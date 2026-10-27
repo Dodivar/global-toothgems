@@ -226,28 +226,59 @@
     },
     "estimate": {
       "question": "How is the estimated price calculated?",
-      "answer": "Each gem has an indicative price by type, adjusted for its size, and the estimate adds them up. It is a conversation aid for you and your client — not a catalogue price, and nothing is charged from it."
+      "answer": "An indicative value at shop prices: each gem in its colour and size, in the smallest pack that covers your pieces, one charm per piece. It is a support for talking with your client, not a quote: nothing is charged from this amount."
     }
   },
   "help": {
     "eyebrow": "Help & Tutorial",
-    "title": "Learn the Studio in a few minutes",
-    "sub": "Six short lessons, from your first gem to reusable design blocks. Open the steps only when you need them.",
+    "title": "Everything about the 3D Studio",
+    "sub": "Six lessons to get started, then the detailed guide to every feature. Every “?” button in the Studio brings you straight to the right topic.",
     "replayTour": "Replay the welcome tour",
+    "searchPlaceholder": "Search the help (mirror, placement sheet, Glowbook…)",
+    "startTitle": "Getting started",
     "showSteps": "Show the steps",
-    "faqTitle": "Good to know",
+    "guideTitle": "Feature guide",
+    "guideSub": "Open a topic to read it; open several to compare.",
+    "resultCount_one": "{{count}} topic matches your search",
+    "resultCount_other": "{{count}} topics match your search",
+    "noMatchTitle": "No topic matches",
+    "noMatchBody": "Try another, shorter word, or browse the full guide.",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "chaptersLabel": "Guide chapters",
+    "readMore": "Read the full help",
+    "plan": {
+      "artist": "Artist & Atelier",
+      "atelier": "Atelier plan"
+    },
     "shortcutsTitle": "Keyboard shortcuts",
-    "feedbackTitle": "Something unclear?",
-    "feedbackBody": "Tell us what felt confusing — the Studio is still in preview and your feedback shapes it.",
+    "shortcutsMac": "On a Mac, Cmd replaces Ctrl. On phones and tablets, use the “Select” button and the quick actions.",
+    "keys": {
+      "Click": "Click",
+      "Drag": "Drag",
+      "Right click": "Right-click",
+      "Double click": "Double-click",
+      "Del": "Del",
+      "Esc": "Esc",
+      "Shift": "Shift"
+    },
     "shortcuts": {
       "undo": "Undo",
       "redo": "Redo",
+      "save": "Save",
       "multi": "Add a gem to the selection",
       "all": "Select every gem",
+      "lasso": "Lasso selection",
       "duplicate": "Duplicate the selection",
+      "duplicateMirror": "Duplicate as a horizontal mirror",
       "delete": "Delete the selection",
-      "deselect": "Deselect / cancel"
+      "deselect": "Deselect / cancel",
+      "actions": "Quick actions on a gem",
+      "pan": "Pan the camera",
+      "focus": "Centre the camera on a tooth"
     },
+    "feedbackTitle": "Something unclear?",
+    "feedbackBody": "Tell us what felt confusing — the Studio is still in preview and your feedback shapes it.",
     "tutorials": {
       "choose": {
         "title": "Choose a gem",
@@ -301,6 +332,343 @@
           "In the library’s My Groups tab, drag a group onto any tooth.",
           "Each gem of the group stays editable once it is placed.",
           "Duplicate a saved creation to explore a variation without touching the original."
+        ]
+      }
+    },
+    "chapters": {
+      "stage": {
+        "title": "The stage and the camera",
+        "sub": "The dentition you work on, how to look at it from every angle, and how to use your own 3D model."
+      },
+      "placing": {
+        "title": "Placing and adjusting a gem",
+        "sub": "The library, the no-overlap rule, and every setting of the right-hand panel."
+      },
+      "compose": {
+        "title": "Selecting and composing",
+        "sub": "Working on several gems at once: selection, quick actions, mirror, alignment."
+      },
+      "organize": {
+        "title": "Saving and organising",
+        "sub": "Your creations, your reusable Gem Groups, your collections and the Global Toothgems templates."
+      },
+      "prepare": {
+        "title": "Preparing the appointment and pricing",
+        "sub": "The tools that link the design to the appointment: front view, placement sheet, estimate, shopping list, exports."
+      },
+      "share": {
+        "title": "Sharing and publishing",
+        "sub": "Showing a creation to a client, posting it on social media, or trying it on a real smile photo."
+      },
+      "glowbook": {
+        "title": "Glowbook, your public showcase",
+        "sub": "A public page in your name, with your creations, to link from your bio."
+      },
+      "account": {
+        "title": "Trial, plans and subscription",
+        "sub": "What each plan includes and how to manage your subscription."
+      }
+    },
+    "topics": {
+      "dentition": {
+        "title": "The reference dentition and FDI notation",
+        "body": [
+          "The Studio opens on a reference dentition: the upper and lower arches, every tooth identified. Teeth are named with the international FDI dental notation: the first digit is the quadrant (1 = upper right, 2 = upper left, 3 = lower left, 4 = lower right, from the patient’s point of view), the second the tooth, from 1 (central incisor) to 7 (second molar). 11 and 21 are therefore the two upper central incisors.",
+          "Click a tooth to see its name, its number and the gems already on it. When you select a gem, the panel also says where it sits on the tooth: the third (incisal, middle or cervical, i.e. near the edge, in the middle or near the gum) and the surface (labial = the visible face, palatal = the inner face…).",
+          "If the reference dentition cannot load (slow connection, limited device), a simplified upper arch replaces it: keep working, then return to the reference dentition with the button in the top bar."
+        ]
+      },
+      "camera": {
+        "title": "Rotate, zoom, frame: the camera",
+        "body": [
+          "Drag the stage to turn around the teeth; use the wheel or pinch to zoom. The camera is also set from the stage controls:"
+        ],
+        "points": [
+          "Preset views: Front (as you see your client), Top, Side, and Reset to return to the starting framing.",
+          "Shift + drag pans the camera sideways without rotating it.",
+          "Double-click a tooth to centre the camera on it: handy for working on a small area.",
+          "Orbit: the camera slowly turns around the creation, to present it or admire it.",
+          "Lighting: Studio (neutral), Lamp (warm, directed light, as in the chair) or Daylight (bright). Switch it to see how the gems catch the light; lighting never changes the creation.",
+          "Full screen: the stage fills the screen, ideal for showing the design during an appointment."
+        ]
+      },
+      "importModel": {
+        "title": "Importing your own 3D model",
+        "body": [
+          "You can replace the reference dentition with a 3D model (a client’s scan, for instance): the import button in the top bar, or simply drop the file on the stage. Accepted formats: .glb and .gltf, 60 MB at most.",
+          "If the tooth meshes are named with their FDI number (11 to 17, 21 to 27…), the Studio recognises every tooth and everything works as on the reference dentition. Otherwise the model opens in “free mode”: you place gems anywhere on the surface, but teeth are only identified approximately.",
+          "Good to know: on an imported model, the front view and the placement sheet cannot draw the gems (they stay in the list). “Back to the reference dentition” restores the original model."
+        ]
+      },
+      "library": {
+        "title": "The library: real gems from the shop",
+        "body": [
+          "The library on the left holds the gems sold in the Global Toothgems shop, with their real shapes, colours and sizes, whether in stock or not. What you compose can therefore be ordered as it is.",
+          "Search by name or filter by shape; each shape folds away to save room. To place a gem: drag it onto a tooth, or click it (it is “picked up”), then click the tooth you want. With the keyboard, select a tooth on the model, then press Enter on a gem to place it there.",
+          "A gem withdrawn from the shop stays on your existing creations, marked unavailable: it can no longer be ordered and is not counted in the estimate."
+        ]
+      },
+      "noOverlap": {
+        "title": "Why won’t a gem go down? (overlaps)",
+        "body": [
+          "Gems settle on the enamel and follow its curve. They may touch but never overlap: while you move a gem, the spot turns red when it is already taken, and the gem cannot be placed there. It is the same rule as in real life, where two stones cannot share one spot.",
+          "An action on several gems (mirror, align, distribute, centre) leaves in place the gems whose new spot would be taken, and a message tells you how many.",
+          "If the stage still has errors (a gem off a tooth or overlapping another, after enlarging it for instance), a “The stage has errors” box lists them: the gems involved are outlined in red, clicking a line selects them, “Select all” takes them all. Move them to free enamel or make them smaller."
+        ]
+      },
+      "sizes": {
+        "title": "Sizes: SS or millimetres",
+        "body": [
+          "A gem’s sizes are the shop’s: you can only choose sizes actually sold. Round crystals are measured in SS (SS2, SS5, SS7…), the rhinestone gauge; the diameter in millimetres shown beside it is approximate. Other shapes are sold in millimetres, sometimes width × length (“2x4”, for instance).",
+          "Each gem is drawn at its real dimensions: a width × length size respects both sides, an SS or single-value size matches the longest side of the shape. You see exactly how much room it will take on the tooth.",
+          "With several gems selected, only the sizes they share are offered."
+        ]
+      },
+      "colors": {
+        "title": "Changing the colour",
+        "body": [
+          "The colours offered are the ones in which the shop sells this shape. Changing the colour swaps the gem for the matching shop product, keeping its place and, where possible, its size.",
+          "To recolour several gems at once, select gems of the same shape: the colour applies to all of them. The stage’s quick actions also have a Colour button, more direct on a phone."
+        ]
+      },
+      "rotation": {
+        "title": "Rotating a gem or a group",
+        "body": [
+          "For a single gem, the right-hand panel offers a rotation on the surface (slider) and quarter turns. On the stage, the “Rotate” dial of the quick actions gives any angle: press it, then turn around it; with the keyboard, the arrows turn by 1°, and by 15° with Shift.",
+          "With several gems selected, the group rotates around its centre as you see it on screen: the gems move with it, like one motif. The group’s rotation buttons turn by a fixed angle, the dial by any angle."
+        ]
+      },
+      "standoff": {
+        "title": "Distance to the enamel (mounting)",
+        "body": [
+          "This setting decides how high the gem sits above the tooth surface. It is mostly useful on an imported model: lower it if the gem seems to float above the tooth, raise it if it sinks into the enamel.",
+          "It only changes what you see on screen, not the gem ordered."
+        ]
+      },
+      "multiSelect": {
+        "title": "Selecting several gems",
+        "body": [
+          "Nearly every setting applies to the whole selection at once. Several ways to select:"
+        ],
+        "points": [
+          "Shift + click adds a gem to the selection or removes it; Ctrl + A selects every gem.",
+          "Lasso (L key, or the Lasso button): draw around gems to select them; with Shift, they are added to the current selection.",
+          "“+ Identical” adds every gem identical to the selected ones (same gem, colour and size): ideal for changing all the gems of one kind.",
+          "On phones and tablets, the “Select” button switches to multiple selection: tap the gems one by one. Pressing and holding a gem does the same.",
+          "Once selected, drag one of the gems: the whole group follows. Esc deselects."
+        ]
+      },
+      "quickActions": {
+        "title": "Quick actions and right-click",
+        "body": [
+          "When gems are selected, floating buttons appear beside them on the stage: rotate, colour, size − / +, duplicate, mirrors, delete. They save a trip to the right-hand panel, especially on a phone or tablet.",
+          "The stage’s Quick actions menu hides them or chooses which buttons show; “Restore default buttons” brings back the original set.",
+          "On a computer, right-clicking a gem also opens an action menu: rotate by 90°, duplicate, horizontal or vertical mirror copy, delete, save as a group."
+        ]
+      },
+      "mirror": {
+        "title": "Mirror: symmetry in one click",
+        "body": [
+          "The horizontal mirror reflects gems across the middle of the smile: a gem on 11 moves to 21, on 13 it moves to 23, at the same height. The vertical mirror reflects from one arch to the other (11 ↔ 41); if the model has a single arch, it reflects from one edge of the tooth to the other.",
+          "Two ways to use it: “Mirror” moves the selected gems to the other side, “Copy” duplicates them on the other side and keeps the originals, so you compose a symmetrical smile by placing only one half. Shortcut: Shift + D for a horizontal mirror copy.",
+          "Reflected gems settle back on the enamel; those whose reflected spot is taken stay where they are."
+        ]
+      },
+      "layout": {
+        "title": "Align, distribute, centre",
+        "body": [
+          "The Layout section appears when several gems are selected:"
+        ],
+        "points": [
+          "Align horizontally: puts the gems’ centres on one horizontal line (one line per arch); they only move up or down.",
+          "Align vertically: puts the gems on one vertical line as you see it on screen, even across teeth or arches; they slide left or right without changing height. For a result true to the smile, align in the front view.",
+          "Distribute: spaces the gems evenly along the arch.",
+          "Centre: brings each gem back to the middle of its tooth (also available for a single gem).",
+          "A gem whose new spot is taken or off the enamel stays where it is."
+        ]
+      },
+      "undo": {
+        "title": "Undo and redo",
+        "body": [
+          "Every action can be undone (Ctrl + Z, or the arrow in the top bar) and redone (Ctrl + Shift + Z). A whole gesture counts as one step: dragging a size or rotation slider is undone at once, not pixel by pixel.",
+          "The history covers the current stage; a saved creation always reopens as it was last saved."
+        ]
+      },
+      "saving": {
+        "title": "Draft, saving and new version",
+        "body": [
+          "While you work, the Studio automatically keeps a draft of the stage in this browser: close the tab and you find it again when you come back. That draft is not in your account yet.",
+          "“Save” (or Ctrl + S) adds the creation to My Creations, under your account: reopen it, duplicate it or share it from any device. After that, “Save changes” updates the same creation, and the menu beside it offers “Save as a new creation” to keep the original and file this version separately.",
+          "The indicator beside the name always tells you where you are: unsaved changes, saving, saved (with the time), or failed, to try again. “Edit details” changes the name and description without touching the composition.",
+          "If a creation is published (in your Glowbook, or as a template for staff), the Studio warns you before saving, because the new version goes live at once. How many creations you can save depends on your plan (see “What each plan includes”)."
+        ]
+      },
+      "gemGroups": {
+        "title": "Reusable Gem Groups",
+        "body": [
+          "A Gem Group is an arrangement you place often (a butterfly, a constellation, an arc…), saved like a “macro”: spacing, rotation, size and colour are kept exactly. A group holds 2 to 24 gems.",
+          "To create one: select the gems on the stage, then “Create a group” in the right-hand panel (or with a right-click), and name it.",
+          "To reuse it: the library’s “My groups” tab. Drag the group onto any tooth, or click it to add it on the selected tooth (otherwise where it was created). On a phone, tap the group, then the tooth. Once placed, every gem stays editable on its own; the original group never changes.",
+          "All your groups are managed on the “My Gem Groups” page (rename, delete, see when it was last used). How many you can keep depends on your plan."
+        ]
+      },
+      "collections": {
+        "title": "Filing creations in collections and folders",
+        "body": [
+          "Collections file your creations by client, occasion or style. A creation can belong to several collections at once, and taking it out of a collection never deletes it.",
+          "Create a collection from the My Creations bar (a name and, if you like, a colour to spot it), then add creations from a card’s menu, a creation’s detail or when saving. Click a collection in the bar to filter.",
+          "The My Creations view switch toggles between the grid and a folder view: each collection becomes a folder, and an “In no collection” folder holds the rest. Your choice of view is kept on your account."
+        ]
+      },
+      "templates": {
+        "title": "Global Toothgems templates",
+        "body": [
+          "The Templates section offers creations designed by the Global Toothgems team, renewed regularly; the newest carry a “New” badge for 30 days.",
+          "“Use this template” adds a copy to your creations and opens it on the stage: edit it freely, the original template never changes."
+        ]
+      },
+      "frontView": {
+        "title": "The numbered front view",
+        "body": [
+          "The front view draws both arches from the front, as you see your client, with every gem in its place, numbered. Mind the direction: the patient’s right is on the left of the drawing.",
+          "The numbers match the gem list and the placement sheet: you know exactly which gem goes where. The front view is in the editor’s right-hand panel and in a creation’s detail; “Enlarge” opens it full size.",
+          "Gems placed on an imported model or off the identified teeth are not drawn, but stay in the list."
+        ]
+      },
+      "placementSheet": {
+        "title": "The placement sheet (printable PDF)",
+        "body": [
+          "The placement sheet is an A4 PDF to print or keep on a tablet during the appointment. Create it from the editor’s Export menu, the front view or a creation’s detail. It holds:"
+        ],
+        "points": [
+          "the creation’s numbered front view;",
+          "a table of the gems: number, tooth (FDI), shape, size, colour or material, and suggested placing order (upper arch first, from the centre outwards);",
+          "a summary per reference: quantity, the gem numbers involved and what to have ready."
+        ]
+      },
+      "estimate": {
+        "title": "How is the estimate calculated?",
+        "body": [
+          "The estimate is an indicative value at shop prices: each gem in its colour and size; for crystals sold in packs, the cheapest pack that covers your pieces (2 pieces → at least the pack of 10); for charms, one per piece.",
+          "It is neither a quote nor an invoice: nothing is charged from this amount, and your own placing fee is not in it. Gems the shop no longer sells are not counted. It is a support for talking with your client and preparing your order."
+        ]
+      },
+      "shoppingList": {
+        "title": "Products to order and the cart",
+        "body": [
+          "Under the estimate, the “Products to order” list turns the creation into shop products: each reference, the pack chosen and the quantity needed, with the stock (low, out of stock).",
+          "“Add to cart” puts every available product in your cart in one click; out-of-stock products are not added and the list tells you so. Prices are always recalculated at checkout.",
+          "Visitors of a shared creation or a Glowbook have this button too: they can order a design’s gems in one go."
+        ]
+      },
+      "exports": {
+        "title": "Exports: captures, estimate sheet, JSON file",
+        "body": [
+          "The editor’s Export menu offers:"
+        ],
+        "points": [
+          "PNG capture: the current view of the stage, on the Studio background.",
+          "Transparent PNG: the same view without background, to lay on your own visuals.",
+          "Estimate sheet (PNG): the creation’s render, the priced detail and the total, with the client name you type.",
+          "Placement sheet (PDF): see its own topic.",
+          "Creation (JSON): the creation’s data, to archive or pass on."
+        ]
+      },
+      "shareLink": {
+        "title": "The read-only share link",
+        "body": [
+          "“Share” creates a link to a saved creation. Whoever opens it sees the design in 3D, with or without an account, can rotate it, zoom and order its gems, but can neither edit it nor see your other creations.",
+          "The link always shows the latest saved version: the stage’s unsaved changes are not in it. You can turn it off at any time from the same window; it then opens nothing, even where it was posted, and you can create a new one.",
+          "If the person has Studio access, “Edit a copy” opens a copy in their own workshop: the shared creation stays untouched."
+        ]
+      },
+      "socialPost": {
+        "title": "Creating a social media post",
+        "body": [
+          "From a creation’s detail, “Create a post” prepares a visual ready to publish, drawn entirely on your device (nothing is published without you):"
+        ],
+        "points": [
+          "Type: HD image (PNG, sharpest, or lighter JPEG), 360° video (one full turn, looping) or 360° GIF (lighter, for messages).",
+          "Format: Story, square or portrait; choose the network you aim at and its best format is offered.",
+          "Signature: with the Essential plan and the trial, every export carries the Global Toothgems watermark. The Artist and Atelier plans sign with your own logo (PNG, JPEG or WebP, 2 MB max.) or nothing. The Atelier plan adds layouts (background, frame, title and your handle).",
+          "Publishing: on a phone, each network button opens the share menu with the file. On a computer, Facebook, Pinterest, X, Threads and WhatsApp share the creation’s public page (Glowbook or share link); for the others, the file is downloaded and the network’s page opens.",
+          "Keep the tab open while a video records. Instagram, TikTok and Snapchat do not accept GIFs; some desktop browsers record WebM, which some networks refuse: a phone or Safari records MP4."
+        ]
+      },
+      "tryOn": {
+        "title": "Try it on a smile (AI render)",
+        "body": [
+          "“Try on a smile” places the saved creation on a real smile photo with an AI, to picture it before the appointment. You open it on your own creations; so can your visitors, with “Try it on my smile” on your Glowbook creations and share links (they sign in to an account).",
+          "For a good photo: a close-up of the teeth (not the whole face), from the front, lips apart and upper teeth clearly visible, in clear light, sharp and without filter. A first check refuses photos too far, at an angle, dark or blurred before any render, without counting them.",
+          "Each account has 10 renders per rolling 24 hours. The photo and the image produced are not kept by Global Toothgems (download the result to keep it); the photo’s metadata are removed before sending. The photographed person’s consent is required. The result is an AI image: a preview, not an exact promise of the placed result."
+        ]
+      },
+      "glowbookBasics": {
+        "title": "Glowbook: creating your page and publishing",
+        "body": [
+          "The Glowbook is your public showcase: a page in your name (/glowbook/your-handle), to link from your Instagram bio, showing the creations you choose. Each opens in 3D for visitors, who can also order its gems.",
+          "Create the page from “My Glowbook” (display name, handle, bio, Instagram). Add a creation from its detail in My Creations, with “Add to my Glowbook” (never from the editor); 60 creations at most.",
+          "Moderation: the page and every new creation are approved by the Global Toothgems team before they show. If refused, the reason is shown; edit and send it again. Once a creation is approved, your next saves are published at once: the Studio warns you before saving. Changing your handle changes the address and sends the page back for approval.",
+          "The page stays visible while your Atelier plan is active. Deleting a creation also takes it off your Glowbook."
+        ]
+      },
+      "glowbookLook": {
+        "title": "Customising your Glowbook and the spotlight creation",
+        "body": [
+          "The Look tab sets your page’s identity: profile picture, colour, background (light, tinted, dark), how creations show (grid or large cards), city or studio, and links (booking, website, TikTok, https only).",
+          "The spotlight creation opens your page, large, in a short 5-second video sweeping across the smile from left to right, looping. Your Studio records this video automatically whenever it is missing or out of date: leave the Studio open a moment after changing the spotlight creation.",
+          "Colour, background, layout, spotlight and city go live when saved; a new picture or link first waits for the team’s approval (the page keeps the previous ones meanwhile)."
+        ]
+      },
+      "glowbookSections": {
+        "title": "Glowbook sections",
+        "body": [
+          "Sections file your page’s creations by theme (“Wedding”, “Minimalist”…), up to 12. Visitors filter your page by section; creations without a section stay visible under “All”.",
+          "A section only shows publicly once it holds at least one published creation. Deleting a section does not take its creations off the page. The My Glowbook dashboard points out creations filed in no section."
+        ]
+      },
+      "glowbookPlace": {
+        "title": "“Where I work” and the map",
+        "body": [
+          "Say where your clients can find you; your page shows it with a map. Two choices:"
+        ],
+        "points": [
+          "A salon open to the public: the address and the pin are public, with directions links (Google Maps, Apple Maps, OpenStreetMap).",
+          "An area (you work from home or at clients’ homes): only the district or city shows, in a circle of about 1 km. The position is rounded and your address is never stored.",
+          "Search for the address or city, then drag the pin or tap the map to adjust. The place is visible once saved."
+        ]
+      },
+      "glowbookShare": {
+        "title": "Spreading the word: link, QR code, badge",
+        "body": [
+          "The Share tab gives your page’s address to copy into your bio, a QR code as a PNG and an A4 poster (PDF) with your name, picture and colour, to print for your studio. They are available once the page is approved.",
+          "If you completed a Global Toothgems Academy course with a certificate, your page can show the “Certified artist” badge, with the course title. You can hide it."
+        ]
+      },
+      "trial": {
+        "title": "The 48-hour free trial",
+        "body": [
+          "Each account can start a 48-hour free trial once, without a bank card. The 48 hours run continuously from the start, even with the Studio closed; a countdown shows the time left.",
+          "During the trial, the Studio works like the Essential plan. At the end, editing pauses until you choose a plan: your saved creations stay in your account and wait for you."
+        ]
+      },
+      "plans": {
+        "title": "What each plan includes",
+        "body": [
+          "The editor, the whole gem library, the front view, the placement sheet, share links and posts are open to every plan. Plans differ by what you save and by the advanced tools:"
+        ],
+        "points": [
+          "Essential: 15 saved creations and 3 Gem Groups; posts with the Global Toothgems watermark.",
+          "Artist: 150 creations and 30 groups; posts signed with your logo or unsigned; collections and folders; Global Toothgems templates.",
+          "Atelier: unlimited creations and groups; everything in Artist; post layouts; Glowbook; AI smile try-on, for you and for visitors of your creations.",
+          "Over the limit, a new save is refused (nothing is lost): editing or deleting a creation is always possible."
+        ]
+      },
+      "subscription": {
+        "title": "Managing your subscription, invoices and withdrawal",
+        "body": [
+          "Your subscription is managed in your account, under “3D Studio” (My subscription): change plan or switch between monthly and yearly (the amount is prorated), replace your card, cancel at the end of the paid period or keep the subscription, and download your invoices and credit notes.",
+          "Right of withdrawal: within 14 days of subscribing, you can withdraw from the same page. The subscription stops at once and the unused share is refunded automatically (each day started counts as used). Your creations stay in your account."
         ]
       }
     }

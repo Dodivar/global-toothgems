@@ -16,13 +16,14 @@
 --       their own collection, and cannot forge the owner;
 --   C5  deleting a collection keeps its creations; deleting a creation
 --       removes its memberships;
---   C6  once the subscription has ended: collections and memberships are still read,
---       a creation can be taken out and a collection deleted; creating,
---       renaming and adding are refused (42501);
+--   C6  once the subscription has ended: collections and memberships are no
+--       longer read nor written (creating and adding refused with 42501, a
+--       rename touches nothing); nothing is deleted, the creations stay
+--       readable, and everything is back with the plan;
 --   C7  active staff have access (support), without reading members' collections.
 --   C8  below the Artist plan (a trial, an Essential subscription) no folder
---       can be created, renamed or filled; folders kept from a higher plan
---       are still read, emptied and deleted; Atelier creates them (decision 113 (b)).
+--       is read, created or filled — not even one kept from a higher plan;
+--       Atelier creates them (decision 113 (b)).
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL STUDIO COLLECTIONS TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -237,43 +238,51 @@ begin
   if v_cnt <> 1 then raise exception 'FAIL C5: collection lost other memberships (% left)', v_cnt; end if;
   passed := passed || 'C5'::text;
 
-  -- C6: access over — read, take out and delete still work; creating, renaming, adding do not.
+  -- C6: access over — the folders are neither read nor written; nothing is deleted,
+  -- and they come back as they were with the plan (decision 113 (b)).
   insert into public.creations (name, scene_data) values ('Création C', v_scene) returning id into c1b;
-  insert into public.studio_collections (name) values ('À supprimer') returning id into k1b;
+  insert into public.studio_collections (name) values ('À garder') returning id into k1b;
   execute 'reset role';
   update public.studio_subscriptions
      set status = 'canceled', current_period_end = now() - interval '1 second'
    where user_id = m1;
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
-  select count(*) into v_cnt from public.studio_collections where user_id = m1;
-  if v_cnt <> 2 then raise exception 'FAIL C6: collections not readable after access (% read)', v_cnt; end if;
-  select count(*) into v_cnt from public.studio_collection_creations where collection_id = k1;
-  if v_cnt <> 1 then raise exception 'FAIL C6: memberships not readable after access'; end if;
+  select count(*) into v_cnt from public.studio_collections;
+  if v_cnt <> 0 then raise exception 'FAIL C6: % collection(s) readable after access', v_cnt; end if;
+  select count(*) into v_cnt from public.studio_collection_creations;
+  if v_cnt <> 0 then raise exception 'FAIL C6: % membership(s) readable after access', v_cnt; end if;
+  select count(*) into v_cnt from public.creations where id in (c1a, c1b);
+  if v_cnt <> 2 then raise exception 'FAIL C6: creations hidden with the folders (%)', v_cnt; end if;
   v_state := null;
   begin
     insert into public.studio_collections (name) values ('Après essai');
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL C6: created after access (%)', v_state; end if;
-  v_state := null;
-  begin
-    update public.studio_collections set name = 'Renommée' where id = k1;
-  exception when others then v_state := sqlstate;
-  end;
-  if v_state is distinct from '42501' then raise exception 'FAIL C6: renamed after access (%)', v_state; end if;
+  update public.studio_collections set name = 'Renommée' where id = k1;
+  get diagnostics v_cnt = row_count;
+  if v_cnt <> 0 then raise exception 'FAIL C6: renamed after access'; end if;
   v_state := null;
   begin
     insert into public.studio_collection_creations (collection_id, creation_id) values (k1, c1b);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL C6: added after access (%)', v_state; end if;
-  delete from public.studio_collection_creations where collection_id = k1 and creation_id = c1a;
-  get diagnostics v_cnt = row_count;
-  if v_cnt <> 1 then raise exception 'FAIL C6: could not take a creation out after access'; end if;
-  delete from public.studio_collections where id = k1b;
-  get diagnostics v_cnt = row_count;
-  if v_cnt <> 1 then raise exception 'FAIL C6: could not delete a collection after access'; end if;
+  execute 'reset role';
+  select count(*) into v_cnt from public.studio_collections where user_id = m1;
+  if v_cnt <> 2 then raise exception 'FAIL C6: folders lost after access (%)', v_cnt; end if;
+  if (select name from public.studio_collections where id = k1) = 'Renommée' then raise exception 'FAIL C6: rename went through'; end if;
+  -- Back on the Artist plan: everything is there again.
+  update public.studio_subscriptions
+     set status = 'active', current_period_end = now() + interval '1 month'
+   where user_id = m1;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  select count(*) into v_cnt from public.studio_collections;
+  if v_cnt <> 2 then raise exception 'FAIL C6: folders not back with the plan (%)', v_cnt; end if;
+  select count(*) into v_cnt from public.studio_collection_creations where collection_id = k1;
+  if v_cnt <> 1 then raise exception 'FAIL C6: memberships not back with the plan (%)', v_cnt; end if;
   passed := passed || 'C6'::text;
 
   -- C7: active staff have access to organise their own work, not to read members'.
@@ -300,24 +309,18 @@ begin
     if v_state is distinct from '42501' then raise exception 'FAIL C8: % created a folder (%)', r, v_state; end if;
   end loop;
   perform set_config('request.jwt.claims', json_build_object('sub', m_ess, 'role', 'authenticated')::text, true);
-  select count(*) into v_cnt from public.studio_collections where id = k_ess;
-  if v_cnt <> 1 then raise exception 'FAIL C8: Essential cannot read the kept folder'; end if;
-  v_state := null;
-  begin
-    update public.studio_collections set name = 'Renommé' where id = k_ess;
-  exception when others then v_state := sqlstate;
-  end;
-  if v_state is distinct from '42501' then raise exception 'FAIL C8: Essential renamed a folder (%)', v_state; end if;
-  delete from public.studio_collection_creations where collection_id = k_ess;
+  select count(*) into v_cnt from public.studio_collections;
+  if v_cnt <> 0 then raise exception 'FAIL C8: Essential reads % folder(s)', v_cnt; end if;
+  select count(*) into v_cnt from public.studio_collection_creations;
+  if v_cnt <> 0 then raise exception 'FAIL C8: Essential reads % filing(s)', v_cnt; end if;
+  select count(*) into v_cnt from public.creations where id = c_ess;
+  if v_cnt <> 1 then raise exception 'FAIL C8: Essential lost the creation'; end if;
   v_state := null;
   begin
     insert into public.studio_collection_creations (collection_id, creation_id) values (k_ess, c_ess);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL C8: Essential filed a creation (%)', v_state; end if;
-  delete from public.studio_collections where id = k_ess;
-  get diagnostics v_cnt = row_count;
-  if v_cnt <> 1 then raise exception 'FAIL C8: Essential could not delete the kept folder'; end if;
   perform set_config('request.jwt.claims', json_build_object('sub', m_atl, 'role', 'authenticated')::text, true);
   insert into public.creations (name, scene_data) values ('Atelier', v_scene) returning id into c_ess;
   insert into public.studio_collections (name) values ('Atelier') returning id into k_ess;

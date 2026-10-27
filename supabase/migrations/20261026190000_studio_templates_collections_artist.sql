@@ -10,10 +10,11 @@
 --   * Templates: browsing them (studio_templates()), reading their renders
 --     and copying one (studio_use_template()) need the Artist tier.
 --     Publishing stays staff work (manage_content), unchanged.
---   * Collections ("folders"): creating, renaming and filing a creation into
---     one need the Artist tier. Reading them, taking a creation out and
---     deleting one stay open whatever the plan, so a member who moves down to
---     Essential keeps their folders and can tidy them, but adds nothing.
+--   * Collections ("folders"): reading, creating, renaming and filing a
+--     creation into one need the Artist tier (owner, 2026-10-26: "after a move
+--     to a smaller plan, simply stop showing the folders; they can no longer
+--     be seen"). Nothing is deleted: the rows stay, unreadable, and come back
+--     as they were on an upgrade. Their creations stay readable as ever.
 --
 -- The tier is private.studio_user_tier() (decision 101): an active trial is
 -- essential, so a trial member has neither.
@@ -119,10 +120,18 @@ alter policy "studio-thumbnails: Studio members read template renders"
 -- -----------------------------------------------------------------------------
 -- 2. Collections
 -- -----------------------------------------------------------------------------
+drop policy "studio_collections: owners read" on public.studio_collections;
+drop policy "studio_collection_creations: owners read" on public.studio_collection_creations;
 drop policy "studio_collections: owners with Studio access insert" on public.studio_collections;
 drop policy "studio_collections: owners with Studio access update" on public.studio_collections;
 drop policy "studio_collection_creations: owners with Studio access add their own creations" on public.studio_collection_creations;
 
+create policy "studio_collections: owners on the Artist plan read"
+  on public.studio_collections for select to authenticated
+  using (user_id = (select auth.uid()) and (select private.studio_artist_plan()));
+create policy "studio_collection_creations: owners on the Artist plan read"
+  on public.studio_collection_creations for select to authenticated
+  using (user_id = (select auth.uid()) and (select private.studio_artist_plan()));
 create policy "studio_collections: owners on the Artist plan insert"
   on public.studio_collections for insert to authenticated
   with check (user_id = (select auth.uid()) and (select private.studio_artist_plan()));

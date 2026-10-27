@@ -230,7 +230,7 @@ function MediaPicker({ onCancel, onConfirm }: { onCancel: () => void; onConfirm:
         aria-modal="true"
         aria-labelledby="gt-media-picker-title"
         tabIndex={-1}
-        className="gt-admin-dialog relative flex max-h-[min(720px,88vh)] w-full max-w-[760px] flex-col rounded-[var(--admin-radius)] border border-[var(--border-subtle)] bg-[var(--admin-panel)] shadow-[var(--shadow-lg)]"
+        className="gt-admin-dialog relative flex max-h-[min(720px,calc(100dvh-2rem))] w-full max-w-[760px] flex-col rounded-[var(--admin-radius)] border border-[var(--border-subtle)] bg-[var(--admin-panel)] shadow-[var(--shadow-lg)]"
       >
         <div className="flex flex-none items-start justify-between gap-4 border-b border-[var(--border-subtle)] px-6 py-4">
           <div className="grid gap-1">

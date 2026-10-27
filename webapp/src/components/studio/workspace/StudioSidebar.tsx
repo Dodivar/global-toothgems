@@ -250,7 +250,7 @@ function Drawer({ section, onClose }: { section: StudioSection | null; onClose: 
         aria-modal="true"
         aria-label={t("studio.workspace.nav.label")}
         tabIndex={-1}
-        className="gt-ws-drawer absolute inset-y-0 left-0 flex w-[min(320px,86vw)] flex-col bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
+        className="gt-ws-drawer absolute inset-y-0 left-0 flex w-[min(320px,86vw)] flex-col overflow-y-auto overscroll-contain bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
       >
         <div className="flex items-center gap-3 border-b border-[var(--border-subtle)] px-4 py-3">
           <img src={monogram.src} alt="" aria-hidden="true" className="h-8 w-8 object-contain" />

@@ -153,7 +153,7 @@ function PhotoViewerBody({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[520] grid place-items-center p-4 sm:p-8">
       <div aria-hidden="true" onClick={onClose} className="gt-admin-scrim fixed inset-0 bg-[rgba(17,17,17,.82)] backdrop-blur-[6px]" />
-      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative grid w-full max-w-[880px] gap-3 outline-none">
+      <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative grid max-h-full w-full max-w-[880px] gap-3 overflow-y-auto overscroll-contain outline-none">
         <div className="flex items-center justify-between gap-3 text-[var(--gt-off-white)]">
           <h2 id={titleId} className="text-[length:var(--text-body-sm)] font-semibold text-[var(--gt-off-white)]">
             {photoTarget.caption}
@@ -168,7 +168,7 @@ function PhotoViewerBody({ onClose }: { onClose: () => void }) {
             key={photo.src}
             src={photo.src}
             alt={alt}
-            className="gt-pop-in max-h-[72vh] w-full rounded-[var(--radius-lg)] object-contain"
+            className="gt-pop-in max-h-[60dvh] w-full rounded-[var(--radius-lg)] object-contain"
           />
           {photo.alt && <figcaption className="text-center text-[length:var(--text-caption)] text-[var(--gt-ink-300)]">{photo.alt}</figcaption>}
         </figure>

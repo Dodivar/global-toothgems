@@ -40,7 +40,7 @@ declare
 begin
   v_scene := jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null,
                                 'pieces', jsonb_build_array(v_piece), 'groups', '[]'::jsonb);
-  v_group := jsonb_build_object('version', 1, 'pieces', jsonb_build_array(v_piece, v_piece));
+  v_group := jsonb_build_object('version', 2, 'anchorToothId', '11', 'pieces', jsonb_build_array(v_piece, v_piece));
 
   insert into auth.users (id, aud, role, email, created_at, updated_at) values
     (trialist, 'authenticated', 'authenticated', 'plan-1.test@example.invalid', now(), now()),

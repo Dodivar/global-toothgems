@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth";
-import { useStudioAccess } from "../studioAccess";
+import { useStudioAccess, useStudioFeature } from "../studioAccess";
 import { trackStudio, trackStudioOnce } from "../studioAnalytics";
 import { useToast } from "../toast";
 import { getEngine } from "../studio3d/engine";
@@ -43,6 +43,8 @@ import { copyName } from "./validation";
  */
 
 export type LibraryStatus = "signedOut" | "loading" | "ready" | "error";
+/** `locked`: the member's plan has no folders (decision 113 (b)): none is shown, the library is a plain grid. */
+export type CollectionsStatus = LibraryStatus | "locked";
 /** What the stage's design is, relative to the account. */
 export type SaveState = "empty" | "unsaved" | "saving" | "saved" | "failed";
 
@@ -55,7 +57,7 @@ interface WorkspaceValue {
   collections: StudioCollection[];
   memberships: CollectionMembership[];
   /** "error" when the collections could not be read; the creations still show. */
-  collectionsStatus: LibraryStatus;
+  collectionsStatus: CollectionsStatus;
   /** How "My Creations" is laid out, kept on the account (defaults until loaded). */
   libraryView: LibraryView;
   /** Switch the layout at once; saved in the background, put back if the save fails. */
@@ -157,10 +159,14 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   const status: LibraryStatus = !repos ? (restoring ? "loading" : "signedOut") : current ? current.status : "loading";
   const creations = useMemo(() => current?.creations ?? [], [current]);
   const groups = useMemo(() => current?.groups ?? [], [current]);
-  const collections = useMemo(() => current?.collections?.list ?? [], [current]);
-  const memberships = useMemo(() => current?.collections?.memberships ?? [], [current]);
-  const collectionsStatus: LibraryStatus = status !== "ready" ? status : current?.collections ? "ready" : "error";
-  const libraryView = current?.preferences.libraryView ?? DEFAULT_PREFERENCES.libraryView;
+  // Below the Artist plan folders are neither shown nor read (decision 113 (b));
+  // the database returns none either. They come back as they were on an upgrade.
+  const collectionsLocked = useStudioFeature("collections") === false;
+  const collections = useMemo(() => (collectionsLocked ? [] : (current?.collections?.list ?? [])), [current, collectionsLocked]);
+  const memberships = useMemo(() => (collectionsLocked ? [] : (current?.collections?.memberships ?? [])), [current, collectionsLocked]);
+  const collectionsStatus: CollectionsStatus =
+    status !== "ready" ? status : collectionsLocked ? "locked" : current?.collections ? "ready" : "error";
+  const libraryView = collectionsLocked ? "grid" : (current?.preferences.libraryView ?? DEFAULT_PREFERENCES.libraryView);
   const [saving, setSaving] = useState(false);
   /** `piecesKey` of the design whose save failed; editing it again clears the failure. */
   const [failedKey, setFailedKey] = useState<string | null>(null);

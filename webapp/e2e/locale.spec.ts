@@ -8,7 +8,7 @@ import { dismissCookieBanner, expect, open, test } from "./fixtures";
 
 const ENGLISH_PAGES: { path: string; heading: RegExp; title: string }[] = [
   { path: "/en", heading: /tooth gems, Academy and 3D Studio/, title: "Global Toothgems — tooth gems, Academy and 3D Studio" },
-  { path: "/en/shop", heading: /Gems, tools and professional kits/, title: "Gems, tools and professional kits · Global Toothgems" },
+  { path: "/en/shop", heading: /^Shop$/, title: "Gems, tools and professional kits · Global Toothgems" },
   { path: "/en/shop/aurora-heart", heading: /Aurora Heart/, title: "Aurora Heart · Global Toothgems" },
   { path: "/en/academy/course/fondation", heading: /Tooth Gem/, title: "Tooth Gem Foundation · Global Toothgems" },
   { path: "/en/3d-studio", heading: /Imagine it\. Design it\. Make it yours\./, title: "Imagine it. Design it. Make it yours · Global Toothgems" },
@@ -133,7 +133,7 @@ test("the language switch moves to the same page in the other language and is re
   await expect(page).toHaveURL((url) => url.pathname === "/en/shop", { timeout: 30_000 });
   // A client-side navigation (phase 5): the page is not loaded again.
   expect(await page.evaluate(() => (window as unknown as { gtMarker?: number }).gtMarker)).toBe(1);
-  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Gems, tools and professional kits/);
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/^Shop$/);
   await expect(page).toHaveTitle("Gems, tools and professional kits · Global Toothgems");
   expect((await context.cookies(baseURL)).find((c) => c.name === "gt-lang")?.value).toBe("en");
 

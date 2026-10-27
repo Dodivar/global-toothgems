@@ -65,12 +65,14 @@ describe("the plan table matches the database", () => {
     expect(allowed).toEqual(fromTier(lowestPlanWith("collections")));
   });
 
-  it("templates and folder writes go through that check, not plain Studio access", () => {
+  it("templates, folder reads and folder writes go through that check, not plain Studio access", () => {
     expect(latestDefinition("public.studio_templates")).toMatch(/not private\.studio_artist_plan\(\)/);
     expect(latestDefinition("public.studio_use_template")).toMatch(/not private\.studio_artist_plan\(\)/);
     const files = readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort();
     const sql = files.map((f) => readFileSync(join(MIGRATIONS, f), "utf8")).join("\n");
     for (const policy of [
+      "studio_collections: owners on the Artist plan read",
+      "studio_collection_creations: owners on the Artist plan read",
       "studio_collections: owners on the Artist plan insert",
       "studio_collections: owners on the Artist plan update",
       "studio_collection_creations: owners on the Artist plan add their own creations",
@@ -78,6 +80,8 @@ describe("the plan table matches the database", () => {
       expect(sql).toContain(`create policy "${policy}"`);
     }
     for (const old of [
+      "studio_collections: owners read",
+      "studio_collection_creations: owners read",
       "studio_collections: owners with Studio access insert",
       "studio_collections: owners with Studio access update",
       "studio_collection_creations: owners with Studio access add their own creations",
