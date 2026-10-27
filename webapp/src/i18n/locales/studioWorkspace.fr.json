@@ -226,28 +226,59 @@
     },
     "estimate": {
       "question": "Comment le prix estimé est-il calculé ?",
-      "answer": "Chaque gemme a un prix indicatif selon son type, ajusté à sa taille, et l’estimation les additionne. C’est un support d’échange avec votre cliente ou votre client, pas un prix catalogue : rien n’est facturé à partir de ce montant."
+      "answer": "Une valeur indicative aux prix de la boutique : chaque gemme dans sa couleur et sa taille, dans le plus petit pack qui couvre vos pièces, un bijou par pièce. C’est un support d’échange avec votre cliente ou votre client, pas un devis : rien n’est facturé à partir de ce montant."
     }
   },
   "help": {
     "eyebrow": "Aide & tutoriel",
-    "title": "Prenez le Studio en main en quelques minutes",
-    "sub": "Six leçons courtes, de votre première gemme aux assemblages réutilisables. N’ouvrez les étapes que lorsque vous en avez besoin.",
+    "title": "Tout savoir sur le Studio 3D",
+    "sub": "Six leçons pour démarrer, puis le guide détaillé de chaque fonctionnalité. Chaque bouton « ? » du Studio vous amène directement au bon sujet.",
     "replayTour": "Revoir la visite guidée",
+    "searchPlaceholder": "Rechercher dans l’aide (miroir, fiche de pose, Glowbook…)",
+    "startTitle": "Premiers pas",
     "showSteps": "Voir les étapes",
-    "faqTitle": "Bon à savoir",
+    "guideTitle": "Guide des fonctionnalités",
+    "guideSub": "Ouvrez un sujet pour le lire ; ouvrez-en plusieurs pour comparer.",
+    "resultCount_one": "{{count}} sujet correspond à votre recherche",
+    "resultCount_other": "{{count}} sujets correspondent à votre recherche",
+    "noMatchTitle": "Aucun sujet ne correspond",
+    "noMatchBody": "Essayez un autre mot, plus court, ou parcourez le guide complet.",
+    "expandAll": "Tout déplier",
+    "collapseAll": "Tout replier",
+    "chaptersLabel": "Chapitres du guide",
+    "readMore": "Lire l’aide complète",
+    "plan": {
+      "artist": "Artiste et Atelier",
+      "atelier": "Formule Atelier"
+    },
     "shortcutsTitle": "Raccourcis clavier",
-    "feedbackTitle": "Quelque chose n’est pas clair ?",
-    "feedbackBody": "Dites-nous ce qui vous a semblé confus : le Studio est en avant-première et vos retours le façonnent.",
+    "shortcutsMac": "Sur Mac, Cmd remplace Ctrl. Sur téléphone et tablette, utilisez le bouton « Sélection » et les actions rapides.",
+    "keys": {
+      "Click": "Clic",
+      "Drag": "Glisser",
+      "Right click": "Clic droit",
+      "Double click": "Double-clic",
+      "Del": "Suppr",
+      "Esc": "Échap",
+      "Shift": "Maj"
+    },
     "shortcuts": {
       "undo": "Annuler",
       "redo": "Rétablir",
+      "save": "Enregistrer",
       "multi": "Ajouter une gemme à la sélection",
       "all": "Sélectionner toutes les gemmes",
+      "lasso": "Lasso de sélection",
       "duplicate": "Dupliquer la sélection",
+      "duplicateMirror": "Dupliquer en miroir horizontal",
       "delete": "Supprimer la sélection",
-      "deselect": "Désélectionner / annuler"
+      "deselect": "Désélectionner / annuler",
+      "actions": "Actions rapides sur une gemme",
+      "pan": "Déplacer la caméra",
+      "focus": "Centrer la caméra sur une dent"
     },
+    "feedbackTitle": "Quelque chose n’est pas clair ?",
+    "feedbackBody": "Dites-nous ce qui vous a semblé confus : le Studio est en avant-première et vos retours le façonnent.",
     "tutorials": {
       "choose": {
         "title": "Choisir une gemme",
@@ -301,6 +332,343 @@
           "Dans l’onglet Mes groupes, glissez un groupe sur n’importe quelle dent.",
           "Chaque gemme du groupe reste modifiable une fois posée.",
           "Dupliquez une création enregistrée pour explorer une variante sans toucher à l’originale."
+        ]
+      }
+    },
+    "chapters": {
+      "stage": {
+        "title": "La scène et la caméra",
+        "sub": "La dentition sur laquelle vous travaillez, comment la regarder sous tous les angles, et comment utiliser votre propre modèle 3D."
+      },
+      "placing": {
+        "title": "Poser et régler une gemme",
+        "sub": "La bibliothèque, la règle anti-chevauchement, et chaque réglage du panneau de droite."
+      },
+      "compose": {
+        "title": "Sélectionner et composer",
+        "sub": "Travailler sur plusieurs gemmes à la fois : sélection, actions rapides, miroir, alignement."
+      },
+      "organize": {
+        "title": "Enregistrer et organiser",
+        "sub": "Vos créations, vos groupes de gemmes réutilisables, vos collections et les modèles Global Toothgems."
+      },
+      "prepare": {
+        "title": "Préparer la pose et chiffrer",
+        "sub": "Les outils qui font le lien entre le design et le rendez-vous : vue de face, fiche de pose, estimation, liste d’achats, exports."
+      },
+      "share": {
+        "title": "Partager et publier",
+        "sub": "Montrer une création à une cliente, la publier sur les réseaux, ou l’essayer sur une vraie photo de sourire."
+      },
+      "glowbook": {
+        "title": "Glowbook, votre vitrine publique",
+        "sub": "Une page publique à votre nom, avec vos créations, à mettre en lien dans votre bio."
+      },
+      "account": {
+        "title": "Essai, formules et abonnement",
+        "sub": "Ce que comprend chaque formule et comment gérer votre abonnement."
+      }
+    },
+    "topics": {
+      "dentition": {
+        "title": "La dentition de référence et la notation FDI",
+        "body": [
+          "Le Studio s’ouvre sur une dentition de référence : les arcades supérieure et inférieure, chaque dent étant identifiée. Toutes les dents sont nommées selon la notation dentaire internationale FDI : le premier chiffre est le quadrant (1 = haut droite, 2 = haut gauche, 3 = bas gauche, 4 = bas droite, du point de vue du patient), le second la dent, de 1 (incisive centrale) à 7 (deuxième molaire). La 11 et la 21 sont donc les deux incisives centrales du haut.",
+          "Cliquez sur une dent pour voir son nom, sa notation et les gemmes déjà posées dessus. Quand vous sélectionnez une gemme, le panneau indique aussi où elle se trouve sur la dent : le tiers (incisif, moyen ou cervical, c’est-à-dire près du bord, au milieu ou près de la gencive) et la face (vestibulaire = face visible, palatine = face intérieure…).",
+          "Si la dentition de référence ne peut pas se charger (connexion lente, appareil limité), une arcade supérieure simplifiée la remplace : vous pouvez continuer à travailler, puis revenir à la dentition de référence avec le bouton prévu dans la barre du haut."
+        ]
+      },
+      "camera": {
+        "title": "Tourner, zoomer, cadrer : la caméra",
+        "body": [
+          "Faites glisser la scène pour tourner autour des dents, utilisez la molette ou le pincement pour zoomer. La caméra se règle aussi depuis les commandes de la scène :"
+        ],
+        "points": [
+          "Vues prédéfinies : Face (comme vous voyez votre client·e), Dessus, Profil, et Réinitialiser pour revenir au cadrage de départ.",
+          "Maj + glisser déplace la caméra latéralement, sans la faire tourner.",
+          "Double-cliquez sur une dent pour centrer la caméra dessus : pratique pour travailler une petite zone.",
+          "Orbite : la caméra tourne lentement autour de la création, pour la présenter ou l’admirer.",
+          "Éclairage : Studio (neutre), Lampe (lumière chaude et dirigée, comme au fauteuil) ou Jour (vive). Changez-le pour voir comment les gemmes accrochent la lumière ; l’éclairage ne modifie pas la création.",
+          "Plein écran : la scène occupe tout l’écran, idéal pour montrer le design en rendez-vous."
+        ]
+      },
+      "importModel": {
+        "title": "Importer votre propre modèle 3D",
+        "body": [
+          "Vous pouvez remplacer la dentition de référence par un modèle 3D (par exemple le scan d’un client) : bouton d’import dans la barre du haut, ou déposez simplement le fichier sur la scène. Formats acceptés : .glb et .gltf, 60 Mo au maximum.",
+          "Si les maillages des dents sont nommés avec leur numéro FDI (11 à 17, 21 à 27…), le Studio reconnaît chaque dent et tout fonctionne comme sur la dentition de référence. Sinon, le modèle s’ouvre en « mode libre » : vous posez les gemmes n’importe où sur la surface, mais les dents sont identifiées seulement de façon approximative.",
+          "Bon à savoir : sur un modèle importé, la vue de face et la fiche de pose ne peuvent pas dessiner les gemmes (elles restent dans la liste). Le bouton « Revenir à la dentition de référence » remet le modèle d’origine."
+        ]
+      },
+      "library": {
+        "title": "La bibliothèque : des gemmes réelles de la boutique",
+        "body": [
+          "La bibliothèque de gauche contient les gemmes vendues dans la boutique Global Toothgems, avec leurs vraies formes, couleurs et tailles, qu’elles soient en stock ou non. Ce que vous composez peut donc être commandé tel quel.",
+          "Cherchez par nom ou filtrez par forme ; chaque forme peut se replier pour gagner de la place. Pour poser une gemme : glissez-la sur une dent, ou cliquez dessus (elle est « prise »), puis cliquez sur la dent voulue. Au clavier, sélectionnez une dent sur le modèle, puis appuyez sur Entrée sur une gemme pour l’y poser.",
+          "Une gemme retirée de la boutique reste sur vos créations existantes, signalée comme indisponible : elle ne peut plus être commandée et n’est pas comptée dans l’estimation."
+        ]
+      },
+      "noOverlap": {
+        "title": "Pourquoi une gemme refuse-t-elle de se poser ? (chevauchements)",
+        "body": [
+          "Les gemmes se calent sur l’émail et en suivent la courbe. Elles peuvent se toucher, mais jamais se chevaucher : pendant que vous déplacez une gemme, l’emplacement apparaît en rouge s’il est déjà occupé, et la pose y est refusée. C’est la même règle qu’en vrai, où deux pierres ne peuvent pas occuper la même place.",
+          "Une action sur plusieurs gemmes (miroir, alignement, espacement, centrage) laisse en place les gemmes dont la nouvelle position serait occupée, et un message vous dit combien.",
+          "Si la scène contient malgré tout des erreurs (une gemme hors d’une dent ou qui en chevauche une autre, par exemple après un agrandissement), un encadré « La scène contient des erreurs » les liste : les gemmes concernées sont encadrées en rouge, un clic sur une ligne les sélectionne, « Tout sélectionner » les prend toutes. Déplacez-les sur un émail libre ou réduisez-les."
+        ]
+      },
+      "sizes": {
+        "title": "Les tailles : SS ou millimètres",
+        "body": [
+          "La liste des tailles d’une gemme est celle de la boutique : vous ne pouvez choisir que des tailles réellement vendues. Les cristaux ronds se mesurent en SS (SS2, SS5, SS7…), le calibre des strass ; le diamètre en millimètres affiché à côté est approximatif. Les autres formes sont vendues en millimètres, parfois en largeur × longueur (par exemple « 2x4 »).",
+          "Chaque gemme est dessinée à ses dimensions réelles : une taille en largeur × longueur respecte les deux côtés, une taille SS ou d’une seule valeur correspond au plus grand côté de la forme. Vous voyez ainsi exactement la place qu’elle prendra sur la dent.",
+          "Avec plusieurs gemmes sélectionnées, seules les tailles qu’elles ont en commun sont proposées."
+        ]
+      },
+      "colors": {
+        "title": "Changer de couleur",
+        "body": [
+          "Les couleurs proposées sont celles dans lesquelles la boutique vend cette forme. Changer de couleur remplace la gemme par le produit correspondant de la boutique, en gardant sa place et, quand c’est possible, sa taille.",
+          "Pour recolorer plusieurs gemmes d’un coup, sélectionnez des gemmes de la même forme : la couleur s’applique à toutes. Les actions rapides de la scène ont aussi un bouton Couleur, plus direct sur téléphone."
+        ]
+      },
+      "rotation": {
+        "title": "Faire pivoter une gemme ou un groupe",
+        "body": [
+          "Pour une gemme seule, le panneau de droite propose une rotation sur la surface (curseur) et des quarts de tour. Sur la scène, la molette « Pivoter » des actions rapides donne un angle libre : appuyez dessus puis tournez autour ; au clavier, les flèches tournent de 1°, et de 15° avec Maj.",
+          "Avec plusieurs gemmes sélectionnées, le groupe pivote autour de son centre tel que vous le voyez à l’écran : les gemmes se déplacent avec lui, comme un seul motif. Les boutons de rotation du groupe tournent d’un angle fixe, la molette d’un angle libre."
+        ]
+      },
+      "standoff": {
+        "title": "La distance à l’émail (pose)",
+        "body": [
+          "Ce réglage décide à quelle hauteur la gemme est posée par rapport à la surface de la dent. Il est surtout utile sur un modèle importé : diminuez-le si la gemme semble flotter au-dessus de la dent, augmentez-le si elle s’enfonce dans l’émail.",
+          "Il ne change que le rendu à l’écran, pas la gemme commandée."
+        ]
+      },
+      "multiSelect": {
+        "title": "Sélectionner plusieurs gemmes",
+        "body": [
+          "Presque tous les réglages s’appliquent à toute la sélection à la fois. Plusieurs façons de sélectionner :"
+        ],
+        "points": [
+          "Maj + clic ajoute ou retire une gemme de la sélection ; Ctrl + A sélectionne toutes les gemmes.",
+          "Lasso (touche L, ou le bouton Lasso) : entourez des gemmes pour les sélectionner ; avec Maj, elles s’ajoutent à la sélection actuelle.",
+          "« + Identiques » ajoute à la sélection toutes les gemmes identiques à celles sélectionnées (même gemme, couleur et taille) : idéal pour changer toutes les gemmes d’un même type.",
+          "Sur téléphone et tablette, le bouton « Sélection » passe en sélection multiple : touchez les gemmes une à une. Un appui long sur une gemme fait de même.",
+          "Une fois la sélection faite, faites glisser l’une des gemmes : tout le groupe suit. Échap désélectionne."
+        ]
+      },
+      "quickActions": {
+        "title": "Les actions rapides et le clic droit",
+        "body": [
+          "Quand des gemmes sont sélectionnées, des boutons flottants apparaissent à côté d’elles sur la scène : pivoter, couleur, taille − / +, dupliquer, miroirs, supprimer. Ils évitent d’aller jusqu’au panneau de droite, surtout sur téléphone ou tablette.",
+          "Le menu Actions rapides de la scène permet de les masquer ou de choisir les boutons affichés ; « Rétablir les boutons par défaut » revient au réglage d’origine.",
+          "Sur ordinateur, un clic droit sur une gemme ouvre aussi un menu d’actions : pivoter de 90°, dupliquer, copie miroir horizontale ou verticale, supprimer, enregistrer comme groupe."
+        ]
+      },
+      "mirror": {
+        "title": "Le miroir : symétrie en un clic",
+        "body": [
+          "Le miroir horizontal reflète les gemmes de part et d’autre du milieu du sourire : une gemme sur la 11 passe sur la 21, sur la 13 elle passe sur la 23, à la même hauteur. Le miroir vertical reflète d’une arcade à l’autre (11 ↔ 41) ; si le modèle n’a qu’une arcade, il reflète d’un bord à l’autre de la dent.",
+          "Deux façons de l’utiliser : « Miroir » déplace les gemmes sélectionnées de l’autre côté, « Copie » les duplique de l’autre côté et garde les originales, pour composer un sourire symétrique en posant seulement une moitié. Raccourci : Maj + D pour la copie miroir horizontale.",
+          "Les gemmes reflétées se recalent sur l’émail ; celles dont l’emplacement reflété est occupé restent en place."
+        ]
+      },
+      "layout": {
+        "title": "Aligner, espacer, centrer",
+        "body": [
+          "La section Disposition apparaît quand plusieurs gemmes sont sélectionnées :"
+        ],
+        "points": [
+          "Aligner horizontalement : place le centre des gemmes sur une même ligne horizontale (une ligne par arcade) ; elles montent ou descendent seulement.",
+          "Aligner verticalement : place les gemmes sur une même ligne verticale telle que vous la voyez à l’écran, même d’une dent ou d’une arcade à l’autre ; elles glissent à gauche ou à droite sans changer de hauteur. Pour un résultat fidèle au sourire, alignez en vue de face.",
+          "Espacer : répartit les gemmes à intervalles réguliers le long de l’arcade.",
+          "Centrer : ramène chaque gemme au milieu de sa dent (disponible aussi pour une gemme seule).",
+          "Une gemme dont le nouvel emplacement est occupé ou hors de l’émail reste en place."
+        ]
+      },
+      "undo": {
+        "title": "Annuler et rétablir",
+        "body": [
+          "Chaque action peut être annulée (Ctrl + Z, ou la flèche dans la barre du haut) puis rétablie (Ctrl + Maj + Z). Un geste complet compte pour une seule étape : faire glisser un curseur de taille ou de rotation s’annule en une fois, pas pixel par pixel.",
+          "L’historique concerne la scène en cours ; une création enregistrée se rouvre toujours dans l’état de son dernier enregistrement."
+        ]
+      },
+      "saving": {
+        "title": "Brouillon, enregistrement et nouvelle version",
+        "body": [
+          "Tant que vous travaillez, le Studio garde automatiquement un brouillon de la scène dans ce navigateur : si vous fermez l’onglet, vous la retrouvez en revenant. Ce brouillon n’est pas encore dans votre compte.",
+          "« Enregistrer » (ou Ctrl + S) ajoute la création à Mes créations, sous votre compte : vous la rouvrez, la dupliquez ou la partagez depuis n’importe quel appareil. Ensuite, « Enregistrer les modifications » met à jour la même création, et le menu à côté propose « Enregistrer comme nouvelle création » pour garder l’originale et ranger cette version à part.",
+          "L’indicateur à côté du nom vous dit toujours où vous en êtes : modifications non enregistrées, enregistrement en cours, enregistrée (avec l’heure), ou échec à réessayer. « Modifier les informations » change le nom et la description sans toucher à la composition.",
+          "Si une création est publiée (dans votre Glowbook, ou comme modèle pour le personnel), le Studio vous prévient avant d’enregistrer, car la nouvelle version devient visible immédiatement. Le nombre de créations enregistrées dépend de votre formule (voir « Ce que comprend chaque formule »)."
+        ]
+      },
+      "gemGroups": {
+        "title": "Les groupes de gemmes réutilisables",
+        "body": [
+          "Un groupe de gemmes est un assemblage que vous posez souvent (un papillon, une constellation, un arc…), enregistré comme une « macro » : espacement, rotation, taille et couleur sont conservés à l’identique. Un groupe compte de 2 à 24 gemmes.",
+          "Pour en créer un : sélectionnez les gemmes sur la scène, puis « Créer un groupe » dans le panneau de droite (ou via le clic droit), et nommez-le.",
+          "Pour le réutiliser : onglet « Mes groupes » de la bibliothèque. Glissez le groupe sur n’importe quelle dent, ou cliquez dessus pour l’ajouter sur la dent sélectionnée (sinon là où il a été créé). Sur téléphone, touchez le groupe puis la dent. Une fois posé, chaque gemme reste modifiable séparément ; le groupe d’origine ne change pas.",
+          "Tous vos groupes se gèrent dans la page « Mes groupes de gemmes » (renommer, supprimer, voir quand il a servi). Leur nombre dépend de votre formule."
+        ]
+      },
+      "collections": {
+        "title": "Ranger ses créations en collections et dossiers",
+        "body": [
+          "Les collections rangent vos créations par cliente, occasion ou style. Une création peut appartenir à plusieurs collections à la fois, et la retirer d’une collection ne la supprime jamais.",
+          "Créez une collection depuis la barre de Mes créations (un nom et, si vous voulez, une couleur pour la repérer), puis ajoutez-y des créations depuis le menu d’une carte, le détail d’une création ou au moment d’enregistrer. Cliquez sur une collection dans la barre pour filtrer.",
+          "Le bouton d’affichage de Mes créations bascule entre la grille et une vue en dossiers : chaque collection devient un dossier, et un dossier « Dans aucune collection » regroupe le reste. Votre choix d’affichage est gardé sur votre compte."
+        ]
+      },
+      "templates": {
+        "title": "Les modèles Global Toothgems",
+        "body": [
+          "La section Modèles propose des créations imaginées par l’équipe Global Toothgems, renouvelées régulièrement ; les plus récentes portent un badge « Nouveau » pendant 30 jours.",
+          "« Utiliser ce modèle » ajoute une copie à vos créations et l’ouvre sur la scène : vous la modifiez librement, le modèle d’origine ne change jamais."
+        ]
+      },
+      "frontView": {
+        "title": "La vue de face numérotée",
+        "body": [
+          "La vue de face dessine les deux arcades de face, comme vous voyez votre client·e, avec chaque gemme à sa place, numérotée. Attention au sens : la droite du patient est à gauche du dessin.",
+          "Les numéros renvoient à la liste des gemmes et à la fiche de pose : vous savez exactement quelle gemme va où. La vue de face est dans le panneau de droite de l’éditeur et dans le détail d’une création ; « Agrandir » l’ouvre en grand.",
+          "Les gemmes posées sur un modèle importé ou hors des dents repérées ne sont pas dessinées, mais restent dans la liste."
+        ]
+      },
+      "placementSheet": {
+        "title": "La fiche de pose (PDF à imprimer)",
+        "body": [
+          "La fiche de pose est un PDF au format A4, à imprimer ou à garder sur tablette pendant le rendez-vous. Elle se crée depuis le menu Exporter de l’éditeur, la vue de face ou le détail d’une création, et contient :"
+        ],
+        "points": [
+          "la vue de face numérotée de la création ;",
+          "un tableau des gemmes : numéro, dent (FDI), forme, taille, couleur ou matière, et ordre de pose suggéré (arcade supérieure d’abord, du centre vers l’extérieur) ;",
+          "un récapitulatif par référence : quantité, numéros des gemmes concernées et ce qu’il faut prévoir."
+        ]
+      },
+      "estimate": {
+        "title": "Comment l’estimation est-elle calculée ?",
+        "body": [
+          "L’estimation est une valeur indicative aux prix de la boutique : chaque gemme dans sa couleur et sa taille ; pour les cristaux vendus en packs, le pack le moins cher qui couvre vos pièces (2 pièces → au moins le pack de 10) ; pour les bijoux, un par pièce.",
+          "Ce n’est ni un devis ni une facture : rien n’est facturé à partir de ce montant, et votre tarif de pose n’y figure pas. Les gemmes que la boutique ne vend plus ne sont pas comptées. C’est un support pour échanger avec votre client·e et préparer votre commande."
+        ]
+      },
+      "shoppingList": {
+        "title": "Les produits à commander et le panier",
+        "body": [
+          "Sous l’estimation, la liste « Produits à commander » traduit la création en produits de la boutique : chaque référence, le pack retenu et la quantité nécessaire, avec le stock (faible, rupture).",
+          "« Ajouter au panier » met tous les produits disponibles dans votre panier en un clic ; les produits en rupture ne sont pas ajoutés et la liste vous le signale. Les prix sont toujours recalculés au paiement.",
+          "Les visiteurs d’une création partagée ou d’un Glowbook ont aussi ce bouton : ils peuvent commander les gemmes d’un design en une fois."
+        ]
+      },
+      "exports": {
+        "title": "Les exports : captures, fiche d’estimation, fichier JSON",
+        "body": [
+          "Le menu Exporter de l’éditeur propose :"
+        ],
+        "points": [
+          "Capture PNG : la vue actuelle de la scène, sur le fond du Studio.",
+          "PNG transparent : la même vue sans fond, à poser sur vos propres visuels.",
+          "Fiche d’estimation (PNG) : le rendu de la création, le détail chiffré et le total, avec le nom du client que vous saisissez.",
+          "Fiche de pose (PDF) : voir le sujet dédié.",
+          "Création (JSON) : les données de la création, à archiver ou à transmettre."
+        ]
+      },
+      "shareLink": {
+        "title": "Le lien de partage en lecture seule",
+        "body": [
+          "« Partager » crée un lien vers une création enregistrée. La personne qui l’ouvre voit le design en 3D, avec ou sans compte, peut le faire tourner, zoomer et commander ses gemmes, mais ne peut ni le modifier ni voir vos autres créations.",
+          "Le lien montre toujours la dernière version enregistrée : les modifications non enregistrées de la scène n’y figurent pas. Vous pouvez le désactiver à tout moment depuis la même fenêtre ; il n’ouvre alors plus rien, même là où il a été publié, et vous pouvez en créer un nouveau.",
+          "Si la personne a accès au Studio, « Modifier une copie » ouvre une copie dans son propre atelier : la création partagée reste intacte."
+        ]
+      },
+      "socialPost": {
+        "title": "Créer un post pour les réseaux",
+        "body": [
+          "Depuis le détail d’une création, « Créer un post » prépare un visuel prêt à publier, dessiné entièrement sur votre appareil (rien n’est publié sans vous) :"
+        ],
+        "points": [
+          "Type : image HD (PNG le plus net, ou JPEG plus léger), vidéo 360° (un tour complet en boucle) ou GIF 360° (plus léger, pour les messages).",
+          "Format : Story, carré ou portrait ; choisissez le réseau visé et le format le mieux affiché est proposé.",
+          "Signature : avec la formule Essentielle et l’essai, le filigrane Global Toothgems figure sur chaque export. Les formules Artiste et Atelier signent avec votre propre logo (PNG, JPEG ou WebP, 2 Mo max.) ou sans rien. La formule Atelier ajoute des mises en page (fond, cadre, titre et votre compte).",
+          "Publier : sur téléphone, chaque bouton de réseau ouvre le menu de partage avec le fichier. Sur ordinateur, Facebook, Pinterest, X, Threads et WhatsApp partagent la page publique de la création (Glowbook ou lien de partage) ; pour les autres, le fichier est téléchargé et la page du réseau s’ouvre.",
+          "Gardez l’onglet ouvert pendant l’enregistrement d’une vidéo. Instagram, TikTok et Snapchat n’acceptent pas les GIF ; certains navigateurs d’ordinateur enregistrent en WebM, que certains réseaux refusent : un téléphone ou Safari enregistre en MP4."
+        ]
+      },
+      "tryOn": {
+        "title": "Essayer sur un sourire (rendu par IA)",
+        "body": [
+          "« Essayer sur un sourire » pose la création enregistrée sur une vraie photo de sourire grâce à une IA, pour se projeter avant le rendez-vous. Vous l’ouvrez sur vos propres créations ; vos visiteurs aussi, avec « Essayer sur mon sourire » sur les créations de votre Glowbook ou de vos liens de partage (ils doivent se connecter à un compte).",
+          "Pour une bonne photo : un gros plan sur les dents (pas tout le visage), de face, lèvres écartées et dents du haut bien visibles, dans une lumière franche, nette et sans filtre. Une première vérification refuse les photos trop éloignées, de biais, sombres ou floues avant tout rendu, sans les compter.",
+          "Chaque compte a 10 rendus par période de 24 heures glissantes. La photo et l’image produite ne sont pas conservées par Global Toothgems (téléchargez le résultat pour le garder) ; les métadonnées de la photo sont retirées avant l’envoi. L’accord de la personne photographiée est obligatoire. Le résultat est une image d’IA : un aperçu, pas une promesse exacte du résultat posé."
+        ]
+      },
+      "glowbookBasics": {
+        "title": "Le Glowbook : créer sa page et y publier",
+        "body": [
+          "Le Glowbook est votre vitrine publique : une page à votre nom (/glowbook/votre-pseudo), à mettre en lien dans votre bio Instagram, qui montre les créations que vous choisissez. Chacune s’ouvre en 3D pour les visiteurs, qui peuvent aussi commander ses gemmes.",
+          "Créez la page depuis « Mon Glowbook » (nom affiché, pseudo, bio, Instagram). Ajoutez une création depuis son détail dans Mes créations, avec « Ajouter à mon Glowbook » (jamais depuis l’éditeur) ; 60 créations au maximum.",
+          "Modération : la page et chaque nouvelle création sont validées par l’équipe Global Toothgems avant d’être visibles. En cas de refus, le motif s’affiche ; modifiez puis renvoyez. Une fois une création validée, vos prochains enregistrements y sont publiés immédiatement : le Studio vous prévient avant d’enregistrer. Changer de pseudo change l’adresse et renvoie la page en validation.",
+          "La page reste visible tant que votre formule Atelier est active. Supprimer une création la retire aussi de votre Glowbook."
+        ]
+      },
+      "glowbookLook": {
+        "title": "Personnaliser son Glowbook et la création à la une",
+        "body": [
+          "L’onglet Apparence règle l’identité de votre page : photo de profil, couleur, fond (clair, teinté, sombre), présentation des créations (grille ou grandes cartes), ville ou studio, et liens (prise de rendez-vous, site web, TikTok, en https).",
+          "La création à la une ouvre votre page en grand, dans une courte vidéo de 5 secondes qui balaie le sourire de gauche à droite, en boucle. Cette vidéo est enregistrée automatiquement par votre Studio quand elle manque ou n’est plus à jour : laissez le Studio ouvert un instant après avoir changé de création à la une.",
+          "Couleur, fond, présentation, une et ville sont publiés dès l’enregistrement ; une nouvelle photo ou un nouveau lien attend d’abord la validation de l’équipe (la page garde les précédents en attendant)."
+        ]
+      },
+      "glowbookSections": {
+        "title": "Les sections du Glowbook",
+        "body": [
+          "Les sections rangent les créations de votre page par thème (« Mariage », « Minimaliste »…), jusqu’à 12. Les visiteurs filtrent votre page par section ; les créations sans section restent visibles dans « Toutes ».",
+          "Une section n’apparaît en public que si elle contient au moins une création publiée. Supprimer une section ne retire pas ses créations de la page. Le tableau de bord de Mon Glowbook signale les créations rangées dans aucune section."
+        ]
+      },
+      "glowbookPlace": {
+        "title": "« Où je travaille » et la carte",
+        "body": [
+          "Indiquez où vos client·es peuvent vous trouver ; votre page l’affiche avec une carte. Deux choix :"
+        ],
+        "points": [
+          "Un salon qui reçoit du public : l’adresse et l’épingle sont publiques, avec des liens d’itinéraire (Google Maps, Plans d’Apple, OpenStreetMap).",
+          "Une zone (vous travaillez chez vous ou à domicile) : seul le quartier ou la ville est affiché, dans un cercle d’environ 1 km. La position est arrondie et votre adresse n’est jamais enregistrée.",
+          "Cherchez l’adresse ou la ville, puis faites glisser l’épingle ou touchez la carte pour ajuster. Le lieu est visible dès l’enregistrement."
+        ]
+      },
+      "glowbookShare": {
+        "title": "Faire connaître son Glowbook : lien, QR code, badge",
+        "body": [
+          "L’onglet Partager donne l’adresse de votre page à copier dans votre bio, un QR code en PNG et une affiche A4 (PDF) avec votre nom, votre photo et votre couleur, à imprimer pour votre studio. Ils sont disponibles une fois la page validée.",
+          "Si vous avez terminé une formation de l’Academy Global Toothgems avec certificat, votre page peut afficher le badge « Artiste certifiée », avec le titre de la formation. Vous pouvez le masquer."
+        ]
+      },
+      "trial": {
+        "title": "L’essai gratuit de 48 heures",
+        "body": [
+          "Chaque compte peut démarrer une fois un essai gratuit de 48 heures, sans carte bancaire. Les 48 heures s’écoulent en continu dès le démarrage, même Studio fermé ; un compte à rebours vous indique le temps restant.",
+          "Pendant l’essai, le Studio fonctionne comme la formule Essentielle. À la fin, l’édition se met en pause jusqu’au choix d’une formule : vos créations enregistrées restent dans votre compte et vous attendent."
+        ]
+      },
+      "plans": {
+        "title": "Ce que comprend chaque formule",
+        "body": [
+          "L’éditeur, toute la bibliothèque de gemmes, la vue de face, la fiche de pose, les liens de partage et les posts sont ouverts à toutes les formules. Elles diffèrent par ce que vous enregistrez et par les outils avancés :"
+        ],
+        "points": [
+          "Essentielle : 15 créations et 3 groupes de gemmes enregistrés ; posts avec le filigrane Global Toothgems.",
+          "Artiste : 150 créations et 30 groupes ; posts signés de votre logo ou sans signature ; collections et dossiers ; modèles Global Toothgems.",
+          "Atelier : créations et groupes illimités ; tout ce que comprend Artiste ; mises en page des posts ; Glowbook ; essai sur un sourire par IA, pour vous et pour les visiteurs de vos créations.",
+          "Au-delà de la limite, un nouvel enregistrement est refusé (rien n’est perdu) : modifier ou supprimer une création reste toujours possible."
+        ]
+      },
+      "subscription": {
+        "title": "Gérer son abonnement, ses factures et la rétractation",
+        "body": [
+          "Votre abonnement se gère dans votre espace, rubrique « Studio 3D » (Mon abonnement) : changer de formule ou passer du mensuel à l’annuel (le montant est ajusté au prorata), remplacer votre carte, résilier pour la fin de la période payée ou garder l’abonnement, et télécharger vos factures et avoirs.",
+          "Droit de rétractation : dans les 14 jours suivant la souscription, vous pouvez vous rétracter depuis cette même page. L’abonnement s’arrête immédiatement et la part non utilisée vous est remboursée automatiquement (chaque jour commencé compte comme utilisé). Vos créations restent dans votre compte."
         ]
       }
     }

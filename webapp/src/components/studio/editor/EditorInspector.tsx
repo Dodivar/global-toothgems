@@ -42,6 +42,8 @@ import { ShoppingList } from "./ShoppingList";
 import { useFrontView } from "../useFrontView";
 import { FrontViewDialog, FrontViewFigure } from "../FrontViewPanel";
 import { SaveSelectionAsGroup } from "../workspace/SaveSelectionAsGroup";
+import { HelpMoreLink } from "../workspace/HelpMoreLink";
+import type { HelpTopicId } from "../../../lib/studioWorkspace/helpTopics";
 
 const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
 const selectClass = clsx(
@@ -79,24 +81,32 @@ export function EditorInspector({ snap }: { snap: StudioSnapshot }) {
 
 /* ------------------------------------------------------------ building blocks */
 
-/** A section heading; `info` puts that section's explanation in a bubble at the end of the rule. */
-function SectionLabel({ children, info }: { children: string; info?: string }) {
+/**
+ * A section heading; `info` puts that section's explanation in a bubble at
+ * the end of the rule, `topic` its way on to the help page.
+ */
+function SectionLabel({ children, info, topic }: { children: string; info?: string; topic?: HelpTopicId }) {
   return (
     <div className="mb-2.5 mt-6 flex items-center gap-1.5">
       <h3 className="m-0 flex flex-1 items-center gap-2 text-[10px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)] after:h-px after:flex-1 after:bg-[var(--border-subtle)]">
         {children}
       </h3>
-      {info && <SectionInfo topic={children}>{info}</SectionInfo>}
+      {info && (
+        <SectionInfo topic={children} helpTopic={topic}>
+          {info}
+        </SectionInfo>
+      )}
     </div>
   );
 }
 
 /** The explanation of a panel or section, shown on hover, keyboard focus or tap. */
-function SectionInfo({ topic, children, className }: { topic: string; children: string; className?: string }) {
+function SectionInfo({ topic, helpTopic, children, className }: { topic: string; helpTopic?: HelpTopicId; children: string; className?: string }) {
   const { t } = useEditorLabels();
   return (
     <InfoTip label={t("studio.editor.inspector.infoAbout", { topic })} className={clsx("-my-1.5", className)}>
       <InfoTipText>{children}</InfoTipText>
+      {helpTopic && <HelpMoreLink topic={helpTopic} className="mx-2 mb-2" />}
     </InfoTip>
   );
 }
@@ -278,20 +288,20 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         <h2 className="m-0 text-[length:var(--text-h4)] font-[var(--weight-black)] leading-tight text-[var(--text-primary)]">
           {t("studio.editor.context.selected", { count: selected.length })}
         </h2>
-        <SectionInfo topic={t("studio.editor.context.selected", { count: selected.length })} className="mt-0.5">
+        <SectionInfo topic={t("studio.editor.context.selected", { count: selected.length })} helpTopic="multiSelect" className="mt-0.5">
           {t("studio.editor.inspector.multiHint")}
         </SectionInfo>
       </div>
       <Hint className="mt-1.5">{t("studio.editor.inspector.multiSub", { count: teethUsed })}</Hint>
       <SaveSelectionAsGroup ids={ids} />
 
-      <SectionLabel info={t("studio.editor.inspector.colorHint")}>{t("studio.editor.inspector.colorAll")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.colorHint")} topic="colors">{t("studio.editor.inspector.colorAll")}</SectionLabel>
       <ColorOptions selected={selected} />
 
-      <SectionLabel info={t("studio.editor.inspector.sizeHint")}>{t("studio.editor.inspector.sizeAll")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.sizeHint")} topic="sizes">{t("studio.editor.inspector.sizeAll")}</SectionLabel>
       <SizeOptions selected={selected} />
 
-      <SectionLabel info={t("studio.editor.inspector.rotationGroupHint")}>{t("studio.editor.inspector.rotationAll")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.rotationGroupHint")} topic="rotation">{t("studio.editor.inspector.rotationAll")}</SectionLabel>
       <GroupTurnButtons ids={ids} />
 
       <SectionLabel>{t("studio.editor.inspector.mountingAll")}</SectionLabel>
@@ -303,7 +313,7 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         onCommit={(v) => studioStore.updateSelected({ offset: v })}
       />
 
-      <SectionLabel info={t("studio.editor.inspector.layoutHint")}>{t("studio.editor.inspector.layout")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.layoutHint")} topic="layout">{t("studio.editor.inspector.layout")}</SectionLabel>
       <div role="group" aria-labelledby={alignLabelId} className="flex items-center gap-2">
         <span id={alignLabelId} className="flex-none text-[11px] font-semibold text-[var(--text-muted)]">
           {t("studio.editor.inspector.align")}
@@ -346,7 +356,7 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         </button>
       </div>
 
-      <SectionLabel info={t("studio.editor.mirror.hint")}>{t("studio.editor.mirror.label")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.mirror.hint")} topic="mirror">{t("studio.editor.mirror.label")}</SectionLabel>
       <MirrorRow />
       <ActionRow count={selected.length} onDuplicate={() => duplicatePieces(ids)} onDelete={() => removePieces(ids)} />
     </>
@@ -430,10 +440,10 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
         </div>
       </div>
 
-      <SectionLabel info={t("studio.editor.inspector.colorHint")}>{t("studio.editor.inspector.color")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.colorHint")} topic="colors">{t("studio.editor.inspector.color")}</SectionLabel>
       <ColorOptions selected={[jewel]} />
 
-      <SectionLabel info={t("studio.editor.inspector.sizeHint")}>{t("studio.editor.inspector.size")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.sizeHint")} topic="sizes">{t("studio.editor.inspector.size")}</SectionLabel>
       <SizeOptions selected={[jewel]} />
 
       <SectionLabel>{t("studio.editor.inspector.rotation")}</SectionLabel>
@@ -452,7 +462,7 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
         onCommit={(v) => set({ rotation: v }, false)}
       />
 
-      <SectionLabel info={t("studio.editor.inspector.standoffHint")}>{t("studio.editor.inspector.mounting")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.standoffHint")} topic="standoff">{t("studio.editor.inspector.mounting")}</SectionLabel>
       <Slider
         label={t("studio.editor.inspector.standoff")}
         value={jewel.offset ?? 0}
@@ -461,10 +471,10 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
         onCommit={(v) => set({ offset: v }, false)}
       />
 
-      <SectionLabel info={t("studio.editor.mirror.hint")}>{t("studio.editor.mirror.label")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.mirror.hint")} topic="mirror">{t("studio.editor.mirror.label")}</SectionLabel>
       <MirrorRow />
 
-      <SectionLabel info={t("studio.editor.inspector.positionHint")}>{t("studio.editor.inspector.position")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.inspector.positionHint")} topic="noOverlap">{t("studio.editor.inspector.position")}</SectionLabel>
       <span className="relative block">
         <select
           aria-label={t("studio.editor.inspector.position")}
@@ -520,7 +530,7 @@ function ToothPanel({ snap, toothId }: { snap: StudioSnapshot; toothId: string }
         <p className="m-0 text-[46px] font-[var(--weight-black)] leading-[.95] tracking-[var(--tracking-display)] text-[var(--text-primary)]">
           #{toothId}
         </p>
-        <SectionInfo topic={t("studio.editor.inspector.camera")} className="mt-1">
+        <SectionInfo topic={t("studio.editor.inspector.camera")} helpTopic="camera" className="mt-1">
           {t("studio.editor.inspector.cameraHint")}
         </SectionInfo>
       </div>
@@ -579,7 +589,7 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
 
       <FrontViewSection snap={snap} />
 
-      <SectionLabel info={t("studio.editor.shopping.hint")}>{t("studio.editor.shopping.title")}</SectionLabel>
+      <SectionLabel info={t("studio.editor.shopping.hint")} topic="shoppingList">{t("studio.editor.shopping.title")}</SectionLabel>
       <ShoppingList jewels={snap.jewels} />
 
       {/* Keyboard and mouse shortcuts mean nothing on a touch screen. */}
@@ -616,7 +626,7 @@ function FrontViewSection({ snap }: { snap: StudioSnapshot }) {
   const projection = useFrontView(snap.jewels, snap.modelMode);
   return (
     <>
-      <SectionLabel info={t("studio.frontView.hint")}>{t("studio.frontView.title")}</SectionLabel>
+      <SectionLabel info={t("studio.frontView.hint")} topic="frontView">{t("studio.frontView.title")}</SectionLabel>
       {snap.jewels.length ? (
         <>
           <FrontViewFigure projection={projection} list={false} />

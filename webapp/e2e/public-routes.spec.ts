@@ -98,6 +98,18 @@ test("the Studio 3D editor loads its 3D engine", async ({ page, problems }) => {
   expect(problems).toEqual([]);
 });
 
+test("the Studio help opens on the topic an explanation button asks for, and searches", async ({ page, problems }) => {
+  await open(page, "/studio-3d/atelier/aide#mirror");
+  const mirror = page.locator("#gt-help-mirror");
+  await expect(mirror).toHaveAttribute("open", "", { timeout: 30_000 });
+  await expect(mirror.getByText(/11 ↔ 41/)).toBeVisible();
+  await page.getByRole("searchbox").fill("fiche de pose");
+  await expect(page.getByText(/sujets? correspond/)).toBeVisible();
+  await expect(page.locator("#gt-help-placementSheet")).toBeVisible();
+  await expect(page.locator("#gt-help-camera")).toHaveCount(0);
+  expect(problems).toEqual([]);
+});
+
 test("each product card shows its own photo", async ({ page, problems }) => {
   await open(page, "/fr/boutique");
   // `src`, the photo each card asks for: `currentSrc` stays empty until the
