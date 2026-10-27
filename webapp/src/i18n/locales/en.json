@@ -795,6 +795,8 @@
       "title": "Check your inbox",
       "body": "We’ve sent a verification link to",
       "instruction": "Open the email and select the link to activate your account.",
+      "sent": "Email sent",
+      "resent": "A new link is on its way",
       "resend": "Resend email",
       "resending": "Sending…",
       "resendIn": "Resend in {{time}}",

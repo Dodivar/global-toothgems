@@ -795,6 +795,8 @@
       "title": "Consultez votre boîte mail",
       "body": "Nous avons envoyé un lien de vérification à",
       "instruction": "Ouvrez l’e-mail et sélectionnez le lien pour activer votre compte.",
+      "sent": "E-mail envoyé",
+      "resent": "Un nouveau lien est en route",
       "resend": "Renvoyer l’e-mail",
       "resending": "Envoi…",
       "resendIn": "Renvoyer dans {{time}}",
