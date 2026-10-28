@@ -3,7 +3,7 @@ import jpegCodec from "npm:jpeg-js@0.4.4";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { mouthCrop, nearestRatio } from "./crop.ts";
 import { accessToken, generateImage, generateUrl, imageModelConfig, nearestAspectRatio, readAdcJson, readImage, resetTokenCache } from "./gemini.ts";
-import { handleStudioTryOn, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
+import { handleStudioTryOn, headerSize, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
 import { imageSize, judgePhoto, MIN_TEETH_SPAN, photoScale } from "./photoCheck.ts";
 import { buildDesignData, piecesFromScene, readSeats, toothLabel } from "./prompt.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
@@ -389,7 +389,7 @@ Deno.test("aspect ratio: the photo's proportions are asked for; a model refusing
   }) as typeof fetch;
   const config = imageModelConfig((n) => ({ GEMINI_API_KEY: "k", GEMINI_IMAGE_MODEL: "model-x" } as Record<string, string>)[n])!;
   const out = await generateImage(config, "system", [{ mimeType: "image/png", data: "AA==" }], null, fakeFetch, 1000, "3:4");
-  assertEquals(out.ok, true);
+  assertEquals(out.ok && out.aspectRatioDropped, true);
   assertEquals(bodies.length, 2);
   assertEquals((bodies[0].generationConfig as Record<string, unknown>).imageConfig, { aspectRatio: "3:4" });
   assertEquals((bodies[1].generationConfig as Record<string, unknown>).imageConfig, undefined);
@@ -524,6 +524,44 @@ Deno.test("flat map: none sent, or prompt v1 — the request goes as before", as
   const dropped = fake();
   assertEquals((await handleStudioTryOn(post(bad), dropped.deps)).status, 200);
   assertEquals(dropped.calls.images.length, 3);
+});
+
+Deno.test("design overview: IMAGE 4 after the map, only with it", async () => {
+  const overview = () => {
+    const f = withMap();
+    f.set("overview", new Blob([new Uint8Array([9, 10])], { type: "image/jpeg" }), "overview.jpg");
+    return f;
+  };
+  const { deps, calls } = fake();
+  assertEquals((await handleStudioTryOn(post(overview()), deps)).status, 200);
+  assertEquals(calls.images, ["image/png:BAU=", "image/jpeg:AQID", "image/png:Bwg=", "image/jpeg:CQo=", "image/jpeg:cmVm"]);
+  assertStringIncludes(calls.data, "IMAGE 4 (the design overview) is included");
+  // Without the map (or with prompt v1, which reads no map) the overview is not sent.
+  const noMap = overview();
+  noMap.delete("map");
+  const alone = fake();
+  assertEquals((await handleStudioTryOn(post(noMap), alone.deps)).status, 200);
+  assertEquals(alone.calls.images.length, 3);
+  assertEquals(alone.calls.data.includes("IMAGE 4"), false);
+  const v1 = fake({ readsMap: false });
+  assertEquals((await handleStudioTryOn(post(overview()), v1.deps)).status, 200);
+  assertEquals(v1.calls.images.length, 3);
+  assertStringIncludes(TRY_ON_SYSTEM_PROMPT_V3, "IMAGE 4 — THE DESIGN OVERVIEW");
+});
+
+Deno.test("render size: what was sent and what came back are logged, sizes only", async () => {
+  const png = "iVBORw0KGgoAAAANSUhEUgAAAGQAAAAyCAIAAAA="; // a PNG header: 100 × 50
+  assertEquals(headerSize(png), { width: 100, height: 50 });
+  assertEquals(headerSize("not base64!"), null);
+  const logs: [string, unknown][] = [];
+  const { deps } = fake({
+    generate: () => Promise.resolve({ ok: true, image: { mimeType: "image/png", data: png }, aspectRatioDropped: true }),
+    log: (message, detail) => logs.push([message, detail]),
+  });
+  assertEquals((await handleStudioTryOn(post(form()), deps)).status, 200);
+  const size = logs.find(([m]) => m === "render size")?.[1] as Record<string, unknown>;
+  assertEquals(size.received, { width: 100, height: 50 });
+  assertEquals(size.ratio_dropped, true);
 });
 
 /* ------------------------------------------------------------ mouth crop */

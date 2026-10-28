@@ -132,11 +132,13 @@ export class ExportStage {
   /**
    * The design alone on its model, the still's framing (in front of the
    * smile, slightly above), no texts and no mark: the design picture sent to
-   * the smile try-on's AI (decision 111).
+   * the smile try-on's AI (decision 111). `framing` "overview": the same
+   * stage seen from further away, the whole smile around the gems (the
+   * try-on's second design picture, so the model sees the gems' real share).
    */
-  stageStill(size: FormatSize, type: ImageType = "jpeg"): Promise<Blob> {
+  stageStill(size: FormatSize, type: ImageType = "jpeg", framing: "design" | "overview" = "design"): Promise<Blob> {
     const { canvas, ctx } = this.target(size);
-    const render = this.engine.renderExportFrame({ ...size, azimuth: null, transparent: false });
+    const render = this.engine.renderExportFrame({ ...size, azimuth: null, transparent: false, framing });
     ctx.drawImage(render, 0, 0, size.width, size.height);
     return canvasBlob(canvas, type === "png" ? "image/png" : "image/jpeg", type === "jpeg" ? 0.92 : undefined);
   }

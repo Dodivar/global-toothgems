@@ -8,19 +8,26 @@ const SIZE = { width: 1280, height: 800 };
 
 /**
  * The creation rendered in 3D on the Studio's dental model, from the front —
- * the Studio's own still (`ExportStage.stageStill`, a hidden stage) as a JPEG,
- * sent to the image model as IMAGE 1 (decision 111): where each gem sits on
- * its tooth, its rotation, cut and look. The list of gems the model must
- * follow comes from the database, not from this picture. Null when the
- * browser cannot draw it (no WebGL, model not loaded).
+ * the Studio's own still (`ExportStage.stageStill`, a hidden stage) as JPEGs,
+ * sent to the image model (decision 111):
+ *   design    framed on the gems (IMAGE 1): where each gem sits on its tooth,
+ *             its rotation, cut and look;
+ *   overview  the same stage from further away, the whole smile around the
+ *             gems (2026-10-28): a close-up of a few gems alone pushed the
+ *             model to enlarge the smile; this one shows their real share.
+ * The list of gems the model must follow comes from the database, not from
+ * these pictures. Both null when the browser cannot draw them (no WebGL,
+ * model not loaded); the overview alone may be missing.
  */
-export async function renderDesignImage(creation: TryOnCreation): Promise<Blob | null> {
+export async function renderDesignImages(creation: TryOnCreation): Promise<{ design: Blob | null; overview: Blob | null }> {
   let stage: ExportStage | null = null;
   try {
     stage = await ExportStage.open(creation.scene);
-    return await stage.stageStill(SIZE);
+    const design = await stage.stageStill(SIZE);
+    const overview = await stage.stageStill(SIZE, "jpeg", "overview").catch(() => null);
+    return { design, overview };
   } catch {
-    return null;
+    return { design: null, overview: null };
   } finally {
     stage?.close();
   }

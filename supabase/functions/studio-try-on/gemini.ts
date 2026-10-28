@@ -44,7 +44,8 @@ export type ImageModelConfig =
   | { kind: "vertex"; model: string; credentials: AdcUserCredentials; project: string; location: string };
 
 export type GenerateOutcome =
-  | { ok: true; image: InlineImage }
+  /** `aspectRatioDropped`: the model refused the proportions asked for and answered at its own (logged). */
+  | { ok: true; image: InlineImage; aspectRatioDropped?: boolean }
   /** `blocked`: the provider refused the content (safety); `failed`: anything else. */
   | { ok: false; code: "blocked" | "failed"; detail?: string };
 
@@ -221,16 +222,19 @@ export async function generateImage(
     generationConfig: { responseModalities: ["IMAGE"], ...(withRatio && aspectRatio ? { imageConfig: { aspectRatio } } : {}) },
   });
   let res = await callModel(config, body(true), fetchImpl, timeoutMs);
+  let dropped = false;
   if (aspectRatio && res instanceof Response && res.status === 400) {
     await res.body?.cancel();
     res = await callModel(config, body(false), fetchImpl, timeoutMs);
+    dropped = true;
   }
   if (!(res instanceof Response)) return { ok: false, code: "failed", detail: res.error };
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     return { ok: false, code: "failed", detail: `http ${res.status} ${detail.slice(0, 300)}` };
   }
-  return readImage(await res.json().catch(() => null));
+  const outcome = readImage(await res.json().catch(() => null));
+  return outcome.ok && dropped ? { ...outcome, aspectRatioDropped: true } : outcome;
 }
 
 /**

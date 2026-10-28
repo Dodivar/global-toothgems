@@ -198,6 +198,8 @@ export function buildDesignData(
   withMap = false,
   /** Whether IMAGE 2 is a close-up of the mouth cut from the customer's photo (`crop.ts`). */
   closeUp = false,
+  /** Whether the design overview was sent (IMAGE 4, only ever with the map). */
+  withOverview = false,
 ): string {
   const seatOf = (p: PromptPiece) => (p.id ? seats.get(p.id) : undefined);
   const shown = pieces.filter((p) => seatOf(p)?.front !== false);
@@ -245,11 +247,18 @@ export function buildDesignData(
         "IMAGE 3 (the flat design map) is included. Each gem below is named by its tag — its tooth number and a letter, e.g. 11a — exactly as written on IMAGE 3, where a line joins the tag to the gem on its labelled tooth.",
       ]
     : ["", "No flat design map (IMAGE 3) with this request."];
+  const overview =
+    withOverview && withMap
+      ? [
+          "",
+          "IMAGE 4 (the design overview) is included: the same 3D design seen from further away, the whole smile around the gems. The gems keep that modest share of the smile in the result; the photo keeps its own framing.",
+        ]
+      : [];
   const photo = closeUp
     ? [
         "",
         "IMAGE 2 is a CLOSE-UP of the customer's mouth, cut from their photo: it will be pasted back into that photo at exactly the same place and size. Keep its framing, its edges and everything around the teeth exactly as they are — only the gems are added.",
       ]
     : [];
-  return [`DESIGN DATA — exactly ${count}, no more.`, ...photo, ...map, ...scale, ...lines].join("\n");
+  return [`DESIGN DATA — exactly ${count}, no more.`, ...photo, ...map, ...overview, ...scale, ...lines].join("\n");
 }

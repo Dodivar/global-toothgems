@@ -1421,6 +1421,8 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
                             map (optional PNG ≤ 2 MB, since 2026-10-26: the flat design map, lib/studio3d/tryOnMap.ts —
                               every front tooth boxed and numbered, midline drawn, bare teeth grey "no gem", each
                               gem tagged like its data line; read with prompt v3 only, a malformed one is dropped)
+                            overview (optional JPEG ≤ 3 MB, since 2026-10-28: the same 3D design seen from further
+                              away, the whole smile around the gems — designImage.ts; sent as IMAGE 4 with the map only)
                             progress=1 (the webapp, since 2026-10-26): the answer after the gates is an event stream
                             (text/event-stream, 200): {stage:checking} → {stage:rendering} once the photo passed →
                             {result: <the JSON body below>}; the dialog shows the check as its own step
@@ -1439,13 +1441,19 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
                               answer adds crop {x, y, width, height, photo_width, photo_height} and the browser
                               pastes the edited close-up back with a faded border (webapp tryOnComposite.ts,
                               pasteBack.ts) — nothing outside the mouth can change; no box, not a JPEG or a
-                              crop over 60 % of the photo: the whole photo, as before
+                              crop over 60 % of the photo: the whole photo, as before. Since 2026-10-28 the browser
+                              first lines the answer up with the crop (tryOnAlign.ts: one scale and a shift, found
+                              on the edges at 192 px wide, zoom 70–110 %): an answer the model zoomed in is pasted
+                              over the smaller region it really shows, so the smile keeps its size; no clear match:
+                              pasted over the whole crop, as before
                             → Gemini generateContent on Vertex AI (GOOGLE_ADC_JSON → access token) or the Gemini
                               API (GEMINI_API_KEY), model GEMINI_IMAGE_MODEL: systemInstruction =
                               systemPrompt.ts v3 (default) or v1 (TRY_ON_PROMPT_VERSION); user turn = design (IMAGE 1),
-                              photo (IMAGE 2), the flat map (IMAGE 3, v3, when sent), up to 6 pictures of the private bucket studio-try-on-references, then
+                              photo (IMAGE 2), the flat map (IMAGE 3, v3, when sent), the overview (IMAGE 4, with the map), up to 6 pictures of the private bucket studio-try-on-references, then
                               (v3 only) the design data built from the STORED scene (one line per gem) → image
-                            → row 'generated' / 'failed' → the browser shows it (before/after, download, share)
+                            → row 'generated' / 'failed'; logged "render size": the size sent, the proportions asked,
+                              the size received and whether the model refused the proportions (asked again without)
+                            → the browser shows it (before/after, download, share)
 ```
 
 - **The gate is the creation owner's plan**, never the viewer's: `private.studio_try_on_allowed(owner)` — since

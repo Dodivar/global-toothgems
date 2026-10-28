@@ -262,6 +262,9 @@ const DENTITION_STAGE: StageFrame = {
     reset: new THREE.Vector3(0, 12, 88),
   },
 };
+/** The still's "overview" framing (model units, millimetres on the default dentition): the front of both arches. */
+const OVERVIEW_WIDTH = 54;
+const OVERVIEW_HEIGHT = 22;
 /** Frames still drawn after the last change, so damped camera and light fades can settle. */
 const SETTLE_FRAMES = 90;
 /** Largest model file accepted for import, in bytes. */
@@ -2742,6 +2745,7 @@ export class StudioEngine {
     azimuth,
     transparent,
     orbit = "turntable",
+    framing = "design",
   }: {
     width: number;
     height: number;
@@ -2749,13 +2753,15 @@ export class StudioEngine {
     transparent: boolean;
     /** "turntable": around the whole model (a full turn); "front": around the gems at the still's distance (a sweep in front of the smile). */
     orbit?: "turntable" | "front";
+    /** The still only: "design" fits the gems; "overview" steps back to the whole smile, centred on its midline. */
+    framing?: "design" | "overview";
   }): HTMLCanvasElement {
     if (!this.offscreen) throw new Error("renderExportFrame needs an offscreen stage");
     this.settleForExport();
     if (this.renderer.getPixelRatio() !== 1) this.renderer.setPixelRatio(1);
     const size = this.renderer.getSize(new THREE.Vector2());
     if (size.x !== width || size.y !== height) this.renderer.setSize(width, height, false);
-    const camera = this.exportCamera(width / height, azimuth, orbit);
+    const camera = this.exportCamera(width / height, azimuth, orbit, framing);
     this.withCleanStage({ transparent }, () => this.renderer.render(this.scene, camera));
     return this.renderer.domElement;
   }
@@ -2792,7 +2798,12 @@ export class StudioEngine {
    * model's own centre at the pieces' height, far enough to clear the arch
    * at every angle, so a full turn never cuts into the teeth.
    */
-  private exportCamera(aspect: number, azimuth: number | null, orbit: "turntable" | "front" = "turntable"): THREE.PerspectiveCamera {
+  private exportCamera(
+    aspect: number,
+    azimuth: number | null,
+    orbit: "turntable" | "front" = "turntable",
+    framing: "design" | "overview" = "design",
+  ): THREE.PerspectiveCamera {
     const cam = new THREE.PerspectiveCamera(this.camera.fov, aspect, 2, 700);
     const jewels = this.store.jewels;
     const box = new THREE.Box3();
@@ -2802,7 +2813,13 @@ export class StudioEngine {
     const center = box.getCenter(new THREE.Vector3());
     const tanV = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
     const fit = (w: number, h: number) => Math.max(h / 2 / tanV, w / 2 / (tanV * aspect));
-    if (azimuth === null) {
+    if (azimuth === null && framing === "overview") {
+      // The whole smile, canine to canine and beyond, around the midline: the gems at their share of it.
+      const focus = new THREE.Vector3(this.stage.target.x, jewels.length ? center.y : 0, center.z);
+      const dist = fit(Math.max(size.x + 20, OVERVIEW_WIDTH), OVERVIEW_HEIGHT);
+      cam.position.copy(focus).addScaledVector(new THREE.Vector3(0, 0.12, 1).normalize(), dist);
+      cam.lookAt(focus);
+    } else if (azimuth === null) {
       const w = Math.max(size.x + 10, 30);
       const dist = fit(w, Math.max(size.y + 8, 18));
       cam.position.copy(center).addScaledVector(new THREE.Vector3(0, 0.12, 1).normalize(), dist);

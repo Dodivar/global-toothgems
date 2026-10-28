@@ -36,8 +36,10 @@ export interface TryOnRenderRequest {
   /** The prepared photo (oriented, downscaled, metadata stripped). */
   photo: Blob;
   source: TryOnSource;
-  /** The creation rendered in 3D from the front, in the browser (`renderDesignImage`). */
+  /** The creation rendered in 3D from the front, in the browser (`renderDesignImages`), framed on the gems. */
   design: Blob;
+  /** The same design seen from further away, the whole smile around the gems (`renderDesignImages`). */
+  overview?: Blob | null;
   /** The flat design map (`tryOnMap`, PNG): every tooth labelled, every gem tagged like the design data. */
   map?: Blob | null;
   /** Each gem's place and size on its tooth (`tryOnSeats`), read by the AI as text. */

@@ -23,6 +23,9 @@ import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
  *     map     optional PNG (≤ 2 MB): the flat design map drawn by the browser
  *             (`webapp/src/lib/studio3d/tryOnMap.ts`), IMAGE 3 with prompt v3,
  *             each gem tagged like its design data line; ignored with v1
+ *     overview  optional JPEG (≤ 3 MB): the same 3D design seen from further
+ *             away, the whole smile around the gems (`designImage.ts`),
+ *             IMAGE 4 — sent to the model only with the map (v3)
  *     seats   optional JSON: each gem's place and size on its tooth, measured
  *             by the browser (`prompt.ts` `readSeats`), matched to the stored
  *             gems by id
@@ -97,7 +100,7 @@ export interface StudioTryOnDeps {
 export const PHOTO_MAX_BYTES = 6 * 1024 * 1024;
 export const DESIGN_MAX_BYTES = 3 * 1024 * 1024;
 export const MAP_MAX_BYTES = 2 * 1024 * 1024;
-const BODY_MAX_BYTES = PHOTO_MAX_BYTES + DESIGN_MAX_BYTES + MAP_MAX_BYTES + 64 * 1024;
+const BODY_MAX_BYTES = PHOTO_MAX_BYTES + 2 * DESIGN_MAX_BYTES + MAP_MAX_BYTES + 64 * 1024;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -138,6 +141,16 @@ export function toBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
+/** An image's size from the start of its base64 (its header), or null when it cannot be read there. */
+export function headerSize(base64: string): { width: number; height: number } | null {
+  try {
+    const binary = atob(base64.slice(0, 64 * 1024));
+    return imageSize(Uint8Array.from(binary, (c) => c.charCodeAt(0)));
+  } catch {
+    return null;
+  }
+}
+
 export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Promise<Response> {
   const cors = corsHeaders(deps.origins, req.headers.get("origin"));
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -176,6 +189,9 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   // The flat map is optional (a site older than the map sends none); a malformed one is dropped, never fatal.
   const mapFile = deps.readsMap ? await inlineFile(form.get("map"), MAP_MAX_BYTES) : null;
   const map = mapFile && mapFile !== "invalid" ? mapFile : null;
+  // The overview goes only with the map (it is IMAGE 4); optional and never fatal, like the map.
+  const overviewFile = map ? await inlineFile(form.get("overview"), DESIGN_MAX_BYTES) : null;
+  const overview = overviewFile && overviewFile !== "invalid" ? overviewFile : null;
   const seats = readSeats(form.get("seats"));
   if (!ref || !photo || photo === "invalid" || !design || design === "invalid") return json({ ok: false, code: "invalid_request" }, 400, cors);
 
@@ -207,7 +223,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     return json({ ok: false, code: "not_found" }, 404, cors);
   }
 
-  const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, design, map, pieces, seats, onRendering);
+  const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, design, map, overview, pieces, seats, onRendering);
   if (form.get("progress") !== "1") {
     const ending = await run(() => {});
     return json(ending.body, ending.status, cors);
@@ -288,6 +304,7 @@ async function checkAndRender(
   photo: Photo,
   design: Photo,
   map: Photo | null,
+  overview: Photo | null,
   pieces: ReturnType<typeof piecesFromScene>,
   seats: ReturnType<typeof readSeats>,
   onRendering: () => void,
@@ -334,7 +351,8 @@ async function checkAndRender(
   const scale = mmShare !== null && edited && photo.size ? (mmShare * photo.size.width) / edited.crop.width : mmShare;
 
   // Counts only: whether the browser sent the gems' places (a site older than the seats sends none).
-  deps.log("design data", { gems: pieces.length, seats: seats.size });
+  deps.log("design data", { gems: pieces.length, seats: seats.size, map: map !== null, overview: overview !== null });
+  const aspectRatio = nearestAspectRatio(target.size);
 
   let outcome: GenerateOutcome;
   try {
@@ -344,10 +362,11 @@ async function checkAndRender(
     });
     const images = [{ mimeType: design.mimeType, data: design.data }, { mimeType: target.mimeType, data: target.data }];
     if (map) images.push({ mimeType: map.mimeType, data: map.data });
+    if (map && overview) images.push({ mimeType: overview.mimeType, data: overview.data });
     outcome = await deps.generate(
       [...images, ...references],
-      buildDesignData(pieces, seats, scale, map !== null, edited !== null),
-      nearestAspectRatio(target.size),
+      buildDesignData(pieces, seats, scale, map !== null, edited !== null, overview !== null),
+      aspectRatio,
     );
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
@@ -359,6 +378,13 @@ async function checkAndRender(
     return { status: 502, body: { ok: false, code: outcome.code } };
   }
   await deps.finishRequest(requestId, "generated", null).catch((error) => deps.log("could not close the request", error));
+  // Sizes only: what was sent against what came back, to see the model change the proportions.
+  deps.log("render size", {
+    sent: target.size,
+    asked: aspectRatio,
+    received: headerSize(outcome.image.data),
+    ratio_dropped: outcome.aspectRatioDropped === true,
+  });
   const image = { mime_type: outcome.image.mimeType, data: outcome.image.data };
   if (!edited || !photo.size) return { status: 200, body: { ok: true, image } };
   const { crop } = edited;
