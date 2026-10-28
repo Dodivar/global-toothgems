@@ -27,6 +27,8 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
   const total = useCompositionEstimate(snap.jewels).totalMinor;
   // Importing a 3D model is a staff tool (owner's request 2026-10-28): members work on the Studio's dentition.
   const staff = useStudioStaff();
+  const canReset = snap.modelMode !== "dentition" && !snap.modelLoading;
+  const modelTools = staff || canReset;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -99,7 +101,8 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
           <Redo2 size={16} aria-hidden="true" />
         </button>
       </div>
-      <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
+      {/* The model tools (staff import, back to the dentition) bring their own divider: none when both are absent. */}
+      {modelTools && <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />}
       {staff && (
         <>
           <input ref={fileRef} type="file" accept=".glb,.gltf,model/gltf-binary" className="hidden" onChange={handleFile} tabIndex={-1} />
@@ -114,7 +117,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
           </button>
         </>
       )}
-      {snap.modelMode !== "dentition" && !snap.modelLoading && (
+      {canReset && (
         <button
           type="button"
           className={toolButton}
