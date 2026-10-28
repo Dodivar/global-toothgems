@@ -17,6 +17,5 @@ supabase/.temp/
 supabase/functions/.env
 .env.local
 
-# Supabase CLI local state (supabase start)
+# Supabase CLI local branch state, written by `supabase start`.
 supabase/.branches/
-supabase/.temp/
