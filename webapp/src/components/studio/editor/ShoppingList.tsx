@@ -22,40 +22,12 @@ const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:o
  * The prices shown are the catalogue's display prices; the cart is priced
  * again by the database at checkout (AGENTS.md §8).
  */
-export function ShoppingList({ jewels }: { jewels: PlacedJewelry[] }) {
+export function ShoppingList({ jewels, withCart = true }: { jewels: PlacedJewelry[]; withCart?: boolean }) {
   const { t, formatEstimate, sizeShort } = useEditorLabels();
   const l = useLocalized();
   const { byKey } = useStudioGems();
-  const { addLines } = useCart();
   const estimate = useCompositionEstimate(jewels);
-  const [added, setAdded] = useState(false);
-
-  const orderable = estimate.lines.filter((line) => line.stock !== "out");
-  const outOfStock = estimate.lines.length - orderable.length;
-
-  const cartLine = (line: EstimateLine, gem: StudioGem): Omit<CartLine, "id"> => ({
-    productId: gem.slug,
-    dbProductId: gem.key,
-    ...(line.offer.variantId ? { variantId: line.offer.variantId } : {}),
-    ...(line.offer.name ? { variant: l(line.offer.name) } : {}),
-    name: l(gem.name),
-    image: line.offer.image ?? gem.image,
-    // Indicative only: the checkout recomputes every price server-side.
-    unitPrice: line.unitMinor,
-    currency: gem.currency,
-    qty: line.quantity,
-  });
-
-  const addAll = () => {
-    const toAdd = orderable.flatMap((line) => {
-      const gem = byKey.get(line.productId);
-      return gem ? [cartLine(line, gem)] : [];
-    });
-    if (!toAdd.length) return;
-    addLines(toAdd);
-    setAdded(true);
-    notify("addedToCart", { count: toAdd.reduce((sum, item) => sum + item.qty, 0) });
-  };
+  const outOfStock = estimate.lines.filter((line) => line.stock === "out").length;
 
   if (!jewels.length) return <p className="m-0 text-[11.5px] leading-relaxed text-[var(--text-muted)]">{t("studio.editor.inspector.designEmpty")}</p>;
 
@@ -124,12 +96,59 @@ export function ShoppingList({ jewels }: { jewels: PlacedJewelry[] }) {
         </p>
       )}
 
+      {withCart && <AddDesignToCart jewels={jewels} className="mt-3" />}
+    </>
+  );
+}
+
+/**
+ * The one button that puts every orderable item of the design in the
+ * customer's cart (out-of-stock items stay out), then the way to the cart.
+ * Shown under the shopping list, and on its own where the list is folded.
+ */
+export function AddDesignToCart({ jewels, className }: { jewels: PlacedJewelry[]; className?: string }) {
+  const { t } = useEditorLabels();
+  const l = useLocalized();
+  const { byKey } = useStudioGems();
+  const { addLines } = useCart();
+  const estimate = useCompositionEstimate(jewels);
+  const [added, setAdded] = useState(false);
+  const orderable = estimate.lines.filter((line) => line.stock !== "out");
+
+  const cartLine = (line: EstimateLine, gem: StudioGem): Omit<CartLine, "id"> => ({
+    productId: gem.slug,
+    dbProductId: gem.key,
+    ...(line.offer.variantId ? { variantId: line.offer.variantId } : {}),
+    ...(line.offer.name ? { variant: l(line.offer.name) } : {}),
+    name: l(gem.name),
+    image: line.offer.image ?? gem.image,
+    // Indicative only: the checkout recomputes every price server-side.
+    unitPrice: line.unitMinor,
+    currency: gem.currency,
+    qty: line.quantity,
+  });
+
+  const addAll = () => {
+    const toAdd = orderable.flatMap((line) => {
+      const gem = byKey.get(line.productId);
+      return gem ? [cartLine(line, gem)] : [];
+    });
+    if (!toAdd.length) return;
+    addLines(toAdd);
+    setAdded(true);
+    notify("addedToCart", { count: toAdd.reduce((sum, item) => sum + item.qty, 0) });
+  };
+
+  if (!jewels.length) return null;
+
+  return (
+    <div className={className}>
       <button
         type="button"
         onClick={addAll}
         disabled={!orderable.length}
         className={clsx(
-          "mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--accent-cta)] px-4 text-[12px] font-black uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)] transition-colors hover:bg-[var(--accent-cta-hover)] disabled:cursor-not-allowed disabled:bg-[var(--gt-ink-100)] disabled:text-[var(--text-muted)]",
+          "inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--accent-cta)] px-4 text-[12px] font-black uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)] transition-colors hover:bg-[var(--accent-cta-hover)] disabled:cursor-not-allowed disabled:bg-[var(--gt-ink-100)] disabled:text-[var(--text-muted)]",
           focusRing,
         )}
       >
@@ -150,6 +169,6 @@ export function ShoppingList({ jewels }: { jewels: PlacedJewelry[] }) {
           </Link>
         </p>
       )}
-    </>
+    </div>
   );
 }

@@ -40,7 +40,7 @@ import {
 import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { studioStore, type StudioSnapshot } from "../../../lib/studio3d/store";
-import { ShoppingList } from "./ShoppingList";
+import { AddDesignToCart, ShoppingList } from "./ShoppingList";
 import { useFrontView } from "../useFrontView";
 import { FrontViewDialog, FrontViewFigure } from "../FrontViewPanel";
 import { SaveSelectionAsGroup } from "../workspace/SaveSelectionAsGroup";
@@ -617,8 +617,8 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
 /**
  * "Buy the gems", first in the overview to lead to the shop (owner's request
  * 2026-10-28): one row with the products to order, the teeth decorated and the
- * estimate, folded by default; unfolded, the shopping list and its "Add to
- * cart" button, then what the estimate means. Soft brand blue, not the green
+ * estimate, folded by default, with the "Add to cart" button always in view;
+ * unfolded, the shopping list and what the estimate means. Soft brand blue, not the green
  * call to action of Save.
  */
 function BuyGemsPanel({
@@ -665,11 +665,13 @@ function BuyGemsPanel({
       </button>
       {open && (
         <div id={bodyId} className="border-t border-[var(--gt-blue-200)] p-2.5">
-          <ShoppingList jewels={jewels} />
+          <ShoppingList jewels={jewels} withCart={false} />
           {totalMinor > 0 && <Hint className="mt-2.5">{t("studio.editor.estimateHint")}</Hint>}
           <HelpMoreLink topic="shoppingList" className="mt-1.5" />
         </div>
       )}
+      {/* The way to the cart stays in view, folded or not. */}
+      <AddDesignToCart jewels={jewels} className={clsx("px-2.5 pb-2.5", open && "pt-1")} />
     </section>
   );
 }
