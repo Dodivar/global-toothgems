@@ -1952,6 +1952,10 @@
   .gt-alt-tile:focus-within .gt-alt-tile-art,
   .gt-alt-course:hover .gt-alt-tile-art,
   .gt-alt-course:focus-within .gt-alt-tile-art { transform: scale(1.05); }
+  /* Exploded arrangements: the pieces fly apart a little on hover. */
+  .gt-alt-burst-piece { transition: translate 900ms var(--ease-out-soft); }
+  .gt-alt-tile:hover .gt-alt-burst-piece,
+  .gt-alt-tile:focus-within .gt-alt-burst-piece { translate: var(--gt-burst-x, 0) var(--gt-burst-y, 0); }
   .gt-alt-tile-arrow { transition: transform var(--duration-normal) var(--ease-out-soft); }
   .gt-alt-tile:hover .gt-alt-tile-arrow,
   .gt-alt-tile:focus-within .gt-alt-tile-arrow { transform: translate(2px, -2px); }
@@ -2073,6 +2077,8 @@
   .gt-alt-course:focus-within .gt-alt-tile-art,
   .gt-alt-pin:hover .gt-alt-tile-art,
   .gt-alt-pin:focus-within .gt-alt-tile-art { transform: none; }
+  .gt-alt-tile:hover .gt-alt-burst-piece,
+  .gt-alt-tile:focus-within .gt-alt-burst-piece { translate: none; }
   .gt-alt-pin:hover,
   .gt-alt-pin:focus-within { transform: none; }
 }
