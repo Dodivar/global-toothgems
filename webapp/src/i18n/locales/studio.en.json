@@ -170,6 +170,7 @@
     },
     "planLocked": {
       "cta": "Switch to {{plan}}",
+      "withPlan": "With the {{plan}} plan",
       "glowbook": {
         "title": "The Glowbook comes with the {{plan}} plan",
         "short": "Show your creations on a public page and let your clients try them on their smile.",
@@ -187,6 +188,18 @@
         "short": "File your creations by client, by style or by event.",
         "body": "Create folders to file your creations by client, by style or by event, and find them at a glance in My Creations.",
         "kept": "Folders you already have stay visible: you can take creations out or delete them, but no longer create or fill them."
+      },
+      "transparentExport": {
+        "title": "Snapshots without a background come with the {{plan}} plan",
+        "short": "Export your designs as transparent PNGs, to lay on your own visuals.",
+        "body": "Download the stage view without the Studio backdrop, as a transparent PNG: ready to lay on your visuals, posts or printed material.",
+        "kept": "Meanwhile the PNG snapshot stays available, on the Studio backdrop and with the Global Toothgems logo."
+      },
+      "tryOn": {
+        "title": "AI try-on comes with the {{plan}} plan",
+        "short": "Show a design on a real smile photo before the appointment.",
+        "body": "From a smile photo, the AI shows the saved design set on the teeth: a way to picture it before the appointment. Visitors can also try it from your Glowbook.",
+        "kept": "Your designs, the estimate and the placement sheet stay available with your current plan."
       }
     }
   },
@@ -233,7 +246,7 @@
       "pngSub": "Current view on the Studio backdrop, with the Global Toothgems logo",
       "transparent": "Snapshot · transparent PNG",
       "transparentSub": "Backdrop removed, transparency kept",
-      "quoteSection": "Estimate",
+      "prepareSection": "Prepare the appointment",
       "quote": "Estimate sheet · PNG",
       "quoteSub": "Priced summary with the render and total",
       "clientLabel": "Client name",
@@ -260,9 +273,6 @@
       "createLink": "Create a read-only link…",
       "createLinkSub": "To post on social networks: the design opens in 3D and can't be changed",
       "unsavedHint": "Unsaved changes don't appear through the link.",
-      "download": "Download the image",
-      "downloadSub": "To post it on Instagram, TikTok or Pinterest",
-      "hint": "The link opens only this design, read-only: nobody can change it or see your other creations.",
       "title": "My tooth gem design — Global Toothgems 3D Studio",
       "message": "Take a look at the tooth gem design I created in the Global Toothgems 3D Studio!",
       "instagram": "Instagram",

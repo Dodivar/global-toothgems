@@ -170,6 +170,7 @@
     },
     "planLocked": {
       "cta": "Passer à {{plan}}",
+      "withPlan": "Avec l’abonnement {{plan}}",
       "glowbook": {
         "title": "Le Glowbook est inclus dans la formule {{plan}}",
         "short": "Montrez vos créations sur une page publique et laissez vos clientes les essayer sur leur sourire.",
@@ -187,6 +188,18 @@
         "short": "Rangez vos créations par cliente, par style ou par événement.",
         "body": "Créez des dossiers pour ranger vos créations par cliente, par style ou par événement, et retrouvez-les d’un coup d’œil dans Mes créations.",
         "kept": "Si vous aviez déjà des dossiers, ils restent visibles : vous pouvez en retirer des créations ou les supprimer, mais plus en créer ni en remplir."
+      },
+      "transparentExport": {
+        "title": "Les captures sans fond sont incluses dans l’abonnement {{plan}}",
+        "short": "Exportez vos créations en PNG transparent, à poser sur vos propres visuels.",
+        "body": "Téléchargez la vue de la scène sans le fond du Studio, en PNG transparent : prête à poser sur vos visuels, vos publications ou vos supports imprimés.",
+        "kept": "En attendant, la capture PNG reste disponible, sur le fond du Studio et avec le logo Global Toothgems."
+      },
+      "tryOn": {
+        "title": "L’essayage par IA est inclus dans l’abonnement {{plan}}",
+        "short": "Montrez une création sur une vraie photo de sourire avant la pose.",
+        "body": "À partir d’une photo de sourire, l’IA montre la création enregistrée posée sur les dents : de quoi se projeter avant le rendez-vous. Toute personne qui visite votre Glowbook peut aussi l’essayer.",
+        "kept": "Vos créations, l’estimation et la fiche de pose restent disponibles avec votre abonnement actuel."
       }
     }
   },
@@ -233,11 +246,11 @@
       "pngSub": "Vue actuelle sur le fond du Studio, avec le logo Global Toothgems",
       "transparent": "Capture · PNG transparent",
       "transparentSub": "Fond retiré, transparence conservée",
-      "quoteSection": "Estimation",
+      "prepareSection": "Préparer la pose",
       "quote": "Fiche d’estimation · PNG",
       "quoteSub": "Récapitulatif chiffré avec le rendu et le total",
-      "clientLabel": "Nom du client",
-      "clientPlaceholder": "Nom du client…",
+      "clientLabel": "Nom sur la fiche",
+      "clientPlaceholder": "Nom sur la fiche…",
       "quoteAction": "Créer",
       "json": "Création · JSON",
       "jsonSub": "Les données brutes de la création · réservé à l'équipe"
@@ -260,9 +273,6 @@
       "createLink": "Créer un lien en lecture seule…",
       "createLinkSub": "À publier sur les réseaux : la création s’ouvre en 3D, sans pouvoir être modifiée",
       "unsavedHint": "Les modifications non enregistrées n’apparaissent pas dans le lien.",
-      "download": "Télécharger l’image",
-      "downloadSub": "Pour la publier sur Instagram, TikTok ou Pinterest",
-      "hint": "Le lien ouvre uniquement cette création, en lecture seule : personne ne peut la modifier ni voir vos autres créations.",
       "title": "Ma création tooth gems — Studio 3D Global Toothgems",
       "message": "Découvrez la création de tooth gems que j’ai imaginée dans le Studio 3D de Global Toothgems !",
       "instagram": "Instagram",

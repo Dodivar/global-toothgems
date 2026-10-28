@@ -1,15 +1,20 @@
-import { ArrowRight, FolderPlus, LayoutTemplate, Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowRight, FolderPlus, LayoutTemplate, ScanFace, Sparkles, SquareDashed, type LucideIcon } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { useNavigate } from "../../../lib/navigation";
 import { ACCOUNT_STUDIO_PATH } from "../StudioPlans";
-import { lowestPlanWith } from "../../../lib/studioEntitlements";
+import { lowestPlanWith, type LockedFeature } from "../../../lib/studioEntitlements";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
-/** The features that show this panel in the Studio when the plan lacks them. */
-export type LockedFeature = "glowbook" | "templates" | "collections";
+export type { LockedFeature };
 
-const ICON: Record<LockedFeature, LucideIcon> = { glowbook: Sparkles, templates: LayoutTemplate, collections: FolderPlus };
+const ICON: Record<LockedFeature, LucideIcon> = {
+  glowbook: Sparkles,
+  templates: LayoutTemplate,
+  collections: FolderPlus,
+  transparentExport: SquareDashed,
+  tryOn: ScanFace,
+};
 
 /**
  * A Studio feature below its plan (decision 113): what it does, the lowest

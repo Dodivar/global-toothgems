@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { PencilLine, Save } from "lucide-react";
+import { Lock, PencilLine, Save } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useCompositionEstimate } from "../../../lib/studio3d/useStudioGems";
@@ -12,6 +12,7 @@ import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CollectionChecklist } from "./Collections";
 import { useStudioFeature } from "../../../lib/studioAccess";
+import { lowestPlanWith } from "../../../lib/studioEntitlements";
 import { DetailsFields } from "./DetailsFields";
 import { ScenePreview } from "./ScenePreview";
 import { useStageCapture } from "./useStageCapture";
@@ -52,8 +53,9 @@ export function SaveCreationDialog({
   // A new save can be filed at once; "save as new" starts from the original's collections.
   const [chosen, setChosen] = useState<Set<string>>(() => (source ? collectionIdsOf(source.id, memberships) : new Set()));
   // Filing into folders needs the Artist plan (decision 113 (b)).
-  const canFile = useStudioFeature("collections") !== false;
-  const filing = mode !== "edit" && collectionsStatus === "ready" && canFile;
+  // Below it the field stays listed, locked, with the plan that opens it (the panel would close this dialog).
+  const fileLocked = useStudioFeature("collections") === false;
+  const filing = mode !== "edit" && collectionsStatus === "ready" && !fileLocked;
   const [busy, setBusy] = useState(false);
 
   const pieces = mode === "edit" && creation ? creation.scene.pieces : snap.jewels;
@@ -156,6 +158,15 @@ export function SaveCreationDialog({
               }
             />
           </div>
+        )}
+        {mode !== "edit" && fileLocked && (
+          <p className="m-0 flex items-center gap-2 text-[length:var(--text-caption)] text-[var(--text-muted)] sm:col-start-2">
+            <Lock size={13} aria-hidden="true" className="flex-none" />
+            <span>
+              {t("studio.workspace.collections.inSaveLocked")} ·{" "}
+              {t("studio.access.planLocked.withPlan", { plan: t(`studio.plans.items.${lowestPlanWith("collections")}.name`) })}
+            </span>
+          </p>
         )}
       </form>
       <div className="flex flex-wrap justify-end gap-2.5 border-t border-[var(--border-subtle)] pt-4">

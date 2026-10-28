@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import type { LockedFeature } from "../studioEntitlements";
 import type { PublicExposure } from "./glowbook";
 import type { Creation, GemGroup, RecordDetails, StudioCollection } from "./types";
 
@@ -30,6 +31,8 @@ export type WorkspaceDialog =
   | { kind: "discardChanges"; onConfirm: () => void }
   /** Before saving a creation others can see: in the artist's Glowbook, or a published template. */
   | { kind: "confirmPublicSave"; exposure: PublicExposure; name: string; onConfirm: () => void; onCancel?: () => void }
+  /** A feature below the member's plan, opened from a locked menu row: what it does and the plan that opens it. */
+  | { kind: "planLocked"; feature: LockedFeature }
   | { kind: "signIn" }
   | { kind: "feedback" }
   | { kind: "onboarding" }

@@ -85,6 +85,8 @@ export function WorkspaceDialogs() {
     case "editCollection":
       if (collectionsLocked) return <PlanLockedDialog feature="collections" onClose={close} />;
       return <CollectionEditDialog collection={dialog.collection} onClose={close} />;
+    case "planLocked":
+      return <PlanLockedDialog feature={dialog.feature} onClose={close} />;
     case "deleteCollection":
       return (
         <DeleteConfirmation

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
 import clsx from "clsx";
+import { Lock } from "lucide-react";
 
 /**
  * A panel anchored under a toolbar button, for the editor's Presets and Export
@@ -108,19 +109,25 @@ export function PopoverSeparator() {
   return <span role="none" className="mx-1 my-1.5 block h-px bg-[var(--border-subtle)]" />;
 }
 
-/** One action row: icon, label and an optional second line. */
+/**
+ * One action row: icon, label and an optional second line. A `locked` row is
+ * a feature below the member's plan: muted, with a lock, its second line
+ * naming the plan; it still opens (the plan panel).
+ */
 export function PopoverItem({
   icon,
   label,
   sub,
   onClick,
   destructive,
+  locked,
 }: {
   icon: ReactNode;
   label: string;
   sub?: string;
   onClick: () => void;
   destructive?: boolean;
+  locked?: boolean;
 }) {
   return (
     <button
@@ -131,16 +138,19 @@ export function PopoverItem({
         "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
         destructive
           ? "text-[var(--status-error-fg)] hover:bg-[var(--status-error-bg)]"
-          : "text-[var(--text-primary)] hover:bg-[var(--surface-brand-wash)]",
+          : locked
+            ? "text-[var(--text-muted)] hover:bg-[var(--surface-brand-wash)]"
+            : "text-[var(--text-primary)] hover:bg-[var(--surface-brand-wash)]",
       )}
     >
-      <span aria-hidden="true" className={clsx("mt-0.5 flex-none", destructive ? "" : "text-[var(--gt-blue-600)]")}>
+      <span aria-hidden="true" className={clsx("mt-0.5 flex-none", destructive ? "" : locked ? "text-[var(--text-subtle)]" : "text-[var(--gt-blue-600)]")}>
         {icon}
       </span>
-      <span className="grid min-w-0">
+      <span className="grid min-w-0 flex-1">
         <span className="truncate">{label}</span>
         {sub && <span className="text-[11.5px] font-medium leading-snug text-[var(--text-muted)]">{sub}</span>}
       </span>
+      {locked && <Lock size={13} aria-hidden="true" className="mt-1 flex-none text-[var(--text-subtle)]" />}
     </button>
   );
 }
