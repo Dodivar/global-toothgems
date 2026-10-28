@@ -556,6 +556,8 @@ export function Cart() {
       variant="primary"
       fullWidth
       size="lg"
+      // The label is long: let it wrap and keep the button inside its card (360px column, phone bar).
+      className="h-auto! min-h-14 min-w-0 whitespace-normal! px-4! py-3"
       iconRight={live && (selected || !shipped) ? ArrowRight : undefined}
       onClick={() => void pay()}
       loading={submitting}
