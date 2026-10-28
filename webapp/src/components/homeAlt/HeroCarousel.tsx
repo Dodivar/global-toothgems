@@ -29,19 +29,19 @@ const PHONE_QUERY = "(max-width: 639px)";
  * would break hydration). `x`/`y` are the piece's centre in % of the box.
  */
 const BOUQUET: { photo: string; x: number; y: number; size: number; rot: number }[] = [
-  { photo: "img-04.jpg", x: 50, y: 46, size: 70, rot: -12 },
-  { photo: "img-02.jpg", x: 29, y: 36, size: 54, rot: 20 },
-  { photo: "img-09.jpg", x: 69, y: 34, size: 58, rot: -25 },
-  { photo: "img-14.jpg", x: 13, y: 62, size: 46, rot: 40 },
-  { photo: "img-13.jpg", x: 85, y: 64, size: 50, rot: 10 },
-  { photo: "img-05.jpg", x: 38, y: 80, size: 42, rot: -30 },
-  { photo: "img-20.jpg", x: 62, y: 82, size: 48, rot: 15 },
-  { photo: "img-19.jpg", x: 92, y: 24, size: 38, rot: -10 },
-  { photo: "img-15.jpg", x: 8, y: 22, size: 40, rot: 25 },
-  { photo: "img-11.jpg", x: 22, y: 86, size: 36, rot: 60 },
-  { photo: "img-18.jpg", x: 77, y: 10, size: 36, rot: -40 },
-  { photo: "img-06.jpg", x: 45, y: 12, size: 38, rot: 30 },
-  { photo: "img-07.jpg", x: 93, y: 88, size: 32, rot: 5 },
+  { photo: "gem-img-04.webp", x: 50, y: 46, size: 70, rot: -12 },
+  { photo: "gem-img-02.webp", x: 29, y: 36, size: 54, rot: 20 },
+  { photo: "gem-img-09.webp", x: 69, y: 34, size: 58, rot: -25 },
+  { photo: "gem-img-14.webp", x: 13, y: 62, size: 46, rot: 40 },
+  { photo: "gem-img-13.webp", x: 85, y: 64, size: 50, rot: 10 },
+  { photo: "gem-img-05.webp", x: 38, y: 80, size: 42, rot: -30 },
+  { photo: "gem-img-20.webp", x: 62, y: 82, size: 48, rot: 15 },
+  { photo: "gem-img-19.webp", x: 92, y: 24, size: 38, rot: -10 },
+  { photo: "gem-img-15.webp", x: 8, y: 22, size: 40, rot: 25 },
+  { photo: "gem-img-11.webp", x: 22, y: 86, size: 36, rot: 60 },
+  { photo: "gem-img-18.webp", x: 77, y: 10, size: 36, rot: -40 },
+  { photo: "gem-img-06.webp", x: 45, y: 12, size: 38, rot: 30 },
+  { photo: "gem-img-07.webp", x: 93, y: 88, size: 32, rot: 5 },
   { photo: "img-08.jpg", x: 21, y: 14, size: 40, rot: -18 },
 ];
 
@@ -271,12 +271,17 @@ function ShopSlide() {
                   className="absolute block"
                   style={{ left: `${g.x}%`, top: `${g.y}%`, width: g.size, marginLeft: -g.size / 2, marginTop: -g.size / 2 }}
                 >
-                  {/* `rotate` (not `transform`) so no stacking context isolates the multiply blend. */}
+                  {/* `rotate` (not `transform`) so no stacking context isolates the packshot's multiply blend. */}
                   <img
                     src={photo(g.photo)}
                     alt=""
                     decoding="async"
-                    className={clsx("gt-alt-cutout gt-alt-float block w-full", i % 2 === 1 && "gt-alt-float--late")}
+                    className={clsx(
+                      // Gems are transparent cut-outs; the one packshot left is multiplied into the blue.
+                      g.photo.startsWith("gem-") ? "gt-alt-gem" : "gt-alt-cutout",
+                      "gt-alt-float block w-full",
+                      i % 2 === 1 && "gt-alt-float--late",
+                    )}
                     style={{ rotate: `${g.rot}deg` }}
                   />
                 </span>
@@ -293,10 +298,10 @@ function ShopSlide() {
                 style={{ objectPosition: "50% 55%" }}
               />
             </div>
-            {/* Loose stones on the blue, beside the photo: product cut-outs on
-                white, multiplied into the backdrop so only the gem remains. */}
-            <img src={photo("img-04.jpg")} alt="" aria-hidden="true" className="gt-alt-cutout gt-alt-float absolute -left-[15%] top-[6%] hidden w-[16%] max-w-[112px] lg:block" />
-            <img src={photo("img-14.jpg")} alt="" aria-hidden="true" className="gt-alt-cutout gt-alt-float gt-alt-float--late absolute -left-[13%] bottom-[22%] hidden w-[15%] max-w-[104px] lg:block" />
+            {/* Loose stones on the blue, beside the photo: gem pictures cut out
+                of their white background, so they keep their own colours. */}
+            <img src={photo("gem-img-04.webp")} alt="" aria-hidden="true" className="gt-alt-gem gt-alt-float absolute -left-[15%] top-[6%] hidden w-[16%] max-w-[112px] lg:block" />
+            <img src={photo("gem-img-14.webp")} alt="" aria-hidden="true" className="gt-alt-gem gt-alt-float gt-alt-float--late absolute -left-[13%] bottom-[22%] hidden w-[15%] max-w-[104px] lg:block" />
             <div className="gt-glass-panel gt-glass-panel-compact absolute -bottom-4 right-4 flex items-center gap-3 rounded-[var(--radius-lg)] py-2.5 pl-2.5 pr-5 sm:right-8 lg:-bottom-5 lg:right-auto lg:left-[8%]">
               <span className="grid h-12 w-12 flex-none place-items-center overflow-hidden rounded-[var(--radius-md)] bg-white">
                 <img src={photo("img-04.jpg")} alt="" className="h-10 w-10 object-contain" />

@@ -1839,6 +1839,8 @@
   /* Product cut-outs are shot on white: multiplying them into the tint
      behind leaves only the gem. */
   .gt-alt-cutout { mix-blend-mode: multiply; }
+  /* Gem cut-outs (transparent `gem-*.webp`): a soft shadow lifts them off the tint. */
+  .gt-alt-gem { filter: drop-shadow(0 6px 10px rgb(17 39 84 / 0.18)); }
 
   .gt-alt-float { animation: gt-alt-float 7s var(--ease-in-out) infinite; }
   .gt-alt-float--late { animation-delay: -3.5s; }

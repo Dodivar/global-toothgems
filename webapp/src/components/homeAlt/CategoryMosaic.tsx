@@ -17,16 +17,18 @@ import type { Product } from "../../data/products";
 /**
  * A category tile's art. `photo`: one of the high-resolution mouth shots.
  * `feature`: a product picture from the catalogue, framed close up on white
- * (the kits). `burst`: loose stones thrown apart like a bouquet going off, the
- * same visual as the hero's shop slide on a phone: gem cut-outs on pure white,
- * multiplied into the tint so only the stone remains. `productBurst`: the same
+ * (the kits, the lip gloss), with a photograph to show until the catalogue
+ * holds it. `burst`: loose stones thrown apart like a bouquet going off, the
+ * same visual as the hero's shop slide on a phone: gem pictures cut out of
+ * their white background (`gem-*.webp`, transparent, so the stones keep their
+ * own colours on the tint). `productBurst`: the same
  * explosion with the category's own product pictures from the catalogue,
  * mounted as small white prints since their backgrounds vary. On hover the
  * pieces of a burst fly a little further apart.
  */
 type TileArt =
   | { kind: "photo"; src: string; position?: string }
-  | { kind: "feature"; family: string; slugs: string[] }
+  | { kind: "feature"; family?: string; slugs: string[]; fallback?: string }
   | { kind: "burst"; tone: Tone; pieces: string[] }
   | { kind: "productBurst"; tone: Tone };
 
@@ -98,18 +100,18 @@ const TILES: Tile[] = [
       kind: "burst",
       tone: "blue",
       pieces: [
-        "img-04.jpg",
-        "img-07.jpg",
-        "img-13.jpg",
-        "img-09.jpg",
-        "img-05.jpg",
-        "img-14.jpg",
-        "img-18.jpg",
-        "img-02.jpg",
-        "img-19.jpg",
-        "img-06.jpg",
-        "img-15.jpg",
-        "img-20.jpg",
+        "gem-img-04.webp",
+        "gem-img-07.webp",
+        "gem-img-13.webp",
+        "gem-img-09.webp",
+        "gem-img-05.webp",
+        "gem-img-14.webp",
+        "gem-img-18.webp",
+        "gem-img-02.webp",
+        "gem-img-19.webp",
+        "gem-img-06.webp",
+        "gem-img-15.webp",
+        "gem-img-20.webp",
       ],
     },
     area: "md:col-span-2 lg:col-span-6 lg:col-start-7",
@@ -123,7 +125,7 @@ const TILES: Tile[] = [
   {
     cat: "lip-gloss",
     copyKey: "lipGloss",
-    art: { kind: "photo", src: photo("mouth-05.jpg"), position: "50% 50%" },
+    art: { kind: "feature", slugs: ["global-lipgloss-bad-habit"], fallback: photo("mouth-05.jpg") },
     area: "lg:col-span-3 lg:col-start-10 lg:row-start-2",
   },
 ];
@@ -195,51 +197,53 @@ function CategoryTile({ tile, index, families }: { tile: Tile; index: number; fa
   return (
     <div
       className={clsx(
-        "gt-alt-tile group relative flex h-full min-h-[340px] flex-col justify-end overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-card)] md:min-h-[340px] lg:min-h-0",
+        "gt-alt-tile group relative isolate flex h-full min-h-[340px] flex-col justify-end overflow-hidden rounded-[var(--radius-xl)] shadow-[var(--shadow-card)] md:min-h-[340px] lg:min-h-0",
         tile.hero && "min-h-[440px] md:min-h-[520px] lg:min-h-0",
         tile.art.kind === "feature" && "bg-white",
       )}
     >
-      {tile.art.kind === "photo" && (
-        <>
-          <img
-            src={tile.art.src}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="gt-alt-tile-art absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition: tile.art.position }}
-          />
-          <Scrim />
-        </>
-      )}
-      {tile.art.kind === "feature" && <FeatureArt products={products} cat={tile.cat} art={tile.art} />}
-      {tile.art.kind === "burst" && (
-        // The tint sits on the art itself: the hover zoom isolates it, and the
-        // multiply blend needs the tint inside the same group.
-        <span aria-hidden="true" className={clsx("gt-alt-tile-art absolute inset-0", TONE_BG[tile.art.tone])}>
-          {tile.art.pieces.slice(0, GEM_SLOTS.length).map((name, i) => (
-            <BurstPiece key={name} slot={GEM_SLOTS[i]} index={i}>
-              {(piece) => <img src={photo(name)} alt="" loading="lazy" decoding="async" className={clsx("gt-alt-cutout", piece.className)} style={piece.style} />}
-            </BurstPiece>
-          ))}
-        </span>
-      )}
-      {tile.art.kind === "productBurst" && (
-        <span aria-hidden="true" className={clsx("gt-alt-tile-art absolute inset-0", TONE_BG[tile.art.tone])}>
-          {pickBurstImages(products, tile.cat, PRINT_SLOTS.length).map((item, i) => (
-            <BurstPiece key={item.key} slot={PRINT_SLOTS[i]} index={i}>
-              {(piece) => (
-                <span className={clsx("rounded-[var(--radius-md)] bg-white p-1.5 shadow-[var(--shadow-card)]", piece.className)} style={piece.style}>
-                  <img src={item.src} alt="" loading="lazy" decoding="async" className="block aspect-square w-full rounded-[var(--radius-sm)] object-contain" />
-                </span>
-              )}
-            </BurstPiece>
-          ))}
-        </span>
-      )}
+      {/* The art sits behind the copy, so the title's stretched link (laid
+          over the whole tile) catches a click anywhere on the card. */}
+      <span className="absolute inset-0 -z-10">
+        {tile.art.kind === "photo" && (
+          <>
+            <img
+              src={tile.art.src}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="gt-alt-tile-art absolute inset-0 h-full w-full object-cover"
+              style={{ objectPosition: tile.art.position }}
+            />
+            <Scrim />
+          </>
+        )}
+        {tile.art.kind === "feature" && <FeatureArt products={products} cat={tile.cat} art={tile.art} />}
+        {tile.art.kind === "burst" && (
+          <span aria-hidden="true" className={clsx("gt-alt-tile-art absolute inset-0", TONE_BG[tile.art.tone])}>
+            {tile.art.pieces.slice(0, GEM_SLOTS.length).map((name, i) => (
+              <BurstPiece key={name} slot={GEM_SLOTS[i]} index={i}>
+                {(piece) => <img src={photo(name)} alt="" loading="lazy" decoding="async" className={clsx("gt-alt-gem", piece.className)} style={piece.style} />}
+              </BurstPiece>
+            ))}
+          </span>
+        )}
+        {tile.art.kind === "productBurst" && (
+          <span aria-hidden="true" className={clsx("gt-alt-tile-art absolute inset-0", TONE_BG[tile.art.tone])}>
+            {pickBurstImages(products, tile.cat, PRINT_SLOTS.length).map((item, i) => (
+              <BurstPiece key={item.key} slot={PRINT_SLOTS[i]} index={i}>
+                {(piece) => (
+                  <span className={clsx("rounded-[var(--radius-md)] bg-white p-1.5 shadow-[var(--shadow-card)]", piece.className)} style={piece.style}>
+                    <img src={item.src} alt="" loading="lazy" decoding="async" className="block aspect-square w-full rounded-[var(--radius-sm)] object-contain" />
+                  </span>
+                )}
+              </BurstPiece>
+            ))}
+          </span>
+        )}
+      </span>
 
-      <span className={clsx("relative grid gap-1.5 p-[clamp(18px,2vw,28px)]", photoTile ? "text-[var(--gt-off-white)]" : "text-[var(--gt-ink-900)]")}>
+      <span className={clsx("grid gap-1.5 p-[clamp(18px,2vw,28px)]", photoTile ? "text-[var(--gt-off-white)]" : "text-[var(--gt-ink-900)]")}>
         <span aria-hidden="true" className={clsx("text-[11px] font-semibold tabular-nums tracking-[var(--tracking-eyebrow)]", photoTile ? "text-[var(--gt-blue-200)]" : "text-[var(--gt-blue-700)]")}>
           {String(index + 1).padStart(2, "0")}
         </span>
@@ -250,8 +254,8 @@ function CategoryTile({ tile, index, families }: { tile: Tile; index: number; fa
             photoTile ? "text-[var(--gt-off-white)]" : "text-[var(--gt-ink-900)]",
           )}
         >
-          {/* Stretched link: its ::after covers the whole tile; the family
-              links below sit above it. */}
+          {/* Stretched link: its ::after covers the whole tile (the art lies
+              behind the copy); the family links below sit above it. */}
           <Link to={shopHref(tile.cat)} className="gt-alt-tile-link text-[inherit] after:absolute after:inset-0 after:content-['']">
             {name}
           </Link>
@@ -260,13 +264,14 @@ function CategoryTile({ tile, index, families }: { tile: Tile; index: number; fa
           {t(`homeAlt.categories.${tile.copyKey}`)}
         </span>
         {families.length > 0 && (
-          <ul aria-label={t("homeAlt.categories.families", { name })} className="relative z-[1] m-0 mt-1 flex list-none flex-wrap gap-1.5 p-0">
+          <ul aria-label={t("homeAlt.categories.families", { name })} className="pointer-events-none relative z-[1] m-0 mt-1 flex list-none flex-wrap gap-1.5 p-0">
             {families.map((family) => (
               <li key={family.slug}>
                 <Link
                   to={familyEntryHref(tile.cat, family.slug)}
                   className={clsx(
-                    "inline-flex h-7 items-center rounded-[var(--radius-pill)] border px-3 text-[11.5px] font-semibold transition-colors duration-[var(--duration-fast)]",
+                    // The row lets clicks between the pills through to the tile's link.
+                    "pointer-events-auto inline-flex h-7 items-center rounded-[var(--radius-pill)] border px-3 text-[11.5px] font-semibold transition-colors duration-[var(--duration-fast)]",
                     photoTile
                       ? "border-white/40 bg-white/10 text-[var(--gt-off-white)] backdrop-blur-sm hover:bg-white/25"
                       : "border-[var(--gt-ink-900)]/20 bg-white/55 text-[var(--gt-ink-900)] hover:bg-white/90",
@@ -299,20 +304,20 @@ function Scrim() {
 
 /**
  * The featured product filling the tile, zoomed in on white. Until the
- * catalogue holds it the tile shows its brand tint.
+ * catalogue holds it the tile shows its fallback photograph, else its tint.
  */
 function FeatureArt({ products, cat, art }: { products: Product[]; cat: string; art: Extract<TileArt, { kind: "feature" }> }) {
   const product = pickFeaturedProduct(products, { cat, family: art.family, slugs: art.slugs });
-  if (!product) return <span aria-hidden="true" className={clsx("absolute inset-0", TONE_BG.brand)} />;
+  if (!product && !art.fallback) return <span aria-hidden="true" className={clsx("absolute inset-0", TONE_BG.brand)} />;
   return (
     <>
       <span aria-hidden="true" className="gt-alt-tile-art absolute inset-0 overflow-hidden">
         <img
-          src={product.image}
+          src={product?.image ?? art.fallback}
           alt=""
           loading="lazy"
           decoding="async"
-          className="h-full w-full scale-[1.18] object-cover"
+          className={clsx("h-full w-full object-cover", product && "scale-[1.18]")}
           style={{ objectPosition: "50% 40%" }}
         />
       </span>
@@ -322,9 +327,8 @@ function FeatureArt({ products, cat, art }: { products: Product[]; cat: string; 
 }
 
 /**
- * One piece of a burst, placed on its slot by a box with no transform (a
- * transformed ancestor would isolate the multiply blend from the tint). The
- * piece itself tilts, floats and, on hover, flies outwards from the centre.
+ * One piece of a burst, placed on its slot. The piece itself tilts, floats
+ * and, on hover, flies outwards from the centre.
  */
 function BurstPiece({ slot, index, children }: { slot: Slot; index: number; children: (piece: { className: string; style: CSSProperties }) => ReactNode }) {
   const width = `min(${slot.w}%, ${slot.max}px)`;
