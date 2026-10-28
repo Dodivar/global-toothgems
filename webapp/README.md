@@ -395,6 +395,8 @@ The hero reflects the visitor's own state — enrolled, in progress, completed �
 
 Every route into a training now lands here rather than on the login form: both home pages, the Academy marketplace, the header's Academy panel and both footers' Academy columns. The course cards are real links (`components/academy/AcademyCourseCard.tsx`, shared by the home page's band and the marketplace; `CourseCard` takes a `to` for the same reason) — a public page has to be openable in a new tab and crawlable — and `lib/academyUrl.ts` holds the path the way `lib/shopUrl.ts` holds the filtered-collection ones. Only the learner's own pages (`/academy/mes-formations/…`, and `/academy/lecon`, which forwards to them) stay behind `RequireAccount`: the lessons are the paid content.
 
+The home page's Academy band (`components/homeAlt/academy/`) is being redesigned (2026-10-28): three proposals share their parts (`AcademyBandParts.tsx`: the catalogue's figures counted by `catalogueFigures()`, the course row, the Academy → Studio 3D → shop → Glowbook tiles) — A `AcademyFeatureNight` (ink band, rendered on the home page), B `AcademyFeaturePastel` (pastel blue, learner path), C `AcademyFeatureBento` (photo-led mosaic). Once the owner picks one, the two others and their `homeAlt.academy.*` keys go.
+
 The account is asked for at the purchase, and the training asked for travels with the visitor: pressing "start" while signed out puts the course id in the navigation state, and signing in adds that course to the account before opening the player, so the purchase resumes instead of opening whichever course happened to be active.
 
 ## Account creation (`/inscription`)

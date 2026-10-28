@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { HeroCarousel } from "../components/homeAlt/HeroCarousel";
 import { BestSellersRail } from "../components/homeAlt/BestSellersRail";
 import { CategoryMosaic } from "../components/homeAlt/CategoryMosaic";
-import { AcademyFeature } from "../components/homeAlt/AcademyFeature";
+import { AcademyFeatureNight } from "../components/homeAlt/academy/AcademyFeatureNight";
 import { ReviewFeed } from "../components/homeAlt/ReviewFeed";
 import { StudioVideoFeature } from "../components/homeAlt/StudioVideoFeature";
 import { GiftCardFeature } from "../components/homeAlt/GiftCardFeature";
@@ -30,7 +30,7 @@ export function HomeAlt() {
       <HeroCarousel />
       <BestSellersRail />
       <CategoryMosaic />
-      <AcademyFeature />
+      <AcademyFeatureNight />
       <ReviewFeed />
       <StudioVideoFeature />
       <GiftCardFeature />

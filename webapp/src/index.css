@@ -1966,6 +1966,34 @@
 
   /* Academy ------------------------------------------------------------------ */
   .gt-alt-academy { background: linear-gradient(180deg, var(--gt-off-white) 0%, var(--gt-sand) 100%); }
+  /* Proposal A: the evening atelier, the brand's ink lit by its pastel blue. */
+  .gt-alt-academy-night {
+    background:
+      radial-gradient(50% 45% at 85% 12%, rgba(122, 149, 184, .34), transparent 70%),
+      radial-gradient(45% 40% at 0% 70%, rgba(185, 205, 229, .14), transparent 70%),
+      linear-gradient(180deg, var(--gt-ink-900) 0%, #151b23 100%);
+  }
+  /* Proposal B: the pastel path, the brand's own blue washed with light. */
+  .gt-alt-academy-pastel {
+    background:
+      radial-gradient(55% 45% at 90% 6%, rgba(255, 255, 255, .85), transparent 65%),
+      radial-gradient(50% 40% at 0% 60%, rgba(255, 255, 255, .5), transparent 70%),
+      linear-gradient(180deg, var(--gt-blue-100) 0%, var(--gt-blue-200) 55%, var(--gt-blue-100) 100%);
+  }
+  /* Proposal C: the bento. One column on phones, then named areas. */
+  .gt-alt-bento { grid-template-columns: minmax(0, 1fr); grid-template-areas: "hero" "learn" "cert" "studio" "shop" "figures"; }
+  @media (min-width: 768px) {
+    .gt-alt-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "hero hero" "learn learn" "cert studio" "shop figures"; }
+  }
+  @media (min-width: 1024px) {
+    .gt-alt-bento {
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas: "hero learn learn" "hero cert studio" "figures figures shop";
+    }
+  }
+  .gt-alt-bento-shade {
+    background: linear-gradient(180deg, rgba(17, 17, 17, 0) 25%, rgba(17, 17, 17, .55) 55%, rgba(17, 17, 17, .9) 100%);
+  }
 
   /* Review feed: Pinterest-style pins ------------------------------------- */
   .gt-alt-pin {
