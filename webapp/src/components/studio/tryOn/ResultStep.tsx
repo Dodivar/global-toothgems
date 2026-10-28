@@ -68,7 +68,7 @@ export function ResultStep({
           aria-label={t("studio.tryOn.viewer.open")}
           className="relative grid cursor-zoom-in touch-pan-y place-items-center overflow-hidden rounded-[var(--radius-md)] bg-[var(--surface-sunken)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
         >
-          <img src={shownUrl} alt={shownAlt} draggable={false} className="max-h-[60vh] w-auto max-w-full object-contain" />
+          <img src={shownUrl} alt={shownAlt} draggable={false} className="max-h-[42vh] w-auto max-w-full object-contain sm:max-h-[60vh]" />
           <span aria-hidden="true" className="absolute bottom-2 right-2 inline-grid h-8 w-8 place-items-center rounded-full bg-[rgba(22,26,32,.7)] text-white">
             <Expand size={15} />
           </span>
@@ -85,19 +85,7 @@ export function ResultStep({
       </figure>
       {enlarged && <ResultViewer src={shownUrl} alt={shownAlt} onClose={() => setEnlarged(false)} />}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="sm" iconLeft={before ? EyeOff : Eye} aria-pressed={before} onClick={() => setBefore((v) => !v)}>
-          {t("studio.tryOn.result.before")}
-        </Button>
-        <Button variant="ghost" size="sm" iconLeft={RefreshCw} onClick={onRegenerate}>
-          {t("studio.tryOn.result.regenerate")}
-        </Button>
-        <Button variant="ghost" size="sm" iconLeft={ImageUp} onClick={onNewPhoto}>
-          {t("studio.tryOn.errorActions.newPhoto")}
-        </Button>
-      </div>
-
-      <div className="grid gap-2 border-t border-[var(--border-subtle)] pt-4">
+      <div className="grid gap-2">
         <div className="flex flex-wrap items-center justify-end gap-2">
           {canShare && (
             <Button variant="outline" size="sm" iconLeft={Share} onClick={share}>
@@ -121,6 +109,18 @@ export function ResultStep({
           {state === "failed" && <span className="text-[var(--status-error-fg)]">{t("studio.tryOn.result.shareFailed")}</span>}
         </p>
         <p className="m-0 text-right text-[11.5px] leading-snug text-[var(--text-muted)]">{t("studio.tryOn.result.notStored")}</p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] pt-4">
+        <Button variant="outline" size="sm" iconLeft={before ? EyeOff : Eye} aria-pressed={before} onClick={() => setBefore((v) => !v)}>
+          {t("studio.tryOn.result.before")}
+        </Button>
+        <Button variant="ghost" size="sm" iconLeft={RefreshCw} onClick={onRegenerate}>
+          {t("studio.tryOn.result.regenerate")}
+        </Button>
+        <Button variant="ghost" size="sm" iconLeft={ImageUp} onClick={onNewPhoto}>
+          {t("studio.tryOn.errorActions.newPhoto")}
+        </Button>
       </div>
     </div>
   );

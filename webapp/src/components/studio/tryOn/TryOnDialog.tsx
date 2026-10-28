@@ -174,13 +174,16 @@ export function TryOnDialog({
         <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("studio.tryOn.empty")}</p>
       ) : (
         <>
-          <ProgressBar
-            variant="steps"
-            tone="ink"
-            doneTone="success"
-            steps={[t("studio.tryOn.steps.photo"), t("studio.tryOn.steps.check"), t("studio.tryOn.steps.render"), t("studio.tryOn.steps.result")]}
-            current={stepIndex(step)}
-          />
+          {/* The result is on screen: the stepper would only push download / share below the fold. */}
+          {step.kind !== "result" && (
+            <ProgressBar
+              variant="steps"
+              tone="ink"
+              doneTone="success"
+              steps={[t("studio.tryOn.steps.photo"), t("studio.tryOn.steps.check"), t("studio.tryOn.steps.render"), t("studio.tryOn.steps.result")]}
+              current={stepIndex(step)}
+            />
+          )}
 
           {step.kind === "photo" && (
             <PhotoStep
