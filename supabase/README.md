@@ -1481,8 +1481,10 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
 - **Not connected yet**: without both secrets the function answers `{available:false}` and `not_available` (503)
   before reading anything, and the dialog says the render is coming and sends nothing. Connecting it (owner's
   Google policy, 2026-10-25: no API key, Application Default Credentials only) = `GEMINI_IMAGE_MODEL=<model id>` +
-  `GOOGLE_ADC_JSON=<content of the file written by gcloud auth application-default login>` (optional
-  `GOOGLE_CLOUD_PROJECT`, default the file's `quota_project_id`; `GOOGLE_CLOUD_LOCATION`, default `global`): the
+  `GOOGLE_ADC_JSON=<content of a service account key (type `service_account`, since 2026-10-28, the dedicated
+  account with the Vertex AI User role; the function signs a JWT and trades it for a token, no
+  `x-goog-user-project`) or of the file written by gcloud auth application-default login>` (optional
+  `GOOGLE_CLOUD_PROJECT`, default the file's `project_id` / `quota_project_id`; `GOOGLE_CLOUD_LOCATION`, default `global`): the
   function trades the refresh token for a short-lived access token (cached until it expires) and calls Vertex AI
   with `x-goog-user-project`. These are a **person's** credentials (the owner's Google account, scope
   cloud-platform): fine to start, but they stop working if the account's password changes or the token is revoked
