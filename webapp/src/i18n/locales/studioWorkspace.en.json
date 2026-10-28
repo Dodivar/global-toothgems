@@ -811,7 +811,6 @@
     "preferenceFailed": "Your layout choice could not be saved on your account."
   },
   "share": {
-    "menuSub": "A read-only link to the saved version",
     "title": "Share read-only",
     "intro": "Send this link: whoever receives it sees “{{name}}” in 3D, without being able to change it.",
     "linkLabel": "Share link",

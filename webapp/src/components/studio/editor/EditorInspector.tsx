@@ -5,6 +5,7 @@ import {
   AlignCenterVertical,
   AlignHorizontalSpaceAround,
   ChevronDown,
+  ChevronRight,
   Copy,
   ExternalLink,
   Crosshair,
@@ -340,10 +341,13 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         </button>
       </div>
       <div className="mt-2 flex gap-2">
-        <button type="button" className={miniButton} onClick={distributeSelection}>
-          <AlignHorizontalSpaceAround size={14} aria-hidden="true" />
-          {t("studio.editor.inspector.distribute")}
-        </button>
+        {/* Spacing needs a piece between the two outermost ones. */}
+        {selected.length >= 3 && (
+          <button type="button" className={miniButton} onClick={distributeSelection}>
+            <AlignHorizontalSpaceAround size={14} aria-hidden="true" />
+            {t("studio.editor.inspector.distribute")}
+          </button>
+        )}
         <button
           type="button"
           className={miniButton}
@@ -526,16 +530,18 @@ function ToothPanel({ snap, toothId }: { snap: StudioSnapshot; toothId: string }
   const onTooth = snap.jewels.filter((j) => j.toothId === toothId);
   return (
     <>
+      {/* One line: the FDI number and the tooth's name; on an imported model the identification is approximate. */}
       <div className="flex items-start justify-between gap-2">
-        <p className="m-0 text-[46px] font-[var(--weight-black)] leading-[.95] tracking-[var(--tracking-display)] text-[var(--text-primary)]">
-          #{toothId}
-        </p>
-        <SectionInfo topic={t("studio.editor.inspector.camera")} helpTopic="camera" className="mt-1">
+        <h2 className="m-0 text-[length:var(--text-h4)] font-bold leading-tight text-[var(--text-primary)]">
+          <span className="font-[var(--weight-black)] tabular-nums">#{toothId}</span>
+          <span aria-hidden="true" className="text-[var(--text-subtle)]"> · </span>
+          {toothName(toothId)}
+        </h2>
+        <SectionInfo topic={t("studio.editor.inspector.camera")} helpTopic="camera" className="mt-0.5">
           {t("studio.editor.inspector.cameraHint")}
         </SectionInfo>
       </div>
-      <h2 className="m-0 mt-2 text-[length:var(--text-h4)] font-bold leading-tight text-[var(--text-primary)]">{toothName(toothId)}</h2>
-      <Hint className="mt-1">{t(snap.modelMode === "free" ? "studio.editor.inspector.fdiApprox" : "studio.editor.inspector.fdi")}</Hint>
+      {snap.modelMode === "free" && <Hint className="mt-1">{t("studio.editor.inspector.fdiApprox")}</Hint>}
 
       <SectionLabel>{t("studio.editor.inspector.piecesOnTooth")}</SectionLabel>
       {onTooth.length === 0 && <Hint>{t("studio.editor.inspector.toothEmpty")}</Hint>}
@@ -549,12 +555,6 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
   const { byKey } = useStudioGems();
   const zones = new Set(snap.jewels.map((j) => j.toothId)).size;
   const total = estimateComposition(snap.jewels, (key) => byKey.get(key)).totalMinor;
-  const stat = (value: string | number, label: string) => (
-    <div className="grid flex-1 gap-0.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-page)] p-3 text-center">
-      <strong className="text-[22px] font-[var(--weight-black)] leading-none text-[var(--text-primary)]">{value}</strong>
-      <span className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--text-subtle)]">{label}</span>
-    </div>
-  );
   const shortcuts = [
     "undoRedo",
     "selectAll",
@@ -572,16 +572,14 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
   return (
     <>
       <h2 className="sr-only">{t("studio.editor.inspector.overview")}</h2>
-      <div className="flex gap-2">
-        {stat(snap.jewels.length, t("studio.editor.inspector.pieces"))}
-        {stat(zones, t("studio.editor.inspector.zones"))}
-      </div>
-      {total > 0 && (
-        <div className="mt-2 flex items-baseline justify-between rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-3 py-2.5">
+      {/* The piece count is in the top bar; here the teeth decorated and the estimate. */}
+      {snap.jewels.length > 0 && (
+        <div className="flex items-baseline justify-between rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-3 py-2.5">
           <span className="text-[11px] font-bold uppercase tracking-[.1em] text-[var(--gt-blue-700)]">
-            {t("studio.editor.inspector.estimate")}
+            {t("studio.editor.inspector.teethCount", { count: zones })}
+            {total > 0 && ` · ${t("studio.editor.inspector.estimate")}`}
           </span>
-          <strong className="text-[18px] font-[var(--weight-black)] text-[var(--text-primary)]">{formatEstimate(total)}</strong>
+          {total > 0 && <strong className="text-[18px] font-[var(--weight-black)] text-[var(--text-primary)]">{formatEstimate(total)}</strong>}
         </div>
       )}
       {/* Stays in view: it qualifies the price shown just above. */}
@@ -592,10 +590,18 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
       <SectionLabel info={t("studio.editor.shopping.hint")} topic="shoppingList">{t("studio.editor.shopping.title")}</SectionLabel>
       <ShoppingList jewels={snap.jewels} />
 
-      {/* Keyboard and mouse shortcuts mean nothing on a touch screen. */}
-      <div className="max-lg:hidden">
-        <SectionLabel>{t("studio.editor.shortcuts.title")}</SectionLabel>
-        <dl className="m-0 grid gap-1">
+      {/* Keyboard and mouse shortcuts mean nothing on a touch screen; folded until asked for. */}
+      <details className="group mt-5 max-lg:hidden">
+        <summary
+          className={clsx(
+            "flex cursor-pointer list-none items-center gap-1.5 rounded-[var(--radius-sm)] text-[11px] font-bold uppercase tracking-[.1em] text-[var(--text-subtle)] hover:text-[var(--text-primary)] [&::-webkit-details-marker]:hidden",
+            focusRing,
+          )}
+        >
+          <ChevronRight size={13} aria-hidden="true" className="transition-transform group-open:rotate-90 motion-reduce:transition-none" />
+          {t("studio.editor.shortcuts.title")}
+        </summary>
+        <dl className="m-0 mt-2 grid gap-1">
           {shortcuts.map((key) => (
             <div key={key} className="flex items-center justify-between gap-3 py-0.5 text-[11.5px] text-[var(--text-muted)]">
               <dt>{t(`studio.editor.shortcuts.${key}`)}</dt>
@@ -614,7 +620,7 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
             </div>
           ))}
         </dl>
-      </div>
+      </details>
     </>
   );
 }

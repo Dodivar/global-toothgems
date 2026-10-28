@@ -811,7 +811,6 @@
     "preferenceFailed": "Votre choix d’affichage n’a pas pu être enregistré sur votre compte."
   },
   "share": {
-    "menuSub": "Un lien en lecture seule vers la version enregistrée",
     "title": "Partager en lecture seule",
     "intro": "Envoyez ce lien : la personne qui le reçoit voit « {{name}} » en 3D, sans pouvoir le modifier.",
     "linkLabel": "Lien de partage",
