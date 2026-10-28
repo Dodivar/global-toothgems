@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Product } from "../../data/products";
-import { jsonLdScript, productAddresses, productDescription, productJsonLd, productTitle, richTextToPlain, truncate } from "./productMeta";
+import { jsonLdScript, productAddresses, productDescription, productJsonLd, productMetaDescription, productTitle, richTextToPlain, truncate } from "./productMeta";
 
 const product: Product = {
   id: "coeur-chrome",
@@ -31,6 +31,20 @@ describe("product page head", () => {
     expect(productDescription(product, "fr")).toBe("Un cœur chromé. poli miroir");
     // Without a description: the line the page shows instead.
     expect(productDescription({ ...product, description: undefined }, "en")).toBe("Chrome Heart — Chrome.");
+  });
+
+  it("prefers the catalogue's search title and description when it sets them", () => {
+    const seo: Product = {
+      ...product,
+      metaTitle: { fr: "Strass dentaire Cœur Chrome", en: "Chrome Heart Tooth Gem" },
+      metaDescription: { fr: "Un cœur chromé pour la dent.", en: "A chrome heart for your tooth." },
+    };
+    expect(productTitle(seo, "en")).toBe("Chrome Heart Tooth Gem · Global Toothgems");
+    expect(productMetaDescription(seo, "fr")).toBe("Un cœur chromé pour la dent.");
+    // The structured data keeps describing the product itself.
+    expect(productDescription(seo, "en")).toBe("A chrome heart.");
+    // Without them, the name and the description are used.
+    expect(productMetaDescription(product, "en")).toBe("A chrome heart.");
   });
 
   it("cuts long descriptions at a word", () => {

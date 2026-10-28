@@ -38,6 +38,9 @@ export interface ProductTranslationRow extends TranslationRow, SpecColumns {
   slug: string | null;
   short_description: string | null;
   description: string | null;
+  /** Search-engine title and description in this language (`products` holds French). */
+  meta_title?: string | null;
+  meta_description?: string | null;
 }
 
 export type StockStatus = "in_stock" | "low_stock" | "out_of_stock" | "preorder";
@@ -84,6 +87,8 @@ export interface ProductRow extends SpecColumns {
   name: string;
   short_description: string | null;
   description: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
   price: number;
   compare_at_price: number | null;
   currency: string;
@@ -268,6 +273,11 @@ export function mapProduct(
     ? localize(row.description, row.product_translations, (t) => t.description)
     : undefined;
 
+  const metaTitle = row.meta_title ? localize(row.meta_title, row.product_translations, (t) => t.meta_title) : undefined;
+  const metaDescription = row.meta_description
+    ? localize(row.meta_description, row.product_translations, (t) => t.meta_description)
+    : undefined;
+
   const specs = mapSpecs(row);
   const material = specs.material?.fr ?? "";
   const categoryName = row.category
@@ -334,6 +344,8 @@ export function mapProduct(
     // simply never shows up in the colour filter.
     color: metadataString(row.metadata, "color"),
     description: longDescription ?? shortDescription,
+    metaTitle,
+    metaDescription,
     specs: Object.keys(specs).length > 0 ? specs : undefined,
     gallery: images.length > 0 ? images : undefined,
     variants: variants.length > 0 ? variants : undefined,

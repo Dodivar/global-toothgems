@@ -162,6 +162,9 @@ export interface Product {
   /** Gems only, like `shape`. */
   color?: GemColor;
   description?: Localized;
+  /** Title and description search engines show for the page, when the catalogue sets them. */
+  metaTitle?: Localized;
+  metaDescription?: Localized;
   /**
    * The characteristics the product page lists (gems only), each optional:
    * a value the catalogue does not hold is not shown.

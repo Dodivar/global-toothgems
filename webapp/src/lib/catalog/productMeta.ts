@@ -57,8 +57,15 @@ export function productAddresses(product: Product): Record<Locale, string> {
   };
 }
 
+/** The catalogue's search title when it sets one, else the product's name. */
 export function productTitle(product: Product, locale: Locale): string {
-  return `${pick(product.name, locale)} · ${SITE_NAME}`;
+  const title = product.metaTitle ? pick(product.metaTitle, locale) : pick(product.name, locale);
+  return `${title} · ${SITE_NAME}`;
+}
+
+/** What search engines show under the title: the catalogue's own line, else `productDescription`. */
+export function productMetaDescription(product: Product, locale: Locale): string {
+  return (product.metaDescription ? pick(product.metaDescription, locale) : "") || productDescription(product, locale);
 }
 
 /** The description the page shows, else its fallback line (`ProductDetail`). */
