@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, Expand, Eye, EyeOff, ImageUp, RefreshCw, Share, Sparkles } from "lucide-react";
+import { Download, Expand, Eye, EyeOff, ImageUp, Info, RefreshCw, Share, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { resultExtension, type TryOnCreation } from "../../../lib/studio3d/tryOn";
@@ -29,6 +29,7 @@ export function ResultStep({
   photo,
   image,
   imageUrl,
+  leftOut,
   creation,
   onRegenerate,
   onNewPhoto,
@@ -37,6 +38,8 @@ export function ResultStep({
   image: Blob;
   /** An object URL of `image`, owned (and revoked) by the dialog. */
   imageUrl: string;
+  /** Gems the AI did not draw because their spot does not show on the photo (the function's photo check). */
+  leftOut: number;
   creation: TryOnCreation;
   onRegenerate: () => void;
   onNewPhoto: () => void;
@@ -83,6 +86,12 @@ export function ResultStep({
         </button>
         <figcaption className="text-[12px] leading-snug text-[var(--text-muted)]">{t("studio.tryOn.result.disclaimer")}</figcaption>
       </figure>
+      {leftOut > 0 && (
+        <p className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-sunken)] px-3 py-2 text-[12.5px] leading-snug text-[var(--text-body)]">
+          <Info size={15} aria-hidden="true" className="mt-px shrink-0" />
+          {t("studio.tryOn.result.leftOut", { count: leftOut })}
+        </p>
+      )}
       {enlarged && <ResultViewer src={shownUrl} alt={shownAlt} onClose={() => setEnlarged(false)} />}
 
       <div className="grid gap-2">

@@ -24,7 +24,8 @@ export const DEFAULT_CHECK_MODEL = "gemini-3.1-flash-lite";
  */
 export const MIN_TEETH_SPAN = 0.25;
 
-export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry"] as const;
+/** `design_hidden`: not one gem of the design has its spot visible in this photo (`placeableGems`). */
+export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry", "design_hidden"] as const;
 export type PhotoIssue = (typeof PHOTO_ISSUES)[number];
 
 export const PHOTO_CHECK_PROMPT = `You check a photo before a tooth gem try-on: gems will be drawn on the person's front teeth.
@@ -37,6 +38,7 @@ Look at the photo and report facts only, as JSON matching the schema:
 - lighting: "good", "dim" (darker but the teeth are readable), "too_dark" (the teeth are hard to see) or "overexposed" (the teeth are burnt white, no detail).
 - head_pose: how the smile faces the camera — "frontal" (facing it), "slightly_turned" (a little to one side, up or down, the front teeth still face the camera) or "strongly_turned" (a three-quarter view or a steep angle from below or above: the front teeth are seen at a slant and one side of the smile is much more visible than the other).
 - central_incisors_visible: true when BOTH upper central incisors (the two front teeth on either side of the middle of the smile) are clearly visible and face the camera; false when one of them is hidden, cut off or seen edge-on.
+- gem_spots: when the text after the photo lists GEM SPOTS, one entry per spot, with its id and placeable. Empty array when no spots are listed. placeable is false only when that spot of that tooth's front surface is clearly NOT visible enamel in this photo: covered by a lip, hidden behind the upper teeth (the biting edge of the lower teeth often is), cut off by the photo's edge, the tooth itself hidden or missing — or when the enamel seen there is clearly too small to hold a gem of that size. On a lower tooth the gum line is at the BOTTOM of the crown and the biting edge at the top.
 Report what you see; when unsure, choose the more favourable value.`;
 
 /** Gemini's `responseSchema` (OpenAPI subset). */
@@ -51,8 +53,12 @@ export const PHOTO_CHECK_SCHEMA = {
     lighting: { type: "STRING", enum: ["good", "dim", "too_dark", "overexposed"] },
     head_pose: { type: "STRING", enum: ["frontal", "slightly_turned", "strongly_turned"] },
     central_incisors_visible: { type: "BOOLEAN" },
+    gem_spots: {
+      type: "ARRAY",
+      items: { type: "OBJECT", properties: { id: { type: "STRING" }, placeable: { type: "BOOLEAN" } }, required: ["id", "placeable"] },
+    },
   },
-  required: ["teeth_visible", "teeth_covered", "teeth_box", "central_incisors_box", "sharpness", "lighting", "head_pose", "central_incisors_visible"],
+  required: ["teeth_visible", "teeth_covered", "teeth_box", "central_incisors_box", "sharpness", "lighting", "head_pose", "central_incisors_visible", "gem_spots"],
 };
 
 export interface PhotoVerdict {

@@ -30,7 +30,7 @@ type Step =
   | { kind: "photo" }
   | { kind: "processing"; stage: TryOnStage }
   | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[]; stage: TryOnStage }
-  | { kind: "result"; image: Blob; url: string };
+  | { kind: "result"; image: Blob; url: string; leftOut: number };
 
 /** The stepper: photo, the photo check, the render, the result. An error stays on the stage it happened at. */
 const STAGE_INDEX: Record<TryOnStage, number> = { checking: 1, rendering: 2 };
@@ -143,7 +143,7 @@ export function TryOnDialog({
       if (controller.signal.aborted) return;
       if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
       resultUrl.current = URL.createObjectURL(image);
-      return setStep({ kind: "result", image, url: resultUrl.current });
+      return setStep({ kind: "result", image, url: resultUrl.current, leftOut: outcome.leftOut ?? 0 });
     }
     if (outcome.code === "not_available") {
       setAi("unavailable");
@@ -244,6 +244,7 @@ export function TryOnDialog({
               photo={photo}
               image={step.image}
               imageUrl={step.url}
+              leftOut={step.leftOut}
               creation={creation}
               onRegenerate={() => void render()}
               onNewPhoto={() => setStep({ kind: "photo" })}

@@ -1434,7 +1434,11 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
                             → the creation must hold at least one valid gem (else not_found)
                             → photo check (photoCheck.ts, TRY_ON_CHECK_MODEL, default gemini-3.1-flash-lite, JSON
                               answer) → refused: row 'failed' / 'photo_unsuitable', 422 with the reasons, no render;
-                              check unavailable: render anyway
+                              check unavailable: render anyway. Since 2026-10-28 the check also gets the design's GEM
+                              SPOTS (prompt.ts gemSpots: tooth, cut, size, place on the crown, named g1…) and says
+                              which are not visible enamel on the photo (lip, upper teeth, edge of the photo); those
+                              gems are marked LEFT OUT in the design data (never drawn), the answer carries left_out
+                              (the dialog says how many), and a design with no visible gem is refused (design_hidden)
                             → mouth close-up (crop.ts, since 2026-10-26; TRY_ON_MOUTH_CROP=off disables it): the
                               check's teeth_box widened to the lips and to the nearest output proportion, cut
                               from the JPEG (npm:jpeg-js) and sent as IMAGE 2 instead of the whole photo; the

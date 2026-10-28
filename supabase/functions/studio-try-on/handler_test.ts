@@ -5,7 +5,7 @@ import { mouthCrop, nearestRatio } from "./crop.ts";
 import { accessToken, generateImage, generateUrl, imageModelConfig, nearestAspectRatio, readAdcJson, readImage, resetTokenCache } from "./gemini.ts";
 import { handleStudioTryOn, headerSize, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
 import { imageSize, judgePhoto, MIN_TEETH_SPAN, photoScale } from "./photoCheck.ts";
-import { buildDesignData, piecesFromScene, readSeats, toothLabel } from "./prompt.ts";
+import { buildDesignData, gemSpots, leftOutGems, piecesFromScene, readSeats, toothLabel } from "./prompt.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
 const SITE = "https://global-toothgems.example";
@@ -562,6 +562,44 @@ Deno.test("render size: what was sent and what came back are logged, sizes only"
   const size = logs.find(([m]) => m === "render size")?.[1] as Record<string, unknown>;
   assertEquals(size.received, { width: 100, height: 50 });
   assertEquals(size.ratio_dropped, true);
+});
+
+Deno.test("gem spots: the check reads each gem's spot; hidden ones are left out, named and never counted", async () => {
+  const pieces = piecesFromScene(SCENE);
+  const spots = gemSpots(pieces);
+  assertEquals([...spots.ids.entries()], [["g1", "p1"], ["g2", "p2"]]);
+  assertStringIncludes(spots.text!, "g2: tooth 12 (upper right lateral incisor) — a 4 mm heart gem");
+  // Only an explicit false leaves a gem out; unknown ids and missing answers keep it.
+  assertEquals([...leftOutGems({ gem_spots: [{ id: "G2", placeable: false }, { id: "g9", placeable: false }, { id: "g1" }] }, spots.ids)], ["p2"]);
+  assertEquals(leftOutGems({}, spots.ids).size, 0);
+  const data = buildDesignData(pieces, new Map(), null, false, false, false, new Set(["p2"]));
+  assertStringIncludes(data, "DESIGN DATA — exactly 1 gem to draw, no more.");
+  assertStringIncludes(data, "1 gem is LEFT OUT");
+  assertStringIncludes(data, "A gem of tooth 12. LEFT OUT");
+
+  // Through the handler: the spots go to the check, the render leaves the gem out, the answer says how many.
+  let sent: string | null = null;
+  const { deps, calls } = fake({
+    checkPhoto: (_photo, text) => {
+      sent = text;
+      return Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, gem_spots: [{ id: "g2", placeable: false }] } });
+    },
+  });
+  const res = await handleStudioTryOn(post(form()), deps);
+  assertEquals(res.status, 200);
+  assertEquals((await res.json()).left_out, 1);
+  assertStringIncludes(sent!, "GEM SPOTS");
+  assertStringIncludes(calls.data, "LEFT OUT");
+
+  // Not one gem visible: refused like an unsuitable photo, no render.
+  const none = fake({
+    checkPhoto: () => Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, gem_spots: [{ id: "g1", placeable: false }, { id: "g2", placeable: false }] } }),
+  });
+  const refused = await handleStudioTryOn(post(form()), none.deps);
+  assertEquals(refused.status, 422);
+  assertEquals((await refused.json()).reasons, ["design_hidden"]);
+  assertEquals(none.calls.images.length, 0);
+  assertEquals(none.calls.finished, ["failed:photo_unsuitable"]);
 });
 
 /* ------------------------------------------------------------ mouth crop */

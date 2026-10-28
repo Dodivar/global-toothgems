@@ -3,7 +3,7 @@ import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./gemini.ts";
 import { cropJpeg, mouthCrop, type CropRect } from "./crop.ts";
 import { imageSize, judgePhoto, photoScale } from "./photoCheck.ts";
-import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
+import { buildDesignData, gemSpots, leftOutGems, piecesFromScene, readSeats } from "./prompt.ts";
 
 /**
  * POST /functions/v1/studio-try-on   (decision 111)
@@ -31,12 +31,15 @@ import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
  *             gems by id
  *     progress  optional "1": the answer is an event stream instead (see
  *             `progressStream`), so the browser shows the photo check as a step
- *     200 { ok: true, image: { mime_type, data }, crop? }   base64, never stored;
+ *     200 { ok: true, image: { mime_type, data }, crop?, left_out? }   base64, never stored;
  *             crop { x, y, width, height, photo_width, photo_height }: the image
- *             is the edited mouth close-up, to paste back at that place of the photo (`crop.ts`)
+ *             is the edited mouth close-up, to paste back at that place of the photo (`crop.ts`);
+ *             left_out: how many gems were not drawn because the photo check
+ *             found their spot not visible (`prompt.ts` `gemSpots`, 2026-10-28)
  *     422 { ok: false, code: "photo_unsuitable", reasons }  the photo check
  *             (`photoCheck.ts`) refused the photo: too_far | not_frontal | no_teeth |
- *             teeth_hidden | too_dark | too_bright | blurry — no generation
+ *             teeth_hidden | too_dark | too_bright | blurry | design_hidden (no
+ *             gem's spot visible) — no generation
  *   status call (JSON `{ "action": "status" }`, no account needed):
  *     200 { available, daily_limit, quota }  quota: the signed-in caller's
  *             { limit, remaining } renders over the last 24 hours,
@@ -86,8 +89,11 @@ export interface StudioTryOnDeps {
   cropMouth: boolean;
   /** Whether the prompt reads the flat design map (IMAGE 3): v3 only; v1 never gets it. */
   readsMap: boolean;
-  /** The photo check model's answer (`photoCheck.ts`), or why there is none; absent: no check. */
-  checkPhoto?(photo: InlineImage): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
+  /**
+   * The photo check model's answer (`photoCheck.ts`), or why there is none; absent: no check.
+   * `spots`: the design's gem spots (`gemSpots`), sent after the photo so the check says which are visible.
+   */
+  checkPhoto?(photo: InlineImage, spots: string | null): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
   /**
    * Sends the images, in this order, with the system instructions; `designData`
    * (the gems as text, from the database) follows them when the prompt version reads it.
@@ -311,8 +317,10 @@ async function checkAndRender(
 ): Promise<Ending> {
   let mmShare: number | null = null;
   let teethBox: unknown = null;
+  let leftOut = new Set<string>();
   if (deps.checkPhoto) {
-    const answer = await deps.checkPhoto({ mimeType: photo.mimeType, data: photo.data }).catch((error) => ({
+    const spots = gemSpots(pieces, seats);
+    const answer = await deps.checkPhoto({ mimeType: photo.mimeType, data: photo.data }, spots.text).catch((error) => ({
       ok: false as const,
       detail: error instanceof Error ? error.message : String(error),
     }));
@@ -320,6 +328,10 @@ async function checkAndRender(
       const verdict = judgePhoto(answer.value, photo.size);
       mmShare = photoScale(answer.value, photo.size);
       teethBox = answer.value.teeth_box;
+      leftOut = leftOutGems(answer.value, spots.ids);
+      // Not one gem the model could draw: the photo does not show the design's teeth.
+      const drawable = pieces.filter((p) => seats.get(p.id)?.front !== false && !leftOut.has(p.id)).length;
+      if (drawable === 0 && verdict.issues.length === 0) verdict.issues.push("design_hidden");
       // Facts only, never the photo: they tune the thresholds.
       deps.log("photo check", {
         span: verdict.span,
@@ -329,6 +341,8 @@ async function checkAndRender(
         pose: answer.value.head_pose,
         centrals: answer.value.central_incisors_visible,
         mm: mmShare === null ? null : Math.round(mmShare * 10000) / 10000,
+        spots: spots.ids.size,
+        left_out: leftOut.size,
       });
       if (verdict.issues.length > 0) {
         await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
@@ -365,7 +379,7 @@ async function checkAndRender(
     if (map && overview) images.push({ mimeType: overview.mimeType, data: overview.data });
     outcome = await deps.generate(
       [...images, ...references],
-      buildDesignData(pieces, seats, scale, map !== null, edited !== null, overview !== null),
+      buildDesignData(pieces, seats, scale, map !== null, edited !== null, overview !== null, leftOut),
       aspectRatio,
     );
   } catch (error) {
@@ -386,11 +400,18 @@ async function checkAndRender(
     ratio_dropped: outcome.aspectRatioDropped === true,
   });
   const image = { mime_type: outcome.image.mimeType, data: outcome.image.data };
-  if (!edited || !photo.size) return { status: 200, body: { ok: true, image } };
+  // How many gems were left out because their spot does not show on the photo: the dialog says so.
+  const omitted = leftOut.size ? { left_out: leftOut.size } : {};
+  if (!edited || !photo.size) return { status: 200, body: { ok: true, image, ...omitted } };
   const { crop } = edited;
   return {
     status: 200,
-    body: { ok: true, image, crop: { x: crop.x, y: crop.y, width: crop.width, height: crop.height, photo_width: photo.size.width, photo_height: photo.size.height } },
+    body: {
+      ok: true,
+      image,
+      ...omitted,
+      crop: { x: crop.x, y: crop.y, width: crop.width, height: crop.height, photo_width: photo.size.width, photo_height: photo.size.height },
+    },
   };
 }
 

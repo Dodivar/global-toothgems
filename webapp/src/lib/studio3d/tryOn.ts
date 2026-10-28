@@ -63,14 +63,17 @@ export type TryOnErrorCode = (typeof TRY_ON_ERROR_CODES)[number];
  * Why the function's photo check refused a photo (`photo_unsuitable`,
  * `photoCheck.ts` in the function): each one has a message saying what to change.
  */
-export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry"] as const;
+export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry", "design_hidden"] as const;
 export type PhotoIssue = (typeof PHOTO_ISSUES)[number];
 
 /** Where a render is, as the function reports it: the photo check, then the AI render. */
 export type TryOnStage = "checking" | "rendering";
 
-/** `crop`: the image is the edited mouth close-up, to paste back into the photo there (`tryOnComposite.ts`). */
-export type TryOnOutcome = { ok: true; image: Blob; crop?: TryOnCrop } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
+/**
+ * `crop`: the image is the edited mouth close-up, to paste back into the photo there (`tryOnComposite.ts`).
+ * `leftOut`: gems not drawn because their spot does not show on the photo (said under the result).
+ */
+export type TryOnOutcome = { ok: true; image: Blob; crop?: TryOnCrop; leftOut?: number } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
 
 /**
  * The signed-in member's daily allowance of AI renders (over the last 24
@@ -179,7 +182,8 @@ export function parseTryOnResponse(json: unknown): TryOnOutcome {
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     const crop = parseTryOnCrop(data.crop);
-    return { ok: true, image: new Blob([bytes], { type }), ...(crop ? { crop } : {}) };
+    const leftOut = count(data.left_out);
+    return { ok: true, image: new Blob([bytes], { type }), ...(crop ? { crop } : {}), ...(leftOut ? { leftOut } : {}) };
   } catch {
     return { ok: false, code: "failed" };
   }

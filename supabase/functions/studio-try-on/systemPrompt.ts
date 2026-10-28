@@ -35,6 +35,9 @@
  *       IMAGE 2 is a close-up of the mouth cut from the photo around the
  *       check's teeth box (`crop.ts`), pasted back by the browser — the
  *       teeth fill the picture, and nothing outside the mouth can change.
+ *       Eighth round (2026-10-28, lower gems drawn on the lip where the lower
+ *       teeth did not show): the photo check judges each gem's spot, and the
+ *       data marks the hidden ones LEFT OUT (`prompt.ts` `gemSpots`).
  *       Seventh round (2026-10-28, renders whose smile came back enlarged —
  *       the close-up of a few gems seemed to pull the model in): THE DESIGN
  *       OVERVIEW, the same 3D stage seen from further away, the whole smile
@@ -404,6 +407,8 @@ Identify the teeth actually visible in IMAGE 2 and match them to the teeth named
 - Never move a gem to another tooth; never open the mouth, move the lips or turn the head to reveal a tooth.
 - No floating gems, no gems between teeth, on the gums or on the lips.
 - A partial design, with only the gems whose teeth are visible, is better than a complete but wrong one.
+- **A gem the data marks LEFT OUT is never drawn**, though it appears on the design images: its place was checked on this photo and is not visible. Never move it to another spot to keep it.
+- **Lower teeth are often partly hidden**: their biting edge behind the upper teeth, their gum side behind the lower lip. A lower gem goes only on enamel that really shows; never on the lower lip or the edge of the upper teeth.
 
 ## 6. SCALE
 

@@ -954,7 +954,9 @@
       "downloaded": "Image downloaded.",
       "share": "Share",
       "shareText": "“{{name}}”, tried on with the Global Toothgems 3D Studio",
-      "shareFailed": "Sharing did not work. Try again or download the image."
+      "shareFailed": "Sharing did not work. Try again or download the image.",
+      "leftOut_one": "{{count}} gem of the creation was not placed: the spot of the tooth it goes on does not show on this photo (hidden by a lip or other teeth).",
+      "leftOut_other": "{{count}} gems of the creation were not placed: the spots of the teeth they go on do not show on this photo (hidden by a lip or other teeth)."
     },
     "visitor": {
       "title": "Try it on my smile",
@@ -968,7 +970,8 @@
       "teeth_hidden": "with nothing in front of the teeth (hand, object, hair);",
       "too_dark": "with more light, no backlight;",
       "too_bright": "with softer light, no direct flash on the teeth;",
-      "blurry": "sharp: hold the phone still and let it focus."
+      "blurry": "sharp: hold the phone still and let it focus.",
+      "design_hidden": "showing the teeth this creation's gems go on: none of them is visible on this photo."
     },
     "allowance": {
       "remaining_one": "You have {{count}} try left out of {{limit}} (rolling 24 hours).",
