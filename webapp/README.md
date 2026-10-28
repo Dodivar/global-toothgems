@@ -85,6 +85,7 @@ With them set:
 - **Images** upload to the public `product-media` bucket as soon as they are picked (JPG, PNG, WebP or AVIF, 10 MB max), under `products/<product id>/`. They are linked to the product when the form is saved; files no product references any more are removed from the bucket on save and on delete. An upload whose form is then abandoned stays in the bucket.
 - **Delete** only works for a product that was never ordered (the database protects order history); otherwise the message says to archive it.
 - **Recommendations** are saved with `admin_save_product_recommendations()`.
+- **Kits** (decision 117): the form's "Kit contents" section (`components/admin/BundleEditor.tsx`) lists what one kit holds; it is saved with `admin_save_product_bundle()` right after the product, and the kit's stock is then derived by the database from its products' stock — the form sends only its alert threshold, the list shows "N kits available" without a restock button, and the editor previews the same figure with the products that limit it (`lib/productBundles.ts`, unit-tested). Compositions are read from `product_bundle_items`; saving a product refreshes the kits that hold it.
 
 What is not wired to the database yet, on purpose:
 

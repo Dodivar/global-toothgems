@@ -18,6 +18,7 @@ import { loadProductListFilters, saveProductListFilters } from "../../lib/adminP
 import { useLocalized } from "../../lib/localized";
 import { useToast } from "../../lib/toast";
 import { hasAdjustableStock } from "../../lib/stockAdjustment";
+import { isBundle } from "../../lib/productBundles";
 import {
   DEFAULT_FILTERS,
   SORT_KEYS,
@@ -164,6 +165,10 @@ export function AdminProducts() {
     },
 
     onMarkOutOfStock: async (product) => {
+      if (isBundle(product)) {
+        showToast(t("admin.toasts.bundleStockTitle"), t("admin.toasts.bundleStockBody"), "info");
+        return;
+      }
       if (product.variantCount) {
         showToast(t("admin.toasts.variantStockTitle"), t("admin.toasts.variantStockBody"), "info");
         return;
@@ -187,6 +192,10 @@ export function AdminProducts() {
       // availability, which can move in one click.
       if (hasAdjustableStock(product)) {
         setRestocking({ id: product.id, variantKey: null });
+        return;
+      }
+      if (isBundle(product)) {
+        showToast(t("admin.toasts.bundleStockTitle"), t("admin.toasts.bundleStockBody"), "info");
         return;
       }
       if (product.variantCount) {

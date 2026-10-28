@@ -184,6 +184,20 @@ describe("helpers", () => {
     expect(catalogErrorKind({ code: "40001" })).toBe("staleStock");
     expect(catalogErrorKind({ code: "22023", hint: "reserved" })).toBe("belowReserved");
     expect(catalogErrorKind({ code: "22023" })).toBe("invalid");
+    expect(catalogErrorKind({ code: "22023", hint: "bundle" })).toBe("bundleStock");
+    expect(catalogErrorKind({ code: "22023", hint: "bundle_option" })).toBe("bundleRule");
+    expect(catalogErrorKind({ code: "55006", hint: "reserved" })).toBe("bundleReserved");
+    expect(
+      catalogErrorKind({ code: "23503", message: 'violates foreign key constraint on table "product_bundle_items"' }),
+    ).toBe("bundleComponent");
+  });
+
+  it("sends only the alert threshold of a kit, whose count is the database's", () => {
+    const kit = rowToProduct(row, url);
+    const payload = productToPayload({ ...kit, stock: 99 }, { derivedStock: true }) as { inventory: Record<string, unknown> };
+    expect(payload.inventory).toEqual({ low_stock_threshold: kit.lowStockThreshold });
+    const plain = productToPayload({ ...kit, stock: 99 }) as { inventory: Record<string, unknown> };
+    expect(plain.inventory).toMatchObject({ quantity_on_hand: 99, track_inventory: kit.trackInventory });
   });
 });
 

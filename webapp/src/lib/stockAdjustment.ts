@@ -1,5 +1,6 @@
 import { comboKey } from "./gemOptions";
 import type { AdminProduct } from "../data/adminCatalog";
+import { isBundle } from "./productBundles";
 
 /**
  * The quick stock change of the product list (decision 91 in
@@ -67,8 +68,12 @@ export function applyStockDelta(product: AdminProduct, variantKey: string | null
   };
 }
 
-/** Whether the product has a count the quick stock pop-up can change. */
+/**
+ * Whether the product has a count the quick stock pop-up can change. A kit
+ * has none of its own: its components' stock makes it (decision 117).
+ */
 export function hasAdjustableStock(product: AdminProduct): boolean {
+  if (isBundle(product)) return false;
   return product.variantStock?.length
     ? product.variantStock.some((variant) => variant.trackInventory)
     : product.trackInventory && !product.variantCount;

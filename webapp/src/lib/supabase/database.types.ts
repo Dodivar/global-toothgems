@@ -4662,6 +4662,71 @@ export type Database = {
           },
         ]
       }
+      order_item_components: {
+        Row: {
+          created_at: string
+          id: number
+          inventory_item_id: string | null
+          order_item_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          variant_id: string | null
+          variant_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          inventory_item_id?: string | null
+          order_item_id: string
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          variant_id?: string | null
+          variant_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          inventory_item_id?: string | null
+          order_item_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          variant_id?: string | null
+          variant_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_item_components_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_item_components_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_item_components_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_item_components_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           course_id: string | null
@@ -5088,6 +5153,95 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      product_bundle_items: {
+        Row: {
+          bundle_product_id: string
+          component_product_id: string
+          component_variant_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          position: number
+          quantity: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bundle_product_id: string
+          component_product_id: string
+          component_variant_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          position?: number
+          quantity: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bundle_product_id?: string
+          component_product_id?: string
+          component_variant_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          position?: number
+          quantity?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_bundle_items_bundle_product_id_fkey"
+            columns: ["bundle_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_bundle_items_component_product_id_fkey"
+            columns: ["component_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_bundle_items_component_variant_id_fkey"
+            columns: ["component_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_bundle_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_bundle_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_bundle_items_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_bundle_items_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_faq_groups: {
         Row: {
@@ -9438,6 +9592,10 @@ export type Database = {
       admin_save_gem_color: { Args: { p_color: Json }; Returns: Json }
       admin_save_languages: { Args: { p_languages: Json }; Returns: undefined }
       admin_save_product: { Args: { p_product: Json }; Returns: Json }
+      admin_save_product_bundle: {
+        Args: { p_components: Json; p_product_id: string }
+        Returns: Json
+      }
       admin_save_product_recommendations: {
         Args: {
           p_complementary: string[]

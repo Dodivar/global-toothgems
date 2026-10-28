@@ -420,7 +420,7 @@ export function readGemOptions(rows: VariantRow[]): GemOptions | undefined {
  * `promoPrice` is deliberately not sent: the database has no column for it and
  * discounts belong to the promotions domain, not to the product.
  */
-export function productToPayload(product: AdminProduct): Json {
+export function productToPayload(product: AdminProduct, { derivedStock = false }: { derivedStock?: boolean } = {}): Json {
   const name = { fr: product.name.fr.trim(), en: product.name.en.trim() };
   const customIds = new Set((product.customVariants ?? []).map((variant) => variant.id));
   return {
@@ -460,12 +460,17 @@ export function productToPayload(product: AdminProduct): Json {
         ADMIN_SPEC_KEYS.map((key) => [key, { fr: product.specs?.[key]?.fr.trim() ?? "", en: product.specs?.[key]?.en.trim() ?? "" }]),
       ),
     },
-    inventory: {
-      track_inventory: product.trackInventory,
-      quantity_on_hand: product.stock,
-      low_stock_threshold: product.lowStockThreshold,
-      availability: product.availability,
-    },
+    // A kit's count is the database's (decision 117): only its alert threshold
+    // is the team's. Also while a product turns into a kit or back, which
+    // `admin_save_product_bundle()` settles after this save.
+    inventory: derivedStock
+      ? { low_stock_threshold: product.lowStockThreshold }
+      : {
+          track_inventory: product.trackInventory,
+          quantity_on_hand: product.stock,
+          low_stock_threshold: product.lowStockThreshold,
+          availability: product.availability,
+        },
     // Absent = variants left as they are; a list (possibly empty) = the
     // complete set of pack × size options (migration `…_gem_pack_stone_size_options`).
     ...(product.gemOptions
@@ -566,7 +571,15 @@ export type CatalogErrorKind =
   /** The stock moved since it was read (a sale): nothing was written. */
   | "staleStock"
   /** The new count would be lower than the units held by unpaid orders. */
-  | "belowReserved";
+  | "belowReserved"
+  /** A kit's stock is derived from its components: it is not written (decision 117). */
+  | "bundleStock"
+  /** A kit rule: no variants on a kit, no kit in a kit, an option to choose. */
+  | "bundleRule"
+  /** Unpaid orders hold units of the product: it cannot become a kit yet. */
+  | "bundleReserved"
+  /** The product or variant is a component of a kit: remove it from the kit first. */
+  | "bundleComponent";
 
 /** Maps a PostgREST / Postgres / Storage error to a message the screen can show. */
 export function catalogErrorKind(
@@ -574,6 +587,10 @@ export function catalogErrorKind(
 ): CatalogErrorKind {
   if (!error) return "generic";
   if (error.code === "22023" && error.hint === "reserved") return "belowReserved";
+  if (error.code === "22023" && error.hint === "bundle") return "bundleStock";
+  if (error.code === "22023" && error.hint?.startsWith("bundle_")) return "bundleRule";
+  if (error.code === "55006" && error.hint === "reserved") return "bundleReserved";
+  if (error.code === "23503" && error.message?.includes("product_bundle_items")) return "bundleComponent";
   switch (error.code) {
     case "40001":
       return "staleStock";

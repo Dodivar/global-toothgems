@@ -144,6 +144,15 @@ export interface CustomVariant {
   availability: Availability;
 }
 
+/** One component of a kit: a product, or one active variant of it, and how many one kit holds. */
+export interface BundleComponent {
+  productId: string;
+  /** Database id of the variant; undefined = the product itself (a product without variants). */
+  variantId?: string;
+  /** Units in ONE kit, 1 to 1000. */
+  quantity: number;
+}
+
 export interface ProductImage {
   id: string;
   /** Resolved asset URL, ready for an `<img>`. */
@@ -205,6 +214,13 @@ export interface AdminProduct {
    * or when it sells pack/SS options — saving then leaves variants alone.
    */
   customVariants?: CustomVariant[];
+  /**
+   * Kit composition (decision 117): undefined = an ordinary product; a list =
+   * a kit, whose stock the database derives from these components (how many
+   * kits their sellable stock makes). Empty only while the form is being
+   * filled. A kit has no variants and its own count is never written.
+   */
+  bundle?: BundleComponent[];
   /** The card subtitle of any product, and the first characteristic of a gem. */
   material: Localized;
   /** A gem's other characteristics (the product page lists them for gems only); empty = not shown. */
