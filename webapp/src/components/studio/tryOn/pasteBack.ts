@@ -1,3 +1,4 @@
+import { ALIGN_WIDTH, alignCloseUp, IDENTITY_FIT, lumaOf, type CloseUpFit, type Luma } from "../../../lib/studio3d/tryOnAlign";
 import { pastePlacement, type TryOnCrop } from "../../../lib/studio3d/tryOnComposite";
 
 async function bitmapOf(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
@@ -12,18 +13,46 @@ async function bitmapOf(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
   }
 }
 
+/** A region of `source` drawn at `width` × `height`, as grey levels; null when the browser cannot read it back. */
+function lumaAt(source: CanvasImageSource, region: [number, number, number, number], width: number, height: number): Luma | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(source, ...region, 0, 0, width, height);
+  try {
+    return lumaOf(ctx.getImageData(0, 0, width, height).data, width, height);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Where the AI's answer lines up on the crop (`tryOnAlign.ts`): both drawn
+ * small, side by side, and compared. The whole crop when it cannot be measured.
+ */
+function measureFit(base: ImageBitmap | HTMLImageElement, edit: ImageBitmap | HTMLImageElement, crop: TryOnCrop): CloseUpFit {
+  const place = pastePlacement(crop, { width: base.width, height: base.height });
+  const width = ALIGN_WIDTH;
+  const height = Math.max(8, Math.round((ALIGN_WIDTH * place.height) / place.width));
+  const original = lumaAt(base, [place.x, place.y, place.width, place.height], width, height);
+  const edited = lumaAt(edit, [0, 0, edit.width, edit.height], width, height);
+  return original && edited ? alignCloseUp(original, edited).fit : IDENTITY_FIT;
+}
+
 /**
  * The customer's photo with the AI's edited mouth close-up drawn back at its
- * place (`tryOnComposite.ts`), its border faded into the original: a JPEG of
- * the photo's size. Null when the browser cannot draw it — the dialog then
- * shows the close-up alone.
+ * place (`tryOnComposite.ts`), lined up first (`measureFit`), its border faded
+ * into the original: a JPEG of the photo's size. Null when the browser cannot
+ * draw it — the dialog then shows the close-up alone.
  */
 export async function pasteBack(photo: Blob, closeUp: Blob, crop: TryOnCrop): Promise<Blob | null> {
   try {
     const [base, edit] = await Promise.all([bitmapOf(photo), bitmapOf(closeUp)]);
     const width = base.width;
     const height = base.height;
-    const place = pastePlacement(crop, { width, height });
+    const place = pastePlacement(crop, { width, height }, measureFit(base, edit, crop));
     const w = Math.round(place.width);
     const h = Math.round(place.height);
 

@@ -93,9 +93,9 @@ jobs:
       - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: v2.x
-      # No permission flag: the handlers are tested with injected fakes, never the network.
+      # Only read access to supabase/templates (the auth e-mail sync test): the handlers use injected fakes, never the network.
       # --node-modules-dir=none: ignore the repository root's package.json, as the deployed functions do.
-      - run: deno test --node-modules-dir=none
+      - run: deno test --node-modules-dir=none --allow-read=../templates
       - name: Type-check every deployed entry point
         run: deno check --node-modules-dir=none "*/index.ts"
 

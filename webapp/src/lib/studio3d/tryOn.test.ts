@@ -75,6 +75,14 @@ describe("try-on service contract", () => {
     });
     expect(parseTryOnResponse({ ok: false, code: "photo_unsuitable" })).toEqual({ ok: false, code: "photo_unsuitable", reasons: [] });
     expect(errorAllowsRetry("photo_unsuitable")).toBe(false);
+    expect(parseTryOnResponse({ ok: false, code: "photo_unsuitable", reasons: ["design_hidden"] })).toMatchObject({ reasons: ["design_hidden"] });
+  });
+
+  it("reads how many gems were left out because their spot does not show", () => {
+    const image = { mime_type: "image/png", data: "aW1n" };
+    expect(parseTryOnResponse({ ok: true, image, left_out: 2 })).toMatchObject({ ok: true, leftOut: 2 });
+    expect("leftOut" in parseTryOnResponse({ ok: true, image, left_out: 0 })).toBe(false);
+    expect("leftOut" in parseTryOnResponse({ ok: true, image, left_out: "2" })).toBe(false);
   });
 
   it("has a message in both languages for every error code", () => {

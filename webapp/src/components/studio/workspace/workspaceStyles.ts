@@ -37,9 +37,11 @@ export const chipClass = (active: boolean) =>
 /**
  * The column of a workspace page (creations, Gem Groups, templates, Glowbook):
  * the storefront's own width and gutter (`.gt-alt` tokens in index.css), so the
- * Studio pages line up with the rest of the site.
+ * Studio pages line up with the rest of the site. Its one column is capped at
+ * the page's width (`minmax(0,1fr)`, not the implicit `auto` track): a row too
+ * wide for a phone shrinks or scrolls on its own instead of widening the page.
  */
-export const workspacePage = "gt-alt gt-alt-wide grid px-[var(--gt-alt-gutter)] pb-16 pt-6 sm:pt-10";
+export const workspacePage = "gt-alt gt-alt-wide grid grid-cols-[minmax(0,1fr)] px-[var(--gt-alt-gutter)] pb-16 pt-6 sm:pt-10";
 
 export const eyebrow = "m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-600)]";
 

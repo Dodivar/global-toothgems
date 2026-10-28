@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CircleAlert, ImageUp, LoaderCircle, LogIn, RefreshCw, ScanFace } from "lucide-react";
+import { CircleAlert, ImageUp, LogIn, RefreshCw, ScanFace } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../lib/auth";
 import { useLocation, useNavigate } from "../../../lib/navigation";
@@ -19,17 +19,18 @@ import {
 } from "../../../lib/studio3d/tryOn";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
 import { tryOnSeats } from "../../../lib/studio3d/tryOnSeats";
-import { renderDesignImage, renderDesignMap } from "./designImage";
+import { renderDesignImages, renderDesignMap } from "./designImage";
 import { pasteBack } from "./pasteBack";
 import { PhotoStep, type AiState } from "./PhotoStep";
 import type { PreparedPhoto } from "./preparePhoto";
+import { ProcessingStep } from "./ProcessingStep";
 import { ResultStep } from "./ResultStep";
 
 type Step =
   | { kind: "photo" }
   | { kind: "processing"; stage: TryOnStage }
   | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[]; stage: TryOnStage }
-  | { kind: "result"; image: Blob; url: string };
+  | { kind: "result"; image: Blob; url: string; leftOut: number };
 
 /** The stepper: photo, the photo check, the render, the result. An error stays on the stage it happened at. */
 const STAGE_INDEX: Record<TryOnStage, number> = { checking: 1, rendering: 2 };
@@ -119,7 +120,7 @@ export function TryOnDialog({
     request.current = controller;
     let stage: TryOnStage = "checking";
     setStep({ kind: "processing", stage });
-    const design = await renderDesignImage(creation).catch(() => null);
+    const { design, overview } = await renderDesignImages(creation).catch(() => ({ design: null, overview: null }));
     if (controller.signal.aborted) return;
     if (!design) {
       request.current = null;
@@ -133,7 +134,7 @@ export function TryOnDialog({
       stage = next;
       setStep({ kind: "processing", stage: next });
     };
-    const outcome = await service.render({ photo: photo.blob, source, design, map, seats }, { signal: controller.signal, onStage });
+    const outcome = await service.render({ photo: photo.blob, source, design, overview, map, seats }, { signal: controller.signal, onStage });
     if (controller.signal.aborted) return; // cancelled or closed: nothing to show
     request.current = null;
     if (outcome.ok) {
@@ -142,7 +143,7 @@ export function TryOnDialog({
       if (controller.signal.aborted) return;
       if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
       resultUrl.current = URL.createObjectURL(image);
-      return setStep({ kind: "result", image, url: resultUrl.current });
+      return setStep({ kind: "result", image, url: resultUrl.current, leftOut: outcome.leftOut ?? 0 });
     }
     if (outcome.code === "not_available") {
       setAi("unavailable");
@@ -173,13 +174,16 @@ export function TryOnDialog({
         <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("studio.tryOn.empty")}</p>
       ) : (
         <>
-          <ProgressBar
-            variant="steps"
-            tone="ink"
-            doneTone="success"
-            steps={[t("studio.tryOn.steps.photo"), t("studio.tryOn.steps.check"), t("studio.tryOn.steps.render"), t("studio.tryOn.steps.result")]}
-            current={stepIndex(step)}
-          />
+          {/* The result is on screen: the stepper would only push download / share below the fold. */}
+          {step.kind !== "result" && (
+            <ProgressBar
+              variant="steps"
+              tone="ink"
+              doneTone="success"
+              steps={[t("studio.tryOn.steps.photo"), t("studio.tryOn.steps.check"), t("studio.tryOn.steps.render"), t("studio.tryOn.steps.result")]}
+              current={stepIndex(step)}
+            />
+          )}
 
           {step.kind === "photo" && (
             <PhotoStep
@@ -195,18 +199,7 @@ export function TryOnDialog({
             />
           )}
 
-          {step.kind === "processing" && (
-            <div className="grid justify-items-center gap-3 py-8 text-center">
-              <LoaderCircle size={28} aria-hidden="true" className="text-[var(--gt-blue-700)] motion-safe:animate-spin" />
-              <p role="status" className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
-                {t(`studio.tryOn.processing.${step.stage}.title`)}
-              </p>
-              <p className="m-0 max-w-sm text-[12.5px] text-[var(--text-muted)]">{t(`studio.tryOn.processing.${step.stage}.body`)}</p>
-              <Button variant="outline" size="sm" onClick={cancel}>
-                {t("studio.tryOn.processing.cancel")}
-              </Button>
-            </div>
-          )}
+          {step.kind === "processing" && <ProcessingStep key={step.stage} stage={step.stage} onCancel={cancel} />}
 
           {step.kind === "error" && (
             <div role="alert" className="grid gap-3">
@@ -251,6 +244,7 @@ export function TryOnDialog({
               photo={photo}
               image={step.image}
               imageUrl={step.url}
+              leftOut={step.leftOut}
               creation={creation}
               onRegenerate={() => void render()}
               onNewPhoto={() => setStep({ kind: "photo" })}

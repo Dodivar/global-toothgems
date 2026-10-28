@@ -28,11 +28,10 @@ export const PATHWAYS_FROM = 2;
 const SEARCH_FROM = 7;
 
 /**
- * The marketplace itself, the page's centre: the featured course, the
- * starting-point picker, the controls and the grid. It scales with the
- * catalogue rather than pretending to be bigger than it is — one course is
- * shown as the feature alone; two add the picker and the other course; from
- * three the whole catalogue is listed, filterable and sortable.
+ * The marketplace itself, straight under the hero: the title, the
+ * starting-point chips (from two courses), the featured course in white and
+ * blue, then — from three courses — the filters and the grid. It scales with
+ * the catalogue rather than pretending to be bigger than it is.
  *
  * Every course is rendered on the server as a real link with the filters at
  * their defaults (the filters are local state, never read from the address),
@@ -45,7 +44,6 @@ export function CourseCatalog({
   featured,
   lang,
   sectionRef,
-  pathwaysRef,
 }: {
   courses: PublicCourse[];
   status: AcademyStatus;
@@ -53,7 +51,6 @@ export function CourseCatalog({
   featured: PublicCourse | undefined;
   lang: string;
   sectionRef: Ref<HTMLElement>;
-  pathwaysRef: Ref<HTMLDivElement>;
 }) {
   const { t } = useTranslation();
   const hydrated = useHydrated();
@@ -73,13 +70,10 @@ export function CourseCatalog({
   const now = useMemo(() => (hydrated ? new Date() : null), [hydrated]);
   const badgesFor = (course: PublicCourse): CourseCardBadge[] => {
     const badges: CourseCardBadge[] = [];
-    if (pathway && suitsPathway(course, pathway)) badges.push({ label: t("academyPage.card.forYou"), tone: "highlight" });
-    if (now && isNewCourse(course, now)) badges.push({ label: t("academyPage.card.new"), tone: "brand" });
+    if (pathway && suitsPathway(course, pathway)) badges.push({ label: t("academyPage.card.forYou"), tone: "brand" });
+    if (now && isNewCourse(course, now)) badges.push({ label: t("academyPage.card.new"), tone: "success" });
     return badges;
   };
-
-  // Replays the cards' entrance when the result changes (the CSS keeps it
-  // instant under reduced motion).
   const gridKey = `${JSON.stringify(filters)}|${pathway ?? ""}`;
 
   return (
@@ -89,21 +83,21 @@ export function CourseCatalog({
       tabIndex={-1}
       aria-labelledby="academy-market-title"
       aria-busy={status === "loading" || status === "idle"}
-      className="gt-academy-market gt-alt-section scroll-mt-6 outline-none"
+      className="gt-academy-market scroll-mt-6 py-[clamp(40px,6vw,104px)] outline-none"
     >
-      <div className="gt-alt-wide grid gap-[clamp(36px,5vw,72px)] px-[var(--gt-alt-gutter)]">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end lg:gap-16">
-          <div className="grid gap-4">
-            <span className="gt-eyebrow !text-[var(--gt-blue-700)]">{t("academyPage.market.eyebrow")}</span>
-            <h2 id="academy-market-title" className="gt-alt-h2 max-w-[16ch]">{t("academyPage.market.title")}</h2>
-          </div>
-          <p className="m-0 max-w-[48ch] text-[length:var(--text-body-lg)] text-[var(--text-body)]">{t("academyPage.market.lead")}</p>
+      <div className="gt-alt-wide grid gap-[clamp(24px,3.5vw,48px)] px-[var(--gt-alt-gutter)]">
+        <div className="grid max-w-[760px] gap-3">
+          <span className="gt-eyebrow !text-[var(--gt-blue-700)]">{t("academyPage.market.eyebrow")}</span>
+          <h2 id="academy-market-title" className="gt-alt-h2 !text-[clamp(28px,3.4vw,52px)]">{t("academyPage.market.title")}</h2>
+          <p className="m-0 max-w-[52ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("academyPage.market.lead")}</p>
         </div>
 
         {courses.length === 0 ? (
           <CatalogState status={status} onRetry={onRetry} />
         ) : (
           <>
+            {courses.length >= PATHWAYS_FROM && <Pathways value={pathway} onChange={setPathway} matches={matches} />}
+
             {featured && (
               <FeaturedCourse
                 course={featured}
@@ -113,10 +107,8 @@ export function CourseCatalog({
               />
             )}
 
-            {courses.length >= PATHWAYS_FROM && <Pathways value={pathway} onChange={setPathway} matches={matches} sectionRef={pathwaysRef} />}
-
             {(withControls || grid.length > 0) && (
-              <div className="grid gap-6">
+              <div className="grid gap-5">
                 {withControls && (
                   <>
                     <h3 className="gt-alt-h3">{t("academyPage.market.allTitle")}</h3>
@@ -131,7 +123,7 @@ export function CourseCatalog({
                   </>
                 )}
                 {grid.length > 0 ? (
-                  <ul key={gridKey} className="m-0 grid list-none grid-cols-1 gap-[clamp(16px,1.6vw,28px)] p-0 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                  <ul key={gridKey} className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                     {grid.map((course, i) => (
                       <li key={course.id} className="gt-academy-card-in" style={{ "--gt-delay": `${Math.min(i, 6) * 60}ms` } as CSSProperties}>
                         <AcademyCourseCard
@@ -149,7 +141,7 @@ export function CourseCatalog({
                     ))}
                   </ul>
                 ) : (
-                  <div className="grid justify-items-start gap-3 rounded-[var(--radius-xl)] border border-dashed border-[var(--border-strong)] bg-[var(--surface-card)] p-[clamp(24px,3vw,40px)]">
+                  <div className="grid justify-items-start gap-3 rounded-[var(--radius-xl)] border border-dashed border-[var(--gt-blue-300)] bg-white p-[clamp(20px,3vw,40px)]">
                     <SearchX size={24} aria-hidden="true" className="text-[var(--gt-blue-600)]" />
                     <h4 className="text-[length:var(--text-h4)] font-bold text-[var(--text-primary)]">{t("academyPage.noMatch.title")}</h4>
                     <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("academyPage.noMatch.body")}</p>
@@ -168,7 +160,7 @@ export function CourseCatalog({
 }
 
 /** No course to show: still loading, failed to load (with a retry), or none published yet. */
-function CatalogState({ status, onRetry }: { status: AcademyStatus; onRetry: () => void }) {
+export function CatalogState({ status, onRetry }: { status: AcademyStatus; onRetry: () => void }) {
   const { t } = useTranslation();
   if (status === "error") {
     return (

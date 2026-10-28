@@ -173,6 +173,10 @@ function placeOf(seat: Seat): string {
 /** A share of the photo's width, with a decimal below 10 %. */
 const photoPct = (n: number) => `${n < 0.1 ? Math.round(n * 1000) / 10 : Math.round(n * 100)}%`;
 
+function leftOutLine(label: string): string {
+  return `  ${label}. LEFT OUT — not visible on this photo: do not draw it.`;
+}
+
 function gemLine(label: string, p: PromptPiece, seat: Seat | undefined, mmShare: number | null): string {
   const mm = p.longestMm > 0 && p.size !== `${p.longestMm} mm` ? ` (about ${p.longestMm} mm on its longest side)` : "";
   const coating = p.iridescent ? " — iridescent coating" : "";
@@ -180,6 +184,41 @@ function gemLine(label: string, p: PromptPiece, seat: Seat | undefined, mmShare:
   const share = seat ? ` — longest side about ${pct(seat.width)} of this tooth's width` : "";
   const place = seat ? ` — ${placeOf(seat)}` : "";
   return `  ${label}. ${SHAPES[p.shape]} — ${p.material} — colour ${p.color}${coating} — size ${p.size}${mm}${inPhoto}${share}${place}`;
+}
+
+/**
+ * The spots of the design, for the photo check (2026-10-28): one line per
+ * gem seen from the front — its tooth, cut, size and place on the crown —
+ * named g1, g2… (the check model never sees the piece ids). The check says
+ * which spots are not visible enamel in the photo (`leftOutGems`), so the
+ * render never forces a gem onto a lip or behind the upper teeth.
+ */
+export function gemSpots(pieces: readonly PromptPiece[], seats: ReadonlyMap<string, Seat> = new Map()): { ids: Map<string, string>; text: string | null } {
+  const ids = new Map<string, string>();
+  const lines: string[] = [];
+  for (const p of pieces) {
+    const seat = p.id ? seats.get(p.id) : undefined;
+    if (!p.id || seat?.front === false || p.toothId === "X0") continue;
+    const id = `g${ids.size + 1}`;
+    ids.set(id, p.id);
+    const size = p.longestMm > 0 ? `${p.longestMm} mm` : p.size;
+    lines.push(`${id}: tooth ${toothLabel(p.toothId)} — a ${size} ${p.shape} gem${seat ? ` — ${placeOf(seat)}` : ""}`);
+  }
+  if (!lines.length) return { ids, text: null };
+  return { ids, text: ["GEM SPOTS — where the design puts each gem, on the person's teeth:", ...lines].join("\n") };
+}
+
+/** The piece ids whose spot the photo check found not placeable (an explicit `false` only: no answer keeps the gem). */
+export function leftOutGems(answer: Record<string, unknown>, ids: ReadonlyMap<string, string>): Set<string> {
+  const out = new Set<string>();
+  const spots = Array.isArray(answer.gem_spots) ? answer.gem_spots : [];
+  for (const spot of spots) {
+    if (!spot || typeof spot !== "object") continue;
+    const s = spot as Record<string, unknown>;
+    const piece = typeof s.id === "string" ? ids.get(s.id.trim().toLowerCase()) : undefined;
+    if (piece && s.placeable === false) out.add(piece);
+  }
+  return out;
 }
 
 /**
@@ -198,6 +237,10 @@ export function buildDesignData(
   withMap = false,
   /** Whether IMAGE 2 is a close-up of the mouth cut from the customer's photo (`crop.ts`). */
   closeUp = false,
+  /** Whether the design overview was sent (IMAGE 4, only ever with the map). */
+  withOverview = false,
+  /** Piece ids whose spot is not visible in this photo (`leftOutGems`): named, never drawn. */
+  leftOut: ReadonlySet<string> = new Set(),
 ): string {
   const seatOf = (p: PromptPiece) => (p.id ? seats.get(p.id) : undefined);
   const shown = pieces.filter((p) => seatOf(p)?.front !== false);
@@ -205,11 +248,20 @@ export function buildDesignData(
     shown.filter((p) => p.toothId === fdi).sort((a, b) => (seatOf(a)?.gum ?? 0.5) - (seatOf(b)?.gum ?? 0.5));
   const lines: string[] = [];
   let n = 0;
+  let skipped = 0;
   // A gem's name: its tag on the map ("11a") when the map was sent and the tag names its own tooth, else its number.
+  const tagOf = (p: PromptPiece) => {
+    const tag = seatOf(p)?.tag;
+    return withMap && tag && tag.startsWith(p.toothId) ? tag : null;
+  };
   const labelOf = (p: PromptPiece) => {
     n++;
-    const tag = seatOf(p)?.tag;
-    return withMap && tag && tag.startsWith(p.toothId) ? tag : String(n);
+    return tagOf(p) ?? String(n);
+  };
+  // A left-out gem is not counted: it is named by its tag on IMAGE 3, else by its tooth.
+  const skippedLabel = (p: PromptPiece) => {
+    skipped++;
+    return tagOf(p) ?? `A gem of tooth ${p.toothId}`;
   };
   const arch = (title: string, teeth: string[]) => {
     const listed = teeth.filter((fdi) => ALWAYS.has(fdi) || onTooth(fdi).length > 0);
@@ -221,8 +273,13 @@ export function buildDesignData(
         lines.push(`Tooth ${toothLabel(fdi)}: no gem — it stays bare.`);
         continue;
       }
-      lines.push(`Tooth ${toothLabel(fdi)}: ${gems.length} gem${gems.length > 1 ? "s" : ""}`);
-      for (const p of gems) lines.push(gemLine(labelOf(p), p, seatOf(p), mmShare));
+      const drawn = gems.filter((p) => !leftOut.has(p.id)).length;
+      lines.push(
+        drawn === gems.length
+          ? `Tooth ${toothLabel(fdi)}: ${gems.length} gem${gems.length > 1 ? "s" : ""}`
+          : `Tooth ${toothLabel(fdi)}: ${drawn} gem${drawn === 1 ? "" : "s"} to draw (${gems.length - drawn} LEFT OUT)`,
+      );
+      for (const p of gems) lines.push(leftOut.has(p.id) ? leftOutLine(skippedLabel(p)) : gemLine(labelOf(p), p, seatOf(p), mmShare));
     }
   };
   arch("UPPER ARCH — teeth in the photo's left-to-right order:", UPPER);
@@ -230,7 +287,7 @@ export function buildDesignData(
   const other = shown.filter((p) => p.toothId === "X0");
   if (other.length) {
     lines.push("", `Gems on an ${toothLabel("X0")}:`);
-    for (const p of other) lines.push(gemLine(labelOf(p), p, seatOf(p), mmShare));
+    for (const p of other) lines.push(leftOut.has(p.id) ? leftOutLine(skippedLabel(p)) : gemLine(labelOf(p), p, seatOf(p), mmShare));
   }
   const count = `${n} gem${n > 1 ? "s" : ""}`;
   const scale = mmShare
@@ -245,11 +302,24 @@ export function buildDesignData(
         "IMAGE 3 (the flat design map) is included. Each gem below is named by its tag — its tooth number and a letter, e.g. 11a — exactly as written on IMAGE 3, where a line joins the tag to the gem on its labelled tooth.",
       ]
     : ["", "No flat design map (IMAGE 3) with this request."];
+  const overview =
+    withOverview && withMap
+      ? [
+          "",
+          "IMAGE 4 (the design overview) is included: the same 3D design seen from further away, the whole smile around the gems. The gems keep that modest share of the smile in the result; the photo keeps its own framing.",
+        ]
+      : [];
   const photo = closeUp
     ? [
         "",
         "IMAGE 2 is a CLOSE-UP of the customer's mouth, cut from their photo: it will be pasted back into that photo at exactly the same place and size. Keep its framing, its edges and everything around the teeth exactly as they are — only the gems are added.",
       ]
     : [];
-  return [`DESIGN DATA — exactly ${count}, no more.`, ...photo, ...map, ...scale, ...lines].join("\n");
+  const omitted = skipped
+    ? [
+        "",
+        `${skipped} gem${skipped > 1 ? "s are" : " is"} LEFT OUT: ${skipped > 1 ? "their" : "its"} place is not visible on this photo (hidden by a lip or by other teeth, or too little enamel shows there). ${skipped > 1 ? "They still appear" : "It still appears"} on the design images: never draw ${skipped > 1 ? "them" : "it"}, never move ${skipped > 1 ? "them" : "it"} elsewhere.`,
+      ]
+    : [];
+  return [`DESIGN DATA — exactly ${count}${skipped ? " to draw" : ""}, no more.`, ...photo, ...map, ...overview, ...omitted, ...scale, ...lines].join("\n");
 }

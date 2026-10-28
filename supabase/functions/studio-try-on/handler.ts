@@ -2,8 +2,8 @@ import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./gemini.ts";
 import { cropJpeg, mouthCrop, type CropRect } from "./crop.ts";
-import { imageSize, judgePhoto, photoScale } from "./photoCheck.ts";
-import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
+import { coherentScale, imageSize, judgeReadings, PHOTO_READINGS, photoScale } from "./photoCheck.ts";
+import { buildDesignData, gemSpots, leftOutGems, piecesFromScene, readSeats } from "./prompt.ts";
 
 /**
  * POST /functions/v1/studio-try-on   (decision 111)
@@ -23,17 +23,23 @@ import { buildDesignData, piecesFromScene, readSeats } from "./prompt.ts";
  *     map     optional PNG (≤ 2 MB): the flat design map drawn by the browser
  *             (`webapp/src/lib/studio3d/tryOnMap.ts`), IMAGE 3 with prompt v3,
  *             each gem tagged like its design data line; ignored with v1
+ *     overview  optional JPEG (≤ 3 MB): the same 3D design seen from further
+ *             away, the whole smile around the gems (`designImage.ts`),
+ *             IMAGE 4 — sent to the model only with the map (v3)
  *     seats   optional JSON: each gem's place and size on its tooth, measured
  *             by the browser (`prompt.ts` `readSeats`), matched to the stored
  *             gems by id
  *     progress  optional "1": the answer is an event stream instead (see
  *             `progressStream`), so the browser shows the photo check as a step
- *     200 { ok: true, image: { mime_type, data }, crop? }   base64, never stored;
+ *     200 { ok: true, image: { mime_type, data }, crop?, left_out? }   base64, never stored;
  *             crop { x, y, width, height, photo_width, photo_height }: the image
- *             is the edited mouth close-up, to paste back at that place of the photo (`crop.ts`)
+ *             is the edited mouth close-up, to paste back at that place of the photo (`crop.ts`);
+ *             left_out: how many gems were not drawn because the photo check
+ *             found their spot not visible (`prompt.ts` `gemSpots`, 2026-10-28)
  *     422 { ok: false, code: "photo_unsuitable", reasons }  the photo check
  *             (`photoCheck.ts`) refused the photo: too_far | not_frontal | no_teeth |
- *             teeth_hidden | too_dark | too_bright | blurry — no generation
+ *             teeth_hidden | too_dark | too_bright | blurry | design_hidden (no
+ *             gem's spot visible) — no generation
  *   status call (JSON `{ "action": "status" }`, no account needed):
  *     200 { available, daily_limit, quota }  quota: the signed-in caller's
  *             { limit, remaining } renders over the last 24 hours,
@@ -83,8 +89,16 @@ export interface StudioTryOnDeps {
   cropMouth: boolean;
   /** Whether the prompt reads the flat design map (IMAGE 3): v3 only; v1 never gets it. */
   readsMap: boolean;
-  /** The photo check model's answer (`photoCheck.ts`), or why there is none; absent: no check. */
-  checkPhoto?(photo: InlineImage): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
+  /**
+   * One reading of the photo by the check model (`photoCheck.ts`), or why there is none; absent: no check.
+   * Called `PHOTO_READINGS` times at once; `reading` tells them apart (0 the first).
+   */
+  checkPhoto?(photo: InlineImage, reading: number): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
+  /**
+   * The second look, on the image the model edits (the mouth close-up): the teeth's boxes for the scale and
+   * each gem's spot (`CLOSE_UP_CHECK_PROMPT`); `spots`: the design's gem spots (`gemSpots`). Absent: none.
+   */
+  checkCloseUp?(image: InlineImage, spots: string | null): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
   /**
    * Sends the images, in this order, with the system instructions; `designData`
    * (the gems as text, from the database) follows them when the prompt version reads it.
@@ -97,7 +111,7 @@ export interface StudioTryOnDeps {
 export const PHOTO_MAX_BYTES = 6 * 1024 * 1024;
 export const DESIGN_MAX_BYTES = 3 * 1024 * 1024;
 export const MAP_MAX_BYTES = 2 * 1024 * 1024;
-const BODY_MAX_BYTES = PHOTO_MAX_BYTES + DESIGN_MAX_BYTES + MAP_MAX_BYTES + 64 * 1024;
+const BODY_MAX_BYTES = PHOTO_MAX_BYTES + 2 * DESIGN_MAX_BYTES + MAP_MAX_BYTES + 64 * 1024;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -138,6 +152,16 @@ export function toBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
+/** An image's size from the start of its base64 (its header), or null when it cannot be read there. */
+export function headerSize(base64: string): { width: number; height: number } | null {
+  try {
+    const binary = atob(base64.slice(0, 64 * 1024));
+    return imageSize(Uint8Array.from(binary, (c) => c.charCodeAt(0)));
+  } catch {
+    return null;
+  }
+}
+
 export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Promise<Response> {
   const cors = corsHeaders(deps.origins, req.headers.get("origin"));
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -176,6 +200,9 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   // The flat map is optional (a site older than the map sends none); a malformed one is dropped, never fatal.
   const mapFile = deps.readsMap ? await inlineFile(form.get("map"), MAP_MAX_BYTES) : null;
   const map = mapFile && mapFile !== "invalid" ? mapFile : null;
+  // The overview goes only with the map (it is IMAGE 4); optional and never fatal, like the map.
+  const overviewFile = map ? await inlineFile(form.get("overview"), DESIGN_MAX_BYTES) : null;
+  const overview = overviewFile && overviewFile !== "invalid" ? overviewFile : null;
   const seats = readSeats(form.get("seats"));
   if (!ref || !photo || photo === "invalid" || !design || design === "invalid") return json({ ok: false, code: "invalid_request" }, 400, cors);
 
@@ -207,7 +234,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     return json({ ok: false, code: "not_found" }, 404, cors);
   }
 
-  const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, design, map, pieces, seats, onRendering);
+  const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, design, map, overview, pieces, seats, onRendering);
   if (form.get("progress") !== "1") {
     const ending = await run(() => {});
     return json(ending.body, ending.status, cors);
@@ -288,6 +315,7 @@ async function checkAndRender(
   photo: Photo,
   design: Photo,
   map: Photo | null,
+  overview: Photo | null,
   pieces: ReturnType<typeof piecesFromScene>,
   seats: ReturnType<typeof readSeats>,
   onRendering: () => void,
@@ -295,34 +323,40 @@ async function checkAndRender(
   let mmShare: number | null = null;
   let teethBox: unknown = null;
   if (deps.checkPhoto) {
-    const answer = await deps.checkPhoto({ mimeType: photo.mimeType, data: photo.data }).catch((error) => ({
-      ok: false as const,
-      detail: error instanceof Error ? error.message : String(error),
-    }));
-    if (answer.ok) {
-      const verdict = judgePhoto(answer.value, photo.size);
-      mmShare = photoScale(answer.value, photo.size);
-      teethBox = answer.value.teeth_box;
+    // Several readings of the same photo, the strictest kept (`judgeReadings`): one reading alone let a photo through.
+    const readings = await Promise.all(
+      Array.from({ length: PHOTO_READINGS }, (_, i) =>
+        deps.checkPhoto!({ mimeType: photo.mimeType, data: photo.data }, i).catch((error) => ({
+          ok: false as const,
+          detail: error instanceof Error ? error.message : String(error),
+        })),
+      ),
+    );
+    const answers = readings.flatMap((r) => (r.ok ? [r.value] : []));
+    if (answers.length > 0) {
+      const { verdict, reading, spans } = judgeReadings(answers, photo.size);
+      mmShare = coherentScale(reading, photo.size);
+      teethBox = reading.teeth_box;
       // Facts only, never the photo: they tune the thresholds.
       deps.log("photo check", {
         span: verdict.span,
+        spans,
         issues: verdict.issues,
-        lighting: answer.value.lighting,
-        sharpness: answer.value.sharpness,
-        pose: answer.value.head_pose,
-        centrals: answer.value.central_incisors_visible,
+        lighting: answers.map((a) => a.lighting),
+        sharpness: answers.map((a) => a.sharpness),
+        pose: answers.map((a) => a.head_pose),
+        centrals: answers.map((a) => a.central_incisors_visible),
         mm: mmShare === null ? null : Math.round(mmShare * 10000) / 10000,
+        mm_incoherent: mmShare === null && photoScale(reading, photo.size) !== null,
       });
       if (verdict.issues.length > 0) {
         await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
         return { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: verdict.issues } };
       }
     } else {
-      deps.log("photo check unavailable, rendering anyway", answer.detail);
+      deps.log("photo check unavailable, rendering anyway", readings.map((r) => (r.ok ? "ok" : r.detail)));
     }
   }
-
-  onRendering();
 
   // The mouth close-up: the model edits the teeth and lips only, the browser pastes them back (`crop.ts`).
   const edited = deps.cropMouth ? closeUp(photo, teethBox) : null;
@@ -330,11 +364,46 @@ async function checkAndRender(
     deps.log("mouth crop", edited ? { photo: photo.size, crop: edited.crop } : { photo: photo.size, crop: null });
   }
   const target = edited?.image ?? photo;
-  // One millimetre as a share of the edited image's width: the crop is narrower than the photo.
-  const scale = mmShare !== null && edited && photo.size ? (mmShare * photo.size.width) / edited.crop.width : mmShare;
+  // One millimetre as a share of the edited image's width, from the whole photo: the fallback scale.
+  const photoMm = mmShare !== null && edited && photo.size ? (mmShare * photo.size.width) / edited.crop.width : mmShare;
+
+  // The second look, on the image the model edits: the scale measured where the teeth are large, and each gem's spot.
+  let scale = photoMm;
+  let leftOut = new Set<string>();
+  if (deps.checkCloseUp) {
+    const spots = gemSpots(pieces, seats);
+    const look = await deps.checkCloseUp({ mimeType: target.mimeType, data: target.data }, spots.text).catch((error) => ({
+      ok: false as const,
+      detail: error instanceof Error ? error.message : String(error),
+    }));
+    if (look.ok) {
+      const closeMm = coherentScale(look.value, target.size);
+      // A close-up measure that does not hold together: no scale at all rather than the whole face's, less precise.
+      scale = closeMm ?? (photoScale(look.value, target.size) === null ? photoMm : null);
+      leftOut = leftOutGems(look.value, spots.ids);
+      deps.log("close-up check", {
+        mm: closeMm === null ? null : Math.round(closeMm * 10000) / 10000,
+        mm_from_photo: photoMm === null ? null : Math.round(photoMm * 10000) / 10000,
+        scale_sent: scale !== null,
+        spots: spots.ids.size,
+        left_out: leftOut.size,
+      });
+      // Not one gem the model could draw: the photo does not show the design's teeth.
+      const drawable = pieces.filter((p) => seats.get(p.id)?.front !== false && !leftOut.has(p.id)).length;
+      if (drawable === 0) {
+        await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
+        return { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: ["design_hidden"] } };
+      }
+    } else {
+      deps.log("close-up check unavailable, the whole photo's scale is used", look.detail);
+    }
+  }
+
+  onRendering();
 
   // Counts only: whether the browser sent the gems' places (a site older than the seats sends none).
-  deps.log("design data", { gems: pieces.length, seats: seats.size });
+  deps.log("design data", { gems: pieces.length, seats: seats.size, map: map !== null, overview: overview !== null });
+  const aspectRatio = nearestAspectRatio(target.size);
 
   let outcome: GenerateOutcome;
   try {
@@ -344,10 +413,11 @@ async function checkAndRender(
     });
     const images = [{ mimeType: design.mimeType, data: design.data }, { mimeType: target.mimeType, data: target.data }];
     if (map) images.push({ mimeType: map.mimeType, data: map.data });
+    if (map && overview) images.push({ mimeType: overview.mimeType, data: overview.data });
     outcome = await deps.generate(
       [...images, ...references],
-      buildDesignData(pieces, seats, scale, map !== null, edited !== null),
-      nearestAspectRatio(target.size),
+      buildDesignData(pieces, seats, scale, map !== null, edited !== null, overview !== null, leftOut),
+      aspectRatio,
     );
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
@@ -359,12 +429,26 @@ async function checkAndRender(
     return { status: 502, body: { ok: false, code: outcome.code } };
   }
   await deps.finishRequest(requestId, "generated", null).catch((error) => deps.log("could not close the request", error));
+  // Sizes only: what was sent against what came back, to see the model change the proportions.
+  deps.log("render size", {
+    sent: target.size,
+    asked: aspectRatio,
+    received: headerSize(outcome.image.data),
+    ratio_dropped: outcome.aspectRatioDropped === true,
+  });
   const image = { mime_type: outcome.image.mimeType, data: outcome.image.data };
-  if (!edited || !photo.size) return { status: 200, body: { ok: true, image } };
+  // How many gems were left out because their spot does not show on the photo: the dialog says so.
+  const omitted = leftOut.size ? { left_out: leftOut.size } : {};
+  if (!edited || !photo.size) return { status: 200, body: { ok: true, image, ...omitted } };
   const { crop } = edited;
   return {
     status: 200,
-    body: { ok: true, image, crop: { x: crop.x, y: crop.y, width: crop.width, height: crop.height, photo_width: photo.size.width, photo_height: photo.size.height } },
+    body: {
+      ok: true,
+      image,
+      ...omitted,
+      crop: { x: crop.x, y: crop.y, width: crop.width, height: crop.height, photo_width: photo.size.width, photo_height: photo.size.height },
+    },
   };
 }
 

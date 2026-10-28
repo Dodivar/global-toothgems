@@ -876,11 +876,25 @@
     "processing": {
       "checking": {
         "title": "Vérification de la photo…",
-        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées avant de créer le rendu. Quelques secondes."
+        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées avant de créer le rendu. Quelques secondes.",
+        "lines": [
+          "Lecture de la photo…",
+          "Repérage du sourire…",
+          "Contrôle de la netteté et de la lumière…",
+          "Vérification que les dents sont bien visibles…"
+        ]
       },
       "rendering": {
         "title": "Création du rendu…",
-        "body": "L’IA pose les pierres de la création sur la photo. Cela prend en général moins d’une minute."
+        "body": "L’IA pose les pierres de la création sur la photo. Cela prend en général moins d’une minute.",
+        "lines": [
+          "Préparation de la création 3D…",
+          "Repérage de chaque dent sur la photo…",
+          "Placement des pierres sur les dents…",
+          "Ajustement des reflets et de la lumière…",
+          "Fondu de la retouche dans la photo…",
+          "Derniers détails, presque prêt…"
+        ]
       },
       "cancel": "Annuler"
     },
@@ -940,7 +954,9 @@
       "downloaded": "Image téléchargée.",
       "share": "Partager",
       "shareText": "« {{name}} », essayé avec le Studio 3D Global Toothgems",
-      "shareFailed": "Le partage n’a pas abouti. Réessayez ou téléchargez l’image."
+      "shareFailed": "Le partage n’a pas abouti. Réessayez ou téléchargez l’image.",
+      "leftOut_one": "{{count}} gemme de la création n’a pas été posée : l’endroit de la dent où elle va n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents).",
+      "leftOut_other": "{{count}} gemmes de la création n’ont pas été posées : l’endroit des dents où elles vont n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents)."
     },
     "visitor": {
       "title": "Essayer sur mon sourire",
@@ -954,7 +970,8 @@
       "teeth_hidden": "sans rien devant les dents (main, objet, cheveux) ;",
       "too_dark": "avec plus de lumière, sans contre-jour ;",
       "too_bright": "avec une lumière moins forte, sans flash direct sur les dents ;",
-      "blurry": "nette : tenez le téléphone immobile et laissez-le faire la mise au point."
+      "blurry": "nette : tenez le téléphone immobile et laissez-le faire la mise au point.",
+      "design_hidden": "en montrant bien les dents où vont les gemmes de cette création : sur cette photo, aucune n’est visible."
     },
     "allowance": {
       "remaining_one": "Il vous reste {{count}} essai sur {{limit}} (sur 24 h glissantes).",
@@ -964,6 +981,13 @@
       "signedOut_one": "Réservé aux membres connectés : {{count}} essai par 24 h.",
       "signedOut_other": "Réservé aux membres connectés : {{count}} essais par 24 h.",
       "signedOutPlain": "Réservé aux membres connectés."
+    },
+    "viewer": {
+      "open": "Afficher l’image en grand",
+      "close": "Fermer",
+      "zoomIn": "Zoomer",
+      "zoomOut": "Dézoomer",
+      "hint": "Pincez ou touchez deux fois pour zoomer."
     }
   },
   "frontView": {

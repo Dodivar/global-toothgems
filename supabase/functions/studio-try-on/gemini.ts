@@ -44,7 +44,8 @@ export type ImageModelConfig =
   | { kind: "vertex"; model: string; credentials: AdcUserCredentials; project: string; location: string };
 
 export type GenerateOutcome =
-  | { ok: true; image: InlineImage }
+  /** `aspectRatioDropped`: the model refused the proportions asked for and answered at its own (logged). */
+  | { ok: true; image: InlineImage; aspectRatioDropped?: boolean }
   /** `blocked`: the provider refused the content (safety); `failed`: anything else. */
   | { ok: false; code: "blocked" | "failed"; detail?: string };
 
@@ -221,16 +222,19 @@ export async function generateImage(
     generationConfig: { responseModalities: ["IMAGE"], ...(withRatio && aspectRatio ? { imageConfig: { aspectRatio } } : {}) },
   });
   let res = await callModel(config, body(true), fetchImpl, timeoutMs);
+  let dropped = false;
   if (aspectRatio && res instanceof Response && res.status === 400) {
     await res.body?.cancel();
     res = await callModel(config, body(false), fetchImpl, timeoutMs);
+    dropped = true;
   }
   if (!(res instanceof Response)) return { ok: false, code: "failed", detail: res.error };
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     return { ok: false, code: "failed", detail: `http ${res.status} ${detail.slice(0, 300)}` };
   }
-  return readImage(await res.json().catch(() => null));
+  const outcome = readImage(await res.json().catch(() => null));
+  return outcome.ok && dropped ? { ...outcome, aspectRatioDropped: true } : outcome;
 }
 
 /**
@@ -243,13 +247,19 @@ export async function generateJson(
   systemPrompt: string,
   images: InlineImage[],
   responseSchema: unknown,
+  /** Text sent after the images (the gem spots of the photo check), or null for images only. */
+  after: string | null = null,
   fetchImpl: typeof fetch = fetch,
   timeoutMs = 20_000,
+  /** 0 (the default) for the most likely answer; higher for a second, independent reading. */
+  temperature = 0,
 ): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }> {
   const body = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
-    contents: [{ role: "user", parts: images.map((img) => ({ inlineData: { mimeType: img.mimeType, data: img.data } })) }],
-    generationConfig: { responseMimeType: "application/json", responseSchema, temperature: 0 },
+    contents: [
+      { role: "user", parts: [...images.map((img) => ({ inlineData: { mimeType: img.mimeType, data: img.data } })), ...(after ? [{ text: after }] : [])] },
+    ],
+    generationConfig: { responseMimeType: "application/json", responseSchema, temperature },
   };
   const res = await callModel(config, body, fetchImpl, timeoutMs);
   if (!(res instanceof Response)) return { ok: false, detail: res.error };

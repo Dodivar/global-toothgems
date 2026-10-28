@@ -1,49 +1,33 @@
-import type { Ref } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Compass, Mountain, Sprout, TrendingUp, Briefcase, type LucideIcon } from "lucide-react";
+import { Check, Mountain, Sprout, TrendingUp, Briefcase, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import { PATHWAYS, type Pathway } from "../../lib/academy/catalog";
 
 const ICONS: Record<Pathway, LucideIcon> = { new: Sprout, improve: TrendingUp, professional: Briefcase, refine: Mountain };
 
 /**
- * "Where are you in your tooth gem journey?" — four starting points, one tap
- * each. Choosing one moves the courses that suit it to the top of the
- * catalogue and marks them; choosing it again (or "back to the whole
- * catalogue") lets go. Not a quiz: one question, no hidden scoring.
+ * The starting-point picker as one row of chips — swiped on a phone, wrapped
+ * on wider screens. One tap moves the courses that suit it to the top of the
+ * catalogue and marks them, a second tap lets go: not a quiz, one question,
+ * no hidden scoring, and a starting point never hides a course. The pressed state is a fill, a check and `aria-pressed`, never the
+ * colour alone.
  */
-export function Pathways({
-  value,
-  onChange,
-  matches,
-  sectionRef,
-}: {
-  value: Pathway | null;
-  onChange: (pathway: Pathway | null) => void;
-  /** Courses that suit the chosen starting point. */
-  matches: number;
-  sectionRef?: Ref<HTMLDivElement>;
-}) {
+export function Pathways({ value, onChange, matches }: { value: Pathway | null; onChange: (pathway: Pathway | null) => void; matches: number }) {
   const { t } = useTranslation();
 
   return (
-    <div ref={sectionRef} id="point-de-depart" tabIndex={-1} className="grid scroll-mt-24 gap-6 outline-none">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end lg:gap-16">
-        <div className="grid gap-3">
-          <span className="gt-eyebrow inline-flex items-center gap-2 !text-[var(--gt-blue-700)]">
-            <Compass size={14} aria-hidden="true" />
-            {t("academyPage.pathways.eyebrow")}
-          </span>
-          <h3 id="academy-pathways-title" className="gt-alt-h3 !text-[clamp(24px,2.2vw,34px)] !font-[var(--weight-black)]">
-            {t("academyPage.pathways.title")}
-          </h3>
-        </div>
-        <p className="m-0 max-w-[48ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t("academyPage.pathways.lead")}</p>
-      </div>
-      <div role="group" aria-labelledby="academy-pathways-title" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3">
+      <h3 id="academy-pathways-title" className="text-[length:var(--text-h4)] font-bold text-[var(--text-primary)]">
+        {t("academyPage.pathways.title")}
+      </h3>
+      <div
+        role="group"
+        aria-labelledby="academy-pathways-title"
+        className="gt-scroller gt-alt-snap-pad -mx-[var(--gt-alt-gutter)] flex gap-2 px-[var(--gt-alt-gutter)] pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+      >
         {PATHWAYS.map((pathway) => {
-          const Icon = ICONS[pathway];
           const selected = value === pathway;
+          const Icon = selected ? Check : ICONS[pathway];
           return (
             <button
               key={pathway}
@@ -51,30 +35,19 @@ export function Pathways({
               aria-pressed={selected}
               onClick={() => onChange(selected ? null : pathway)}
               className={clsx(
-                "gt-academy-path group relative grid grid-cols-[auto_1fr] items-center gap-x-4 sm:items-start gap-y-1 rounded-[var(--radius-lg)] border p-4 text-left sm:p-5",
+                "gt-academy-chip inline-flex min-h-11 flex-none snap-start items-center gap-2 rounded-[var(--radius-pill)] border px-4 text-[14px] font-semibold",
                 selected
-                  ? "border-[var(--surface-inverse)] bg-[var(--surface-inverse)] text-[var(--gt-ink-300)]"
-                  : "border-[var(--border-subtle)] bg-[var(--surface-card)] text-[var(--text-body)] hover:border-[var(--gt-blue-300)]",
+                  ? "border-[var(--gt-blue-700)] bg-[var(--gt-blue-700)] text-white"
+                  : "border-[var(--gt-blue-200)] bg-white text-[var(--text-primary)] hover:border-[var(--gt-blue-400)]",
               )}
             >
-              <span
-                aria-hidden="true"
-                className={clsx(
-                  "grid h-11 w-11 sm:row-span-2 place-items-center rounded-full",
-                  selected ? "bg-[var(--accent-cta)] text-[var(--text-on-accent)]" : "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]",
-                )}
-              >
-                {selected ? <Check size={19} strokeWidth={2.5} /> : <Icon size={19} strokeWidth={1.75} />}
-              </span>
-              <span className={clsx("text-[15px] font-bold leading-snug", selected ? "text-[var(--gt-off-white)]" : "text-[var(--text-primary)]")}>
-                {t(`academyPage.pathways.${pathway}.title`)}
-              </span>
-              <span className="hidden text-[length:var(--text-body-sm)] sm:block">{t(`academyPage.pathways.${pathway}.body`)}</span>
+              <Icon size={16} strokeWidth={selected ? 2.5 : 1.9} aria-hidden="true" className={selected ? undefined : "text-[var(--gt-blue-700)]"} />
+              {t(`academyPage.pathways.${pathway}.title`)}
             </button>
           );
         })}
       </div>
-      <div className="flex min-h-6 flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="flex min-h-6 flex-wrap items-center gap-x-4 gap-y-1">
         <p role="status" className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
           {value ? (matches > 0 ? t("academyPage.pathways.matches", { count: matches }) : t("academyPage.pathways.none")) : ""}
         </p>

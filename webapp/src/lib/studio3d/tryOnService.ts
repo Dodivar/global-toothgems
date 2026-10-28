@@ -71,11 +71,12 @@ export const smileTryOnService: SmileTryOnService = supabase
           return UNAVAILABLE_STATUS;
         }
       },
-      async render({ photo, source, design, map, seats }, options) {
+      async render({ photo, source, design, overview, map, seats }, options) {
         const form = new FormData();
         form.set("source", JSON.stringify(sourcePayload(source)));
         form.set("photo", photo, "smile");
         form.set("design", design, "design");
+        if (overview) form.set("overview", overview, "overview");
         if (map) form.set("map", map, "map");
         if (seats?.length) form.set("seats", JSON.stringify(seats));
         form.set("progress", "1");
