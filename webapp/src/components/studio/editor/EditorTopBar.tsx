@@ -44,6 +44,7 @@ import {
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useFormat } from "../../../lib/format";
+import { useStudioFeature, useStudioStaff } from "../../../lib/studioAccess";
 
 const toolButton = clsx(
   "inline-grid h-9 w-9 flex-none place-items-center rounded-[var(--radius-sm)] text-[var(--gt-ink-600)] transition-colors",
@@ -59,6 +60,8 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
   const { t, formatEstimate } = useEditorLabels();
   const fileRef = useRef<HTMLInputElement>(null);
   const total = useCompositionEstimate(snap.jewels).totalMinor;
+  // Importing a 3D model is a staff tool (owner's request 2026-10-28): members work on the Studio's dentition.
+  const staff = useStudioStaff();
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -133,16 +136,20 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
       </div>
       <TourButton />
       <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
-      <input ref={fileRef} type="file" accept=".glb,.gltf,model/gltf-binary" className="hidden" onChange={handleFile} tabIndex={-1} />
-      <button
-        type="button"
-        className={clsx(toolButton, "max-sm:hidden")}
-        aria-label={t("studio.editor.importModel")}
-        title={t("studio.editor.importModelHint")}
-        onClick={() => fileRef.current?.click()}
-      >
-        <Upload size={16} aria-hidden="true" />
-      </button>
+      {staff && (
+        <>
+          <input ref={fileRef} type="file" accept=".glb,.gltf,model/gltf-binary" className="hidden" onChange={handleFile} tabIndex={-1} />
+          <button
+            type="button"
+            className={clsx(toolButton, "max-sm:hidden")}
+            aria-label={t("studio.editor.importModel")}
+            title={t("studio.editor.importModelHint")}
+            onClick={() => fileRef.current?.click()}
+          >
+            <Upload size={16} aria-hidden="true" />
+          </button>
+        </>
+      )}
       {snap.modelMode !== "dentition" && !snap.modelLoading && (
         <button
           type="button"
@@ -201,6 +208,10 @@ function ExportMenu() {
   const ws = useWorkspace();
   const activeId = useStudio().active?.creationId;
   const saved = !ws.dirty ? ws.creations.find((c) => c.id === activeId && c.elementCount > 0) : undefined;
+  // Without a background from the Artist plan up; below it the PNG keeps the stage and the watermark.
+  const transparentAllowed = useStudioFeature("transparentExport") === true;
+  // The raw JSON is a team tool, not a member export.
+  const staff = useStudioStaff();
 
   const close = () => {
     setOpen(false);
@@ -209,7 +220,7 @@ function ExportMenu() {
   const exportPng = async (transparent: boolean) => {
     const engine = getEngine();
     close();
-    if (!engine) return;
+    if (!engine || (transparent && !transparentAllowed)) return;
     try {
       await engine.exportPNG(transparent);
       notify(transparent ? "exportedTransparent" : "exportedPng");
@@ -299,12 +310,14 @@ function ExportMenu() {
         sub={t("studio.editor.export.pngSub")}
         onClick={() => exportPng(false)}
       />
-      <PopoverItem
-        icon={<SquareDashed size={14} />}
-        label={t("studio.editor.export.transparent")}
-        sub={t("studio.editor.export.transparentSub")}
-        onClick={() => exportPng(true)}
-      />
+      {transparentAllowed && (
+        <PopoverItem
+          icon={<SquareDashed size={14} />}
+          label={t("studio.editor.export.transparent")}
+          sub={t("studio.editor.export.transparentSub")}
+          onClick={() => exportPng(true)}
+        />
+      )}
       {saved && (
         <PopoverItem
           icon={<ScanFace size={14} />}
@@ -348,13 +361,17 @@ function ExportMenu() {
         />
       )}
       <PlacementSheetMenuItem onDone={close} />
-      <PopoverSeparator />
-      <PopoverItem
-        icon={<Braces size={14} />}
-        label={t("studio.editor.export.json")}
-        sub={t("studio.editor.export.jsonSub")}
-        onClick={exportJson}
-      />
+      {staff && (
+        <>
+          <PopoverSeparator />
+          <PopoverItem
+            icon={<Braces size={14} />}
+            label={t("studio.editor.export.json")}
+            sub={t("studio.editor.export.jsonSub")}
+            onClick={exportJson}
+          />
+        </>
+      )}
     </EditorPopover>
   );
 }

@@ -139,6 +139,7 @@
       "templates": "The Global Toothgems templates, to copy into your creations",
       "watermark": "Social posts, with the Global Toothgems watermark",
       "ownLogo": "Posts signed with your logo, or without a watermark",
+      "transparentExport": "PNG snapshots without a background, ready to cut out",
       "glowbook": "Your Glowbook: the public showcase of your creations, customised, with a QR code and a map",
       "tryOn": "AI try-on: your clients see your creations on their own smile",
       "collections": "Folders to file your creations",

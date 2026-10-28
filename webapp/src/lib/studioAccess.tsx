@@ -244,3 +244,15 @@ export function useStudioFeature(feature: StudioFeature): boolean | null {
   if (!status || status.kind === "preview") return true;
   return status.kind === "ready" ? hasFeature(status.info.tier, feature) : null;
 }
+
+/**
+ * Whether the signed-in member is active staff, as far as the Studio knows
+ * (`staff` access state): true in the preview, false otherwise until known.
+ * Gates the staff-only editor tools, such as importing a 3D model — a local
+ * convenience that saves nothing, so there is no write for the database to refuse.
+ */
+export function useStudioStaff(): boolean {
+  const status = useStudioAccess()?.status;
+  if (!status || status.kind === "preview") return true;
+  return status.kind === "ready" && status.info.state === "staff";
+}

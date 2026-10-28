@@ -13,7 +13,7 @@ import { STUDIO_PLAN_FEATURES, type StudioPaidPlanId, type StudioPlanFeatures } 
 export type StudioTier = StudioPaidPlanId;
 
 /** The features a plan either has or has not. */
-export type StudioFeature = "ownLogo" | "postLayouts" | "templates" | "collections" | "glowbook" | "tryOn";
+export type StudioFeature = "ownLogo" | "postLayouts" | "transparentExport" | "templates" | "collections" | "glowbook" | "tryOn";
 
 export type StudioCountKind = "creations" | "gemGroups";
 

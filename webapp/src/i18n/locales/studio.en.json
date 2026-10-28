@@ -230,7 +230,7 @@
       "menu": "Export",
       "images": "Images",
       "png": "Snapshot · PNG",
-      "pngSub": "Current view on the Studio backdrop",
+      "pngSub": "Current view on the Studio backdrop, with the Global Toothgems logo",
       "transparent": "Snapshot · transparent PNG",
       "transparentSub": "Backdrop removed, transparency kept",
       "quoteSection": "Estimate",
@@ -240,7 +240,7 @@
       "clientPlaceholder": "Client name…",
       "quoteAction": "Create",
       "json": "Design · JSON",
-      "jsonSub": "The design's data, to keep or share with your artist"
+      "jsonSub": "The design's raw data · team only"
     },
     "share": {
       "menu": "Share",

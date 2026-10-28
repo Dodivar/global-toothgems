@@ -19,6 +19,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { getEngine } from "../../../lib/studio3d/engine";
+import { useStudioStaff } from "../../../lib/studioAccess";
 import {
   HELP_CHAPTERS,
   helpTopicFromHash,
@@ -162,13 +163,17 @@ export function HelpPanel() {
   }, [t]);
 
   const searching = query.trim() !== "";
+  const staff = useStudioStaff();
   const chapters = useMemo(
     () =>
-      HELP_CHAPTERS.map((chapter) => ({
-        ...chapter,
-        topics: searching ? chapter.topics.filter((topic) => matchesHelpQuery(searchText.get(topic.id) ?? "", query)) : chapter.topics,
-      })).filter((chapter) => chapter.topics.length > 0),
-    [query, searching, searchText],
+      HELP_CHAPTERS.map((chapter) => {
+        const visible = chapter.topics.filter((topic) => staff || !topic.staffOnly);
+        return {
+          ...chapter,
+          topics: searching ? visible.filter((topic) => matchesHelpQuery(searchText.get(topic.id) ?? "", query)) : visible,
+        };
+      }).filter((chapter) => chapter.topics.length > 0),
+    [query, searching, searchText, staff],
   );
   const shown = chapters.reduce((n, chapter) => n + chapter.topics.length, 0);
   const allOpen = chapters.every((chapter) => chapter.topics.every((topic) => open.has(topic.id)));

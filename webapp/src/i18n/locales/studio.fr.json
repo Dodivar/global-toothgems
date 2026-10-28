@@ -230,7 +230,7 @@
       "menu": "Exporter",
       "images": "Images",
       "png": "Capture · PNG",
-      "pngSub": "Vue actuelle sur le fond du Studio",
+      "pngSub": "Vue actuelle sur le fond du Studio, avec le logo Global Toothgems",
       "transparent": "Capture · PNG transparent",
       "transparentSub": "Fond retiré, transparence conservée",
       "quoteSection": "Estimation",
@@ -240,7 +240,7 @@
       "clientPlaceholder": "Nom du client…",
       "quoteAction": "Créer",
       "json": "Création · JSON",
-      "jsonSub": "Les données de la création, à conserver ou à partager avec votre artiste"
+      "jsonSub": "Les données brutes de la création · réservé à l'équipe"
     },
     "share": {
       "menu": "Partager",

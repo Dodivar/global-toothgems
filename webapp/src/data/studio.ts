@@ -200,6 +200,8 @@ export interface StudioPlanFeatures {
   /** How social posts are signed: the Global Toothgems watermark, or the member's own logo (or nothing). */
   postSignature: "watermark" | "ownLogo";
   postLayouts: boolean;
+  /** PNG export with a transparent background (owner's request 2026-10-28); below it the image keeps the stage and the watermark. */
+  transparentExport: boolean;
   /** The Global Toothgems templates page (browse and copy). */
   templates: boolean;
   /** Collections ("folders"): creating, renaming and filing creations. */
@@ -214,6 +216,7 @@ export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> 
     gemGroups: 3,
     postSignature: "watermark",
     postLayouts: false,
+    transparentExport: false,
     templates: false,
     collections: false,
     glowbook: false,
@@ -224,6 +227,7 @@ export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> 
     gemGroups: 30,
     postSignature: "ownLogo",
     postLayouts: false,
+    transparentExport: true,
     templates: true,
     collections: true,
     glowbook: false,
@@ -234,6 +238,7 @@ export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> 
     gemGroups: null,
     postSignature: "ownLogo",
     postLayouts: true,
+    transparentExport: true,
     templates: true,
     collections: true,
     glowbook: true,
