@@ -4,7 +4,7 @@ import { readSiteOrigins } from "../_shared/http.ts";
 import { mouthCrop, nearestRatio } from "./crop.ts";
 import { accessToken, generateImage, generateUrl, imageModelConfig, nearestAspectRatio, readAdcJson, readImage, resetTokenCache } from "./gemini.ts";
 import { handleStudioTryOn, headerSize, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
-import { imageSize, judgePhoto, MIN_TEETH_SPAN, photoScale } from "./photoCheck.ts";
+import { coherentScale, imageSize, judgePhoto, judgeReadings, MIN_TEETH_SPAN, photoScale } from "./photoCheck.ts";
 import { buildDesignData, gemSpots, leftOutGems, piecesFromScene, readSeats, toothLabel } from "./prompt.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
@@ -168,7 +168,7 @@ Deno.test("photo check: an unsuitable photo is refused with its reasons, recorde
   });
   const res = await handleStudioTryOn(post(form()), deps);
   assertEquals(res.status, 422);
-  assertEquals(await res.json(), { ok: false, code: "photo_unsuitable", reasons: ["too_dark", "too_far"] });
+  assertEquals(await res.json(), { ok: false, code: "photo_unsuitable", reasons: ["too_far", "too_dark"] });
   assertEquals(calls.finished, ["failed:photo_unsuitable"]);
   assertEquals(calls.images, []);
 });
@@ -577,12 +577,12 @@ Deno.test("gem spots: the check reads each gem's spot; hidden ones are left out,
   assertStringIncludes(data, "1 gem is LEFT OUT");
   assertStringIncludes(data, "A gem of tooth 12. LEFT OUT");
 
-  // Through the handler: the spots go to the check, the render leaves the gem out, the answer says how many.
+  // Through the handler: the spots go to the close-up check, the render leaves the gem out, the answer says how many.
   let sent: string | null = null;
   const { deps, calls } = fake({
-    checkPhoto: (_photo, text) => {
+    checkCloseUp: (_image, text) => {
       sent = text;
-      return Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, gem_spots: [{ id: "g2", placeable: false }] } });
+      return Promise.resolve({ ok: true, value: { teeth_box: [], central_incisors_box: [], gem_spots: [{ id: "g2", placeable: false }] } });
     },
   });
   const res = await handleStudioTryOn(post(form()), deps);
@@ -593,13 +593,75 @@ Deno.test("gem spots: the check reads each gem's spot; hidden ones are left out,
 
   // Not one gem visible: refused like an unsuitable photo, no render.
   const none = fake({
-    checkPhoto: () => Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, gem_spots: [{ id: "g1", placeable: false }, { id: "g2", placeable: false }] } }),
+    checkCloseUp: () =>
+      Promise.resolve({ ok: true, value: { teeth_box: [], central_incisors_box: [], gem_spots: [{ id: "g1", placeable: false }, { id: "g2", placeable: false }] } }),
   });
   const refused = await handleStudioTryOn(post(form()), none.deps);
   assertEquals(refused.status, 422);
   assertEquals((await refused.json()).reasons, ["design_hidden"]);
   assertEquals(none.calls.images.length, 0);
   assertEquals(none.calls.finished, ["failed:photo_unsuitable"]);
+});
+
+Deno.test("photo readings: the photo is read twice and the strictest reading decides", async () => {
+  const size = { width: 1536, height: 2048 };
+  // The reported photo: one reading measured the teeth at 0.22 of the longer side and a turned head, the other at 0.33.
+  const strict = { ...GOOD_PHOTO, teeth_box: [520, 330, 600, 610], head_pose: "slightly_turned" };
+  const lenient = { ...GOOD_PHOTO, teeth_box: [500, 230, 620, 670] };
+  const { verdict, reading, spans } = judgeReadings([lenient, strict], size);
+  assertEquals(verdict.issues, ["too_far", "not_frontal"]);
+  assertEquals(spans, [0.33, 0.21]);
+  assertEquals(reading, strict);
+
+  const readings: number[] = [];
+  const answers = [lenient, strict];
+  const { deps, calls } = fake({
+    checkPhoto: (_photo, i) => {
+      readings.push(i);
+      return Promise.resolve({ ok: true, value: answers[i] });
+    },
+  });
+  const res = await handleStudioTryOn(post(form()), deps);
+  assertEquals(res.status, 422);
+  assertEquals(readings.sort(), [0, 1]);
+  assertEquals(calls.images.length, 0);
+  // One reading failing: the other one decides alone.
+  const half = fake({
+    checkPhoto: (_photo, i) => (i === 0 ? Promise.reject(new Error("boom")) : Promise.resolve({ ok: true, value: GOOD_PHOTO })),
+  });
+  assertEquals((await handleStudioTryOn(post(form()), half.deps)).status, 200);
+});
+
+Deno.test("scale: kept only when the incisors fit the teeth; the close-up's measure wins", async () => {
+  // Incisors 0.1 wide in teeth 0.4 wide: a quarter, plausible.
+  assertEquals(coherentScale({ teeth_box: [400, 300, 520, 700], central_incisors_box: [450, 450, 520, 550] }, null) !== null, true);
+  // Incisors as wide as nine tenths of the teeth: one box is wrong, no scale.
+  assertEquals(coherentScale({ teeth_box: [400, 300, 520, 400], central_incisors_box: [450, 300, 520, 390] }, null), null);
+  assertEquals(coherentScale({ central_incisors_box: [450, 450, 520, 550] }, null), null);
+
+  const sent: string[] = [];
+  const close = { teeth_box: [300, 100, 700, 900], central_incisors_box: [300, 400, 600, 600] }; // incisors 0.2 of the close-up
+  const render = (checkCloseUp: StudioTryOnDeps["checkCloseUp"]) => {
+    const { deps } = fake({
+      checkPhoto: () => Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, central_incisors_box: [450, 450, 520, 550] } }),
+      checkCloseUp,
+      generate: (_images, designData) => {
+        sent.push(designData);
+        return Promise.resolve({ ok: true, image: { mimeType: "image/png", data: "aW1n" } });
+      },
+    });
+    return handleStudioTryOn(post(form()), deps);
+  };
+  // The close-up measure: 20 % of its width for the incisors.
+  assertEquals((await render(() => Promise.resolve({ ok: true, value: { ...close, gem_spots: [] } }))).status, 200);
+  assertStringIncludes(sent[0], "span about 20% of the photo's width");
+  // An incoherent close-up measure: no scale at all.
+  const wrong = { ...close, central_incisors_box: [300, 100, 600, 820] };
+  assertEquals((await render(() => Promise.resolve({ ok: true, value: { ...wrong, gem_spots: [] } }))).status, 200);
+  assertEquals(sent[1].includes("SCALE MEASURED"), false);
+  // No close-up check: the whole photo's measure (10 % of its width, the photo not cut).
+  assertEquals((await render(undefined)).status, 200);
+  assertStringIncludes(sent[2], "span about 10% of the photo's width");
 });
 
 /* ------------------------------------------------------------ mouth crop */

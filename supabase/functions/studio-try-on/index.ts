@@ -2,7 +2,7 @@ import { requireEnv, serviceClient } from "../_shared/clients.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { configProblem, generateImage, generateJson, imageModelConfig, type InlineImage } from "./gemini.ts";
 import { handleStudioTryOn, toBase64, type TryOnCreationRow } from "./handler.ts";
-import { DEFAULT_CHECK_MODEL, PHOTO_CHECK_PROMPT, PHOTO_CHECK_SCHEMA } from "./photoCheck.ts";
+import { CLOSE_UP_CHECK_PROMPT, CLOSE_UP_CHECK_SCHEMA, DEFAULT_CHECK_MODEL, PHOTO_CHECK_PROMPT, PHOTO_CHECK_SCHEMA } from "./photoCheck.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
 /*
@@ -123,7 +123,11 @@ Deno.serve((req) =>
     references,
     readsMap: version === "v3",
     cropMouth: Deno.env.get("TRY_ON_MOUTH_CROP")?.trim().toLowerCase() !== "off",
-    checkPhoto: checkConfig ? (photo, spots) => generateJson(checkConfig, PHOTO_CHECK_PROMPT, [photo], PHOTO_CHECK_SCHEMA, spots) : undefined,
+    // The second reading is sampled (temperature 0.6), so it is not a copy of the first.
+    checkPhoto: checkConfig
+      ? (photo, reading) => generateJson(checkConfig, PHOTO_CHECK_PROMPT, [photo], PHOTO_CHECK_SCHEMA, null, fetch, undefined, reading === 0 ? 0 : 0.6)
+      : undefined,
+    checkCloseUp: checkConfig ? (image, spots) => generateJson(checkConfig, CLOSE_UP_CHECK_PROMPT, [image], CLOSE_UP_CHECK_SCHEMA, spots) : undefined,
     generate: (images, designData, aspectRatio) =>
       config
         ? generateImage(config, systemPrompt, images, version === "v3" ? designData : null, fetch, undefined, aspectRatio)

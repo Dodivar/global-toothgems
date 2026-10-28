@@ -251,13 +251,15 @@ export async function generateJson(
   after: string | null = null,
   fetchImpl: typeof fetch = fetch,
   timeoutMs = 20_000,
+  /** 0 (the default) for the most likely answer; higher for a second, independent reading. */
+  temperature = 0,
 ): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }> {
   const body = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [
       { role: "user", parts: [...images.map((img) => ({ inlineData: { mimeType: img.mimeType, data: img.data } })), ...(after ? [{ text: after }] : [])] },
     ],
-    generationConfig: { responseMimeType: "application/json", responseSchema, temperature: 0 },
+    generationConfig: { responseMimeType: "application/json", responseSchema, temperature },
   };
   const res = await callModel(config, body, fetchImpl, timeoutMs);
   if (!(res instanceof Response)) return { ok: false, detail: res.error };

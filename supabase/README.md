@@ -1434,11 +1434,17 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
                             → the creation must hold at least one valid gem (else not_found)
                             → photo check (photoCheck.ts, TRY_ON_CHECK_MODEL, default gemini-3.1-flash-lite, JSON
                               answer) → refused: row 'failed' / 'photo_unsuitable', 422 with the reasons, no render;
-                              check unavailable: render anyway. Since 2026-10-28 the check also gets the design's GEM
-                              SPOTS (prompt.ts gemSpots: tooth, cut, size, place on the crown, named g1…) and says
-                              which are not visible enamel on the photo (lip, upper teeth, edge of the photo); those
-                              gems are marked LEFT OUT in the design data (never drawn), the answer carries left_out
-                              (the dialog says how many), and a design with no visible gem is refused (design_hidden)
+                              check unavailable: render anyway. Since 2026-10-28 the photo is read twice at once
+                              (PHOTO_READINGS, the second sampled at temperature 0.6) and the strictest reading decides
+                              (judgeReadings: every issue found, the smallest span); its scale is kept only when the
+                              incisors' box is coherent with the teeth's (coherentScale: 0.22–0.7 of their width).
+                              Then a second look on the mouth close-up (CLOSE_UP_CHECK_PROMPT, after the crop below):
+                              the scale sent to the image model is measured there (no scale when that measure is
+                              incoherent; the whole photo's when the look fails), and it judges the design's GEM
+                              SPOTS (prompt.ts gemSpots: tooth, cut, size, place on the crown, named g1…) — gems
+                              whose spot is not visible enamel are marked LEFT OUT in the design data (never drawn),
+                              the answer carries left_out (the dialog says how many), and a design with no visible
+                              gem is refused (design_hidden). Change log and how to revert: docs/studio-try-on-changelog.md
                             → mouth close-up (crop.ts, since 2026-10-26; TRY_ON_MOUTH_CROP=off disables it): the
                               check's teeth_box widened to the lips and to the nearest output proportion, cut
                               from the JPEG (npm:jpeg-js) and sent as IMAGE 2 instead of the whole photo; the

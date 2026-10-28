@@ -2,7 +2,7 @@ import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./gemini.ts";
 import { cropJpeg, mouthCrop, type CropRect } from "./crop.ts";
-import { imageSize, judgePhoto, photoScale } from "./photoCheck.ts";
+import { coherentScale, imageSize, judgeReadings, PHOTO_READINGS, photoScale } from "./photoCheck.ts";
 import { buildDesignData, gemSpots, leftOutGems, piecesFromScene, readSeats } from "./prompt.ts";
 
 /**
@@ -90,10 +90,15 @@ export interface StudioTryOnDeps {
   /** Whether the prompt reads the flat design map (IMAGE 3): v3 only; v1 never gets it. */
   readsMap: boolean;
   /**
-   * The photo check model's answer (`photoCheck.ts`), or why there is none; absent: no check.
-   * `spots`: the design's gem spots (`gemSpots`), sent after the photo so the check says which are visible.
+   * One reading of the photo by the check model (`photoCheck.ts`), or why there is none; absent: no check.
+   * Called `PHOTO_READINGS` times at once; `reading` tells them apart (0 the first).
    */
-  checkPhoto?(photo: InlineImage, spots: string | null): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
+  checkPhoto?(photo: InlineImage, reading: number): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
+  /**
+   * The second look, on the image the model edits (the mouth close-up): the teeth's boxes for the scale and
+   * each gem's spot (`CLOSE_UP_CHECK_PROMPT`); `spots`: the design's gem spots (`gemSpots`). Absent: none.
+   */
+  checkCloseUp?(image: InlineImage, spots: string | null): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
   /**
    * Sends the images, in this order, with the system instructions; `designData`
    * (the gems as text, from the database) follows them when the prompt version reads it.
@@ -317,43 +322,41 @@ async function checkAndRender(
 ): Promise<Ending> {
   let mmShare: number | null = null;
   let teethBox: unknown = null;
-  let leftOut = new Set<string>();
   if (deps.checkPhoto) {
-    const spots = gemSpots(pieces, seats);
-    const answer = await deps.checkPhoto({ mimeType: photo.mimeType, data: photo.data }, spots.text).catch((error) => ({
-      ok: false as const,
-      detail: error instanceof Error ? error.message : String(error),
-    }));
-    if (answer.ok) {
-      const verdict = judgePhoto(answer.value, photo.size);
-      mmShare = photoScale(answer.value, photo.size);
-      teethBox = answer.value.teeth_box;
-      leftOut = leftOutGems(answer.value, spots.ids);
-      // Not one gem the model could draw: the photo does not show the design's teeth.
-      const drawable = pieces.filter((p) => seats.get(p.id)?.front !== false && !leftOut.has(p.id)).length;
-      if (drawable === 0 && verdict.issues.length === 0) verdict.issues.push("design_hidden");
+    // Several readings of the same photo, the strictest kept (`judgeReadings`): one reading alone let a photo through.
+    const readings = await Promise.all(
+      Array.from({ length: PHOTO_READINGS }, (_, i) =>
+        deps.checkPhoto!({ mimeType: photo.mimeType, data: photo.data }, i).catch((error) => ({
+          ok: false as const,
+          detail: error instanceof Error ? error.message : String(error),
+        })),
+      ),
+    );
+    const answers = readings.flatMap((r) => (r.ok ? [r.value] : []));
+    if (answers.length > 0) {
+      const { verdict, reading, spans } = judgeReadings(answers, photo.size);
+      mmShare = coherentScale(reading, photo.size);
+      teethBox = reading.teeth_box;
       // Facts only, never the photo: they tune the thresholds.
       deps.log("photo check", {
         span: verdict.span,
+        spans,
         issues: verdict.issues,
-        lighting: answer.value.lighting,
-        sharpness: answer.value.sharpness,
-        pose: answer.value.head_pose,
-        centrals: answer.value.central_incisors_visible,
+        lighting: answers.map((a) => a.lighting),
+        sharpness: answers.map((a) => a.sharpness),
+        pose: answers.map((a) => a.head_pose),
+        centrals: answers.map((a) => a.central_incisors_visible),
         mm: mmShare === null ? null : Math.round(mmShare * 10000) / 10000,
-        spots: spots.ids.size,
-        left_out: leftOut.size,
+        mm_incoherent: mmShare === null && photoScale(reading, photo.size) !== null,
       });
       if (verdict.issues.length > 0) {
         await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
         return { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: verdict.issues } };
       }
     } else {
-      deps.log("photo check unavailable, rendering anyway", answer.detail);
+      deps.log("photo check unavailable, rendering anyway", readings.map((r) => (r.ok ? "ok" : r.detail)));
     }
   }
-
-  onRendering();
 
   // The mouth close-up: the model edits the teeth and lips only, the browser pastes them back (`crop.ts`).
   const edited = deps.cropMouth ? closeUp(photo, teethBox) : null;
@@ -361,8 +364,42 @@ async function checkAndRender(
     deps.log("mouth crop", edited ? { photo: photo.size, crop: edited.crop } : { photo: photo.size, crop: null });
   }
   const target = edited?.image ?? photo;
-  // One millimetre as a share of the edited image's width: the crop is narrower than the photo.
-  const scale = mmShare !== null && edited && photo.size ? (mmShare * photo.size.width) / edited.crop.width : mmShare;
+  // One millimetre as a share of the edited image's width, from the whole photo: the fallback scale.
+  const photoMm = mmShare !== null && edited && photo.size ? (mmShare * photo.size.width) / edited.crop.width : mmShare;
+
+  // The second look, on the image the model edits: the scale measured where the teeth are large, and each gem's spot.
+  let scale = photoMm;
+  let leftOut = new Set<string>();
+  if (deps.checkCloseUp) {
+    const spots = gemSpots(pieces, seats);
+    const look = await deps.checkCloseUp({ mimeType: target.mimeType, data: target.data }, spots.text).catch((error) => ({
+      ok: false as const,
+      detail: error instanceof Error ? error.message : String(error),
+    }));
+    if (look.ok) {
+      const closeMm = coherentScale(look.value, target.size);
+      // A close-up measure that does not hold together: no scale at all rather than the whole face's, less precise.
+      scale = closeMm ?? (photoScale(look.value, target.size) === null ? photoMm : null);
+      leftOut = leftOutGems(look.value, spots.ids);
+      deps.log("close-up check", {
+        mm: closeMm === null ? null : Math.round(closeMm * 10000) / 10000,
+        mm_from_photo: photoMm === null ? null : Math.round(photoMm * 10000) / 10000,
+        scale_sent: scale !== null,
+        spots: spots.ids.size,
+        left_out: leftOut.size,
+      });
+      // Not one gem the model could draw: the photo does not show the design's teeth.
+      const drawable = pieces.filter((p) => seats.get(p.id)?.front !== false && !leftOut.has(p.id)).length;
+      if (drawable === 0) {
+        await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
+        return { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: ["design_hidden"] } };
+      }
+    } else {
+      deps.log("close-up check unavailable, the whole photo's scale is used", look.detail);
+    }
+  }
+
+  onRendering();
 
   // Counts only: whether the browser sent the gems' places (a site older than the seats sends none).
   deps.log("design data", { gems: pieces.length, seats: seats.size, map: map !== null, overview: overview !== null });
