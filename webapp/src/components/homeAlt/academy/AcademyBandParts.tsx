@@ -6,8 +6,7 @@ import { photo } from "../../../lib/images";
 import { GEMS_CATEGORY, shopHref } from "../../../data/taxonomy";
 import { STUDIO_PATH } from "../../../lib/studioUrl";
 import { AcademyCourseCard } from "../../academy/AcademyCourseCard";
-import { useAcademy } from "../../../lib/academy/AcademyProvider";
-import type { CatalogueFigures } from "../../../lib/academy/publicCourse";
+import type { CatalogueFigures, PublicCourse } from "../../../lib/academy/publicCourse";
 import { formatDuration } from "../../../lib/trainingFilters";
 
 /**
@@ -47,34 +46,24 @@ export function AcademyFigures({ figures, className }: { figures: CatalogueFigur
 }
 
 /**
- * The published courses as editorial cards (none shown until one is online),
- * a swiped row on phones. No price: it belongs to the course's own page.
+ * The courses after the one shown beside the statement, as editorial cards
+ * (nothing while there are none), a swiped row on phones. No price: it
+ * belongs to the course's own page.
  */
-export function AcademyCourseRow({ className }: { className?: string }) {
+export function AcademyCourseRow({ courses, className }: { courses: PublicCourse[]; className?: string }) {
   const { t, i18n } = useTranslation();
-  const { courses } = useAcademy();
   if (courses.length === 0) return null;
 
   return (
     <div className={className}>
       <h3 className="gt-alt-h3 mb-6 !text-[var(--gt-off-white)]">{t("homeAlt.academy.coursesTitle")}</h3>
-      <ul className="gt-scroller gt-alt-snap-pad -mx-[var(--gt-alt-gutter)] my-0 flex list-none gap-4 px-[var(--gt-alt-gutter)] pb-4 md:mx-0 md:grid md:grid-cols-2 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
-        {courses.slice(0, 3).map((course, i) => (
-          <li key={course.id} className={clsx("w-[82%] max-w-[360px] flex-none snap-start md:w-auto md:max-w-none", i === 0 && "md:col-span-2 lg:col-span-1")}>
-            <AcademyCourseCard
-              course={course}
-              lang={i18n.language}
-              featured={i === 0}
-              heading="h4"
-              badges={i === 0 ? [{ label: t("homeAlt.academy.featured"), tone: "brand" }] : []}
-              ctaLabel={t("homeAlt.academy.courseCta")}
-            />
+      <ul className="gt-scroller gt-alt-snap-pad -mx-[var(--gt-alt-gutter)] my-0 flex list-none gap-4 px-[var(--gt-alt-gutter)] pb-4 md:mx-0 md:grid md:grid-cols-2 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-3 lg:gap-6">
+        {courses.map((course) => (
+          <li key={course.id} className="w-[82%] max-w-[360px] flex-none snap-start md:w-auto md:max-w-none">
+            <AcademyCourseCard course={course} lang={i18n.language} heading="h4" ctaLabel={t("homeAlt.academy.courseCta")} />
           </li>
         ))}
       </ul>
-      <p className="m-0 mt-6 max-w-[var(--max-width-prose)] text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)]">
-        {t("homeAlt.academy.footnote")}
-      </p>
     </div>
   );
 }

@@ -94,9 +94,7 @@
       "shineTitle": "Rayonner",
       "shineBody": "Votre vitrine Glowbook, avec le badge des artistes certifiées."
     },
-    "courseChip": "Formation · {{lessons}}",
-    "certificateChip": "Certificat délivré à la fin",
-    "coursesTitle": "Nos formations",
+    "coursesTitle": "Les autres formations",
     "courseCta": "Découvrir la formation",
     "featured": "Pour commencer",
     "footnote": "Les formations sont dispensées en français, en anglais et en allemand, et restent sur votre compte à côté de vos commandes."
