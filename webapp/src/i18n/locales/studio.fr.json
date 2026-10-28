@@ -611,6 +611,9 @@
     },
     "shopping": {
       "title": "Produits à commander",
+      "buyTitle": "Acheter les gemmes",
+      "buyProducts_one": "{{count}} produit",
+      "buyProducts_other": "{{count}} produits",
       "hint": "Les produits de la boutique qu’il faut pour réaliser cette création : la couleur et la taille de vos pièces, dans le plus petit pack qui les couvre (2 pièces → au moins le pack de 10), un bijou en or par pièce. Les prix sont recalculés au paiement.",
       "pack_one": "Pack de {{count}}",
       "pack_other": "Pack de {{count}}",

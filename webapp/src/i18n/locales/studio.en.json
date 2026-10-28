@@ -611,6 +611,9 @@
     },
     "shopping": {
       "title": "Products to order",
+      "buyTitle": "Buy the gems",
+      "buyProducts_one": "{{count}} product",
+      "buyProducts_other": "{{count}} products",
       "hint": "The shop products this design takes: your pieces' colour and size, in the smallest pack that covers them (2 pieces → at least the pack of 10), one gold charm per piece. Prices are worked out again at checkout.",
       "pack_one": "Pack of {{count}}",
       "pack_other": "Pack of {{count}}",

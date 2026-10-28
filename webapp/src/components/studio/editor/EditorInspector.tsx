@@ -6,6 +6,7 @@ import {
   AlignHorizontalSpaceAround,
   ChevronDown,
   ChevronRight,
+  ShoppingBag,
   Copy,
   ExternalLink,
   Crosshair,
@@ -554,7 +555,7 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
   const { t, formatEstimate } = useEditorLabels();
   const { byKey } = useStudioGems();
   const zones = new Set(snap.jewels.map((j) => j.toothId)).size;
-  const total = estimateComposition(snap.jewels, (key) => byKey.get(key)).totalMinor;
+  const estimate = estimateComposition(snap.jewels, (key) => byKey.get(key));
   const shortcuts = [
     "undoRedo",
     "selectAll",
@@ -572,23 +573,11 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
   return (
     <>
       <h2 className="sr-only">{t("studio.editor.inspector.overview")}</h2>
-      {/* The piece count is in the top bar; here the teeth decorated and the estimate. */}
       {snap.jewels.length > 0 && (
-        <div className="flex items-baseline justify-between rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-3 py-2.5">
-          <span className="text-[11px] font-bold uppercase tracking-[.1em] text-[var(--gt-blue-700)]">
-            {t("studio.editor.inspector.teethCount", { count: zones })}
-            {total > 0 && ` · ${t("studio.editor.inspector.estimate")}`}
-          </span>
-          {total > 0 && <strong className="text-[18px] font-[var(--weight-black)] text-[var(--text-primary)]">{formatEstimate(total)}</strong>}
-        </div>
+        <BuyGemsPanel jewels={snap.jewels} products={estimate.lines.length} teeth={zones} totalMinor={estimate.totalMinor} formatEstimate={formatEstimate} />
       )}
-      {/* Stays in view: it qualifies the price shown just above. */}
-      {total > 0 && <Hint className="mt-2.5">{t("studio.editor.estimateHint")}</Hint>}
 
       <FrontViewSection snap={snap} />
-
-      <SectionLabel info={t("studio.editor.shopping.hint")} topic="shoppingList">{t("studio.editor.shopping.title")}</SectionLabel>
-      <ShoppingList jewels={snap.jewels} />
 
       {/* Keyboard and mouse shortcuts mean nothing on a touch screen; folded until asked for. */}
       <details className="group mt-5 max-lg:hidden">
@@ -622,6 +611,66 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
         </dl>
       </details>
     </>
+  );
+}
+
+/**
+ * "Buy the gems", first in the overview to lead to the shop (owner's request
+ * 2026-10-28): one row with the products to order, the teeth decorated and the
+ * estimate, folded by default; unfolded, the shopping list and its "Add to
+ * cart" button, then what the estimate means. Soft brand blue, not the green
+ * call to action of Save.
+ */
+function BuyGemsPanel({
+  jewels,
+  products,
+  teeth,
+  totalMinor,
+  formatEstimate,
+}: {
+  jewels: PlacedJewelry[];
+  products: number;
+  teeth: number;
+  totalMinor: number;
+  formatEstimate: (minor: number) => string;
+}) {
+  const { t } = useEditorLabels();
+  const [open, setOpen] = useState(false);
+  const bodyId = useId();
+  return (
+    <section className="rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)]">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={() => setOpen((v) => !v)}
+        className={clsx(
+          "flex w-full min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] px-3 py-2.5 text-left transition-colors hover:bg-[var(--gt-blue-100)]",
+          focusRing,
+        )}
+      >
+        <span aria-hidden="true" className="grid h-8 w-8 flex-none place-items-center rounded-full bg-[var(--surface-card)] text-[var(--gt-blue-700)] shadow-[var(--shadow-sm)]">
+          <ShoppingBag size={15} />
+        </span>
+        <span className="grid min-w-0 flex-1 gap-0.5">
+          <span className="text-[13px] font-bold leading-tight text-[var(--text-primary)]">{t("studio.editor.shopping.buyTitle")}</span>
+          <span className="truncate text-[11px] text-[var(--text-muted)]">
+            {t("studio.editor.shopping.buyProducts", { count: products })} · {t("studio.editor.inspector.teethCount", { count: teeth })}
+          </span>
+        </span>
+        {totalMinor > 0 && (
+          <strong className="flex-none text-[15px] font-[var(--weight-black)] tabular-nums text-[var(--text-primary)]">{formatEstimate(totalMinor)}</strong>
+        )}
+        <ChevronDown size={15} aria-hidden="true" className={clsx("flex-none text-[var(--gt-blue-700)] transition-transform motion-reduce:transition-none", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div id={bodyId} className="border-t border-[var(--gt-blue-200)] p-2.5">
+          <ShoppingList jewels={jewels} />
+          {totalMinor > 0 && <Hint className="mt-2.5">{t("studio.editor.estimateHint")}</Hint>}
+          <HelpMoreLink topic="shoppingList" className="mt-1.5" />
+        </div>
+      )}
+    </section>
   );
 }
 
