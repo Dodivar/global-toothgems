@@ -26,7 +26,6 @@ const PUBLIC_ROUTES: { path: string; heading: RegExp }[] = [
   { path: "/fr/studio-3d/abonnement", heading: /Débloquez le Studio 3D/ },
   { path: "/studio-3d/partage", heading: /Ce lien ne contient pas de création lisible/ },
   { path: "/fr/academy", heading: /Apprenez\. Créez\. Maîtrisez votre art\./ },
-  { path: "/fr/academy-b", heading: /Apprenez\. Créez\. Maîtrisez votre art\./ },
   { path: "/fr/academy/formation/fondation", heading: /Fondation Tooth Gem/ },
   { path: "/fr/aide", heading: /Centre d’aide/ },
   { path: "/fr/aide/faq", heading: /Questions fréquentes/ },

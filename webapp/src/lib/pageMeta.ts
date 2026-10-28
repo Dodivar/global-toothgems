@@ -36,7 +36,6 @@ const PAGES: Partial<Record<PublicRouteId, { title: Text; description?: Text }>>
   studio: { title: { key: "studioPage.hero.title" }, description: { key: "studioPage.hero.body" } },
   studioSubscribe: { title: { key: "studio.subscribe.title" }, description: { key: "studio.subscribe.body" } },
   academy: { title: { key: "academyPage.meta.title" }, description: { key: "academyPage.meta.description" } },
-  academyB: { title: { key: "academyPage.meta.title" }, description: { key: "academyPage.meta.description" } },
   help: { title: { key: "legal.hub.title" }, description: { key: "legal.hub.intro" } },
   faq: { title: { key: "legal.faq.title" }, description: { key: "legal.faq.intro" } },
   contact: { title: { key: "legal.contact.title" }, description: { key: "legal.contact.intro" } },

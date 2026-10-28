@@ -2056,43 +2056,37 @@
 
 /* ---------------------------------------------------------------------------
    Academy marketplace (/academy)
-
-   The home page's editorial language (`gt-alt`), carried into the Academy:
-   a pastel-blue hero, the catalogue on the warm off-white the home page's
-   Academy band uses, one dark band for the learner's progression, and the
-   pastel blue again for the ecosystem and the closing call. Emerald stays on
-   the calls to action, fuchsia marks only the featured label and "for you".
-   Every entrance and loop stops under reduced motion.
+   ---------------------------------------------------------------------------
+   Phone first, in the brand's white and pastel blue — no dark band — with
+   emerald kept for the calls to action (chosen by the owner on 2026-10-28).
+   Short sections, one column on a phone, chips swiped. Every entrance and
+   loop stops under reduced motion.
 --------------------------------------------------------------------------- */
 @layer components {
+  .gt-academy { background: var(--surface-page); }
   .gt-academy-hero {
     background:
-      radial-gradient(50% 60% at 85% 20%, rgba(255, 255, 255, .7), transparent 70%),
-      radial-gradient(45% 55% at 5% 95%, rgba(255, 255, 255, .45), transparent 70%),
-      linear-gradient(160deg, var(--gt-blue-100) 0%, var(--gt-blue-200) 100%);
+      radial-gradient(70% 60% at 100% 0%, rgba(255, 255, 255, .85), transparent 70%),
+      linear-gradient(180deg, var(--gt-blue-100) 0%, var(--gt-blue-50) 100%);
   }
+  .gt-academy-market { background: linear-gradient(180deg, var(--gt-blue-50) 0%, #fff 100%); }
 
-  .gt-academy-market { background: linear-gradient(180deg, var(--gt-off-white) 0%, var(--gt-sand) 100%); }
-
-  /* Featured course: the magazine feature. */
+  /* Featured course: a white card lifted off the blue. */
   .gt-academy-featured {
-    background:
-      radial-gradient(60% 80% at 100% 0%, rgba(122, 149, 184, .28), transparent 70%),
-      var(--gt-ink-900);
+    box-shadow: 0 24px 48px -28px rgba(63, 90, 117, .45);
     transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft);
   }
   .gt-academy-featured:hover,
-  .gt-academy-featured:focus-within { transform: translateY(-3px); }
+  .gt-academy-featured:focus-within { transform: translateY(-3px); box-shadow: 0 32px 56px -28px rgba(63, 90, 117, .55); }
   .gt-academy-featured:hover .gt-alt-tile-art,
   .gt-academy-featured:focus-within .gt-alt-tile-art { transform: scale(1.04); }
-  .gt-academy-featured-cta { box-shadow: 0 10px 24px -12px rgba(18, 168, 122, .55); transition: box-shadow var(--duration-normal) var(--ease-out-soft); }
-  .gt-academy-featured:hover .gt-academy-featured-cta { box-shadow: 0 16px 32px -12px rgba(18, 168, 122, .75); }
+  .gt-academy-featured-cta { box-shadow: 0 10px 24px -12px rgba(18, 168, 122, .55); transition: box-shadow var(--duration-normal) var(--ease-out-soft), background-color var(--duration-fast) var(--ease-standard); }
+  .gt-academy-featured:hover .gt-academy-featured-cta { background: var(--accent-cta-hover); box-shadow: 0 16px 32px -12px rgba(18, 168, 122, .75); }
   .gt-academy-featured:hover .gt-alt-tile-arrow,
   .gt-academy-featured:focus-within .gt-alt-tile-arrow { transform: translateX(3px); }
 
   /* Starting points and theme chips: a pressed state that is a fill, a
      check and `aria-pressed`, never the colour alone. */
-  .gt-academy-path,
   .gt-academy-chip {
     transition:
       background-color var(--duration-fast) var(--ease-standard),
@@ -2100,87 +2094,35 @@
       color var(--duration-fast) var(--ease-standard),
       transform var(--duration-fast) var(--ease-standard);
   }
-  .gt-academy-path:active,
   .gt-academy-chip:active { transform: scale(.98); }
-  .gt-academy-path:focus-visible,
   .gt-academy-chip:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
 
   /* Course cards settle in one after another when the result changes. */
   .gt-academy-card-in { animation: gt-alt-rise var(--duration-slow) var(--ease-out-soft) both; animation-delay: var(--gt-delay, 0ms); }
 
-  /* How it works: a line joins the numbered steps on wide screens. */
-  @media (min-width: 1280px) {
-    .gt-academy-step:not(:last-child)::before {
-      content: "";
-      position: absolute;
-      top: 20px;
-      left: 52px;
-      right: -12px;
-      height: 1px;
-      background: linear-gradient(90deg, var(--gt-blue-300), color-mix(in srgb, var(--gt-blue-300) 30%, transparent));
-    }
-  }
+  /* The Global Toothgems world: rows that lift their border and lean their arrow. */
+  .gt-academy-eco { transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-normal) var(--ease-out-soft); }
+  .gt-academy-eco:has(a, button):hover,
+  .gt-academy-eco:has(a, button):focus-within { border-color: var(--gt-blue-400); box-shadow: var(--shadow-card-hover); }
+  .gt-academy-eco:hover .gt-alt-tile-arrow,
+  .gt-academy-eco:focus-within .gt-alt-tile-arrow { transform: translate(2px, -2px); }
+  .gt-academy-eco-down { transition: transform var(--duration-normal) var(--ease-out-soft); }
+  .gt-academy-eco:hover .gt-academy-eco-down,
+  .gt-academy-eco:focus-within .gt-academy-eco-down { transform: translateY(2px); }
 
-  /* From curiosity to confidence: the dark band. */
-  .gt-academy-journey {
-    background:
-      radial-gradient(45% 60% at 0% 0%, rgba(122, 149, 184, .32), transparent 70%),
-      radial-gradient(40% 50% at 100% 100%, rgba(185, 205, 229, .14), transparent 70%),
-      linear-gradient(180deg, var(--gt-ink-900) 0%, #151b23 100%);
-  }
-  .gt-academy-stages { position: relative; }
-  .gt-academy-stages::before {
-    content: "";
-    position: absolute;
-    left: 15.5px;
-    top: 16px;
-    bottom: 16px;
-    width: 1px;
-    background: linear-gradient(180deg, var(--gt-blue-300), var(--gt-emerald-400));
-    transform: scaleY(0);
-    transform-origin: top;
-    transition: transform 1200ms var(--ease-out-soft) 200ms;
-  }
-  @media (min-width: 640px) {
-    .gt-academy-stages::before {
-      left: 16px;
-      right: 16px;
-      top: 15.5px;
-      bottom: auto;
-      width: auto;
-      height: 1px;
-      background: linear-gradient(90deg, var(--gt-blue-300), var(--gt-emerald-400));
-      transform: scaleX(0);
-      transform-origin: left;
-    }
-  }
-  .gt-academy-journey.is-visible .gt-academy-stages::before { transform: none; }
-  .gt-academy-stage-dot {
-    color: var(--gt-blue-300);
-    background: var(--gt-ink-900);
-    border: 1px solid var(--gt-blue-300);
-  }
-  .gt-academy-stage:last-child .gt-academy-stage-dot {
-    color: var(--text-on-accent);
-    background: var(--accent-cta);
-    border-color: var(--accent-cta);
-  }
-
-  /* The ecosystem and the closing call: the pastel blue. */
-  .gt-academy-ecosystem {
-    background:
-      radial-gradient(55% 80% at 92% 8%, rgba(255, 255, 255, .6), transparent 60%),
-      linear-gradient(160deg, var(--gt-blue-100) 0%, var(--gt-blue-200) 100%);
-  }
-  .gt-academy-eco-tile { transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft); }
-  .gt-academy-eco-tile:has(a, button):hover,
-  .gt-academy-eco-tile:has(a, button):focus-within { transform: translateY(-4px); box-shadow: var(--shadow-card-hover); }
-  .gt-academy-eco-tile:hover .gt-alt-tile-arrow,
-  .gt-academy-eco-tile:focus-within .gt-alt-tile-arrow { transform: translate(2px, -2px); }
+  /* The closing call: the pastel blue, a white glow behind the collage. */
   .gt-academy-final {
     background:
-      radial-gradient(60% 90% at 50% 0%, rgba(255, 255, 255, .9), transparent 70%),
+      radial-gradient(45% 60% at 78% 40%, rgba(255, 255, 255, .85), transparent 70%),
+      radial-gradient(40% 50% at 0% 100%, rgba(255, 255, 255, .45), transparent 70%),
       linear-gradient(160deg, var(--gt-blue-100) 0%, var(--gt-blue-300) 100%);
+  }
+  @media (max-width: 1023px) {
+    .gt-academy-final {
+      background:
+        radial-gradient(70% 40% at 50% 22%, rgba(255, 255, 255, .85), transparent 70%),
+        linear-gradient(180deg, var(--gt-blue-100) 0%, var(--gt-blue-300) 100%);
+    }
   }
 }
 
@@ -2188,69 +2130,14 @@
   .gt-academy-card-in { animation: none; }
   .gt-academy-featured,
   .gt-academy-featured-cta,
-  .gt-academy-path,
   .gt-academy-chip,
-  .gt-academy-eco-tile,
-  .gt-academy-stages::before { transition: none; }
+  .gt-academy-eco,
+  .gt-academy-eco-down { transition: none; }
   .gt-academy-featured:hover,
   .gt-academy-featured:focus-within,
-  .gt-academy-eco-tile:has(a, button):hover,
-  .gt-academy-eco-tile:has(a, button):focus-within,
   .gt-academy-featured:hover .gt-alt-tile-art,
   .gt-academy-featured:focus-within .gt-alt-tile-art,
-  .gt-academy-path:active,
   .gt-academy-chip:active { transform: none; }
-  .gt-academy-stages::before { transform: none; }
-}
-
-/* ---------------------------------------------------------------------------
-   Académie B (/academy-b): the marketplace's second composition, to compare.
-   White and the pastel blue only — no dark band — with emerald kept for the
-   calls to action. Phone first: short sections, one column, chips swiped.
---------------------------------------------------------------------------- */
-@layer components {
-  .gt-academyb { background: var(--surface-page); }
-  .gt-academyb-hero {
-    background:
-      radial-gradient(70% 60% at 100% 0%, rgba(255, 255, 255, .85), transparent 70%),
-      linear-gradient(180deg, var(--gt-blue-100) 0%, var(--gt-blue-50) 100%);
-  }
-  .gt-academyb-market { background: linear-gradient(180deg, var(--gt-blue-50) 0%, #fff 100%); }
-
-  .gt-academyb-featured {
-    box-shadow: 0 24px 48px -28px rgba(63, 90, 117, .45);
-    transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft);
-  }
-  .gt-academyb-featured:hover,
-  .gt-academyb-featured:focus-within { transform: translateY(-3px); box-shadow: 0 32px 56px -28px rgba(63, 90, 117, .55); }
-  .gt-academyb-featured:hover .gt-alt-tile-art,
-  .gt-academyb-featured:focus-within .gt-alt-tile-art { transform: scale(1.04); }
-  .gt-academyb-featured-cta { box-shadow: 0 10px 24px -12px rgba(18, 168, 122, .55); transition: box-shadow var(--duration-normal) var(--ease-out-soft), background-color var(--duration-fast) var(--ease-standard); }
-  .gt-academyb-featured:hover .gt-academyb-featured-cta { background: var(--accent-cta-hover); box-shadow: 0 16px 32px -12px rgba(18, 168, 122, .75); }
-  .gt-academyb-featured:hover .gt-alt-tile-arrow,
-  .gt-academyb-featured:focus-within .gt-alt-tile-arrow { transform: translateX(3px); }
-
-  .gt-academyb-eco { transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-normal) var(--ease-out-soft); }
-  .gt-academyb-eco:has(a):hover,
-  .gt-academyb-eco:has(a):focus-within { border-color: var(--gt-blue-400); box-shadow: var(--shadow-card-hover); }
-  .gt-academyb-eco:hover .gt-alt-tile-arrow,
-  .gt-academyb-eco:focus-within .gt-alt-tile-arrow { transform: translate(2px, -2px); }
-
-  .gt-academyb-final {
-    background:
-      radial-gradient(60% 90% at 50% 0%, rgba(255, 255, 255, .9), transparent 70%),
-      linear-gradient(160deg, var(--gt-blue-100) 0%, var(--gt-blue-300) 100%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gt-academyb-featured,
-  .gt-academyb-featured-cta,
-  .gt-academyb-eco { transition: none; }
-  .gt-academyb-featured:hover,
-  .gt-academyb-featured:focus-within,
-  .gt-academyb-featured:hover .gt-alt-tile-art,
-  .gt-academyb-featured:focus-within .gt-alt-tile-art { transform: none; }
 }
 
 /* ---------------------------------------------------------------------------
