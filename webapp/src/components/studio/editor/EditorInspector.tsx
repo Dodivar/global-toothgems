@@ -639,39 +639,42 @@ function BuyGemsPanel({
   const bodyId = useId();
   return (
     <section className="rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)]">
+      {/* Two lines that never wrap: the title with the fold arrow, then the figures with the estimate. */}
       <button
         type="button"
         aria-expanded={open}
         aria-controls={bodyId}
         onClick={() => setOpen((v) => !v)}
         className={clsx(
-          "flex w-full min-w-0 items-center gap-2.5 rounded-[var(--radius-md)] px-3 py-2.5 text-left transition-colors hover:bg-[var(--gt-blue-100)]",
+          "grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2.5 gap-y-1 rounded-t-[var(--radius-md)] p-3 text-left transition-colors hover:bg-[var(--gt-blue-100)]",
           focusRing,
         )}
       >
-        <span aria-hidden="true" className="grid h-8 w-8 flex-none place-items-center rounded-full bg-[var(--surface-card)] text-[var(--gt-blue-700)] shadow-[var(--shadow-sm)]">
-          <ShoppingBag size={15} />
+        <span aria-hidden="true" className="row-span-2 grid h-9 w-9 place-items-center rounded-full bg-[var(--surface-card)] text-[var(--gt-blue-700)] shadow-[var(--shadow-xs)]">
+          <ShoppingBag size={16} />
         </span>
-        <span className="grid min-w-0 flex-1 gap-0.5">
-          <span className="text-[13px] font-bold leading-tight text-[var(--text-primary)]">{t("studio.editor.shopping.buyTitle")}</span>
-          <span className="truncate text-[11px] text-[var(--text-muted)]">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-[13px] font-bold leading-tight text-[var(--text-primary)]">{t("studio.editor.shopping.buyTitle")}</span>
+          <ChevronDown size={15} aria-hidden="true" className={clsx("flex-none text-[var(--gt-blue-700)] transition-transform motion-reduce:transition-none", open && "rotate-180")} />
+        </span>
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--text-muted)]">
             {t("studio.editor.shopping.buyProducts", { count: products })} · {t("studio.editor.inspector.teethCount", { count: teeth })}
           </span>
+          {totalMinor > 0 && (
+            <strong className="flex-none text-[14px] font-[var(--weight-black)] tabular-nums text-[var(--text-primary)]">{formatEstimate(totalMinor)}</strong>
+          )}
         </span>
-        {totalMinor > 0 && (
-          <strong className="flex-none text-[15px] font-[var(--weight-black)] tabular-nums text-[var(--text-primary)]">{formatEstimate(totalMinor)}</strong>
-        )}
-        <ChevronDown size={15} aria-hidden="true" className={clsx("flex-none text-[var(--gt-blue-700)] transition-transform motion-reduce:transition-none", open && "rotate-180")} />
       </button>
       {open && (
-        <div id={bodyId} className="border-t border-[var(--gt-blue-200)] p-2.5">
+        <div id={bodyId} className="border-t border-[var(--gt-blue-200)] px-3 pt-3">
           <ShoppingList jewels={jewels} withCart={false} />
           {totalMinor > 0 && <Hint className="mt-2.5">{t("studio.editor.estimateHint")}</Hint>}
           <HelpMoreLink topic="shoppingList" className="mt-1.5" />
         </div>
       )}
-      {/* The way to the cart stays in view, folded or not. */}
-      <AddDesignToCart jewels={jewels} className={clsx("px-2.5 pb-2.5", open && "pt-1")} />
+      {/* The way to the cart stays in view, folded or not; folded, it also says what stays out of stock. */}
+      <AddDesignToCart jewels={jewels} compact outNote={!open} className="px-3 pb-3 pt-2" />
     </section>
   );
 }
