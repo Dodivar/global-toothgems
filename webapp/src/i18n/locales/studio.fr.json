@@ -890,9 +890,15 @@
         "lines": [
           "Préparation de la création 3D…",
           "Repérage de chaque dent sur la photo…",
+          "Mesure de la forme de votre sourire…",
+          "Choix de l’emplacement de chaque pierre…",
           "Placement des pierres sur les dents…",
+          "Ajustement de la taille de chaque gemme…",
           "Ajustement des reflets et de la lumière…",
+          "Les facettes se mettent à briller…",
+          "Respect des teintes naturelles de vos dents…",
           "Fondu de la retouche dans la photo…",
+          "Dernier polissage des pierres…",
           "Derniers détails, presque prêt…"
         ]
       },
@@ -945,6 +951,7 @@
       "alt": "« {{name}} » essayé sur la photo, rendu par IA",
       "beforeAlt": "La photo d’origine",
       "aiTag": "Rendu IA",
+      "ready": "Votre rendu est prêt",
       "beforeTag": "Avant",
       "disclaimer": "Image générée par IA : un aperçu pour se projeter, pas une promesse exacte du résultat posé.",
       "regenerate": "Générer à nouveau",

@@ -890,9 +890,15 @@
         "lines": [
           "Preparing the 3D creation…",
           "Finding each tooth on the photo…",
+          "Measuring the shape of the smile…",
+          "Choosing where each gem sits…",
           "Setting the gems on the teeth…",
+          "Sizing each gem to its tooth…",
           "Adjusting reflections and light…",
+          "The facets are starting to sparkle…",
+          "Keeping the natural shade of the teeth…",
           "Blending the edit into the photo…",
+          "One last polish of the stones…",
           "Final touches, almost ready…"
         ]
       },
@@ -945,6 +951,7 @@
       "alt": "“{{name}}” tried on the photo, AI render",
       "beforeAlt": "The original photo",
       "aiTag": "AI render",
+      "ready": "Your render is ready",
       "beforeTag": "Before",
       "disclaimer": "AI-generated image: a preview to picture it, not an exact promise of the finished result.",
       "regenerate": "Generate again",
