@@ -17,8 +17,8 @@ import type { Product } from "../../data/products";
 /**
  * A category tile's art. `photo`: one of the high-resolution mouth shots.
  * `feature`: a product picture from the catalogue, framed close up on white
- * (the kits, the lip gloss), with a photograph to show until the catalogue
- * holds it. `burst`: loose stones thrown apart like a bouquet going off, the
+ * (the kits), or shown whole (`whole`: the lip gloss bottle), with a
+ * photograph to show until the catalogue holds it. `burst`: loose stones thrown apart like a bouquet going off, the
  * same visual as the hero's shop slide on a phone: gem pictures cut out of
  * their white background (`gem-*.webp`, transparent, so the stones keep their
  * own colours on the tint). `productBurst`: the same
@@ -28,7 +28,7 @@ import type { Product } from "../../data/products";
  */
 type TileArt =
   | { kind: "photo"; src: string; position?: string }
-  | { kind: "feature"; family?: string; slugs: string[]; fallback?: string }
+  | { kind: "feature"; family?: string; slugs: string[]; fallback?: string; whole?: boolean }
   | { kind: "burst"; tone: Tone; pieces: string[] }
   | { kind: "productBurst"; tone: Tone };
 
@@ -60,18 +60,18 @@ interface Slot {
 }
 
 const GEM_SLOTS: Slot[] = [
-  { x: 50, y: 24, w: 16, max: 100, rot: -12 },
-  { x: 30, y: 18, w: 12, max: 80, rot: 20 },
-  { x: 70, y: 16, w: 13, max: 84, rot: -25 },
-  { x: 12, y: 30, w: 10, max: 66, rot: 40 },
-  { x: 88, y: 32, w: 10, max: 66, rot: 10 },
-  { x: 40, y: 40, w: 8, max: 54, rot: -30 },
-  { x: 62, y: 40, w: 9, max: 58, rot: 15 },
-  { x: 93, y: 12, w: 7, max: 46, rot: -10 },
-  { x: 7, y: 12, w: 8, max: 50, rot: 25 },
-  { x: 20, y: 8, w: 6, max: 38, rot: 60 },
-  { x: 82, y: 8, w: 7, max: 42, rot: -40 },
-  { x: 50, y: 8, w: 7, max: 42, rot: 30 },
+  { x: 50, y: 30, w: 16, max: 100, rot: -12 },
+  { x: 30, y: 24, w: 12, max: 80, rot: 20 },
+  { x: 70, y: 22, w: 13, max: 84, rot: -25 },
+  { x: 12, y: 36, w: 10, max: 66, rot: 40 },
+  { x: 88, y: 38, w: 10, max: 66, rot: 10 },
+  { x: 40, y: 43, w: 8, max: 54, rot: -30 },
+  { x: 62, y: 43, w: 9, max: 58, rot: 15 },
+  { x: 93, y: 18, w: 7, max: 46, rot: -10 },
+  { x: 7, y: 18, w: 8, max: 50, rot: 25 },
+  { x: 20, y: 14, w: 6, max: 38, rot: 60 },
+  { x: 82, y: 14, w: 7, max: 42, rot: -40 },
+  { x: 50, y: 14, w: 7, max: 42, rot: 30 },
 ];
 
 const PRINT_SLOTS: Slot[] = [
@@ -125,7 +125,7 @@ const TILES: Tile[] = [
   {
     cat: "lip-gloss",
     copyKey: "lipGloss",
-    art: { kind: "feature", slugs: ["global-lipgloss-bad-habit"], fallback: photo("mouth-05.jpg") },
+    art: { kind: "feature", slugs: ["global-lipgloss-bad-habit"], fallback: photo("mouth-05.jpg"), whole: true },
     area: "lg:col-span-3 lg:col-start-10 lg:row-start-2",
   },
 ];
@@ -303,7 +303,7 @@ function Scrim() {
 }
 
 /**
- * The featured product filling the tile, zoomed in on white. Until the
+ * The featured product filling the tile on white, zoomed in unless shown whole. Until the
  * catalogue holds it the tile shows its fallback photograph, else its tint.
  */
 function FeatureArt({ products, cat, art }: { products: Product[]; cat: string; art: Extract<TileArt, { kind: "feature" }> }) {
@@ -317,7 +317,7 @@ function FeatureArt({ products, cat, art }: { products: Product[]; cat: string; 
           alt=""
           loading="lazy"
           decoding="async"
-          className={clsx("h-full w-full object-cover", product && "scale-[1.18]")}
+          className={clsx("h-full w-full", product && art.whole ? "object-contain" : "object-cover", product && !art.whole && "scale-[1.18]")}
           style={{ objectPosition: "50% 40%" }}
         />
       </span>
@@ -338,7 +338,7 @@ function BurstPiece({ slot, index, children }: { slot: Slot; index: number; chil
   const style = {
     rotate: `${slot.rot}deg`,
     "--gt-burst-x": `${Math.round((slot.x - 50) * 0.5)}px`,
-    "--gt-burst-y": `${Math.round((slot.y - 24) * 0.6)}px`,
+    "--gt-burst-y": `${Math.round((slot.y - 30) * 0.6)}px`,
   } as CSSProperties;
   return (
     <span className="absolute block" style={box}>
