@@ -25,7 +25,7 @@ export const CONTROLS_FROM = 3;
 /** From this many, the starting-point picker (it needs a choice to steer). */
 export const PATHWAYS_FROM = 2;
 /** From this many, a search field. */
-const SEARCH_FROM = 7;
+export const SEARCH_FROM = 7;
 
 /**
  * The marketplace itself, the page's centre: the featured course, the
@@ -168,7 +168,7 @@ export function CourseCatalog({
 }
 
 /** No course to show: still loading, failed to load (with a retry), or none published yet. */
-function CatalogState({ status, onRetry }: { status: AcademyStatus; onRetry: () => void }) {
+export function CatalogState({ status, onRetry }: { status: AcademyStatus; onRetry: () => void }) {
   const { t } = useTranslation();
   if (status === "error") {
     return (

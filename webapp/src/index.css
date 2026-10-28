@@ -2204,6 +2204,56 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Académie B (/academy-b): the marketplace's second composition, to compare.
+   White and the pastel blue only — no dark band — with emerald kept for the
+   calls to action. Phone first: short sections, one column, chips swiped.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gt-academyb { background: var(--surface-page); }
+  .gt-academyb-hero {
+    background:
+      radial-gradient(70% 60% at 100% 0%, rgba(255, 255, 255, .85), transparent 70%),
+      linear-gradient(180deg, var(--gt-blue-100) 0%, var(--gt-blue-50) 100%);
+  }
+  .gt-academyb-market { background: linear-gradient(180deg, var(--gt-blue-50) 0%, #fff 100%); }
+
+  .gt-academyb-featured {
+    box-shadow: 0 24px 48px -28px rgba(63, 90, 117, .45);
+    transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft);
+  }
+  .gt-academyb-featured:hover,
+  .gt-academyb-featured:focus-within { transform: translateY(-3px); box-shadow: 0 32px 56px -28px rgba(63, 90, 117, .55); }
+  .gt-academyb-featured:hover .gt-alt-tile-art,
+  .gt-academyb-featured:focus-within .gt-alt-tile-art { transform: scale(1.04); }
+  .gt-academyb-featured-cta { box-shadow: 0 10px 24px -12px rgba(18, 168, 122, .55); transition: box-shadow var(--duration-normal) var(--ease-out-soft), background-color var(--duration-fast) var(--ease-standard); }
+  .gt-academyb-featured:hover .gt-academyb-featured-cta { background: var(--accent-cta-hover); box-shadow: 0 16px 32px -12px rgba(18, 168, 122, .75); }
+  .gt-academyb-featured:hover .gt-alt-tile-arrow,
+  .gt-academyb-featured:focus-within .gt-alt-tile-arrow { transform: translateX(3px); }
+
+  .gt-academyb-eco { transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-normal) var(--ease-out-soft); }
+  .gt-academyb-eco:has(a):hover,
+  .gt-academyb-eco:has(a):focus-within { border-color: var(--gt-blue-400); box-shadow: var(--shadow-card-hover); }
+  .gt-academyb-eco:hover .gt-alt-tile-arrow,
+  .gt-academyb-eco:focus-within .gt-alt-tile-arrow { transform: translate(2px, -2px); }
+
+  .gt-academyb-final {
+    background:
+      radial-gradient(60% 90% at 50% 0%, rgba(255, 255, 255, .9), transparent 70%),
+      linear-gradient(160deg, var(--gt-blue-100) 0%, var(--gt-blue-300) 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-academyb-featured,
+  .gt-academyb-featured-cta,
+  .gt-academyb-eco { transition: none; }
+  .gt-academyb-featured:hover,
+  .gt-academyb-featured:focus-within,
+  .gt-academyb-featured:hover .gt-alt-tile-art,
+  .gt-academyb-featured:focus-within .gt-alt-tile-art { transform: none; }
+}
+
+/* ---------------------------------------------------------------------------
    Alternative shop (/boutique)
 
    The products come first: a wider container than the rest of the storefront

@@ -41,6 +41,7 @@ export type PublicRouteId =
   | "studioSubscribe"
   | "glowbook"
   | "academy"
+  | "academyB"
   | "course"
   | "help"
   | "faq"
@@ -79,6 +80,8 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   // An artist's public showcase, linked from their Instagram bio (decision 99): same word in both languages (decided by the owner).
   { id: "glowbook", fr: "/glowbook/:id", en: "/glowbook/:id", indexed: true },
   { id: "academy", fr: "/academy", en: "/academy", indexed: true },
+  // A second design of the Academy marketplace, to compare with /academy (owner's request, 2026-10-28): not indexed.
+  { id: "academyB", fr: "/academy-b", en: "/academy-b", indexed: false },
   { id: "course", fr: "/academy/formation/:id", en: "/academy/course/:id", indexed: true },
   { id: "help", fr: "/aide", en: "/help", indexed: true },
   { id: "faq", fr: "/aide/faq", en: "/help/faq", indexed: true },
