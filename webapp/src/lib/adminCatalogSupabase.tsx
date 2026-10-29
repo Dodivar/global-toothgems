@@ -22,6 +22,7 @@ import {
   ADMIN_GEM_COLOR_SELECT,
   ADMIN_PRODUCT_SELECT,
   ADMIN_PRODUCT_SELECT_BASE,
+  ADMIN_PRODUCT_SELECT_NO_OPTIONS,
   PRODUCT_IMAGE_MAX_BYTES,
   PRODUCT_MEDIA_BUCKET,
   UNSAVED_MEDIA_PREFIX,
@@ -96,9 +97,10 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<CatalogErrorKind | null>(null);
   const [loadCount, setLoadCount] = useState(0);
-  // False on a database without `…_category_families`: products read and
-  // save without a family until the migration is applied.
-  const familiesSupported = useRef(true);
+  // The product columns this database can read: without `…_category_families`
+  // (`ADMIN_PRODUCT_SELECT_BASE`) products read and save without a family until
+  // the migration is applied; see also `ADMIN_PRODUCT_SELECT_NO_OPTIONS`.
+  const productSelect = useRef(ADMIN_PRODUCT_SELECT);
   // False on a database without `…_product_bundles` (no kit can be saved).
   const bundlesSupported = useRef(true);
 
@@ -120,12 +122,18 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         client.from("products").select(select).order("updated_at", { ascending: false });
       const loadCategories = (select: string) => client.from("categories").select(select).order("position");
       let [productRes, categoryRes] = await Promise.all([loadProducts(ADMIN_PRODUCT_SELECT), loadCategories(ADMIN_CATEGORY_SELECT)]);
-      // Any failure is retried once without the families (see
-      // `ADMIN_PRODUCT_SELECT_BASE`); a real outage still fails the second time.
+      // A failure is retried without the variant options, keeping the
+      // families, then without the families too (see `ADMIN_PRODUCT_SELECT_BASE`);
+      // a real outage still fails the last time.
+      if (productRes.error && !categoryRes.error) {
+        console.warn("Admin catalogue: variant options unavailable", productRes.error);
+        productRes = await loadProducts(ADMIN_PRODUCT_SELECT_NO_OPTIONS);
+        if (!productRes.error) productSelect.current = ADMIN_PRODUCT_SELECT_NO_OPTIONS;
+      }
       if (productRes.error || categoryRes.error) {
         console.warn("Admin catalogue: product families unavailable", productRes.error ?? categoryRes.error);
         [productRes, categoryRes] = await Promise.all([loadProducts(ADMIN_PRODUCT_SELECT_BASE), loadCategories(ADMIN_CATEGORY_SELECT_BASE)]);
-        familiesSupported.current = false;
+        productSelect.current = ADMIN_PRODUCT_SELECT_BASE;
       }
       const [recommendationRes, colorRes, bundleRes] = await Promise.all([
         client.from("product_recommendations").select("product_id, recommended_product_id, kind, position"),
@@ -205,7 +213,7 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
    */
   const refresh = useCallback(
     async (id: string): Promise<AdminProduct> => {
-      const select = familiesSupported.current ? ADMIN_PRODUCT_SELECT : ADMIN_PRODUCT_SELECT_BASE;
+      const select = productSelect.current;
       const kitIds = kitsContaining(id, productsRef.current).map((kit) => kit.id);
       const [fresh, kits, bundleRes] = await Promise.all([
         client.from("products").select(select).eq("id", id).single(),

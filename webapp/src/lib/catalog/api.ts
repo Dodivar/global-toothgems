@@ -42,18 +42,27 @@ const productSelect = (options: boolean) => `
 /** Without the families and the variant options: the fallback below. */
 const PRODUCT_SELECT_BASE = productSelect(false);
 
-const PRODUCT_SELECT = `${productSelect(true)},
+const FAMILY_SELECT = `,
   family:category_families!products_family_fkey ( slug )
 `;
+
+const PRODUCT_SELECT = `${productSelect(true)}${FAMILY_SELECT}`;
+
+/** With the families but without the variant options: tried first on a failure. */
+const PRODUCT_SELECT_NO_OPTIONS = `${productSelect(false)}${FAMILY_SELECT}`;
 
 /**
  * The front end may ship before its latest migration (`…_category_families`,
  * `…_product_variant_options`) is applied, and the error a missing relation
- * gives depends on the PostgREST version. So any failure of the full query is
- * retried once without them: the shop then keeps working (categories alone,
- * variants as a flat list) instead of going down, and a real outage still
- * surfaces through the second query.
+ * gives depends on the PostgREST version. So a failing product query is
+ * retried without the variant options first, then without the families too:
+ * the shop keeps working (variants as a flat list, families kept while they
+ * exist) instead of going down, and a real outage still surfaces through the
+ * last query. Dropping the families when only the options were missing would
+ * empty every family page and the shape tiles.
  */
+const PRODUCT_SELECT_FALLBACKS = [PRODUCT_SELECT_NO_OPTIONS, PRODUCT_SELECT_BASE];
+
 function retryWithoutFamilies(error: { message?: string } | null, signal?: AbortSignal): boolean {
   if (!error || signal?.aborted) return false;
   console.warn("[catalog] product families unavailable", error.message);
@@ -78,9 +87,12 @@ export async function fetchCatalog(signal?: AbortSignal, db: TypedSupabaseClient
   let statsQuery = db.from("product_review_stats").select("product_id, average_rating, review_count");
   if (signal) statsQuery = statsQuery.abortSignal(signal);
 
-  const [withFamilies, stats] = await Promise.all([productsQuery(PRODUCT_SELECT), statsQuery]);
-  let products = withFamilies;
-  if (retryWithoutFamilies(products.error, signal)) products = await productsQuery(PRODUCT_SELECT_BASE);
+  const [full, stats] = await Promise.all([productsQuery(PRODUCT_SELECT), statsQuery]);
+  let products = full;
+  for (const select of PRODUCT_SELECT_FALLBACKS) {
+    if (!retryWithoutFamilies(products.error, signal)) break;
+    products = await productsQuery(select);
+  }
   if (products.error) throw products.error;
   // Ratings are secondary: a failing stats view must not take the shop down.
   if (stats.error) console.warn("[catalog] review stats unavailable", stats.error.message);
@@ -152,7 +164,10 @@ export async function fetchProductByKey(db: TypedSupabaseClient, key: string): P
 
   const byColumn = async (column: "id" | "slug", value: string) => {
     let result = await productsQuery(PRODUCT_SELECT).eq(column, value).maybeSingle();
-    if (retryWithoutFamilies(result.error)) result = await productsQuery(PRODUCT_SELECT_BASE).eq(column, value).maybeSingle();
+    for (const select of PRODUCT_SELECT_FALLBACKS) {
+      if (!retryWithoutFamilies(result.error)) break;
+      result = await productsQuery(select).eq(column, value).maybeSingle();
+    }
     if (result.error) throw result.error;
     return result.data as unknown as ProductRow | null;
   };

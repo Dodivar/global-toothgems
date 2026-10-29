@@ -68,6 +68,12 @@ const adminProductSelect = (options: boolean) => `
 `;
 export const ADMIN_PRODUCT_SELECT_BASE = adminProductSelect(false);
 export const ADMIN_PRODUCT_SELECT = `${adminProductSelect(true)}, family_id`;
+/**
+ * With the families but without the variant options: the first fallback, so a
+ * database that only lacks the options keeps every product's family (a product
+ * read without it would be saved with none).
+ */
+export const ADMIN_PRODUCT_SELECT_NO_OPTIONS = `${adminProductSelect(false)}, family_id`;
 
 export const ADMIN_CATEGORY_SELECT_BASE = `
   id, slug, name, description, position, is_active,
