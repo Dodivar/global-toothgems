@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, BellOff, Check, CheckCheck, ChevronDown, Globe2, Inbox, Plus, Search, Users } from "lucide-react";
 import clsx from "clsx";
-import { UPCOMING_SERVERS, type Presence } from "../../lib/communityChat/model";
+import { LOUNGE_DIRECT_MESSAGES_ENABLED, UPCOMING_SERVERS, type Presence } from "../../lib/communityChat/model";
 import { useChat, type ChannelView, type ConversationView } from "../../lib/communityChat/chatStore";
 import { plainText, timestampOf } from "../../lib/communityChat/chatLogic";
 import { ChatAvatar, CountBadge, Popover, PopoverItem, PresenceDot, ToolButton, focusRing, useChatTime, useNow } from "./primitives";
@@ -416,7 +416,7 @@ export function ChatSidebar() {
 
       <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-2 pb-4">
         <ChannelList />
-        <DirectMessageList />
+        {LOUNGE_DIRECT_MESSAGES_ENABLED && <DirectMessageList />}
         <div className="mt-5 grid gap-2 px-2.5">
           <p className="m-0 flex items-center gap-1.5 text-[11.5px] font-semibold text-[var(--text-muted)]">
             <Users size={12} aria-hidden="true" />

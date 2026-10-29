@@ -1,6 +1,7 @@
 import {
   CHANNEL_KEYS,
   DEFAULT_SERVER,
+  LOUNGE_DIRECT_MESSAGES_ENABLED,
   channelId,
   directConversationId,
   isServerId,
@@ -17,7 +18,7 @@ import type { ChatRoom } from "./chatLogic";
  *
  *   /compte/salons                        → the last room visited (or the default one)
  *   /compte/salons/<lounge>/<channel>      e.g. /compte/salons/fr/techniques
- *   /compte/salons/messages/<member>       a private conversation
+ *   /compte/salons/messages/<member>       a private conversation (404 while they are closed)
  *
  * Internal paths of the member space are French, like the rest of `/compte`;
  * the lounge segment is the language code. Channels are fixed structure
@@ -77,7 +78,7 @@ export function parseLoungePath(pathname: string): LoungeRoute {
   const [first, second] = segments;
 
   if (first === MESSAGES_SEGMENT) {
-    if (!MEMBER_SEGMENT.test(second)) return { kind: "notFound" };
+    if (!LOUNGE_DIRECT_MESSAGES_ENABLED || !MEMBER_SEGMENT.test(second)) return { kind: "notFound" };
     return { kind: "room", room: { kind: "dm", conversationId: directConversationId(second) } };
   }
 

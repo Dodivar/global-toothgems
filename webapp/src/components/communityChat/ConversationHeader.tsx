@@ -5,6 +5,7 @@ import { Bell, BellOff, Inbox, Lock, MessageCircle, PanelLeft, Search, Users } f
 import clsx from "clsx";
 import { useChat } from "../../lib/communityChat/chatStore";
 import { messagesToday } from "../../lib/communityChat/chatLogic";
+import { LOUNGE_DIRECT_MESSAGES_ENABLED } from "../../lib/communityChat/model";
 import { ChatAvatar, ToolButton, focusRing } from "./primitives";
 import { ChannelIcon } from "./channelIcons";
 import { useLoungeUi } from "./loungeUi";
@@ -101,6 +102,7 @@ export function ConversationHeader() {
 
       <div className="flex flex-none items-center gap-0.5">
         <ToolButton icon={Search} label={t("lounge.header.search")} onClick={openSearch} />
+        {LOUNGE_DIRECT_MESSAGES_ENABLED && (
         <span className="lg:hidden">
           <ToolButton
             icon={MessageCircle}
@@ -109,6 +111,7 @@ export function ConversationHeader() {
             badge={dmUnread > 0 ? <Dot /> : undefined}
           />
         </span>
+        )}
         <span className="lg:hidden">
           <ToolButton
             icon={Inbox}

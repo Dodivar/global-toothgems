@@ -9,6 +9,7 @@ import {
   CHANNEL_KEYS,
   DEFAULT_SERVER,
   LOUNGES,
+  LOUNGE_DIRECT_MESSAGES_ENABLED,
   catalogChannel,
   channelId as channelIdOf,
   directConversationId,
@@ -484,7 +485,7 @@ export function LiveChatProvider({ children }: { children: ReactNode }) {
   );
 
   const conversations = useMemo<ConversationView[]>(() => {
-    if (!current) return [];
+    if (!current || !LOUNGE_DIRECT_MESSAGES_ENABLED) return [];
     const views: ConversationView[] = [];
     for (const conversation of current.overview.conversations) {
       const member = current.members[conversation.memberId];
@@ -533,7 +534,7 @@ export function LiveChatProvider({ children }: { children: ReactNode }) {
     for (const row of current.notifications) {
       if (!row.message || !isNotificationKind(row.kind)) continue;
       const target = roomOf(row.message, current.overview);
-      if (!target) continue;
+      if (!target || (target.kind === "dm" && !LOUNGE_DIRECT_MESSAGES_ENABLED)) continue;
       const message = mapMessage(row.message, mine[row.message.id] ?? [], () => undefined);
       list.push({
         id: row.id,

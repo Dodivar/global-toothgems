@@ -17,6 +17,7 @@ import clsx from "clsx";
 import {
   CHAT_REACTIONS,
   CHAT_REACTION_EMOJI,
+  LOUNGE_DIRECT_MESSAGES_ENABLED,
   type ChatMessage,
   type ChatReaction,
   type MessagePart,
@@ -287,7 +288,7 @@ function MessageToolbar({ message, visible }: { message: ChatMessage; visible: b
                 {t("lounge.message.mentionAuthor", { name: author.name })}
               </PopoverItem>
             )}
-            {!isMine && author && room.kind === "channel" && (
+            {LOUNGE_DIRECT_MESSAGES_ENABLED && !isMine && author && room.kind === "channel" && (
               <PopoverItem
                 icon={MessageCircle}
                 onSelect={() => {

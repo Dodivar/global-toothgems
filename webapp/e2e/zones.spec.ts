@@ -46,7 +46,6 @@ const MEMBER_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/compte/fidelite", heading: /^Ma carte de fidélité$/ },
   { path: "/compte/avis", heading: /^Mes avis$/ },
   { path: "/compte/salons/en/discussion", heading: /^Salon des membres$/ },
-  { path: "/compte/salons/messages/emma", heading: /^Salon des membres$/ },
 ];
 
 for (const { path, heading } of MEMBER_SCREENS) {
@@ -91,7 +90,7 @@ test("member space: the lounge's bare address opens a room, and channels have th
   expect(problems).toEqual([]);
 });
 
-for (const path of ["/compte/nimporte-quoi", "/compte/communaute", "/compte/communaute/membres", "/compte/salons/nimporte-quoi", "/compte/salons/en/nimporte-quoi"]) {
+for (const path of ["/compte/nimporte-quoi", "/compte/communaute", "/compte/communaute/membres", "/compte/salons/nimporte-quoi", "/compte/salons/en/nimporte-quoi", "/compte/salons/messages/emma"]) {
   test(`member space: ${path} is the 404 screen inside the shell`, async ({ page, problems }) => {
     await signInMember(page);
     await expectScreen(page, path, /Oups, cette page a fait un petit détour/);
