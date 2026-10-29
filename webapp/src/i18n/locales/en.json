@@ -281,7 +281,7 @@
   "cart": {
     "confirmedBadge": "Order confirmed",
     "confirmedTitle": "Thank you, your order is confirmed.",
-    "confirmedBody": "Shipping within 24h from Lyon, tracking sent by email. Your kit's QR code opens the matching lesson in the Academy.",
+    "confirmedBody": "Shipping within 24h, tracking sent by email. Your kit's QR code opens the matching lesson in the Academy.",
     "confirmedReference": "Reference {{reference}} · a confirmation email is on its way.",
     "confirmedOpenAccount": "View my order",
     "confirmedContinueShopping": "Continue shopping",
@@ -1265,7 +1265,7 @@
     "navStudio": "Studio subscription"
   },
   "footer": {
-    "blurb": "Professional gems, tools and training. Shipped across Europe from Lyon.",
+    "blurb": "Professional gems, tools and training. Shipped internationally.",
     "colShop": "Shop",
     "colAcademy": "Academy",
     "shopItems": [

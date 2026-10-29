@@ -281,7 +281,7 @@
   "cart": {
     "confirmedBadge": "Commande confirmée",
     "confirmedTitle": "Merci, votre commande est enregistrée.",
-    "confirmedBody": "Expédition sous 24 h depuis Lyon, suivi envoyé par email. Le QR de votre kit ouvre la leçon correspondante dans l’Academy.",
+    "confirmedBody": "Expédition sous 24 h, suivi envoyé par email. Le QR de votre kit ouvre la leçon correspondante dans l’Academy.",
     "confirmedReference": "Référence {{reference}} · un e-mail de confirmation vient de partir.",
     "confirmedOpenAccount": "Voir ma commande",
     "confirmedContinueShopping": "Continuer mes achats",
@@ -1265,7 +1265,7 @@
     "navStudio": "Abonnement Studio"
   },
   "footer": {
-    "blurb": "Gems, outils et formation professionnels. Expédié dans toute l’Europe depuis Lyon.",
+    "blurb": "Gems, outils et formation professionnels. Expédié à l’international.",
     "colShop": "Boutique",
     "colAcademy": "Academy",
     "shopItems": [

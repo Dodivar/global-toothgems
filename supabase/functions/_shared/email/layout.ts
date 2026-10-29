@@ -62,7 +62,7 @@ const CHROME: Record<"fr" | "en", Chrome> = {
     reasonTransactional: "Vous recevez cet e-mail au sujet de votre compte, d’une commande ou d’une formation Global Toothgems.",
     reasonMarketing: "Vous recevez cet e-mail car vous êtes inscrit·e à nos actualités.",
     unsubscribe: "Se désinscrire",
-    tagline: "Gems, outils et formation professionnels. Expédié dans toute l’Europe depuis Lyon.",
+    tagline: "Gems, outils et formation professionnels. Expédié à l’international.",
     footerNav: "Liens utiles",
   },
   en: {
@@ -75,7 +75,7 @@ const CHROME: Record<"fr" | "en", Chrome> = {
     reasonTransactional: "You are receiving this e-mail about your Global Toothgems account, an order or a course.",
     reasonMarketing: "You are receiving this e-mail because you subscribed to our news.",
     unsubscribe: "Unsubscribe",
-    tagline: "Professional gems, tools and training. Shipped across Europe from Lyon.",
+    tagline: "Professional gems, tools and training. Shipped internationally.",
     footerNav: "Useful links",
   },
 };
