@@ -1,5 +1,5 @@
 -- =============================================================================
--- Product bundles validation suite (migration 20261028221344_product_bundles)
+-- Product bundles validation suite (migration 20261029181304_product_bundles)
 -- =============================================================================
 -- Proves, as the roles that really call it (decision 117):
 --
