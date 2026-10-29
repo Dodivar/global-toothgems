@@ -14,6 +14,7 @@ import type { Product, ProductVariant } from "../../data/products";
 import { OfferBadges } from "../shop/OfferBadges";
 import { offerPrice } from "../../lib/storefrontOffers";
 import { useProductOffer } from "../../lib/useStorefrontOffers";
+import { cardVariants } from "../../lib/productOptions";
 
 interface StorefrontCardProps {
   product: Product;
@@ -184,7 +185,7 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
         {product.cat && subtitle && subtitle !== categoryLabel && subtitle !== eyebrow && (
           <span className="truncate text-xs text-[var(--text-muted)]">{subtitle}</span>
         )}
-        <VariantAvailability variants={product.variants ?? []} />
+        <VariantAvailability variants={cardVariants(product) ?? []} />
         <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 pt-1.5">
           <span className="flex items-baseline gap-1.5">
             <strong className={`text-[15px] font-bold ${shown.was !== undefined && offer?.promotion?.priceOffPercent ? "text-[var(--accent-highlight-ink)]" : "text-[var(--text-primary)]"}`}>{formatPrice(shown.price)}</strong>

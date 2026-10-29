@@ -142,6 +142,32 @@ export interface CustomVariant {
   reserved?: number;
   lowStockThreshold: number;
   availability: Availability;
+  /**
+   * With options (`AdminProduct.variantOptions`): the value id this variant
+   * has on each option, in option order. Its name and colour dot are then
+   * derived from those values (`lib/variantOptions.ts`, and the database).
+   */
+  optionValues?: string[];
+}
+
+/** A value of a product option: "Argent" with its colour dot, "Prise EU". */
+export interface VariantOptionValue {
+  /** Database id; generated in the browser for a new value. */
+  id: string;
+  name: Localized;
+  /** Colour dot, lowercase `#rrggbb`. */
+  swatch?: string;
+}
+
+/**
+ * An axis the variants combine ("Couleur", "Prise"; migration
+ * `…_product_variant_options`): each variant is one combination of values.
+ */
+export interface VariantOption {
+  /** Database id; generated in the browser for a new option. */
+  id: string;
+  name: Localized;
+  values: VariantOptionValue[];
 }
 
 /** One component of a kit: a product, or one active variant of it, and how many one kit holds. */
@@ -165,6 +191,8 @@ export interface ProductImage {
   alt: Localized;
   /** Id of the variant this photo shows (`customVariants`); none = the whole product. */
   variantId?: string;
+  /** …or of the option value it shows (`variantOptions`): "Argent", whatever the plug. */
+  optionValueId?: string;
 }
 
 export interface AdminProduct {
@@ -221,6 +249,11 @@ export interface AdminProduct {
    * filled. A kit has no variants and its own count is never written.
    */
   bundle?: BundleComponent[];
+  /**
+   * Options the custom variants combine (colour × plug…), in display order.
+   * Empty or undefined = the variants are a plain list.
+   */
+  variantOptions?: VariantOption[];
   /** The card subtitle of any product, and the first characteristic of a gem. */
   material: Localized;
   /** A gem's other characteristics (the product page lists them for gems only); empty = not shown. */

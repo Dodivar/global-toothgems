@@ -459,3 +459,82 @@ describe("gem colours", () => {
     });
   });
 });
+
+describe("variant options (colour × plug)", () => {
+  const inv = { track_inventory: true, quantity_on_hand: 3, quantity_reserved: 0, low_stock_threshold: 5, availability: "in_stock" };
+  const lamp: ProductRow = {
+    ...row,
+    product_options: [
+      {
+        id: "o-plug",
+        name: "Prise",
+        position: 1,
+        product_option_translations: [{ locale: "en", name: "Plug" }],
+        product_option_values: [
+          { id: "x-eu", name: "Prise EU", swatch: null, position: 0, product_option_value_translations: [{ locale: "en", name: "EU plug" }] },
+        ],
+      },
+      {
+        id: "o-colour",
+        name: "Couleur",
+        position: 0,
+        product_option_translations: null,
+        product_option_values: [
+          { id: "x-silver", name: "Argent", swatch: "#D9D9D9", position: 0, product_option_value_translations: null },
+        ],
+      },
+    ],
+    product_variants: [
+      {
+        id: "v-silver-eu",
+        name: "Argent · Prise EU",
+        attributes: { swatch: "#d9d9d9" },
+        is_active: true,
+        position: 0,
+        product_variant_option_values: [
+          { option_id: "o-plug", value_id: "x-eu" },
+          { option_id: "o-colour", value_id: "x-silver" },
+        ],
+        inventory_items: [inv],
+      },
+    ],
+    product_media: [
+      { id: "m1", storage_path: "products/x/1.jpg", alt_text: null, position: 0, option_value_id: "x-silver", product_media_translations: [] },
+    ],
+  };
+
+  it("reads the options and each variant's values in option order", () => {
+    const product = rowToProduct(lamp, url);
+    expect(product.variantOptions).toEqual([
+      { id: "o-colour", name: { fr: "Couleur", en: "" }, values: [{ id: "x-silver", name: { fr: "Argent", en: "" }, swatch: "#d9d9d9" }] },
+      { id: "o-plug", name: { fr: "Prise", en: "Plug" }, values: [{ id: "x-eu", name: { fr: "Prise EU", en: "EU plug" } }] },
+    ]);
+    expect(product.customVariants?.[0].optionValues).toEqual(["x-silver", "x-eu"]);
+    expect(product.media[0].optionValueId).toBe("x-silver");
+  });
+
+  it("sends the options, each variant's values and each photo's value", () => {
+    const payload = productToPayload(rowToProduct(lamp, url)) as {
+      variant_options: unknown[];
+      custom_variants: { option_values?: string[] }[];
+      media: { variant_id: string | null; option_value_id: string | null }[];
+    };
+    expect(payload.variant_options).toEqual([
+      { id: "o-colour", name: "Couleur", name_en: "", values: [{ id: "x-silver", name: "Argent", name_en: "", swatch: "#d9d9d9" }] },
+      { id: "o-plug", name: "Prise", name_en: "Plug", values: [{ id: "x-eu", name: "Prise EU", name_en: "EU plug", swatch: null }] },
+    ]);
+    expect(payload.custom_variants[0].option_values).toEqual(["x-silver", "x-eu"]);
+    expect(payload.media[0]).toMatchObject({ variant_id: null, option_value_id: "x-silver" });
+  });
+
+  it("sends an empty option list with plain variants", () => {
+    const plain = productToPayload({ ...rowToProduct(lamp, url), variantOptions: [] }) as {
+      variant_options: unknown[];
+      custom_variants: Record<string, unknown>[];
+      media: { option_value_id: string | null }[];
+    };
+    expect(plain.variant_options).toEqual([]);
+    expect(plain.custom_variants[0]).not.toHaveProperty("option_values");
+    expect(plain.media[0].option_value_id).toBeNull();
+  });
+});

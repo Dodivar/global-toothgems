@@ -145,6 +145,29 @@ export interface ProductVariant {
   swatch?: string;
   /** First photo showing this variant: the gallery moves to it when the variant is picked. */
   image?: string;
+  /**
+   * With options (`Product.options`): the value id this variant has on each
+   * option, in option order.
+   */
+  optionValues?: string[];
+}
+
+/** A value of a product option: "Argent" (with its colour dot), "Prise EU". */
+export interface ProductOptionValue {
+  id: string;
+  name: Localized;
+  /** Colour dot, `#rrggbb`. */
+  swatch?: string;
+}
+
+/**
+ * An axis a product is offered on ("Couleur", "Prise"): the product page
+ * shows one row of choices per option, and each variant is one combination.
+ */
+export interface ProductOption {
+  id: string;
+  name: Localized;
+  values: ProductOptionValue[];
 }
 
 /** The five characteristics a product may list, in display order. */
@@ -200,6 +223,8 @@ export interface Product {
   gallery?: { src: string; alt: Localized }[];
   /** Database products only. Mock products use the prototype's shade/size pickers. */
   variants?: ProductVariant[];
+  /** Options the variants combine (colour × plug…), in display order; absent = a flat list. */
+  options?: ProductOption[];
   isFeatured?: boolean;
 }
 

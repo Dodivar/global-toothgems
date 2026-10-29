@@ -31,6 +31,7 @@ import {
 } from "../../data/adminCatalog";
 import type { Localized } from "../../data/types";
 import { comboSkuSuffix, isValidPack, longestSkuSuffix, PACK_MAX, PACK_MIN } from "../../lib/gemOptions";
+import { optionsProblem } from "../../lib/variantOptions";
 
 /**
  * Create and edit a product.
@@ -121,6 +122,7 @@ export function ProductForm({
   const showCustomVariants =
     (initial.customVariants?.length ?? 0) > 0 ||
     (draft.customVariants?.length ?? 0) > 0 ||
+    (draft.variantOptions?.length ?? 0) > 0 ||
     (!isGem && draft.gemOptions === undefined);
   const showGemOptions = !showCustomVariants;
   // A kit (decision 117) has no options and no count of its own.
@@ -152,7 +154,7 @@ export function ProductForm({
     // Shape and colour describe a gem; a product moved out of the gems
     // category loses them so it never shows up under a gem filter.
     const gemLook = isGem ? {} : { shape: undefined, color: undefined };
-    const variantKind = showCustomVariants ? { gemOptions: undefined } : { customVariants: undefined };
+    const variantKind = showCustomVariants ? { gemOptions: undefined } : { customVariants: undefined, variantOptions: undefined };
     onSubmit(
       { ...draft, ...gemLook, ...variantKind, status, promoPrice: withPromoPrice ? draft.promoPrice : undefined },
       intent,
@@ -430,6 +432,10 @@ export function ProductForm({
                 onChange={(customVariants) => set("customVariants", customVariants)}
                 onMediaChange={(update) => setDraft((prev) => ({ ...prev, media: update(prev.media) }))}
                 focusOption={focusOption}
+                options={draft.variantOptions}
+                onOptionsChange={(variantOptions, customVariants) =>
+                  setDraft((prev) => ({ ...prev, variantOptions, customVariants }))
+                }
               />
             </Section>
           )}
@@ -793,7 +799,10 @@ function validate(
     }
   }
 
-  if (customVariants.length > 0) {
+  const optionProblem = custom ? optionsProblem(draft.variantOptions ?? []) : null;
+  if (optionProblem) {
+    errors.variants = t(`admin.form.errors.${optionProblem}`);
+  } else if (customVariants.length > 0) {
     const names = customVariants.map((v) => v.name.fr.trim().toLowerCase());
     if (customVariants.some((v) => !v.name.fr.trim() || !v.name.en.trim())) {
       errors.variants = t("admin.form.errors.variantsName");

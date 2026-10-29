@@ -1,11 +1,15 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowDown, ArrowUp, Check, Info, Palette, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Info, Layers, Palette, Plus, Trash2, X } from "lucide-react";
 import clsx from "clsx";
 import { MoneyInput, NumberInput } from "./AdminNumberInputs";
 import { AdminButton } from "./AdminButton";
-import { blankCustomVariant, type CustomVariant, type ProductImage } from "../../data/adminCatalog";
+import { blankCustomVariant, type CustomVariant, type ProductImage, type VariantOption } from "../../data/adminCatalog";
 import { pick } from "../../data/types";
+import { Field, IconAction } from "./variantEditorParts";
+import { DEFAULT_SWATCH, fieldId } from "./variantFields";
+import { VariantOptionsEditor } from "./VariantOptionsEditor";
+import { optionFromVariants, syncVariants } from "../../lib/variantOptions";
 
 /**
  * The variants of a product that is not sold in gem packs: a mirror in blue
@@ -15,6 +19,9 @@ import { pick } from "../../data/types";
  * own name (the storefront shows it as the option label), an optional colour
  * dot, an optional price, its stock and the photos that show it — picking the
  * variant on the product page brings its first photo forward.
+ *
+ * When the variants combine options (colour × plug…), the options are edited
+ * instead and the variants are their combinations (`VariantOptionsEditor`).
  */
 
 interface CustomVariantsEditorProps {
@@ -33,10 +40,11 @@ interface CustomVariantsEditorProps {
    * field focused. An id the list does not hold is ignored.
    */
   focusOption?: string | null;
+  /** Options the variants combine; empty = a plain list. */
+  options?: VariantOption[];
+  /** Options and variants change together: the variants are the options' combinations. */
+  onOptionsChange: (options: VariantOption[], variants: CustomVariant[]) => void;
 }
-
-/** Default colour of a dot being added: a neutral grey the administrator changes. */
-const DEFAULT_SWATCH = "#d9d9d9";
 
 export function CustomVariantsEditor({
   variants = [],
@@ -46,6 +54,8 @@ export function CustomVariantsEditor({
   onChange,
   onMediaChange,
   focusOption,
+  options = [],
+  onOptionsChange,
 }: CustomVariantsEditorProps) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
@@ -98,6 +108,41 @@ export function CustomVariantsEditor({
 
   const nameOf = (variant: CustomVariant, index: number) =>
     pick(variant.name, lang).trim() || t("admin.form.variantsUnnamed", { index: index + 1 });
+
+  /**
+   * Switches to options: the existing variants become the values of a first
+   * option (ids, stock and photos kept), so a second one can join them; with
+   * no variant yet, an option with one value to name.
+   */
+  const startOptions = () => {
+    const allColours = variants.length > 0 && variants.every((v) => v.swatch);
+    const name = allColours
+      ? { fr: t("admin.form.optionsDefaultColour", { lng: "fr" }), en: t("admin.form.optionsDefaultColour", { lng: "en" }) }
+      : { fr: "", en: "" };
+    if (variants.length > 0) {
+      const converted = optionFromVariants(variants, media, name, () => crypto.randomUUID());
+      onMediaChange(() => converted.media);
+      onOptionsChange([converted.option], syncVariants([converted.option], [converted.option], converted.variants, () => crypto.randomUUID()));
+      return;
+    }
+    const option: VariantOption = { id: crypto.randomUUID(), name, values: [{ id: crypto.randomUUID(), name: { fr: "", en: "" } }] };
+    onOptionsChange([option], syncVariants([], [option], [], () => crypto.randomUUID()));
+  };
+
+  if (options.length > 0) {
+    return (
+      <VariantOptionsEditor
+        options={options}
+        variants={variants}
+        media={media}
+        productPrice={productPrice}
+        error={error}
+        onChange={onOptionsChange}
+        onMediaChange={onMediaChange}
+        focusVariant={target}
+      />
+    );
+  }
 
   return (
     <div className="grid gap-4">
@@ -277,11 +322,15 @@ export function CustomVariantsEditor({
         </ol>
       )}
 
-      <div>
+      <div className="flex flex-wrap gap-2">
         <AdminButton variant="outline" iconLeft={Plus} onClick={add}>
           {t("admin.form.variantsAdd")}
         </AdminButton>
+        <AdminButton variant="outline" iconLeft={Layers} onClick={startOptions}>
+          {t("admin.form.optionsStart")}
+        </AdminButton>
       </div>
+      <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.form.optionsStartHint")}</p>
 
       {error && (
         <p role="alert" className="m-0 text-[length:var(--text-caption)] font-semibold text-[var(--status-error-fg)]">
@@ -299,46 +348,5 @@ export function CustomVariantsEditor({
         </div>
       )}
     </div>
-  );
-}
-
-/** Id of one field of a variant card, for labels and the arrival focus. */
-function fieldId(variantId: string, field: string): string {
-  return `variant-${variantId}-${field}`;
-}
-
-function Field({ id, label, children }: { id: string; label: string; children: ReactNode }) {
-  return (
-    <div className="grid content-start gap-1.5">
-      <label htmlFor={id} className="text-[length:var(--text-caption)] font-semibold text-[var(--text-primary)]">
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function IconAction({
-  icon: Icon,
-  label,
-  disabled,
-  onClick,
-}: {
-  icon: typeof Plus;
-  label: string;
-  disabled?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--admin-radius-sm)] text-[var(--text-muted)] transition-colors hover:bg-[var(--admin-panel)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-    >
-      <Icon size={15} aria-hidden="true" />
-    </button>
   );
 }

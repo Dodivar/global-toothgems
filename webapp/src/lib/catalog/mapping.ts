@@ -3,6 +3,7 @@ import {
   SPEC_KEYS,
   type ProductSpecs,
   type GemColorDef,
+  type ProductOption,
   type GemShape,
   type Product,
   type ProductVariant,
@@ -60,6 +61,23 @@ export interface VariantRow {
   position: number;
   product_variant_translations: (TranslationRow & { name: string })[];
   inventory_items: InventoryRow[];
+  /** The value this variant has on each option (`…_product_variant_options`). */
+  product_variant_option_values?: { option_id: string; value_id: string }[];
+}
+
+/** An option of the product (`…_product_variant_options`) with its values. */
+export interface OptionRow {
+  id: string;
+  name: string;
+  position: number;
+  product_option_translations: (TranslationRow & { name: string })[];
+  product_option_values: {
+    id: string;
+    name: string;
+    swatch: string | null;
+    position: number;
+    product_option_value_translations: (TranslationRow & { name: string })[];
+  }[];
 }
 
 export interface MediaRow {
@@ -71,6 +89,8 @@ export interface MediaRow {
   is_primary: boolean;
   /** The variant this photo shows; null = the whole product. */
   variant_id?: string | null;
+  /** …or the option value it shows ("Argent", whatever the plug). */
+  option_value_id?: string | null;
   product_media_translations: (TranslationRow & { alt_text: string })[];
 }
 
@@ -99,6 +119,8 @@ export interface ProductRow extends SpecColumns {
   family?: { slug: string } | null;
   product_translations: ProductTranslationRow[];
   product_variants: VariantRow[];
+  /** Absent when the query predates `…_product_variant_options`. */
+  product_options?: OptionRow[];
   product_media: MediaRow[];
   inventory_items: InventoryRow[];
 }
@@ -237,7 +259,12 @@ function swatchOf(attributes: Json | undefined): string | undefined {
   return typeof swatch === "string" && /^#[0-9a-f]{6}$/i.test(swatch) ? swatch.toLowerCase() : undefined;
 }
 
-function mapVariant(row: VariantRow, productPrice: number | string, image: string | undefined): ProductVariant {
+function mapVariant(
+  row: VariantRow,
+  productPrice: number | string,
+  image: string | undefined,
+  optionValues: string[] | undefined,
+): ProductVariant {
   const price = displayPrice(row.price ?? productPrice);
   const compareAt = row.compare_at_price != null ? displayPrice(row.compare_at_price) : undefined;
   const gem = parseGemAttributes(row.attributes);
@@ -248,6 +275,7 @@ function mapVariant(row: VariantRow, productPrice: number | string, image: strin
     ...(gem ? { pack: gem.pack ?? undefined, size: gem.size ?? undefined } : {}),
     ...(swatch ? { swatch } : {}),
     ...(image ? { image } : {}),
+    ...(optionValues ? { optionValues } : {}),
     price,
     compareAtPrice: compareAt != null && compareAt > price ? compareAt : undefined,
     stock: stockBadge(row.inventory_items[0]?.stock_status),
@@ -293,16 +321,27 @@ export function mapProduct(
       ? localize(m.alt_text, m.product_media_translations, (t) => t.alt_text)
       : name,
   }));
-  // A variant's photo is the first gallery image that shows it.
-  const variantImage = (variantId: string) => {
-    const index = imageRows.findIndex((m) => m.variant_id === variantId);
+  const options = mapOptions(row.product_options ?? []);
+  // A variant's photo is the first gallery image that shows it, else the
+  // first one showing one of its option values (the silver lamp, any plug).
+  const variantImage = (variantId: string, valueIds: string[] = []) => {
+    let index = imageRows.findIndex((m) => m.variant_id === variantId);
+    for (const valueId of valueIds) {
+      if (index >= 0) break;
+      index = imageRows.findIndex((m) => m.option_value_id === valueId);
+    }
     return index >= 0 ? images[index].src : undefined;
   };
 
   const variants = row.product_variants
     .filter((v) => v.is_active)
     .sort((a, b) => a.position - b.position)
-    .map((v) => mapVariant(v, row.price, variantImage(v.id)));
+    .map((v) => {
+      const optionValues = variantOptionValues(v, options);
+      return mapVariant(v, row.price, variantImage(v.id, optionValues), optionValues);
+    });
+  // Options are offered only when every variant is one of their combinations.
+  const offerOptions = options.length > 0 && variants.length > 0 && variants.every((v) => v.optionValues);
 
   const stock = variants.length > 0
     ? aggregateStock(row.product_variants.filter((v) => v.is_active).map((v) => v.inventory_items[0]?.stock_status))
@@ -349,6 +388,39 @@ export function mapProduct(
     specs: Object.keys(specs).length > 0 ? specs : undefined,
     gallery: images.length > 0 ? images : undefined,
     variants: variants.length > 0 ? variants : undefined,
+    ...(offerOptions ? { options } : {}),
     isFeatured: row.is_featured,
   };
+}
+
+/** The product's options and their values, in back-office order. */
+function mapOptions(rows: OptionRow[]): ProductOption[] {
+  return [...rows]
+    .sort((a, b) => a.position - b.position)
+    .map((option) => ({
+      id: option.id,
+      name: localize(option.name, option.product_option_translations ?? [], (t) => t.name),
+      values: [...(option.product_option_values ?? [])]
+        .sort((a, b) => a.position - b.position)
+        .map((value) => {
+          const swatch = swatchOf({ swatch: value.swatch });
+          return {
+            id: value.id,
+            name: localize(value.name, value.product_option_value_translations ?? [], (t) => t.name),
+            ...(swatch ? { swatch } : {}),
+          };
+        }),
+    }))
+    .filter((option) => option.values.length > 0);
+}
+
+/** A variant's value on each option, in option order; undefined unless it has one on every option. */
+function variantOptionValues(row: VariantRow, options: ProductOption[]): string[] | undefined {
+  if (options.length === 0) return undefined;
+  const links = row.product_variant_option_values ?? [];
+  const values = options.map((option) => {
+    const valueId = links.find((link) => link.option_id === option.id)?.value_id;
+    return valueId && option.values.some((value) => value.id === valueId) ? valueId : undefined;
+  });
+  return values.every(Boolean) ? (values as string[]) : undefined;
 }

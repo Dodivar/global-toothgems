@@ -28,6 +28,8 @@ import { useTaxonomy } from "../lib/catalog/useTaxonomy";
 import { shopHref } from "../data/taxonomy";
 import { CatalogError } from "../components/shop/CatalogError";
 import { GemOptionPicker } from "../components/shop/GemOptionPicker";
+import { VariantOptionPicker } from "../components/shop/VariantOptionPicker";
+import { cardVariants, hasOptionPicker } from "../lib/productOptions";
 import { BackInStockForm } from "../components/shop/BackInStockForm";
 import { formatSizeFull, isGemOptionSet } from "../lib/gemOptions";
 import { NotFound } from "./NotFound";
@@ -97,6 +99,8 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
   const legacyOptions = variants.length === 0 && source === "mock";
   // Gems sold by pack and stone size get a two-axis picker instead of one list.
   const gemPicker = isGemOptionSet(variants);
+  // Variants combining options (colour × plug…) get one row per option.
+  const optionPicker = !gemPicker && hasOptionPicker(product.options, variants);
   const [variantId, setVariantId] = useState(() => (variants.find((v) => v.stock !== "out") ?? variants[0])?.id);
   const variant = variants.find((v) => v.id === variantId);
   // Colour variants read as colours: the legend says so once every one has a dot.
@@ -348,7 +352,11 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
                 decision here, and a <select> hides the options behind a click. */}
             {gemPicker && <GemOptionPicker variants={variants} selected={variant} onSelect={selectVariant} />}
 
-            {variants.length > 0 && !gemPicker && (
+            {optionPicker && product.options && (
+              <VariantOptionPicker options={product.options} variants={variants} selected={variant} onSelect={selectVariant} />
+            )}
+
+            {variants.length > 0 && !gemPicker && !optionPicker && (
               <fieldset className="m-0 grid gap-2 border-0 p-0">
                 <legend className="text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">
                   {t(colorVariants ? "product.colorLabel" : "product.variantLabel")}
@@ -554,7 +562,7 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
                   price: p.price,
                   image: p.image,
                   hoverImage: p.gallery?.[1]?.src,
-                  variants: p.variants,
+                  variants: cardVariants(p),
                   stock: p.stock,
                   offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR", compareAtPrice: p.compareAtPrice }),
                 }}

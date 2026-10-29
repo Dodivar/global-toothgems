@@ -19,30 +19,40 @@ import {
  * translations and active variants; the filters below say the same thing
  * explicitly so a signed-in admin browsing the shop sees what customers see.
  */
-const PRODUCT_SELECT_BASE = `
+const productSelect = (options: boolean) => `
   id, slug, name, short_description, description, meta_title, meta_description, price, compare_at_price, currency, is_featured, metadata,
   spec_material, spec_center, spec_back, spec_packaging, spec_wear,
   category:categories ( slug, name, category_translations ( locale, name, status ) ),
   product_translations ( locale, name, slug, short_description, description, meta_title, meta_description, status,
     spec_material, spec_center, spec_back, spec_packaging, spec_wear ),
   product_variants ( id, name, attributes, price, compare_at_price, is_active, position,
-    product_variant_translations ( locale, name, status ),
-    inventory_items ( stock_status ) ),
-  product_media ( id, storage_path, media_type, alt_text, position, is_primary, variant_id,
+    product_variant_translations ( locale, name, status ),${options ? "\n    product_variant_option_values ( option_id, value_id )," : ""}
+    inventory_items ( stock_status ) ),${
+      options
+        ? `
+  product_options ( id, name, position, product_option_translations ( locale, name, status ),
+    product_option_values ( id, name, swatch, position, product_option_value_translations ( locale, name, status ) ) ),`
+        : ""
+    }
+  product_media ( id, storage_path, media_type, alt_text, position, is_primary, variant_id,${options ? " option_value_id," : ""}
     product_media_translations ( locale, alt_text, status ) ),
   inventory_items ( stock_status )
 `;
 
-const PRODUCT_SELECT = `${PRODUCT_SELECT_BASE},
+/** Without the families and the variant options: the fallback below. */
+const PRODUCT_SELECT_BASE = productSelect(false);
+
+const PRODUCT_SELECT = `${productSelect(true)},
   family:category_families!products_family_fkey ( slug )
 `;
 
 /**
- * The front end may ship before `…_category_families` is applied, and the
- * error a missing relation gives depends on the PostgREST version. So any
- * failure of a query reading the families is retried once without them: the
- * shop then keeps working on categories alone instead of going down, and a
- * real outage still surfaces through the second query.
+ * The front end may ship before its latest migration (`…_category_families`,
+ * `…_product_variant_options`) is applied, and the error a missing relation
+ * gives depends on the PostgREST version. So any failure of the full query is
+ * retried once without them: the shop then keeps working (categories alone,
+ * variants as a flat list) instead of going down, and a real outage still
+ * surfaces through the second query.
  */
 function retryWithoutFamilies(error: { message?: string } | null, signal?: AbortSignal): boolean {
   if (!error || signal?.aborted) return false;

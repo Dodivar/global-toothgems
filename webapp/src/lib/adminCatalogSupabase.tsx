@@ -255,6 +255,7 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         custom_variants?: string[];
         family_id?: string | null;
         specs?: boolean;
+        variant_options?: boolean;
       };
       await removeFiles(result.removed_paths ?? []);
       // A database without the pack/SS, variants or families migration saves
@@ -264,6 +265,9 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       }
       if (product.customVariants && !Array.isArray(result.custom_variants)) {
         return fail({ code: "PGRST202", message: "admin_save_product() does not save variants yet" });
+      }
+      if ((product.variantOptions?.length ?? 0) > 0 && product.customVariants && !result.variant_options) {
+        return fail({ code: "PGRST202", message: "admin_save_product() does not save variant options yet" });
       }
       if (product.familyId && !("family_id" in result)) {
         return fail({ code: "PGRST202", message: "admin_save_product() does not save families yet" });
@@ -362,8 +366,12 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       let sku = base;
       for (let n = 2; taken.has(sku); n++) sku = `${base}${n}`;
 
-      // The copy's variants are rows of their own, and its photos follow them.
+      // The copy's variants and options are rows of their own, and its photos follow them.
       const variantIds = new Map((source.customVariants ?? []).map((variant) => [variant.id, crypto.randomUUID()]));
+      const optionIds = new Map((source.variantOptions ?? []).map((option) => [option.id, crypto.randomUUID()]));
+      const valueIds = new Map(
+        (source.variantOptions ?? []).flatMap((option) => option.values.map((value) => [value.id, crypto.randomUUID()] as const)),
+      );
       const copy: AdminProduct = {
         ...source,
         id: crypto.randomUUID(),
@@ -379,8 +387,18 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
           ...image,
           id: `${UNSAVED_MEDIA_PREFIX}${index}`,
           variantId: image.variantId ? variantIds.get(image.variantId) : undefined,
+          optionValueId: image.optionValueId ? valueIds.get(image.optionValueId) : undefined,
         })),
-        customVariants: source.customVariants?.map((variant) => ({ ...variant, id: variantIds.get(variant.id)! })),
+        customVariants: source.customVariants?.map((variant) => ({
+          ...variant,
+          id: variantIds.get(variant.id)!,
+          ...(variant.optionValues ? { optionValues: variant.optionValues.map((id) => valueIds.get(id) ?? id) } : {}),
+        })),
+        variantOptions: source.variantOptions?.map((option) => ({
+          ...option,
+          id: optionIds.get(option.id)!,
+          values: option.values.map((value) => ({ ...value, id: valueIds.get(value.id)! })),
+        })),
       };
       const saved = await save(copy);
       log("duplicated", saved, { fr: `Copie de ${source.name.fr}`, en: `Copy of ${source.name.en || source.name.fr}` });
