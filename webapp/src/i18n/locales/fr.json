@@ -180,21 +180,7 @@
     "resultsLoading": "Mise à jour des résultats",
     "gridLabel": "Liste des produits",
     "shapes": {
-      "all": "Toutes les formes",
-      "round": "Rond",
-      "heart": "Cœur",
-      "drop": "Goutte",
-      "navette": "Navette",
-      "star": "Étoile",
-      "square": "Carré",
-      "triangle": "Triangle",
-      "baguette": "Baguette",
-      "flower": "Fleur",
-      "marquise": "Marquise",
-      "diamond": "Diamant",
-      "rivoli-star": "Étoile rivoli",
-      "star-flower": "Fleur étoilée",
-      "xilion-rose": "Xilion rose"
+      "all": "Toutes les formes"
     },
     "colors": {
       "all": "Toutes les couleurs"

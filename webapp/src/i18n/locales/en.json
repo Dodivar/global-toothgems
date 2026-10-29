@@ -180,21 +180,7 @@
     "resultsLoading": "Updating results",
     "gridLabel": "Product list",
     "shapes": {
-      "all": "All shapes",
-      "round": "Round",
-      "heart": "Heart",
-      "drop": "Drop",
-      "navette": "Navette",
-      "star": "Star",
-      "square": "Square",
-      "triangle": "Triangle",
-      "baguette": "Baguette",
-      "flower": "Flower",
-      "marquise": "Marquise",
-      "diamond": "Diamond shape",
-      "rivoli-star": "Rivoli star",
-      "star-flower": "Star flower",
-      "xilion-rose": "Xilion rose"
+      "all": "All shapes"
     },
     "colors": {
       "all": "All colours"

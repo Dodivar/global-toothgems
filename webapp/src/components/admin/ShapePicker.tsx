@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { LookTileGroup } from "./LookTileGroup";
 import { ShapeGlyph } from "../ui/ShapeGlyph";
-import { GEM_SHAPES, sortByShapeLabel, type GemShape } from "../../data/products";
+import { GEM_SHAPES, shapeName, sortByShapeLabel, type GemShape } from "../../data/products";
 
 /**
  * Gem cut of a product, picked from its drawing.
@@ -22,9 +22,9 @@ export function ShapePicker({ label, value, onChange }: ShapePickerProps) {
 
   const options = useMemo(
     () =>
-      sortByShapeLabel(GEM_SHAPES, (shape) => shape, (shape) => t(`shop.shapes.${shape}`), i18n.language).map((shape) => ({
+      sortByShapeLabel(GEM_SHAPES, (shape) => shape, shapeName, i18n.language).map((shape) => ({
         value: shape,
-        label: t(`shop.shapes.${shape}`),
+        label: shapeName(shape),
         visual: <ShapeGlyph shape={shape} size={26} className="text-[var(--gt-blue-700)]" />,
       })),
     [t, i18n.language],

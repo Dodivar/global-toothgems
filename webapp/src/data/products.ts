@@ -5,8 +5,8 @@ import { photo } from "../lib/images";
 
 /**
  * Cut of a gem, as an ASCII slug. The slug is what travels in the `forme` URL
- * parameter, so a link built in French still resolves in English — display
- * labels live in the locale files under `shop.shapes.*`.
+ * parameter, so a link built in French still resolves in English. Its display
+ * name is {@link SHAPE_NAMES}.
  */
 export type GemShape =
   | "round"
@@ -26,7 +26,7 @@ export type GemShape =
 
 /**
  * Every known cut. Not a display order: shape lists are shown alphabetically
- * by translated label (`sortByShapeLabel`).
+ * by name (`sortByShapeLabel`).
  */
 export const GEM_SHAPES: GemShape[] = [
   "round",
@@ -44,6 +44,33 @@ export const GEM_SHAPES: GemShape[] = [
   "star-flower",
   "xilion-rose",
 ];
+
+/**
+ * Display name of each cut. Decided by the owner (2026-10-29): cut names are
+ * the crystal makers' English names in every language, never translated
+ * ("Starflower", not "Fleur" nor "Flower"), so they match the product names.
+ */
+export const SHAPE_NAMES: Record<GemShape, string> = {
+  round: "Round",
+  heart: "Heart",
+  drop: "Raindrop",
+  navette: "Navette",
+  star: "Star",
+  square: "Square",
+  triangle: "Triangle",
+  baguette: "Baguette",
+  flower: "Starflower",
+  marquise: "Marquise",
+  diamond: "Diamond Shape",
+  "rivoli-star": "Rivoli Star",
+  "star-flower": "Star Flower",
+  "xilion-rose": "Xilion Rose",
+};
+
+/** Name of a cut; a slug outside the taxonomy (hand-edited URL) shows as-is. */
+export function shapeName(shape: string): string {
+  return (SHAPE_NAMES as Record<string, string>)[shape] ?? shape;
+}
 
 /**
  * Colour family of a gem, as an ASCII slug. It travels in the `couleur` URL
@@ -479,6 +506,22 @@ export function relatedProducts(product: Product, list: Product[] = PRODUCTS): P
 export interface ShapeGroup {
   shape: GemShape;
   count: number;
+  /** Picture of the cut: its Crystal AB gem's photo, when the group has one. */
+  image?: string;
+}
+
+/** Colour whose photo stands for a cut on the shape tiles. */
+const SHAPE_PICTURE_COLOR = "crystal-ab";
+
+/**
+ * The Crystal AB gem's photo, which shows the cut best (decided by the owner,
+ * 2026-10-29). A gem whose colour was not set yet is recognised by the
+ * "Crystal AB" in its name.
+ */
+function shapePicture(gems: Product[]): string | undefined {
+  const isCrystalAb = (p: Product) =>
+    p.color === SHAPE_PICTURE_COLOR || (!p.color && /\bcrystal ab\b/i.test(`${p.name.fr} ${p.name.en}`));
+  return gems.find((p) => p.image && isCrystalAb(p))?.image;
 }
 
 /**
@@ -491,17 +534,16 @@ export interface ShapeGroup {
 export function shapesInCatalog(list: Product[] = PRODUCTS): ShapeGroup[] {
   const groups: ShapeGroup[] = [];
   for (const shape of GEM_SHAPES) {
-    const count = list.filter((p) => p.shape === shape).length;
-    if (count > 0) groups.push({ shape, count });
+    const gems = list.filter((p) => p.shape === shape);
+    if (gems.length > 0) groups.push({ shape, count: gems.length, image: shapePicture(gems) });
   }
   return groups;
 }
 
 /**
- * Items ordered alphabetically by their shape's translated label.
+ * Items ordered alphabetically by their shape's name.
  *
- * Sorted at render time, not by slug: "Étoile" must sit beside "Diamant" in
- * French, and the English order differs from the French one.
+ * Sorted by name, not by slug: "Raindrop" (`drop`) sits under R.
  */
 export function sortByShapeLabel<T>(
   items: T[],

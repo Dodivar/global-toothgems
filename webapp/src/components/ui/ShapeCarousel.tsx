@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import { CarouselTrack } from "./CarouselTrack";
 import { ShapeGlyph } from "./ShapeGlyph";
-import type { ShapeGroup } from "../../data/products";
+import { shapeName, type ShapeGroup } from "../../data/products";
 
 interface ShapeCarouselProps {
   groups: ShapeGroup[];
@@ -24,7 +24,7 @@ export function ShapeCarousel({ groups, hrefFor, compact = false, onNavigate }: 
           <Link
             to={hrefFor(group)}
             onClick={onNavigate}
-            aria-label={t("home.shapeTileAria", { shape: t(`shop.shapes.${group.shape}`), count: group.count })}
+            aria-label={t("home.shapeTileAria", { shape: shapeName(group.shape), count: group.count })}
             className={`group grid justify-items-center gap-2.5 rounded-[var(--radius-card)] p-2 transition-colors duration-[var(--duration-fast)] hover:bg-[var(--surface-brand-wash-strong)] ${
               compact ? "w-[84px] gap-2" : "w-[104px] sm:w-[124px]"
             }`}
@@ -38,7 +38,7 @@ export function ShapeCarousel({ groups, hrefFor, compact = false, onNavigate }: 
             </span>
             <span className="grid justify-items-center gap-0.5 text-center">
               <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">
-                {t(`shop.shapes.${group.shape}`)}
+                {shapeName(group.shape)}
               </span>
               {!compact && (
                 <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">

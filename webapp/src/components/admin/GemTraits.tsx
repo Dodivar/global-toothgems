@@ -1,11 +1,10 @@
 import { useCallback, useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import { ColorSwatch } from "../ui/ColorSwatch";
 import { ShapeGlyph } from "../ui/ShapeGlyph";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
 import type { AdminGemColor } from "../../data/adminCatalog";
-import type { GemColor, GemShape } from "../../data/products";
+import { shapeName, type GemColor, type GemShape } from "../../data/products";
 
 /**
  * Names and pictures of a gem's cut and colour, as the product list shows
@@ -18,7 +17,6 @@ import type { GemColor, GemShape } from "../../data/products";
  * product stays findable.
  */
 export function useGemTraits() {
-  const { t } = useTranslation();
   const L = useLocalized();
   const { gemColors } = useAdminCatalog();
 
@@ -29,7 +27,7 @@ export function useGemTraits() {
     [gemColors],
   );
 
-  const shapeLabel = useCallback((shape: GemShape) => t(`shop.shapes.${shape}`), [t]);
+  const shapeLabel = useCallback((shape: GemShape) => shapeName(shape), []);
   const colorDef = useCallback((slug: GemColor): AdminGemColor | undefined => bySlug.get(slug), [bySlug]);
   const colorLabel = useCallback(
     (slug: GemColor) => {
