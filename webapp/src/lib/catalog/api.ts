@@ -19,31 +19,50 @@ import {
  * translations and active variants; the filters below say the same thing
  * explicitly so a signed-in admin browsing the shop sees what customers see.
  */
-const PRODUCT_SELECT_BASE = `
-  id, slug, name, short_description, description, price, compare_at_price, currency, is_featured, metadata,
+const productSelect = (options: boolean) => `
+  id, slug, name, short_description, description, meta_title, meta_description, price, compare_at_price, currency, is_featured, metadata,
   spec_material, spec_center, spec_back, spec_packaging, spec_wear,
   category:categories ( slug, name, category_translations ( locale, name, status ) ),
-  product_translations ( locale, name, slug, short_description, description, status,
+  product_translations ( locale, name, slug, short_description, description, meta_title, meta_description, status,
     spec_material, spec_center, spec_back, spec_packaging, spec_wear ),
   product_variants ( id, name, attributes, price, compare_at_price, is_active, position,
-    product_variant_translations ( locale, name, status ),
-    inventory_items ( stock_status ) ),
-  product_media ( id, storage_path, media_type, alt_text, position, is_primary, variant_id,
+    product_variant_translations ( locale, name, status ),${options ? "\n    product_variant_option_values ( option_id, value_id )," : ""}
+    inventory_items ( stock_status ) ),${
+      options
+        ? `
+  product_options ( id, name, position, product_option_translations ( locale, name, status ),
+    product_option_values ( id, name, swatch, position, product_option_value_translations ( locale, name, status ) ) ),`
+        : ""
+    }
+  product_media ( id, storage_path, media_type, alt_text, position, is_primary, variant_id,${options ? " option_value_id," : ""}
     product_media_translations ( locale, alt_text, status ) ),
   inventory_items ( stock_status )
 `;
 
-const PRODUCT_SELECT = `${PRODUCT_SELECT_BASE},
+/** Without the families and the variant options: the fallback below. */
+const PRODUCT_SELECT_BASE = productSelect(false);
+
+const FAMILY_SELECT = `,
   family:category_families!products_family_fkey ( slug )
 `;
 
+const PRODUCT_SELECT = `${productSelect(true)}${FAMILY_SELECT}`;
+
+/** With the families but without the variant options: tried first on a failure. */
+const PRODUCT_SELECT_NO_OPTIONS = `${productSelect(false)}${FAMILY_SELECT}`;
+
 /**
- * The front end may ship before `…_category_families` is applied, and the
- * error a missing relation gives depends on the PostgREST version. So any
- * failure of a query reading the families is retried once without them: the
- * shop then keeps working on categories alone instead of going down, and a
- * real outage still surfaces through the second query.
+ * The front end may ship before its latest migration (`…_category_families`,
+ * `…_product_variant_options`) is applied, and the error a missing relation
+ * gives depends on the PostgREST version. So a failing product query is
+ * retried without the variant options first, then without the families too:
+ * the shop keeps working (variants as a flat list, families kept while they
+ * exist) instead of going down, and a real outage still surfaces through the
+ * last query. Dropping the families when only the options were missing would
+ * empty every family page and the shape tiles.
  */
+const PRODUCT_SELECT_FALLBACKS = [PRODUCT_SELECT_NO_OPTIONS, PRODUCT_SELECT_BASE];
+
 function retryWithoutFamilies(error: { message?: string } | null, signal?: AbortSignal): boolean {
   if (!error || signal?.aborted) return false;
   console.warn("[catalog] product families unavailable", error.message);
@@ -68,9 +87,12 @@ export async function fetchCatalog(signal?: AbortSignal, db: TypedSupabaseClient
   let statsQuery = db.from("product_review_stats").select("product_id, average_rating, review_count");
   if (signal) statsQuery = statsQuery.abortSignal(signal);
 
-  const [withFamilies, stats] = await Promise.all([productsQuery(PRODUCT_SELECT), statsQuery]);
-  let products = withFamilies;
-  if (retryWithoutFamilies(products.error, signal)) products = await productsQuery(PRODUCT_SELECT_BASE);
+  const [full, stats] = await Promise.all([productsQuery(PRODUCT_SELECT), statsQuery]);
+  let products = full;
+  for (const select of PRODUCT_SELECT_FALLBACKS) {
+    if (!retryWithoutFamilies(products.error, signal)) break;
+    products = await productsQuery(select);
+  }
   if (products.error) throw products.error;
   // Ratings are secondary: a failing stats view must not take the shop down.
   if (stats.error) console.warn("[catalog] review stats unavailable", stats.error.message);
@@ -142,7 +164,10 @@ export async function fetchProductByKey(db: TypedSupabaseClient, key: string): P
 
   const byColumn = async (column: "id" | "slug", value: string) => {
     let result = await productsQuery(PRODUCT_SELECT).eq(column, value).maybeSingle();
-    if (retryWithoutFamilies(result.error)) result = await productsQuery(PRODUCT_SELECT_BASE).eq(column, value).maybeSingle();
+    for (const select of PRODUCT_SELECT_FALLBACKS) {
+      if (!retryWithoutFamilies(result.error)) break;
+      result = await productsQuery(select).eq(column, value).maybeSingle();
+    }
     if (result.error) throw result.error;
     return result.data as unknown as ProductRow | null;
   };

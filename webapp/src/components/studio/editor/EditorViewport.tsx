@@ -56,6 +56,7 @@ import { useQuickActions, type QuickActionId } from "../../../lib/studio3d/quick
 import { studioStore, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
 import { GROUP_MIN_PIECES } from "../../../lib/studioWorkspace/gemGroup";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { useStudioStaff } from "../../../lib/studioAccess";
 
 /**
  * Centred in the part of the stage the side drawers leave in view, and no wider
@@ -111,10 +112,11 @@ export function EditorViewport({ snap, panels }: { snap: StudioSnapshot; panels?
     };
   }, []);
 
-  // Drag and drop a .glb model straight onto the stage.
+  // Drag and drop a .glb model straight onto the stage (staff only, like the import button).
+  const staff = useStudioStaff();
   useEffect(() => {
     const host = hostRef.current;
-    if (!host) return;
+    if (!host || !staff) return;
     const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
     const over = (e: DragEvent) => {
       if (!hasFiles(e)) return;
@@ -139,7 +141,7 @@ export function EditorViewport({ snap, panels }: { snap: StudioSnapshot; panels?
       host.removeEventListener("dragleave", leave);
       host.removeEventListener("drop", drop);
     };
-  }, []);
+  }, [staff]);
 
   const armedName = snap.armedTypeId ? pieceName({ productId: snap.armedTypeId }) : null;
   const quick = useQuickActions();

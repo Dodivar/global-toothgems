@@ -577,6 +577,27 @@
 }
 .gt-quiet-in { animation: gt-quiet-in var(--duration-fast) var(--ease-standard) 350ms both; }
 
+/* AI try-on result: the image comes out of a soft blur, a light sweeps across it once, the "ready" badge pops in. */
+@keyframes gt-tryon-reveal {
+  from { opacity: 0; transform: scale(1.05); filter: blur(14px) saturate(.7); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes gt-tryon-sheen {
+  from { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+  20% { opacity: 1; }
+  to { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+}
+.gt-tryon-reveal { animation: gt-tryon-reveal 1100ms var(--ease-standard) both; }
+.gt-tryon-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent);
+  animation: gt-tryon-sheen 1300ms ease-out 700ms both;
+}
+
 @keyframes gt-skeleton {
   from { background-position: 100% 50%; }
   to { background-position: 0 50%; }
@@ -595,7 +616,9 @@
   .gt-stamp-press,
   .gt-lounge-typing > span,
   .gt-quiet-in,
+  .gt-tryon-reveal,
   .gt-skeleton { animation: none; }
+  .gt-tryon-sheen::after { display: none; }
   .gt-lounge-flash { animation: none; background-color: var(--gt-blue-100); }
   .gt-diploma { transform: none; transition: none; }
   .gt-sparkle::after { display: none; }
@@ -1816,6 +1839,8 @@
   /* Product cut-outs are shot on white: multiplying them into the tint
      behind leaves only the gem. */
   .gt-alt-cutout { mix-blend-mode: multiply; }
+  /* Gem cut-outs (transparent `gem-*.webp`): a soft shadow lifts them off the tint. */
+  .gt-alt-gem { filter: drop-shadow(0 6px 10px rgb(17 39 84 / 0.18)); }
 
   .gt-alt-float { animation: gt-alt-float 7s var(--ease-in-out) infinite; }
   .gt-alt-float--late { animation-delay: -3.5s; }
@@ -1929,6 +1954,10 @@
   .gt-alt-tile:focus-within .gt-alt-tile-art,
   .gt-alt-course:hover .gt-alt-tile-art,
   .gt-alt-course:focus-within .gt-alt-tile-art { transform: scale(1.05); }
+  /* Exploded arrangements: the pieces fly apart a little on hover. */
+  .gt-alt-burst-piece { transition: translate 900ms var(--ease-out-soft); }
+  .gt-alt-tile:hover .gt-alt-burst-piece,
+  .gt-alt-tile:focus-within .gt-alt-burst-piece { translate: var(--gt-burst-x, 0) var(--gt-burst-y, 0); }
   .gt-alt-tile-arrow { transition: transform var(--duration-normal) var(--ease-out-soft); }
   .gt-alt-tile:hover .gt-alt-tile-arrow,
   .gt-alt-tile:focus-within .gt-alt-tile-arrow { transform: translate(2px, -2px); }
@@ -1936,7 +1965,13 @@
   .gt-alt-course:focus-within .gt-alt-tile-arrow { transform: translateX(3px); }
 
   /* Academy ------------------------------------------------------------------ */
-  .gt-alt-academy { background: linear-gradient(180deg, var(--gt-off-white) 0%, var(--gt-sand) 100%); }
+  /* The evening atelier: the brand's ink lit by its pastel blue. */
+  .gt-alt-academy {
+    background:
+      radial-gradient(50% 45% at 85% 12%, rgba(122, 149, 184, .34), transparent 70%),
+      radial-gradient(45% 40% at 0% 70%, rgba(185, 205, 229, .14), transparent 70%),
+      linear-gradient(180deg, var(--gt-ink-900) 0%, #151b23 100%);
+  }
 
   /* Review feed: Pinterest-style pins ------------------------------------- */
   .gt-alt-pin {
@@ -2050,6 +2085,8 @@
   .gt-alt-course:focus-within .gt-alt-tile-art,
   .gt-alt-pin:hover .gt-alt-tile-art,
   .gt-alt-pin:focus-within .gt-alt-tile-art { transform: none; }
+  .gt-alt-tile:hover .gt-alt-burst-piece,
+  .gt-alt-tile:focus-within .gt-alt-burst-piece { translate: none; }
   .gt-alt-pin:hover,
   .gt-alt-pin:focus-within { transform: none; }
 }

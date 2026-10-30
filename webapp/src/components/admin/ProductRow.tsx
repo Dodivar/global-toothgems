@@ -25,6 +25,7 @@ import { StockIndicator, VariantStockIndicator } from "./StockIndicator";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
 import { hasAdjustableStock } from "../../lib/stockAdjustment";
+import { isBundle } from "../../lib/productBundles";
 import { useFormat } from "../../lib/format";
 import {
   displayState,
@@ -126,14 +127,19 @@ export function ProductRow({
           onSelect: () => actions.onPublish(product),
           separated: true,
         },
-    stock === "out_of_stock"
-      ? { id: "restock", label: t("admin.actions.restock"), icon: PackageCheck, onSelect: () => actions.onRestock(product) }
-      : {
-          id: "out-of-stock",
-          label: t("admin.actions.markOutOfStock"),
-          icon: PackageX,
-          onSelect: () => actions.onMarkOutOfStock(product),
-        },
+    // A kit's stock is its components' (decision 117): nothing to change here.
+    ...(isBundle(product)
+      ? []
+      : [
+          stock === "out_of_stock"
+            ? { id: "restock", label: t("admin.actions.restock"), icon: PackageCheck, onSelect: () => actions.onRestock(product) }
+            : {
+                id: "out-of-stock",
+                label: t("admin.actions.markOutOfStock"),
+                icon: PackageX,
+                onSelect: () => actions.onMarkOutOfStock(product),
+              },
+        ]),
     archived
       ? {
           id: "restore",

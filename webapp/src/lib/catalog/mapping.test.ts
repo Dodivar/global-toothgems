@@ -321,3 +321,54 @@ describe("colour variants", () => {
     expect(product.variants?.[0]).not.toHaveProperty("pack");
   });
 });
+
+describe("variant options", () => {
+  const option = (id: string, name: string, position: number, values: { id: string; name: string; swatch?: string; en?: string }[]) => ({
+    id,
+    name,
+    position,
+    product_option_translations: [{ locale: "en", status: "published", name: `${name} (en)` }],
+    product_option_values: values.map((value, index) => ({
+      id: value.id,
+      name: value.name,
+      swatch: value.swatch ?? null,
+      position: index,
+      product_option_value_translations: value.en ? [{ locale: "en", status: "published", name: value.en }] : [],
+    })),
+  });
+  const lamp = row({
+    product_options: [
+      option("o-plug", "Prise", 1, [{ id: "eu", name: "Prise EU", en: "EU plug" }, { id: "us", name: "Prise US" }]),
+      option("o-colour", "Couleur", 0, [{ id: "silver", name: "Argent", swatch: "#D9D9D9" }, { id: "black", name: "Noir" }]),
+    ],
+    product_variants: [
+      variant({ id: "v1", position: 0, product_variant_option_values: [{ option_id: "o-plug", value_id: "eu" }, { option_id: "o-colour", value_id: "silver" }] }),
+      variant({ id: "v2", position: 1, product_variant_option_values: [{ option_id: "o-colour", value_id: "black" }, { option_id: "o-plug", value_id: "us" }] }),
+    ],
+    product_media: [
+      { id: "m1", storage_path: "products/lamp/silver.jpg", media_type: "image", alt_text: null, position: 0, is_primary: true, option_value_id: "silver", product_media_translations: [] },
+      { id: "m2", storage_path: "products/lamp/black.jpg", media_type: "image", alt_text: null, position: 1, is_primary: false, option_value_id: "black", product_media_translations: [] },
+    ],
+  });
+
+  it("maps the options in order, each variant's values in option order, and photos through values", () => {
+    const product = mapProduct(lamp, undefined, url);
+    expect(product.options?.map((o) => [o.name, o.values.map((value) => [value.id, value.name.en, value.swatch])])).toEqual([
+      [{ fr: "Couleur", en: "Couleur (en)" }, [["silver", "Argent", "#d9d9d9"], ["black", "Noir", undefined]]],
+      [{ fr: "Prise", en: "Prise (en)" }, [["eu", "EU plug", undefined], ["us", "Prise US", undefined]]],
+    ]);
+    expect(product.variants?.map((v) => [v.optionValues, v.image])).toEqual([
+      [["silver", "eu"], url("products/lamp/silver.jpg")],
+      [["black", "us"], url("products/lamp/black.jpg")],
+    ]);
+  });
+
+  it("offers no options when a variant misses a value", () => {
+    const partial = mapProduct(
+      { ...lamp, product_variants: [...lamp.product_variants, variant({ id: "v3", position: 2, product_variant_option_values: [] })] },
+      undefined,
+      url,
+    );
+    expect(partial.options).toBeUndefined();
+  });
+});

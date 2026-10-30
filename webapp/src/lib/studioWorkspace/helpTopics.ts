@@ -17,6 +17,8 @@ export type HelpPlan = "artist" | "atelier";
 export interface HelpTopic {
   id: string;
   plan?: HelpPlan;
+  /** A staff-only tool: the topic is shown to active staff only. */
+  staffOnly?: boolean;
 }
 
 export interface HelpChapter {
@@ -27,7 +29,7 @@ export interface HelpChapter {
 export const HELP_CHAPTERS: HelpChapter[] = [
   {
     id: "stage",
-    topics: [{ id: "dentition" }, { id: "camera" }, { id: "importModel" }],
+    topics: [{ id: "dentition" }, { id: "camera" }, { id: "importModel", staffOnly: true }],
   },
   {
     id: "placing",

@@ -180,21 +180,7 @@
     "resultsLoading": "Updating results",
     "gridLabel": "Product list",
     "shapes": {
-      "all": "All shapes",
-      "round": "Round",
-      "heart": "Heart",
-      "drop": "Drop",
-      "navette": "Navette",
-      "star": "Star",
-      "square": "Square",
-      "triangle": "Triangle",
-      "baguette": "Baguette",
-      "flower": "Flower",
-      "marquise": "Marquise",
-      "diamond": "Diamond shape",
-      "rivoli-star": "Rivoli star",
-      "star-flower": "Star flower",
-      "xilion-rose": "Xilion rose"
+      "all": "All shapes"
     },
     "colors": {
       "all": "All colours"
@@ -258,6 +244,7 @@
     "packValue_other": "{{count}} stones",
     "stoneSizeLabel": "Stone size",
     "optionUnavailable": "unavailable",
+    "optionOtherCombination": "other combination",
     "ssApprox": "SS = stone size. Diameters are approximate.",
     "restock": {
       "cta": "Tell me when it's back",
@@ -281,7 +268,7 @@
   "cart": {
     "confirmedBadge": "Order confirmed",
     "confirmedTitle": "Thank you, your order is confirmed.",
-    "confirmedBody": "Shipping within 24h from Lyon, tracking sent by email. Your kit's QR code opens the matching lesson in the Academy.",
+    "confirmedBody": "Shipping within 24h, tracking sent by email. Your kit's QR code opens the matching lesson in the Academy.",
     "confirmedReference": "Reference {{reference}} · a confirmation email is on its way.",
     "confirmedOpenAccount": "View my order",
     "confirmedContinueShopping": "Continue shopping",
@@ -1265,7 +1252,7 @@
     "navStudio": "Studio subscription"
   },
   "footer": {
-    "blurb": "Professional gems, tools and training. Shipped across Europe from Lyon.",
+    "blurb": "Professional gems, tools and training. Shipped internationally.",
     "colShop": "Shop",
     "colAcademy": "Academy",
     "shopItems": [
@@ -1528,7 +1515,11 @@
       "optionsLow_other": "{{count}} options low on stock",
       "reserved_one": "{{count}} reserved",
       "reserved_other": "{{count}} reserved",
-      "perOption": "Per option"
+      "perOption": "Per option",
+      "kits_one": "{{count}} kit available",
+      "kits_other": "{{count}} kits available",
+      "bundle_one": "kit of {{count}} product",
+      "bundle_other": "kit of {{count}} products"
     },
     "type": {
       "single": "Single piece",
@@ -1767,7 +1758,11 @@
         "optionsPrice": "Check the option prices: greater than 0, two decimal places at most.",
         "optionsStock": "Option stock and alert thresholds must be positive whole numbers.",
         "variantsName": "Give every variant a name in French and in English.",
-        "variantsDuplicate": "Two variants have the same name: each name must be unique."
+        "variantsDuplicate": "Two variants have the same name: each name must be unique.",
+        "bundleEmpty": "Add at least one product to the kit, or switch the kit off.",
+        "bundleQuantity": "Each kit quantity is a whole number from 1 to {{max}}.",
+        "optionsNames": "Name every option and each of its values, in French and in English (60 characters at most).",
+        "optionsDuplicate": "Two options, or two values of one option, have the same name."
       },
       "promoInPromotions": "Promotional prices are managed in Promotions: the price here is the regular selling price.",
       "databaseNotice": "Saved to the Supabase database: an active product appears in the shop. Images upload as soon as they are added.",
@@ -1835,7 +1830,32 @@
       "variantsPhotoTaken": "Linked to {{option}}: clicking moves it here",
       "variantsPriceHint": "An empty price uses the product price. When every variant has a colour dot, the product page shows colour dots; otherwise buttons with their names.",
       "variantsRemoveNotice": "Removed variants are deleted on save. Those already ordered are kept for the order history, hidden from the shop.",
-      "variantsStockNotice": "Stock is set per variant, under “Variants”."
+      "variantsStockNotice": "Stock is set per variant, under “Variants”.",
+      "optionsDefaultColour": "Colour",
+      "optionsStart": "Combine options",
+      "optionsStartHint": "For a product offered on several criteria (colour × plug type…): every combination becomes a variant with its own stock. The existing variants become the values of the first option, keeping their stock.",
+      "optionsHeading": "Option {{index}} · {{option}}",
+      "optionsUnnamed": "Option {{index}}",
+      "optionsValueUnnamed": "Value {{index}}",
+      "optionsRemove": "Remove the option {{option}}",
+      "optionsNameFr": "Option name (FR)",
+      "optionsNameEn": "Option name (EN)",
+      "optionsNamePlaceholder": "Couleur, Prise…",
+      "optionsNamePlaceholderEn": "Colour, Plug…",
+      "optionsValues": "Values",
+      "optionsValuePlaceholder": "Argent, Prise EU…",
+      "optionsValuePlaceholderEn": "Silver, EU plug…",
+      "optionsSwatchAdd": "Add a colour dot to {{option}}",
+      "optionsValuePhotos": "Photos:",
+      "optionsValueAdd": "Add a value",
+      "optionsAdd": "Add an option",
+      "optionsCombinations_one": "{{count}} combination offered",
+      "optionsCombinations_other": "{{count}} combinations offered",
+      "optionsCombinationsNone": "No combination offered: the product cannot be bought.",
+      "optionsCombinationRemove": "Stop offering {{option}}",
+      "optionsCombinationsMissing": "Combinations not offered (click to offer them, stock at 0):",
+      "optionsCombinationOffer": "Offer {{option}}",
+      "optionsHint": "Every combination has its own stock and SKU; an empty price uses the product price. Its name (“Silver · EU plug”) comes from the values. Photos belong to a value: those of “Silver” show whatever the plug."
     },
     "dialog": {
       "archiveTitle": "Archive this product?",
@@ -1877,7 +1897,9 @@
       "stockUpdatedTitle": "Stock updated",
       "stockAddedBody_one": "{{count}} unit added to {{name}}.",
       "stockAddedBody_other": "{{count}} units added to {{name}}.",
-      "stockUpdatedBody": "{{name}}: stock saved."
+      "stockUpdatedBody": "{{name}}: stock saved.",
+      "bundleStockTitle": "Calculated stock",
+      "bundleStockBody": "A kit’s stock comes from its products: restock them and the kit follows automatically."
     },
     "dashboard": {
       "title": "Hello {{name}}",
@@ -4046,7 +4068,11 @@
       "loadFailed": "The catalogue could not be loaded.",
       "retry": "Try again",
       "staleStock": "The stock changed in the meantime (a sale?). The new figure is shown: check it and try again.",
-      "belowReserved": "The stock cannot go below the units held by orders awaiting payment."
+      "belowReserved": "The stock cannot go below the units held by orders awaiting payment.",
+      "bundleStock": "A kit’s stock is calculated from its products: it cannot be changed directly.",
+      "bundleRule": "This kit content is not accepted: a kit has no options, holds no other kit, and an option must be chosen for a product that has some.",
+      "bundleReserved": "Orders awaiting payment still hold units of this product: it can become a kit once they are paid or expired.",
+      "bundleComponent": "This product (or option) is part of a kit: remove it from the kit before deleting it."
     },
     "faq": {
       "title": "Frequently asked questions",
@@ -4233,6 +4259,34 @@
         "belowReserved_other": "The stock cannot go below the {{count}} units held by orders awaiting payment.",
         "nothing": "Enter a quantity for at least one option."
       }
+    },
+    "bundle": {
+      "title": "Kit contents",
+      "body": "For a pack or kit sold beside its products: its stock is calculated from theirs, and every sale of one lowers the other.",
+      "toggle": "This product is a kit",
+      "toggleHint": "Its stock becomes the number of kits its products’ stock can make. Selling a kit takes its products; selling a product alone takes kits away.",
+      "toggleVariants": "A product with options cannot become a kit: remove its options first.",
+      "ownStockWarning_one": "This product has {{count}} unit of its own stock today. Once a kit, that figure is replaced by the calculation: if these are kits already assembled, first add their products to each product’s stock.",
+      "ownStockWarning_other": "This product has {{count}} units of its own stock today. Once a kit, that figure is replaced by the calculation: if these are kits already assembled, first add their products to each product’s stock.",
+      "snapshotHint": "Changing the contents does not change orders already placed: they keep the products they reserved.",
+      "pickLabel": "Products in the kit",
+      "pickHint": "Drafts are offered: a product never sold alone can hold the stock of a kit part.",
+      "listLabel": "Contents of one kit",
+      "unknownProduct": "Product not found",
+      "optionLabel": "Option of {{name}}",
+      "untracked": "Stock not tracked: does not limit the kit",
+      "unavailable": "Unavailable: the kit cannot be made",
+      "componentStock_one": "{{count}} sellable · enough for {{kits}} kit",
+      "componentStock_other": "{{count}} sellable · enough for {{kits}} kits",
+      "limiting": "limits the kit",
+      "quantity": "Per kit",
+      "quantityLabel": "Quantity of {{name}} per kit",
+      "remove": "Remove {{name}} from the kit",
+      "capacity_one": "Calculated stock: {{count}} kit available (limited by {{names}}).",
+      "capacity_other": "Calculated stock: {{count}} kits available (limited by {{names}}).",
+      "capacityUntracked": "No product in the kit has tracked stock: the kit stays available while none is marked out of stock.",
+      "stockNotice": "This kit’s stock is calculated from its products (see “Kit contents”): restock the products and the kit follows automatically.",
+      "thresholdHint": "Below this number of kits available, the kit shows as low stock."
     }
   },
   "community": {

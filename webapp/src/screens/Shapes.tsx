@@ -3,6 +3,7 @@
 import { useTranslation } from "react-i18next";
 import { SelectorPage, SelectorTile } from "../components/shop/SelectorPage";
 import { ShapeGlyph } from "../components/ui/ShapeGlyph";
+import { shapeName } from "../data/products";
 import { GEMS_CATEGORY, shopHref } from "../data/taxonomy";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { useShapesInCatalog } from "../lib/catalog/useShapesInCatalog";
@@ -13,7 +14,8 @@ import { isShapeFirstFamily, shapeHref } from "../lib/shopUrl";
 /** Every cut on one page — the carousel's overflow, for people who want to see
  *  the whole range at once before narrowing the collection. With `?famille=`
  *  (Swarovski) it is the step before that family's products: only its cuts,
- *  each leading to the shop already filtered on family and cut. */
+ *  each leading to the shop already filtered on family and cut. A cut is shown
+ *  by its Crystal AB gem's photo when there is one, else by its line drawing. */
 export function Shapes() {
   const { t } = useTranslation();
   const { products } = useCatalog();
@@ -43,9 +45,15 @@ export function Shapes() {
         <SelectorTile
           key={group.shape}
           to={shapeHref(group.shape, family ?? undefined)}
-          ariaLabel={t("home.shapeTileAria", { shape: t(`shop.shapes.${group.shape}`), count: group.count })}
-          media={<ShapeGlyph shape={group.shape} size={58} />}
-          label={t(`shop.shapes.${group.shape}`)}
+          ariaLabel={t("home.shapeTileAria", { shape: shapeName(group.shape), count: group.count })}
+          media={
+            group.image ? (
+              <img src={group.image} alt="" loading="lazy" decoding="async" className="h-[88px] w-[88px] object-contain mix-blend-multiply" />
+            ) : (
+              <ShapeGlyph shape={group.shape} size={58} />
+            )
+          }
+          label={shapeName(group.shape)}
           count={t("home.shapeCount", { count: group.count })}
         />
       ))}

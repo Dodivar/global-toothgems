@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CHAT_SERVERS } from "../../data/communityChat";
 import { DEFAULT_LOUNGE_PATH, isLoungePath, loungePath, parseLoungePath } from "./loungeRoutes";
+import { LOUNGE_DIRECT_MESSAGES_ENABLED } from "./model";
 
 describe("lounge addresses", () => {
   it("gives every channel of every lounge an address that reads back to it", () => {
@@ -20,10 +21,13 @@ describe("lounge addresses", () => {
 
   it("addresses private conversations by member", () => {
     expect(loungePath({ kind: "dm", conversationId: "dm-emma" })).toBe("/compte/salons/messages/emma");
-    expect(parseLoungePath("/compte/salons/messages/emma")).toEqual({ kind: "room", room: { kind: "dm", conversationId: "dm-emma" } });
-    const uuid = "3f1c2a4e-9b7d-4c2a-8e1f-0a9b8c7d6e5f";
-    const room = { kind: "dm" as const, conversationId: `dm-${uuid}` };
-    expect(parseLoungePath(loungePath(room))).toEqual({ kind: "room", room });
+  });
+
+  /* Private messages are closed (LOUNGE_DIRECT_MESSAGES_ENABLED): their addresses are the 404. */
+  it("turns private conversation addresses into the 404 while they are closed", () => {
+    expect(LOUNGE_DIRECT_MESSAGES_ENABLED).toBe(false);
+    expect(parseLoungePath("/compte/salons/messages/emma")).toEqual({ kind: "notFound" });
+    expect(parseLoungePath(loungePath({ kind: "dm", conversationId: "dm-3f1c2a4e-9b7d-4c2a-8e1f-0a9b8c7d6e5f" }))).toEqual({ kind: "notFound" });
   });
 
   /* An unknown member is the lounge's 404, once it knows its members (MembersLounge). */

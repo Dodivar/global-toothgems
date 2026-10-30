@@ -193,6 +193,15 @@ export const UPCOMING_SERVERS: Array<{ code: "it" | "pt"; name: string }> = [
 
 /* ------------------------------------------------------------ conversations */
 
+/**
+ * Private conversations are closed (owner's request, 2026-10-29): no entry
+ * point is shown, their addresses are the 404 and the stores list none. The
+ * database refuses them too while `private.lounge_settings` keeps them off
+ * (migration `…_lounge_direct_messages_closed`). Reopening = this flag and that
+ * switch; the logic behind both is kept.
+ */
+export const LOUNGE_DIRECT_MESSAGES_ENABLED = false;
+
 /** One private conversation per member: `dm-<memberId>`. */
 export function directConversationId(memberId: string): string {
   return `dm-${memberId}`;

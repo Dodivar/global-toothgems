@@ -361,6 +361,42 @@ Deno.test("ADC: the refresh token buys an access token, cached, sent with the qu
   resetTokenCache();
 });
 
+Deno.test("service account: the signed JWT is traded for a token, no user project header", async () => {
+  resetTokenCache();
+  const pair = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+  const der = new Uint8Array(await crypto.subtle.exportKey("pkcs8", pair.privateKey));
+  const pem = `-----BEGIN PRIVATE KEY-----\n${btoa(String.fromCharCode(...der)).replace(/(.{64})/g, "$1\n")}\n-----END PRIVATE KEY-----\n`;
+  const file = JSON.stringify({ type: "service_account", project_id: "gt-ai", client_email: "tryon@gt-ai.iam.gserviceaccount.com", private_key: pem });
+  assertEquals(readAdcJson(JSON.stringify({ type: "service_account", client_email: "x" })), null);
+  const config = imageModelConfig((n) => ({ GOOGLE_ADC_JSON: file, GEMINI_IMAGE_MODEL: "model-x" } as Record<string, string>)[n])!;
+  assertEquals(config.kind, "vertex");
+  assertStringIncludes(generateUrl(config), "/projects/gt-ai/");
+  const seen: { url: string; headers: Record<string, string>; body: string }[] = [];
+  const fakeFetch = ((input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    seen.push({ url, headers: (init?.headers ?? {}) as Record<string, string>, body: String(init?.body ?? "") });
+    if (url.startsWith("https://oauth2.googleapis.com/token")) return Promise.resolve(new Response(JSON.stringify({ access_token: "ya29.sa", expires_in: 3599 }), { status: 200 }));
+    return Promise.resolve(new Response(JSON.stringify({ candidates: [{ content: { parts: [{ inlineData: { mimeType: "image/png", data: "QQ==" } }] } }] }), { status: 200 }));
+  }) as typeof fetch;
+  assertEquals((await generateImage(config, "system", [{ mimeType: "image/png", data: "AA==" }], null, fakeFetch)).ok, true);
+  const form = new URLSearchParams(seen[0].body);
+  assertEquals(form.get("grant_type"), "urn:ietf:params:oauth:grant-type:jwt-bearer");
+  const [h, c, sig] = form.get("assertion")!.split(".");
+  const b64 = (v: string) => Uint8Array.from(atob(v.replace(/-/g, "+").replace(/_/g, "/")), (ch) => ch.charCodeAt(0));
+  assertEquals(JSON.parse(atob(h)), { alg: "RS256", typ: "JWT" });
+  const claims = JSON.parse(atob(c.replace(/-/g, "+").replace(/_/g, "/")));
+  assertEquals(claims.iss, "tryon@gt-ai.iam.gserviceaccount.com");
+  assertEquals(claims.scope, "https://www.googleapis.com/auth/cloud-platform");
+  assertEquals(claims.aud, "https://oauth2.googleapis.com/token");
+  assertEquals(
+    await crypto.subtle.verify("RSASSA-PKCS1-v1_5", pair.publicKey, b64(sig), new TextEncoder().encode(`${h}.${c}`)),
+    true,
+  );
+  assertEquals(seen[1].headers.authorization, "Bearer ya29.sa");
+  assertEquals(seen[1].headers["x-goog-user-project"], undefined);
+  resetTokenCache();
+});
+
 Deno.test("gemini: config needs both secrets; the answer's first image is read", () => {
   assertEquals(imageModelConfig(() => undefined), null);
   assertEquals(imageModelConfig((n) => (n === "GEMINI_API_KEY" ? "k" : undefined)), null);

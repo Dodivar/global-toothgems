@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { AtSign, CheckCheck, Inbox, UserRound, GraduationCap, Heart, Lock, MessageCircle, Reply, Search, SearchX } from "lucide-react";
 import clsx from "clsx";
 import { Link } from "../../lib/navigation";
-import { memberOfConversation, type ChatMember } from "../../lib/communityChat/model";
+import { LOUNGE_DIRECT_MESSAGES_ENABLED, memberOfConversation, type ChatMember } from "../../lib/communityChat/model";
 import { pick } from "../../data/types";
 import { useChat, type ChatNotification, type NotificationKind } from "../../lib/communityChat/chatStore";
 import { mentionCandidates, normalize, plainText, searchCommunity, timestampOf, type ChatRoom } from "../../lib/communityChat/chatLogic";
@@ -108,6 +108,7 @@ export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
+            {LOUNGE_DIRECT_MESSAGES_ENABLED && (
             <button
               type="button"
               onClick={() => {
@@ -123,6 +124,7 @@ export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose
               <MessageCircle size={16} aria-hidden="true" />
               {t("lounge.profile.sendMessage")}
             </button>
+            )}
             {!(room.kind === "dm" && room.conversationId === `dm-${member.id}`) && (
               <button
                 type="button"
@@ -455,7 +457,7 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
 
 /* ------------------------------------------------------------------- inbox */
 
-const FILTERS: Array<"all" | NotificationKind> = ["all", "mention", "reply", "reaction", "dm"];
+const FILTERS: Array<"all" | NotificationKind> = ["all", "mention", "reply", "reaction", ...(LOUNGE_DIRECT_MESSAGES_ENABLED ? (["dm"] as const) : [])];
 
 const KIND_ICON = { mention: AtSign, reply: Reply, reaction: Heart, dm: MessageCircle } as const;
 

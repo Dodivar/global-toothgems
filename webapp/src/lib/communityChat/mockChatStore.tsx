@@ -22,6 +22,7 @@ import {
 import { useCommunity } from "../community";
 import { useNavigate } from "../navigation";
 import { loungePath } from "./loungeRoutes";
+import { LOUNGE_DIRECT_MESSAGES_ENABLED } from "./model";
 import {
   chronological,
   mentionsMember,
@@ -313,6 +314,7 @@ export function MockChatProvider({ children }: { children: ReactNode }) {
   );
 
   const conversations = useMemo<ConversationView[]>(() => {
+    if (!LOUNGE_DIRECT_MESSAGES_ENABLED) return [];
     const all = [...state.started, ...DIRECT_CONVERSATIONS];
     return all
       .map((conversation) => {

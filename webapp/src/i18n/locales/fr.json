@@ -180,21 +180,7 @@
     "resultsLoading": "Mise à jour des résultats",
     "gridLabel": "Liste des produits",
     "shapes": {
-      "all": "Toutes les formes",
-      "round": "Rond",
-      "heart": "Cœur",
-      "drop": "Goutte",
-      "navette": "Navette",
-      "star": "Étoile",
-      "square": "Carré",
-      "triangle": "Triangle",
-      "baguette": "Baguette",
-      "flower": "Fleur",
-      "marquise": "Marquise",
-      "diamond": "Diamant",
-      "rivoli-star": "Étoile rivoli",
-      "star-flower": "Fleur étoilée",
-      "xilion-rose": "Xilion rose"
+      "all": "Toutes les formes"
     },
     "colors": {
       "all": "Toutes les couleurs"
@@ -258,6 +244,7 @@
     "packValue_other": "{{count}} pierres",
     "stoneSizeLabel": "Taille de pierre",
     "optionUnavailable": "indisponible",
+    "optionOtherCombination": "autre combinaison",
     "ssApprox": "SS = stone size (taille de pierre). Diamètres approximatifs.",
     "restock": {
       "cta": "Me prévenir du retour",
@@ -281,7 +268,7 @@
   "cart": {
     "confirmedBadge": "Commande confirmée",
     "confirmedTitle": "Merci, votre commande est enregistrée.",
-    "confirmedBody": "Expédition sous 24 h depuis Lyon, suivi envoyé par email. Le QR de votre kit ouvre la leçon correspondante dans l’Academy.",
+    "confirmedBody": "Expédition sous 24 h, suivi envoyé par email. Le QR de votre kit ouvre la leçon correspondante dans l’Academy.",
     "confirmedReference": "Référence {{reference}} · un e-mail de confirmation vient de partir.",
     "confirmedOpenAccount": "Voir ma commande",
     "confirmedContinueShopping": "Continuer mes achats",
@@ -1265,7 +1252,7 @@
     "navStudio": "Abonnement Studio"
   },
   "footer": {
-    "blurb": "Gems, outils et formation professionnels. Expédié dans toute l’Europe depuis Lyon.",
+    "blurb": "Gems, outils et formation professionnels. Expédié à l’international.",
     "colShop": "Boutique",
     "colAcademy": "Academy",
     "shopItems": [
@@ -1528,7 +1515,11 @@
       "optionsLow_other": "{{count}} options en stock bas",
       "reserved_one": "dont {{count}} réservée",
       "reserved_other": "dont {{count}} réservées",
-      "perOption": "Par option"
+      "perOption": "Par option",
+      "kits_one": "{{count}} kit réalisable",
+      "kits_other": "{{count}} kits réalisables",
+      "bundle_one": "kit de {{count}} produit",
+      "bundle_other": "kit de {{count}} produits"
     },
     "type": {
       "single": "Pièce à l’unité",
@@ -1767,7 +1758,11 @@
         "optionsPrice": "Vérifiez les prix des options : supérieurs à 0, deux décimales au plus.",
         "optionsStock": "Le stock et le seuil d’alerte des options doivent être des nombres entiers positifs.",
         "variantsName": "Donnez un nom en français et en anglais à chaque variante.",
-        "variantsDuplicate": "Deux variantes portent le même nom : chaque nom doit être unique."
+        "variantsDuplicate": "Deux variantes portent le même nom : chaque nom doit être unique.",
+        "bundleEmpty": "Ajoutez au moins un produit au kit, ou désactivez le kit.",
+        "bundleQuantity": "Chaque quantité du kit est un nombre entier de 1 à {{max}}.",
+        "optionsNames": "Nommez chaque option et chacune de ses valeurs, en français et en anglais (60 caractères au plus).",
+        "optionsDuplicate": "Deux options, ou deux valeurs d’une même option, portent le même nom."
       },
       "promoInPromotions": "Les prix promotionnels se gèrent dans l’espace Promotions : le prix affiché ici est le prix de vente normal.",
       "databaseNotice": "Enregistré dans la base Supabase : un produit « En ligne » apparaît en boutique. Les visuels sont envoyés dès leur ajout.",
@@ -1835,7 +1830,32 @@
       "variantsPhotoTaken": "Associée à {{option}} : cliquer la déplace ici",
       "variantsPriceHint": "Un prix vide reprend le prix du produit. Quand toutes les variantes ont une pastille, la fiche produit affiche des pastilles de couleur ; sinon des boutons avec leur nom.",
       "variantsRemoveNotice": "Les variantes retirées sont supprimées à l’enregistrement. Celles déjà commandées sont conservées pour l’historique, masquées en boutique.",
-      "variantsStockNotice": "Le stock se règle par variante, dans « Variantes »."
+      "variantsStockNotice": "Le stock se règle par variante, dans « Variantes ».",
+      "optionsDefaultColour": "Couleur",
+      "optionsStart": "Combiner des options",
+      "optionsStartHint": "Pour un produit qui se décline sur plusieurs critères (couleur × type de prise…) : chaque combinaison devient une variante avec son propre stock. Les variantes existantes deviennent les valeurs de la première option, sans perdre leur stock.",
+      "optionsHeading": "Option {{index}} · {{option}}",
+      "optionsUnnamed": "Option {{index}}",
+      "optionsValueUnnamed": "Valeur {{index}}",
+      "optionsRemove": "Retirer l’option {{option}}",
+      "optionsNameFr": "Nom de l’option (FR)",
+      "optionsNameEn": "Nom de l’option (EN)",
+      "optionsNamePlaceholder": "Couleur, Prise…",
+      "optionsNamePlaceholderEn": "Colour, Plug…",
+      "optionsValues": "Valeurs",
+      "optionsValuePlaceholder": "Argent, Prise EU…",
+      "optionsValuePlaceholderEn": "Silver, EU plug…",
+      "optionsSwatchAdd": "Ajouter une pastille de couleur à {{option}}",
+      "optionsValuePhotos": "Photos :",
+      "optionsValueAdd": "Ajouter une valeur",
+      "optionsAdd": "Ajouter une option",
+      "optionsCombinations_one": "{{count}} combinaison proposée",
+      "optionsCombinations_other": "{{count}} combinaisons proposées",
+      "optionsCombinationsNone": "Aucune combinaison proposée : le produit ne peut pas être acheté.",
+      "optionsCombinationRemove": "Ne plus proposer {{option}}",
+      "optionsCombinationsMissing": "Combinaisons non proposées (cliquer pour les proposer, stock à 0) :",
+      "optionsCombinationOffer": "Proposer {{option}}",
+      "optionsHint": "Chaque combinaison a son propre stock et sa référence ; un prix vide reprend le prix du produit. Son nom (« Argent · Prise EU ») vient des valeurs. Les photos se rattachent à une valeur : celles de « Argent » s’affichent quelle que soit la prise."
     },
     "dialog": {
       "archiveTitle": "Archiver ce produit ?",
@@ -1877,7 +1897,9 @@
       "stockUpdatedTitle": "Stock mis à jour",
       "stockAddedBody_one": "{{count}} unité ajoutée à {{name}}.",
       "stockAddedBody_other": "{{count}} unités ajoutées à {{name}}.",
-      "stockUpdatedBody": "{{name}} : stock enregistré."
+      "stockUpdatedBody": "{{name}} : stock enregistré.",
+      "bundleStockTitle": "Stock calculé",
+      "bundleStockBody": "Le stock d’un kit vient de ses produits : réapprovisionnez-les, le kit suit automatiquement."
     },
     "dashboard": {
       "title": "Bonjour {{name}}",
@@ -4046,7 +4068,11 @@
       "loadFailed": "Le catalogue n’a pas pu être chargé.",
       "retry": "Réessayer",
       "staleStock": "Le stock a changé entre-temps (une vente ?). Le nouveau chiffre est affiché : vérifiez-le puis recommencez.",
-      "belowReserved": "Le stock ne peut pas descendre sous les unités réservées par des commandes en attente de paiement."
+      "belowReserved": "Le stock ne peut pas descendre sous les unités réservées par des commandes en attente de paiement.",
+      "bundleStock": "Le stock d’un kit est calculé à partir de ses produits : il ne se modifie pas directement.",
+      "bundleRule": "Ce contenu de kit n’est pas accepté : un kit n’a pas d’options, ne contient pas d’autre kit, et une option doit être choisie pour un produit qui en a.",
+      "bundleReserved": "Des commandes en attente de paiement réservent encore des unités de ce produit : il pourra devenir un kit une fois ces commandes payées ou expirées.",
+      "bundleComponent": "Ce produit (ou cette option) fait partie d’un kit : retirez-le du kit avant de le supprimer."
     },
     "faq": {
       "title": "Questions fréquentes",
@@ -4233,6 +4259,34 @@
         "belowReserved_other": "Le stock ne peut pas descendre sous les {{count}} unités réservées par des commandes en attente de paiement.",
         "nothing": "Indiquez une quantité pour au moins une option."
       }
+    },
+    "bundle": {
+      "title": "Contenu du kit",
+      "body": "Pour un pack ou un kit vendu à côté de ses produits : son stock est calculé à partir de leur stock, et chaque vente de l’un fait baisser l’autre.",
+      "toggle": "Ce produit est un kit",
+      "toggleHint": "Son stock devient le nombre de kits que le stock de ses produits permet de composer. Vendre un kit retire ses produits ; vendre un produit seul retire des kits.",
+      "toggleVariants": "Un produit avec des options ne peut pas devenir un kit : retirez d’abord ses options.",
+      "ownStockWarning_one": "Ce produit a aujourd’hui {{count}} unité en stock propre. En devenant un kit, ce chiffre est remplacé par le calcul : si ce sont des kits déjà assemblés, ajoutez d’abord leurs produits au stock de chacun.",
+      "ownStockWarning_other": "Ce produit a aujourd’hui {{count}} unités en stock propre. En devenant un kit, ce chiffre est remplacé par le calcul : si ce sont des kits déjà assemblés, ajoutez d’abord leurs produits au stock de chacun.",
+      "snapshotHint": "Modifier le contenu ne change pas les commandes déjà passées : elles gardent les produits qu’elles ont réservés.",
+      "pickLabel": "Produits du kit",
+      "pickHint": "Les brouillons sont proposés : un produit jamais vendu seul peut porter le stock d’un élément du kit.",
+      "listLabel": "Contenu d’un kit",
+      "unknownProduct": "Produit introuvable",
+      "optionLabel": "Option de {{name}}",
+      "untracked": "Stock non suivi : ne limite pas le kit",
+      "unavailable": "Indisponible : le kit ne peut pas être composé",
+      "componentStock_one": "{{count}} en stock vendable · de quoi faire {{kits}} kit",
+      "componentStock_other": "{{count}} en stock vendable · de quoi faire {{kits}} kits",
+      "limiting": "limite le kit",
+      "quantity": "Par kit",
+      "quantityLabel": "Quantité de {{name}} par kit",
+      "remove": "Retirer {{name}} du kit",
+      "capacity_one": "Stock calculé : {{count}} kit réalisable (limité par {{names}}).",
+      "capacity_other": "Stock calculé : {{count}} kits réalisables (limité par {{names}}).",
+      "capacityUntracked": "Aucun produit du kit n’a de stock suivi : le kit reste disponible tant qu’aucun n’est marqué en rupture.",
+      "stockNotice": "Le stock de ce kit est calculé à partir de ses produits (voir « Contenu du kit ») : réapprovisionnez les produits, le kit suit automatiquement.",
+      "thresholdHint": "En dessous de ce nombre de kits réalisables, le kit apparaît en stock bas."
     }
   },
   "community": {

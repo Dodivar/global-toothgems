@@ -9,7 +9,7 @@ import studioFr from "../i18n/locales/studio.fr.json";
 import studioEn from "../i18n/locales/studio.en.json";
 
 const TIERS: StudioPaidPlanId[] = ["essential", "artist", "atelier"];
-const FEATURES: StudioFeature[] = ["ownLogo", "postLayouts", "templates", "collections", "glowbook", "tryOn"];
+const FEATURES: StudioFeature[] = ["ownLogo", "postLayouts", "transparentExport", "templates", "collections", "glowbook", "tryOn"];
 
 /**
  * Who gets what (decision 113). The expected table is written out here, on
@@ -19,9 +19,9 @@ const FEATURES: StudioFeature[] = ["ownLogo", "postLayouts", "templates", "colle
  * `studio_try_on_allowed()`, `studio_user_tier()`).
  */
 const EXPECTED: Record<StudioPaidPlanId, Record<StudioFeature, boolean>> = {
-  essential: { ownLogo: false, postLayouts: false, templates: false, collections: false, glowbook: false, tryOn: false },
-  artist: { ownLogo: true, postLayouts: false, templates: true, collections: true, glowbook: false, tryOn: false },
-  atelier: { ownLogo: true, postLayouts: true, templates: true, collections: true, glowbook: true, tryOn: true },
+  essential: { ownLogo: false, postLayouts: false, transparentExport: false, templates: false, collections: false, glowbook: false, tryOn: false },
+  artist: { ownLogo: true, postLayouts: false, transparentExport: true, templates: true, collections: true, glowbook: false, tryOn: false },
+  atelier: { ownLogo: true, postLayouts: true, transparentExport: true, templates: true, collections: true, glowbook: true, tryOn: true },
 };
 
 describe("hasFeature", () => {

@@ -5,6 +5,7 @@ import type {
   ActivityKind,
   AdminGemColor,
   AdminProduct,
+  BundleComponent,
   Category,
   GemColorDraft,
   ProductImage,
@@ -21,6 +22,7 @@ import {
   ADMIN_GEM_COLOR_SELECT,
   ADMIN_PRODUCT_SELECT,
   ADMIN_PRODUCT_SELECT_BASE,
+  ADMIN_PRODUCT_SELECT_NO_OPTIONS,
   PRODUCT_IMAGE_MAX_BYTES,
   PRODUCT_MEDIA_BUCKET,
   UNSAVED_MEDIA_PREFIX,
@@ -47,6 +49,7 @@ import {
   unknownCategory,
   type AdminCatalogValue,
 } from "./adminCatalogContext";
+import { BUNDLE_SELECT, bundlePayload, isBundle, kitsContaining, rowsToBundles, sameBundle, type BundleRow } from "./productBundles";
 
 /**
  * Admin catalogue backed by Supabase.
@@ -60,6 +63,10 @@ import {
  * Images are uploaded to the public `product-media` bucket as soon as they are
  * picked, under `products/<product id>/`, and linked to the product when the
  * form is saved. The browser only ever holds the publishable key.
+ *
+ * Kit compositions (decision 117) are read from `product_bundle_items` and
+ * saved by `admin_save_product_bundle()` right after the product: the kit's
+ * stock is then the database's, so the form never sends its count.
  *
  * The activity feed is this session's own actions; the authoritative history
  * is `audit_logs` / `inventory_movements` in the database.
@@ -90,9 +97,12 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<CatalogErrorKind | null>(null);
   const [loadCount, setLoadCount] = useState(0);
-  // False on a database without `…_category_families`: products read and
-  // save without a family until the migration is applied.
-  const familiesSupported = useRef(true);
+  // The product columns this database can read: without `…_category_families`
+  // (`ADMIN_PRODUCT_SELECT_BASE`) products read and save without a family until
+  // the migration is applied; see also `ADMIN_PRODUCT_SELECT_NO_OPTIONS`.
+  const productSelect = useRef(ADMIN_PRODUCT_SELECT);
+  // False on a database without `…_product_bundles` (no kit can be saved).
+  const bundlesSupported = useRef(true);
 
   // Callbacks read the latest list without being rebuilt on every change.
   const productsRef = useRef(products);
@@ -112,24 +122,37 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         client.from("products").select(select).order("updated_at", { ascending: false });
       const loadCategories = (select: string) => client.from("categories").select(select).order("position");
       let [productRes, categoryRes] = await Promise.all([loadProducts(ADMIN_PRODUCT_SELECT), loadCategories(ADMIN_CATEGORY_SELECT)]);
-      // Any failure is retried once without the families (see
-      // `ADMIN_PRODUCT_SELECT_BASE`); a real outage still fails the second time.
+      // A failure is retried without the variant options, keeping the
+      // families, then without the families too (see `ADMIN_PRODUCT_SELECT_BASE`);
+      // a real outage still fails the last time.
+      if (productRes.error && !categoryRes.error) {
+        console.warn("Admin catalogue: variant options unavailable", productRes.error);
+        productRes = await loadProducts(ADMIN_PRODUCT_SELECT_NO_OPTIONS);
+        if (!productRes.error) productSelect.current = ADMIN_PRODUCT_SELECT_NO_OPTIONS;
+      }
       if (productRes.error || categoryRes.error) {
         console.warn("Admin catalogue: product families unavailable", productRes.error ?? categoryRes.error);
         [productRes, categoryRes] = await Promise.all([loadProducts(ADMIN_PRODUCT_SELECT_BASE), loadCategories(ADMIN_CATEGORY_SELECT_BASE)]);
-        familiesSupported.current = false;
+        productSelect.current = ADMIN_PRODUCT_SELECT_BASE;
       }
-      const [recommendationRes, colorRes] = await Promise.all([
+      const [recommendationRes, colorRes, bundleRes] = await Promise.all([
         client.from("product_recommendations").select("product_id, recommended_product_id, kind, position"),
         client.from("gem_colors").select(ADMIN_GEM_COLOR_SELECT).order("position"),
+        client.from("product_bundle_items").select(BUNDLE_SELECT),
       ]);
       if (cancelled) return;
+      // A database without `…_product_bundles` has no kits: the catalogue still loads.
+      if (bundleRes.error) console.warn("Admin catalogue: kits unavailable", bundleRes.error);
+      bundlesSupported.current = !bundleRes.error;
+      const bundles = rowsToBundles((bundleRes.data ?? []) as BundleRow[]);
       const error = productRes.error ?? categoryRes.error ?? recommendationRes.error ?? colorRes.error;
       if (error) {
         console.error("Admin catalogue load failed", error);
         setLoadError(catalogErrorKind(error));
       } else {
-        setProducts((productRes.data as unknown as ProductRow[]).map((row) => rowToProduct(row, publicUrl)));
+        setProducts(
+          (productRes.data as unknown as ProductRow[]).map((row) => withBundle(rowToProduct(row, publicUrl), bundles)),
+        );
         setCategories((categoryRes.data as unknown as CategoryRow[]).map(rowToCategory));
         setRecommendations((recommendationRes.data as RecommendationRow[]).map(rowToRecommendation));
         setGemColors((colorRes.data as unknown as GemColorRow[]).map(rowToGemColor));
@@ -184,14 +207,32 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
     [client],
   );
 
-  /** Reads one product back after a write and puts it at the top of the list. */
+  /**
+   * Reads one product back after a write and puts it at the top of the list,
+   * with the kits holding it: their stock moved with it (decision 117).
+   */
   const refresh = useCallback(
     async (id: string): Promise<AdminProduct> => {
-      const select = familiesSupported.current ? ADMIN_PRODUCT_SELECT : ADMIN_PRODUCT_SELECT_BASE;
-      const fresh = await client.from("products").select(select).eq("id", id).single();
+      const select = productSelect.current;
+      const kitIds = kitsContaining(id, productsRef.current).map((kit) => kit.id);
+      const [fresh, kits, bundleRes] = await Promise.all([
+        client.from("products").select(select).eq("id", id).single(),
+        kitIds.length > 0
+          ? client.from("products").select(select).in("id", kitIds)
+          : Promise.resolve({ data: [] as unknown[], error: null }),
+        bundlesSupported.current
+          ? client.from("product_bundle_items").select(BUNDLE_SELECT).in("bundle_product_id", [id, ...kitIds])
+          : Promise.resolve({ data: [] as unknown[], error: null }),
+      ]);
       if (fresh.error) return fail(fresh.error);
-      const saved = rowToProduct(fresh.data as unknown as ProductRow, publicUrl);
-      setProducts((prev) => [saved, ...prev.filter((p) => p.id !== saved.id)]);
+      const bundles = rowsToBundles((bundleRes.data ?? []) as BundleRow[]);
+      const saved = withBundle(rowToProduct(fresh.data as unknown as ProductRow, publicUrl), bundles);
+      const kitRows = kits.error ? [] : ((kits.data ?? []) as unknown as ProductRow[]);
+      const freshKits = new Map(kitRows.map((row) => [row.id, withBundle(rowToProduct(row, publicUrl), bundles)]));
+      setProducts((prev) => [
+        saved,
+        ...prev.filter((p) => p.id !== saved.id).map((p) => freshKits.get(p.id) ?? p),
+      ]);
       return saved;
     },
     [client, fail, publicUrl],
@@ -200,9 +241,15 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
   /** One write path for create, edit, status changes and duplicates. */
   const save = useCallback(
     async (product: AdminProduct): Promise<AdminProduct> => {
+      const before = productsRef.current.find((p) => p.id === product.id);
+      // The kit's count is the database's, also while a product turns into a kit or back.
+      const kitChange = product.bundle !== undefined || isBundle(before);
+      if (kitChange && !bundlesSupported.current) {
+        return fail({ code: "PGRST202", message: "kits are not available on this database yet" });
+      }
       let payload;
       try {
-        payload = productToPayload(product);
+        payload = productToPayload(product, { derivedStock: kitChange });
       } catch (error) {
         return fail({ code: "22023", message: String(error) });
       }
@@ -216,6 +263,7 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         custom_variants?: string[];
         family_id?: string | null;
         specs?: boolean;
+        variant_options?: boolean;
       };
       await removeFiles(result.removed_paths ?? []);
       // A database without the pack/SS, variants or families migration saves
@@ -226,11 +274,27 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       if (product.customVariants && !Array.isArray(result.custom_variants)) {
         return fail({ code: "PGRST202", message: "admin_save_product() does not save variants yet" });
       }
+      if ((product.variantOptions?.length ?? 0) > 0 && product.customVariants && !result.variant_options) {
+        return fail({ code: "PGRST202", message: "admin_save_product() does not save variant options yet" });
+      }
       if (product.familyId && !("family_id" in result)) {
         return fail({ code: "PGRST202", message: "admin_save_product() does not save families yet" });
       }
       if (!result.specs) {
         return fail({ code: "PGRST202", message: "admin_save_product() does not save characteristics yet" });
+      }
+
+      // Composition after the product, only when it changed. A refusal leaves
+      // the product saved with its former composition (the error says why).
+      if (kitChange && !sameBundle(product.bundle, before?.bundle)) {
+        const { error: bundleError } = await client.rpc("admin_save_product_bundle", {
+          p_product_id: result.id,
+          p_components: bundlePayload(product.bundle),
+        });
+        if (bundleError) {
+          await refresh(result.id).catch(() => undefined);
+          return fail(bundleError);
+        }
       }
 
       return refresh(result.id);
@@ -310,8 +374,12 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
       let sku = base;
       for (let n = 2; taken.has(sku); n++) sku = `${base}${n}`;
 
-      // The copy's variants are rows of their own, and its photos follow them.
+      // The copy's variants and options are rows of their own, and its photos follow them.
       const variantIds = new Map((source.customVariants ?? []).map((variant) => [variant.id, crypto.randomUUID()]));
+      const optionIds = new Map((source.variantOptions ?? []).map((option) => [option.id, crypto.randomUUID()]));
+      const valueIds = new Map(
+        (source.variantOptions ?? []).flatMap((option) => option.values.map((value) => [value.id, crypto.randomUUID()] as const)),
+      );
       const copy: AdminProduct = {
         ...source,
         id: crypto.randomUUID(),
@@ -327,8 +395,18 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
           ...image,
           id: `${UNSAVED_MEDIA_PREFIX}${index}`,
           variantId: image.variantId ? variantIds.get(image.variantId) : undefined,
+          optionValueId: image.optionValueId ? valueIds.get(image.optionValueId) : undefined,
         })),
-        customVariants: source.customVariants?.map((variant) => ({ ...variant, id: variantIds.get(variant.id)! })),
+        customVariants: source.customVariants?.map((variant) => ({
+          ...variant,
+          id: variantIds.get(variant.id)!,
+          ...(variant.optionValues ? { optionValues: variant.optionValues.map((id) => valueIds.get(id) ?? id) } : {}),
+        })),
+        variantOptions: source.variantOptions?.map((option) => ({
+          ...option,
+          id: optionIds.get(option.id)!,
+          values: option.values.map((value) => ({ ...value, id: valueIds.get(value.id)! })),
+        })),
       };
       const saved = await save(copy);
       log("duplicated", saved, { fr: `Copie de ${source.name.fr}`, en: `Copy of ${source.name.en || source.name.fr}` });
@@ -531,4 +609,10 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
   );
 
   return <AdminCatalogContext.Provider value={value}>{children}</AdminCatalogContext.Provider>;
+}
+
+/** The product with its kit composition, when it is a kit. */
+function withBundle(product: AdminProduct, bundles: Map<string, BundleComponent[]>): AdminProduct {
+  const bundle = bundles.get(product.id);
+  return bundle ? { ...product, bundle } : product;
 }

@@ -538,7 +538,7 @@
       "placementSheet": {
         "title": "The placement sheet (printable PDF)",
         "body": [
-          "The placement sheet is an A4 PDF to print or keep on a tablet during the appointment. Create it from the editor’s Export menu, the front view or a creation’s detail. It holds:"
+          "The placement sheet is an A4 PDF to print or keep on a tablet during the appointment. Create it from the editor’s Share menu, the front view or a creation’s detail. It holds:"
         ],
         "points": [
           "the creation’s numbered front view;",
@@ -562,16 +562,16 @@
         ]
       },
       "exports": {
-        "title": "Exports: captures, estimate sheet, JSON file",
+        "title": "The Share menu: networks, images, preparing the appointment",
         "body": [
-          "The editor’s Export menu offers:"
+          "The editor’s Share menu gathers everything that leaves the Studio:"
         ],
         "points": [
-          "PNG capture: the current view of the stage, on the Studio background.",
-          "Transparent PNG: the same view without background, to lay on your own visuals.",
-          "Estimate sheet (PNG): the creation’s render, the priced detail and the total, with the client name you type.",
-          "Placement sheet (PDF): see its own topic.",
-          "Creation (JSON): the creation’s data, to archive or pass on."
+          "Social networks: the saved creation’s read-only link, to send to each network or copy (see its own topic).",
+          "PNG capture: the current view of the stage, on the Studio background, with the Global Toothgems logo.",
+          "PNG without background (Artist and Atelier plans): the same view without background, to lay on your own visuals.",
+          "Prepare the appointment: the estimate sheet (PNG, the render, the priced detail and the total, with the name you type), the placement sheet (PDF, see its own topic) and the AI try-on (Atelier plan).",
+          "A feature your plan does not include stays listed, with a lock and the plan that opens it."
         ]
       },
       "shareLink": {
@@ -811,7 +811,6 @@
     "preferenceFailed": "Your layout choice could not be saved on your account."
   },
   "share": {
-    "menuSub": "A read-only link to the saved version",
     "title": "Share read-only",
     "intro": "Send this link: whoever receives it sees “{{name}}” in 3D, without being able to change it.",
     "linkLabel": "Share link",
@@ -882,6 +881,7 @@
     "emptyCollectionBody": "Open a creation’s menu and choose Collections to add it here.",
     "showAll": "Show all creations",
     "inSave": "Add to collections (optional)",
+    "inSaveLocked": "File into collections",
     "detailNone": "Not in any collection yet.",
     "addTo": "Collections",
     "picker": {

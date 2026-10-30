@@ -13,6 +13,7 @@ import { useFavorites } from "../../lib/favorites";
 import { useStorefrontOffers } from "../../lib/useStorefrontOffers";
 import { useReveal } from "../../lib/useReveal";
 import { useScrollRail } from "./useScrollRail";
+import { cardVariants } from "../../lib/productOptions";
 
 /** Enough cards for the rail to run past the edge of a wide screen. */
 const RAIL_SIZE = 8;
@@ -101,7 +102,7 @@ export function BestSellersRail() {
                     hoverImage: p.gallery?.[1]?.src,
                     badge: i < 2 ? t("homeAlt.bestSellers.badge") : p.badge ? pick(p.badge, lang) : undefined,
                     badgeTone: i < 2 ? "ink" : p.badgeTone,
-                    variants: p.variants,
+                    variants: cardVariants(p),
                     stock: p.stock ?? "in",
                     offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR", compareAtPrice: p.compareAtPrice }),
                   }}

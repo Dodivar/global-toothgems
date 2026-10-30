@@ -6,6 +6,7 @@ import { ShapeGlyph } from "../../ui/ShapeGlyph";
 import { GemGroupPanel } from "../workspace/GemGroupPanel";
 import { useEditorLabels } from "./editorLabels";
 import { FREE_TOOTH } from "../../../data/studioEditor";
+import { shapeName } from "../../../data/products";
 import { useTaxonomy } from "../../../lib/catalog/useTaxonomy";
 import { useLocalized } from "../../../lib/localized";
 import { placeOnTooth } from "../../../lib/studio3d/actions";
@@ -69,7 +70,7 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
       librarySections(
         gems,
         {
-          shape: (shape) => t(`shop.shapes.${shape}`),
+          shape: shapeName,
           family: familyName,
           other: t("studio.editor.library.otherGems"),
           gemName: (gem) => l(gem.name),

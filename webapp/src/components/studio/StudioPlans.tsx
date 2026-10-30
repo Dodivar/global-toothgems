@@ -236,7 +236,7 @@ export function StudioPaidPlans({
 const PREVIOUS_PLAN: Partial<Record<StudioPaidPlanId, StudioPaidPlanId>> = { artist: "essential", atelier: "artist" };
 
 /** The features a card names, in its order, when the plan has them and the one below does not. */
-const ADDED_FEATURES: readonly StudioFeature[] = ["ownLogo", "templates", "collections", "glowbook", "tryOn", "postLayouts"];
+const ADDED_FEATURES: readonly StudioFeature[] = ["ownLogo", "transparentExport", "templates", "collections", "glowbook", "tryOn", "postLayouts"];
 
 /**
  * What a plan includes, from `STUDIO_PLAN_FEATURES` (decision 113): Essential

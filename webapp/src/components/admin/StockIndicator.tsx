@@ -8,6 +8,7 @@ import {
   type StockState,
   type VariantStock,
 } from "../../data/adminCatalog";
+import { isBundle } from "../../lib/productBundles";
 
 const TONE: Record<StockState, string> = {
   in_stock: "text-[var(--text-body)]",
@@ -51,6 +52,20 @@ export function StockIndicator({ product, compact = false }: { product: AdminPro
             {low > 0 && <span className={TONE.low_stock}>{t("admin.stock.optionsLow", { count: low })}</span>}
           </span>
         )}
+      </span>
+    );
+  }
+
+  // A kit: how many its components can make, computed by the database (decision 117).
+  if (isBundle(product)) {
+    return (
+      <span className={clsx("grid gap-0.5", compact && "inline-grid")}>
+        <span className={clsx("text-[length:var(--text-body-sm)] font-semibold tabular-nums", TONE[state])}>
+          {product.trackInventory ? t("admin.stock.kits", { count: product.stock }) : t(`admin.stock.${state}`)}
+        </span>
+        <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
+          {t(`admin.stock.${state}`)} · {t("admin.stock.bundle", { count: product.bundle?.length ?? 0 })}
+        </span>
       </span>
     );
   }

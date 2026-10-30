@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { GEM_SHAPES } from "../../data/products";
+import { shapeName } from "../../data/products";
 import { useCatalog } from "../../lib/catalog/CatalogProvider";
 import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import { useLocalized } from "../../lib/localized";
@@ -28,7 +28,7 @@ export function useFilterLabels() {
           return value === "all" ? t("shop.materials.all") : value.includes(".") ? value : t(`shop.materials.${value}`, { defaultValue: value });
         case "shape":
           // A slug outside the taxonomy can still arrive from a hand-edited URL.
-          return value === "all" ? t("shop.shapes.all") : (GEM_SHAPES as string[]).includes(value) ? t(`shop.shapes.${value}`) : value;
+          return value === "all" ? t("shop.shapes.all") : shapeName(value);
         case "color": {
           if (value === "all") return t("shop.colors.all");
           const def = colors.find((c) => c.slug === value);

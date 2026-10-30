@@ -86,6 +86,28 @@ export function checkCount(course: Pick<PublicCourse, "modules">): number {
   return course.modules.filter((module) => module.check).length;
 }
 
+/** What the published catalogue adds up to, as the home page's Academy band states it. */
+export interface CatalogueFigures {
+  courses: number;
+  lessons: number;
+  /** The courses' advertised lengths added up. */
+  minutes: number;
+  /** Knowledge checks across the catalogue. */
+  checks: number;
+  /** At least one course issues a certificate. */
+  certificate: boolean;
+}
+
+export function catalogueFigures(courses: readonly Pick<PublicCourse, "modules" | "minutes" | "issuesCertificate">[]): CatalogueFigures {
+  return {
+    courses: courses.length,
+    lessons: courses.reduce((sum, course) => sum + lessonCount(course), 0),
+    minutes: courses.reduce((sum, course) => sum + Math.max(0, course.minutes), 0),
+    checks: courses.reduce((sum, course) => sum + checkCount(course), 0),
+    certificate: courses.some((course) => course.issuesCertificate),
+  };
+}
+
 export function moduleMinutes(module: PublicModule): number {
   return module.steps.reduce((sum, step) => sum + step.minutes, 0);
 }

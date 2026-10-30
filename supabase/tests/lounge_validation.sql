@@ -8,7 +8,9 @@
 -- members only, replies in their room, empty/invalid/too long, rate limit),
 -- private conversations (third party and staff refused), reactions and their
 -- totals, notifications, overview and read state, attachments and their storage
--- policies.
+-- policies; private messages closed by the switch (migration
+-- `…_lounge_direct_messages_closed`, X1). The suite opens the switch first so
+-- the dormant private-conversation logic stays covered.
 -- =============================================================================
 
 do $$
@@ -47,6 +49,9 @@ begin
   insert into public.course_entitlements (user_id, course_id, source, granted_by)
   select u, crs, 'manual_grant', stf from unnest(array[a, b, c, sus]) as u;
   insert into public.course_completions (user_id, course_id, average_score, min_score) values (a, crs, 90, 70);
+
+  -- Private conversations are closed on the project: open them for C1 and the rest, X1 closes them again.
+  update private.lounge_settings set direct_messages_enabled = true;
 
   -- A1: the door ----------------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
@@ -350,6 +355,33 @@ begin
   end;
   if not v_ok then raise exception 'FAIL T1: no rate limit'; end if;
   passed := passed || 'T1'::text;
+
+  -- X1: private messages closed by the switch ------------------------------------------------------
+  reset role;
+  update private.lounge_settings set direct_messages_enabled = false;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  begin
+    perform public.lounge_post_message(null, b, '[{"type":"text","text":"closed"}]');
+    raise exception 'FAIL X1: private message posted while closed';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.lounge_toggle_reaction(dm1, 'gem');
+    raise exception 'FAIL X1: reaction to a private message while closed';
+  exception when insufficient_privilege or invalid_parameter_value then null;
+  end;
+  select count(*) into v_cnt from public.lounge_messages where conversation_id is not null;
+  if v_cnt <> 0 then raise exception 'FAIL X1: private messages readable while closed'; end if;
+  select count(*) into v_cnt from public.lounge_conversations;
+  if v_cnt <> 0 then raise exception 'FAIL X1: conversations readable while closed'; end if;
+  select count(*) into v_cnt from public.lounge_messages where channel_id is not null;
+  if v_cnt = 0 then raise exception 'FAIL X1: channel messages hidden too'; end if;
+  m2 := public.lounge_post_message('en-general', null, '[{"type":"text","text":"Channels still open"}]');
+  reset role;
+  select count(*) into v_cnt from public.lounge_messages where conversation_id is not null and body_text = 'closed';
+  if v_cnt <> 0 then raise exception 'FAIL X1: a closed private message was stored'; end if;
+  passed := passed || 'X1'::text;
 
   reset role;
   raise exception 'ALL LOUNGE TESTS PASSED (%)', array_to_string(passed, ', ');

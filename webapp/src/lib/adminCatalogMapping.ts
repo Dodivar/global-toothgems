@@ -13,6 +13,7 @@ import {
   type ProductRecommendation,
   type ProductStatus,
   type ProductType,
+  type VariantOption,
   type RecommendationKind,
   type GemColorDraft,
   type VariantStock,
@@ -40,23 +41,39 @@ import { comboKey, comboName, parseGemAttributes, sortSizes, type GemSize } from
  */
 
 /**
- * Columns the admin reads, with the relations it embeds. The `_BASE` variants
- * leave out the product families (`…_category_families`), for a database the
- * migration has not reached yet: the catalogue still loads, without families.
+ * Columns the admin reads, with the relations it embeds. The `_BASE` variant
+ * leaves out the product families (`…_category_families`) and the variant
+ * options (`…_product_variant_options`), for a database the migrations have
+ * not reached yet: the catalogue still loads, without them — and a product
+ * read without its options is never saved as having none (see
+ * `productToPayload`).
  */
-export const ADMIN_PRODUCT_SELECT_BASE = `
+const adminProductSelect = (options: boolean) => `
   id, sku, slug, name, short_description, description, category_id,
   price, compare_at_price, currency, status, metadata, created_at, updated_at,
   spec_material, spec_center, spec_back, spec_packaging, spec_wear,
   product_translations ( locale, name, short_description, description,
     spec_material, spec_center, spec_back, spec_packaging, spec_wear ),
-  product_media ( id, storage_path, alt_text, position, variant_id, product_media_translations ( locale, alt_text ) ),
+  product_media ( id, storage_path, alt_text, position, variant_id,${options ? " option_value_id," : ""} product_media_translations ( locale, alt_text ) ),
   inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ),
   product_variants ( id, name, sku, attributes, price, is_active, position,
-    product_variant_translations ( locale, name ),
-    inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ) )
+    product_variant_translations ( locale, name ),${options ? "\n    product_variant_option_values ( option_id, value_id )," : ""}
+    inventory_items ( track_inventory, quantity_on_hand, quantity_reserved, low_stock_threshold, availability ) )${
+      options
+        ? `,
+  product_options ( id, name, position, product_option_translations ( locale, name ),
+    product_option_values ( id, name, swatch, position, product_option_value_translations ( locale, name ) ) )`
+        : ""
+    }
 `;
-export const ADMIN_PRODUCT_SELECT = `${ADMIN_PRODUCT_SELECT_BASE}, family_id`;
+export const ADMIN_PRODUCT_SELECT_BASE = adminProductSelect(false);
+export const ADMIN_PRODUCT_SELECT = `${adminProductSelect(true)}, family_id`;
+/**
+ * With the families but without the variant options: the first fallback, so a
+ * database that only lacks the options keeps every product's family (a product
+ * read without it would be saved with none).
+ */
+export const ADMIN_PRODUCT_SELECT_NO_OPTIONS = `${adminProductSelect(false)}, family_id`;
 
 export const ADMIN_CATEGORY_SELECT_BASE = `
   id, slug, name, description, position, is_active,
@@ -110,6 +127,7 @@ export interface ProductRow extends SpecColumns {
         alt_text: string | null;
         position: number;
         variant_id?: string | null;
+        option_value_id?: string | null;
         product_media_translations: { locale: string; alt_text: string }[] | null;
       }[]
     | null;
@@ -117,6 +135,24 @@ export interface ProductRow extends SpecColumns {
   inventory_items: InventoryRow[] | InventoryRow | null;
   /** Variants, each with its own stock row. */
   product_variants?: VariantRow[] | null;
+  /** Options the variants combine; absent when read with `ADMIN_PRODUCT_SELECT_BASE`. */
+  product_options?: OptionRow[] | null;
+}
+
+export interface OptionRow {
+  id: string;
+  name: string;
+  position: number;
+  product_option_translations: { locale: string; name: string }[] | null;
+  product_option_values:
+    | {
+        id: string;
+        name: string;
+        swatch: string | null;
+        position: number;
+        product_option_value_translations: { locale: string; name: string }[] | null;
+      }[]
+    | null;
 }
 
 export interface VariantRow {
@@ -128,6 +164,7 @@ export interface VariantRow {
   price?: number | string | null;
   is_active?: boolean;
   position?: number;
+  product_variant_option_values?: { option_id: string; value_id: string }[] | null;
   inventory_items: InventoryRow[] | InventoryRow | null;
 }
 
@@ -268,8 +305,12 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
         ? row.inventory_items[0]
         : row.inventory_items;
   const gemOptions = readGemOptions(allVariants);
-  // Any other kind of variant is edited as a list: the active ones, in order.
-  const customVariants = !gemOptions && allVariants.length > 0 ? variants.map(variantToCustom) : undefined;
+  // Any other kind of variant is edited as a list: the active ones, in order,
+  // with the options they combine when they combine some.
+  // Undefined when the read did not include them: such a product never sends options.
+  const variantOptions = gemOptions || row.product_options == null ? undefined : readVariantOptions(row.product_options);
+  const customVariants =
+    !gemOptions && allVariants.length > 0 ? variants.map((variant) => variantToCustom(variant, variantOptions ?? [])) : undefined;
   const variantStockRows = variants.map((variant) => variantToStock(variant));
   const tags = Array.isArray(metadata.tags) ? metadata.tags.filter((tag): tag is string => typeof tag === "string") : [];
 
@@ -281,6 +322,7 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
       src: publicUrl(item.storage_path),
       alt: { fr: item.alt_text ?? "", en: english(item.product_media_translations)?.alt_text ?? "" },
       ...(item.variant_id ? { variantId: item.variant_id } : {}),
+      ...(item.option_value_id ? { optionValueId: item.option_value_id } : {}),
     }));
 
   return {
@@ -308,6 +350,7 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
     variantStock: variantStockRows.length > 0 ? variantStockRows : undefined,
     gemOptions,
     customVariants,
+    ...(variantOptions ? { variantOptions } : {}),
     material: { fr: row.spec_material ?? "", en: en?.spec_material ?? "" },
     specs: Object.fromEntries(
       ADMIN_SPEC_KEYS.map((key) => [key, { fr: row[`spec_${key}`] ?? "", en: en?.[`spec_${key}`] ?? "" }]),
@@ -339,9 +382,31 @@ export function readSwatch(attributes: Json | undefined): string | undefined {
   return typeof swatch === "string" && /^#[0-9a-f]{6}$/i.test(swatch) ? swatch.toLowerCase() : undefined;
 }
 
+/** The options of a product's variants and their values, in order (`…_product_variant_options`). */
+export function readVariantOptions(rows: OptionRow[]): VariantOption[] {
+  return [...rows]
+    .sort((a, b) => a.position - b.position)
+    .map((option) => ({
+      id: option.id,
+      name: { fr: option.name, en: english(option.product_option_translations)?.name ?? "" },
+      values: [...(option.product_option_values ?? [])]
+        .sort((a, b) => a.position - b.position)
+        .map((value) => {
+          const swatch = readSwatch({ swatch: value.swatch });
+          return {
+            id: value.id,
+            name: { fr: value.name, en: english(value.product_option_value_translations)?.name ?? "" },
+            ...(swatch ? { swatch } : {}),
+          };
+        }),
+    }));
+}
+
 /** One variant of any kind other than pack/SS, as the form's variant list edits it. */
-function variantToCustom(variant: VariantRow): CustomVariant {
+function variantToCustom(variant: VariantRow, options: VariantOption[]): CustomVariant {
   const inventory = inventoryOf(variant);
+  const links = variant.product_variant_option_values ?? [];
+  const optionValues = options.map((option) => links.find((link) => link.option_id === option.id)?.value_id ?? "");
   return {
     id: variant.id,
     name: { fr: variant.name ?? "", en: english(variant.product_variant_translations)?.name ?? "" },
@@ -352,6 +417,7 @@ function variantToCustom(variant: VariantRow): CustomVariant {
     reserved: inventory?.quantity_reserved ?? 0,
     lowStockThreshold: inventory?.low_stock_threshold ?? 5,
     availability: oneOf(inventory?.availability, AVAILABILITIES, "in_stock"),
+    ...(options.length > 0 ? { optionValues } : {}),
   };
 }
 
@@ -420,9 +486,13 @@ export function readGemOptions(rows: VariantRow[]): GemOptions | undefined {
  * `promoPrice` is deliberately not sent: the database has no column for it and
  * discounts belong to the promotions domain, not to the product.
  */
-export function productToPayload(product: AdminProduct): Json {
+export function productToPayload(product: AdminProduct, { derivedStock = false }: { derivedStock?: boolean } = {}): Json {
   const name = { fr: product.name.fr.trim(), en: product.name.en.trim() };
   const customIds = new Set((product.customVariants ?? []).map((variant) => variant.id));
+  // Options are sent only when they were read (or edited): `[]` removes them.
+  const sendOptions = Boolean(product.customVariants && product.variantOptions);
+  const options = sendOptions ? product.variantOptions! : [];
+  const valueIds = new Set(options.flatMap((option) => option.values.map((value) => value.id)));
   return {
     id: product.id,
     category_id: product.categoryId,
@@ -460,12 +530,17 @@ export function productToPayload(product: AdminProduct): Json {
         ADMIN_SPEC_KEYS.map((key) => [key, { fr: product.specs?.[key]?.fr.trim() ?? "", en: product.specs?.[key]?.en.trim() ?? "" }]),
       ),
     },
-    inventory: {
-      track_inventory: product.trackInventory,
-      quantity_on_hand: product.stock,
-      low_stock_threshold: product.lowStockThreshold,
-      availability: product.availability,
-    },
+    // A kit's count is the database's (decision 117): only its alert threshold
+    // is the team's. Also while a product turns into a kit or back, which
+    // `admin_save_product_bundle()` settles after this save.
+    inventory: derivedStock
+      ? { low_stock_threshold: product.lowStockThreshold }
+      : {
+          track_inventory: product.trackInventory,
+          quantity_on_hand: product.stock,
+          low_stock_threshold: product.lowStockThreshold,
+          availability: product.availability,
+        },
     // Absent = variants left as they are; a list (possibly empty) = the
     // complete set of pack × size options (migration `…_gem_pack_stone_size_options`).
     ...(product.gemOptions
@@ -494,7 +569,26 @@ export function productToPayload(product: AdminProduct): Json {
             track_inventory: variant.trackInventory,
             quantity_on_hand: variant.stock,
             low_stock_threshold: variant.lowStockThreshold,
+            // With options, the database derives the name and dot from these.
+            ...(options.length > 0 ? { option_values: variant.optionValues ?? [] } : {}),
           })),
+          // The complete options the variants combine; [] = a plain list
+          // (migration `…_product_variant_options`).
+          ...(sendOptions
+            ? {
+                variant_options: options.map((option) => ({
+                  id: option.id,
+                  name: option.name.fr.trim(),
+                  name_en: option.name.en.trim(),
+                  values: option.values.map((value) => ({
+                    id: value.id,
+                    name: value.name.fr.trim(),
+                    name_en: value.name.en.trim(),
+                    swatch: value.swatch ? value.swatch.toLowerCase() : null,
+                  })),
+                })),
+              }
+            : {}),
         }
       : {}),
     media: product.media
@@ -509,7 +603,19 @@ export function productToPayload(product: AdminProduct): Json {
         // The variant a photo shows, sent only with the variant list it
         // belongs to; a link to a variant removed in this edit is dropped.
         ...(product.customVariants
-          ? { variant_id: image.variantId && customIds.has(image.variantId) ? image.variantId : null }
+          ? {
+              variant_id: image.variantId && customIds.has(image.variantId) ? image.variantId : null,
+              // …or the option value it shows; never both. Not sent when the
+              // options were not read, so an unread link is left alone.
+              ...(sendOptions
+                ? {
+                    option_value_id:
+                      !(image.variantId && customIds.has(image.variantId)) && image.optionValueId && valueIds.has(image.optionValueId)
+                        ? image.optionValueId
+                        : null,
+                  }
+                : {}),
+            }
           : {}),
       })),
   };
@@ -566,7 +672,15 @@ export type CatalogErrorKind =
   /** The stock moved since it was read (a sale): nothing was written. */
   | "staleStock"
   /** The new count would be lower than the units held by unpaid orders. */
-  | "belowReserved";
+  | "belowReserved"
+  /** A kit's stock is derived from its components: it is not written (decision 117). */
+  | "bundleStock"
+  /** A kit rule: no variants on a kit, no kit in a kit, an option to choose. */
+  | "bundleRule"
+  /** Unpaid orders hold units of the product: it cannot become a kit yet. */
+  | "bundleReserved"
+  /** The product or variant is a component of a kit: remove it from the kit first. */
+  | "bundleComponent";
 
 /** Maps a PostgREST / Postgres / Storage error to a message the screen can show. */
 export function catalogErrorKind(
@@ -574,6 +688,10 @@ export function catalogErrorKind(
 ): CatalogErrorKind {
   if (!error) return "generic";
   if (error.code === "22023" && error.hint === "reserved") return "belowReserved";
+  if (error.code === "22023" && error.hint === "bundle") return "bundleStock";
+  if (error.code === "22023" && error.hint?.startsWith("bundle_")) return "bundleRule";
+  if (error.code === "55006" && error.hint === "reserved") return "bundleReserved";
+  if (error.code === "23503" && error.message?.includes("product_bundle_items")) return "bundleComponent";
   switch (error.code) {
     case "40001":
       return "staleStock";

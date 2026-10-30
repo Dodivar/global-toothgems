@@ -5,6 +5,8 @@ import {
   AlignCenterVertical,
   AlignHorizontalSpaceAround,
   ChevronDown,
+  ChevronRight,
+  ShoppingBag,
   Copy,
   ExternalLink,
   Crosshair,
@@ -38,7 +40,7 @@ import {
 import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { studioStore, type StudioSnapshot } from "../../../lib/studio3d/store";
-import { ShoppingList } from "./ShoppingList";
+import { AddDesignToCart, ShoppingList } from "./ShoppingList";
 import { useFrontView } from "../useFrontView";
 import { FrontViewDialog, FrontViewFigure } from "../FrontViewPanel";
 import { SaveSelectionAsGroup } from "../workspace/SaveSelectionAsGroup";
@@ -340,10 +342,13 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         </button>
       </div>
       <div className="mt-2 flex gap-2">
-        <button type="button" className={miniButton} onClick={distributeSelection}>
-          <AlignHorizontalSpaceAround size={14} aria-hidden="true" />
-          {t("studio.editor.inspector.distribute")}
-        </button>
+        {/* Spacing needs a piece between the two outermost ones. */}
+        {selected.length >= 3 && (
+          <button type="button" className={miniButton} onClick={distributeSelection}>
+            <AlignHorizontalSpaceAround size={14} aria-hidden="true" />
+            {t("studio.editor.inspector.distribute")}
+          </button>
+        )}
         <button
           type="button"
           className={miniButton}
@@ -526,16 +531,18 @@ function ToothPanel({ snap, toothId }: { snap: StudioSnapshot; toothId: string }
   const onTooth = snap.jewels.filter((j) => j.toothId === toothId);
   return (
     <>
+      {/* One line: the FDI number and the tooth's name; on an imported model the identification is approximate. */}
       <div className="flex items-start justify-between gap-2">
-        <p className="m-0 text-[46px] font-[var(--weight-black)] leading-[.95] tracking-[var(--tracking-display)] text-[var(--text-primary)]">
-          #{toothId}
-        </p>
-        <SectionInfo topic={t("studio.editor.inspector.camera")} helpTopic="camera" className="mt-1">
+        <h2 className="m-0 text-[length:var(--text-h4)] font-bold leading-tight text-[var(--text-primary)]">
+          <span className="font-[var(--weight-black)] tabular-nums">#{toothId}</span>
+          <span aria-hidden="true" className="text-[var(--text-subtle)]"> · </span>
+          {toothName(toothId)}
+        </h2>
+        <SectionInfo topic={t("studio.editor.inspector.camera")} helpTopic="camera" className="mt-0.5">
           {t("studio.editor.inspector.cameraHint")}
         </SectionInfo>
       </div>
-      <h2 className="m-0 mt-2 text-[length:var(--text-h4)] font-bold leading-tight text-[var(--text-primary)]">{toothName(toothId)}</h2>
-      <Hint className="mt-1">{t(snap.modelMode === "free" ? "studio.editor.inspector.fdiApprox" : "studio.editor.inspector.fdi")}</Hint>
+      {snap.modelMode === "free" && <Hint className="mt-1">{t("studio.editor.inspector.fdiApprox")}</Hint>}
 
       <SectionLabel>{t("studio.editor.inspector.piecesOnTooth")}</SectionLabel>
       {onTooth.length === 0 && <Hint>{t("studio.editor.inspector.toothEmpty")}</Hint>}
@@ -548,13 +555,7 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
   const { t, formatEstimate } = useEditorLabels();
   const { byKey } = useStudioGems();
   const zones = new Set(snap.jewels.map((j) => j.toothId)).size;
-  const total = estimateComposition(snap.jewels, (key) => byKey.get(key)).totalMinor;
-  const stat = (value: string | number, label: string) => (
-    <div className="grid flex-1 gap-0.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-page)] p-3 text-center">
-      <strong className="text-[22px] font-[var(--weight-black)] leading-none text-[var(--text-primary)]">{value}</strong>
-      <span className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--text-subtle)]">{label}</span>
-    </div>
-  );
+  const estimate = estimateComposition(snap.jewels, (key) => byKey.get(key));
   const shortcuts = [
     "undoRedo",
     "selectAll",
@@ -572,30 +573,24 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
   return (
     <>
       <h2 className="sr-only">{t("studio.editor.inspector.overview")}</h2>
-      <div className="flex gap-2">
-        {stat(snap.jewels.length, t("studio.editor.inspector.pieces"))}
-        {stat(zones, t("studio.editor.inspector.zones"))}
-      </div>
-      {total > 0 && (
-        <div className="mt-2 flex items-baseline justify-between rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-3 py-2.5">
-          <span className="text-[11px] font-bold uppercase tracking-[.1em] text-[var(--gt-blue-700)]">
-            {t("studio.editor.inspector.estimate")}
-          </span>
-          <strong className="text-[18px] font-[var(--weight-black)] text-[var(--text-primary)]">{formatEstimate(total)}</strong>
-        </div>
+      {snap.jewels.length > 0 && (
+        <BuyGemsPanel jewels={snap.jewels} products={estimate.lines.length} teeth={zones} totalMinor={estimate.totalMinor} formatEstimate={formatEstimate} />
       )}
-      {/* Stays in view: it qualifies the price shown just above. */}
-      {total > 0 && <Hint className="mt-2.5">{t("studio.editor.estimateHint")}</Hint>}
 
       <FrontViewSection snap={snap} />
 
-      <SectionLabel info={t("studio.editor.shopping.hint")} topic="shoppingList">{t("studio.editor.shopping.title")}</SectionLabel>
-      <ShoppingList jewels={snap.jewels} />
-
-      {/* Keyboard and mouse shortcuts mean nothing on a touch screen. */}
-      <div className="max-lg:hidden">
-        <SectionLabel>{t("studio.editor.shortcuts.title")}</SectionLabel>
-        <dl className="m-0 grid gap-1">
+      {/* Keyboard and mouse shortcuts mean nothing on a touch screen; folded until asked for. */}
+      <details className="group mt-5 max-lg:hidden">
+        <summary
+          className={clsx(
+            "flex cursor-pointer list-none items-center gap-1.5 rounded-[var(--radius-sm)] text-[11px] font-bold uppercase tracking-[.1em] text-[var(--text-subtle)] hover:text-[var(--text-primary)] [&::-webkit-details-marker]:hidden",
+            focusRing,
+          )}
+        >
+          <ChevronRight size={13} aria-hidden="true" className="transition-transform group-open:rotate-90 motion-reduce:transition-none" />
+          {t("studio.editor.shortcuts.title")}
+        </summary>
+        <dl className="m-0 mt-2 grid gap-1">
           {shortcuts.map((key) => (
             <div key={key} className="flex items-center justify-between gap-3 py-0.5 text-[11.5px] text-[var(--text-muted)]">
               <dt>{t(`studio.editor.shortcuts.${key}`)}</dt>
@@ -614,8 +609,73 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
             </div>
           ))}
         </dl>
-      </div>
+      </details>
     </>
+  );
+}
+
+/**
+ * "Buy the gems", first in the overview to lead to the shop (owner's request
+ * 2026-10-28): one row with the products to order, the teeth decorated and the
+ * estimate, folded by default, with the "Add to cart" button always in view;
+ * unfolded, the shopping list and what the estimate means. Soft brand blue, not the green
+ * call to action of Save.
+ */
+function BuyGemsPanel({
+  jewels,
+  products,
+  teeth,
+  totalMinor,
+  formatEstimate,
+}: {
+  jewels: PlacedJewelry[];
+  products: number;
+  teeth: number;
+  totalMinor: number;
+  formatEstimate: (minor: number) => string;
+}) {
+  const { t } = useEditorLabels();
+  const [open, setOpen] = useState(false);
+  const bodyId = useId();
+  return (
+    <section className="rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)]">
+      {/* Two lines that never wrap: the title with the fold arrow, then the figures with the estimate. */}
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={() => setOpen((v) => !v)}
+        className={clsx(
+          "grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2.5 gap-y-1 rounded-t-[var(--radius-md)] p-3 text-left transition-colors hover:bg-[var(--gt-blue-100)]",
+          focusRing,
+        )}
+      >
+        <span aria-hidden="true" className="row-span-2 grid h-9 w-9 place-items-center rounded-full bg-[var(--surface-card)] text-[var(--gt-blue-700)] shadow-[var(--shadow-xs)]">
+          <ShoppingBag size={16} />
+        </span>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-[13px] font-bold leading-tight text-[var(--text-primary)]">{t("studio.editor.shopping.buyTitle")}</span>
+          <ChevronDown size={15} aria-hidden="true" className={clsx("flex-none text-[var(--gt-blue-700)] transition-transform motion-reduce:transition-none", open && "rotate-180")} />
+        </span>
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--text-muted)]">
+            {t("studio.editor.shopping.buyProducts", { count: products })} · {t("studio.editor.inspector.teethCount", { count: teeth })}
+          </span>
+          {totalMinor > 0 && (
+            <strong className="flex-none text-[14px] font-[var(--weight-black)] tabular-nums text-[var(--text-primary)]">{formatEstimate(totalMinor)}</strong>
+          )}
+        </span>
+      </button>
+      {open && (
+        <div id={bodyId} className="border-t border-[var(--gt-blue-200)] px-3 pt-3">
+          <ShoppingList jewels={jewels} withCart={false} />
+          {totalMinor > 0 && <Hint className="mt-2.5">{t("studio.editor.estimateHint")}</Hint>}
+          <HelpMoreLink topic="shoppingList" className="mt-1.5" />
+        </div>
+      )}
+      {/* The way to the cart stays in view, folded or not; folded, it also says what stays out of stock. */}
+      <AddDesignToCart jewels={jewels} compact outNote={!open} className="px-3 pb-3 pt-2" />
+    </section>
   );
 }
 

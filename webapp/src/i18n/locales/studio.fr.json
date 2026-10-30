@@ -170,6 +170,7 @@
     },
     "planLocked": {
       "cta": "Passer à {{plan}}",
+      "withPlan": "Avec l’abonnement {{plan}}",
       "glowbook": {
         "title": "Le Glowbook est inclus dans la formule {{plan}}",
         "short": "Montrez vos créations sur une page publique et laissez vos clientes les essayer sur leur sourire.",
@@ -187,6 +188,18 @@
         "short": "Rangez vos créations par cliente, par style ou par événement.",
         "body": "Créez des dossiers pour ranger vos créations par cliente, par style ou par événement, et retrouvez-les d’un coup d’œil dans Mes créations.",
         "kept": "Si vous aviez déjà des dossiers, ils restent visibles : vous pouvez en retirer des créations ou les supprimer, mais plus en créer ni en remplir."
+      },
+      "transparentExport": {
+        "title": "Les captures sans fond sont incluses dans l’abonnement {{plan}}",
+        "short": "Exportez vos créations en PNG transparent, à poser sur vos propres visuels.",
+        "body": "Téléchargez la vue de la scène sans le fond du Studio, en PNG transparent : prête à poser sur vos visuels, vos publications ou vos supports imprimés.",
+        "kept": "En attendant, la capture PNG reste disponible, sur le fond du Studio et avec le logo Global Toothgems."
+      },
+      "tryOn": {
+        "title": "L’essayage par IA est inclus dans l’abonnement {{plan}}",
+        "short": "Montrez une création sur une vraie photo de sourire avant la pose.",
+        "body": "À partir d’une photo de sourire, l’IA montre la création enregistrée posée sur les dents : de quoi se projeter avant le rendez-vous. Toute personne qui visite votre Glowbook peut aussi l’essayer.",
+        "kept": "Vos créations, l’estimation et la fiche de pose restent disponibles avec votre abonnement actuel."
       }
     }
   },
@@ -230,17 +243,17 @@
       "menu": "Exporter",
       "images": "Images",
       "png": "Capture · PNG",
-      "pngSub": "Vue actuelle sur le fond du Studio",
+      "pngSub": "Vue actuelle sur le fond du Studio, avec le logo Global Toothgems",
       "transparent": "Capture · PNG transparent",
       "transparentSub": "Fond retiré, transparence conservée",
-      "quoteSection": "Estimation",
+      "prepareSection": "Préparer la pose",
       "quote": "Fiche d’estimation · PNG",
       "quoteSub": "Récapitulatif chiffré avec le rendu et le total",
-      "clientLabel": "Nom du client",
-      "clientPlaceholder": "Nom du client…",
+      "clientLabel": "Nom sur la fiche",
+      "clientPlaceholder": "Nom sur la fiche…",
       "quoteAction": "Créer",
       "json": "Création · JSON",
-      "jsonSub": "Les données de la création, à conserver ou à partager avec votre artiste"
+      "jsonSub": "Les données brutes de la création · réservé à l'équipe"
     },
     "share": {
       "menu": "Partager",
@@ -260,9 +273,6 @@
       "createLink": "Créer un lien en lecture seule…",
       "createLinkSub": "À publier sur les réseaux : la création s’ouvre en 3D, sans pouvoir être modifiée",
       "unsavedHint": "Les modifications non enregistrées n’apparaissent pas dans le lien.",
-      "download": "Télécharger l’image",
-      "downloadSub": "Pour la publier sur Instagram, TikTok ou Pinterest",
-      "hint": "Le lien ouvre uniquement cette création, en lecture seule : personne ne peut la modifier ni voir vos autres créations.",
       "title": "Ma création tooth gems — Studio 3D Global Toothgems",
       "message": "Découvrez la création de tooth gems que j’ai imaginée dans le Studio 3D de Global Toothgems !",
       "instagram": "Instagram",
@@ -437,15 +447,14 @@
       "layoutHint": "Aligner horizontalement : place les centres des pièces sur une même ligne horizontale (une par arcade) ; elles montent ou descendent seulement. Aligner verticalement : les place exactement sur une même ligne verticale, telle que vous la voyez à l’écran, quelle que soit leur dent et d’une arcade à l’autre ; elles glissent à gauche ou à droite sans changer de hauteur. Pour un résultat fidèle au sourire, alignez en vue de face. Espacer : répartit les pièces à intervalles réguliers le long de l’arcade. Centrer : ramène chaque pièce au milieu de sa dent. Une pièce dont l’emplacement est occupé reste en place.",
       "position": "Position",
       "positionHint": "Faites glisser la pièce sur le modèle pour la déplacer (avec une sélection multiple, tout le groupe suit), ou faites un clic droit pour les actions rapides. Centrer sur la dent la ramène au milieu de sa dent. Les pièces peuvent se toucher, jamais se chevaucher.",
-      "fdi": "Notation FDI",
       "fdiApprox": "Notation FDI · identification approximative",
       "piecesOnTooth": "Pièces sur cette dent",
       "toothEmpty": "Aucun bijou ici pour l’instant. Glissez une pièce de la bibliothèque sur le modèle.",
       "camera": "Caméra",
       "cameraHint": "Double-cliquez sur une dent pour centrer la caméra dessus.",
       "overview": "Vue d’ensemble de la création",
-      "pieces": "Pièces",
-      "zones": "Dents",
+      "teethCount_one": "{{count}} dent",
+      "teethCount_other": "{{count}} dents",
       "estimate": "Estimation",
       "noOverlap": "Les pièces peuvent se toucher, jamais se chevaucher — les emplacements occupés sont refusés.",
       "design": "Création",
@@ -602,6 +611,9 @@
     },
     "shopping": {
       "title": "Produits à commander",
+      "buyTitle": "Acheter les gemmes",
+      "buyProducts_one": "{{count}} produit",
+      "buyProducts_other": "{{count}} produits",
       "hint": "Les produits de la boutique qu’il faut pour réaliser cette création : la couleur et la taille de vos pièces, dans le plus petit pack qui les couvre (2 pièces → au moins le pack de 10), un bijou en or par pièce. Les prix sont recalculés au paiement.",
       "pack_one": "Pack de {{count}}",
       "pack_other": "Pack de {{count}}",
@@ -611,10 +623,13 @@
       "out": "Rupture de stock",
       "outNote_one": "{{count}} produit est en rupture de stock : il ne sera pas ajouté au panier.",
       "outNote_other": "{{count}} produits sont en rupture de stock : ils ne seront pas ajoutés au panier.",
+      "outShort_one": "{{count}} produit en rupture ne sera pas ajouté.",
+      "outShort_other": "{{count}} produits en rupture ne seront pas ajoutés.",
       "unavailable_one": "{{count}} pièce n’est plus vendue par la boutique (gemme, couleur ou taille retirée) : elle n’est pas comptée.",
       "unavailable_other": "{{count}} pièces ne sont plus vendues par la boutique (gemme, couleur ou taille retirée) : elles ne sont pas comptées.",
       "addAll_one": "Ajouter {{count}} produit au panier",
       "addAll_other": "Ajouter les {{count}} produits au panier",
+      "addToCart": "Ajouter au panier",
       "added": "Ajouté à votre panier.",
       "viewCart": "Voir le panier",
       "noneAvailable": "Aucun produit disponible"
@@ -890,9 +905,15 @@
         "lines": [
           "Préparation de la création 3D…",
           "Repérage de chaque dent sur la photo…",
+          "Mesure de la forme de votre sourire…",
+          "Choix de l’emplacement de chaque pierre…",
           "Placement des pierres sur les dents…",
+          "Ajustement de la taille de chaque gemme…",
           "Ajustement des reflets et de la lumière…",
+          "Les facettes se mettent à briller…",
+          "Respect des teintes naturelles de vos dents…",
           "Fondu de la retouche dans la photo…",
+          "Dernier polissage des pierres…",
           "Derniers détails, presque prêt…"
         ]
       },
@@ -945,6 +966,7 @@
       "alt": "« {{name}} » essayé sur la photo, rendu par IA",
       "beforeAlt": "La photo d’origine",
       "aiTag": "Rendu IA",
+      "ready": "Votre rendu est prêt",
       "beforeTag": "Avant",
       "disclaimer": "Image générée par IA : un aperçu pour se projeter, pas une promesse exacte du résultat posé.",
       "regenerate": "Générer à nouveau",

@@ -538,7 +538,7 @@
       "placementSheet": {
         "title": "La fiche de pose (PDF à imprimer)",
         "body": [
-          "La fiche de pose est un PDF au format A4, à imprimer ou à garder sur tablette pendant le rendez-vous. Elle se crée depuis le menu Exporter de l’éditeur, la vue de face ou le détail d’une création, et contient :"
+          "La fiche de pose est un PDF au format A4, à imprimer ou à garder sur tablette pendant le rendez-vous. Elle se crée depuis le menu Partager de l’éditeur, la vue de face ou le détail d’une création, et contient :"
         ],
         "points": [
           "la vue de face numérotée de la création ;",
@@ -562,16 +562,16 @@
         ]
       },
       "exports": {
-        "title": "Les exports : captures, fiche d’estimation, fichier JSON",
+        "title": "Le menu Partager : réseaux, images, préparer la pose",
         "body": [
-          "Le menu Exporter de l’éditeur propose :"
+          "Le menu Partager de l’éditeur regroupe tout ce qui sort du Studio :"
         ],
         "points": [
-          "Capture PNG : la vue actuelle de la scène, sur le fond du Studio.",
-          "PNG transparent : la même vue sans fond, à poser sur vos propres visuels.",
-          "Fiche d’estimation (PNG) : le rendu de la création, le détail chiffré et le total, avec le nom du client que vous saisissez.",
-          "Fiche de pose (PDF) : voir le sujet dédié.",
-          "Création (JSON) : les données de la création, à archiver ou à transmettre."
+          "Réseaux sociaux : le lien en lecture seule de la création enregistrée, à envoyer sur chaque réseau ou à copier (voir le sujet dédié).",
+          "Capture PNG : la vue actuelle de la scène, sur le fond du Studio, avec le logo Global Toothgems.",
+          "PNG sans fond (abonnements Artiste et Atelier) : la même vue sans fond, à poser sur vos propres visuels.",
+          "Préparer la pose : la fiche d’estimation (PNG, le rendu, le détail chiffré et le total, avec le nom que vous saisissez), la fiche de pose (PDF, voir le sujet dédié) et l’essayage par IA (abonnement Atelier).",
+          "Une fonction qui n’est pas incluse dans votre abonnement reste visible, avec un cadenas et l’abonnement qui l’ouvre."
         ]
       },
       "shareLink": {
@@ -811,7 +811,6 @@
     "preferenceFailed": "Votre choix d’affichage n’a pas pu être enregistré sur votre compte."
   },
   "share": {
-    "menuSub": "Un lien en lecture seule vers la version enregistrée",
     "title": "Partager en lecture seule",
     "intro": "Envoyez ce lien : la personne qui le reçoit voit « {{name}} » en 3D, sans pouvoir le modifier.",
     "linkLabel": "Lien de partage",
@@ -882,6 +881,7 @@
     "emptyCollectionBody": "Ouvrez le menu d’une création et choisissez Collections pour l’ajouter ici.",
     "showAll": "Voir toutes les créations",
     "inSave": "Ajouter à des collections (facultatif)",
+    "inSaveLocked": "Ranger dans des collections",
     "detailNone": "Dans aucune collection pour l’instant.",
     "addTo": "Collections",
     "picker": {

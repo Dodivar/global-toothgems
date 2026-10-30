@@ -39,7 +39,7 @@ const exampleTemplate: TemplateRow = {
   subject: "Votre commande {{order_number}} est confirmée",
   preheader: "Merci {{first_name}} ! Nous préparons vos gems avec soin.",
   body:
-    "Bonjour {{first_name}},\n\nMerci pour votre confiance. Votre paiement est validé et notre atelier lyonnais prépare déjà votre colis.\n\nVous recevrez un e-mail avec le lien de suivi dès son expédition.",
+    "Bonjour {{first_name}},\n\nMerci pour votre confiance. Votre paiement est validé et notre atelier prépare déjà votre colis.\n\nVous recevrez un e-mail avec le lien de suivi dès son expédition.",
   variables: ["first_name", "order_number"],
 };
 

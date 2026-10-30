@@ -25,7 +25,7 @@ interface StagePace {
 
 export const TRY_ON_PACE: Record<TryOnStage, StagePace> = {
   checking: { from: 3, to: 30, tau: 4_000, every: 2_200, lines: 4 },
-  rendering: { from: 32, to: 95, tau: 20_000, every: 4_000, lines: 6 },
+  rendering: { from: 32, to: 95, tau: 25_000, every: 4_500, lines: 12 },
 };
 
 /** The bar's position (0–100) `elapsed` ms into `stage`. */

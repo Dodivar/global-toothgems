@@ -4,6 +4,7 @@ import { Archive, CircleAlert, Info, Save, Send, X } from "lucide-react";
 import clsx from "clsx";
 import { AdminButton } from "./AdminButton";
 import { AdminSelect, type AdminOption } from "./AdminSelect";
+import { BundleEditor } from "./BundleEditor";
 import { ColorPicker } from "./ColorPicker";
 import { CustomVariantsEditor } from "./CustomVariantsEditor";
 import { MoneyInput, NumberInput } from "./AdminNumberInputs";
@@ -16,6 +17,7 @@ import { ToggleSwitch } from "./ToggleSwitch";
 import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { useFormat } from "../../lib/format";
 import { useAdminCatalog } from "../../lib/adminCatalog";
+import { bundleError } from "../../lib/productBundles";
 import {
   ADMIN_SPEC_KEYS,
   offeredGemVariants,
@@ -29,6 +31,7 @@ import {
 } from "../../data/adminCatalog";
 import type { Localized } from "../../data/types";
 import { comboSkuSuffix, isValidPack, longestSkuSuffix, PACK_MAX, PACK_MIN } from "../../lib/gemOptions";
+import { optionsProblem } from "../../lib/variantOptions";
 
 /**
  * Create and edit a product.
@@ -61,7 +64,7 @@ interface ProductFormProps {
 
 type FieldKey =
   | "name" | "sku" | "price" | "compareAtPrice" | "promoPrice" | "stock" | "lowStockThreshold" | "category" | "family" | "options"
-  | "variants";
+  | "variants" | "bundle";
 
 /** Same rule as the `products.sku` column: upper-case letters, digits and hyphens. */
 const SKU_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,63}$/;
@@ -119,8 +122,11 @@ export function ProductForm({
   const showCustomVariants =
     (initial.customVariants?.length ?? 0) > 0 ||
     (draft.customVariants?.length ?? 0) > 0 ||
+    (draft.variantOptions?.length ?? 0) > 0 ||
     (!isGem && draft.gemOptions === undefined);
   const showGemOptions = !showCustomVariants;
+  // A kit (decision 117) has no options and no count of its own.
+  const isKit = draft.bundle !== undefined;
   const variantsOn = showCustomVariants
     ? (draft.customVariants?.length ?? 0) > 0
     : Boolean(draft.gemOptions?.enabled);
@@ -148,7 +154,7 @@ export function ProductForm({
     // Shape and colour describe a gem; a product moved out of the gems
     // category loses them so it never shows up under a gem filter.
     const gemLook = isGem ? {} : { shape: undefined, color: undefined };
-    const variantKind = showCustomVariants ? { gemOptions: undefined } : { customVariants: undefined };
+    const variantKind = showCustomVariants ? { gemOptions: undefined } : { customVariants: undefined, variantOptions: undefined };
     onSubmit(
       { ...draft, ...gemLook, ...variantKind, status, promoPrice: withPromoPrice ? draft.promoPrice : undefined },
       intent,
@@ -402,7 +408,7 @@ export function ProductForm({
             />
           </Section>
 
-          {showGemOptions && (
+          {showGemOptions && !isKit && (
             <Section title={t("admin.form.optionsTitle")} description={t("admin.form.optionsBody")}>
               <GemOptionsEditor
                 options={draft.gemOptions}
@@ -416,7 +422,7 @@ export function ProductForm({
             </Section>
           )}
 
-          {showCustomVariants && (
+          {showCustomVariants && !isKit && (
             <Section title={t("admin.form.variantsTitle")} description={t("admin.form.variantsBody")}>
               <CustomVariantsEditor
                 variants={draft.customVariants}
@@ -426,12 +432,49 @@ export function ProductForm({
                 onChange={(customVariants) => set("customVariants", customVariants)}
                 onMediaChange={(update) => setDraft((prev) => ({ ...prev, media: update(prev.media) }))}
                 focusOption={focusOption}
+                options={draft.variantOptions}
+                onOptionsChange={(variantOptions, customVariants) =>
+                  setDraft((prev) => ({ ...prev, variantOptions, customVariants }))
+                }
               />
             </Section>
           )}
 
+          <Section title={t("admin.bundle.title")} description={t("admin.bundle.body")}>
+            <BundleEditor
+              product={draft}
+              initial={initial}
+              error={showError("bundle")}
+              onChange={(bundle) => set("bundle", bundle)}
+            />
+          </Section>
+
           <Section title={t("admin.form.inventoryTitle")} description={t("admin.form.inventoryBody")}>
-            {variantsOn ? (
+            {isKit ? (
+              <>
+                <p className="m-0 flex items-start gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--gt-blue-700)]">
+                  <Info size={14} aria-hidden="true" className="mt-0.5 flex-none" />
+                  {t("admin.bundle.stockNotice")}
+                </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    label={t("admin.form.lowStockThreshold")}
+                    error={showError("lowStockThreshold")}
+                    hint={t("admin.bundle.thresholdHint")}
+                  >
+                    {(props) => (
+                      <NumberInput
+                        {...props}
+                        value={draft.lowStockThreshold}
+                        min={0}
+                        onValueChange={(value) => set("lowStockThreshold", value ?? 0)}
+                        onBlur={blur("lowStockThreshold")}
+                      />
+                    )}
+                  </FormField>
+                </div>
+              </>
+            ) : variantsOn ? (
               <p className="m-0 flex items-start gap-2 rounded-[var(--admin-radius-sm)] bg-[var(--status-info-bg)] p-3 text-[length:var(--text-body-sm)] text-[var(--gt-blue-700)]">
                 <Info size={14} aria-hidden="true" className="mt-0.5 flex-none" />
                 {t(showCustomVariants ? "admin.form.variantsStockNotice" : "admin.form.optionsStockNotice")}
@@ -737,10 +780,17 @@ function validate(
     errors.promoPrice = t("admin.form.errors.promoTooHigh");
   }
 
-  const customVariants = custom ? (draft.customVariants ?? []) : [];
-  const gemOn = !custom && Boolean(draft.gemOptions?.enabled);
+  const kit = draft.bundle !== undefined;
+  const customVariants = custom && !kit ? (draft.customVariants ?? []) : [];
+  const gemOn = !custom && !kit && Boolean(draft.gemOptions?.enabled);
   const productStock = !gemOn && customVariants.length === 0;
-  if (draft.trackInventory && productStock) {
+  const bundle = bundleError(draft.bundle, t);
+  if (bundle) errors.bundle = bundle;
+  if (kit) {
+    if (!Number.isInteger(draft.lowStockThreshold) || draft.lowStockThreshold < 0) {
+      errors.lowStockThreshold = t("admin.form.errors.thresholdInvalid");
+    }
+  } else if (draft.trackInventory && productStock) {
     if (!Number.isInteger(draft.stock) || draft.stock < 0) {
       errors.stock = t("admin.form.errors.stockInvalid");
     }
@@ -749,7 +799,10 @@ function validate(
     }
   }
 
-  if (customVariants.length > 0) {
+  const optionProblem = custom ? optionsProblem(draft.variantOptions ?? []) : null;
+  if (optionProblem) {
+    errors.variants = t(`admin.form.errors.${optionProblem}`);
+  } else if (customVariants.length > 0) {
     const names = customVariants.map((v) => v.name.fr.trim().toLowerCase());
     if (customVariants.some((v) => !v.name.fr.trim() || !v.name.en.trim())) {
       errors.variants = t("admin.form.errors.variantsName");

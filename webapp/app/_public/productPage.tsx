@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { jsonLdScript, productAddresses, productDescription, productJsonLd, productTitle } from "../../src/lib/catalog/productMeta";
+import { jsonLdScript, productAddresses, productJsonLd, productMetaDescription, productTitle } from "../../src/lib/catalog/productMeta";
 import { productSlug } from "../../src/lib/catalog/productSlugs";
 import { findProductFaq, findPublicProduct } from "../../src/lib/catalog/serverCatalog";
 import { localizedPath, type Locale } from "../../src/lib/localeRoutes";
@@ -43,7 +43,7 @@ export async function productMetadata(props: ProductPageProps, locale: Locale): 
   const image = product.gallery?.[0]?.src ?? product.image;
   return publicPageMetadata({
     title: productTitle(product, locale),
-    description: productDescription(product, locale),
+    description: productMetaDescription(product, locale),
     locale,
     alternates: productAddresses(product),
     image: image || undefined,

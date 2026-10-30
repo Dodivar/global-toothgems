@@ -2,15 +2,20 @@
  * The call to Google's image model ("Nano Banana", decision 111), through one
  * of two doors, chosen by the function secrets:
  *
- *   Vertex AI with Application Default Credentials (the owner's Google policy
+ *   Vertex AI with a Google credentials file (the owner's Google policy
  *   forbids API keys, 2026-10-25):
- *     GOOGLE_ADC_JSON         the content of the ADC file written by
- *                             `gcloud auth application-default login`
- *                             (type "authorized_user": client id / secret +
- *                             refresh token). The function trades it for a
- *                             short-lived access token (cached until it
- *                             expires) — the file itself never leaves Supabase.
- *     GOOGLE_CLOUD_PROJECT    optional, else the file's `quota_project_id`
+ *     GOOGLE_ADC_JSON         the content of the file, either
+ *                             - a service account key (type "service_account",
+ *                               since 2026-10-28: the dedicated account, not a
+ *                               person's): the function signs a JWT with its
+ *                               private key (RS256) and trades it for a token;
+ *                             - or the ADC file written by
+ *                               `gcloud auth application-default login` (type
+ *                               "authorized_user": a person's refresh token).
+ *                             Either way the access token is short-lived (cached
+ *                             until it expires) — the file never leaves Supabase.
+ *     GOOGLE_CLOUD_PROJECT    optional, else the file's `project_id`
+ *                             (service account) or `quota_project_id` (user)
  *     GOOGLE_CLOUD_LOCATION   optional, `global` by default
  *   or the Gemini API with a key:
  *     GEMINI_API_KEY          (+ GEMINI_API_BASE, optional)
@@ -39,9 +44,18 @@ export interface AdcUserCredentials {
   refreshToken: string;
 }
 
+/** Fields of a "service_account" key file. */
+export interface ServiceAccountCredentials {
+  clientEmail: string;
+  /** PKCS#8 PEM, as in the file's `private_key`. */
+  privateKey: string;
+}
+
+export type GoogleCredentials = AdcUserCredentials | ServiceAccountCredentials;
+
 export type ImageModelConfig =
   | { kind: "api_key"; model: string; apiKey: string; baseUrl: string }
-  | { kind: "vertex"; model: string; credentials: AdcUserCredentials; project: string; location: string };
+  | { kind: "vertex"; model: string; credentials: GoogleCredentials; project: string; location: string };
 
 export type GenerateOutcome =
   /** `aspectRatioDropped`: the model refused the proportions asked for and answered at its own (logged). */
@@ -53,8 +67,8 @@ const DEFAULT_BASE = "https://generativelanguage.googleapis.com/v1beta";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const ID = /^[\w.-]{3,80}$/;
 
-/** The "authorized_user" ADC file's credentials and quota project, or null when it is not one. */
-export function readAdcJson(raw: string | undefined): { credentials: AdcUserCredentials; quotaProject: string | null } | null {
+/** The credentials file's credentials and project, or null when it is neither a service account key nor an "authorized_user" file. */
+export function readAdcJson(raw: string | undefined): { credentials: GoogleCredentials; quotaProject: string | null } | null {
   if (!raw?.trim()) return null;
   let data: unknown;
   try {
@@ -63,6 +77,11 @@ export function readAdcJson(raw: string | undefined): { credentials: AdcUserCred
     return null;
   }
   const d = (data && typeof data === "object" ? data : {}) as Record<string, unknown>;
+  if (d.type === "service_account") {
+    const { client_email: clientEmail, private_key: privateKey, project_id: projectId } = d;
+    if (typeof clientEmail !== "string" || typeof privateKey !== "string" || !clientEmail || !privateKey.includes("PRIVATE KEY")) return null;
+    return { credentials: { clientEmail, privateKey }, quotaProject: typeof projectId === "string" && ID.test(projectId) ? projectId : null };
+  }
   if (d.type !== "authorized_user") return null;
   const { client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken } = d;
   if (typeof clientId !== "string" || typeof clientSecret !== "string" || typeof refreshToken !== "string") return null;
@@ -110,7 +129,7 @@ export function configProblem(env: (name: string) => string | undefined): string
       type = `not JSON (starts with ${JSON.stringify(t.slice(0, 1))}, ${t.length} chars)`;
     }
     const adc = readAdcJson(raw);
-    if (!adc) problems.push(`GOOGLE_ADC_JSON is not an authorized_user ADC file (type: ${String(type).slice(0, 80)})`);
+    if (!adc) problems.push(`GOOGLE_ADC_JSON is not a service_account or authorized_user file (type: ${String(type).slice(0, 80)})`);
     else if (!(env("GOOGLE_CLOUD_PROJECT")?.trim() || adc.quotaProject)) problems.push("no Google Cloud project: set GOOGLE_CLOUD_PROJECT");
   } else if (!env("GEMINI_API_KEY")?.trim()) problems.push("neither GOOGLE_ADC_JSON nor GEMINI_API_KEY is set");
   return problems.join("; ") || "unknown";
@@ -124,29 +143,53 @@ export function generateUrl(config: ImageModelConfig): string {
   return `https://${host}/v1/projects/${config.project}/locations/${config.location}/publishers/google/models/${model}:generateContent`;
 }
 
-let cachedToken: { value: string; expiresAt: number; refreshToken: string } | null = null;
+let cachedToken: { value: string; expiresAt: number; key: string } | null = null;
 
-/** A Google access token for the ADC user, refreshed a minute before it expires. */
-export async function accessToken(credentials: AdcUserCredentials, fetchImpl: typeof fetch = fetch, now = Date.now()): Promise<string> {
-  if (cachedToken && cachedToken.refreshToken === credentials.refreshToken && now < cachedToken.expiresAt - 60_000) return cachedToken.value;
+const base64Url = (bytes: Uint8Array | string) =>
+  btoa(typeof bytes === "string" ? bytes : String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+/** The signed JWT a service account trades for an access token (RS256, one hour). */
+export async function serviceAccountAssertion(credentials: ServiceAccountCredentials, nowSeconds: number): Promise<string> {
+  const pem = credentials.privateKey.replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "").replace(/\s+/g, "");
+  const der = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey("pkcs8", der, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const header = base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const claims = base64Url(
+    JSON.stringify({
+      iss: credentials.clientEmail,
+      scope: "https://www.googleapis.com/auth/cloud-platform",
+      aud: TOKEN_URL,
+      iat: nowSeconds,
+      exp: nowSeconds + 3600,
+    }),
+  );
+  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(`${header}.${claims}`));
+  return `${header}.${claims}.${base64Url(new Uint8Array(signature))}`;
+}
+
+/** A Google access token for the credentials, refreshed a minute before it expires. */
+export async function accessToken(credentials: GoogleCredentials, fetchImpl: typeof fetch = fetch, now = Date.now()): Promise<string> {
+  const serviceAccount = "privateKey" in credentials;
+  const key = serviceAccount ? credentials.clientEmail : credentials.refreshToken;
+  if (cachedToken && cachedToken.key === key && now < cachedToken.expiresAt - 60_000) return cachedToken.value;
   const res = await fetchImpl(TOKEN_URL, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      client_id: credentials.clientId,
-      client_secret: credentials.clientSecret,
-      refresh_token: credentials.refreshToken,
-    }),
+    body: new URLSearchParams(
+      serviceAccount
+        ? { grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: await serviceAccountAssertion(credentials, Math.floor(now / 1000)) }
+        : { grant_type: "refresh_token", client_id: credentials.clientId, client_secret: credentials.clientSecret, refresh_token: credentials.refreshToken },
+    ),
     signal: AbortSignal.timeout(15_000),
   });
   const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
   if (!res.ok || !data || typeof data.access_token !== "string") {
-    // `invalid_grant`: the refresh token was revoked or expired — run `gcloud auth application-default login` again.
+    // `invalid_grant`: a user's refresh token was revoked or expired (run `gcloud auth application-default login` again),
+    // or a service account's key was deleted / its clock is off.
     throw new Error(`token refresh failed (${res.status} ${typeof data?.error === "string" ? data.error : ""})`);
   }
   const ttl = typeof data.expires_in === "number" ? data.expires_in : 3600;
-  cachedToken = { value: data.access_token, expiresAt: now + ttl * 1000, refreshToken: credentials.refreshToken };
+  cachedToken = { value: data.access_token, expiresAt: now + ttl * 1000, key };
   return data.access_token;
 }
 
@@ -157,8 +200,9 @@ export function resetTokenCache() {
 
 async function authHeaders(config: ImageModelConfig, fetchImpl: typeof fetch): Promise<Record<string, string>> {
   if (config.kind === "api_key") return { "x-goog-api-key": config.apiKey };
-  // With user credentials, Google bills and counts quota on the project named here.
-  return { authorization: `Bearer ${await accessToken(config.credentials, fetchImpl)}`, "x-goog-user-project": config.project };
+  const authorization = `Bearer ${await accessToken(config.credentials, fetchImpl)}`;
+  // A service account bills its own project; with a person's credentials, Google bills and counts quota on the project named here.
+  return "privateKey" in config.credentials ? { authorization } : { authorization, "x-goog-user-project": config.project };
 }
 
 /** POST a `generateContent` body to the model named in `config`: the response, or why it could not be sent. */

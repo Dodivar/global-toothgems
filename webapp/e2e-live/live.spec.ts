@@ -241,3 +241,77 @@ test.describe("registration", () => {
     await signedInClient(ACCOUNTS.customer, testPassword());
   });
 });
+
+test.describe("kits, stock derived from their products (decision 117)", () => {
+  test("a staff member makes a product a kit; its stock follows its products", async ({ page, problems }) => {
+    const db = serviceClient();
+    const tag = Date.now().toString(36).toUpperCase();
+    const { data: category } = await db.from("categories").select("id").eq("is_active", true).order("position").limit(1).single();
+    const insert = async (name: string, stock: number) => {
+      const { data, error } = await db
+        .from("products")
+        .insert({
+          name, slug: `e2e-kit-${tag.toLowerCase()}-${stock}`, sku: `E2E-KIT-${tag}-${stock}`, category_id: category!.id,
+          price: 9, currency: "EUR", status: "draft", product_type: "physical",
+        })
+        .select("id")
+        .single();
+      if (error) throw new Error(error.message);
+      const english = await db.from("product_translations").insert({ product_id: data.id, locale: "en", name, status: "published" });
+      if (english.error) throw new Error(english.error.message);
+      const stockRow = await db.from("inventory_items").insert({ product_id: data.id, quantity_on_hand: stock });
+      if (stockRow.error) throw new Error(stockRow.error.message);
+      return data.id as string;
+    };
+    const glossA = await insert(`Gloss A ${tag}`, 10);
+    const glossB = await insert(`Gloss B ${tag}`, 4);
+    const trio = await insert(`Trio ${tag}`, 7);
+
+    try {
+      await signIn(page, ACCOUNTS.staff, "/admin/connexion");
+      await expect(page).toHaveURL((url) => url.pathname.startsWith("/admin") && url.pathname !== "/admin/connexion");
+      await open(page, `/admin/produits/${trio}`);
+
+      await page.getByText("Ce produit est un kit", { exact: true }).click();
+      await expect(page.getByRole("switch", { name: "Ce produit est un kit" })).toBeChecked();
+      // Its own 7 units are replaced by the calculation: the form says so.
+      await expect(page.getByText(/7 unités en stock propre/)).toBeVisible();
+      const picker = page.getByRole("group", { name: "Produits du kit" });
+      await picker.getByRole("searchbox").fill(tag);
+      await picker.getByRole("checkbox", { name: new RegExp(`Gloss A ${tag}`) }).check();
+      await picker.getByRole("checkbox", { name: new RegExp(`Gloss B ${tag}`) }).check();
+      const quantityB = page.getByRole("spinbutton", { name: `Quantité de Gloss B ${tag} par kit` });
+      await quantityB.fill("2");
+      // 10 A and 4 B ÷ 2 per kit: 2 kits, held down by B.
+      await expect(page.getByText(`Stock calculé : 2 kits réalisables (limité par Gloss B ${tag}).`)).toBeVisible();
+      await page.getByRole("button", { name: "Enregistrer les modifications" }).click();
+
+      await expect
+        .poll(async () => (await db.from("inventory_items").select("quantity_on_hand").eq("product_id", trio).single()).data?.quantity_on_hand)
+        .toBe(2);
+      const { data: rows } = await db
+        .from("product_bundle_items")
+        .select("component_product_id, quantity")
+        .eq("bundle_product_id", trio)
+        .order("position");
+      expect(rows).toEqual([
+        { component_product_id: glossA, quantity: 1 },
+        { component_product_id: glossB, quantity: 2 },
+      ]);
+
+      // Restocking a product moves the kit; the kit itself has no count to change.
+      const staff = await signedInClient(ACCOUNTS.staff, testPassword());
+      const restock = await staff.rpc("admin_adjust_stock", { p_product_id: glossB, p_variant_id: null as unknown as string, p_delta: 4 });
+      expect(restock.error).toBeNull();
+      const { data: kit } = await db.from("inventory_items").select("quantity_on_hand").eq("product_id", trio).single();
+      expect(kit?.quantity_on_hand).toBe(4);
+      const refused = await staff.rpc("admin_adjust_stock", { p_product_id: trio, p_variant_id: null as unknown as string, p_delta: 5 });
+      expect(refused.error?.hint).toBe("bundle");
+
+      expect(problems).toEqual([]);
+    } finally {
+      await db.from("products").delete().eq("id", trio);
+      await db.from("products").delete().in("id", [glossA, glossB]);
+    }
+  });
+});
