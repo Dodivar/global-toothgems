@@ -1616,7 +1616,9 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   workspace). **Gem size is physical** (owner's decision): real millimetres × the fitted scale. A confidence below
   `RELIABLE_CONFIDENCE` (0.6, first value) or fewer than three agreeing teeth marks the placement unreliable.
   **Renders are unchanged**: they still let the image model place the gems; the switch to the computed placement
-  comes with steps 3–4, staff only during the trial. The behaviour before this change is tagged `try-on-ai-placement`.
+  comes with steps 3–4, staff only during the trial. The behaviour before this change is tagged `try-on-ai-placement`
+  (commit `7ba69d1`; it is the code of version 29 of the function). Deployed on 2026-11-01 as version 30 from the
+  pinned commit `32c5a6b` (raw-GitHub entry point, `verify_jwt = false`).
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
   `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The
   photo step says the photo is sent to Google only while the AI is connected.
