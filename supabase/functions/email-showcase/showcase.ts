@@ -379,3 +379,8 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
   }
   return samples;
 }
+
+/** The samples that carry a document (invoice or credit note as a PDF). */
+export function withDocuments(samples: Sample[]): Sample[] {
+  return samples.filter((s) => s.kind === "template" && (s.request.attachments?.length ?? 0) > 0);
+}

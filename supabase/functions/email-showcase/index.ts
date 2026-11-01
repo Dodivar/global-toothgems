@@ -4,16 +4,17 @@ import { sendWithResend } from "../_shared/email/resend.ts";
 import { isValidAddress } from "../_shared/email/send.ts";
 import { hasInternalSecret } from "../_shared/internalAuth.ts";
 import { json, readJson } from "../_shared/http.ts";
-import { buildShowcase, type Sample } from "./showcase.ts";
+import { buildShowcase, type Sample, withDocuments } from "./showcase.ts";
 
 /*
- * POST /functions/v1/email-showcase  { "to": "<address>" }
+ * POST /functions/v1/email-showcase  { "to": "<address>", "only_documents"?: true }
  *
  * Sends one sample of every e-mail the site sends to one address, so the
  * owner sees them all (see showcase.ts). Deployed with verify_jwt = false
  * (supabase/config.toml): the caller is the database or the team, with the
  * shared secret EMAIL_INTERNAL_SECRET in `x-internal-secret`, like the other
- * e-mail jobs. Answer: the status of each sample, no content.
+ * e-mail jobs. `only_documents` keeps the samples carrying an invoice or a
+ * credit note (PDF attached). Answer: the status of each sample, no content.
  */
 
 const log = (message: string, detail?: unknown) => console.error(`[email-showcase] ${message}`, detail ?? "");
@@ -44,11 +45,12 @@ Deno.serve(async (req) => {
   const body = await readJson(req, 1024);
   const to = body && typeof body === "object" ? (body as { to?: unknown }).to : undefined;
   if (typeof to !== "string" || !isValidAddress(to.trim())) return json({ error: "invalid_recipient" }, 400);
+  const onlyDocuments = (body as { only_documents?: unknown }).only_documents === true;
 
   try {
     const deps = emailDepsFromEnv();
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const samples: Sample[] = buildShowcase({
+    const all: Sample[] = buildShowcase({
       to: to.trim(),
       runId: crypto.randomUUID(),
       siteUrl: deps.layout.siteUrl,
@@ -57,6 +59,7 @@ Deno.serve(async (req) => {
       product: { name: "Kit d’Application Premium", slug: "kit-application-premium", imagePath: "products/kit-application-premium/01.jpg" },
     });
 
+    const samples = onlyDocuments ? withDocuments(all) : all;
     const results: { label: string; status: string; error?: string }[] = [];
     for (const sample of samples) {
       try {

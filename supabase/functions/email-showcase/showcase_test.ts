@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { buildShowcase } from "./showcase.ts";
+import { buildShowcase, withDocuments } from "./showcase.ts";
 
 const ctx = {
   to: "owner@example.com",
@@ -47,4 +47,10 @@ Deno.test("the Auth samples have no Go template action left", () => {
       assert(s.html.includes("https://globaltoothgems.com/auth/confirm"), s.label);
     }
   }
+});
+
+Deno.test("only_documents keeps the five samples with an invoice or a credit note", () => {
+  const kept = withDocuments(buildShowcase(ctx));
+  assertEquals(kept.length, 5);
+  assert(kept.every((s) => s.kind === "template" && (s.request.attachments?.length ?? 0) === 1));
 });
