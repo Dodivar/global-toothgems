@@ -93,11 +93,24 @@ const page = await context.newPage();
 page.setDefaultTimeout(60_000);
 
 async function signIn() {
-  await page.goto(`${SITE}/connexion`, { waitUntil: "domcontentloaded" });
-  await page.locator('input[type="email"]').first().fill(EMAIL);
+  // A first `npm run dev` compiles each page on its first visit: generous waits.
+  await page.goto(`${SITE}/connexion`, { waitUntil: "domcontentloaded", timeout: 180_000 });
+  await page.locator('input[type="email"]').first().fill(EMAIL, { timeout: 180_000 });
   await page.locator('input[type="password"]').first().fill(PASSWORD);
   await page.locator('input[type="password"]').first().press("Enter");
-  await page.waitForURL((u) => !u.pathname.startsWith("/connexion"), { timeout: 60_000 });
+  try {
+    await page.waitForURL((u) => !u.pathname.startsWith("/connexion"), { timeout: 180_000 });
+  } catch {
+    // Say why: the page's own message (wrong password, unconfirmed e-mail…), and a screenshot.
+    const shot = join(OUT, "signin-error.png");
+    await page.screenshot({ path: shot, fullPage: true }).catch(() => {});
+    const messages = (await page.locator('[role="alert"], [aria-live]').allInnerTexts().catch(() => [])).map((t) => t.trim()).filter(Boolean);
+    console.error(`Sign-in did not complete for ${EMAIL} on ${SITE}.`);
+    console.error(messages.length ? `Page says: ${messages.join(" | ")}` : "No message on the page: check that `npm run dev` runs from webapp/ with .env.local pointing at the project.");
+    console.error(`Screenshot: ${shot}`);
+    await browser.close();
+    process.exit(1);
+  }
 }
 
 async function runOne(photo, scene) {
