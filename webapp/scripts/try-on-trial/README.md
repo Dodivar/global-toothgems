@@ -1,10 +1,10 @@
 # Studio try-on trial (computed placement)
 
 Evaluation harness for decision 111 (k) (`docs/studio-try-on-computed-placement.md`): it drives the **real**
-try-on dialog of the local site, connected to the real Supabase project, for every photo × test creation, with
-"Render with computed placement" — sign in, open the creation, add the photo, tick the consent, render. Every
-step goes through the deployed Edge Function `studio-try-on` exactly as a staff member's browser does
-(analysis, registration and guide in the browser, Nano Banana render, paste-back, drift check).
+try-on dialog of the local site, connected to the real Supabase project, for every photo × test creation —
+sign in, open the creation, add the photo, tick the consent, "Generate the AI render". Every step goes through
+the deployed Edge Function `studio-try-on` exactly as a member's browser does (analysis, placement and guide in
+the browser, Nano Banana render, paste-back).
 
 Run it on a machine with a GPU: the browser draws the creation in 3D before each render, which takes seconds
 with a GPU and minutes in a container without one.
@@ -39,7 +39,7 @@ has no daily limit) and is billed by the image model.
 
 ## Output (`--out`, not committed: it holds the photos' renders)
 
-- `P<n>-S<m>/`: `log.json` (calls, timings, the staff report under the result, errors), `analysis.json` (teeth
+- `P<n>-S<m>/`: `log.json` (calls, timings, errors), `analysis.json` (teeth
   found and the close-up), `guide.jpg` (the marks sent to the model), `answer.*` (the model's close-up),
   `result.jpg` (pasted back), `dialog.png`.
 - `sheet-P1.jpg` … `sheet-P5.jpg`: one contact sheet per photo — guide beside result close-up for each creation.

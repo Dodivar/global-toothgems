@@ -7,7 +7,6 @@ import {
   TRY_ON_ERROR_MESSAGES,
   errorAllowsRetry,
   parseTryOnAnalysis,
-  parseTryOnEvent,
   parseTryOnResponse,
   parseTryOnStatus,
   resultExtension,
@@ -18,8 +17,10 @@ import { checkPhotoFile, checkPhotoLight, checkPhotoSize, fitWithin, PHOTO_MAX_B
 
 describe("try-on service contract", () => {
   it("the not-available service says so at once, without a photo leaving", async () => {
-    expect(await unavailableTryOnService.status()).toEqual({ available: false, dailyLimit: null, quota: null, diagnostic: false });
-    expect(await unavailableTryOnService.render({ photo: new Blob(), design: new Blob(), source: { kind: "own", creationId: "c1" } })).toEqual({
+    expect(await unavailableTryOnService.status()).toEqual({ available: false, dailyLimit: null, quota: null });
+    expect(await unavailableTryOnService.analyse({ photo: new Blob(), source: { kind: "own", creationId: "c1" } })).toEqual({ ok: false, code: "not_available" });
+    const crop = { x: 0, y: 0, width: 10, height: 10, photoWidth: 10, photoHeight: 10 };
+    expect(await unavailableTryOnService.render({ photo: new Blob(), design: new Blob(), guide: new Blob(), crop, marks: 1, source: { kind: "own", creationId: "c1" } })).toEqual({
       ok: false,
       code: "not_available",
     });
@@ -30,17 +31,12 @@ describe("try-on service contract", () => {
       available: true,
       dailyLimit: 10,
       quota: { unlimited: false, limit: 10, remaining: 7 },
-      diagnostic: false,
     });
     expect(parseTryOnStatus({ available: true, daily_limit: 10, quota: { unlimited: true } }).quota).toEqual({ unlimited: true });
-    expect(parseTryOnStatus({ available: true, daily_limit: 10, quota: null })).toEqual({ available: true, dailyLimit: 10, quota: null, diagnostic: false });
+    expect(parseTryOnStatus({ available: true, daily_limit: 10, quota: null })).toEqual({ available: true, dailyLimit: 10, quota: null });
     expect(parseTryOnStatus({ available: true, quota: { limit: 10, remaining: 12 } }).quota).toEqual({ unlimited: false, limit: 10, remaining: 10 });
     expect(parseTryOnStatus({ available: true, quota: { limit: "10", remaining: -1 } }).quota).toBeNull();
-    expect(parseTryOnStatus({ available: "yes" })).toEqual({ available: false, dailyLimit: null, quota: null, diagnostic: false });
-    // The placement diagnostic: only when the function says so, and only with the AI connected.
-    expect(parseTryOnStatus({ available: true, diagnostic: true }).diagnostic).toBe(true);
-    expect(parseTryOnStatus({ available: true, diagnostic: "yes" }).diagnostic).toBe(false);
-    expect(parseTryOnStatus({ available: false, diagnostic: true }).diagnostic).toBe(false);
+    expect(parseTryOnStatus({ available: "yes" })).toEqual({ available: false, dailyLimit: null, quota: null });
     expect(parseTryOnStatus(null).available).toBe(false);
   });
 
@@ -81,14 +77,7 @@ describe("try-on service contract", () => {
     });
     expect(parseTryOnResponse({ ok: false, code: "photo_unsuitable" })).toEqual({ ok: false, code: "photo_unsuitable", reasons: [] });
     expect(errorAllowsRetry("photo_unsuitable")).toBe(false);
-    expect(parseTryOnResponse({ ok: false, code: "photo_unsuitable", reasons: ["design_hidden"] })).toMatchObject({ reasons: ["design_hidden"] });
-  });
-
-  it("reads how many gems were left out because their spot does not show", () => {
-    const image = { mime_type: "image/png", data: "aW1n" };
-    expect(parseTryOnResponse({ ok: true, image, left_out: 2 })).toMatchObject({ ok: true, leftOut: 2 });
-    expect("leftOut" in parseTryOnResponse({ ok: true, image, left_out: 0 })).toBe(false);
-    expect("leftOut" in parseTryOnResponse({ ok: true, image, left_out: "2" })).toBe(false);
+    expect(parseTryOnResponse({ ok: false, code: "photo_unsuitable", reasons: ["placement_uncertain"] })).toMatchObject({ reasons: ["placement_uncertain"] });
   });
 
   it("has a message in both languages for every error code", () => {
@@ -144,24 +133,6 @@ describe("photo checks", () => {
   it("names the export after the creation", () => {
     expect(tryOnFileName("Étoile & Cœur")).toBe("global-toothgems-try-on-etoile-c-ur.jpg");
     expect(tryOnFileName("***", "png")).toBe("global-toothgems-try-on.png");
-  });
-});
-
-describe("progress events", () => {
-  it("reads the stages, then the final answer like a plain response", () => {
-    expect(parseTryOnEvent('data: {"stage":"checking"}')).toEqual({ stage: "checking" });
-    expect(parseTryOnEvent('data: {"stage":"rendering"}')).toEqual({ stage: "rendering" });
-    expect(parseTryOnEvent('data: {"result":{"ok":false,"code":"photo_unsuitable","reasons":["blurry"]}}')).toEqual({
-      outcome: { ok: false, code: "photo_unsuitable", reasons: ["blurry"] },
-    });
-    expect(parseTryOnEvent('data: {"result":{"ok":false,"code":"server_error"}}')).toEqual({ outcome: { ok: false, code: "failed" } });
-  });
-
-  it("skips anything else", () => {
-    expect(parseTryOnEvent(": keep-alive")).toBeNull();
-    expect(parseTryOnEvent('data: {"stage":"done"}')).toBeNull();
-    expect(parseTryOnEvent("data: {broken")).toBeNull();
-    expect(parseTryOnEvent("data: null")).toBeNull();
   });
 });
 

@@ -1472,60 +1472,36 @@ logo (artist, atelier)      re-encoded to PNG ≤ 1024 px in the browser → stu
 ### 3D Studio smile try-on with AI (decision 111)
 
 ```
-artist (own creation)       creation detail / editor Export menu → "Try on a smile"   source {creation_id}
+artist (own creation)       creation detail / editor Share menu → "Try on a smile"   source {creation_id}
 visitor                     /studio-3d/glowbook/<handle>/<item> or /studio-3d/partage/<token> → "Try it on my smile"
                             (shown only when studio_public_showcase_creation / studio_shared_creation say try_on = true;
                              never for a design carried in a link's fragment)       source {handle,item_id} | {token}
 dialog                      photo + consent → POST functions/v1/studio-try-on {"action":"status"} → {available}
                             → "Generate the AI render" (sign-in required; disabled while available = false)
-AI render                   multipart: source, photo (≤ 6 MB), design (3D still JPEG drawn in the browser, required),
-                            seats (optional JSON: each gem's place and size on its tooth, and its tag "11a"),
-                            map (optional PNG ≤ 2 MB, since 2026-10-26: the flat design map, lib/studio3d/tryOnMap.ts —
-                              every front tooth boxed and numbered, midline drawn, bare teeth grey "no gem", each
-                              gem tagged like its data line; read with prompt v3 only, a malformed one is dropped)
-                            overview (optional JPEG ≤ 3 MB, since 2026-10-28: the same 3D design seen from further
-                              away, the whole smile around the gems — designImage.ts; sent as IMAGE 4 with the map only)
-                            progress=1 (the webapp, since 2026-10-26): the answer after the gates is an event stream
-                            (text/event-stream, 200): {stage:checking} → {stage:rendering} once the photo passed →
-                            {result: <the JSON body below>}; the dialog shows the check as its own step
-                            (Photo → Check → Render → Result, completed steps in the success colour)
-                            → token checked → studio_try_on_creation(requester, ref) → scene + allowed (owner's switch)
-                            → daily limits (studio_try_on_requests, 24 h: renders TRY_ON_DAILY_LIMIT, default 10,
-                              photos refused by the check not counted; every request TRY_ON_DAILY_CHECKS, default 30)
-                            → row 'pending'
-                            → the creation must hold at least one valid gem (else not_found)
-                            → photo check (photoCheck.ts, TRY_ON_CHECK_MODEL, default gemini-3.1-flash-lite, JSON
-                              answer) → refused: row 'failed' / 'photo_unsuitable', 422 with the reasons, no render;
-                              check unavailable: render anyway. Since 2026-10-28 the photo is read twice at once
-                              (PHOTO_READINGS, the second sampled at temperature 0.6) and the strictest reading decides
-                              (judgeReadings: every issue found, the smallest span); its scale is kept only when the
-                              incisors' box is coherent with the teeth's (coherentScale: 0.22–0.7 of their width).
-                              Then a second look on the mouth close-up (CLOSE_UP_CHECK_PROMPT, after the crop below):
-                              the scale sent to the image model is measured there (no scale when that measure is
-                              incoherent; the whole photo's when the look fails), and it judges the design's GEM
-                              SPOTS (prompt.ts gemSpots: tooth, cut, size, place on the crown, named g1…) — gems
-                              whose spot is not visible enamel are marked LEFT OUT in the design data (never drawn),
-                              the answer carries left_out (the dialog says how many), and a design with no visible
-                              gem is refused (design_hidden). Change log and how to revert: docs/studio-try-on-changelog.md
-                            → mouth close-up (crop.ts, since 2026-10-26; TRY_ON_MOUTH_CROP=off disables it): the
-                              check's teeth_box widened to the lips and to the nearest output proportion, cut
-                              from the JPEG (npm:jpeg-js) and sent as IMAGE 2 instead of the whole photo; the
-                              answer adds crop {x, y, width, height, photo_width, photo_height} and the browser
-                              pastes the edited close-up back with a faded border (webapp tryOnComposite.ts,
-                              pasteBack.ts) — nothing outside the mouth can change; no box, not a JPEG or a
-                              crop over 60 % of the photo: the whole photo, as before. Since 2026-10-28 the browser
-                              first lines the answer up with the crop (tryOnAlign.ts: one scale and a shift, found
-                              on the edges at 192 px wide, zoom 70–110 %): an answer the model zoomed in is pasted
-                              over the smaller region it really shows, so the smile keeps its size; no clear match:
-                              pasted over the whole crop, as before
-                            → Gemini generateContent on Vertex AI (GOOGLE_ADC_JSON → access token) or the Gemini
-                              API (GEMINI_API_KEY), model GEMINI_IMAGE_MODEL: systemInstruction =
-                              systemPrompt.ts v3 (default) or v1 (TRY_ON_PROMPT_VERSION); user turn = design (IMAGE 1),
-                              photo (IMAGE 2), the flat map (IMAGE 3, v3, when sent), the overview (IMAGE 4, with the map), up to 6 pictures of the private bucket studio-try-on-references, then
-                              (v3 only) the design data built from the STORED scene (one line per gem) → image
-                            → row 'generated' / 'failed'; logged "render size": the size sent, the proportions asked,
-                              the size received and whether the model refused the proportions (asked again without)
-                            → the browser shows it (before/after, download, share)
+1. analysis                 multipart action=analyse: source, photo (≤ 6 MB)
+                            → token → studio_try_on_creation(requester, ref) → scene (≥ 1 gem) + allowed (owner's switch)
+                            → daily requests cap (TRY_ON_DAILY_CHECKS, default 30) → row 'pending'
+                            → photo check (photoCheck.ts, TRY_ON_CHECK_MODEL; read twice, the strictest reading decides)
+                              refused: row 'failed' / 'photo_unsuitable', 422 with the reasons
+                            → mouth close-up (crop.ts: the check's teeth_box widened to the lips, at a model proportion)
+                            → teeth (teeth.ts, TRY_ON_TEETH_MODEL, default the check model): one box per visible tooth
+                              with its FDI number → row 'failed' / 'analysis' (never a render)
+                            → 200 {crop, teeth}
+2. placement (browser)      tryOnRegistration.ts: the Studio's reference dentition (frontView.ts, real mm) fitted on
+                            the teeth (one similarity on the biting-edge centres, outliers set aside), each gem on its
+                            own tooth, physical size; unreliable (confidence < 0.6 or < 3 teeth agreeing) → the dialog
+                            asks for another photo (placement_uncertain), nothing rendered
+                            tryOnGuide.ts + placementGuide.ts: each gem drawn as a flat mark (cut, colour, turn) on the
+                            close-up — only gems on teeth found on the photo (the others counted as left out)
+3. render                   multipart: source, photo, design (the 3D still, designImage.ts), guide (JPEG), crop, marks
+                            → same gates, renders cap (TRY_ON_DAILY_LIMIT, default 10) → row 'pending'
+                            → Gemini (Vertex AI via GOOGLE_ADC_JSON, or GEMINI_API_KEY), GEMINI_IMAGE_MODEL,
+                              systemInstruction = systemPrompt.ts TRY_ON_SYSTEM_PROMPT ("v4"): IMAGE 1 the guide,
+                              IMAGE 2 the same close-up cut by the function, IMAGE 3 the design, then up to 6
+                              reference pictures (bucket studio-try-on-references); text: how many marks
+                            → row 'generated' / 'failed' → 200 {image, crop}
+                            → the browser lines the answer up with the close-up (tryOnAlign.ts) and pastes it back
+                              into the photo (tryOnComposite.ts, pasteBack.ts) → before/after, download, share
 ```
 
 - **The gate is the creation owner's plan**, never the viewer's: `private.studio_try_on_allowed(owner)` — since
@@ -1557,37 +1533,15 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
 - **Reference pictures**: uploaded by the owner in the dashboard to the root of the private bucket
   `studio-try-on-references` (JPEG / PNG / WebP, 10 MB; the first 6 by name are sent, 8 MB in all — a picture that would pass it is
   skipped — cached 10 min per instance; Google's inline request limit is to check when connecting). No storage policy: only the service role and the dashboard see them.
-- **Prompt** (`supabase/functions/studio-try-on/systemPrompt.ts`, sent as `systemInstruction`, chosen by the
-  `TRY_ON_PROMPT_VERSION` secret): **v3** (default; any value but `v1`, `v2` included) — the agent's revision of
-  the owner's prompt after the first renders (2026-10-26): IMAGE 1 is the Studio's **3D render** of the creation
-  (`webapp/src/components/studio/tryOn/designImage.ts`: a hidden stage, `ExportStage.stageStill`, the still's
-  framing — front, slightly above — as a 1280 × 800 JPEG; it replaced the flat 2D map of v2, whose generic tooth
-  outlines and identical star outlines misled the model); images 3+ are realism references whose layouts must never
-  be copied; a **design data** block follows the images (`prompt.ts` `buildDesignData`: "exactly N gems", then
-  tooth FDI + name, cut described by its 3D geometry (a `starflower` is a plump five-pointed star, never a flower),
-  material, `#rrggbb`, coating, size — reduced to known values, never the artist's free text). The data decides
-  count, tooth, cut, material, colour and size, the render the position and rotation; a listed gem not visible on
-  the render (tongue side) is never rendered. Against the first renders it also asks for the exact count (no extra
-  stone), teeth counted from the midline, crisp highlights and saturated colours (real jewellery, not stickers) and
-  a final self-check. Second round (same day, after gems landed on the gums, too large or one tooth off): the
-  browser also sends `seats` (`webapp/src/lib/studio3d/tryOnSeats.ts`, from the Studio's front view: each gem's
-  centre height from the gum line, shift toward the midline, longest side as a share of the crown's width, tongue
-  side or not), read by `prompt.ts` `readSeats` (clamped numbers, matched to the stored gems by id — untrusted, at
-  worst it moves a gem on the requester's own render). The design data then goes tooth by tooth in the photo's
-  order, front teeth without gems named "bare", each gem with its share of the tooth and place on the crown;
-  tongue-side gems are left out. The prompt makes the gum line a hard limit (slide toward the biting edge, else
-  leave out) and the share of the tooth's width the first size rule. Third round (after a render that opened the mouth and enlarged
-  the teeth — the model recomposing, nothing in our code resizes the photo): the prompt locks the framing, lips,
-  opening and every tooth's size and place (a gem that does not fit gets smaller, never the tooth bigger), and the
-  render asks for the proportions closest to the photo's (`imageConfig.aspectRatio`, `gemini.ts`
-  `nearestAspectRatio`, read from the JPEG header; same price — a format, not a resolution; a model refusing the
-  option is asked again without it). The owner keeps the AI edit and wants the starting photo to be good (photo check).
-  Fourth round (gems kept the same size whatever the size of the smile): the photo check also boxes the two upper
-  central incisors (`central_incisors_box`); `photoCheck.ts` `photoScale` turns it into one millimetre as a share of
-  the photo's width (17 mm for the two teeth; implausible boxes ignored), and the design data gives the scale and each
-  gem's length IN THIS PHOTO, which the prompt makes the first size rule (never drawn larger). **v1** — the owner's original prompt, verbatim, images only. Both: IMAGE 1 the design,
-  IMAGE 2 the photo. Output size is the model's default (no `imageConfig`): a higher resolution costs more, kept
-  as a last resort by the owner (2026-10-26).
+- **Prompt** (`supabase/functions/studio-try-on/systemPrompt.ts`, `TRY_ON_SYSTEM_PROMPT`, the "v4" of decision
+  111 (k)): the gems are already placed as flat marks; the model turns each mark into a real gem at the same place,
+  size and turn, keeps everything else of the photo, takes cut, colour and material from the 3D design (IMAGE 3) and
+  realism only from the reference pictures. The former prompts v1 (the owner's original) and v3 (where the model
+  placed the gems itself from the design render, a flat map, the gems' seats as text and a scale read from the
+  photo), the `TRY_ON_PROMPT_VERSION` and `TRY_ON_MOUTH_CROP` secrets, the close-up gem-spot check and the progress
+  stream were removed on 2026-11-01 (owner's decision after the trial: computed placement clearly better); commit
+  `7ba69d1` holds them. Output size is the model's default; the render asks for the close-up's proportions
+  (`imageConfig.aspectRatio`, asked again without it if the model refuses).
 - **Photo check** (2026-10-26, owner's request: no user manipulation, as little friction as possible): before any
   render, a small text model (`TRY_ON_CHECK_MODEL`, `gemini-3.1-flash-lite` by default, same door as the image
   model) reports facts as JSON — teeth visible, covered, the box around the visible teeth, sharpness, light — and
@@ -1602,29 +1556,16 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   count toward the renders (`TRY_ON_DAILY_LIMIT`), only toward every request (`TRY_ON_DAILY_CHECKS`, default 30). Active administrators (`profiles.role = 'admin'`, owner's decision 2026-10-26, to test freely) have no daily limit; their requests are still recorded.
   The browser asks for a close-up first (photo step), refuses locally only a photo far too dark to see a tooth
   (`tryOnPhoto.ts` `checkPhotoLight`), and lists the reasons with what to change.
-- **Computed placement — staff diagnostic** (decision 111 (k), 2026-11-01, owner's request: the gems' places to be
-  predictable, the image model only making them realistic; plan in `docs/studio-try-on-computed-placement.md`, steps
-  0–2 built). The multipart call with `action = "analyse"` (active staff only — `profiles.status = 'active'` and a
-  staff role, checked by the function, 403 `not_allowed` otherwise) runs the photo check and the mouth crop, then
-  `TRY_ON_TEETH_MODEL` (default: the check model) boxes every visible tooth with its FDI number (`teeth.ts`,
-  checked by `readTeeth`); no image is generated. It is recorded as `failed` / `diagnostic`: counted against
-  `TRY_ON_DAILY_CHECKS`, never against the renders. The browser fits the Studio's reference dentition
-  (`frontView.ts`, real millimetres) onto the found teeth (`webapp/src/lib/studio3d/tryOnRegistration.ts`: one
-  similarity on the biting-edge centres, outliers set aside while three teeth remain, each gem across its share
-  of the customer's own tooth and up at its real distance from the biting edge) and draws the result over the photo
-  (`PlacementDiagnostic.tsx`, the "Placement diagnostic" button next to "Generate"). The button shows when the status
-  call answers `diagnostic: true` — active staff, the AI and the teeth model connected, decided from the profile: the
-  Studio's access state says "subscribed" for staff who also hold a subscription, so it cannot gate it. **Gem size is physical** (owner's decision): real millimetres × the fitted scale. A confidence below
-  `RELIABLE_CONFIDENCE` (0.6, first value) or fewer than three agreeing teeth marks the placement unreliable.
-  **Steps 3–5** (same day): staff also get "Render with computed placement" — the browser draws each gem as a flat
-  mark at its computed place on the close-up (`tryOnGuide.ts`; gems on teeth not found are left out), the function
-  (`placement = "computed"`, staff only, counted as a render, no second photo check) sends the guide, the same
-  close-up cut from the photo and the design render with `TRY_ON_SYSTEM_PROMPT_PLACED`, and the model only turns the
-  marks into real gems; an unreliable placement falls back to the current render. Under the result, staff read the
-  drift check (`tryOnDrift.ts`) and can "Compare" the two placements on the same photo. **Members' renders are
-  unchanged** until the owner chooses the default. The behaviour before this change is tagged `try-on-ai-placement`
-  (commit `7ba69d1`; it is the code of version 29 of the function). Deployed on 2026-11-01 as version 32 from the
-  pinned commit `91134a6` (raw-GitHub entry point, `verify_jwt = false`).
+- **Computed placement** (decision 111 (k), 2026-11-01, owner's request: the gems' places predictable, the image
+  model only making them realistic; `docs/studio-try-on-computed-placement.md`). Built step by step for staff with a
+  diagnostic, a comparison and a drift check, evaluated on the owner's photos (`webapp/scripts/try-on-trial/`), then
+  made the only try-on the same day (owner's decision): one "Generate" button for everyone the owner's plan allows,
+  the staff tools removed. **Gem size is physical** (owner's decision): real millimetres × the fitted scale.
+  A placement the teeth do not support (`RELIABLE_CONFIDENCE` 0.6, at least three teeth agreeing — first values)
+  asks for another photo rather than rendering a guess (decision to confirm with the owner). An analysis is counted
+  against the daily requests, never the renders (`failed` / `analysis`; rows of the trial carry `diagnostic`). The
+  render trusts the browser's guide and crop (validated: a JPEG, a crop inside the photo, 1–200 marks): at worst a
+  member edits their own photo within their own render quota.
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
   `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The
   photo step says the photo is sent to Google only while the AI is connected.

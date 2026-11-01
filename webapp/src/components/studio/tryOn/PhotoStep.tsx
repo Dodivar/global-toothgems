@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type DragEvent } from "react";
 import clsx from "clsx";
-import { Camera, CircleAlert, Crosshair, ImageUp, Info, LoaderCircle, LogIn, ScanSearch, ShieldCheck, Sparkles, ZoomIn } from "lucide-react";
+import { Camera, CircleAlert, ImageUp, Info, LoaderCircle, LogIn, ShieldCheck, Sparkles, ZoomIn } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
@@ -22,9 +22,7 @@ export type AiState = "checking" | "available" | "unavailable";
  * person's consent is confirmed — the artist for a client, a visitor for
  * themselves — then one button asks for the render (a signed-out visitor is
  * sent to sign in). While the AI is not connected the button is disabled
- * and the step says it is coming: nothing is sent. Active staff also get the
- * placement diagnostic (`onDiagnose`, decision 111 (k)): the teeth found and
- * the computed placement, no render.
+ * and the step says it is coming: nothing is sent.
  */
 export function PhotoStep({
   photo,
@@ -36,8 +34,6 @@ export function PhotoStep({
   signedIn,
   onAi,
   onSignIn,
-  onDiagnose,
-  onComputed,
 }: {
   photo: PreparedPhoto | null;
   onPhoto: (photo: PreparedPhoto) => void;
@@ -48,10 +44,6 @@ export function PhotoStep({
   signedIn: boolean;
   onAi: () => void;
   onSignIn: () => void;
-  /** Active staff only: the placement diagnostic. Absent: no button. */
-  onDiagnose?: () => void;
-  /** Active staff only: the render with the computed placement. Absent: no button. */
-  onComputed?: () => void;
 }) {
   const { t } = useTranslation();
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -235,21 +227,9 @@ export function PhotoStep({
               {t("studio.tryOn.errorActions.signIn")}
             </Button>
           ) : (
-            <>
-              {onDiagnose && (
-                <Button variant="outline" size="sm" iconLeft={ScanSearch} disabled={ai !== "available" || !ready} onClick={() => proceed(onDiagnose)}>
-                  {t("studio.tryOn.diagnostic.action")}
-                </Button>
-              )}
-              {onComputed && (
-                <Button variant="outline" size="sm" iconLeft={Crosshair} disabled={ai !== "available" || !ready} onClick={() => proceed(onComputed)}>
-                  {t("studio.tryOn.computed.action")}
-                </Button>
-              )}
-              <Button variant="primary" size="sm" iconLeft={Sparkles} disabled={ai !== "available" || !ready} onClick={() => proceed(onAi)}>
+            <Button variant="primary" size="sm" iconLeft={Sparkles} disabled={ai !== "available" || !ready} onClick={() => proceed(onAi)}>
               {t("studio.tryOn.photo.generate")}
-              </Button>
-            </>
+            </Button>
           )}
         </div>
       </div>

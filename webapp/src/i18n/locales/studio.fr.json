@@ -886,30 +886,23 @@
     "processing": {
       "checking": {
         "title": "Vérification de la photo…",
-        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées avant de créer le rendu. Quelques secondes.",
+        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées, puis repère chaque dent. Quelques secondes.",
         "lines": [
           "Lecture de la photo…",
           "Repérage du sourire…",
           "Contrôle de la netteté et de la lumière…",
-          "Vérification que les dents sont bien visibles…"
+          "Repérage de chaque dent…"
         ]
       },
       "rendering": {
         "title": "Création du rendu…",
-        "body": "L’IA pose les pierres de la création sur la photo. Cela prend en général moins d’une minute.",
+        "body": "Les pierres sont placées sur vos dents à leur taille réelle, puis l’IA les rend réalistes. En général moins d’une minute.",
         "lines": [
+          "Placement de chaque pierre sur sa dent…",
           "Préparation de la création 3D…",
-          "Repérage de chaque dent sur la photo…",
-          "Mesure de la forme de votre sourire…",
-          "Choix de l’emplacement de chaque pierre…",
-          "Placement des pierres sur les dents…",
-          "Ajustement de la taille de chaque gemme…",
+          "Rendu réaliste des pierres…",
           "Ajustement des reflets et de la lumière…",
-          "Les facettes se mettent à briller…",
-          "Respect des teintes naturelles de vos dents…",
-          "Fondu de la retouche dans la photo…",
-          "Dernier polissage des pierres…",
-          "Derniers détails, presque prêt…"
+          "Finitions…"
         ]
       },
       "cancel": "Annuler"
@@ -988,7 +981,7 @@
       "too_dark": "avec plus de lumière, sans contre-jour ;",
       "too_bright": "avec une lumière moins forte, sans flash direct sur les dents ;",
       "blurry": "nette : tenez le téléphone immobile et laissez-le faire la mise au point.",
-      "design_hidden": "en montrant bien les dents où vont les gemmes de cette création : sur cette photo, aucune n’est visible."
+      "placement_uncertain": "Les dents ne ressortent pas assez nettement pour placer les gemmes avec précision : reprenez la photo bien de face, plus près, lèvres écartées."
     },
     "allowance": {
       "remaining_one": "Il vous reste {{count}} essai sur {{limit}} (sur 24 h glissantes).",
@@ -1005,60 +998,6 @@
       "zoomIn": "Zoomer",
       "zoomOut": "Dézoomer",
       "hint": "Pincez ou touchez deux fois pour zoomer."
-    },
-    "diagnostic": {
-      "action": "Diagnostic du placement",
-      "intro": "Réservé à l'équipe : les dents trouvées sur la photo et l'emplacement calculé de chaque gemme, à sa taille réelle. Aucune image n'est générée.",
-      "imageLabel": "Gros plan de la bouche : {{teeth}} dents repérées, {{gems}} gemmes placées par le calcul.",
-      "legend": {
-        "found": "Dent trouvée",
-        "outlier": "Dent écartée (incohérente)",
-        "fitted": "Dent déduite des autres",
-        "gem": "Gemme calculée"
-      },
-      "reliable": "Placement fiable ({{percent}} %)",
-      "unreliable": "Placement peu fiable ({{percent}} %) : le rendu garderait le fonctionnement actuel",
-      "issues": {
-        "no_teeth": "Aucune dent exploitable sur la photo.",
-        "few_teeth": "Moins de trois dents concordent : le calcul ne peut pas se vérifier.",
-        "outliers": "Des dents trouvées ne concordent pas avec les autres et ont été écartées.",
-        "out_of_order": "L'ordre des dents de gauche à droite contredit leurs numéros.",
-        "scale_mismatch": "L'échelle calculée et la largeur des dents ne concordent pas.",
-        "design_teeth_missing": "Des dents portant des gemmes n'ont pas été trouvées : leurs gemmes sont placées par déduction."
-      },
-      "figures": {
-        "teeth": "Dents trouvées",
-        "gems": "Gemmes",
-        "gemsValue": "{{placed}} placées, {{skipped}} ignorées",
-        "scale": "Échelle",
-        "scaleValue": "{{value}} px/mm",
-        "spread": "Écart moyen",
-        "spreadValue": "{{value}} % d'une dent"
-      },
-      "back": "Retour à la photo"
-    },
-    "computed": {
-      "action": "Rendu à placement calculé",
-      "mode": {
-        "ai": "Placement par l'IA (fonctionnement actuel)",
-        "computed": "Placement calculé à partir des dents de la photo"
-      },
-      "fellBack": "Placement calculé peu fiable ({{percent}} %) : l'IA a placé les gemmes comme avant.",
-      "confidence": "Confiance du placement : {{percent}} %.",
-      "drift": {
-        "kept": "Gemmes restées à leur place : {{kept}} sur {{checked}} mesurées.",
-        "missing_one": "{{count}} gemme a été déplacée ou retirée par l'IA.",
-        "missing_other": "{{count}} gemmes ont été déplacées ou retirées par l'IA.",
-        "clean": "Peu de changements ailleurs sur la photo ({{percent}} %).",
-        "stray": "L'IA a aussi modifié la photo ailleurs ({{percent}} % du gros plan) : vérifiez l'image.",
-        "unmeasured": "Le contrôle de dérive n'a pas pu être mesuré sur cette image."
-      },
-      "compareWith": {
-        "ai": "Comparer avec le placement par l'IA",
-        "computed": "Comparer avec le placement calculé"
-      },
-      "compareAlt": "Essayage : {{mode}}",
-      "backToPhoto": "Retour à la photo"
     }
   },
   "frontView": {

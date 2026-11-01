@@ -2,35 +2,30 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "../supabase/client";
 import {
   parseTryOnAnalysis,
-  parseTryOnEvent,
   parseTryOnResponse,
   parseTryOnStatus,
   sourcePayload,
   UNAVAILABLE_STATUS,
   unavailableTryOnService,
   type SmileTryOnService,
-  type TryOnOutcome,
-  type TryOnStage,
 } from "./tryOn";
 
 /**
- * The live try-on service: the Edge Function `studio-try-on` (decision 111).
- * The Supabase client sends the member's token when signed in; the function
- * reads the creation, checks the owner's plan and the daily limit, and calls
- * the image model. Without a backend (mock mode) the AI is simply not there.
+ * The live try-on service: the Edge Function `studio-try-on` (decision 111,
+ * computed placement: decision 111 (k)). The Supabase client sends the
+ * member's token when signed in; the function reads the creation, checks the
+ * owner's plan and the daily limits, and calls the models. Without a backend
+ * (mock mode) the AI is simply not there.
  */
 
 const FUNCTION = "studio-try-on";
+/** The analysis: the photo check and one reading of the close-up, no image. */
+const ANALYSE_TIMEOUT_MS = 60_000;
 /** Generous: an image model takes from a few seconds to about a minute. */
 const RENDER_TIMEOUT_MS = 120_000;
-/** The diagnostic: the photo check and one reading of the close-up, no image. */
-const ANALYSE_TIMEOUT_MS = 60_000;
 
-async function readError(error: unknown): Promise<TryOnOutcome> {
-  return readErrorWith(error, parseTryOnResponse);
-}
-
-async function readErrorWith<T>(error: unknown, parse: (json: unknown) => T): Promise<T | { ok: false; code: "not_available" | "failed" | "network" }> {
+/** A refusal of the function, read like its answer; `network` when nothing came back. */
+async function readError<T>(error: unknown, parse: (json: unknown) => T): Promise<T | { ok: false; code: "not_available" | "failed" | "network" }> {
   if (error instanceof FunctionsHttpError) {
     const response = error.context as Response;
     if (response.status === 404 && !response.headers.get("content-type")?.includes("json")) return { ok: false, code: "not_available" };
@@ -43,28 +38,23 @@ async function readErrorWith<T>(error: unknown, parse: (json: unknown) => T): Pr
   return { ok: false, code: "network" };
 }
 
-/**
- * Read the function's progress stream to its final answer, reporting each
- * stage. A stream that ends without an answer is `failed`; an aborted read throws.
- */
-async function readProgress(response: Response, onStage?: (stage: TryOnStage) => void): Promise<TryOnOutcome> {
-  if (!response.body) return { ok: false, code: "failed" };
-  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-  let buffer = "";
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (value) buffer += value.replace(/\r\n/g, "\n");
-    let end: number;
-    while ((end = buffer.indexOf("\n\n")) >= 0) {
-      const event = parseTryOnEvent(buffer.slice(0, end));
-      buffer = buffer.slice(end + 2);
-      if (event && "outcome" in event) {
-        void reader.cancel().catch(() => {});
-        return event.outcome;
-      }
-      if (event) onStage?.(event.stage);
-    }
-    if (done) return { ok: false, code: "failed" };
+/** One multipart call; an aborted or timed-out call resolves with `failed`. */
+async function call<T>(form: FormData, timeout: number, parse: (json: unknown) => T, signal?: AbortSignal) {
+  const controller = new AbortController();
+  const stop = () => controller.abort();
+  const timer = setTimeout(stop, timeout);
+  signal?.addEventListener("abort", stop);
+  if (signal?.aborted) stop();
+  try {
+    const { data, error } = await supabase!.functions.invoke(FUNCTION, { body: form, signal: controller.signal });
+    if (controller.signal.aborted) return { ok: false as const, code: "failed" as const };
+    if (error) return await readError(error, parse);
+    return parse(data);
+  } catch {
+    return { ok: false as const, code: controller.signal.aborted ? ("failed" as const) : ("network" as const) };
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", stop);
   }
 }
 
@@ -78,54 +68,22 @@ export const smileTryOnService: SmileTryOnService = supabase
           return UNAVAILABLE_STATUS;
         }
       },
-      async render({ photo, source, design, overview, map, seats, placement }, options) {
-        const form = new FormData();
-        if (placement) {
-          const { crop } = placement;
-          form.set("placement", "computed");
-          form.set("guide", placement.guide, "guide");
-          form.set("crop", JSON.stringify({ x: crop.x, y: crop.y, width: crop.width, height: crop.height }));
-          form.set("marks", String(placement.marks));
-        }
-        form.set("source", JSON.stringify(sourcePayload(source)));
-        form.set("photo", photo, "smile");
-        form.set("design", design, "design");
-        if (overview) form.set("overview", overview, "overview");
-        if (map) form.set("map", map, "map");
-        if (seats?.length) form.set("seats", JSON.stringify(seats));
-        form.set("progress", "1");
-        // One signal for the caller's cancel and the timeout, kept for the whole
-        // stream (the client's own `timeout` would stop watching it once the headers arrive).
-        const controller = new AbortController();
-        const stop = () => controller.abort();
-        const timer = setTimeout(stop, RENDER_TIMEOUT_MS);
-        options?.signal?.addEventListener("abort", stop);
-        if (options?.signal?.aborted) stop();
-        try {
-          const { data, error } = await supabase!.functions.invoke(FUNCTION, { body: form, signal: controller.signal });
-          if (controller.signal.aborted) return { ok: false, code: "failed" };
-          if (error) return await readError(error);
-          // A function older than the progress stream answers with plain JSON.
-          return data instanceof Response ? await readProgress(data, options?.onStage) : parseTryOnResponse(data);
-        } catch {
-          return { ok: false, code: options?.signal?.aborted || controller.signal.aborted ? "failed" : "network" };
-        } finally {
-          clearTimeout(timer);
-          options?.signal?.removeEventListener("abort", stop);
-        }
-      },
-      async analyse({ photo, source }, options) {
+      analyse({ photo, source }, options) {
         const form = new FormData();
         form.set("action", "analyse");
         form.set("source", JSON.stringify(sourcePayload(source)));
         form.set("photo", photo, "smile");
-        try {
-          const { data, error } = await supabase!.functions.invoke(FUNCTION, { body: form, signal: options?.signal, timeout: ANALYSE_TIMEOUT_MS });
-          if (error) return await readErrorWith(error, parseTryOnAnalysis);
-          return parseTryOnAnalysis(data);
-        } catch {
-          return { ok: false, code: options?.signal?.aborted ? "failed" : "network" };
-        }
+        return call(form, ANALYSE_TIMEOUT_MS, parseTryOnAnalysis, options?.signal);
+      },
+      render({ photo, source, design, guide, crop, marks }, options) {
+        const form = new FormData();
+        form.set("source", JSON.stringify(sourcePayload(source)));
+        form.set("photo", photo, "smile");
+        form.set("design", design, "design");
+        form.set("guide", guide, "guide");
+        form.set("crop", JSON.stringify({ x: crop.x, y: crop.y, width: crop.width, height: crop.height }));
+        form.set("marks", String(marks));
+        return call(form, RENDER_TIMEOUT_MS, parseTryOnResponse, options?.signal);
       },
     }
   : unavailableTryOnService;

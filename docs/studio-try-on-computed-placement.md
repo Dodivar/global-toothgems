@@ -4,8 +4,9 @@ Decision 111 (k) in `supabase/README.md`. Owner's request (2026-11-01): the gems
 be predictable; the image model (Nano Banana) only makes the result realistic. The current behaviour (the model
 places the gems from the design images and text) stays available and is tagged `try-on-ai-placement`.
 
-Owner's decisions (2026-11-01): **physical gem size** (real millimetres × the photo's fitted scale); the computed
-placement is **staff only** while it is evaluated.
+Owner's decisions (2026-11-01): **physical gem size** (real millimetres × the photo's fitted scale); evaluated
+for staff first, then, after the trial (`webapp/scripts/try-on-trial/`), **the only try-on for everyone** — the
+former behaviour and the staff tools (diagnostic, compare, drift check) removed the same day.
 
 ## Pipeline
 
@@ -30,17 +31,13 @@ placement is **staff only** while it is evaluated.
 
 ## Status
 
-| Step | State |
-| --- | --- |
-| 0. Keep the current behaviour | Done: tag `try-on-ai-placement` (local only: pushing tags is refused from agent sessions; it names commit `7ba69d1`); members' renders unchanged. No runtime switch yet: the computed placement is staff-only, chosen per render in the dialog; a switch for members comes with the owner's choice of default. |
-| 1. Teeth found on the close-up | Done (staff diagnostic). `TRY_ON_TEETH_MODEL` picks the model (default: the check model). |
-| 2. Registration + diagnostic overlay | Done: "Placement diagnostic" button for staff in the Studio workspace's try-on dialog. |
-| 3. Composition | Done (flat marks on the close-up; the 3D engine's own gem sprites were not needed: the model takes the material from the design render). |
-| 4. Render | Done, staff only: "Render with computed placement" next to "Generate" in the try-on dialog. Members keep the current render. |
-| 5. Control | Drift check and "Compare" done (staff). To do with the owner: 20–30 varied photos compared both ways, then the choice of the default for members (a switch or the removal of one path). |
+Done (2026-11-01). The try-on is: analysis (function) → placement and guide (browser) → render ("v4" prompt) →
+paste-back. An unreliable placement asks for another photo (decision to confirm). The former behaviour is the code
+of commit `7ba69d1`.
 
 Tunable values to revisit with real photos: `RELIABLE_CONFIDENCE` (0.6), `OUTLIER_RESIDUAL` (0.5 of a tooth's
-width), the confidence weights in `registerDesign`, and the drift thresholds in `tryOnDrift.ts` (`STRAY_LIMIT` 3 %).
+width), the confidence weights in `registerDesign`, `TRY_ON_TEETH_MODEL` (a stronger model if teeth are misnumbered).
 
-Known limits: a mirrored selfie puts the person's left teeth on the image's left — the FDI numbers the model gives
-then follow the image, as the current render does; lower teeth are often partly hidden by the upper ones.
+Known limits: the teeth model sometimes numbers the teeth one tooth off (seen on one trial photo: the whole design
+then moves one tooth, with a high confidence, since the fit stays consistent); a mirrored selfie puts the person's
+left teeth on the image's left; lower teeth are often partly hidden by the upper ones.

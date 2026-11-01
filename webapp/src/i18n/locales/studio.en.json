@@ -886,30 +886,23 @@
     "processing": {
       "checking": {
         "title": "Checking the photo…",
-        "body": "An AI checks that the teeth are clearly visible, face-on, sharp and well lit before creating the render. A few seconds.",
+        "body": "An AI checks that the teeth are clearly visible, face-on, sharp and well lit, then finds each tooth. A few seconds.",
         "lines": [
           "Reading the photo…",
           "Finding the smile…",
           "Checking sharpness and light…",
-          "Making sure the teeth are clearly visible…"
+          "Finding each tooth…"
         ]
       },
       "rendering": {
         "title": "Creating the render…",
-        "body": "The AI is setting the creation’s gems on the photo. It usually takes less than a minute.",
+        "body": "The gems are placed on the teeth at their real size, then the AI makes them look real. It usually takes less than a minute.",
         "lines": [
+          "Placing each gem on its tooth…",
           "Preparing the 3D creation…",
-          "Finding each tooth on the photo…",
-          "Measuring the shape of the smile…",
-          "Choosing where each gem sits…",
-          "Setting the gems on the teeth…",
-          "Sizing each gem to its tooth…",
+          "Rendering the gems realistically…",
           "Adjusting reflections and light…",
-          "The facets are starting to sparkle…",
-          "Keeping the natural shade of the teeth…",
-          "Blending the edit into the photo…",
-          "One last polish of the stones…",
-          "Final touches, almost ready…"
+          "Finishing…"
         ]
       },
       "cancel": "Cancel"
@@ -988,7 +981,7 @@
       "too_dark": "with more light, no backlight;",
       "too_bright": "with softer light, no direct flash on the teeth;",
       "blurry": "sharp: hold the phone still and let it focus.",
-      "design_hidden": "showing the teeth this creation's gems go on: none of them is visible on this photo."
+      "placement_uncertain": "The teeth do not show clearly enough to place the gems precisely: take the photo again face-on, closer, lips apart."
     },
     "allowance": {
       "remaining_one": "You have {{count}} try left out of {{limit}} (rolling 24 hours).",
@@ -1005,60 +998,6 @@
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
       "hint": "Pinch or double-tap to zoom."
-    },
-    "diagnostic": {
-      "action": "Placement diagnostic",
-      "intro": "Staff only: the teeth found on the photo and where each gem is computed to go, at its real size. No image is generated.",
-      "imageLabel": "Mouth close-up: {{teeth}} teeth found, {{gems}} gems placed by the computation.",
-      "legend": {
-        "found": "Tooth found",
-        "outlier": "Tooth set aside (inconsistent)",
-        "fitted": "Tooth inferred from the others",
-        "gem": "Computed gem"
-      },
-      "reliable": "Reliable placement ({{percent}}%)",
-      "unreliable": "Unreliable placement ({{percent}}%): the render would keep the current behaviour",
-      "issues": {
-        "no_teeth": "No usable tooth on the photo.",
-        "few_teeth": "Fewer than three teeth agree: the computation cannot check itself.",
-        "outliers": "Some teeth found disagree with the others and were set aside.",
-        "out_of_order": "The teeth's left-to-right order contradicts their numbers.",
-        "scale_mismatch": "The computed scale and the teeth's widths disagree.",
-        "design_teeth_missing": "Some teeth carrying gems were not found: their gems are placed by inference."
-      },
-      "figures": {
-        "teeth": "Teeth found",
-        "gems": "Gems",
-        "gemsValue": "{{placed}} placed, {{skipped}} skipped",
-        "scale": "Scale",
-        "scaleValue": "{{value}} px/mm",
-        "spread": "Average gap",
-        "spreadValue": "{{value}}% of a tooth"
-      },
-      "back": "Back to the photo"
-    },
-    "computed": {
-      "action": "Render with computed placement",
-      "mode": {
-        "ai": "Placed by the AI (current behaviour)",
-        "computed": "Placement computed from the teeth on the photo"
-      },
-      "fellBack": "Computed placement unreliable ({{percent}}%): the AI placed the gems as before.",
-      "confidence": "Placement confidence: {{percent}}%.",
-      "drift": {
-        "kept": "Gems that stayed in place: {{kept}} of {{checked}} measured.",
-        "missing_one": "{{count}} gem was moved or removed by the AI.",
-        "missing_other": "{{count}} gems were moved or removed by the AI.",
-        "clean": "Few changes elsewhere on the photo ({{percent}}%).",
-        "stray": "The AI also changed the photo elsewhere ({{percent}}% of the close-up): check the image.",
-        "unmeasured": "The drift check could not be measured on this image."
-      },
-      "compareWith": {
-        "ai": "Compare with the AI placement",
-        "computed": "Compare with the computed placement"
-      },
-      "compareAlt": "Try-on: {{mode}}",
-      "backToPhoto": "Back to the photo"
     }
   },
   "frontView": {

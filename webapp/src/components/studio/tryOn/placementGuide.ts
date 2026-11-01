@@ -1,12 +1,9 @@
-import { lumaOf, type Luma } from "../../../lib/studio3d/tryOnAlign";
 import type { TryOnCrop } from "../../../lib/studio3d/tryOnComposite";
-import { driftReport, type DriftReport } from "../../../lib/studio3d/tryOnDrift";
 import { placementGuideSvg, type GuideMark } from "../../../lib/studio3d/tryOnGuide";
 
 /**
- * The browser side of the computed try-on (decision 111 (k), steps 3 and 5):
- * the placement guide drawn on the customer's mouth close-up, and the drift
- * check of the result. The pure parts are `tryOnGuide.ts` and `tryOnDrift.ts`.
+ * The placement guide of a try-on (decision 111 (k)), drawn on the customer's
+ * mouth close-up. The marks themselves are `tryOnGuide.ts` (pure).
  */
 
 async function bitmapOf(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
@@ -52,46 +49,5 @@ export async function renderPlacementGuide(photo: Blob, crop: TryOnCrop, marks: 
     return null;
   } finally {
     URL.revokeObjectURL(url);
-  }
-}
-
-/** The width the close-ups are compared at (the gems scaled with it). */
-const DRIFT_WIDTH = 640;
-
-function lumaAt(source: CanvasImageSource & { width: number; height: number }, crop: TryOnCrop, width: number, height: number): Luma | null {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) return null;
-  ctx.drawImage(source, ...regionOf(source, crop), 0, 0, width, height);
-  try {
-    return lumaOf(ctx.getImageData(0, 0, width, height).data, width, height);
-  } catch {
-    return null;
-  }
-}
-
-/**
- * The drift check (`tryOnDrift.ts`): the photo's close-up against the final
- * result's (the AI's answer pasted back into the photo), at each mark. Null
- * when the browser cannot read the pictures.
- */
-export async function measureDrift(photo: Blob, result: Blob, crop: TryOnCrop, marks: readonly GuideMark[]): Promise<DriftReport | null> {
-  try {
-    const [base, final] = await Promise.all([bitmapOf(photo), bitmapOf(result)]);
-    const scale = Math.min(1, DRIFT_WIDTH / crop.width);
-    const width = Math.max(8, Math.round(crop.width * scale));
-    const height = Math.max(8, Math.round(crop.height * scale));
-    const original = lumaAt(base, crop, width, height);
-    const edited = lumaAt(final, crop, width, height);
-    if (!original || !edited) return null;
-    return driftReport(
-      original,
-      edited,
-      marks.map((m) => ({ id: m.id, x: m.x * scale, y: m.y * scale, r: m.r * scale })),
-    );
-  } catch {
-    return null;
   }
 }

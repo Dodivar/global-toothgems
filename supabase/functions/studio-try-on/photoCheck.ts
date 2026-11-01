@@ -24,8 +24,7 @@ export const DEFAULT_CHECK_MODEL = "gemini-3.1-flash-lite";
  */
 export const MIN_TEETH_SPAN = 0.25;
 
-/** `design_hidden`: not one gem of the design has its spot visible in this photo (`placeableGems`). */
-export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry", "design_hidden"] as const;
+export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry"] as const;
 export type PhotoIssue = (typeof PHOTO_ISSUES)[number];
 
 export const PHOTO_CHECK_PROMPT = `You check a photo before a tooth gem try-on: gems will be drawn on the person's front teeth.
@@ -56,35 +55,6 @@ export const PHOTO_CHECK_SCHEMA = {
   required: ["teeth_visible", "teeth_covered", "teeth_box", "central_incisors_box", "sharpness", "lighting", "head_pose", "central_incisors_visible"],
 };
 
-/**
- * The second look, on the mouth close-up the image model will edit
- * (2026-10-28): the teeth fill that picture, so their boxes are measured far
- * more precisely than on a whole face — the scale given to the image model
- * comes from here (a whole-face reading had the front teeth 1.7 times too
- * wide, and the gems came out as large). It also judges each gem's spot.
- */
-export const CLOSE_UP_CHECK_PROMPT = `You measure a close-up of a person's smile before a tooth gem try-on: gems will be drawn on the front teeth.
-Report facts only, as JSON matching the schema; boxes are [ymin, xmin, ymax, xmax] on a 0–1000 scale of THIS image:
-- teeth_box: the box around ALL the visible teeth together — enamel only, not the lips, not the gums. Empty array when no teeth are visible.
-- central_incisors_box: the box around the two upper central incisors together — the two front teeth on either side of the middle of the smile, from the outer edge of one to the outer edge of the other (enamel only, never the neighbouring teeth), from where the enamel starts to the biting edge. Empty array when they are not both visible.
-- gem_spots: when the text after the image lists GEM SPOTS, one entry per spot, with its id and placeable. Empty array when no spots are listed. placeable is false only when that spot of that tooth's front surface is clearly NOT visible enamel in this image: covered by a lip, hidden behind the upper teeth (the biting edge of the lower teeth often is), cut off by the image's edge, the tooth itself hidden or missing — or when the enamel seen there is clearly too small to hold a gem of that size. On a lower tooth the gum line is at the BOTTOM of the crown and the biting edge at the top.
-Measure the boxes tightly on the enamel; when unsure whether a spot is placeable, answer true.`;
-
-const BOX = { type: "ARRAY", items: { type: "INTEGER" } };
-
-export const CLOSE_UP_CHECK_SCHEMA = {
-  type: "OBJECT",
-  properties: {
-    teeth_box: BOX,
-    central_incisors_box: BOX,
-    gem_spots: {
-      type: "ARRAY",
-      items: { type: "OBJECT", properties: { id: { type: "STRING" }, placeable: { type: "BOOLEAN" } }, required: ["id", "placeable"] },
-    },
-  },
-  required: ["teeth_box", "central_incisors_box", "gem_spots"],
-};
-
 /** How many times the photo is read (2026-10-28): one reading let a photo through that the reading before had refused. */
 export const PHOTO_READINGS = 2;
 
@@ -107,27 +77,6 @@ export function judgeReadings(
     if (v.span !== null && (best === null || v.span < best)) pick = i;
   });
   return { verdict: { issues, span: verdicts[pick]?.span ?? null }, reading: answers[pick] ?? {}, spans };
-}
-
-/**
- * The two upper central incisors against all the visible teeth: their width
- * over the teeth's width. Seen from the front, the incisors (about 17 mm)
- * are a third to a half of a canine-to-premolar smile, up to about two thirds
- * when only the incisors show. Outside these bounds one of the two boxes is
- * wrong (2026-10-28), and no scale is better than a false one.
- */
-export const CENTRALS_SHARE_MIN = 0.22;
-export const CENTRALS_SHARE_MAX = 0.7;
-
-/** `photoScale`, kept only when the incisors' box is coherent with the teeth's box; null otherwise. */
-export function coherentScale(answer: Record<string, unknown>, size: { width: number; height: number } | null): number | null {
-  const scale = photoScale(answer, size);
-  const teeth = answer.teeth_box;
-  if (scale === null || !Array.isArray(teeth) || teeth.length !== 4 || !teeth.every((v) => typeof v === "number" && Number.isFinite(v))) return null;
-  const teethWidth = ((teeth[3] as number) - (teeth[1] as number)) / 1000;
-  if (!(teethWidth > 0)) return null;
-  const share = (scale * CENTRAL_INCISORS_MM) / teethWidth;
-  return share >= CENTRALS_SHARE_MIN && share <= CENTRALS_SHARE_MAX ? scale : null;
 }
 
 export interface PhotoVerdict {
@@ -165,30 +114,6 @@ export function judgePhoto(answer: Record<string, unknown>, size: { width: numbe
     }
   }
   return { issues, span };
-}
-
-/** Width of the two upper central incisors together, in millimetres (about 8.5 mm each). */
-export const CENTRAL_INCISORS_MM = 17;
-
-/**
- * The photo's scale, from the two upper central incisors: one millimetre as a
- * share of the photo's width — so the image model can be told how long each
- * gem should be in THIS photo (2026-10-26: without it, gems kept the same size
- * whatever the size of the smile). Null when the box is missing or implausible
- * (too small, too large, or not shaped like two front teeth).
- */
-export function photoScale(answer: Record<string, unknown>, size: { width: number; height: number } | null): number | null {
-  const box = answer.central_incisors_box;
-  if (!Array.isArray(box) || box.length !== 4 || !box.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1000)) return null;
-  const [ymin, xmin, ymax, xmax] = box as number[];
-  const share = (xmax - xmin) / 1000;
-  if (!(ymax > ymin) || share < 0.02 || share > 0.8) return null;
-  if (size && size.width > 0 && size.height > 0) {
-    // Two front teeth: about 17 mm wide, 6–12 mm of crown seen.
-    const ratio = ((ymax - ymin) * size.height) / ((xmax - xmin) * size.width);
-    if (ratio < 0.2 || ratio > 1.5) return null;
-  }
-  return share / CENTRAL_INCISORS_MM;
 }
 
 /** Width and height read from a JPEG (SOF marker) or PNG (IHDR) header; null for anything else. */

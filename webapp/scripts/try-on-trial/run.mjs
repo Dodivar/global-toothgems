@@ -1,6 +1,6 @@
 // Studio try-on trial (decision 111 (k)): drives the real try-on dialog of the local site, connected to the real
-// Supabase project, for every photo × test creation, with the computed placement — exactly as a staff member
-// would: sign in, open the creation, add the photo, tick the consent, "Render with computed placement".
+// Supabase project, for every photo × test creation — exactly as a member would: sign in, open the creation,
+// add the photo, tick the consent, "Generate the AI render" (the computed placement, decision 111 (k)).
 // See README.md next to this file. Nothing here holds a secret: the test account's password comes from the
 // environment. The photos and the results stay on this machine.
 //
@@ -171,25 +171,25 @@ async function runOne(photo, scene) {
     const dialog = page.getByRole("dialog").filter({ hasText: "Essayer sur un sourire" }).last();
     await dialog.locator('input[type="file"][accept^="image/jpeg"]').setInputFiles(PHOTO_BY_KEY[photo]);
     await dialog.getByText("La personne photographiée m’a donné son accord", { exact: false }).click();
-    const computed = dialog.getByRole("button", { name: "Rendu à placement calculé" });
-    await computed.waitFor({ timeout: 60_000 });
-    await page.waitForFunction((el) => !el.disabled, await computed.elementHandle(), { timeout: 60_000 });
+    const generate = dialog.getByRole("button", { name: "Générer le rendu IA" });
+    await generate.waitFor({ timeout: 60_000 });
+    await page.waitForFunction((el) => !el.disabled, await generate.elementHandle(), { timeout: 60_000 });
     log.clicked = Date.now() - t0;
-    await computed.click();
-    const report = dialog.locator("text=/Placement (calculé à partir|par l’IA)/");
+    await generate.click();
+    const img = dialog.locator('img[alt*="essayé sur la photo"]');
     const error = dialog.getByRole("alert");
-    await Promise.race([report.first().waitFor({ timeout: 900_000 }), error.first().waitFor({ timeout: 900_000 })]);
+    await Promise.race([img.first().waitFor({ timeout: 900_000 }), error.first().waitFor({ timeout: 900_000 })]);
     log.ended = Date.now() - t0;
-    if (await report.count()) {
+    if (await img.count()) {
       log.outcome = "result";
-      log.report = (await report.first().locator("xpath=ancestor::div[contains(@class,'border')][1]").innerText().catch(() => "")).trim();
-      const img = dialog.locator('img[alt*="essayé sur la photo"]').first();
+      const marks = log.calls.find((c) => c.fields?.marks)?.fields.marks;
+      log.report = marks ? `${marks} gem(s) placed` : "";
       const b64 = await page.evaluate(async (u) => {
         const buf = new Uint8Array(await (await (await fetch(u)).blob()).arrayBuffer());
         let s = "";
         for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode(...buf.subarray(i, i + 0x8000));
         return btoa(s);
-      }, await img.getAttribute("src"));
+      }, await img.first().getAttribute("src"));
       writeFileSync(join(dir, "result.jpg"), Buffer.from(b64, "base64"));
       log.notes = (await dialog.locator("p").allInnerTexts()).filter((t) => /gemme|non dessinée|cachée/i.test(t)).slice(0, 3);
     } else {
@@ -207,7 +207,7 @@ async function runOne(photo, scene) {
     page.off("response", onResponse);
     log.total = Date.now() - t0;
     writeFileSync(join(dir, "log.json"), JSON.stringify(log, null, 1));
-    const first = log.report?.split("\n").filter(Boolean).slice(0, 2).join(" · ") ?? log.error?.split("\n")[0] ?? "";
+    const first = log.report || log.error?.split("\n")[0] || "";
     console.log(`${photo}-${scene}  ${log.outcome}  ${Math.round(log.total / 1000)}s  ${first}`);
   }
   return log;
