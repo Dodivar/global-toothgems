@@ -1623,8 +1623,8 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   marks into real gems; an unreliable placement falls back to the current render. Under the result, staff read the
   drift check (`tryOnDrift.ts`) and can "Compare" the two placements on the same photo. **Members' renders are
   unchanged** until the owner chooses the default. The behaviour before this change is tagged `try-on-ai-placement`
-  (commit `7ba69d1`; it is the code of version 29 of the function). Deployed on 2026-11-01 as version 31 from the
-  pinned commit `22b6cbf` (raw-GitHub entry point, `verify_jwt = false`).
+  (commit `7ba69d1`; it is the code of version 29 of the function). Deployed on 2026-11-01 as version 32 from the
+  pinned commit `91134a6` (raw-GitHub entry point, `verify_jwt = false`).
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
   `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The
   photo step says the photo is sent to Google only while the AI is connected.
