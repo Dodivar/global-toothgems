@@ -78,8 +78,15 @@ export const smileTryOnService: SmileTryOnService = supabase
           return UNAVAILABLE_STATUS;
         }
       },
-      async render({ photo, source, design, overview, map, seats }, options) {
+      async render({ photo, source, design, overview, map, seats, placement }, options) {
         const form = new FormData();
+        if (placement) {
+          const { crop } = placement;
+          form.set("placement", "computed");
+          form.set("guide", placement.guide, "guide");
+          form.set("crop", JSON.stringify({ x: crop.x, y: crop.y, width: crop.width, height: crop.height }));
+          form.set("marks", String(placement.marks));
+        }
         form.set("source", JSON.stringify(sourcePayload(source)));
         form.set("photo", photo, "smile");
         form.set("design", design, "design");

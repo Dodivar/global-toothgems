@@ -21,26 +21,35 @@ import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
 import { tryOnSeats } from "../../../lib/studio3d/tryOnSeats";
 import { projectFrontView } from "../../../lib/studio3d/frontView";
 import { registerDesign, type Registration } from "../../../lib/studio3d/tryOnRegistration";
+import { guideMarks } from "../../../lib/studio3d/tryOnGuide";
 import type { TryOnAnalysis } from "../../../lib/studio3d/tryOn";
 import { renderDesignImages, renderDesignMap } from "./designImage";
 import { pasteBack } from "./pasteBack";
 import { PhotoStep, type AiState } from "./PhotoStep";
 import { PlacementDiagnostic } from "./PlacementDiagnostic";
+import { measureDrift, renderPlacementGuide } from "./placementGuide";
+import { PlacementCompare, PlacementReport, type PlacementMode, type TryOnRenderResult } from "./PlacementReport";
 import type { PreparedPhoto } from "./preparePhoto";
 import { ProcessingStep } from "./ProcessingStep";
 import { ResultStep } from "./ResultStep";
 
+/** What an error's "Try again" runs again. */
+type RetryAction = { kind: "render"; mode: PlacementMode } | { kind: "diagnose" } | { kind: "compare"; first: TryOnRenderResult };
+
 type Step =
   | { kind: "photo" }
   | { kind: "processing"; stage: TryOnStage }
-  | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[]; stage: TryOnStage; action: "render" | "diagnose" }
-  | { kind: "result"; image: Blob; url: string; leftOut: number }
+  | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[]; stage: TryOnStage; retry: RetryAction }
+  | { kind: "result"; result: TryOnRenderResult }
+  | { kind: "compare"; results: [TryOnRenderResult, TryOnRenderResult] }
   | { kind: "diagnostic"; analysis: TryOnAnalysis; registration: Registration };
+
+type Produced = { ok: true; result: TryOnRenderResult } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[]; stage: TryOnStage };
 
 /** The stepper: photo, the photo check, the render, the result. An error stays on the stage it happened at. */
 const STAGE_INDEX: Record<TryOnStage, number> = { checking: 1, rendering: 2 };
 const stepIndex = (step: Step) =>
-  step.kind === "photo" ? 0 : step.kind === "result" ? 3 : step.kind === "diagnostic" ? 1 : STAGE_INDEX[step.stage];
+  step.kind === "photo" ? 0 : step.kind === "result" || step.kind === "compare" ? 3 : step.kind === "diagnostic" ? 1 : STAGE_INDEX[step.stage];
 
 /**
  * "Try it on a smile": a creation on a photo of a smile, rendered by AI
@@ -57,9 +66,13 @@ const stepIndex = (step: Step) =>
  * (the owner's plan) is decided by the database: the viewers only show the
  * entry point when it says so, and the function checks again.
  *
- * Active staff also get the placement diagnostic next to the render (decision
- * 111 (k)), when the function's status says so — it decides from the profile
- * and refuses the diagnostic to anyone else.
+ * Active staff also get the computed placement (decision 111 (k)), when the
+ * function's status says so — it decides from the profile and refuses it to
+ * anyone else: the placement diagnostic (teeth found, gems placed, no render),
+ * the render with the computed placement (the gems drawn as marks where the
+ * teeth say, the AI only making them real; the current render when the
+ * placement is not reliable), its drift check, and "Compare" (the same photo
+ * rendered both ways). Members keep the current render only.
  */
 export function TryOnDialog({
   creation,
@@ -85,7 +98,7 @@ export function TryOnDialog({
   const [diagnosticAllowed, setDiagnosticAllowed] = useState(false);
   const request = useRef<AbortController | null>(null);
   const photoUrl = useRef<string | null>(null);
-  const resultUrl = useRef<string | null>(null);
+  const resultUrls = useRef<string[]>([]);
 
   // Ask once whether the AI is connected: no photo leaves before the answer.
   // Keyed on whether there is a source, not on the object (callers pass it inline).
@@ -111,7 +124,7 @@ export function TryOnDialog({
     () => () => {
       request.current?.abort();
       if (photoUrl.current) URL.revokeObjectURL(photoUrl.current);
-      if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
+      resultUrls.current.forEach((url) => URL.revokeObjectURL(url));
     },
     [],
   );
@@ -127,43 +140,103 @@ export function TryOnDialog({
     navigate("/connexion", { state: { from: `${pathname}${hash}` } });
   };
 
-  const render = async () => {
+  const keepUrl = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    resultUrls.current.push(url);
+    return url;
+  };
+
+  /** The current render: the AI places the gems from the design (decision 111). */
+  const produceAi = async (controller: AbortController, onStage: (stage: TryOnStage) => void): Promise<Produced | null> => {
+    const current = photo!;
+    let stage: TryOnStage = "checking";
+    const { design, overview } = await renderDesignImages(creation).catch(() => ({ design: null, overview: null }));
+    if (controller.signal.aborted) return null;
+    if (!design) return { ok: false, code: "failed", stage };
+    const seats = tryOnSeats(creation.scene.pieces, creation.scene.model);
+    const map = await renderDesignMap(creation, seats);
+    if (controller.signal.aborted) return null;
+    const outcome = await service.render(
+      { photo: current.blob, source: source!, design, overview, map, seats },
+      {
+        signal: controller.signal,
+        onStage: (next) => {
+          stage = next;
+          onStage(next);
+        },
+      },
+    );
+    if (controller.signal.aborted) return null;
+    if (!outcome.ok) return { ok: false, code: outcome.code, reasons: outcome.reasons, stage };
+    // A mouth close-up goes back into the photo; if the browser cannot draw it, the close-up is shown alone.
+    const image = outcome.crop ? ((await pasteBack(current.blob, outcome.image, outcome.crop)) ?? outcome.image) : outcome.image;
+    if (controller.signal.aborted) return null;
+    return { ok: true, result: { image, url: keepUrl(image), leftOut: outcome.leftOut ?? 0, mode: "ai" } };
+  };
+
+  /**
+   * The computed placement (staff): the teeth found on the photo, the gems
+   * placed on them here and drawn as marks, the AI only making them real; the
+   * current render when the placement is not reliable.
+   */
+  const produceComputed = async (controller: AbortController, onStage: (stage: TryOnStage) => void): Promise<Produced | null> => {
+    const current = photo!;
+    if (!service.analyse) return produceAi(controller, onStage);
+    const analysed = await service.analyse({ photo: current.blob, source: source! }, { signal: controller.signal });
+    if (controller.signal.aborted) return null;
+    if (!analysed.ok) return { ok: false, code: analysed.code, reasons: analysed.reasons, stage: "checking" };
+    const { crop } = analysed.analysis;
+    const registration = registerDesign(projectFrontView(creation.scene.pieces, creation.scene.model), analysed.analysis.teeth);
+    const { marks, leftOut } = guideMarks(registration, creation.scene.pieces);
+    const fallBack = async () => {
+      const produced = await produceAi(controller, onStage);
+      return produced?.ok ? { ...produced, result: { ...produced.result, fellBack: true, confidence: registration.confidence } } : produced;
+    };
+    if (!registration.reliable || marks.length === 0) return fallBack();
+    const [{ design }, guide] = await Promise.all([
+      renderDesignImages(creation).catch(() => ({ design: null })),
+      renderPlacementGuide(current.blob, crop, marks),
+    ]);
+    if (controller.signal.aborted) return null;
+    if (!design || !guide) return { ok: false, code: "failed", stage: "checking" };
+    onStage("rendering");
+    const outcome = await service.render(
+      { photo: current.blob, source: source!, design, placement: { guide, crop, marks: marks.length } },
+      { signal: controller.signal },
+    );
+    if (controller.signal.aborted) return null;
+    if (!outcome.ok) return { ok: false, code: outcome.code, reasons: outcome.reasons, stage: "rendering" };
+    const image = (await pasteBack(current.blob, outcome.image, outcome.crop ?? crop)) ?? outcome.image;
+    const drift = image === outcome.image ? null : await measureDrift(current.blob, image, crop, marks);
+    if (controller.signal.aborted) return null;
+    return { ok: true, result: { image, url: keepUrl(image), leftOut, mode: "computed", confidence: registration.confidence, drift } };
+  };
+
+  /** One render in `mode`; `then` receives it, an error is shown with what "Try again" runs. */
+  const run = async (mode: PlacementMode, retry: RetryAction, then: (result: TryOnRenderResult) => void) => {
     if (!photo || !source) return;
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
-    let stage: TryOnStage = "checking";
-    setStep({ kind: "processing", stage });
-    const { design, overview } = await renderDesignImages(creation).catch(() => ({ design: null, overview: null }));
-    if (controller.signal.aborted) return;
-    if (!design) {
-      request.current = null;
-      return setStep({ kind: "error", code: "failed", stage, action: "render" });
-    }
-    const seats = tryOnSeats(creation.scene.pieces, creation.scene.model);
-    const map = await renderDesignMap(creation, seats);
-    if (controller.signal.aborted) return;
-    const onStage = (next: TryOnStage) => {
-      if (controller.signal.aborted) return;
-      stage = next;
-      setStep({ kind: "processing", stage: next });
-    };
-    const outcome = await service.render({ photo: photo.blob, source, design, overview, map, seats }, { signal: controller.signal, onStage });
-    if (controller.signal.aborted) return; // cancelled or closed: nothing to show
+    setStep({ kind: "processing", stage: "checking" });
+    const onStage = (stage: TryOnStage) => !controller.signal.aborted && setStep({ kind: "processing", stage });
+    const produced = await (mode === "computed" ? produceComputed : produceAi)(controller, onStage);
+    if (!produced || controller.signal.aborted) return; // cancelled or closed: nothing to show
     request.current = null;
-    if (outcome.ok) {
-      // A mouth close-up goes back into the photo; if the browser cannot draw it, the close-up is shown alone.
-      const image = outcome.crop ? ((await pasteBack(photo.blob, outcome.image, outcome.crop)) ?? outcome.image) : outcome.image;
-      if (controller.signal.aborted) return;
-      if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
-      resultUrl.current = URL.createObjectURL(image);
-      return setStep({ kind: "result", image, url: resultUrl.current, leftOut: outcome.leftOut ?? 0 });
-    }
-    if (outcome.code === "not_available") {
+    if (produced.ok) return then(produced.result);
+    if (produced.code === "not_available") {
       setAi("unavailable");
       return setStep({ kind: "photo" });
     }
-    setStep({ kind: "error", code: outcome.code, reasons: outcome.reasons, stage, action: "render" });
+    setStep({ kind: "error", code: produced.code, reasons: produced.reasons, stage: produced.stage, retry });
+  };
+
+  const render = (mode: PlacementMode = "ai") => run(mode, { kind: "render", mode }, (result) => setStep({ kind: "result", result }));
+
+  /** Staff: the same photo rendered the other way, shown beside the first result. */
+  const compare = (first: TryOnRenderResult) => {
+    const other: PlacementMode = first.mode === "ai" ? "computed" : "ai";
+    return run(other, { kind: "compare", first }, (second) => setStep({ kind: "compare", results: first.mode === "ai" ? [first, second] : [second, first] }));
   };
 
   // The staff's placement diagnostic: the teeth the function finds, the gems placed on them here. No render.
@@ -181,10 +254,16 @@ export function TryOnDialog({
         setAi("unavailable");
         return setStep({ kind: "photo" });
       }
-      return setStep({ kind: "error", code: outcome.code, reasons: outcome.reasons, stage: "checking", action: "diagnose" });
+      return setStep({ kind: "error", code: outcome.code, reasons: outcome.reasons, stage: "checking", retry: { kind: "diagnose" } });
     }
     const registration = registerDesign(projectFrontView(creation.scene.pieces, creation.scene.model), outcome.analysis.teeth);
     setStep({ kind: "diagnostic", analysis: outcome.analysis, registration });
+  };
+
+  const retry = (action: RetryAction) => {
+    if (action.kind === "diagnose") return void diagnose();
+    if (action.kind === "compare") return void compare(action.first);
+    void render(action.mode);
   };
 
   const cancel = () => {
@@ -210,7 +289,7 @@ export function TryOnDialog({
       ) : (
         <>
           {/* The result is on screen: the stepper would only push download / share below the fold. */}
-          {step.kind !== "result" && (
+          {step.kind !== "result" && step.kind !== "compare" && (
             <ProgressBar
               variant="steps"
               tone="ink"
@@ -232,6 +311,7 @@ export function TryOnDialog({
               onAi={() => void render()}
               onSignIn={signIn}
               onDiagnose={diagnosticAllowed && service.analyse ? () => void diagnose() : undefined}
+              onComputed={diagnosticAllowed && service.analyse ? () => void render("computed") : undefined}
             />
           )}
 
@@ -259,7 +339,7 @@ export function TryOnDialog({
                     {t("studio.tryOn.errorActions.signIn")}
                   </Button>
                 ) : errorAllowsRetry(step.code) ? (
-                  <Button variant="dark" size="sm" iconLeft={RefreshCw} onClick={() => void (step.action === "diagnose" ? diagnose() : render())}>
+                  <Button variant="dark" size="sm" iconLeft={RefreshCw} onClick={() => retry(step.retry)}>
                     {t("studio.tryOn.errorActions.retry")}
                   </Button>
                 ) : null}
@@ -280,16 +360,21 @@ export function TryOnDialog({
           )}
 
           {step.kind === "result" && photo && (
-            <ResultStep
-              photo={photo}
-              image={step.image}
-              imageUrl={step.url}
-              leftOut={step.leftOut}
-              creation={creation}
-              onRegenerate={() => void render()}
-              onNewPhoto={() => setStep({ kind: "photo" })}
-            />
+            <>
+              <ResultStep
+                photo={photo}
+                image={step.result.image}
+                imageUrl={step.result.url}
+                leftOut={step.result.leftOut}
+                creation={creation}
+                onRegenerate={() => void render(step.result.mode)}
+                onNewPhoto={() => setStep({ kind: "photo" })}
+              />
+              {diagnosticAllowed && <PlacementReport result={step.result} onCompare={step.result.fellBack ? undefined : () => void compare(step.result)} />}
+            </>
           )}
+
+          {step.kind === "compare" && <PlacementCompare results={step.results} onBack={() => setStep({ kind: "photo" })} />}
 
         </>
       )}

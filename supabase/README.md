@@ -1616,8 +1616,13 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   call answers `diagnostic: true` — active staff, the AI and the teeth model connected, decided from the profile: the
   Studio's access state says "subscribed" for staff who also hold a subscription, so it cannot gate it. **Gem size is physical** (owner's decision): real millimetres × the fitted scale. A confidence below
   `RELIABLE_CONFIDENCE` (0.6, first value) or fewer than three agreeing teeth marks the placement unreliable.
-  **Renders are unchanged**: they still let the image model place the gems; the switch to the computed placement
-  comes with steps 3–4, staff only during the trial. The behaviour before this change is tagged `try-on-ai-placement`
+  **Steps 3–5** (same day): staff also get "Render with computed placement" — the browser draws each gem as a flat
+  mark at its computed place on the close-up (`tryOnGuide.ts`; gems on teeth not found are left out), the function
+  (`placement = "computed"`, staff only, counted as a render, no second photo check) sends the guide, the same
+  close-up cut from the photo and the design render with `TRY_ON_SYSTEM_PROMPT_PLACED`, and the model only turns the
+  marks into real gems; an unreliable placement falls back to the current render. Under the result, staff read the
+  drift check (`tryOnDrift.ts`) and can "Compare" the two placements on the same photo. **Members' renders are
+  unchanged** until the owner chooses the default. The behaviour before this change is tagged `try-on-ai-placement`
   (commit `7ba69d1`; it is the code of version 29 of the function). Deployed on 2026-11-01 as version 31 from the
   pinned commit `22b6cbf` (raw-GitHub entry point, `verify_jwt = false`).
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);

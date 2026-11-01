@@ -51,6 +51,17 @@ import { readTeeth } from "./teeth.ts";
  *     422 photo_unsuitable as above; 403 not_allowed for a member who is not staff
  *     Recorded in `studio_try_on_requests` as failed / `diagnostic`: counted
  *     against the daily requests, never against the renders.
+ *   multipart/form-data with `placement` = "computed"  (active staff only, decision 111 (k), step 4)
+ *     source, photo, design  as for a render (the photo a JPEG)
+ *     guide   JPEG (≤ 3 MB): the mouth close-up with every gem drawn as a flat
+ *             mark where the browser computed it (`tryOnRegistration.ts`)
+ *     crop    JSON { x, y, width, height }: where that close-up was cut from the
+ *             photo (the diagnostic's crop), inside the photo
+ *     marks   how many marks the guide holds (1–200)
+ *     The model only turns the marks into real gems (`TRY_ON_SYSTEM_PROMPT_PLACED`):
+ *     IMAGE 1 the guide, IMAGE 2 the same close-up cut here from the photo,
+ *     IMAGE 3 the design. No photo check (the diagnostic ran it). Counted as a
+ *     render. 200 { ok: true, image, crop } as for a render (plain JSON).
  *   status call (JSON `{ "action": "status" }`, no account needed):
  *     200 { available, daily_limit, quota }  quota: the signed-in caller's
  *             { limit, remaining } renders over the last 24 hours,
@@ -121,7 +132,7 @@ export interface StudioTryOnDeps {
    * Sends the images, in this order, with the system instructions; `designData`
    * (the gems as text, from the database) follows them when the prompt version reads it.
    */
-  generate(images: InlineImage[], designData: string, aspectRatio: string | null): Promise<GenerateOutcome>;
+  generate(images: InlineImage[], designData: string, aspectRatio: string | null, prompt?: "design" | "placed"): Promise<GenerateOutcome>;
   now?: () => Date;
   log(message: string, detail?: unknown): void;
 }
@@ -227,6 +238,18 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   const analyse = form.get("action") === "analyse";
   if (!ref || !photo || photo === "invalid" || (!analyse && (!design || design === "invalid"))) return json({ ok: false, code: "invalid_request" }, 400, cors);
   if (analyse && !deps.findTeeth) return json({ ok: false, code: "not_available" }, 503, cors);
+  // The computed placement's render: the gems already drawn on the close-up by the browser.
+  const computed = !analyse && form.get("placement") === "computed";
+  let placed: { guide: Photo; rect: CropRect; marks: number } | null = null;
+  if (computed) {
+    const guide = await inlineFile(form.get("guide"), DESIGN_MAX_BYTES);
+    const rect = readCropRect(form.get("crop"), photo.size);
+    const marks = Number(form.get("marks"));
+    if (!guide || guide === "invalid" || guide.mimeType !== "image/jpeg" || !rect || photo.mimeType !== "image/jpeg" || !Number.isInteger(marks) || marks < 1 || marks > 200) {
+      return json({ ok: false, code: "invalid_request" }, 400, cors);
+    }
+    placed = { guide, rect, marks };
+  }
 
   let userId: string | null;
   try {
@@ -237,7 +260,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   }
   if (!userId) return json({ ok: false, code: "session_expired" }, 401, cors);
 
-  if (analyse) {
+  if (analyse || computed) {
     try {
       if (!(await deps.staff(userId))) return json({ ok: false, code: "not_allowed" }, 403, cors);
     } catch (error) {
@@ -276,6 +299,13 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   }
   // Checked above: a render always has its design.
   const designImage = design as Photo;
+  if (placed) {
+    const ending = await renderPlaced(deps, requestId, photo, designImage, placed).catch((error): Ending => {
+      deps.log("computed render failed", error instanceof Error ? error.message : error);
+      return { status: 500, body: { ok: false, code: "server_error" } };
+    });
+    return json(ending.body, ending.status, cors);
+  }
   const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, designImage, map, overview, pieces, seats, onRendering);
   if (form.get("progress") !== "1") {
     const ending = await run(() => {});
@@ -566,6 +596,87 @@ async function analyseTeeth(deps: StudioTryOnDeps, requestId: string, photo: Pho
       ok: true,
       crop: { ...crop, photo_width: photoSize.width, photo_height: photoSize.height },
       teeth,
+    },
+  };
+}
+
+/** The browser's crop of the photo (`{ x, y, width, height }`, whole pixels inside it), or null. */
+export function readCropRect(raw: FormDataEntryValue | null, size: { width: number; height: number } | null): CropRect | null {
+  if (typeof raw !== "string" || raw.length > 200 || !size) return null;
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!data || typeof data !== "object") return null;
+  const { x, y, width, height } = data as Record<string, unknown>;
+  const ints = [x, y, width, height];
+  if (!ints.every((n) => typeof n === "number" && Number.isInteger(n))) return null;
+  const [cx, cy, cw, ch] = ints as number[];
+  if (cx < 0 || cy < 0 || cw < 64 || ch < 64 || cx + cw > size.width || cy + ch > size.height) return null;
+  return { x: cx, y: cy, width: cw, height: ch };
+}
+
+/**
+ * The computed placement's render (decision 111 (k), step 4): the model turns
+ * the guide's marks into real gems, the untouched close-up beside it. The
+ * request is closed whatever happens.
+ */
+async function renderPlaced(
+  deps: StudioTryOnDeps,
+  requestId: string,
+  photo: Photo,
+  design: Photo,
+  placed: { guide: Photo; rect: CropRect; marks: number },
+): Promise<Ending> {
+  const { guide, rect, marks } = placed;
+  const original = cropJpeg(photo.bytes, rect);
+  if (!original || !photo.size) {
+    await deps.finishRequest(requestId, "failed", "crop_failed").catch(() => {});
+    return { status: 502, body: { ok: false, code: "failed" } };
+  }
+  const references = await deps.references().catch((error) => {
+    deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
+    return [] as InlineImage[];
+  });
+  const plural = marks === 1 ? "" : "s";
+  const text = [
+    "PLACEMENT DATA",
+    `IMAGE 1 holds ${marks} gem mark${plural}: your output holds exactly ${marks} gem${plural}, one on each mark, nowhere else.`,
+    "IMAGE 2 is the same close-up of the customer's mouth, untouched. IMAGE 3 is the design in 3D (cut, colour, rotation only).",
+  ].join("\n");
+  deps.log("computed render", { marks, crop: rect, guide: guide.size });
+  const aspectRatio = nearestAspectRatio({ width: rect.width, height: rect.height });
+  let outcome: GenerateOutcome;
+  try {
+    outcome = await deps.generate(
+      [
+        { mimeType: guide.mimeType, data: guide.data },
+        { mimeType: "image/jpeg", data: toBase64(original) },
+        { mimeType: design.mimeType, data: design.data },
+        ...references,
+      ],
+      text,
+      aspectRatio,
+      "placed",
+    );
+  } catch (error) {
+    outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
+  }
+  if (!outcome.ok) {
+    deps.log(`computed render ${outcome.code}`, outcome.detail);
+    await deps.finishRequest(requestId, "failed", outcome.code).catch(() => {});
+    return { status: 502, body: { ok: false, code: outcome.code } };
+  }
+  await deps.finishRequest(requestId, "generated", null).catch((error) => deps.log("could not close the request", error));
+  deps.log("render size", { sent: { width: rect.width, height: rect.height }, asked: aspectRatio, received: headerSize(outcome.image.data) });
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      image: { mime_type: outcome.image.mimeType, data: outcome.image.data },
+      crop: { ...rect, photo_width: photo.size.width, photo_height: photo.size.height },
     },
   };
 }

@@ -1036,6 +1036,29 @@
         "spreadValue": "{{value}}% of a tooth"
       },
       "back": "Back to the photo"
+    },
+    "computed": {
+      "action": "Render with computed placement",
+      "mode": {
+        "ai": "Placed by the AI (current behaviour)",
+        "computed": "Placement computed from the teeth on the photo"
+      },
+      "fellBack": "Computed placement unreliable ({{percent}}%): the AI placed the gems as before.",
+      "confidence": "Placement confidence: {{percent}}%.",
+      "drift": {
+        "kept": "Gems that stayed in place: {{kept}} of {{checked}} measured.",
+        "missing_one": "{{count}} gem was moved or removed by the AI.",
+        "missing_other": "{{count}} gems were moved or removed by the AI.",
+        "clean": "Few changes elsewhere on the photo ({{percent}}%).",
+        "stray": "The AI also changed the photo elsewhere ({{percent}}% of the close-up): check the image.",
+        "unmeasured": "The drift check could not be measured on this image."
+      },
+      "compareWith": {
+        "ai": "Compare with the AI placement",
+        "computed": "Compare with the computed placement"
+      },
+      "compareAlt": "Try-on: {{mode}}",
+      "backToPhoto": "Back to the photo"
     }
   },
   "frontView": {

@@ -4,7 +4,7 @@ import { configProblem, generateImage, generateJson, imageModelConfig, type Inli
 import { handleStudioTryOn, toBase64, type TryOnCreationRow } from "./handler.ts";
 import { CLOSE_UP_CHECK_PROMPT, CLOSE_UP_CHECK_SCHEMA, DEFAULT_CHECK_MODEL, PHOTO_CHECK_PROMPT, PHOTO_CHECK_SCHEMA } from "./photoCheck.ts";
 import { TEETH_PROMPT, TEETH_SCHEMA } from "./teeth.ts";
-import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
+import { promptVersion, TRY_ON_SYSTEM_PROMPT_PLACED, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): the status call is
@@ -142,9 +142,11 @@ Deno.serve((req) =>
       : undefined,
     findTeeth: teethConfig ? (image) => generateJson(teethConfig, TEETH_PROMPT, [image], TEETH_SCHEMA) : undefined,
     checkCloseUp: checkConfig ? (image, spots) => generateJson(checkConfig, CLOSE_UP_CHECK_PROMPT, [image], CLOSE_UP_CHECK_SCHEMA, spots) : undefined,
-    generate: (images, designData, aspectRatio) =>
+    generate: (images, designData, aspectRatio, prompt = "design") =>
       config
-        ? generateImage(config, systemPrompt, images, version === "v3" ? designData : null, fetch, undefined, aspectRatio)
+        ? prompt === "placed"
+          ? generateImage(config, TRY_ON_SYSTEM_PROMPT_PLACED, images, designData, fetch, undefined, aspectRatio)
+          : generateImage(config, systemPrompt, images, version === "v3" ? designData : null, fetch, undefined, aspectRatio)
         : Promise.resolve({ ok: false, code: "failed" }),
     log,
   })

@@ -1036,6 +1036,29 @@
         "spreadValue": "{{value}} % d'une dent"
       },
       "back": "Retour à la photo"
+    },
+    "computed": {
+      "action": "Rendu à placement calculé",
+      "mode": {
+        "ai": "Placement par l'IA (fonctionnement actuel)",
+        "computed": "Placement calculé à partir des dents de la photo"
+      },
+      "fellBack": "Placement calculé peu fiable ({{percent}} %) : l'IA a placé les gemmes comme avant.",
+      "confidence": "Confiance du placement : {{percent}} %.",
+      "drift": {
+        "kept": "Gemmes restées à leur place : {{kept}} sur {{checked}} mesurées.",
+        "missing_one": "{{count}} gemme a été déplacée ou retirée par l'IA.",
+        "missing_other": "{{count}} gemmes ont été déplacées ou retirées par l'IA.",
+        "clean": "Peu de changements ailleurs sur la photo ({{percent}} %).",
+        "stray": "L'IA a aussi modifié la photo ailleurs ({{percent}} % du gros plan) : vérifiez l'image.",
+        "unmeasured": "Le contrôle de dérive n'a pas pu être mesuré sur cette image."
+      },
+      "compareWith": {
+        "ai": "Comparer avec le placement par l'IA",
+        "computed": "Comparer avec le placement calculé"
+      },
+      "compareAlt": "Essayage : {{mode}}",
+      "backToPhoto": "Retour à la photo"
     }
   },
   "frontView": {

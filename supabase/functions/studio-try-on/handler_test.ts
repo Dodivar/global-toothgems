@@ -886,3 +886,83 @@ Deno.test("diagnostic: the status call says whether the caller may ask for it", 
   assertEquals(body.diagnostic, undefined);
   assertEquals(body.quota, { limit: 3, remaining: 3 });
 });
+
+/* ------------------------------------------- computed placement render (decision 111 (k), step 4) */
+
+function placedForm(over: { crop?: unknown; marks?: string; guide?: Blob | null } = {}) {
+  const data = form({ creation_id: CREATION }, jpegOf(768, 1024));
+  data.set("placement", "computed");
+  const guide = over.guide === undefined ? jpegOf(400, 300) : over.guide;
+  if (guide) data.set("guide", guide, "guide.jpg");
+  data.set("crop", JSON.stringify(over.crop ?? { x: 100, y: 500, width: 400, height: 300 }));
+  data.set("marks", over.marks ?? "3");
+  return data;
+}
+
+Deno.test("computed render: staff only", async () => {
+  const { deps, calls } = fake();
+  const res = await handleStudioTryOn(post(placedForm()), deps);
+  assertEquals(res.status, 403);
+  assertEquals(calls.started, 0);
+});
+
+Deno.test("computed render: the guide, the crop and the marks are checked", async () => {
+  const staff = () => fake({ staff: () => Promise.resolve(true) }).deps;
+  for (const bad of [
+    placedForm({ crop: { x: 500, y: 900, width: 400, height: 300 } }), // past the photo
+    placedForm({ crop: { x: 0, y: 0, width: 10, height: 10 } }), // too small
+    placedForm({ crop: "nope" }),
+    placedForm({ marks: "0" }),
+    placedForm({ marks: "2.5" }),
+    placedForm({ guide: null }),
+    placedForm({ guide: new Blob([new Uint8Array([1, 2])], { type: "image/png" }) }),
+  ]) {
+    assertEquals((await handleStudioTryOn(post(bad), staff())).status, 400);
+  }
+});
+
+Deno.test("computed render: the model turns the marks into gems, the placement prompt, no photo check", async () => {
+  let checked = false;
+  let prompt: string | undefined;
+  let sentRatio: string | null = null;
+  const { deps, calls } = fake({
+    staff: () => Promise.resolve(true),
+    checkPhoto: () => {
+      checked = true;
+      return Promise.resolve({ ok: true, value: GOOD_PHOTO });
+    },
+    generate: (images, data, ratio, which) => {
+      calls.images = images.map((img) => `${img.mimeType}:${img.data}`);
+      calls.data = data;
+      prompt = which;
+      sentRatio = ratio;
+      return Promise.resolve({ ok: true, image: { mimeType: "image/png", data: "aW1n" } });
+    },
+  });
+  const res = await handleStudioTryOn(post(placedForm()), deps);
+  assertEquals(res.status, 200);
+  const body = await res.json();
+  assertEquals(body.crop, { x: 100, y: 500, width: 400, height: 300, photo_width: 768, photo_height: 1024 });
+  assertEquals(prompt, "placed");
+  assertEquals(checked, false);
+  // IMAGE 1 the guide, IMAGE 2 the close-up cut here at the crop's size, IMAGE 3 the design, then the references.
+  assertEquals(calls.images.length, 4);
+  const second = Uint8Array.from(atob(calls.images[1].split(":")[1]), (c) => c.charCodeAt(0));
+  assertEquals(imageSize(second), { width: 400, height: 300 });
+  assertEquals(calls.images[2], "image/png:BAU=");
+  assertEquals(calls.images[3], "image/jpeg:cmVm");
+  assertStringIncludes(calls.data, "IMAGE 1 holds 3 gem marks");
+  assertEquals(sentRatio, nearestAspectRatio({ width: 400, height: 300 }));
+  assertEquals(calls.finished, ["generated"]);
+});
+
+Deno.test("computed render: a failed generation is recorded and counted like a render", async () => {
+  const { deps, calls } = fake({ staff: () => Promise.resolve(true), generate: () => Promise.resolve({ ok: false, code: "blocked" }) });
+  const res = await handleStudioTryOn(post(placedForm()), deps);
+  assertEquals(res.status, 502);
+  assertEquals((await res.json()).code, "blocked");
+  assertEquals(calls.finished, ["failed:blocked"]);
+  // Every render used: refused like any render.
+  const used = fake({ staff: () => Promise.resolve(true), countRecent: () => Promise.resolve({ requests: 3, renders: 3 }) });
+  assertEquals((await handleStudioTryOn(post(placedForm()), used.deps)).status, 429);
+});

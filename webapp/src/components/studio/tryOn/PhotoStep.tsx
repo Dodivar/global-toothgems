@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type DragEvent } from "react";
 import clsx from "clsx";
-import { Camera, CircleAlert, ImageUp, Info, LoaderCircle, LogIn, ScanSearch, ShieldCheck, Sparkles, ZoomIn } from "lucide-react";
+import { Camera, CircleAlert, Crosshair, ImageUp, Info, LoaderCircle, LogIn, ScanSearch, ShieldCheck, Sparkles, ZoomIn } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
@@ -37,6 +37,7 @@ export function PhotoStep({
   onAi,
   onSignIn,
   onDiagnose,
+  onComputed,
 }: {
   photo: PreparedPhoto | null;
   onPhoto: (photo: PreparedPhoto) => void;
@@ -49,6 +50,8 @@ export function PhotoStep({
   onSignIn: () => void;
   /** Active staff only: the placement diagnostic. Absent: no button. */
   onDiagnose?: () => void;
+  /** Active staff only: the render with the computed placement. Absent: no button. */
+  onComputed?: () => void;
 }) {
   const { t } = useTranslation();
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -236,6 +239,11 @@ export function PhotoStep({
               {onDiagnose && (
                 <Button variant="outline" size="sm" iconLeft={ScanSearch} disabled={ai !== "available" || !ready} onClick={() => proceed(onDiagnose)}>
                   {t("studio.tryOn.diagnostic.action")}
+                </Button>
+              )}
+              {onComputed && (
+                <Button variant="outline" size="sm" iconLeft={Crosshair} disabled={ai !== "available" || !ready} onClick={() => proceed(onComputed)}>
+                  {t("studio.tryOn.computed.action")}
                 </Button>
               )}
               <Button variant="primary" size="sm" iconLeft={Sparkles} disabled={ai !== "available" || !ready} onClick={() => proceed(onAi)}>

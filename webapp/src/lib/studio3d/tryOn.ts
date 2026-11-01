@@ -45,6 +45,12 @@ export interface TryOnRenderRequest {
   map?: Blob | null;
   /** Each gem's place and size on its tooth (`tryOnSeats`), read by the AI as text. */
   seats?: readonly TryOnSeat[];
+  /**
+   * The computed placement (decision 111 (k), active staff only): the close-up
+   * with the gems drawn as marks (`renderPlacementGuide`), where it was cut, and
+   * how many marks it holds. The model then only makes the marks real.
+   */
+  placement?: { guide: Blob; crop: TryOnCrop; marks: number };
 }
 
 export const TRY_ON_ERROR_CODES = [
