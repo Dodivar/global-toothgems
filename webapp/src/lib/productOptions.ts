@@ -49,7 +49,7 @@ export function pickOptionVariant<T extends Pickable>(
  *                 moves them);
  *   "out"       — no combination with this value can be bought.
  */
-export type OptionValueState = "available" | "elsewhere" | "out";
+type OptionValueState = "available" | "elsewhere" | "out";
 
 export function optionValueState(
   variants: Pickable[],

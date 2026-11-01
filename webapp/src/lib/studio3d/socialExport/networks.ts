@@ -19,7 +19,7 @@ export type SocialNetwork = "tiktok" | "instagram" | "pinterest" | "facebook" | 
 /** In the order the dialog lists them. */
 export const SOCIAL_NETWORKS: readonly SocialNetwork[] = ["instagram", "tiktok", "pinterest", "facebook", "snapchat", "whatsapp", "x", "threads"];
 
-export interface NetworkSpec {
+interface NetworkSpec {
   /** The page where a member creates a post by hand (desktop, file downloaded first). */
   uploadUrl: string;
   /** Has a documented web intent taking a link. */
@@ -59,7 +59,7 @@ export function fileFits(network: SocialNetwork, fileType: string): boolean {
   return true;
 }
 
-export interface LinkShare {
+interface LinkShare {
   /** The creation's public page, absolute https URL. */
   url: string;
   /** The message that goes with it. */
@@ -88,7 +88,7 @@ export function linkShareUrl(network: SocialNetwork, { url, text, imageUrl }: Li
   }
 }
 
-export type DesktopAction = { kind: "link"; url: string } | { kind: "upload"; url: string };
+type DesktopAction = { kind: "link"; url: string } | { kind: "upload"; url: string };
 
 /**
  * What a click does on a computer: the link-share page when the network has

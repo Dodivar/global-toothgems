@@ -18,7 +18,7 @@ import {
  * the page says the feature is unavailable rather than inventing groups.
  */
 
-export type FaqLoad = "unavailable" | "loading" | "ready" | "forbidden" | "error";
+type FaqLoad = "unavailable" | "loading" | "ready" | "forbidden" | "error";
 
 /** A failed write, already logged; the screen shows a localized message. */
 export class FaqWriteError extends Error {

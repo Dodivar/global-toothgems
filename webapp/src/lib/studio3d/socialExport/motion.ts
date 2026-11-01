@@ -40,7 +40,7 @@ export function sweepAngle(elapsedMs: number, durationMs: number, amplitude: num
 export const TURNTABLE_GIF = { width: 540, frames: 36, delayMs: 100, maxColors: 256 };
 
 /** The containers tried, best first: MP4 (H.264) is what Instagram and iOS take; WebM where it is all there is. */
-export const VIDEO_TYPES: readonly string[] = [
+const VIDEO_TYPES: readonly string[] = [
   "video/mp4;codecs=avc1.640028",
   "video/mp4;codecs=avc1.4D401F",
   "video/mp4;codecs=avc1.42E01E",

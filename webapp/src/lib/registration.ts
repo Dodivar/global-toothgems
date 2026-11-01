@@ -25,7 +25,7 @@ export type RegistrationContext =
   | { kind: "purchase"; productId?: string; qty?: number }
   | { kind: "training"; courseId: string };
 
-export type ContextKind = RegistrationContext["kind"];
+type ContextKind = RegistrationContext["kind"];
 
 /** URL values, in French like the rest of the site's paths. */
 const CONTEXT_PARAM: Record<ContextKind, string> = {
@@ -100,23 +100,12 @@ export function dialCodeOf(code: string): string | undefined {
   return REGISTRATION_COUNTRIES.find((c) => c.code === code)?.dial;
 }
 
-export function countryName(code: string, lang: string): string {
-  try {
-    return new Intl.DisplayNames([lang], { type: "region" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-}
-
 /* ------------------------------------------------------------------ */
 /* Form data                                                          */
 /* ------------------------------------------------------------------ */
 
 export type Persona = "artist" | "student" | "customer" | "other";
 export type Interest = "products" | "training" | "community" | "all";
-
-export const PERSONAS: Persona[] = ["artist", "student", "customer", "other"];
-export const INTERESTS: Interest[] = ["products", "training", "community", "all"];
 
 export interface RegistrationData {
   email: string;
@@ -150,7 +139,7 @@ export const EMPTY_REGISTRATION: RegistrationData = {
 export type FieldName = keyof RegistrationData;
 
 /** An error is a translation key; the component renders it. */
-export type Errors = Partial<Record<FieldName, string>>;
+type Errors = Partial<Record<FieldName, string>>;
 
 /* ------------------------------------------------------------------ */
 /* Rules                                                              */
@@ -190,7 +179,7 @@ export const MIN_PASSWORD = 8;
  * — in the order they are usually met. One policy for the whole product: a
  * password accepted at sign-up must not be refused by the reset form.
  */
-export type PasswordRule = "length" | "lowercase" | "uppercase" | "number" | "special";
+type PasswordRule = "length" | "lowercase" | "uppercase" | "number" | "special";
 
 export const PASSWORD_RULES: PasswordRule[] = ["length", "lowercase", "uppercase", "number", "special"];
 
@@ -233,7 +222,7 @@ export function isCommonPassword(value: string): boolean {
 }
 
 /** 0 = empty, 1 = too weak, 2 = fair, 3 = good, 4 = strong. */
-export type Strength = 0 | 1 | 2 | 3 | 4;
+type Strength = 0 | 1 | 2 | 3 | 4;
 
 export function passwordStrength(value: string): Strength {
   if (!value) return 0;

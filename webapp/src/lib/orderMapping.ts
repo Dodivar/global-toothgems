@@ -14,6 +14,7 @@ import type {
 import type { Product } from "../data/products";
 import { toMinorUnits } from "./catalog/money";
 import { INVOICE_SELECT, mapInvoice, sortInvoices, type InvoiceRow } from "./documents/invoiceModel";
+import { oneOf } from "./oneOf";
 
 /**
  * Database rows → the member area's `Order` model. Pure, so it is unit-tested
@@ -28,7 +29,7 @@ import { INVOICE_SELECT, mapInvoice, sortInvoices, type InvoiceRow } from "./doc
 
 type Amount = number | string;
 
-export interface OrderItemRow {
+interface OrderItemRow {
   product_name: string;
   variant_name: string | null;
   /** The variant bought, to pick its own photo (null for a variant-less line or once deleted). */
@@ -48,7 +49,7 @@ export interface CustomerOrderItemRow extends OrderItemRow {
   gift_cards?: { design: string }[] | { design: string } | null;
 }
 
-export interface ShipmentRow {
+interface ShipmentRow {
   status: string;
   carrier: string | null;
   tracking_number: string | null;
@@ -208,10 +209,6 @@ const REFUND_REASONS: readonly RefundReason[] = [
   "other",
 ];
 
-function oneOf<T extends string>(value: string, allowed: readonly T[], fallback: T): T {
-  return (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
-}
-
 /** The date part of a timestamp or date column. */
 function day(value: string | null | undefined): string | undefined {
   return value ? value.slice(0, 10) : undefined;
@@ -237,7 +234,7 @@ export function mapAddress(row: AddressSnapshotRow | null): OrderAddress | undef
   };
 }
 
-export function mapCustomerLine(
+function mapCustomerLine(
   row: CustomerOrderItemRow,
   findProduct: (slug: string) => Product | undefined,
 ): CustomerOrderLine {
@@ -264,7 +261,7 @@ export function mapCustomerLine(
   };
 }
 
-export function mapParcel(row: CustomerShipmentRow): OrderParcel {
+function mapParcel(row: CustomerShipmentRow): OrderParcel {
   return {
     id: row.id,
     status: oneOf(row.status, PARCEL_STATUSES, "preparing"),
@@ -279,7 +276,7 @@ export function mapParcel(row: CustomerShipmentRow): OrderParcel {
   };
 }
 
-export function mapRefund(row: RefundRow): OrderRefund {
+function mapRefund(row: RefundRow): OrderRefund {
   return {
     ...(row.id ? { id: row.id, sentToProvider: Boolean(row.provider_refund_id) } : {}),
     amount: toMinorUnits(row.amount),
@@ -292,7 +289,7 @@ export function mapRefund(row: RefundRow): OrderRefund {
 }
 
 /** The parcel to follow: the latest one that has a carrier and a number. */
-export function trackingOf(shipments: ShipmentRow[]): OrderTracking | undefined {
+function trackingOf(shipments: ShipmentRow[]): OrderTracking | undefined {
   const parcel = [...shipments]
     .filter((s) => s.carrier && s.tracking_number && s.status !== "cancelled")
     .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];

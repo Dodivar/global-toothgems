@@ -22,7 +22,7 @@ export const normalizePromotionCode = (input: string): string | null => {
   return PROMO_CODE_RE.test(code) ? code : null;
 };
 
-export type AddPromotionCodeResult = { ok: true; codes: string[] } | { ok: false; reason: "format" | "duplicate" | "limit" };
+type AddPromotionCodeResult = { ok: true; codes: string[] } | { ok: false; reason: "format" | "duplicate" | "limit" };
 
 export function addPromotionCode(codes: string[], input: string): AddPromotionCodeResult {
   const code = normalizePromotionCode(input);

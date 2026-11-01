@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../../lib/navigation";
-import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import type { CustomerSortKey } from "../../lib/adminCustomerFilters";
 import {
@@ -13,6 +13,7 @@ import {
 import { CustomerStatusBadge, TagBadge, TrainingBadge } from "./CustomerBadges";
 import { Avatar, ContactCell, IdentityCell, OrdersCell, SpendValue } from "./CustomerCells";
 import { CustomerRowActions } from "./CustomerRowActions";
+import { SortableHead } from "./SortableHead";
 
 /**
  * The customers table. The page's centre of gravity, so everything above it was
@@ -36,7 +37,7 @@ import { CustomerRowActions } from "./CustomerRowActions";
  *   1024px screen leaves the table about 730px and would scroll it by 300.
  */
 
-export interface CustomersTableProps {
+interface CustomersTableProps {
   customers: AdminCustomerRecord[];
   selected: Set<string>;
   onToggle: (id: string) => void;
@@ -58,55 +59,6 @@ export interface CustomersTableProps {
 
 const headCell =
   "sticky top-0 z-10 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]";
-
-function SortableHead({
-  label,
-  ascKey,
-  descKey,
-  sort,
-  onSort,
-  align = "left",
-}: {
-  label: string;
-  ascKey: CustomerSortKey;
-  descKey: CustomerSortKey;
-  sort: CustomerSortKey;
-  onSort: (sort: CustomerSortKey) => void;
-  align?: "left" | "right";
-}) {
-  const { t } = useTranslation();
-  const active = sort === ascKey || sort === descKey;
-  const ascending = sort === ascKey;
-  return (
-    <th
-      scope="col"
-      className={clsx(headCell, align === "right" && "text-right")}
-      aria-sort={active ? (ascending ? "ascending" : "descending") : "none"}
-    >
-      <button
-        type="button"
-        onClick={() => onSort(ascending ? descKey : ascKey)}
-        className={clsx(
-          "inline-flex items-center gap-1 rounded-[var(--radius-xs)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-          active && "text-[var(--text-primary)]",
-          align === "right" && "flex-row-reverse",
-        )}
-      >
-        {label}
-        {active ? (
-          ascending ? (
-            <ArrowUp size={12} aria-hidden="true" />
-          ) : (
-            <ArrowDown size={12} aria-hidden="true" />
-          )
-        ) : (
-          <ArrowDown size={12} aria-hidden="true" className="opacity-25" />
-        )}
-        <span className="sr-only">{t("admin.customers.sortHint")}</span>
-      </button>
-    </th>
-  );
-}
 
 export function CustomersTable(props: CustomersTableProps) {
   const { t, i18n } = useTranslation();
@@ -159,6 +111,8 @@ export function CustomersTable(props: CustomersTableProps) {
                 )}
               </th>
               <SortableHead
+                className={headCell}
+                hint={t("admin.customers.sortHint")}
                 label={t("admin.customers.colCustomer")}
                 ascKey="nameAsc"
                 descKey="nameDesc"
@@ -169,6 +123,8 @@ export function CustomersTable(props: CustomersTableProps) {
                 {t("admin.customers.colContact")}
               </th>
               <SortableHead
+                className={headCell}
+                hint={t("admin.customers.sortHint")}
                 label={t("admin.customers.colOrders")}
                 ascKey="ordersAsc"
                 descKey="ordersDesc"
@@ -176,6 +132,8 @@ export function CustomersTable(props: CustomersTableProps) {
                 onSort={onSort}
               />
               <SortableHead
+                className={headCell}
+                hint={t("admin.customers.sortHint")}
                 label={t("admin.customers.colSpent")}
                 ascKey="spentAsc"
                 descKey="spentDesc"
@@ -190,6 +148,8 @@ export function CustomersTable(props: CustomersTableProps) {
                 {t("admin.customers.colStatus")}
               </th>
               <SortableHead
+                className={headCell}
+                hint={t("admin.customers.sortHint")}
                 label={t("admin.customers.colJoined")}
                 ascKey="recentAsc"
                 descKey="recentDesc"

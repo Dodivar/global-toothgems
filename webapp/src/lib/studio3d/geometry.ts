@@ -173,7 +173,7 @@ export function createToothGeometry(spec: ToothSpec): THREE.BufferGeometry {
   return geo;
 }
 
-export interface JewelTemplate {
+interface JewelTemplate {
   parts: THREE.BufferGeometry[];
   halfDepth: number;
   radius: number;

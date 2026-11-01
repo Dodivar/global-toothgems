@@ -10,7 +10,7 @@ import type { MediaKind } from "./trainingMediaRules";
  * course pages keep using the original.
  */
 
-export const THUMB_MAX_SIDE = 480;
+const THUMB_MAX_SIDE = 480;
 const THUMB_QUALITY = 0.8;
 
 /** The thumbnail's size: the longer side brought down to `max`, never enlarged. */

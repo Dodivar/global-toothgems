@@ -23,6 +23,7 @@ import {
   type Trend,
 } from "../data/adminAnalytics";
 import { toMinorUnits } from "./catalog/money";
+import { addDays, zoneOffset } from "./calendar";
 
 /**
  * Pure mapping of the Statistics screen: the period a filter set stands for,
@@ -42,12 +43,6 @@ export interface Period {
 export function dayIn(now: Date, timeZone: string): string {
   // en-CA writes ISO-ordered dates.
   return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
-}
-
-export function addDays(day: string, days: number): string {
-  const date = new Date(`${day}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
 }
 
 /** Days from `from` to `to`, both included. */
@@ -87,23 +82,6 @@ export function periodOf(filters: Pick<AnalyticsFilters, "range" | "customFrom" 
 export function previousPeriod(period: Period): Period {
   const length = daysInclusive(period.from, period.to);
   return { from: addDays(period.from, -length), to: addDays(period.from, -1) };
-}
-
-/** Offset of a time zone from UTC at an instant, in milliseconds. */
-function zoneOffset(instant: number, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).formatToParts(new Date(instant));
-  const value = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
-  const wall = Date.UTC(value("year"), value("month") - 1, value("day"), value("hour"), value("minute"), value("second"));
-  return wall - Math.floor(instant / 1000) * 1000;
 }
 
 /** The instant a calendar day starts in a time zone (as `day::timestamp at time zone tz`). */
@@ -168,12 +146,12 @@ function bucketOf(value: Json): RevenueCategoryId {
 /* ------------------------------------------------------------------- KPIs */
 
 /** Same rule as `private.analytics_kpi()`: under half a percent (or point) is flat. */
-export function trendOf(change: number | null): Trend {
+function trendOf(change: number | null): Trend {
   if (change === null || Math.abs(change) < 0.5) return "flat";
   return change > 0 ? "up" : "down";
 }
 
-export function changeOf(value: number, previous: number, format: KpiDatum["format"]): number | null {
+function changeOf(value: number, previous: number, format: KpiDatum["format"]): number | null {
   if (format === "percent") return Math.round((value - previous) * 10) / 10;
   if (previous === 0) return null;
   return Math.round(((value - previous) / previous) * 1000) / 10;
@@ -225,7 +203,7 @@ function mapKpi(raw: Json): KpiDatum | null {
 
 /* ------------------------------------------------------------- the snapshot */
 
-export interface ShopSnapshotSources {
+interface ShopSnapshotSources {
   /** The JSON `analytics_snapshot()` returned. */
   raw: Json;
   /** Names of the best sellers in both languages; the snapshot carries the French one. */
@@ -235,7 +213,7 @@ export interface ShopSnapshotSources {
 }
 
 /** Everything of the snapshot the shop's figures make (training and insights are added after). */
-export type ShopSnapshot = Omit<AnalyticsSnapshot, "training" | "insights">;
+type ShopSnapshot = Omit<AnalyticsSnapshot, "training" | "insights">;
 
 export function mapShopSnapshot({ raw, productNames, mediaUrl }: ShopSnapshotSources): ShopSnapshot {
   const root = object(raw);

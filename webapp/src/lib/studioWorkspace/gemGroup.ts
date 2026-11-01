@@ -10,7 +10,6 @@ import {
 } from "../../data/studioEditor";
 import type { GemSize } from "../gemOptions";
 import { ARCH_FRAME_BY_ID, approxLabialPoint } from "../studio3d/archLayout";
-import { currentEstimate } from "../studio3d/gemRegistry";
 
 /**
  * A Gem Group's arrangement: several pieces kept together as a reusable
@@ -67,13 +66,13 @@ function unit(v: Vec3): Vec3 {
 }
 
 /** World vector → frame coordinates (direction only when `point` is false). */
-export function toLocal(v: Vec3, f: Frame, point = true): Vec3 {
+function toLocal(v: Vec3, f: Frame, point = true): Vec3 {
   const d = point ? sub(v, f.origin) : v;
   return { x: dot(d, f.tangent), y: dot(d, f.up), z: dot(d, f.outward) };
 }
 
 /** Frame coordinates → world vector. */
-export function toWorld(v: Vec3, f: Frame, point = true): Vec3 {
+function toWorld(v: Vec3, f: Frame, point = true): Vec3 {
   const o = point ? f.origin : { x: 0, y: 0, z: 0 };
   return {
     x: o.x + f.tangent.x * v.x + f.up.x * v.y + f.outward.x * v.z,
@@ -118,11 +117,6 @@ export function anchorToothOf(pieces: Pick<PlacedJewelry, "toothId">[]): string 
     }
   }
   return best;
-}
-
-/** The indicative shop value of a group's pieces, at the prices last loaded (`gemCatalog.estimateComposition`). */
-export function groupEstimateCents(pieces: Pick<GroupPiece, "productId" | "variantId" | "look" | "size">[]): number {
-  return currentEstimate(pieces).totalMinor;
 }
 
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);

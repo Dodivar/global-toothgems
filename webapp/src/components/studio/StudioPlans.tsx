@@ -25,7 +25,7 @@ import {
 /** The member's subscription page (`app/compte/(space)/studio`). */
 export const ACCOUNT_STUDIO_PATH = "/compte/studio";
 
-export type ChooseStudioPlan =(plan: StudioPaidPlanId, interval: StudioBillingInterval, price: StudioPlanPrice | null) => void;
+type ChooseStudioPlan =(plan: StudioPaidPlanId, interval: StudioBillingInterval, price: StudioPlanPrice | null) => void;
 
 /**
  * The Studio's offers in the alternative page's dress: the free trial as an

@@ -104,11 +104,6 @@
       "lessThanMinute": "less than a minute",
       "ended": "Trial ended"
     },
-    "warning": {
-      "body": "Your free trial ends soon — {{time}}. Save your designs, and have a look at the plans to keep creating.",
-      "plans": "See the plans",
-      "dismiss": "Dismiss"
-    },
     "denied": {
       "title": "Your Studio access has ended",
       "body": "This change could not be saved. Your saved designs are kept."

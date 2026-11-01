@@ -38,7 +38,7 @@ import { ChannelIcon } from "./channelIcons";
 /* ------------------------------------------------------------ message text */
 
 /** A message's text with its mentions as buttons that open the member's profile. */
-export function MessageText({ parts, className }: { parts: readonly MessagePart[]; className?: string }) {
+function MessageText({ parts, className }: { parts: readonly MessagePart[]; className?: string }) {
   const { t } = useTranslation();
   const { nameOf, viewer } = useChat();
   const { openProfile } = useLoungeUi();
@@ -494,7 +494,7 @@ function RoomIntro() {
 
 /* ------------------------------------------------------------- empty state */
 
-export function EmptyChannel({ onStart }: { onStart: () => void }) {
+function EmptyChannel({ onStart }: { onStart: () => void }) {
   const { t } = useTranslation();
   const { currentChannel } = useChat();
   return (

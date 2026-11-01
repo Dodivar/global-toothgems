@@ -1,5 +1,6 @@
 import { pick } from "../../data/types";
 import { COURSE_CATEGORIES, COURSE_LEVELS, type CourseCategory, type CourseLevel, type PublicCourse } from "./publicCourse";
+import { foldText } from "../foldText";
 
 /**
  * The Academy marketplace's browsing rules (`/academy`): which course is
@@ -31,18 +32,10 @@ export function activeFilterCount(filters: CatalogFilters): number {
   return (filters.search.trim() ? 1 : 0) + (filters.category !== "any" ? 1 : 0) + (filters.level !== "any" ? 1 : 0);
 }
 
-/** Ignores case and accents, so "hygiene" finds "Hygiène". */
-function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
-}
-
 function matchesSearch(course: PublicCourse, query: string): boolean {
-  const needle = normalize(query.trim());
+  const needle = foldText(query.trim());
   if (!needle) return true;
-  const haystack = [course.title.fr, course.title.en, course.summary?.fr ?? "", course.summary?.en ?? ""].map(normalize).join(" ");
+  const haystack = [course.title.fr, course.title.en, course.summary?.fr ?? "", course.summary?.en ?? ""].map(foldText).join(" ");
   return haystack.includes(needle);
 }
 
@@ -107,7 +100,7 @@ export function featuredCourse(courses: readonly PublicCourse[]): PublicCourse |
 }
 
 /** Days a course is labelled "new" after it goes online. */
-export const NEW_COURSE_DAYS = 60;
+const NEW_COURSE_DAYS = 60;
 
 /**
  * True for a course published within the last `NEW_COURSE_DAYS` days. Reads

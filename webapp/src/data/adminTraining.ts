@@ -215,10 +215,6 @@ export function moduleDuration(module: Module): number {
   return module.steps.reduce((total, s) => total + s.duration, 0);
 }
 
-export function courseStepDuration(course: TrainingCourse): number {
-  return course.modules.reduce((total, m) => total + moduleDuration(m), 0);
-}
-
 export function blockCount(module: Module): number {
   return module.steps.reduce((total, s) => total + s.blocks.length, 0);
 }
@@ -241,17 +237,6 @@ export const MEDIA_LIBRARY: { id: string; src: string; label: Localized }[] = [
   { id: "med-10", src: img("img-14.jpg"), label: L("Lampe de polymérisation", "Curing lamp") },
   { id: "med-11", src: img("img-17.jpg"), label: L("Fiche de consentement client", "Client consent form") },
   { id: "med-12", src: img("img-19.jpg"), label: L("Studio en situation", "Studio in session") },
-];
-
-export const COVER_LIBRARY: string[] = [
-  img("img-12.jpg"),
-  img("mouth-01.jpg"),
-  img("mouth-02.jpg"),
-  img("mouth-03.jpg"),
-  img("img-05.jpg"),
-  img("img-19.jpg"),
-  img("img-07.jpg"),
-  img("img-20.jpg"),
 ];
 
 export const DEFAULT_QUIZ_SETTINGS: QuizSettings = {

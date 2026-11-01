@@ -15,7 +15,7 @@ import { GlowbookBadge } from "./GlowbookBadge";
  * public page and the Studio's preview. Same markup on the server and in the
  * browser.
  */
-export interface GlowbookIdentityProps {
+interface GlowbookIdentityProps {
   displayName: string;
   handle: string;
   bio: string;
@@ -29,7 +29,7 @@ export interface GlowbookIdentityProps {
 }
 
 /** The id of the profile section, the target of the bar's "Profile" link. */
-export const GLOWBOOK_PROFILE_ID = "gt-glowbook-profile";
+const GLOWBOOK_PROFILE_ID = "gt-glowbook-profile";
 
 const focus = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gb-accent)]";
 const pill = clsx(

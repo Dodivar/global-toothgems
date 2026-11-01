@@ -20,7 +20,7 @@ import { sortSections, type CertifiedCourse, type GlowbookSection, type SectionP
  * it is `unavailable`, never a fake page.
  */
 
-export type GlowbookStatus = "signedOut" | "unavailable" | "loading" | "ready" | "error";
+type GlowbookStatus = "signedOut" | "unavailable" | "loading" | "ready" | "error";
 
 interface GlowbookValue {
   status: GlowbookStatus;

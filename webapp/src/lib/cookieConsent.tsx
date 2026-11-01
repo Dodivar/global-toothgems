@@ -25,7 +25,7 @@ export const OPTIONAL_CATEGORIES: OptionalCategory[] = ["preferences", "analytic
 
 export type ConsentChoices = Record<OptionalCategory, boolean>;
 
-export interface ConsentRecord extends ConsentChoices {
+interface ConsentRecord extends ConsentChoices {
   decidedAt: string;
 }
 

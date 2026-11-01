@@ -8,8 +8,8 @@ import clsx from "clsx";
  * toolbar sitting above a data table. Same palette, squarer geometry, sentence
  * case.
  */
-export type AdminButtonVariant = "primary" | "dark" | "outline" | "ghost" | "danger" | "quiet";
-export type AdminButtonSize = "sm" | "md";
+type AdminButtonVariant = "primary" | "dark" | "outline" | "ghost" | "danger" | "quiet";
+type AdminButtonSize = "sm" | "md";
 
 interface AdminButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: AdminButtonVariant;

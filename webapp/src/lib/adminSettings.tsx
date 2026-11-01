@@ -49,7 +49,7 @@ import { isSupabaseConfigured, requireSupabase } from "./supabase/client";
 export type SettingsSection = "store" | "shipping" | "taxes" | "languages";
 export const SETTINGS_SECTIONS: SettingsSection[] = ["store", "shipping", "taxes", "languages"];
 
-export interface SectionValues {
+interface SectionValues {
   store: StoreDetails;
   shipping: ShippingZone[];
   taxes: TaxSettings;
@@ -57,7 +57,7 @@ export interface SectionValues {
 }
 
 export type SettingsStatus = "loading" | "ready" | "failed" | "unavailable";
-export type SettingsSaveResult = { ok: true } | { ok: false; error: SettingsWriteError };
+type SettingsSaveResult = { ok: true } | { ok: false; error: SettingsWriteError };
 export type { SettingsWriteError };
 
 interface SettingsContextValue {
@@ -82,6 +82,14 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 const EMPTY: SectionValues = {
   store: {
     storeName: "",
+    tradingName: "",
+    publisherName: "",
+    publisherLegalName: "",
+    publisherLegalForm: "",
+    publisherRegistrationNumber: "",
+    publisherAddress: "",
+    publisherEmail: "",
+    publisherPhone: "",
     legalName: "",
     legalForm: "",
     shareCapital: "",

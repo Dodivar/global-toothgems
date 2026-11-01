@@ -9,9 +9,9 @@ import { trackStudio, trackStudioOnce } from "./studioAnalytics";
  * The rules are pure (`activityEvents`) so they are tested without a stage.
  */
 
-export type StudioFeature = "place_gem" | "gem_group" | "model" | "lighting" | "lasso" | "multi_select" | "client_name" | "undo";
+type StudioFeature = "place_gem" | "gem_group" | "model" | "lighting" | "lasso" | "multi_select" | "client_name" | "undo";
 
-export interface ActivityEvent {
+interface ActivityEvent {
   kind: "design_created" | "feature";
   feature?: StudioFeature;
 }

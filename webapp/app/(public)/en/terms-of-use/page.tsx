@@ -1,7 +1,6 @@
 import { publicScreen } from "../../../_public/publicPage";
-import { LegalDocumentPage } from "../../../../src/components/legal/LegalDocumentPage";
-import { TERMS_OF_USE } from "../../../../src/data/legal/termsOfUse";
+import { TermsOfUsePage } from "../../../_public/storePages";
 
-const page = publicScreen("termsOfUse", "en", <LegalDocumentPage doc={TERMS_OF_USE} />);
+const page = publicScreen("termsOfUse", "en", <TermsOfUsePage />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

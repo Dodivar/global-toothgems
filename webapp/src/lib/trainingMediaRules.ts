@@ -1,5 +1,6 @@
 import type { Localized } from "../data/types";
 import type { TrainingCourse } from "../data/adminTraining";
+import { foldText } from "./foldText";
 
 /**
  * Rules of the training media library.
@@ -55,8 +56,8 @@ export interface TrainingMedia {
   origin: "library" | "upload";
 }
 
-export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-export const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 export const ACCEPTED_TYPES = [...IMAGE_TYPES, ...VIDEO_TYPES];
 
 /** 10 MB: comfortably above a well-exported lesson photo, well below a raw camera file. */
@@ -67,16 +68,13 @@ export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
  */
 export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 
-/** Back-compat name: the image limit. */
-export const MAX_UPLOAD_BYTES = MAX_IMAGE_BYTES;
-
 export function mediaKindOf(mimeType: string): MediaKind | null {
   if (IMAGE_TYPES.includes(mimeType)) return "image";
   if (VIDEO_TYPES.includes(mimeType)) return "video";
   return null;
 }
 
-export function maxBytesFor(kind: MediaKind): number {
+function maxBytesFor(kind: MediaKind): number {
   return kind === "video" ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
 }
 
@@ -141,7 +139,7 @@ export type FolderFilter = "all" | "none" | string;
 export type MediaSort = "newest" | "oldest" | "name";
 export const MEDIA_SORTS: MediaSort[] = ["newest", "oldest", "name"];
 
-export interface MediaFilters {
+interface MediaFilters {
   query: string;
   category: MediaCategory | "all";
   usage: UsageFilter;
@@ -199,11 +197,7 @@ export function folderCounts(items: TrainingMedia[]): Map<string, number> {
 
 /** Lower case, accents off: "hygiène" finds "Hygiene". */
 function normalise(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .trim();
+  return foldText(value).trim();
 }
 
 /**

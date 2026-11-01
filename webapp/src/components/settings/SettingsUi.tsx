@@ -1,6 +1,6 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { CircleCheck, CircleDashed, CircleHelp, Star, X, type LucideIcon } from "lucide-react";
+import { CircleCheck, CircleDashed, Star, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import { FormField } from "../admin/FormField";
 
@@ -225,77 +225,6 @@ export function TextField({
 /* -------------------------------------------------------------------------- */
 /* Toggletip                                                                  */
 /* -------------------------------------------------------------------------- */
-
-/**
- * A "?" that explains a setting.
- *
- * A toggletip rather than a hover tooltip: it opens on click or Enter, so it
- * works on touch and from the keyboard, and it stays open while it is read.
- * The explanation is announced through a live region when it opens. Escape or
- * a click elsewhere closes it.
- */
-export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLSpanElement>(null);
-  const id = useId();
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey, true);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey, true);
-    };
-  }, [open]);
-
-  return (
-    <span ref={ref} className="relative inline-flex align-middle">
-      <button
-        type="button"
-        aria-label={t("settings.ui.moreInfo", { topic: label })}
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => setOpen((v) => !v)}
-        className={clsx(
-          "grid h-6 w-6 place-items-center rounded-full text-[var(--text-subtle)] transition-colors hover:bg-[var(--gt-blue-100)] hover:text-[var(--gt-blue-700)]",
-          open && "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]",
-          focusRing,
-        )}
-      >
-        <CircleHelp size={15} strokeWidth={2} aria-hidden="true" />
-      </button>
-      <span id={id} role="status" aria-live="polite" className="contents">
-        {open && (
-          <span className="gt-admin-dialog absolute left-1/2 top-[calc(100%+6px)] z-[70] w-[min(300px,80vw)] -translate-x-1/2 rounded-[var(--admin-radius-sm)] border border-[var(--gt-blue-200)] bg-[var(--admin-panel)] p-3.5 text-left text-[length:var(--text-caption)] font-normal normal-case leading-[var(--leading-normal)] tracking-normal text-[var(--text-body)] shadow-[var(--shadow-md)]">
-            <span className="mb-1 flex items-start justify-between gap-2">
-              <strong className="text-[var(--text-primary)]">{label}</strong>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label={t("settings.ui.close")}
-                className={clsx("-mr-1 -mt-1 grid h-6 w-6 flex-none place-items-center rounded-full text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)]", focusRing)}
-              >
-                <X size={13} aria-hidden="true" />
-              </button>
-            </span>
-            {children}
-          </span>
-        )}
-      </span>
-    </span>
-  );
-}
 
 /* -------------------------------------------------------------------------- */
 /* Status                                                                     */

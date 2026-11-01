@@ -39,7 +39,7 @@ export interface KeyValueStorage {
   removeItem(key: string): void;
 }
 
-export interface LocalRepositoryOptions {
+interface LocalRepositoryOptions {
   storage: KeyValueStorage;
   /** Simulated network latency in ms; 0 in tests. */
   latency?: number;

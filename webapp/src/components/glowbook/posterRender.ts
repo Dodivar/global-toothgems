@@ -2,6 +2,7 @@ import wordmark from "../../assets/logo-wordmark-black.png";
 import { A4_PORTRAIT_PT, jpegToPdf } from "../../lib/certificate/pdf";
 import { layoutPoster, POSTER_PAGE, qrPngSize, type PosterContent, type PosterOp } from "../../lib/glowbookPoster/layout";
 import { QR_QUIET_ZONE } from "../../lib/glowbookPoster/qr";
+import { loadImage, canvasToBlob } from "../../lib/canvasImage";
 
 /**
  * The Glowbook's printable files (decision 102), drawn in the browser like
@@ -16,19 +17,6 @@ const SANS = '"Montserrat", "Helvetica Neue", Arial, sans-serif';
 const FONTS = ["500 16px Montserrat", "600 16px Montserrat", "700 16px Montserrat", "800 16px Montserrat"];
 /** Pixels per millimetre: 300 dpi. */
 const PDF_SCALE = 300 / 25.4;
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("image unavailable"));
-    image.src = src;
-  });
-}
-
-function toBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {
-  return new Promise((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("export failed"))), type, quality));
-}
 
 function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
@@ -116,7 +104,7 @@ async function renderPosterCanvas(content: PosterContent, avatar: ImageBitmap | 
 /** The A4 poster as a PDF, to print. */
 export async function glowbookPosterPdf(content: PosterContent, avatar: ImageBitmap | null, meta: { title: string; author: string }): Promise<Blob> {
   const canvas = await renderPosterCanvas(content, avatar);
-  const jpeg = new Uint8Array(await (await toBlob(canvas, "image/jpeg", 0.95)).arrayBuffer());
+  const jpeg = new Uint8Array(await (await canvasToBlob(canvas, "image/jpeg", 0.95)).arrayBuffer());
   const pdf = jpegToPdf(jpeg, { width: canvas.width, height: canvas.height }, meta, A4_PORTRAIT_PT);
   return new Blob([pdf as BlobPart], { type: "application/pdf" });
 }
@@ -132,7 +120,7 @@ export async function glowbookQrPng(modules: readonly (readonly boolean[])[]): P
   if (!ctx) throw new Error("canvas unavailable");
   ctx.imageSmoothingEnabled = false;
   drawQr(ctx, modules, 0, 0, size, "#000000");
-  return toBlob(canvas, "image/png");
+  return canvasToBlob(canvas, "image/png");
 }
 
 export { saveFile } from "../../lib/saveFile";

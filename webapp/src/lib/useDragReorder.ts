@@ -13,7 +13,7 @@ import { useCallback, useRef, useState, type DragEvent } from "react";
  * affordance is the shortcut; the buttons are the interface.
  */
 
-export interface DragState {
+interface DragState {
   /** Id of the item currently being dragged, if any. */
   draggingId: string | null;
   /** Id of the item the pointer is hovering over, and on which side. */

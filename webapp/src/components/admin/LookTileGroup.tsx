@@ -11,7 +11,7 @@ import clsx from "clsx";
  * the platform. "Not set" comes first, and the current choice is echoed next
  * to the legend so it stays readable without hunting for the dark tile.
  */
-export interface LookTile<T extends string> {
+interface LookTile<T extends string> {
   value: T;
   label: string;
   visual: ReactNode;

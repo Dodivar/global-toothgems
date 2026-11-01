@@ -1,4 +1,5 @@
 import wordmarkImage from "../../assets/logo-wordmark-black.png";
+import { loadImage } from "../canvasImage";
 
 /**
  * The design estimate sheet: a PNG the artist can hand to a client.
@@ -11,7 +12,7 @@ import wordmarkImage from "../../assets/logo-wordmark-black.png";
  * and the sheet says so in its footer.
  */
 
-export interface QuoteRow {
+interface QuoteRow {
   name: string;
   tooth: string;
   size: string;
@@ -19,7 +20,7 @@ export interface QuoteRow {
   price: string;
 }
 
-export interface QuoteSheetInput {
+interface QuoteSheetInput {
   renderURL: string;
   clientName: string;
   rows: QuoteRow[];
@@ -48,15 +49,6 @@ const BLUE_100 = "#e7eef7";
 const BLUE_600 = "#5a7796";
 const OFF_WHITE = "#fafaf8";
 const FONT = 'Montserrat, "Helvetica Neue", Arial, sans-serif';
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("image load failed"));
-    img.src = src;
-  });
-}
 
 /** Draw `text` shortened with an ellipsis so it never runs into the next column. */
 function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {

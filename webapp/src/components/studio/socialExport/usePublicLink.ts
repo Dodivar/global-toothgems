@@ -4,7 +4,7 @@ import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import type { Creation } from "../../../lib/studioWorkspace/types";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 
-export type PublicLink =
+type PublicLink =
   | { kind: "loading" }
   /** No public page: link-based sharing waits for the member to create a share link. */
   | { kind: "none" }

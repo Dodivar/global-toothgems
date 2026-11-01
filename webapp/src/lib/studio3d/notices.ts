@@ -8,10 +8,10 @@
  * same language, as the rest of Global Toothgems.
  */
 
-export type NoticeTone = "success" | "info" | "warning" | "error";
+type NoticeTone = "success" | "info" | "warning" | "error";
 
 /** A key under `studio.editor.toasts`, with its interpolation values. */
-export type NoticeHandler = (key: string, params?: Record<string, string | number>, tone?: NoticeTone) => void;
+type NoticeHandler = (key: string, params?: Record<string, string | number>, tone?: NoticeTone) => void;
 
 let handler: NoticeHandler | null = null;
 

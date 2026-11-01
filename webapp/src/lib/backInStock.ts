@@ -21,9 +21,9 @@ export const BACK_IN_STOCK_ERRORS = [
 ] as const;
 export type BackInStockError = (typeof BACK_IN_STOCK_ERRORS)[number];
 
-export type BackInStockResult = { ok: true } | { ok: false; error: BackInStockError };
+type BackInStockResult = { ok: true } | { ok: false; error: BackInStockError };
 
-export interface BackInStockRequest {
+interface BackInStockRequest {
   /** `products.id`. */
   productId: string;
   /** `product_variants.id`, for a product sold in options. */

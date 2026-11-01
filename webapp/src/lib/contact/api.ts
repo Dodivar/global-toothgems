@@ -9,7 +9,7 @@ import { requireSupabase } from "../supabase/client";
  * the request; a visitor goes through the same door.
  */
 
-export interface ContactMessage {
+interface ContactMessage {
   name: string;
   email: string;
   category: string;
@@ -33,12 +33,12 @@ export const CONTACT_ERRORS = [
 ] as const;
 export type ContactError = (typeof CONTACT_ERRORS)[number];
 
-export type ContactResult = { ok: true; ticketNumber: string | null } | { ok: false; error: ContactError };
+type ContactResult = { ok: true; ticketNumber: string | null } | { ok: false; error: ContactError };
 
 const asError = (value: unknown): ContactError =>
   (CONTACT_ERRORS as readonly unknown[]).includes(value) ? (value as ContactError) : "server_error";
 
-export function contactFormData(message: ContactMessage): FormData {
+function contactFormData(message: ContactMessage): FormData {
   const data = new FormData();
   data.set("name", message.name.trim());
   data.set("email", message.email.trim());

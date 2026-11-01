@@ -12,7 +12,7 @@ import type { GiftCardConfig } from "./giftCardMapping";
  * - `unavailable`: not published, or local mock mode (nothing is invented);
  * - `error`: the read failed — never shown as "not on sale".
  */
-export type StorefrontGiftCardState =
+type StorefrontGiftCardState =
   | { status: "loading" }
   | { status: "ready"; config: GiftCardConfig; product: GiftCardProductText }
   | { status: "unavailable" }

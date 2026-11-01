@@ -56,11 +56,10 @@ export interface GlowbookDetails {
   instagram: string;
 }
 
-export const HANDLE_MIN = 3;
+const HANDLE_MIN = 3;
 export const HANDLE_MAX = 30;
 export const DISPLAY_NAME_MAX = 60;
 export const BIO_MAX = 300;
-export const GLOWBOOK_MAX_ITEMS = 60;
 export const REVIEW_NOTE_MAX = 500;
 
 /** Same list as `studio_save_showcase()`. */

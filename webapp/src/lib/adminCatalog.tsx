@@ -31,7 +31,7 @@ import {
   type AdminCatalogValue,
 } from "./adminCatalogContext";
 
-export { useAdminCatalog, CatalogError, type AdminCatalogValue, type CatalogStats } from "./adminCatalogContext";
+export { useAdminCatalog } from "./adminCatalogContext";
 
 /**
  * The administration catalogue store.

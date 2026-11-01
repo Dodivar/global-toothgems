@@ -72,7 +72,7 @@ export interface CustomerNoteRow {
 }
 
 export type CustomerCourseRow = Database["public"]["Functions"]["admin_customer_courses"]["Returns"][number];
-export type StatusHistoryRow = Database["public"]["Functions"]["admin_customer_status_history"]["Returns"][number];
+type StatusHistoryRow = Database["public"]["Functions"]["admin_customer_status_history"]["Returns"][number];
 
 /* -------------------------------------------------------------------------- */
 /* Vocabulary                                                                 */
@@ -124,7 +124,7 @@ function personName(p: { display_name: string | null; first_name: string | null;
   return p.display_name?.trim() || full || p.email || "";
 }
 
-export function mapNote(row: CustomerNoteRow): CustomerNote {
+function mapNote(row: CustomerNoteRow): CustomerNote {
   return {
     id: row.id,
     authorId: row.author_id,

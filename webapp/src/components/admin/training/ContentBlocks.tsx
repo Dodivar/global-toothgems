@@ -26,7 +26,6 @@ import { LocalizedImageField, MediaPicker } from "./MediaPicker";
 import { secondsToClock } from "../../../lib/adminTrainingMapping";
 import { useTrainingMedia } from "../../../lib/trainingMedia";
 import { RichTextEditor } from "./RichTextEditor";
-import { LessonBlock } from "../../learning/LessonBlocks";
 import { BLOCK_TYPES, localizedMedia, type BlockType, type ContentBlock, type ImageBlock, type TextBlock, type VideoBlock } from "../../../data/adminTraining";
 import type { ContentLang } from "../../../lib/localized";
 import type { DragItemProps } from "../../../lib/useDragReorder";
@@ -160,7 +159,7 @@ export function AddContentMenu({
 /* Block card                                                                  */
 /* -------------------------------------------------------------------------- */
 
-export interface BlockActions {
+interface BlockActions {
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -622,7 +621,7 @@ function LocalizedPreviewCaption({ lang, hasEnglish }: { lang: ContentLang; hasE
  * It is plainly a still with a play affordance: a control that looks like it
  * plays and then does nothing is worse than one that says what it is.
  */
-export function VideoFrame({
+function VideoFrame({
   poster,
   title,
   duration,
@@ -658,19 +657,4 @@ export function VideoFrame({
       </div>
     </div>
   );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Read-only rendering                                                         */
-/* -------------------------------------------------------------------------- */
-
-/**
- * How a block looks to a learner. Used by the preview and the step preview.
- *
- * It is the learner's own renderer (`components/learning/LessonBlocks.tsx`),
- * not a lookalike: what an administrator previews is exactly what a learner
- * reads, video player and sanitised text included.
- */
-export function BlockView({ block, lang }: { block: ContentBlock; lang: ContentLang }) {
-  return <LessonBlock block={block} lang={lang} />;
 }

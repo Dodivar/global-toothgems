@@ -225,7 +225,7 @@ export type UserWriteError =
   | "invalid"
   | "unavailable";
 
-export interface WriteFailure {
+interface WriteFailure {
   code?: string;
   message?: string;
 }

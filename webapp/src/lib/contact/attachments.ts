@@ -11,7 +11,7 @@ export const ACCEPTED_ATTACHMENTS = ".jpg,.jpeg,.png,.pdf";
 
 const EXTENSION = /\.(jpe?g|png|pdf)$/i;
 
-export type AttachmentProblem = "count" | "size" | "type";
+type AttachmentProblem = "count" | "size" | "type";
 
 interface FileLike {
   name: string;

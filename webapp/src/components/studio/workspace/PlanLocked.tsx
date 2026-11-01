@@ -6,8 +6,6 @@ import { ACCOUNT_STUDIO_PATH } from "../StudioPlans";
 import { lowestPlanWith, type LockedFeature } from "../../../lib/studioEntitlements";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
-export type { LockedFeature };
-
 const ICON: Record<LockedFeature, LucideIcon> = {
   glowbook: Sparkles,
   templates: LayoutTemplate,

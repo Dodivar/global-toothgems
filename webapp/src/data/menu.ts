@@ -1,7 +1,7 @@
 import type { Localized } from "./types";
 import { photo } from "../lib/images";
 
-export interface MenuItem {
+interface MenuItem {
   title: Localized;
   sub: Localized;
   thumb: string;

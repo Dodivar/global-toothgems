@@ -22,7 +22,7 @@ import type { Localized } from "../data/types";
  *   exclude discounted products, as the engine does.
  */
 
-export type OfferPromotionType = "percentage" | "fixed_amount" | "buy_x_get_y" | "free_shipping" | "bundle" | "gift";
+type OfferPromotionType = "percentage" | "fixed_amount" | "buy_x_get_y" | "free_shipping" | "bundle" | "gift";
 
 export interface OfferPromotionRow {
   id: string;

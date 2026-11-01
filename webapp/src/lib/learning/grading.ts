@@ -43,7 +43,7 @@ export interface QuizGrader {
 const filled = (value: Localized | undefined): Localized | undefined => (value && (value.fr || value.en) ? value : undefined);
 
 /** The correction of one answer, from a quiz that carries its answer keys. */
-export function localCorrection(quiz: Quiz, question: Question, answerId: string | null): Correction {
+function localCorrection(quiz: Quiz, question: Question, answerId: string | null): Correction {
   const answer = question.answers.find((a) => a.id === answerId);
   const right = question.answers.find((a) => a.correct);
   const correct = Boolean(answer?.correct);

@@ -11,7 +11,7 @@ import { useSyncExternalStore } from "react";
 export const QUICK_ACTIONS = ["rotate", "size", "color", "duplicate", "duplicateMirror", "duplicateMirrorV", "mirrorH", "mirrorV", "delete"] as const;
 export type QuickActionId = (typeof QUICK_ACTIONS)[number];
 
-export interface QuickActionPrefs {
+interface QuickActionPrefs {
   /** Show the floating bar at all when pieces are selected. */
   enabled: boolean;
   /** The actions shown, in `QUICK_ACTIONS` order. */
@@ -21,7 +21,7 @@ export interface QuickActionPrefs {
 }
 
 const KEY = "gt-studio3d-quick-actions-v1";
-export const DEFAULT_QUICK_ACTIONS: QuickActionPrefs = {
+const DEFAULT_QUICK_ACTIONS: QuickActionPrefs = {
   enabled: true,
   // The mirrored duplicates are offered but off: with them, a single piece's bar is wider than a phone.
   actions: ["rotate", "size", "color", "duplicate", "delete"],

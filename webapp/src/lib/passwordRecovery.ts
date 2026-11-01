@@ -1,7 +1,7 @@
-import type { AuthError } from "@supabase/supabase-js";
 import { supabase } from "./supabase/client";
 import { RESET_PATH } from "./accountSecurity";
 import { authConfirmUrl } from "./authRoutes";
+import { isAuthRateLimit } from "./supabase/authErrors";
 
 /**
  * Password recovery through Supabase Auth, used by `/mot-de-passe-oublie` and
@@ -13,11 +13,8 @@ import { authConfirmUrl } from "./authRoutes";
  * customer.
  */
 
-export type RecoveryRequestResult = "sent" | "rateLimited" | "failed";
-export type NewPasswordResult = "updated" | "weak" | "same" | "noSession" | "failed";
-
-const isRateLimit = (error: AuthError) =>
-  error.status === 429 || error.code === "over_email_send_rate_limit" || error.code === "over_request_rate_limit";
+type RecoveryRequestResult = "sent" | "rateLimited" | "failed";
+type NewPasswordResult = "updated" | "weak" | "same" | "noSession" | "failed";
 
 export async function sendPasswordReset(email: string): Promise<RecoveryRequestResult> {
   if (!supabase) return "failed";
@@ -26,7 +23,7 @@ export async function sendPasswordReset(email: string): Promise<RecoveryRequestR
     redirectTo: authConfirmUrl(RESET_PATH, window.location.origin),
   });
   if (!error) return "sent";
-  return isRateLimit(error) ? "rateLimited" : "failed";
+  return isAuthRateLimit(error) ? "rateLimited" : "failed";
 }
 
 /** Sets the new password for the session opened by the recovery link, then closes it. */

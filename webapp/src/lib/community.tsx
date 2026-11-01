@@ -16,7 +16,7 @@ import { canEnterLounge } from "./communityChat/loungeApi";
  */
 
 /** The visitor as the lounge shows them, built from the account (mock mode). */
-export interface LoungeViewer {
+interface LoungeViewer {
   name: string;
   location?: string;
   bio: { fr: string; en: string };

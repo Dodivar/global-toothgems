@@ -8,7 +8,7 @@
  * The database accepts https addresses only.
  */
 
-export interface Carrier {
+interface Carrier {
   /** Stored as `shipments.carrier`. */
   name: string;
   /** Public tracking page, `{number}` replaced by the URL-encoded tracking number. */

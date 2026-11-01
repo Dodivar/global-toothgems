@@ -1,6 +1,6 @@
 import type { StoreDetails } from "../adminSettings";
 import type { Localized } from "../types";
-import { countryName } from "../../lib/settingsRules";
+import { countryName } from "../../lib/countryName";
 import { addressLines } from "../../lib/storeDetails";
 import { LEGAL_PATHS } from "./routes";
 import { DRAFT_DATE, l, type LegalDocument } from "./types";
@@ -19,6 +19,36 @@ function officeValue(store: StoreDetails): Localized | undefined {
   const lines = addressLines(store);
   if (!store.address1.trim() || lines.length === 0) return undefined;
   return l([...lines, countryName(store.country, "fr")].join(", "), [...lines, countryName(store.country, "en")].join(", "));
+}
+
+/**
+ * Who publishes the site: the publisher (decision 121) — the business that
+ * holds the site, distinct from the seller — named by its trading name.
+ */
+function publisherSentence(store: StoreDetails | null): Localized {
+  const brand = store?.storeName.trim() || "Global Toothgems";
+  const publisher = store ? store.publisherName.trim() || store.publisherLegalName.trim() : "";
+  return publisher
+    ? l(`Le site ${brand} est détenu et édité par ${publisher}, entreprise identifiée ci-dessous.`, `The ${brand} website is owned and published by ${publisher}, the business identified below.`)
+    : l(`Le site ${brand} est édité par l’entreprise identifiée ci-dessous.`, `The ${brand} website is published by the business identified below.`);
+}
+
+/**
+ * Who sells: the seller of the goods, courses and subscriptions, named by its
+ * trading name; its legal identity is in the field list, as the law requires
+ * (LCEN art. 19), not put forward (decision 120).
+ */
+function sellerSentence(store: StoreDetails | null): Localized {
+  const seller = store ? store.tradingName.trim() || store.legalName.trim() : "";
+  return seller
+    ? l(
+        `Les produits, formations et abonnements proposés sur le site sont vendus par ${seller}, avec qui les ventes sont conclues selon nos <<conditions générales de vente|/conditions-generales>>.`,
+        `The products, courses and subscriptions offered on the site are sold by ${seller}, with whom sales are concluded under our <<terms of sale|/conditions-generales>>.`,
+      )
+    : l(
+        "Les produits, formations et abonnements proposés sur le site sont vendus par l’entreprise identifiée ci-dessous.",
+        "The products, courses and subscriptions offered on the site are sold by the business identified below.",
+      );
 }
 
 /** Replaces a "to be supplied" marker by the supplied value, in both languages. */
@@ -43,8 +73,8 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
     eyebrow: l("Informations légales", "Legal information"),
     title: l("Mentions légales", "Legal notice"),
     intro: l(
-      "Qui édite ce site, qui l’héberge et comment nous joindre. Les informations d’identification de l’entreprise sont à compléter et à vérifier avant publication.",
-      "Who publishes this website, who hosts it and how to reach us. The company’s identification details must be completed and verified before publication.",
+      "Qui édite ce site, qui vend ce qu’il propose, qui l’héberge et comment nous joindre.",
+      "Who publishes this website, who sells what it offers, who hosts it and how to reach us.",
     ),
     updated: DRAFT_DATE,
     showKey: true,
@@ -63,22 +93,48 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
         id: "publisher",
         title: l("Éditeur du site", "Website publisher"),
         blocks: [
-          {
-            kind: "p",
-            text: l(
-              "Le site Global Toothgems est édité par l’entreprise identifiée ci-dessous.",
-              "The Global Toothgems website is published by the company identified below.",
-            ),
-          },
+          { kind: "p", text: publisherSentence(store) },
           {
             kind: "fields",
             fields: [
+              { label: l("Nom commercial", "Trading name"), value: same(store?.publisherName), placeholder: l("Nom commercial de l’éditeur", "Publisher’s trading name") },
+              { label: l("Marque du site", "Website brand"), value: same(store?.storeName) ?? l("Global Toothgems", "Global Toothgems") },
               {
-                label: l("Dénomination sociale", "Legal business name"),
-                value: same(store?.legalName),
-                placeholder: l("Dénomination sociale", "Legal business name"),
+                label: l("Dénomination", "Legal name"),
+                value: same(store?.publisherLegalName),
+                placeholder: l("Dénomination (ou nom de l’entrepreneur)", "Legal name (or the entrepreneur’s name)"),
               },
-              { label: l("Nom commercial / marque", "Trading name / brand"), value: same(store?.storeName) ?? l("Global Toothgems", "Global Toothgems") },
+              { label: l("Forme juridique", "Legal entity type"), value: same(store?.publisherLegalForm), placeholder: l("Forme juridique", "Legal entity type") },
+              {
+                label: l("Siège social / adresse", "Registered office / address"),
+                value: same(store?.publisherAddress),
+                placeholder: l("Adresse du siège social", "Registered office address"),
+              },
+              {
+                label: l("Numéro d’immatriculation", "Registration number"),
+                value: same(store?.publisherRegistrationNumber),
+                placeholder: l("Numéro et registre d’immatriculation", "Registration number and register"),
+              },
+              { label: l("E-mail de contact", "Contact email"), value: same(store?.publisherEmail), placeholder: l("Adresse e-mail de l’éditeur", "Publisher’s email address") },
+              { label: l("Téléphone", "Telephone"), value: same(store?.publisherPhone), placeholder: l("Numéro de téléphone de l’éditeur", "Publisher’s telephone number") },
+            ],
+          },
+        ],
+      },
+      {
+        id: "seller",
+        title: l("Vendeur", "Seller"),
+        blocks: [
+          { kind: "p", text: sellerSentence(store) },
+          {
+            kind: "fields",
+            fields: [
+              { label: l("Nom commercial", "Trading name"), value: same(store?.tradingName), placeholder: l("Nom commercial", "Trading name") },
+              {
+                label: l("Dénomination", "Legal name"),
+                value: same(store?.legalName),
+                placeholder: l("Dénomination (ou nom de l’entrepreneur)", "Legal name (or the entrepreneur’s name)"),
+              },
               {
                 label: l("Forme juridique", "Legal entity type"),
                 value: store ? legalFormValue(store) : undefined,
@@ -107,10 +163,6 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
                 value: store?.showPhone ? same(store.phone) : undefined,
                 placeholder: l("Numéro de téléphone", "Telephone number"),
                 hint: l("Si un numéro est mis à disposition des clients.", "If a number is made available to customers."),
-              },
-              {
-                label: l("Autres mentions obligatoires", "Other mandatory information"),
-                placeholder: l("Selon la structure et le pays (ex. activité réglementée)", "Depending on structure and country (e.g. regulated activity)"),
               },
             ],
           },
@@ -187,7 +239,7 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
                 "All content on this website — text, photographs, videos, training materials, logos, visual identity and layout — is protected by intellectual property law. Unless stated otherwise, it belongs to [[!Rights holder]] or is used with its authors’ permission.",
               ),
               l("[[!Titulaire des droits]]", "[[!Rights holder]]"),
-              store?.legalName,
+              store ? store.publisherName.trim() || store.publisherLegalName.trim() : undefined,
             ),
           },
           {

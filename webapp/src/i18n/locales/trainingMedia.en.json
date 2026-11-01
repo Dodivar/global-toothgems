@@ -1,6 +1,5 @@
 {
   "title": "Training media library",
-  "subtitle": "Images and videos for courses, modules and lessons. Kept apart from the shop's product photos.",
   "close": "Close the image library",
   "search": "Search training media",
   "searchPlaceholder": "Search by name, description or tag",
@@ -156,7 +155,6 @@
     "languageFr": "French",
     "languageEn": "English"
   },
-  "addedOn": "Added on {{date}}",
   "more": "Show more ({{count}} left)",
   "sort": {
     "label": "Sort",

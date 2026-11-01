@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import clsx from "clsx";
 
 export type BadgeTone = "neutral" | "brand" | "success" | "warning" | "error" | "highlight" | "ink";
-export type BadgeSize = "sm" | "md";
+type BadgeSize = "sm" | "md";
 
 const toneClasses: Record<BadgeTone, string> = {
   neutral: "bg-[var(--gt-ink-100)] text-[var(--text-body)] border-[var(--border-subtle)]",

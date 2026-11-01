@@ -18,7 +18,7 @@ import { isSupabaseConfigured, supabase } from "./supabase/client";
  * in the member area.
  */
 
-export type OrdersLoadState = "loading" | "ready" | "error";
+type OrdersLoadState = "loading" | "ready" | "error";
 
 interface OrdersContextValue {
   /** Newest first. */

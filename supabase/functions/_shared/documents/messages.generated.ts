@@ -4,7 +4,6 @@
 export const DOCUMENT_MESSAGES = {
   "fr": {
     "documents": {
-      "seller": "Vendeur",
       "page": "Page {{page}} sur {{count}}",
       "meta": {
         "reference": "Référence",
@@ -90,7 +89,6 @@ export const DOCUMENT_MESSAGES = {
   },
   "en": {
     "documents": {
-      "seller": "Seller",
       "page": "Page {{page}} of {{count}}",
       "meta": {
         "reference": "Reference",

@@ -5,7 +5,7 @@ import { logoFileProblem, logoTargetSize, type LogoProblem } from "./branding";
  * decoded, redrawn as a PNG within 1024 px (transparency kept, metadata
  * dropped). Browser only.
  */
-export type PreparedLogo = { ok: true; png: Blob } | { ok: false; problem: LogoProblem | "decode" };
+type PreparedLogo = { ok: true; png: Blob } | { ok: false; problem: LogoProblem | "decode" };
 
 export async function prepareLogo(file: File): Promise<PreparedLogo> {
   const problem = logoFileProblem(file);

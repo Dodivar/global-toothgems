@@ -17,7 +17,7 @@ import { fetchStoreDetails } from "./storeDetails";
  * cannot invalidate the server cache.
  */
 
-export const STORE_DETAILS_CACHE_TAG = "store-details";
+const STORE_DETAILS_CACHE_TAG = "store-details";
 
 const readStoreDetails = unstable_cache(() => fetchStoreDetails(createPublicServerSupabase()), ["store-details"], {
   revalidate: CATALOGUE_TTL_SECONDS,

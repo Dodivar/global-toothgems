@@ -35,14 +35,14 @@ export type RichBlock =
   | { type: "list"; ordered: false; items: RichInline[][] }
   | { type: "list"; ordered: true; start: number; items: RichInline[][] };
 
-export const BULLET_PATTERN = /^\s*[-*•]\s+(.*)$/;
-export const ORDERED_PATTERN = /^\s*(\d{1,4})[.)]\s+(.*)$/;
+const BULLET_PATTERN = /^\s*[-*•]\s+(.*)$/;
+const ORDERED_PATTERN = /^\s*(\d{1,4})[.)]\s+(.*)$/;
 const HEADING_PATTERN = /^\s*(#{2,3})\s+(.*)$/;
 const QUOTE_PATTERN = /^\s*>(?:\s+(.*))?$/;
 const RULE_PATTERN = /^\s*-{3,}\s*$/;
 
 /** Characters a backslash turns back into plain text. */
-export const ESCAPABLE = "\\*_~+[]#>-.)•";
+const ESCAPABLE = "\\*_~+[]#>-.)•";
 
 /** Paired markers, longest first so `**` is tried before `*`. */
 const DOUBLE_MARKERS = [
@@ -173,7 +173,7 @@ export function parseInline(text: string): RichInline[] {
   return nodes;
 }
 
-export function normalizeNewlines(source: string): string {
+function normalizeNewlines(source: string): string {
   return source.replace(/\r\n?/g, "\n");
 }
 

@@ -20,11 +20,12 @@ import { EmptyState } from "../admin/EmptyState";
 import { OverflowMenu } from "../admin/OverflowMenu";
 import { useToast } from "../../lib/toast";
 import { useAdminSettings } from "../../lib/adminSettings";
-import { countryName, flagOf, resolveZone, shippingIssues } from "../../lib/settingsRules";
+import { flagOf, resolveZone, shippingIssues } from "../../lib/settingsRules";
 import { COUNTRY_GROUPS, type ShippingRate, type ShippingZone } from "../../data/adminSettings";
 import { RateSheet, ZoneSheet } from "./ShippingSheets";
 import { RATE_ICON, useRateText } from "./shippingFormat";
 import { Eyebrow, RowSwitch, SettingsCard, StatusPill, focusRing } from "./SettingsUi";
+import { countryName } from "../../lib/countryName";
 
 /**
  * Shipping zones and the methods offered in each.

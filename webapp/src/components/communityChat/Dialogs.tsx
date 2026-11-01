@@ -8,12 +8,13 @@ import { Link } from "../../lib/navigation";
 import { LOUNGE_DIRECT_MESSAGES_ENABLED, memberOfConversation, type ChatMember } from "../../lib/communityChat/model";
 import { pick } from "../../data/types";
 import { useChat, type ChatNotification, type NotificationKind } from "../../lib/communityChat/chatStore";
-import { mentionCandidates, normalize, plainText, searchCommunity, timestampOf, type ChatRoom } from "../../lib/communityChat/chatLogic";
+import { mentionCandidates, plainText, searchCommunity, timestampOf, type ChatRoom } from "../../lib/communityChat/chatLogic";
 import { ChatAvatar, ChatDialog, focusRing, useChatTime, useCountryName, useNow } from "./primitives";
 import { LanguageFlag } from "./LanguageFlag";
 import { ChannelIcon } from "./channelIcons";
 import { MemberCard } from "./MemberCard";
 import { useLoungeUi } from "./loungeUi";
+import { foldText } from "../../lib/foldText";
 
 const sectionTitle = "m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]";
 
@@ -252,9 +253,9 @@ function NoResults({ text, hint }: { text: string; hint?: string }) {
 
 /** Wraps each matched word in a highlight, accents and case ignored. */
 function Highlight({ text, query }: { text: string; query: string }) {
-  const words = normalize(query).split(/\s+/).filter(Boolean);
+  const words = foldText(query).split(/\s+/).filter(Boolean);
   if (words.length === 0) return <>{text}</>;
-  const folded = normalize(text);
+  const folded = foldText(text);
   const marks: Array<[number, number]> = [];
   for (const word of words) {
     let from = 0;
@@ -283,9 +284,9 @@ function Highlight({ text, query }: { text: string; query: string }) {
 
 /** An excerpt around the first match, so the hit is visible in one line. */
 function excerpt(text: string, query: string): string {
-  const word = normalize(query).split(/\s+/).filter(Boolean)[0];
+  const word = foldText(query).split(/\s+/).filter(Boolean)[0];
   if (!word) return text;
-  const at = normalize(text).indexOf(word);
+  const at = foldText(text).indexOf(word);
   if (at < 50) return text;
   return `…${text.slice(at - 36)}`;
 }

@@ -19,7 +19,7 @@ import { holdsMoney, parseInstant, type AdminOrder, type AdminOrderLine } from "
  */
 
 export const DASHBOARD_WINDOWS = [7, 14, 30] as const;
-export type DashboardWindow = (typeof DASHBOARD_WINDOWS)[number];
+type DashboardWindow = (typeof DASHBOARD_WINDOWS)[number];
 export const DEFAULT_DASHBOARD_WINDOW: DashboardWindow = 7;
 
 export function readDashboardWindow(value: string | null): DashboardWindow {
@@ -52,13 +52,13 @@ export interface SalesSeries {
 }
 
 /** Local `YYYY-MM-DD` of a date (the shop's day is the administrator's day). */
-export function localDay(date: Date): string {
+function localDay(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-export type LineKind = "product" | "course" | "giftCard";
+type LineKind = "product" | "course" | "giftCard";
 
 export function lineKind(line: Pick<AdminOrderLine, "courseId" | "giftCardDesign">): LineKind {
   if (line.courseId) return "course";
@@ -67,7 +67,7 @@ export function lineKind(line: Pick<AdminOrderLine, "courseId" | "giftCardDesign
 }
 
 /** The currency the book is mostly sold in: where the chart's amounts come from. */
-export function dominantCurrency(orders: Pick<AdminOrder, "currency">[], fallback = "EUR"): string {
+function dominantCurrency(orders: Pick<AdminOrder, "currency">[], fallback = "EUR"): string {
   const counts = new Map<string, number>();
   for (const order of orders) counts.set(order.currency, (counts.get(order.currency) ?? 0) + 1);
   let best = fallback;
@@ -133,7 +133,7 @@ export function ordersToShip(orders: AdminOrder[]): AdminOrder[] {
 
 /* ------------------------------------------------------------------ spline */
 
-export interface Point {
+interface Point {
   x: number;
   y: number;
 }

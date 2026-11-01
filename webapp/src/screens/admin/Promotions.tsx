@@ -46,7 +46,7 @@ import { useAdminShell } from "./AdminLayout";
  */
 
 /** URL slug per tab — French, like every admin route. */
-export const TAB_SLUG: Record<PromotionTab, string> = {
+const TAB_SLUG: Record<PromotionTab, string> = {
   all: "",
   active: "actives",
   scheduled: "programmees",
@@ -55,7 +55,7 @@ export const TAB_SLUG: Record<PromotionTab, string> = {
   giftCards: "cartes-cadeaux",
 };
 
-export function promotionsHref(tab: PromotionTab): string {
+function promotionsHref(tab: PromotionTab): string {
   return TAB_SLUG[tab] ? `/admin/promotions?vue=${TAB_SLUG[tab]}` : "/admin/promotions";
 }
 

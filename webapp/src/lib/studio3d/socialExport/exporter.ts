@@ -34,7 +34,7 @@ export interface ExportLook {
   mark: MarkImage | null;
 }
 
-export interface ExportOptions {
+interface ExportOptions {
   signal?: AbortSignal;
   onProgress?: (share: number) => void;
 }

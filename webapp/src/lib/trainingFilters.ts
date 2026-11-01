@@ -10,9 +10,9 @@ import { COURSE_STATUSES, type CourseStatus, type TrainingCourse } from "../data
  */
 
 /** Section order of the back-office list. */
-export const COURSE_STATUS_ORDER: CourseStatus[] = ["published", "draft", "unpublished"];
+const COURSE_STATUS_ORDER: CourseStatus[] = ["published", "draft", "unpublished"];
 
-export interface CourseStatusGroup {
+interface CourseStatusGroup {
   status: CourseStatus;
   courses: TrainingCourse[];
 }

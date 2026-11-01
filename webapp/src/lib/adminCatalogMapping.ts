@@ -22,6 +22,7 @@ import { GEM_SHAPES } from "../data/products";
 import type { Json } from "./supabase/database.types";
 import { toMinorUnits } from "./catalog/money";
 import { comboKey, comboName, parseGemAttributes, sortSizes, type GemSize } from "./gemOptions";
+import { oneOf } from "./oneOf";
 
 /**
  * Pure translation between the Supabase catalogue and the admin model.
@@ -212,12 +213,8 @@ export const UNSAVED_MEDIA_PREFIX = "upload-";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function isUuid(value: string): boolean {
+function isUuid(value: string): boolean {
   return UUID.test(value);
-}
-
-function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
-  return allowed.includes(value as T) ? (value as T) : fallback;
 }
 
 function english<T extends { locale: string }>(rows: T[] | null | undefined): T | undefined {
@@ -377,13 +374,13 @@ function inventoryOf(variant: VariantRow): InventoryRow | null {
 }
 
 /** Colour dot of a variant (`attributes.swatch`), when it is a valid `#rrggbb`. */
-export function readSwatch(attributes: Json | undefined): string | undefined {
+function readSwatch(attributes: Json | undefined): string | undefined {
   const swatch = asObject(attributes).swatch;
   return typeof swatch === "string" && /^#[0-9a-f]{6}$/i.test(swatch) ? swatch.toLowerCase() : undefined;
 }
 
 /** The options of a product's variants and their values, in order (`…_product_variant_options`). */
-export function readVariantOptions(rows: OptionRow[]): VariantOption[] {
+function readVariantOptions(rows: OptionRow[]): VariantOption[] {
   return [...rows]
     .sort((a, b) => a.position - b.position)
     .map((option) => ({

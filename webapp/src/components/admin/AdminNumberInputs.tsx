@@ -4,7 +4,7 @@ import { useState } from "react";
  * Numeric fields of the admin forms (product form, gem options grid).
  */
 
-export interface NumberInputProps {
+interface NumberInputProps {
   id?: string;
   value: number | undefined;
   onValueChange: (value: number | undefined) => void;

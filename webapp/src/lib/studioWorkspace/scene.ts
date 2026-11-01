@@ -20,7 +20,7 @@ import { currentEstimate } from "../studio3d/gemRegistry";
 /** 2: pieces are the shop's gems (format 1 named pieces of a built-in library, discarded). */
 export const SCENE_VERSION = 2;
 /** Upper bound on pieces per design; far above any real smile, it keeps a row small. */
-export const SCENE_MAX_PIECES = 200;
+const SCENE_MAX_PIECES = 200;
 
 /**
  * Which dentition the pieces were placed on — the editor's own model names
@@ -117,7 +117,7 @@ export function sanitizeScene(input: unknown): StudioScene {
   };
 }
 
-export interface SceneStats {
+interface SceneStats {
   elementCount: number;
   /** Indicative value at shop prices, in minor units — never a price to charge. */
   estimatedPriceMinor: number;

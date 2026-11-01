@@ -79,6 +79,8 @@ export interface InvoiceVatRow {
 /** The seller as Settings held it when the document was issued. */
 export interface InvoiceSeller {
   storeName: string;
+  /** Trading name frozen with the document (decision 120); empty on documents issued before. */
+  tradingName: string;
   legalName: string;
   legalForm: string;
   shareCapital: string;
@@ -194,6 +196,7 @@ function seller(value: Json | undefined): InvoiceSeller {
   const town = [str(s.postal_code), str(s.city)].filter(Boolean).join(" ");
   return {
     storeName: str(s.store_name),
+    tradingName: str(s.trading_name),
     legalName: str(s.legal_name),
     legalForm: str(s.legal_form),
     shareCapital: str(s.share_capital),

@@ -13,13 +13,13 @@ import { shopHref } from "../../data/taxonomy";
  * An item either navigates (`to`) or acts (`action`): "Cookie settings" opens
  * the preferences dialog rather than a page.
  */
-export interface FooterItem {
+interface FooterItem {
   label: string;
   to?: string;
   action?: () => void;
 }
 
-export interface FooterColumn {
+interface FooterColumn {
   id: string;
   heading: string;
   items: FooterItem[];

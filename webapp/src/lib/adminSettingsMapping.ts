@@ -74,7 +74,7 @@ const byPosition = <T extends { position: number; id: string }>(a: T, b: T) => a
 
 const rateKind = (kind: string): RateKind => ((RATE_KINDS as string[]).includes(kind) ? (kind as RateKind) : "standard");
 
-export function mapShippingRate(row: ShippingRateRow): ShippingRate {
+function mapShippingRate(row: ShippingRateRow): ShippingRate {
   return {
     id: row.id,
     kind: rateKind(row.kind),

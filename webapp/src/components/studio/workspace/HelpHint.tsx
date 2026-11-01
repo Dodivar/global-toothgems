@@ -8,7 +8,7 @@ import { HelpMoreLink } from "./HelpMoreLink";
 import { focusRing } from "./workspaceStyles";
 
 /** The questions the workspace answers in place, each under `studio.workspace.hints.<id>`. */
-export type HintId = "saving" | "groups" | "estimate";
+type HintId = "saving" | "groups" | "estimate";
 
 /** The help page's topic each answer continues in. */
 const HINT_TOPIC: Record<HintId, HelpTopicId> = { saving: "saving", groups: "gemGroups", estimate: "estimate" };

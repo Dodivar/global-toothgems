@@ -1,7 +1,7 @@
 import type { Localized } from "./types";
 import { photo } from "../lib/images";
 
-export interface Course {
+interface Course {
   id: string;
   title: Localized;
   level: Localized;

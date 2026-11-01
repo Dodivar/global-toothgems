@@ -16,7 +16,7 @@
 
 import { hasFeature, isStudioTier, type StudioTier } from "../../studioEntitlements";
 
-export { isStudioTier, type StudioTier };
+export {  type StudioTier };
 
 /** The mark in the corner of the export. */
 export type ShareMark = "brand" | "logo" | "none";
@@ -78,7 +78,7 @@ export function defaultMark(rights: BrandingRights, hasLogo: boolean): ShareMark
 }
 
 /** Logo files accepted (the bucket's own limits, checked again by Storage). */
-export const LOGO_LIMITS = {
+const LOGO_LIMITS = {
   maxBytes: 2 * 1024 * 1024,
   types: ["image/png", "image/jpeg", "image/webp"] as readonly string[],
   /** The uploaded logo is redrawn as a PNG no larger than this on its long side. */

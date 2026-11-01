@@ -149,7 +149,7 @@ function historyOf(row: ReviewRow, submittedAt: string, author: string, responde
   return events.sort((a, b) => a.at.localeCompare(b.at));
 }
 
-export interface ReviewMappingContext {
+interface ReviewMappingContext {
   /** Account of the open session, to mark the reader's own reviews. */
   userId: string | null;
   /** Readable URL of a stored photo, or undefined when the reader may not see it. */

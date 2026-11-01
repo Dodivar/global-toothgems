@@ -19,9 +19,10 @@ import { orderAmountRows, orderDocument, orderDocumentFileName } from "../../lib
 import { invoiceDocument, invoiceFileName } from "../../lib/documents/invoiceDocument";
 import type { OrderInvoice } from "../../lib/documents/invoiceModel";
 import { useDocumentDownload } from "../../lib/documents/useDocumentDownload";
-import { countryName, useDocumentFormat } from "../../lib/documents/useDocumentFormat";
+import { useDocumentFormat } from "../../lib/documents/useDocumentFormat";
 import { fetchStoreDetails } from "../../lib/storeDetails";
 import { supabase } from "../../lib/supabase/client";
+import { countryName } from "../../lib/countryName";
 
 /**
  * One order, as recorded: the lines frozen at purchase time, every amount the

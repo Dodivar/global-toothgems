@@ -88,14 +88,6 @@ const ATTENTION_ICON: Record<AttentionReason, LucideIcon> = {
   fulfillmentIssue: CircleSlash,
 };
 
-export function orderStatusIcon(status: AdminOrderStatus): LucideIcon {
-  return ORDER_META[status].icon;
-}
-
-export function attentionIcon(reason: AttentionReason): LucideIcon {
-  return ATTENTION_ICON[reason];
-}
-
 export function OrderStatusBadge({
   status,
   size = "md",

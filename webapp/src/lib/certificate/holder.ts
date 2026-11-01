@@ -7,7 +7,7 @@
  *
  * Pure: unit-tested in `certificate.test.ts`.
  */
-export interface CertificateHolder {
+interface CertificateHolder {
   /** "First Last" as typed, trimmed; "" when neither is set. */
   name: string;
   /** Both names are present: the certificate may leave the screen. */

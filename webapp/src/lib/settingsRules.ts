@@ -20,19 +20,6 @@ import {
 /* Countries                                                                  */
 /* -------------------------------------------------------------------------- */
 
-const displayNames = new Map<string, Intl.DisplayNames>();
-
-/** Country name in the UI language — from the platform, not a hand-kept list. */
-export function countryName(code: string, lang: string): string {
-  const key = lang.slice(0, 2);
-  let dn = displayNames.get(key);
-  if (!dn) {
-    dn = new Intl.DisplayNames([key], { type: "region" });
-    displayNames.set(key, dn);
-  }
-  return dn.of(code) ?? code;
-}
-
 /** Regional-indicator flag. Decorative only: always shown beside the name or code. */
 export function flagOf(code: string): string {
   return code
@@ -102,6 +89,12 @@ const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 /** Same limits as the `store_settings` columns. */
 const MAX_LENGTH: Partial<Record<keyof StoreDetails, number>> = {
   storeName: 120,
+  tradingName: 120,
+  publisherName: 120,
+  publisherLegalName: 200,
+  publisherLegalForm: 120,
+  publisherRegistrationNumber: 120,
+  publisherAddress: 300,
   legalName: 200,
   legalForm: 120,
   shareCapital: 60,
@@ -131,6 +124,8 @@ export function validateStore(d: StoreDetails): StoreErrors {
   if (!d.supportEmail.trim()) e.supportEmail = "required";
   else if (!EMAIL.test(d.supportEmail.trim())) e.supportEmail = "email";
   if (d.businessEmail.trim() && !EMAIL.test(d.businessEmail.trim())) e.businessEmail = "email";
+  if (d.publisherEmail.trim() && !EMAIL.test(d.publisherEmail.trim())) e.publisherEmail = "email";
+  if (d.publisherPhone.trim() && !PHONE.test(d.publisherPhone.trim())) e.publisherPhone = "phone";
   if (d.phone.trim() && !PHONE.test(d.phone.trim())) e.phone = "phone";
   if (d.vatNumber.trim() && !VAT_NUMBER.test(d.vatNumber.replace(/\s/g, "").toUpperCase())) e.vatNumber = "vatNumber";
   if (d.country === "FR" && d.postalCode.trim() && !/^\d{5}$/.test(d.postalCode.trim())) e.postalCode = "postalFr";
@@ -147,7 +142,7 @@ export function validateStore(d: StoreDetails): StoreErrors {
 /* Shipping                                                                   */
 /* -------------------------------------------------------------------------- */
 
-export type RateErrors = Partial<Record<"name" | "days" | "price" | "freeOver" | "orderRange" | "weightRange", string>>;
+type RateErrors = Partial<Record<"name" | "days" | "price" | "freeOver" | "orderRange" | "weightRange", string>>;
 
 export function validateRate(r: ShippingRate): RateErrors {
   const e: RateErrors = {};
@@ -161,7 +156,7 @@ export function validateRate(r: ShippingRate): RateErrors {
   return e;
 }
 
-export type ZoneErrors = Partial<Record<"name" | "countries", string>>;
+type ZoneErrors = Partial<Record<"name" | "countries", string>>;
 
 export function validateZone(z: ShippingZone, all: ShippingZone[]): ZoneErrors {
   const e: ZoneErrors = {};
@@ -190,7 +185,7 @@ export function resolveZone(code: string, zones: ShippingZone[]): { zone: Shippi
   return { zone: undefined, reason: "none" };
 }
 
-export interface ShippingIssue {
+interface ShippingIssue {
   zoneId: string;
   key: "noActiveRate" | "noRates";
 }

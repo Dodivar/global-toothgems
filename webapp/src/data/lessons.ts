@@ -1,11 +1,11 @@
 import type { Localized } from "./types";
 
-export interface Lesson {
+interface Lesson {
   title: Localized;
   duration: string;
 }
 
-export interface Module {
+interface Module {
   title: Localized;
   /** Title without the "Module n ·" prefix, for layouts that number modules themselves. */
   short: Localized;
@@ -56,46 +56,6 @@ export const MODULES: Module[] = [
   },
 ];
 
-export const FLAT: Lesson[] = MODULES.flatMap((m) => m.lessons);
-
-export function moduleIndexForFlatIndex(flatIndex: number): number {
-  let count = 0;
-  for (let m = 0; m < MODULES.length; m++) {
-    count += MODULES[m].lessons.length;
-    if (flatIndex < count) return m;
-  }
-  return MODULES.length - 1;
-}
-
-export const LESSON_POINTS: Record<number, Localized[]> = {
-  4: [
-    { fr: "Positionner la gem sur le grand axe de la dent.", en: "Position the gem on the tooth's major axis." },
-    {
-      fr: "Quelle quantité d’adhésif suffit — et à quoi ressemble un excès.",
-      en: "How much adhesive is enough — and what excess looks like.",
-    },
-    {
-      fr: "Polymérisation en deux temps, avec les temps pour la lampe 1200 mW.",
-      en: "Two-stage curing, with timings for the 1200mW lamp.",
-    },
-  ],
-};
-
-export const LESSON_POINTS_FALLBACK: Localized[] = [
-  {
-    fr: "Les points clés de cette leçon sont détaillés dans les notes téléchargeables.",
-    en: "The key points of this lesson are detailed in the downloadable notes.",
-  },
-  {
-    fr: "Chaque geste est filmé en plan serré, puis répété au ralenti.",
-    en: "Every motion is filmed in close-up, then repeated in slow motion.",
-  },
-  {
-    fr: "Le quiz de fin de module reprend les trois erreurs les plus fréquentes.",
-    en: "The end-of-module quiz covers the three most common mistakes.",
-  },
-];
-
 export const QUIZ = {
   index: 1,
   total: 3,
@@ -127,9 +87,4 @@ export const PASS_SCORE = 80;
 export function parseDuration(d: string): number {
   const [m, s] = d.split(":").map(Number);
   return m * 60 + s;
-}
-
-/** Video seconds still ahead of a learner who has validated `doneCount` lessons. */
-export function remainingSeconds(doneCount: number): number {
-  return FLAT.reduce((sum, l, i) => (i >= doneCount ? sum + parseDuration(l.duration) : sum), 0);
 }

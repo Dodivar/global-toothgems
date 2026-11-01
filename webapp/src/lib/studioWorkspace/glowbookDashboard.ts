@@ -6,7 +6,7 @@ import type { Glowbook, GlowbookItem } from "./glowbook";
  * or other figures the Studio does not have.
  */
 
-export interface GlowbookCounts {
+interface GlowbookCounts {
   approved: number;
   pending: number;
   rejected: number;

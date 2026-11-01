@@ -4,7 +4,7 @@ import { pick } from "../../data/types";
 import { FALLBACK_TAXONOMY, findCategory, findFamily, type ShopCategoryDef } from "../../data/taxonomy";
 import { useCatalog } from "./CatalogProvider";
 
-export interface TaxonomyApi {
+interface TaxonomyApi {
   taxonomy: ShopCategoryDef[];
   /**
    * Name of a category in the reading language. Until the taxonomy has

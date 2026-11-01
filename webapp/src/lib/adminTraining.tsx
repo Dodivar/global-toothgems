@@ -170,7 +170,7 @@ function newStep(index: number): Step {
  * without a file, shown as an empty slot to fill from the media library (the
  * publication check reports any left empty).
  */
-export function newBlock(type: BlockType): ContentBlock {
+function newBlock(type: BlockType): ContentBlock {
   const id = newId();
   if (type === "text") {
     return {
@@ -234,7 +234,7 @@ function newQuiz(): Quiz {
   };
 }
 
-export function newAnswer(): Answer {
+function newAnswer(): Answer {
   return {
     id: newId(),
     text: { fr: "Nouvelle réponse", en: "New answer" },
@@ -246,7 +246,7 @@ export function newAnswer(): Answer {
 /* Context                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export type MoveDirection = "up" | "down";
+type MoveDirection = "up" | "down";
 
 interface AdminTrainingValue {
   /** Where courses are kept: the prototype fixtures or the Supabase database. */

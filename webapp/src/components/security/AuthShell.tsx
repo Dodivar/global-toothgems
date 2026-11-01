@@ -32,7 +32,7 @@ export function AuthShell({ demo, children, footer }: { demo?: ReactNode; childr
   );
 }
 
-export type Tone = "brand" | "success" | "warning" | "error" | "neutral";
+type Tone = "brand" | "success" | "warning" | "error" | "neutral";
 
 const toneClasses: Record<Tone, string> = {
   brand: "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]",
@@ -47,7 +47,7 @@ const toneClasses: Record<Tone, string> = {
  * spark, the registration journey's envelope motif. The icon's shape carries
  * the meaning (clock for expired, check for done…), so the tint never has to.
  */
-export function StateMark({ icon: Icon, tone = "brand", spark = true }: { icon: LucideIcon; tone?: Tone; spark?: boolean }) {
+function StateMark({ icon: Icon, tone = "brand", spark = true }: { icon: LucideIcon; tone?: Tone; spark?: boolean }) {
   return (
     <span aria-hidden="true" className={clsx("gt-pop-in relative grid h-[72px] w-[72px] place-items-center rounded-full", toneClasses[tone])}>
       <Icon size={30} strokeWidth={1.6} />

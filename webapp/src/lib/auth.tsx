@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import posthog from "posthog-js";
 import { Navigate, useLocation } from "./navigation";
-import type { AuthError, User } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
 import { DELIVERY_COUNTRIES } from "../data/countries";
 import { LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData } from "./registration";
@@ -9,6 +9,8 @@ import { authConfirmUrl, isSafeNext } from "./authRoutes";
 import { rememberGoogleTerms, takeGoogleTerms } from "./googleTerms";
 import { TermsGate } from "../components/auth/TermsGate";
 import { useHydrated } from "./useHydrated";
+import { isAuthRateLimit } from "./supabase/authErrors";
+import { initialsOf } from "./initials";
 
 /**
  * Member session.
@@ -44,7 +46,7 @@ export interface Profile {
 }
 
 /** Fields the profile form can change. The email is edited here too. */
-export type ProfilePatch = Partial<Profile>;
+type ProfilePatch = Partial<Profile>;
 
 /**
  * Demo postal details, the counterpart of the seeded orders in `data/orders.ts`:
@@ -62,7 +64,7 @@ const DEMO_POSTAL: Pick<Profile, "phone" | "addressLine" | "postalCode" | "city"
 export type SignInResult = "accepted" | "rejected" | "unconfirmed" | "suspended" | "rateLimited" | "unavailable";
 
 /** Outcome of an account creation. */
-export type SignUpResult =
+type SignUpResult =
   | "confirmationSent"
   | "signedIn"
   | "emailTaken"
@@ -73,7 +75,7 @@ export type SignUpResult =
   | "server";
 
 /** Outcome of starting the Google sign-in. */
-export type GoogleSignInResult = "redirecting" | "unavailable";
+type GoogleSignInResult = "redirecting" | "unavailable";
 
 /** Outcome of asking for a new confirmation email. */
 export type ResendResult = "sent" | "rateLimited" | "failed";
@@ -137,7 +139,7 @@ interface AuthContextValue {
  * What a mock sign-in may carry beyond the email: the registration journey
  * sends what it asked for, so the new profile reflects the answers given.
  */
-export interface SignInIdentity {
+interface SignInIdentity {
   firstName?: string;
   lastName?: string;
   phone?: string;
@@ -157,12 +159,6 @@ function nameFromEmail(email: string): string {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-}
-
-function initialsOf(name: string): string {
-  const parts = name.split(" ").filter(Boolean);
-  if (parts.length === 0) return "?";
-  return (parts[0].charAt(0) + (parts.length > 1 ? parts[parts.length - 1].charAt(0) : "")).toUpperCase();
 }
 
 /** Name shown everywhere: the typed one, else the email's local part. */
@@ -298,9 +294,6 @@ async function recordTerms(userId: string, source: "account" | "checkout"): Prom
   return !error;
 }
 
-const isRateLimit = (error: AuthError) =>
-  error.status === 429 || error.code === "over_email_send_rate_limit" || error.code === "over_request_rate_limit";
-
 function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -360,7 +353,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) {
         if (error.code === "email_not_confirmed") return "unconfirmed";
-        if (isRateLimit(error)) return "rateLimited";
+        if (isAuthRateLimit(error)) return "rateLimited";
         return error.status === 400 || error.status === 401 ? "rejected" : "unavailable";
       }
       const loaded = await applyUser(data.user);
@@ -386,7 +379,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         if (error.code === "user_already_exists" || error.code === "email_exists") return "emailTaken";
         if (error.code === "weak_password") return "weakPassword";
-        if (isRateLimit(error)) return "rateLimited";
+        if (isAuthRateLimit(error)) return "rateLimited";
         // supabase-js reports every 5xx as "retryable"; only status 0 means the
         // request never reached Supabase.
         if (error.name === "AuthRetryableFetchError" && !error.status) return "network";
@@ -416,7 +409,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       options: { emailRedirectTo: redirectTo },
     });
     if (!error) return "sent";
-    return isRateLimit(error) ? "rateLimited" : "failed";
+    return isAuthRateLimit(error) ? "rateLimited" : "failed";
   }, []);
 
   const acceptTerms = useCallback(

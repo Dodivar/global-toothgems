@@ -25,7 +25,7 @@ export interface StockChange {
 }
 
 /** Same ceiling as the database function. */
-export const MAX_STOCK_CHANGE = 1_000_000;
+const MAX_STOCK_CHANGE = 1_000_000;
 
 /** Reads what the administrator typed into a change of the current count. */
 export function stockChange(mode: StockChangeMode, current: number, reserved: number, input: string): StockChange {

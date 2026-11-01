@@ -3,7 +3,7 @@ import { useFormat } from "./format";
 import { stampsRemaining, type LoyaltyState } from "../data/loyalty";
 import { useLoyalty } from "./loyalty";
 
-export interface LoyaltyCopy {
+interface LoyaltyCopy {
   /** Short status label for the corner of the card. */
   badge: string;
   title: string;

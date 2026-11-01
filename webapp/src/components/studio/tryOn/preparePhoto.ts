@@ -15,7 +15,7 @@ export interface PreparedPhoto {
   height: number;
 }
 
-export type PreparePhotoResult = { ok: true; photo: PreparedPhoto } | { ok: false; error: PhotoError };
+type PreparePhotoResult = { ok: true; photo: PreparedPhoto } | { ok: false; error: PhotoError };
 
 interface Decoded {
   source: CanvasImageSource;

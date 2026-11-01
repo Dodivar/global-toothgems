@@ -9,7 +9,7 @@ export const PHOTO_MAX_BYTES = 25 * 1024 * 1024;
 export const PHOTO_MIN_SHORT_EDGE = 480;
 export const PHOTO_MIN_LONG_EDGE = 640;
 /** The photo is downscaled to this longer side once decoded: plenty for a preview and an export. */
-export const PHOTO_MAX_EDGE = 2048;
+const PHOTO_MAX_EDGE = 2048;
 
 const TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const EXTENSIONS = ["jpg", "jpeg", "png", "webp", "heic", "heif"];
@@ -44,7 +44,7 @@ export function checkPhotoSize(width: number, height: number): PhotoError | null
  * brightest things in a smile photo, so a dim but usable photo still has a
  * bright tenth; anything less clear-cut is left to the function's photo check.
  */
-export const PHOTO_MIN_BRIGHT_LUMA = 60;
+const PHOTO_MIN_BRIGHT_LUMA = 60;
 
 /** `luma`: one value per pixel of a small copy of the photo, 0–255. */
 export function checkPhotoLight(luma: ArrayLike<number>): PhotoError | null {

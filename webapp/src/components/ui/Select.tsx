@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 
-export interface SelectOption {
+interface SelectOption {
   value: string;
   label: string;
 }

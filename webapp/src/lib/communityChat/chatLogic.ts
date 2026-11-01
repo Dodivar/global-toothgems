@@ -1,4 +1,5 @@
 import { CHAT_REACTIONS, type ChatMember, type ChatMessage, type ChatReaction, type MessagePart } from "./model";
+import { foldText } from "../foldText";
 
 /*
  * Pure rules of the Members' Lounge: no React, no state, no fixtures read
@@ -16,13 +17,9 @@ export function roomKey(room: ChatRoom): string {
   return room.kind === "channel" ? `channel:${room.channelId}` : `dm:${room.conversationId}`;
 }
 
-export function sameRoom(a: ChatRoom, b: ChatRoom): boolean {
-  return roomKey(a) === roomKey(b);
-}
-
 /* -------------------------------------------------------------- reactions */
 
-export interface ReactionView {
+interface ReactionView {
   reaction: ChatReaction;
   count: number;
   /** Whether the viewer is one of the people counted. */
@@ -55,14 +52,6 @@ export function toggleReaction(list: readonly ChatReaction[], reaction: ChatReac
 
 /* --------------------------------------------------------------- mentions */
 
-/** Lowercase, accents removed: "Inès" and "ines" match. */
-export function normalize(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
-}
-
 /**
  * The `@word` being typed right before the caret, if any. An `@` only opens a
  * mention at the start of the text or after a space, so an e-mail address does
@@ -77,10 +66,10 @@ export function activeMentionQuery(text: string, caret: number): { query: string
 
 /** Members whose first name, last name or handle starts with the query. */
 export function mentionCandidates(query: string, members: readonly ChatMember[], limit = 6): ChatMember[] {
-  const q = normalize(query);
+  const q = foldText(query);
   const matches = members.filter((member) => {
     if (!q) return true;
-    const words = [...normalize(member.name).split(/\s+/), normalize(member.handle)];
+    const words = [...foldText(member.name).split(/\s+/), foldText(member.handle)];
     return words.some((word) => word.startsWith(q));
   });
   return matches.slice(0, limit);
@@ -169,7 +158,7 @@ export function recentAuthors(messages: readonly ChatMessage[], now: number = Da
 /* --------------------------------------------------------------- timeline */
 
 /** Gap under which two messages of one author read as one block. */
-export const GROUP_WINDOW_MINUTES = 7;
+const GROUP_WINDOW_MINUTES = 7;
 
 /** When a message was written, in epoch milliseconds, seen from `now`. */
 export function timestampOf(message: ChatMessage, now: number): number {
@@ -204,7 +193,7 @@ export function chronological(messages: readonly ChatMessage[], now: number = Da
 }
 
 /** Newest first. */
-export function newestFirst(messages: readonly ChatMessage[], now: number = Date.now()): ChatMessage[] {
+function newestFirst(messages: readonly ChatMessage[], now: number = Date.now()): ChatMessage[] {
   return chronological(messages, now).reverse();
 }
 
@@ -215,20 +204,20 @@ export function messagesToday(messages: readonly ChatMessage[], now: number = Da
 
 /* ----------------------------------------------------------------- search */
 
-export interface SearchableRoom {
+interface SearchableRoom {
   room: ChatRoom;
   /** How the room is named in results ("# Techniques & Tips", "Emma Martin"). */
   label: string;
   messages: readonly ChatMessage[];
 }
 
-export interface SearchableChannel {
+interface SearchableChannel {
   channelId: string;
   name: string;
   topic: string;
 }
 
-export interface SearchResults<C extends SearchableChannel> {
+interface SearchResults<C extends SearchableChannel> {
   messages: Array<{ room: ChatRoom; label: string; message: ChatMessage; text: string }>;
   members: ChatMember[];
   channels: C[];
@@ -246,10 +235,10 @@ export function searchCommunity<C extends SearchableChannel>(
   limits = { messages: 8, members: 5, channels: 5 },
   now: number = Date.now(),
 ): SearchResults<C> {
-  const words = normalize(query).split(/\s+/).filter(Boolean);
+  const words = foldText(query).split(/\s+/).filter(Boolean);
   if (words.length === 0) return { messages: [], members: [], channels: [] };
   const matches = (value: string) => {
-    const haystack = normalize(value);
+    const haystack = foldText(value);
     return words.every((word) => haystack.includes(word));
   };
 
@@ -282,7 +271,7 @@ export function joinedDate(joined: string): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export type Tenure = { unit: "day" | "month" | "year"; count: number };
+type Tenure = { unit: "day" | "month" | "year"; count: number };
 
 /** How long ago a member joined, in the largest whole unit: 0 days means today. */
 export function tenureOf(joined: string, now: number): Tenure | null {

@@ -1,4 +1,5 @@
 import type { Localized } from "./types";
+import { zoneOffset } from "../lib/calendar";
 
 /**
  * Types and pure rules behind the Promotions workspace (promotions and
@@ -179,23 +180,6 @@ export interface Campaign {
 /* Derivations                                                                */
 /* -------------------------------------------------------------------------- */
 
-/** UTC offset (ms) of a time zone at an instant. */
-function zoneOffset(instant: number, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).formatToParts(new Date(instant));
-  const part = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
-  const asUtc = Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"), part("second"));
-  return asUtc - Math.floor(instant / 1000) * 1000;
-}
-
 /** Milliseconds since epoch of a local date-time (`YYYY-MM-DD[THH:mm]`) read in a time zone, summer time included. */
 export function toTime(local: string, timeZone: string = PROMO_TIMEZONE): number {
   if (/[zZ]|[+-]\d\d:\d\d$/.test(local)) return new Date(local).getTime();
@@ -241,11 +225,6 @@ export function campaignStatus(c: Pick<Campaign, "lifecycle" | "startsAt" | "end
   if (c.lifecycle === "paused") return "paused";
   if (toTime(c.startsAt, c.timezone) > now) return "scheduled";
   return "active";
-}
-
-/** Days between two stored dates, rounded. */
-export function daysBetween(from: string, to: string, timeZone: string = PROMO_TIMEZONE): number {
-  return Math.round((toTime(to, timeZone) - toTime(from, timeZone)) / 86_400_000);
 }
 
 export function daysFromNow(date: string, timeZone: string = PROMO_TIMEZONE): number {

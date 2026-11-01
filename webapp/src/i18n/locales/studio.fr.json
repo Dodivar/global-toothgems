@@ -104,11 +104,6 @@
       "lessThanMinute": "moins d’une minute",
       "ended": "Essai terminé"
     },
-    "warning": {
-      "body": "Votre essai gratuit se termine bientôt — il reste {{time}}. Enregistrez vos designs et jetez un œil aux formules pour continuer à créer.",
-      "plans": "Voir les formules",
-      "dismiss": "Fermer"
-    },
     "denied": {
       "title": "Votre accès au Studio a pris fin",
       "body": "Cette modification n’a pas pu être enregistrée. Vos designs enregistrés sont conservés."

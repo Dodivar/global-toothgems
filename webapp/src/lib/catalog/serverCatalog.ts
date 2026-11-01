@@ -26,7 +26,7 @@ import { findProductByKey, type SluggedProduct } from "./productSlugs";
 
 /** How long a server read of the catalogue is reused (decided default, see docs/migration-nextjs.md). */
 export const CATALOGUE_TTL_SECONDS = 60;
-export const CATALOGUE_CACHE_TAG = "catalog";
+const CATALOGUE_CACHE_TAG = "catalog";
 
 function cached<A extends string[], T>(name: string, read: (...args: A) => Promise<T>) {
   return unstable_cache(read, ["catalog", name], { revalidate: CATALOGUE_TTL_SECONDS, tags: [CATALOGUE_CACHE_TAG] });

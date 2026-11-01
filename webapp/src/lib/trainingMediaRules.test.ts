@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TRAINING_COURSES } from "../data/adminTrainingSeed";
 import {
-  MAX_UPLOAD_BYTES,
+  MAX_IMAGE_BYTES,
   MAX_VIDEO_BYTES,
   displayName,
   storageFileName,
@@ -40,14 +40,14 @@ const item = (patch: Partial<TrainingMedia>): TrainingMedia => ({
 describe("validateUpload", () => {
   it("accepts web images within the size limit", () => {
     expect(validateUpload({ type: "image/jpeg", size: 2_000_000 })).toBeNull();
-    expect(validateUpload({ type: "image/webp", size: MAX_UPLOAD_BYTES })).toBeNull();
+    expect(validateUpload({ type: "image/webp", size: MAX_IMAGE_BYTES })).toBeNull();
   });
 
   it("rejects other files, empty files and oversized files", () => {
     expect(validateUpload({ type: "application/pdf", size: 10 })).toBe("type");
     expect(validateUpload({ type: "image/svg+xml", size: 10 })).toBe("type");
     expect(validateUpload({ type: "image/png", size: 0 })).toBe("empty");
-    expect(validateUpload({ type: "image/png", size: MAX_UPLOAD_BYTES + 1 })).toBe("size");
+    expect(validateUpload({ type: "image/png", size: MAX_IMAGE_BYTES + 1 })).toBe("size");
   });
 
   it("accepts videos up to the plan's upload limit", () => {

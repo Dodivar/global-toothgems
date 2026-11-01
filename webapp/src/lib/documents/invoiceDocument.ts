@@ -21,18 +21,16 @@ export interface InvoiceFormat extends DocumentFormat {
   percent: (basisPoints: number) => string;
 }
 
-function sellerParty(seller: InvoiceSeller, t: Translate, fmt: InvoiceFormat): DocumentParty {
-  return {
-    title: t("documents.seller"),
-    lines: [
-      seller.legalName || seller.storeName || "Global Toothgems",
-      ...seller.addressLines,
-      seller.countryCode ? fmt.country(seller.countryCode) : "",
-      seller.email,
-      seller.registrationNumber && t("documents.footer.registration", { number: seller.registrationNumber }),
-      seller.vatNumber && t("documents.footer.vat", { number: seller.vatNumber }),
-    ],
-  };
+/**
+ * The name the seller is known by (file metadata). The seller has no block of
+ * its own at the top (owner's choice, 2026-11-01, decision 120 (a)): its full
+ * legal identity — trading name, legal name with "EI", registration, VAT
+ * number, address, e-mail — is in the legal mentions at the foot of every page,
+ * which is where the law's mentions are carried (it requires them on the
+ * invoice, not in a given place).
+ */
+function sellerName(seller: InvoiceSeller): string {
+  return seller.tradingName || seller.legalName || seller.storeName || "Global Toothgems";
 }
 
 function buyerParty(invoice: OrderInvoice, t: Translate, fmt: InvoiceFormat): DocumentParty {
@@ -231,10 +229,11 @@ export function invoiceDocument(invoice: OrderInvoice, t: Translate, fmt: Invoic
     lang: fmt.lang,
     title,
     meta,
-    parties: [sellerParty(s, t, fmt), buyerParty(invoice, t, fmt)],
+    parties: [buyerParty(invoice, t, fmt)],
     blocks,
     footer: legalFooterLines(
       {
+        tradingName: s.tradingName,
         name: s.legalName || s.storeName || "Global Toothgems",
         legalForm: s.legalForm,
         shareCapital: s.shareCapital,
@@ -246,7 +245,7 @@ export function invoiceDocument(invoice: OrderInvoice, t: Translate, fmt: Invoic
       t,
     ),
     pageLabel: (page, count) => t("documents.page", { page, count }),
-    info: { title: `${title} ${invoice.number}`, author: s.legalName || s.storeName || "Global Toothgems" },
+    info: { title: `${title} ${invoice.number}`, author: sellerName(s) },
   };
 }
 
