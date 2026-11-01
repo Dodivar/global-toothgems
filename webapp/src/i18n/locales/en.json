@@ -4929,7 +4929,6 @@
     "nameLockedHint": "Add your first and last name to download or share this certificate."
   },
   "documents": {
-    "seller": "Seller",
     "page": "Page {{page}} of {{count}}",
     "meta": {
       "reference": "Reference",

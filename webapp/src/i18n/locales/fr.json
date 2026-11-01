@@ -4929,7 +4929,6 @@
     "nameLockedHint": "Ajoutez votre prénom et votre nom pour télécharger ou partager cette attestation."
   },
   "documents": {
-    "seller": "Vendeur",
     "page": "Page {{page}} sur {{count}}",
     "meta": {
       "reference": "Référence",

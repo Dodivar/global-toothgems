@@ -134,7 +134,7 @@ describe("invoice PDF", () => {
     expect(all).toContain("Total TTC");
   });
 
-  it("with a trading name: the seller block shows it, the legal identity stays in the small mentions at the foot", () => {
+  it("no seller block: the whole legal identity of the seller is in the mentions at the foot of the page", () => {
     const ei: InvoiceRow = {
       ...invoiceRow,
       seller: {
@@ -149,11 +149,9 @@ describe("invoice PDF", () => {
       },
     };
     const doc = invoiceDocument(mapInvoice(ei), t, fmt);
-    const sellerBlock = doc.parties[0].lines.filter(Boolean);
-    expect(sellerBlock[0]).toBe("Pimp ton smile");
-    expect(sellerBlock.join(" ")).not.toContain("Ada Test");
-    expect(sellerBlock.join(" ")).not.toContain("SIREN");
+    expect(doc.parties.map((p) => p.title)).toEqual(["Client"]);
     expect(doc.footer[0]).toBe("Pimp ton smile · Ada Test, Entrepreneur individuel (EI) · Immatriculation SIREN 123 456 789");
+    expect(doc.footer[1]).toBe("1 rue de l’Exemple, 69001 Lyon · contact@example.com");
     expect(doc.info.author).toBe("Pimp ton smile");
   });
 

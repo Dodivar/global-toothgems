@@ -69,21 +69,6 @@ function addressParty(title: string, address: OrderAddress | undefined, fmt: Doc
   };
 }
 
-/** The store as the seller block; only what Settings holds, nothing invented. */
-export function sellerParty(store: StoreDetails | null, t: Translate, fmt: DocumentFormat): DocumentParty {
-  if (!store) return { title: t("documents.seller"), lines: ["Global Toothgems"] };
-  return {
-    title: t("documents.seller"),
-    lines: [
-      store.tradingName.trim() || store.legalName.trim() || store.storeName.trim(),
-      ...addressLines(store),
-      store.country ? fmt.country(store.country) : "",
-      store.supportEmail.trim() || store.businessEmail.trim(),
-      store.showPhone ? store.phone.trim() : "",
-    ],
-  };
-}
-
 /** The store's legal mentions as Settings holds them today (the order form). */
 export function legalFooter(store: StoreDetails | null, t: Translate): string[] {
   if (!store) return ["Global Toothgems"];
@@ -162,8 +147,8 @@ export function orderDocument(order: Order, store: StoreDetails | null, t: Trans
   }
   blocks.push({ kind: "paragraph", tone: "notice", text: t("documents.order.notice") });
 
+  // No seller block: the store's identity is in the legal mentions at the foot (decision 120 (a)).
   const parties = [
-    sellerParty(store, t, fmt),
     addressParty(t("account.orderDetail.billingAddress"), order.billingAddress, fmt),
     order.ships ? addressParty(t("account.orderDetail.shippingAddress"), order.shippingAddress, fmt) : null,
   ].filter((p): p is DocumentParty => p !== null);

@@ -21,30 +21,16 @@ export interface InvoiceFormat extends DocumentFormat {
   percent: (basisPoints: number) => string;
 }
 
-/** The name the seller is presented under: its trading name, else its legal name, else the brand. */
+/**
+ * The name the seller is known by (file metadata). The seller has no block of
+ * its own at the top (owner's choice, 2026-11-01, decision 120 (a)): its full
+ * legal identity — trading name, legal name with "EI", registration, VAT
+ * number, address, e-mail — is in the legal mentions at the foot of every page,
+ * which is where the law's mentions are carried (it requires them on the
+ * invoice, not in a given place).
+ */
 function sellerName(seller: InvoiceSeller): string {
   return seller.tradingName || seller.legalName || seller.storeName || "Global Toothgems";
-}
-
-/**
- * The seller block. With a trading name, the block shows it and the legal
- * identity, registration and VAT number stay in the legal mentions at the
- * foot of every page (decision 120); without one (documents issued before),
- * the block keeps them as it always did.
- */
-function sellerParty(seller: InvoiceSeller, t: Translate, fmt: InvoiceFormat): DocumentParty {
-  const legalInBlock = !seller.tradingName;
-  return {
-    title: t("documents.seller"),
-    lines: [
-      sellerName(seller),
-      ...seller.addressLines,
-      seller.countryCode ? fmt.country(seller.countryCode) : "",
-      seller.email,
-      legalInBlock && seller.registrationNumber ? t("documents.footer.registration", { number: seller.registrationNumber }) : "",
-      legalInBlock && seller.vatNumber ? t("documents.footer.vat", { number: seller.vatNumber }) : "",
-    ],
-  };
 }
 
 function buyerParty(invoice: OrderInvoice, t: Translate, fmt: InvoiceFormat): DocumentParty {
@@ -243,7 +229,7 @@ export function invoiceDocument(invoice: OrderInvoice, t: Translate, fmt: Invoic
     lang: fmt.lang,
     title,
     meta,
-    parties: [sellerParty(s, t, fmt), buyerParty(invoice, t, fmt)],
+    parties: [buyerParty(invoice, t, fmt)],
     blocks,
     footer: legalFooterLines(
       {

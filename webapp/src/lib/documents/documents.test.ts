@@ -171,11 +171,12 @@ describe("order form", () => {
     expect(rows.find((r) => r.key === "total")?.emphasis).toBe("strong");
   });
 
-  it("says who sells, to whom, what and how much, and that it is not an invoice", () => {
+  it("says who sells (in the legal mentions), to whom, what and how much, and that it is not an invoice", () => {
     const doc = orderDocument(order, store, t, fmt, "2026-10-09");
     expect(doc.title).toBe("Bon de commande");
-    expect(doc.parties.map((p) => p.title)).toEqual(["Vendeur", "Adresse de facturation", "Adresse de livraison"]);
-    expect(doc.parties[0].lines).not.toContain(store.phone);
+    expect(doc.parties.map((p) => p.title)).toEqual(["Adresse de facturation", "Adresse de livraison"]);
+    expect(doc.footer.join(" ")).toContain("Global Toothgems SAS");
+    expect(doc.footer.join(" ")).toContain("1 rue de l’Exemple");
     const all = texts(layoutDocument(doc)).flat().join("\n");
     expect(all).toContain("GT-100149");
     expect(all).toContain("Cœur chromé");
@@ -190,7 +191,7 @@ describe("order form", () => {
     const doc = orderDocument(plain, null, translator(en), { ...fmt, lang: "en" }, "2026-10-09");
     const table = doc.blocks.find((b) => b.kind === "table");
     expect(table?.kind === "table" && table.columns.map((c) => c.label)).toEqual(["Item", "Qty", "Unit price", "Total"]);
-    expect(doc.parties[0].lines).toEqual(["Global Toothgems"]);
+    expect(doc.footer).toEqual(["Global Toothgems"]);
     expect(legalFooter(null, t)).toEqual(["Global Toothgems"]);
   });
 
