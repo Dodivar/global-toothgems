@@ -19,9 +19,13 @@ import {
 } from "../../../lib/studio3d/tryOn";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
 import { tryOnSeats } from "../../../lib/studio3d/tryOnSeats";
+import { projectFrontView } from "../../../lib/studio3d/frontView";
+import { registerDesign, type Registration } from "../../../lib/studio3d/tryOnRegistration";
+import type { TryOnAnalysis } from "../../../lib/studio3d/tryOn";
 import { renderDesignImages, renderDesignMap } from "./designImage";
 import { pasteBack } from "./pasteBack";
 import { PhotoStep, type AiState } from "./PhotoStep";
+import { PlacementDiagnostic } from "./PlacementDiagnostic";
 import type { PreparedPhoto } from "./preparePhoto";
 import { ProcessingStep } from "./ProcessingStep";
 import { ResultStep } from "./ResultStep";
@@ -29,13 +33,14 @@ import { ResultStep } from "./ResultStep";
 type Step =
   | { kind: "photo" }
   | { kind: "processing"; stage: TryOnStage }
-  | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[]; stage: TryOnStage }
-  | { kind: "result"; image: Blob; url: string; leftOut: number };
+  | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[]; stage: TryOnStage; action: "render" | "diagnose" }
+  | { kind: "result"; image: Blob; url: string; leftOut: number }
+  | { kind: "diagnostic"; analysis: TryOnAnalysis; registration: Registration };
 
 /** The stepper: photo, the photo check, the render, the result. An error stays on the stage it happened at. */
 const STAGE_INDEX: Record<TryOnStage, number> = { checking: 1, rendering: 2 };
 const stepIndex = (step: Step) =>
-  step.kind === "photo" ? 0 : step.kind === "result" ? 3 : STAGE_INDEX[step.stage];
+  step.kind === "photo" ? 0 : step.kind === "result" ? 3 : step.kind === "diagnostic" ? 1 : STAGE_INDEX[step.stage];
 
 /**
  * "Try it on a smile": a creation on a photo of a smile, rendered by AI
@@ -51,6 +56,10 @@ const stepIndex = (step: Step) =>
  * the function (the viewers only open the dialog with one). Whether the AI may be used for a creation
  * (the owner's plan) is decided by the database: the viewers only show the
  * entry point when it says so, and the function checks again.
+ *
+ * `staffTools` (the Studio workspace, for active staff): the placement
+ * diagnostic next to the render (decision 111 (k)) — the function refuses it
+ * to anyone else.
  */
 export function TryOnDialog({
   creation,
@@ -58,12 +67,14 @@ export function TryOnDialog({
   audience = "artist",
   onClose,
   service = smileTryOnService,
+  staffTools = false,
 }: {
   creation: TryOnCreation;
   source: TryOnSource | null;
   audience?: TryOnAudience;
   onClose: () => void;
   service?: SmileTryOnService;
+  staffTools?: boolean;
 }) {
   const { t } = useTranslation();
   const { signedIn } = useAuth();
@@ -124,7 +135,7 @@ export function TryOnDialog({
     if (controller.signal.aborted) return;
     if (!design) {
       request.current = null;
-      return setStep({ kind: "error", code: "failed", stage });
+      return setStep({ kind: "error", code: "failed", stage, action: "render" });
     }
     const seats = tryOnSeats(creation.scene.pieces, creation.scene.model);
     const map = await renderDesignMap(creation, seats);
@@ -149,7 +160,28 @@ export function TryOnDialog({
       setAi("unavailable");
       return setStep({ kind: "photo" });
     }
-    setStep({ kind: "error", code: outcome.code, reasons: outcome.reasons, stage });
+    setStep({ kind: "error", code: outcome.code, reasons: outcome.reasons, stage, action: "render" });
+  };
+
+  // The staff's placement diagnostic: the teeth the function finds, the gems placed on them here. No render.
+  const diagnose = async () => {
+    if (!photo || !source || !service.analyse) return;
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
+    setStep({ kind: "processing", stage: "checking" });
+    const outcome = await service.analyse({ photo: photo.blob, source }, { signal: controller.signal });
+    if (controller.signal.aborted) return;
+    request.current = null;
+    if (!outcome.ok) {
+      if (outcome.code === "not_available") {
+        setAi("unavailable");
+        return setStep({ kind: "photo" });
+      }
+      return setStep({ kind: "error", code: outcome.code, reasons: outcome.reasons, stage: "checking", action: "diagnose" });
+    }
+    const registration = registerDesign(projectFrontView(creation.scene.pieces, creation.scene.model), outcome.analysis.teeth);
+    setStep({ kind: "diagnostic", analysis: outcome.analysis, registration });
   };
 
   const cancel = () => {
@@ -196,6 +228,7 @@ export function TryOnDialog({
               signedIn={signedIn}
               onAi={() => void render()}
               onSignIn={signIn}
+              onDiagnose={staffTools && service.analyse ? () => void diagnose() : undefined}
             />
           )}
 
@@ -223,7 +256,7 @@ export function TryOnDialog({
                     {t("studio.tryOn.errorActions.signIn")}
                   </Button>
                 ) : errorAllowsRetry(step.code) ? (
-                  <Button variant="dark" size="sm" iconLeft={RefreshCw} onClick={() => void render()}>
+                  <Button variant="dark" size="sm" iconLeft={RefreshCw} onClick={() => void (step.action === "diagnose" ? diagnose() : render())}>
                     {t("studio.tryOn.errorActions.retry")}
                   </Button>
                 ) : null}
@@ -237,6 +270,10 @@ export function TryOnDialog({
                 </Button>
               </div>
             </div>
+          )}
+
+          {step.kind === "diagnostic" && photo && (
+            <PlacementDiagnostic photo={photo} analysis={step.analysis} registration={step.registration} onBack={() => setStep({ kind: "photo" })} />
           )}
 
           {step.kind === "result" && photo && (

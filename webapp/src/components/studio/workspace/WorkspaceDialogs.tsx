@@ -5,7 +5,7 @@ import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
-import { useStudioFeature } from "../../../lib/studioAccess";
+import { useStudioFeature, useStudioStaff } from "../../../lib/studioAccess";
 import { closeWorkspaceDialog, useWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CollectionEditDialog, CreationCollectionsDialog } from "./Collections";
 import { CreationDetail } from "./CreationDetail";
@@ -36,6 +36,8 @@ export function WorkspaceDialogs() {
   // Below the Artist plan folders cannot be created, renamed or filled (decision 113 (b)):
   // those actions open the plan panel instead; deleting a folder stays open.
   const collectionsLocked = useStudioFeature("collections") === false;
+  // The placement diagnostic of the try-on (decision 111 (k)): shown to staff, refused by the function to anyone else.
+  const staff = useStudioStaff();
   const close = closeWorkspaceDialog;
   if (!dialog) return null;
 
@@ -58,7 +60,7 @@ export function WorkspaceDialogs() {
     case "shareCreation":
       return <ShareDialog creation={dialog.creation} onClose={close} />;
     case "tryOn":
-      return <TryOnDialog creation={dialog.creation} source={{ kind: "own", creationId: dialog.creation.id }} onClose={close} />;
+      return <TryOnDialog creation={dialog.creation} source={{ kind: "own", creationId: dialog.creation.id }} staffTools={staff} onClose={close} />;
     case "socialExport":
       return (
         <Suspense fallback={null}>

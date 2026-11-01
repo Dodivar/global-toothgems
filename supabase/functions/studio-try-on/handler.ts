@@ -4,6 +4,7 @@ import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./ge
 import { cropJpeg, mouthCrop, type CropRect } from "./crop.ts";
 import { coherentScale, imageSize, judgeReadings, PHOTO_READINGS, photoScale } from "./photoCheck.ts";
 import { buildDesignData, gemSpots, leftOutGems, piecesFromScene, readSeats } from "./prompt.ts";
+import { readTeeth } from "./teeth.ts";
 
 /**
  * POST /functions/v1/studio-try-on   (decision 111)
@@ -40,6 +41,16 @@ import { buildDesignData, gemSpots, leftOutGems, piecesFromScene, readSeats } fr
  *             (`photoCheck.ts`) refused the photo: too_far | not_frontal | no_teeth |
  *             teeth_hidden | too_dark | too_bright | blurry | design_hidden (no
  *             gem's spot visible) — no generation
+ *   multipart/form-data with `action` = "analyse"  (active staff only, decision 111 (k))
+ *     source, photo  as above; no design, map or seats
+ *     The placement diagnostic: the photo check, the mouth close-up, then each
+ *     tooth found on it with its FDI number (`teeth.ts`) — no image generated.
+ *     200 { ok: true, crop, teeth: [{ fdi, x, y, width, height }] }  boxes in
+ *             the close-up's pixels; crop as above, the whole photo when no
+ *             close-up was cut
+ *     422 photo_unsuitable as above; 403 not_allowed for a member who is not staff
+ *     Recorded in `studio_try_on_requests` as failed / `diagnostic`: counted
+ *     against the daily requests, never against the renders.
  *   status call (JSON `{ "action": "status" }`, no account needed):
  *     200 { available, daily_limit, quota }  quota: the signed-in caller's
  *             { limit, remaining } renders over the last 24 hours,
@@ -78,6 +89,13 @@ export interface StudioTryOnDeps {
   dailyChecks: number;
   userFromToken(token: string): Promise<string | null>;
   loadCreation(requester: string, ref: TryOnSourceRef): Promise<TryOnCreationRow | null>;
+  /** Whether the account is active staff (`roles.is_staff`): the only ones who may ask for the placement diagnostic. */
+  staff(userId: string): Promise<boolean>;
+  /**
+   * Each tooth on the image the model edits, by the check model (`teeth.ts`); absent: the
+   * placement diagnostic is not available.
+   */
+  findTeeth?(image: InlineImage): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
   /** Whether the account has no daily limit: an active administrator (owner's decision, 2026-10-26, to test freely). */
   unlimited(userId: string): Promise<boolean>;
   /** The account's requests since then: all of them, and those that were not refused by the photo check. */
@@ -204,7 +222,10 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   const overviewFile = map ? await inlineFile(form.get("overview"), DESIGN_MAX_BYTES) : null;
   const overview = overviewFile && overviewFile !== "invalid" ? overviewFile : null;
   const seats = readSeats(form.get("seats"));
-  if (!ref || !photo || photo === "invalid" || !design || design === "invalid") return json({ ok: false, code: "invalid_request" }, 400, cors);
+  // The staff's placement diagnostic needs no design: it only finds the teeth.
+  const analyse = form.get("action") === "analyse";
+  if (!ref || !photo || photo === "invalid" || (!analyse && (!design || design === "invalid"))) return json({ ok: false, code: "invalid_request" }, 400, cors);
+  if (analyse && !deps.findTeeth) return json({ ok: false, code: "not_available" }, 503, cors);
 
   let userId: string | null;
   try {
@@ -215,13 +236,24 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   }
   if (!userId) return json({ ok: false, code: "session_expired" }, 401, cors);
 
+  if (analyse) {
+    try {
+      if (!(await deps.staff(userId))) return json({ ok: false, code: "not_allowed" }, 403, cors);
+    } catch (error) {
+      deps.log("staff check failed", error instanceof Error ? error.message : error);
+      return json({ ok: false, code: "server_error" }, 500, cors);
+    }
+  }
+
   let requestId: string;
   let row: TryOnCreationRow | null;
   try {
     row = await deps.loadCreation(userId, ref);
     if (!row) return json({ ok: false, code: "not_found" }, 404, cors);
     if (!row.allowed) return json({ ok: false, code: "not_allowed" }, 403, cors);
-    if (!(await deps.unlimited(userId)) && (await remainingRenders(deps, userId)) === 0) return json({ ok: false, code: "daily_limit" }, 429, cors);
+    if (!(await deps.unlimited(userId)) && (await (analyse ? remainingChecks : remainingRenders)(deps, userId)) === 0) {
+      return json({ ok: false, code: "daily_limit" }, 429, cors);
+    }
     requestId = await deps.startRequest(userId, row);
   } catch (error) {
     deps.log("preparing the request failed", error instanceof Error ? error.message : error);
@@ -234,7 +266,16 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     return json({ ok: false, code: "not_found" }, 404, cors);
   }
 
-  const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, design, map, overview, pieces, seats, onRendering);
+  if (analyse) {
+    const ending = await analyseTeeth(deps, requestId, photo).catch((error): Ending => {
+      deps.log("placement diagnostic failed", error instanceof Error ? error.message : error);
+      return { status: 500, body: { ok: false, code: "server_error" } };
+    });
+    return json(ending.body, ending.status, cors);
+  }
+  // Checked above: a render always has its design.
+  const designImage = design as Photo;
+  const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, designImage, map, overview, pieces, seats, onRendering);
   if (form.get("progress") !== "1") {
     const ending = await run(() => {});
     return json(ending.body, ending.status, cors);
@@ -247,6 +288,13 @@ async function remainingRenders(deps: StudioTryOnDeps, userId: string): Promise<
   const now = deps.now?.() ?? new Date();
   const used = await deps.countRecent(userId, new Date(now.getTime() - 24 * 3600 * 1000));
   return used.requests >= deps.dailyChecks ? 0 : Math.max(0, deps.dailyLimit - used.renders);
+}
+
+/** Requests the account may still make in the last 24 hours, refused photos and diagnostics included. */
+async function remainingChecks(deps: StudioTryOnDeps, userId: string): Promise<number> {
+  const now = deps.now?.() ?? new Date();
+  const used = await deps.countRecent(userId, new Date(now.getTime() - 24 * 3600 * 1000));
+  return Math.max(0, deps.dailyChecks - used.requests);
 }
 
 /**
@@ -320,43 +368,9 @@ async function checkAndRender(
   seats: ReturnType<typeof readSeats>,
   onRendering: () => void,
 ): Promise<Ending> {
-  let mmShare: number | null = null;
-  let teethBox: unknown = null;
-  if (deps.checkPhoto) {
-    // Several readings of the same photo, the strictest kept (`judgeReadings`): one reading alone let a photo through.
-    const readings = await Promise.all(
-      Array.from({ length: PHOTO_READINGS }, (_, i) =>
-        deps.checkPhoto!({ mimeType: photo.mimeType, data: photo.data }, i).catch((error) => ({
-          ok: false as const,
-          detail: error instanceof Error ? error.message : String(error),
-        })),
-      ),
-    );
-    const answers = readings.flatMap((r) => (r.ok ? [r.value] : []));
-    if (answers.length > 0) {
-      const { verdict, reading, spans } = judgeReadings(answers, photo.size);
-      mmShare = coherentScale(reading, photo.size);
-      teethBox = reading.teeth_box;
-      // Facts only, never the photo: they tune the thresholds.
-      deps.log("photo check", {
-        span: verdict.span,
-        spans,
-        issues: verdict.issues,
-        lighting: answers.map((a) => a.lighting),
-        sharpness: answers.map((a) => a.sharpness),
-        pose: answers.map((a) => a.head_pose),
-        centrals: answers.map((a) => a.central_incisors_visible),
-        mm: mmShare === null ? null : Math.round(mmShare * 10000) / 10000,
-        mm_incoherent: mmShare === null && photoScale(reading, photo.size) !== null,
-      });
-      if (verdict.issues.length > 0) {
-        await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
-        return { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: verdict.issues } };
-      }
-    } else {
-      deps.log("photo check unavailable, rendering anyway", readings.map((r) => (r.ok ? "ok" : r.detail)));
-    }
-  }
+  const checked = await checkPhoto(deps, requestId, photo);
+  if ("refused" in checked) return checked.refused;
+  const { mmShare, teethBox } = checked;
 
   // The mouth close-up: the model edits the teeth and lips only, the browser pastes them back (`crop.ts`).
   const edited = deps.cropMouth ? closeUp(photo, teethBox) : null;
@@ -448,6 +462,93 @@ async function checkAndRender(
       image,
       ...omitted,
       crop: { x: crop.x, y: crop.y, width: crop.width, height: crop.height, photo_width: photo.size.width, photo_height: photo.size.height },
+    },
+  };
+}
+
+/**
+ * The photo check (several readings, the strictest kept): the refusal to send,
+ * or the scale and the teeth's box read from the photo (null when the check
+ * could not run — it never blocks).
+ */
+async function checkPhoto(
+  deps: StudioTryOnDeps,
+  requestId: string,
+  photo: Photo,
+): Promise<{ refused: Ending } | { mmShare: number | null; teethBox: unknown }> {
+  let mmShare: number | null = null;
+  let teethBox: unknown = null;
+  if (deps.checkPhoto) {
+    // Several readings of the same photo, the strictest kept (`judgeReadings`): one reading alone let a photo through.
+    const readings = await Promise.all(
+      Array.from({ length: PHOTO_READINGS }, (_, i) =>
+        deps.checkPhoto!({ mimeType: photo.mimeType, data: photo.data }, i).catch((error) => ({
+          ok: false as const,
+          detail: error instanceof Error ? error.message : String(error),
+        })),
+      ),
+    );
+    const answers = readings.flatMap((r) => (r.ok ? [r.value] : []));
+    if (answers.length > 0) {
+      const { verdict, reading, spans } = judgeReadings(answers, photo.size);
+      mmShare = coherentScale(reading, photo.size);
+      teethBox = reading.teeth_box;
+      // Facts only, never the photo: they tune the thresholds.
+      deps.log("photo check", {
+        span: verdict.span,
+        spans,
+        issues: verdict.issues,
+        lighting: answers.map((a) => a.lighting),
+        sharpness: answers.map((a) => a.sharpness),
+        pose: answers.map((a) => a.head_pose),
+        centrals: answers.map((a) => a.central_incisors_visible),
+        mm: mmShare === null ? null : Math.round(mmShare * 10000) / 10000,
+        mm_incoherent: mmShare === null && photoScale(reading, photo.size) !== null,
+      });
+      if (verdict.issues.length > 0) {
+        await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
+        return { refused: { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: verdict.issues } } };
+      }
+    } else {
+      deps.log("photo check unavailable, rendering anyway", readings.map((r) => (r.ok ? "ok" : r.detail)));
+    }
+  }
+  return { mmShare, teethBox };
+}
+
+/**
+ * The placement diagnostic (active staff): the photo check, the mouth
+ * close-up, then each tooth on it. Nothing is generated; the request is closed
+ * as `diagnostic` so it never counts as a render.
+ */
+async function analyseTeeth(deps: StudioTryOnDeps, requestId: string, photo: Photo): Promise<Ending> {
+  const checked = await checkPhoto(deps, requestId, photo);
+  if ("refused" in checked) return checked.refused;
+  const edited = deps.cropMouth ? closeUp(photo, checked.teethBox) : null;
+  const target = edited?.image ?? photo;
+  const size = target.size;
+  const found = size
+    ? await deps.findTeeth!({ mimeType: target.mimeType, data: target.data }).catch((error) => ({
+        ok: false as const,
+        detail: error instanceof Error ? error.message : String(error),
+      }))
+    : ({ ok: false, detail: "image size unknown" } as const);
+  await deps.finishRequest(requestId, "failed", "diagnostic").catch(() => {});
+  if (!found.ok || !size) {
+    deps.log("teeth detection unavailable", found.ok ? "image size unknown" : found.detail);
+    return { status: 502, body: { ok: false, code: "failed" } };
+  }
+  const teeth = readTeeth(found.value, size);
+  // Facts only: which teeth were found, never the photo.
+  deps.log("placement diagnostic", { crop: edited?.crop ?? null, teeth: teeth.map((t) => t.fdi) });
+  const crop = edited?.crop ?? { x: 0, y: 0, width: size.width, height: size.height };
+  const photoSize = photo.size ?? size;
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      crop: { ...crop, photo_width: photoSize.width, photo_height: photoSize.height },
+      teeth,
     },
   };
 }

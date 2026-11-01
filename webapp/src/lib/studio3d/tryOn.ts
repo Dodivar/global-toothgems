@@ -1,5 +1,6 @@
 import type { Creation } from "../studioWorkspace/types";
 import { parseTryOnCrop, type TryOnCrop } from "./tryOnComposite";
+import type { FoundTooth } from "./tryOnRegistration";
 import type { TryOnSeat } from "./tryOnSeats";
 
 /**
@@ -111,6 +112,17 @@ export function parseTryOnStatus(json: unknown): TryOnStatus {
   return { available: data.available === true, dailyLimit: dailyLimit && dailyLimit > 0 ? dailyLimit : null, quota };
 }
 
+/**
+ * The staff's placement diagnostic (decision 111 (k)): the mouth close-up the
+ * function cut and each tooth it found there, boxes in the close-up's pixels.
+ */
+export interface TryOnAnalysis {
+  crop: TryOnCrop;
+  teeth: FoundTooth[];
+}
+
+export type TryOnAnalysisOutcome = { ok: true; analysis: TryOnAnalysis } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
+
 export interface SmileTryOnService {
   /**
    * Whether the AI is connected, and the caller's daily allowance. Asked
@@ -124,12 +136,18 @@ export interface SmileTryOnService {
    * photo check, then the render once the photo passed.
    */
   render(request: TryOnRenderRequest, options?: { signal?: AbortSignal; onStage?: (stage: TryOnStage) => void }): Promise<TryOnOutcome>;
+  /**
+   * The placement diagnostic, active staff only (the function refuses anyone
+   * else): the teeth found on the photo, no image generated. Never throws.
+   */
+  analyse?(request: { photo: Blob; source: TryOnSource }, options?: { signal?: AbortSignal }): Promise<TryOnAnalysisOutcome>;
 }
 
 /** Used without a backend (mock mode): the AI is simply not there. */
 export const unavailableTryOnService: SmileTryOnService = {
   status: async () => UNAVAILABLE_STATUS,
   render: async () => ({ ok: false, code: "not_available" }),
+  analyse: async () => ({ ok: false, code: "not_available" }),
 };
 
 /** The `source` field the function reads (`readSourceRef` in the function). */
@@ -162,16 +180,7 @@ const ALIASES: Record<string, TryOnErrorCode> = { session_expired: "sign_in_requ
 export function parseTryOnResponse(json: unknown): TryOnOutcome {
   if (!json || typeof json !== "object") return { ok: false, code: "failed" };
   const data = json as Record<string, unknown>;
-  if (data.ok !== true) {
-    const code = typeof data.code === "string" ? (ALIASES[data.code] ?? data.code) : null;
-    if (code === "photo_unsuitable") {
-      const reasons = Array.isArray(data.reasons)
-        ? PHOTO_ISSUES.filter((issue) => (data.reasons as unknown[]).includes(issue))
-        : [];
-      return { ok: false, code, reasons };
-    }
-    return { ok: false, code: isCode(code) ? code : "failed" };
-  }
+  if (data.ok !== true) return readFailure(data);
   const image = (data.image && typeof data.image === "object" ? data.image : {}) as Record<string, unknown>;
   const type = image.mime_type;
   const b64 = image.data;
@@ -187,6 +196,44 @@ export function parseTryOnResponse(json: unknown): TryOnOutcome {
   } catch {
     return { ok: false, code: "failed" };
   }
+}
+
+/** A refusal of the function (`{ ok: false, code, reasons? }`), its code narrowed to the dialog's. */
+function readFailure(data: Record<string, unknown>): { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] } {
+  const code = typeof data.code === "string" ? (ALIASES[data.code] ?? data.code) : null;
+  if (code === "photo_unsuitable") {
+    const reasons = Array.isArray(data.reasons) ? PHOTO_ISSUES.filter((issue) => (data.reasons as unknown[]).includes(issue)) : [];
+    return { ok: false, code, reasons };
+  }
+  return { ok: false, code: isCode(code) ? code : "failed" };
+}
+
+const TOOTH_FDI = /^[1-4][1-6]$/;
+const MAX_TEETH = 20;
+
+/**
+ * Read the placement diagnostic's answer (`{ ok: true, crop, teeth }`):
+ * a crop inside its photo, and teeth with a front-tooth FDI number and a box
+ * inside the crop — the others are dropped, a missing crop is `failed`.
+ */
+export function parseTryOnAnalysis(json: unknown): TryOnAnalysisOutcome {
+  if (!json || typeof json !== "object") return { ok: false, code: "failed" };
+  const data = json as Record<string, unknown>;
+  if (data.ok !== true) return readFailure(data);
+  const crop = parseTryOnCrop(data.crop);
+  if (!crop) return { ok: false, code: "failed" };
+  const seen = new Set<string>();
+  const teeth = (Array.isArray(data.teeth) ? data.teeth : []).flatMap((raw): FoundTooth[] => {
+    if (!raw || typeof raw !== "object") return [];
+    const { fdi, x, y, width, height } = raw as Record<string, unknown>;
+    if (typeof fdi !== "string" || !TOOTH_FDI.test(fdi) || seen.has(fdi)) return [];
+    if (![x, y, width, height].every((n) => typeof n === "number" && Number.isFinite(n))) return [];
+    const [bx, by, bw, bh] = [x, y, width, height] as number[];
+    if (bx < 0 || by < 0 || bw <= 0 || bh <= 0 || bx + bw > crop.width + 1 || by + bh > crop.height + 1) return [];
+    seen.add(fdi);
+    return [{ fdi, x: bx, y: by, width: bw, height: bh }];
+  });
+  return { ok: true, analysis: { crop, teeth: teeth.slice(0, MAX_TEETH) } };
 }
 
 /**

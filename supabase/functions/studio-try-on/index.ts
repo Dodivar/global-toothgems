@@ -3,6 +3,7 @@ import { readSiteOrigins } from "../_shared/http.ts";
 import { configProblem, generateImage, generateJson, imageModelConfig, type InlineImage } from "./gemini.ts";
 import { handleStudioTryOn, toBase64, type TryOnCreationRow } from "./handler.ts";
 import { CLOSE_UP_CHECK_PROMPT, CLOSE_UP_CHECK_SCHEMA, DEFAULT_CHECK_MODEL, PHOTO_CHECK_PROMPT, PHOTO_CHECK_SCHEMA } from "./photoCheck.ts";
+import { TEETH_PROMPT, TEETH_SCHEMA } from "./teeth.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
 /*
@@ -16,7 +17,9 @@ import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from 
  * 24 hours (photos refused by the check not counted); TRY_ON_DAILY_CHECKS
  * (optional, default 30) caps every request, refused photos included;
  * TRY_ON_CHECK_MODEL (optional, default gemini-3.1-flash-lite) is the text
- * model of the photo check (`photoCheck.ts`), on the same door as the image model; TRY_ON_PROMPT_VERSION (optional, v3 by default, or v1) picks the
+ * model of the photo check (`photoCheck.ts`), on the same door as the image model;
+ * TRY_ON_TEETH_MODEL (optional, the check model by default) finds each tooth for
+ * the staff's placement diagnostic (`teeth.ts`, decision 111 (k)); TRY_ON_PROMPT_VERSION (optional, v3 by default, or v1) picks the
  * system instructions (`systemPrompt.ts`). Reference pictures: the private bucket `studio-try-on-references`
  * (root folder, JPEG / PNG / WebP, the first REFERENCE_MAX by name, at most
  * REFERENCE_MAX_BYTES in all — a picture that would pass it is skipped).
@@ -29,6 +32,8 @@ const limit = Number.parseInt(Deno.env.get("TRY_ON_DAILY_LIMIT") ?? "", 10);
 const checks = Number.parseInt(Deno.env.get("TRY_ON_DAILY_CHECKS") ?? "", 10);
 const checkModel = Deno.env.get("TRY_ON_CHECK_MODEL")?.trim() || DEFAULT_CHECK_MODEL;
 const checkConfig = config && /^[\w.-]{3,80}$/.test(checkModel) ? { ...config, model: checkModel } : null;
+const teethModel = Deno.env.get("TRY_ON_TEETH_MODEL")?.trim() || checkModel;
+const teethConfig = config && /^[\w.-]{3,80}$/.test(teethModel) ? { ...config, model: teethModel } : null;
 // v3 (default): the revised instructions + the design data; v1: the owner's original, images only.
 const version = promptVersion(Deno.env.get("TRY_ON_PROMPT_VERSION"));
 const systemPrompt = version === "v1" ? TRY_ON_SYSTEM_PROMPT_V1 : TRY_ON_SYSTEM_PROMPT_V3;
@@ -99,13 +104,21 @@ Deno.serve((req) =>
       }
       return data?.role === "admin" && data?.status === "active";
     },
+    async staff(userId) {
+      // Active staff: an active profile whose role is a staff role (`private.is_staff()`).
+      const { data, error } = await supabase.from("profiles").select("status, roles!inner(is_staff)").eq("id", userId).maybeSingle();
+      if (error) throw new Error(error.message);
+      const role = (data as { status?: string; roles?: { is_staff?: boolean } | null } | null)?.roles;
+      return data?.status === "active" && role?.is_staff === true;
+    },
     async countRecent(userId, since) {
       const recent = () =>
         supabase.from("studio_try_on_requests").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", since.toISOString());
-      const [all, refused] = await Promise.all([recent(), recent().eq("error_code", "photo_unsuitable")]);
+      // Refused photos and placement diagnostics never produced an image: they are not renders.
+      const [all, notRendered] = await Promise.all([recent(), recent().in("error_code", ["photo_unsuitable", "diagnostic"])]);
       if (all.error) throw new Error(all.error.message);
-      if (refused.error) throw new Error(refused.error.message);
-      return { requests: all.count ?? 0, renders: (all.count ?? 0) - (refused.count ?? 0) };
+      if (notRendered.error) throw new Error(notRendered.error.message);
+      return { requests: all.count ?? 0, renders: (all.count ?? 0) - (notRendered.count ?? 0) };
     },
     async startRequest(userId, row) {
       const { data, error } = await supabase
@@ -127,6 +140,7 @@ Deno.serve((req) =>
     checkPhoto: checkConfig
       ? (photo, reading) => generateJson(checkConfig, PHOTO_CHECK_PROMPT, [photo], PHOTO_CHECK_SCHEMA, null, fetch, undefined, reading === 0 ? 0 : 0.6)
       : undefined,
+    findTeeth: teethConfig ? (image) => generateJson(teethConfig, TEETH_PROMPT, [image], TEETH_SCHEMA) : undefined,
     checkCloseUp: checkConfig ? (image, spots) => generateJson(checkConfig, CLOSE_UP_CHECK_PROMPT, [image], CLOSE_UP_CHECK_SCHEMA, spots) : undefined,
     generate: (images, designData, aspectRatio) =>
       config

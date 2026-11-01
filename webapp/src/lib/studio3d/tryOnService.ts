@@ -1,6 +1,7 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "../supabase/client";
 import {
+  parseTryOnAnalysis,
   parseTryOnEvent,
   parseTryOnResponse,
   parseTryOnStatus,
@@ -22,13 +23,19 @@ import {
 const FUNCTION = "studio-try-on";
 /** Generous: an image model takes from a few seconds to about a minute. */
 const RENDER_TIMEOUT_MS = 120_000;
+/** The diagnostic: the photo check and one reading of the close-up, no image. */
+const ANALYSE_TIMEOUT_MS = 60_000;
 
 async function readError(error: unknown): Promise<TryOnOutcome> {
+  return readErrorWith(error, parseTryOnResponse);
+}
+
+async function readErrorWith<T>(error: unknown, parse: (json: unknown) => T): Promise<T | { ok: false; code: "not_available" | "failed" | "network" }> {
   if (error instanceof FunctionsHttpError) {
     const response = error.context as Response;
     if (response.status === 404 && !response.headers.get("content-type")?.includes("json")) return { ok: false, code: "not_available" };
     try {
-      return parseTryOnResponse(await response.json());
+      return parse(await response.json());
     } catch {
       return { ok: false, code: "failed" };
     }
@@ -98,6 +105,19 @@ export const smileTryOnService: SmileTryOnService = supabase
         } finally {
           clearTimeout(timer);
           options?.signal?.removeEventListener("abort", stop);
+        }
+      },
+      async analyse({ photo, source }, options) {
+        const form = new FormData();
+        form.set("action", "analyse");
+        form.set("source", JSON.stringify(sourcePayload(source)));
+        form.set("photo", photo, "smile");
+        try {
+          const { data, error } = await supabase!.functions.invoke(FUNCTION, { body: form, signal: options?.signal, timeout: ANALYSE_TIMEOUT_MS });
+          if (error) return await readErrorWith(error, parseTryOnAnalysis);
+          return parseTryOnAnalysis(data);
+        } catch {
+          return { ok: false, code: options?.signal?.aborted ? "failed" : "network" };
         }
       },
     }

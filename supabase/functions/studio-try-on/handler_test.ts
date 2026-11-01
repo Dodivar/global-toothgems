@@ -6,6 +6,7 @@ import { accessToken, generateImage, generateUrl, imageModelConfig, nearestAspec
 import { handleStudioTryOn, headerSize, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
 import { coherentScale, imageSize, judgePhoto, judgeReadings, MIN_TEETH_SPAN, photoScale } from "./photoCheck.ts";
 import { buildDesignData, gemSpots, leftOutGems, piecesFromScene, readSeats, toothLabel } from "./prompt.ts";
+import { readTeeth } from "./teeth.ts";
 import { promptVersion, TRY_ON_SYSTEM_PROMPT_V1, TRY_ON_SYSTEM_PROMPT_V3 } from "./systemPrompt.ts";
 
 const SITE = "https://global-toothgems.example";
@@ -29,6 +30,7 @@ function fake(over: Partial<StudioTryOnDeps> = {}, row: TryOnCreationRow | null 
     userFromToken: (token) => Promise.resolve(token === TOKEN ? "user-1" : null),
     loadCreation: () => Promise.resolve(row),
     unlimited: () => Promise.resolve(false),
+    staff: () => Promise.resolve(false),
     countRecent: () => Promise.resolve({ requests: 0, renders: 0 }),
     startRequest: () => {
       calls.started++;
@@ -757,4 +759,114 @@ Deno.test("mouth crop: off by secret, or not a JPEG — the whole photo, no crop
   const png = fake({ checkPhoto: check });
   const res2 = await handleStudioTryOn(post(form({ creation_id: CREATION }, new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" }))), png.deps);
   assertEquals((await res2.json()).crop, undefined);
+});
+
+/* ------------------------------------------- placement diagnostic (decision 111 (k)) */
+
+Deno.test("teeth: valid FDI numbers and boxes in pixels; misreadings dropped", () => {
+  const teeth = readTeeth(
+    {
+      teeth: [
+        { fdi: "11", box: [100, 400, 600, 500] },
+        { fdi: "11", box: [100, 300, 600, 400] }, // the same number twice: the first kept
+        { fdi: "19", box: [100, 300, 600, 400] }, // not a tooth number
+        { fdi: "17", box: [100, 300, 600, 400] }, // a second molar: not a front tooth
+        { fdi: "21", box: [100, 500, 600, 500] }, // no width
+        { fdi: "12", box: [100, 300, 600] }, // three numbers
+        { fdi: " 22 ", box: [-50, 600, 600, 1200] }, // clamped to the image
+        "nonsense",
+      ],
+    },
+    { width: 2000, height: 1000 },
+  );
+  assertEquals(teeth, [
+    { fdi: "11", x: 800, y: 100, width: 200, height: 500 },
+    { fdi: "22", x: 1200, y: 0, width: 800, height: 600 },
+  ]);
+  assertEquals(readTeeth(null, { width: 10, height: 10 }), []);
+  assertEquals(readTeeth({ teeth: "x" }, { width: 10, height: 10 }), []);
+});
+
+function analyseForm(photo: Blob = jpegOf(768, 1024)) {
+  const data = new FormData();
+  data.set("source", JSON.stringify({ creation_id: CREATION }));
+  data.set("photo", photo, "smile.jpg");
+  data.set("action", "analyse");
+  return data;
+}
+
+const TEETH_ANSWER = { teeth: [{ fdi: "11", box: [100, 300, 700, 500] }, { fdi: "21", box: [100, 500, 700, 700] }] };
+
+Deno.test("diagnostic: staff only, refused to a member before anything is read or counted", async () => {
+  const { deps, calls } = fake({ findTeeth: () => Promise.resolve({ ok: true, value: TEETH_ANSWER }) });
+  const res = await handleStudioTryOn(post(analyseForm()), deps);
+  assertEquals(res.status, 403);
+  assertEquals((await res.json()).code, "not_allowed");
+  assertEquals(calls.started, 0);
+});
+
+Deno.test("diagnostic: not available without the teeth model", async () => {
+  const { deps } = fake({ staff: () => Promise.resolve(true) });
+  assertEquals((await handleStudioTryOn(post(analyseForm()), deps)).status, 503);
+});
+
+Deno.test("diagnostic: the close-up and its teeth, nothing generated, recorded as a diagnostic", async () => {
+  let generated = false;
+  let sentSize: { width: number; height: number } | null = null;
+  const { deps, calls } = fake({
+    staff: () => Promise.resolve(true),
+    checkPhoto: () => Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, teeth_box: [430, 240, 560, 810] } }),
+    findTeeth: (image) => {
+      sentSize = imageSize(Uint8Array.from(atob(image.data), (c) => c.charCodeAt(0)));
+      return Promise.resolve({ ok: true, value: TEETH_ANSWER });
+    },
+    generate: () => {
+      generated = true;
+      return Promise.resolve({ ok: false, code: "failed" });
+    },
+  });
+  const res = await handleStudioTryOn(post(analyseForm()), deps);
+  assertEquals(res.status, 200);
+  const body = await res.json();
+  const crop = mouthCrop([430, 240, 560, 810], { width: 768, height: 1024 })!;
+  assertEquals(body.crop, { ...crop, photo_width: 768, photo_height: 1024 });
+  // The teeth are found on the close-up, and their boxes are in its pixels.
+  assertEquals(sentSize, { width: crop.width, height: crop.height });
+  assertEquals(body.teeth, readTeeth(TEETH_ANSWER, { width: crop.width, height: crop.height }));
+  assertEquals(generated, false);
+  assertEquals(calls.finished, ["failed:diagnostic"]);
+});
+
+Deno.test("diagnostic: an unsuitable photo is refused like a render", async () => {
+  const { deps, calls } = fake({
+    staff: () => Promise.resolve(true),
+    checkPhoto: () => Promise.resolve({ ok: true, value: { ...GOOD_PHOTO, lighting: "too_dark" } }),
+    findTeeth: () => Promise.resolve({ ok: true, value: TEETH_ANSWER }),
+  });
+  const res = await handleStudioTryOn(post(analyseForm()), deps);
+  assertEquals(res.status, 422);
+  assertEquals(calls.finished, ["failed:photo_unsuitable"]);
+});
+
+Deno.test("diagnostic: counted against the daily requests, not the renders", async () => {
+  const capped = fake({
+    staff: () => Promise.resolve(true),
+    findTeeth: () => Promise.resolve({ ok: true, value: TEETH_ANSWER }),
+    countRecent: () => Promise.resolve({ requests: 5, renders: 0 }),
+  });
+  assertEquals((await handleStudioTryOn(post(analyseForm()), capped.deps)).status, 429);
+  // Every render used today, requests left: the diagnostic still runs.
+  const rendersUsed = fake({
+    staff: () => Promise.resolve(true),
+    findTeeth: () => Promise.resolve({ ok: true, value: TEETH_ANSWER }),
+    countRecent: () => Promise.resolve({ requests: 3, renders: 3 }),
+  });
+  assertEquals((await handleStudioTryOn(post(analyseForm()), rendersUsed.deps)).status, 200);
+});
+
+Deno.test("diagnostic: the teeth model failing is a failure, still recorded", async () => {
+  const { deps, calls } = fake({ staff: () => Promise.resolve(true), findTeeth: () => Promise.reject(new Error("boom")) });
+  const res = await handleStudioTryOn(post(analyseForm()), deps);
+  assertEquals(res.status, 502);
+  assertEquals(calls.finished, ["failed:diagnostic"]);
 });

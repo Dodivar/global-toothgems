@@ -1602,6 +1602,21 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   count toward the renders (`TRY_ON_DAILY_LIMIT`), only toward every request (`TRY_ON_DAILY_CHECKS`, default 30). Active administrators (`profiles.role = 'admin'`, owner's decision 2026-10-26, to test freely) have no daily limit; their requests are still recorded.
   The browser asks for a close-up first (photo step), refuses locally only a photo far too dark to see a tooth
   (`tryOnPhoto.ts` `checkPhotoLight`), and lists the reasons with what to change.
+- **Computed placement — staff diagnostic** (decision 111 (k), 2026-11-01, owner's request: the gems' places to be
+  predictable, the image model only making them realistic; plan in `docs/studio-try-on-computed-placement.md`, steps
+  0–2 built). The multipart call with `action = "analyse"` (active staff only — `profiles.status = 'active'` and a
+  staff role, checked by the function, 403 `not_allowed` otherwise) runs the photo check and the mouth crop, then
+  `TRY_ON_TEETH_MODEL` (default: the check model) boxes every visible tooth with its FDI number (`teeth.ts`,
+  checked by `readTeeth`); no image is generated. It is recorded as `failed` / `diagnostic`: counted against
+  `TRY_ON_DAILY_CHECKS`, never against the renders. The browser fits the Studio's reference dentition
+  (`frontView.ts`, real millimetres) onto the found teeth (`webapp/src/lib/studio3d/tryOnRegistration.ts`: one
+  similarity on the biting-edge centres, outliers set aside while three teeth remain, each gem across its share
+  of the customer's own tooth and up at its real distance from the biting edge) and draws the result over the photo
+  (`PlacementDiagnostic.tsx`, the "Placement diagnostic" button next to "Generate", shown to staff in the Studio
+  workspace). **Gem size is physical** (owner's decision): real millimetres × the fitted scale. A confidence below
+  `RELIABLE_CONFIDENCE` (0.6, first value) or fewer than three agreeing teeth marks the placement unreliable.
+  **Renders are unchanged**: they still let the image model place the gems; the switch to the computed placement
+  comes with steps 3–4, staff only during the trial. The behaviour before this change is tagged `try-on-ai-placement`.
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
   `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The
   photo step says the photo is sent to Google only while the AI is connected.

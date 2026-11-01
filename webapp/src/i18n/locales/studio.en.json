@@ -1005,6 +1005,37 @@
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
       "hint": "Pinch or double-tap to zoom."
+    },
+    "diagnostic": {
+      "action": "Placement diagnostic",
+      "intro": "Staff only: the teeth found on the photo and where each gem is computed to go, at its real size. No image is generated.",
+      "imageLabel": "Mouth close-up: {{teeth}} teeth found, {{gems}} gems placed by the computation.",
+      "legend": {
+        "found": "Tooth found",
+        "outlier": "Tooth set aside (inconsistent)",
+        "fitted": "Tooth inferred from the others",
+        "gem": "Computed gem"
+      },
+      "reliable": "Reliable placement ({{percent}}%)",
+      "unreliable": "Unreliable placement ({{percent}}%): the render would keep the current behaviour",
+      "issues": {
+        "no_teeth": "No usable tooth on the photo.",
+        "few_teeth": "Fewer than three teeth agree: the computation cannot check itself.",
+        "outliers": "Some teeth found disagree with the others and were set aside.",
+        "out_of_order": "The teeth's left-to-right order contradicts their numbers.",
+        "scale_mismatch": "The computed scale and the teeth's widths disagree.",
+        "design_teeth_missing": "Some teeth carrying gems were not found: their gems are placed by inference."
+      },
+      "figures": {
+        "teeth": "Teeth found",
+        "gems": "Gems",
+        "gemsValue": "{{placed}} placed, {{skipped}} skipped",
+        "scale": "Scale",
+        "scaleValue": "{{value}} px/mm",
+        "spread": "Average gap",
+        "spreadValue": "{{value}}% of a tooth"
+      },
+      "back": "Back to the photo"
     }
   },
   "frontView": {
