@@ -192,6 +192,7 @@ describe("languages", () => {
 describe("store details", () => {
   const row: StoreSettingsRow = {
     store_name: "Global Toothgems",
+    trading_name: null,
     legal_name: "Global Toothgems SAS",
     legal_form: "SAS",
     share_capital: null,
@@ -283,6 +284,7 @@ describe("legal notice", () => {
       ...mapStoreDetails(
         {
           store_name: "Global Toothgems",
+          trading_name: null,
           legal_name: "Global Toothgems SAS",
           legal_form: "SAS",
           share_capital: "10 000 €",
@@ -315,7 +317,7 @@ describe("legal notice", () => {
     const doc = legalNotice(store);
     const fields = doc.sections.flatMap((s) => s.blocks).flatMap((b) => (b.kind === "fields" ? b.fields : []));
     const valueOf = (fr: string) => fields.find((f) => f.label.fr === fr)?.value;
-    expect(valueOf("Dénomination sociale")?.fr).toBe("Global Toothgems SAS");
+    expect(valueOf("Dénomination")?.fr).toBe("Global Toothgems SAS");
     expect(valueOf("Forme juridique")).toEqual({ fr: "SAS au capital de 10 000 €", en: "SAS with share capital of 10 000 €" });
     expect(valueOf("Siège social / adresse")?.fr).toBe("1 rue Fictive, 75004 Paris, France");
     expect(valueOf("E-mail de contact")?.fr).toBe("support@example.com");
@@ -323,5 +325,73 @@ describe("legal notice", () => {
     expect(valueOf("Téléphone")).toBeUndefined(); // not shown to customers
     const contact = doc.sections.find((s) => s.id === "contact")?.blocks[0];
     expect(contact?.kind === "p" && contact.text.en).toContain("write to us at support@example.com");
+  });
+});
+
+describe("trading name (decision 120)", () => {
+  const ei: StoreDetails = {
+    ...mapStoreDetails(
+      {
+        store_name: "Global Toothgems",
+        trading_name: "Pimp son smile",
+        legal_name: "Ada Test",
+        legal_form: "Entrepreneur individuel (EI)",
+        share_capital: null,
+        registration_number: "SIREN 123 456 789",
+        vat_number: null,
+        vat_franchise: true,
+        business_email: null,
+        support_email: "support@example.com",
+        phone: null,
+        address_line1: "1 rue Fictive",
+        address_line2: null,
+        postal_code: "75004",
+        city: "Paris",
+        region: null,
+        country_code: "FR",
+        publication_director: null,
+        publication_director_role: null,
+        host_name: null,
+        host_address: null,
+        host_contact: null,
+        show_email: true,
+        show_phone: false,
+        show_address: false,
+        opening_hours: {},
+        support_message: null,
+      },
+      [],
+    ),
+  };
+
+  it("is read and saved like the other details", () => {
+    expect(ei.tradingName).toBe("Pimp son smile");
+    expect(storeDetailsPayload(ei).trading_name).toBe("Pimp son smile");
+  });
+
+  it("names the publisher by its trading name, the legal identity only in the field list", async () => {
+    const { legalNotice } = await import("../data/legal/legalNotice");
+    const doc = legalNotice(ei);
+    const publisher = doc.sections.find((s) => s.id === "publisher");
+    const intro = publisher?.blocks[0];
+    expect(intro?.kind === "p" && intro.text.fr).toBe("Le site Global Toothgems est édité par Pimp son smile, entreprise identifiée ci-dessous.");
+    expect(intro?.kind === "p" && intro.text.fr).not.toContain("Ada Test");
+    const fields = publisher?.blocks.flatMap((b) => (b.kind === "fields" ? b.fields : [])) ?? [];
+    expect(fields.find((f) => f.label.fr === "Nom commercial")?.value?.fr).toBe("Pimp son smile");
+    expect(fields.find((f) => f.label.fr === "Dénomination")?.value?.fr).toBe("Ada Test");
+  });
+
+  it("fills the seller in the terms of sale and the publisher in the terms of use", async () => {
+    const { withStoreDetails } = await import("../data/legal/storeFill");
+    const { TERMS } = await import("../data/legal/terms");
+    const { TERMS_OF_USE } = await import("../data/legal/termsOfUse");
+    const seller = withStoreDetails(TERMS, ei).sections.find((s) => s.id === "seller")?.blocks[0];
+    expect(seller?.kind === "p" && seller.text.fr).toContain(
+      "conclues avec Pimp son smile — Ada Test, Entrepreneur individuel (EI), dont le siège est situé 1 rue Fictive, 75004 Paris, France, immatriculée sous le numéro SIREN 123 456 789.",
+    );
+    expect(seller?.kind === "p" && seller.text.en).toContain("concluded with Pimp son smile — Ada Test");
+    const publisher = withStoreDetails(TERMS_OF_USE, ei).sections.find((s) => s.id === "publisher")?.blocks[0];
+    expect(publisher?.kind === "p" && publisher.text.fr).toContain("Le site est édité par Pimp son smile.");
+    expect(withStoreDetails(TERMS, null)).toBe(TERMS);
   });
 });

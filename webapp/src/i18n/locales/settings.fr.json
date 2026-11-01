@@ -141,7 +141,8 @@
     },
     "fields": {
       "storeName": "Nom de la boutique",
-      "legalName": "Raison sociale",
+      "tradingName": "Nom commercial",
+      "legalName": "Dénomination légale",
       "legalForm": "Forme juridique",
       "shareCapital": "Capital social",
       "registrationNumber": "Numéro d'immatriculation",
@@ -164,8 +165,9 @@
       "supportMessageEn": "Délai de réponse (anglais)"
     },
     "hints": {
-      "storeName": "Le nom commercial, tel que les clients le connaissent.",
-      "legalName": "Telle qu'immatriculée.",
+      "storeName": "Le nom du site, tel que les clients le connaissent.",
+      "tradingName": "Le nom sous lequel l'entreprise exerce (factures, mentions légales).",
+      "legalName": "Telle qu'immatriculée : raison sociale, ou nom et prénom pour une entreprise individuelle. Affichée seulement dans les mentions légales.",
       "shareCapital": "Si la forme juridique l'exige.",
       "registrationNumber": "Numéro et registre, par exemple RCS Paris 123 456 789.",
       "vatNumber": "Uniquement si l'entreprise est assujettie à la TVA.",

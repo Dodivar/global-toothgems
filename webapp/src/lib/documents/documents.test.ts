@@ -27,6 +27,7 @@ const fmt: DocumentFormat = {
 
 const store = {
   storeName: "Global Toothgems",
+  tradingName: "",
   legalName: "Global Toothgems SAS",
   legalForm: "SAS",
   shareCapital: "10 000 €",

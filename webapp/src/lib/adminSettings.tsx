@@ -82,6 +82,7 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 const EMPTY: SectionValues = {
   store: {
     storeName: "",
+    tradingName: "",
     legalName: "",
     legalForm: "",
     shareCapital: "",

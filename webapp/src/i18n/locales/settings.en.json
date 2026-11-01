@@ -141,7 +141,8 @@
     },
     "fields": {
       "storeName": "Store name",
-      "legalName": "Legal business name",
+      "tradingName": "Trading name",
+      "legalName": "Legal name",
       "legalForm": "Legal entity type",
       "shareCapital": "Share capital",
       "registrationNumber": "Registration number",
@@ -164,8 +165,9 @@
       "supportMessageEn": "Response time (English)"
     },
     "hints": {
-      "storeName": "The trading name customers know you by.",
-      "legalName": "As registered.",
+      "storeName": "The website's name, as customers know it.",
+      "tradingName": "The name the business trades under (invoices, legal notice).",
+      "legalName": "As registered: company name, or first and last name for a sole trader. Shown only in the legal mentions.",
       "shareCapital": "Where the legal form requires it.",
       "registrationNumber": "Number and register, e.g. RCS Paris 123 456 789.",
       "vatNumber": "Only if the business is registered for VAT.",

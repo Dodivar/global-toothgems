@@ -7655,6 +7655,7 @@ export type Database = {
           store_name: string
           support_email: string | null
           support_message: string | null
+          trading_name: string | null
           updated_at: string
           updated_by: string | null
           vat_franchise: boolean
@@ -7692,6 +7693,7 @@ export type Database = {
           store_name?: string
           support_email?: string | null
           support_message?: string | null
+          trading_name?: string | null
           updated_at?: string
           updated_by?: string | null
           vat_franchise?: boolean
@@ -7729,6 +7731,7 @@ export type Database = {
           store_name?: string
           support_email?: string | null
           support_message?: string | null
+          trading_name?: string | null
           updated_at?: string
           updated_by?: string | null
           vat_franchise?: boolean

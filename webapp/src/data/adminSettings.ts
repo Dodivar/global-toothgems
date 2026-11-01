@@ -32,8 +32,14 @@ export interface OpeningSlot {
 export const STORE_CURRENCY = "EUR";
 
 export interface StoreDetails {
-  /** Trading name, shown to customers. */
+  /** The site's brand (Global Toothgems), shown to customers. */
   storeName: string;
+  /**
+   * The business's trading name ("nom commercial", e.g. "Pimp son smile"):
+   * what invoices and the legal notice put forward (decision 120).
+   */
+  tradingName: string;
+  /** The legal identity: company name, or for an individual entrepreneur their own name. */
   legalName: string;
   legalForm: string;
   shareCapital: string;

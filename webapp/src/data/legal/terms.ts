@@ -77,8 +77,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les ventes sont conclues avec [[!Dénomination sociale]], [[!Forme juridique]], dont le siège est situé [[!Adresse du siège]], immatriculée sous le numéro [[!Numéro d’immatriculation]]. Toutes les informations d’identification figurent dans les <<mentions légales|/mentions-legales>>.",
-            "Sales are concluded with [[!Legal business name]], [[!Legal entity type]], registered office at [[!Registered office address]], registration number [[!Registration number]]. Full identification details are in the <<legal notice|/mentions-legales>>.",
+            "Les ventes sont conclues avec [[!Dénomination et forme juridique]], dont le siège est situé [[!Adresse du siège]], immatriculée sous le numéro [[!Numéro d’immatriculation]]. Toutes les informations d’identification figurent dans les <<mentions légales|/mentions-legales>>.",
+            "Sales are concluded with [[!Legal name and entity type]], registered office at [[!Registered office address]], registration number [[!Registration number]]. Full identification details are in the <<legal notice|/mentions-legales>>.",
           ),
         },
       ],

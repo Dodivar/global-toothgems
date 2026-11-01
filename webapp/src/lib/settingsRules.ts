@@ -102,6 +102,7 @@ const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 /** Same limits as the `store_settings` columns. */
 const MAX_LENGTH: Partial<Record<keyof StoreDetails, number>> = {
   storeName: 120,
+  tradingName: 120,
   legalName: 200,
   legalForm: 120,
   shareCapital: 60,

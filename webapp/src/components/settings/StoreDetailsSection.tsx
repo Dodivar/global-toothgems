@@ -70,6 +70,7 @@ export function StoreDetailsSection() {
         <div className="grid gap-4">
           <FieldGrid>
             {text("storeName", { required: true, autoComplete: "organization" })}
+            {text("tradingName")}
             {text("legalName", { required: true })}
             {text("legalForm", { placeholder: t("settings.store.placeholders.legalForm") })}
             {text("shareCapital", { placeholder: t("settings.store.placeholders.shareCapital") })}

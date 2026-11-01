@@ -75,7 +75,7 @@ export function sellerParty(store: StoreDetails | null, t: Translate, fmt: Docum
   return {
     title: t("documents.seller"),
     lines: [
-      store.legalName.trim() || store.storeName.trim(),
+      store.tradingName.trim() || store.legalName.trim() || store.storeName.trim(),
       ...addressLines(store),
       store.country ? fmt.country(store.country) : "",
       store.supportEmail.trim() || store.businessEmail.trim(),
@@ -89,6 +89,7 @@ export function legalFooter(store: StoreDetails | null, t: Translate): string[] 
   if (!store) return ["Global Toothgems"];
   return legalFooterLines(
     {
+      tradingName: store.tradingName.trim(),
       name: store.legalName.trim() || store.storeName.trim(),
       legalForm: store.legalForm.trim(),
       shareCapital: store.shareCapital.trim(),
@@ -179,7 +180,7 @@ export function orderDocument(order: Order, store: StoreDetails | null, t: Trans
     blocks,
     footer: legalFooter(store, t),
     pageLabel: (page, count) => t("documents.page", { page, count }),
-    info: { title: `${title} ${order.reference}`, author: store?.legalName.trim() || store?.storeName.trim() || "Global Toothgems" },
+    info: { title: `${title} ${order.reference}`, author: store?.tradingName.trim() || store?.legalName.trim() || store?.storeName.trim() || "Global Toothgems" },
   };
 }
 

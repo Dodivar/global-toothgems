@@ -134,6 +134,29 @@ describe("invoice PDF", () => {
     expect(all).toContain("Total TTC");
   });
 
+  it("with a trading name: the seller block shows it, the legal identity stays in the small mentions at the foot", () => {
+    const ei: InvoiceRow = {
+      ...invoiceRow,
+      seller: {
+        ...seller,
+        trading_name: "Pimp son smile",
+        legal_name: "Ada Test",
+        legal_form: "Entrepreneur individuel (EI)",
+        share_capital: "",
+        registration_number: "SIREN 123 456 789",
+        vat_number: "",
+        vat_franchise: true,
+      },
+    };
+    const doc = invoiceDocument(mapInvoice(ei), t, fmt);
+    const sellerBlock = doc.parties[0].lines.filter(Boolean);
+    expect(sellerBlock[0]).toBe("Pimp son smile");
+    expect(sellerBlock.join(" ")).not.toContain("Ada Test");
+    expect(sellerBlock.join(" ")).not.toContain("SIREN");
+    expect(doc.footer[0]).toBe("Pimp son smile · Ada Test, Entrepreneur individuel (EI) · Immatriculation SIREN 123 456 789");
+    expect(doc.info.author).toBe("Pimp son smile");
+  });
+
   it("draws a credit note against its invoice", () => {
     const invoice = mapInvoice(invoiceRow);
     const doc = invoiceDocument(mapInvoice(creditRow), translator(en), { ...fmt, lang: "en" }, invoice);
