@@ -57,9 +57,9 @@ const stepIndex = (step: Step) =>
  * (the owner's plan) is decided by the database: the viewers only show the
  * entry point when it says so, and the function checks again.
  *
- * `staffTools` (the Studio workspace, for active staff): the placement
- * diagnostic next to the render (decision 111 (k)) — the function refuses it
- * to anyone else.
+ * Active staff also get the placement diagnostic next to the render (decision
+ * 111 (k)), when the function's status says so — it decides from the profile
+ * and refuses the diagnostic to anyone else.
  */
 export function TryOnDialog({
   creation,
@@ -67,14 +67,12 @@ export function TryOnDialog({
   audience = "artist",
   onClose,
   service = smileTryOnService,
-  staffTools = false,
 }: {
   creation: TryOnCreation;
   source: TryOnSource | null;
   audience?: TryOnAudience;
   onClose: () => void;
   service?: SmileTryOnService;
-  staffTools?: boolean;
 }) {
   const { t } = useTranslation();
   const { signedIn } = useAuth();
@@ -84,6 +82,7 @@ export function TryOnDialog({
   const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
   const [consent, setConsent] = useState(false);
   const [ai, setAi] = useState<AiState>(source ? "checking" : "unavailable");
+  const [diagnosticAllowed, setDiagnosticAllowed] = useState(false);
   const request = useRef<AbortController | null>(null);
   const photoUrl = useRef<string | null>(null);
   const resultUrl = useRef<string | null>(null);
@@ -96,7 +95,11 @@ export function TryOnDialog({
     let live = true;
     service
       .status()
-      .then((status) => live && setAi(status.available ? "available" : "unavailable"))
+      .then((status) => {
+        if (!live) return;
+        setAi(status.available ? "available" : "unavailable");
+        setDiagnosticAllowed(status.diagnostic);
+      })
       .catch(() => live && setAi("unavailable"));
     return () => {
       live = false;
@@ -228,7 +231,7 @@ export function TryOnDialog({
               signedIn={signedIn}
               onAi={() => void render()}
               onSignIn={signIn}
-              onDiagnose={staffTools && service.analyse ? () => void diagnose() : undefined}
+              onDiagnose={diagnosticAllowed && service.analyse ? () => void diagnose() : undefined}
             />
           )}
 

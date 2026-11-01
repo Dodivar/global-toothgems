@@ -90,9 +90,11 @@ export interface TryOnStatus {
   dailyLimit: number | null;
   /** The caller's own allowance; null when not signed in or unknown. */
   quota: TryOnQuota | null;
+  /** Whether the caller may ask for the placement diagnostic (active staff, decided by the function). */
+  diagnostic: boolean;
 }
 
-export const UNAVAILABLE_STATUS: TryOnStatus = { available: false, dailyLimit: null, quota: null };
+export const UNAVAILABLE_STATUS: TryOnStatus = { available: false, dailyLimit: null, quota: null, diagnostic: false };
 
 const count = (v: unknown): number | null => (typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 10_000 ? v : null);
 
@@ -109,7 +111,12 @@ export function parseTryOnStatus(json: unknown): TryOnStatus {
     if (limit !== null && limit > 0 && remaining !== null) quota = { unlimited: false, limit, remaining: Math.min(remaining, limit) };
   }
   const dailyLimit = count(data.daily_limit);
-  return { available: data.available === true, dailyLimit: dailyLimit && dailyLimit > 0 ? dailyLimit : null, quota };
+  return {
+    available: data.available === true,
+    dailyLimit: dailyLimit && dailyLimit > 0 ? dailyLimit : null,
+    quota,
+    diagnostic: data.available === true && data.diagnostic === true,
+  };
 }
 
 /**

@@ -18,7 +18,7 @@ import { checkPhotoFile, checkPhotoLight, checkPhotoSize, fitWithin, PHOTO_MAX_B
 
 describe("try-on service contract", () => {
   it("the not-available service says so at once, without a photo leaving", async () => {
-    expect(await unavailableTryOnService.status()).toEqual({ available: false, dailyLimit: null, quota: null });
+    expect(await unavailableTryOnService.status()).toEqual({ available: false, dailyLimit: null, quota: null, diagnostic: false });
     expect(await unavailableTryOnService.render({ photo: new Blob(), design: new Blob(), source: { kind: "own", creationId: "c1" } })).toEqual({
       ok: false,
       code: "not_available",
@@ -30,12 +30,17 @@ describe("try-on service contract", () => {
       available: true,
       dailyLimit: 10,
       quota: { unlimited: false, limit: 10, remaining: 7 },
+      diagnostic: false,
     });
     expect(parseTryOnStatus({ available: true, daily_limit: 10, quota: { unlimited: true } }).quota).toEqual({ unlimited: true });
-    expect(parseTryOnStatus({ available: true, daily_limit: 10, quota: null })).toEqual({ available: true, dailyLimit: 10, quota: null });
+    expect(parseTryOnStatus({ available: true, daily_limit: 10, quota: null })).toEqual({ available: true, dailyLimit: 10, quota: null, diagnostic: false });
     expect(parseTryOnStatus({ available: true, quota: { limit: 10, remaining: 12 } }).quota).toEqual({ unlimited: false, limit: 10, remaining: 10 });
     expect(parseTryOnStatus({ available: true, quota: { limit: "10", remaining: -1 } }).quota).toBeNull();
-    expect(parseTryOnStatus({ available: "yes" })).toEqual({ available: false, dailyLimit: null, quota: null });
+    expect(parseTryOnStatus({ available: "yes" })).toEqual({ available: false, dailyLimit: null, quota: null, diagnostic: false });
+    // The placement diagnostic: only when the function says so, and only with the AI connected.
+    expect(parseTryOnStatus({ available: true, diagnostic: true }).diagnostic).toBe(true);
+    expect(parseTryOnStatus({ available: true, diagnostic: "yes" }).diagnostic).toBe(false);
+    expect(parseTryOnStatus({ available: false, diagnostic: true }).diagnostic).toBe(false);
     expect(parseTryOnStatus(null).available).toBe(false);
   });
 

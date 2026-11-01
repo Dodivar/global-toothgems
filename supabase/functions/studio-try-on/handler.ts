@@ -195,7 +195,8 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
       body = null;
     }
     if (!body || (body as Record<string, unknown>).action !== "status") return json({ ok: false, code: "invalid_request" }, 400, cors);
-    return json({ available: deps.available, daily_limit: deps.dailyLimit, quota: await quotaFor(req, deps) }, 200, cors);
+    const { quota, diagnostic } = await callerFor(req, deps);
+    return json({ available: deps.available, daily_limit: deps.dailyLimit, quota, ...(diagnostic ? { diagnostic: true } : {}) }, 200, cors);
   }
   if (!type.startsWith("multipart/form-data")) return json({ ok: false, code: "invalid_request" }, 400, cors);
 
@@ -298,23 +299,39 @@ async function remainingChecks(deps: StudioTryOnDeps, userId: string): Promise<n
 }
 
 /**
- * The signed-in caller's daily allowance, for the status call: `{ limit,
- * remaining }`, `{ unlimited: true }` for an active administrator, or null
- * without a valid member token (a visitor) or when it cannot be read — the
- * status itself never fails on it. Display only: a generation counts again.
+ * What the status call says about the signed-in caller. `quota`: the daily
+ * allowance — `{ limit, remaining }`, `{ unlimited: true }` for an active
+ * administrator, or null without a valid member token (a visitor) or when it
+ * cannot be read. `diagnostic`: whether the caller may ask for the placement
+ * diagnostic (active staff, the AI and the teeth model connected) — decided
+ * here from the profile, since the Studio's access state says "subscribed"
+ * for staff who also hold a subscription. The status itself never fails on
+ * either. Display only: a generation or a diagnostic checks again.
  */
-async function quotaFor(req: Request, deps: StudioTryOnDeps): Promise<Record<string, unknown> | null> {
+async function callerFor(req: Request, deps: StudioTryOnDeps): Promise<{ quota: Record<string, unknown> | null; diagnostic: boolean }> {
   const token = bearer(req);
-  if (!token || !looksLikeJwt(token)) return null;
+  if (!token || !looksLikeJwt(token)) return { quota: null, diagnostic: false };
+  let userId: string | null;
   try {
-    const userId = await deps.userFromToken(token);
-    if (!userId) return null;
-    if (await deps.unlimited(userId)) return { unlimited: true };
-    return { limit: deps.dailyLimit, remaining: await remainingRenders(deps, userId) };
+    userId = await deps.userFromToken(token);
   } catch (error) {
-    deps.log("reading the daily allowance failed", error instanceof Error ? error.message : error);
-    return null;
+    deps.log("reading the caller failed", error instanceof Error ? error.message : error);
+    return { quota: null, diagnostic: false };
   }
+  if (!userId) return { quota: null, diagnostic: false };
+  const [quota, diagnostic] = await Promise.all([
+    (async () => {
+      try {
+        if (await deps.unlimited(userId)) return { unlimited: true };
+        return { limit: deps.dailyLimit, remaining: await remainingRenders(deps, userId) };
+      } catch (error) {
+        deps.log("reading the daily allowance failed", error instanceof Error ? error.message : error);
+        return null;
+      }
+    })(),
+    deps.available && deps.findTeeth ? deps.staff(userId).catch(() => false) : Promise.resolve(false),
+  ]);
+  return { quota, diagnostic };
 }
 
 type Ending = { status: number; body: Record<string, unknown> };

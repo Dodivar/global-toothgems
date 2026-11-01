@@ -870,3 +870,19 @@ Deno.test("diagnostic: the teeth model failing is a failure, still recorded", as
   assertEquals(res.status, 502);
   assertEquals(calls.finished, ["failed:diagnostic"]);
 });
+
+Deno.test("diagnostic: the status call says whether the caller may ask for it", async () => {
+  const teeth = { findTeeth: () => Promise.resolve({ ok: true as const, value: TEETH_ANSWER }) };
+  const staff = fake({ ...teeth, staff: () => Promise.resolve(true) });
+  assertEquals((await (await handleStudioTryOn(post('{"action":"status"}'), staff.deps)).json()).diagnostic, true);
+  // A member, a visitor, no teeth model, or a failed staff check: not offered.
+  const member = fake(teeth);
+  assertEquals((await (await handleStudioTryOn(post('{"action":"status"}'), member.deps)).json()).diagnostic, undefined);
+  assertEquals((await (await handleStudioTryOn(post('{"action":"status"}', null), staff.deps)).json()).diagnostic, undefined);
+  const noModel = fake({ staff: () => Promise.resolve(true) });
+  assertEquals((await (await handleStudioTryOn(post('{"action":"status"}'), noModel.deps)).json()).diagnostic, undefined);
+  const broken = fake({ ...teeth, staff: () => Promise.reject(new Error("db")) });
+  const body = await (await handleStudioTryOn(post('{"action":"status"}'), broken.deps)).json();
+  assertEquals(body.diagnostic, undefined);
+  assertEquals(body.quota, { limit: 3, remaining: 3 });
+});

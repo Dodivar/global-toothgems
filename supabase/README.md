@@ -1612,8 +1612,9 @@ AI render                   multipart: source, photo (≤ 6 MB), design (3D stil
   (`frontView.ts`, real millimetres) onto the found teeth (`webapp/src/lib/studio3d/tryOnRegistration.ts`: one
   similarity on the biting-edge centres, outliers set aside while three teeth remain, each gem across its share
   of the customer's own tooth and up at its real distance from the biting edge) and draws the result over the photo
-  (`PlacementDiagnostic.tsx`, the "Placement diagnostic" button next to "Generate", shown to staff in the Studio
-  workspace). **Gem size is physical** (owner's decision): real millimetres × the fitted scale. A confidence below
+  (`PlacementDiagnostic.tsx`, the "Placement diagnostic" button next to "Generate"). The button shows when the status
+  call answers `diagnostic: true` — active staff, the AI and the teeth model connected, decided from the profile: the
+  Studio's access state says "subscribed" for staff who also hold a subscription, so it cannot gate it. **Gem size is physical** (owner's decision): real millimetres × the fitted scale. A confidence below
   `RELIABLE_CONFIDENCE` (0.6, first value) or fewer than three agreeing teeth marks the placement unreliable.
   **Renders are unchanged**: they still let the image model place the gems; the switch to the computed placement
   comes with steps 3–4, staff only during the trial. The behaviour before this change is tagged `try-on-ai-placement`
