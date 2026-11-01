@@ -7,7 +7,7 @@ import { parseAccessRow, type StudioAccessInfo } from "./studioAccessState";
  * member knows their work is kept). Screens go through `studioAccess.tsx`.
  */
 
-export class StudioAccessError extends Error {
+class StudioAccessError extends Error {
   readonly kind: "unavailable" | "invalid";
   constructor(kind: "unavailable" | "invalid") {
     super(kind);

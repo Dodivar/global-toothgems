@@ -147,7 +147,7 @@ export function sourcePayload(source: TryOnSource): Record<string, string> {
 /* ------------------------------------------------- reading the answer */
 
 /** A generated image above this (decoded) is refused. */
-export const RESULT_MAX_BYTES = 15 * 1024 * 1024;
+const RESULT_MAX_BYTES = 15 * 1024 * 1024;
 const RESULT_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const isCode = (v: unknown): v is TryOnErrorCode => typeof v === "string" && (TRY_ON_ERROR_CODES as readonly string[]).includes(v);
 

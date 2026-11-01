@@ -43,7 +43,7 @@ export function scaledSize(format: ShareFormat, width: number): FormatSize {
   return { width: w, height: h };
 }
 
-export interface Insets {
+interface Insets {
   top: number;
   bottom: number;
   side: number;

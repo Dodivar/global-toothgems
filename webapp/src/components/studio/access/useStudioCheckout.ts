@@ -21,11 +21,9 @@ import type { StudioCheckoutQuery, StudioCheckoutSurface } from "../../../lib/st
  * report `studio_subscription_completed` with the surface the plan was chosen on.
  */
 
-export type { StudioCheckoutSurface };
-
 const PENDING_KEY = "gt-studio-checkout";
 
-export interface PendingStudioCheckout {
+interface PendingStudioCheckout {
   plan: StudioCheckoutQuery["plan"];
   interval: StudioCheckoutQuery["interval"];
   surface: StudioCheckoutSurface;

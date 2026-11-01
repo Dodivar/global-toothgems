@@ -61,48 +61,6 @@ export function xForArc(s: number): number {
   return a.x + (b.x - a.x) * t;
 }
 
-/* HSV ↔ hex, for the colour wheel. */
-export function hsvToHex(h: number, s: number, v: number): string {
-  h = ((h % 360) + 360) % 360;
-  const c = v * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = v - c;
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  if (h < 60) [r, g] = [c, x];
-  else if (h < 120) [r, g] = [x, c];
-  else if (h < 180) [g, b] = [c, x];
-  else if (h < 240) [g, b] = [x, c];
-  else if (h < 300) [r, b] = [x, c];
-  else [r, b] = [c, x];
-  const to = (t: number) =>
-    Math.round((t + m) * 255)
-      .toString(16)
-      .padStart(2, "0");
-  return `#${to(r)}${to(g)}${to(b)}`;
-}
-
-export function hexToHsv(hex: string): { h: number; s: number; v: number } {
-  const m = /^#?([0-9a-f]{6})$/i.exec((hex || "").trim());
-  if (!m) return { h: 0, s: 0, v: 1 };
-  const n = parseInt(m[1], 16);
-  const r = ((n >> 16) & 255) / 255;
-  const g = ((n >> 8) & 255) / 255;
-  const b = (n & 255) / 255;
-  const mx = Math.max(r, g, b);
-  const mn = Math.min(r, g, b);
-  const d = mx - mn;
-  let h = 0;
-  if (d > 0) {
-    if (mx === r) h = 60 * (((g - b) / d) % 6);
-    else if (mx === g) h = 60 * ((b - r) / d + 2);
-    else h = 60 * ((r - g) / d + 4);
-  }
-  if (h < 0) h += 360;
-  return { h, s: mx === 0 ? 0 : d / mx, v: mx };
-}
-
 /** A point on screen, in CSS pixels. */
 export interface Point2 {
   x: number;

@@ -1,6 +1,6 @@
 import type { StoreDetails } from "../adminSettings";
 import type { Localized } from "../types";
-import { countryName } from "../../lib/settingsRules";
+import { countryName } from "../../lib/countryName";
 import { addressLines } from "../../lib/storeDetails";
 import { LEGAL_PATHS } from "./routes";
 import { DRAFT_DATE, l, type LegalDocument } from "./types";

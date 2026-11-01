@@ -82,7 +82,6 @@
     "cancel": "Cancel",
     "close": "Close",
     "actions": "Actions",
-    "moreInfo": "More about {{topic}}",
     "appliesOnSave": "Goes live when you save the page."
   },
   "errors": {

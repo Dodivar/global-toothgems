@@ -33,7 +33,6 @@ export const SHOP_CURRENCY = "EUR";
  * its own panel.
  */
 export type RevenueCategoryId = "jewelry" | "aftercare" | "kits" | "training" | "other";
-export const REVENUE_CATEGORIES: RevenueCategoryId[] = ["jewelry", "aftercare", "kits", "training", "other"];
 export type ShopCategoryId = Exclude<RevenueCategoryId, "training">;
 export const SHOP_CATEGORIES: ShopCategoryId[] = ["jewelry", "aftercare", "kits", "other"];
 
@@ -85,7 +84,7 @@ export const DEFAULT_FILTERS: AnalyticsFilters = {
   orderStatus: "all",
 };
 
-export const FILTER_KEYS = ["category", "product", "customerType", "country", "orderStatus"] as const;
+const FILTER_KEYS = ["category", "product", "customerType", "country", "orderStatus"] as const;
 
 /** The date range is a control of its own, so it is not counted as a filter. */
 export function activeFilterCount(filters: AnalyticsFilters): number {

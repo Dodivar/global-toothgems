@@ -10,14 +10,14 @@ import { l, type ContactCategory, type IconKey } from "./types";
  * too, so an FAQ answer can never contradict the terms it summarises.
  */
 
-export interface FaqItem {
+interface FaqItem {
   id: string;
   question: Localized;
   /** Paragraphs. */
   answer: Localized[];
 }
 
-export interface FaqCategory {
+interface FaqCategory {
   id: string;
   title: Localized;
   icon: IconKey;

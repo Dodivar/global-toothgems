@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../../lib/navigation";
-import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import type { AdminOrder } from "../../data/adminOrders";
 import { parseInstant } from "../../data/adminOrders";
@@ -9,6 +9,7 @@ import type { SortKey } from "../../lib/adminOrderFilters";
 import { AttentionBadge, FulfillmentBadge, OrderStatusBadge, PaymentStatusBadge } from "./StatusBadges";
 import { CustomerCell, ItemsCell } from "./OrderCells";
 import { RowActions } from "./RowActions";
+import { SortableHead } from "./SortableHead";
 
 /**
  * The orders table. The page's centre of gravity, so everything else was kept
@@ -33,7 +34,7 @@ import { RowActions } from "./RowActions";
  *   it disappears entirely around 1400.
  */
 
-export interface OrdersTableProps {
+interface OrdersTableProps {
   orders: AdminOrder[];
   selected: Set<string>;
   onToggle: (reference: string) => void;
@@ -50,55 +51,6 @@ export interface OrdersTableProps {
 
 const headCell =
   "sticky top-0 z-10 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]";
-
-function SortableHead({
-  label,
-  ascKey,
-  descKey,
-  sort,
-  onSort,
-  align = "left",
-}: {
-  label: string;
-  ascKey: SortKey;
-  descKey: SortKey;
-  sort: SortKey;
-  onSort: (sort: SortKey) => void;
-  align?: "left" | "right";
-}) {
-  const { t } = useTranslation();
-  const active = sort === ascKey || sort === descKey;
-  const ascending = sort === ascKey;
-  return (
-    <th
-      scope="col"
-      className={clsx(headCell, align === "right" && "text-right")}
-      aria-sort={active ? (ascending ? "ascending" : "descending") : "none"}
-    >
-      <button
-        type="button"
-        onClick={() => onSort(ascending ? descKey : ascKey)}
-        className={clsx(
-          "inline-flex items-center gap-1 rounded-[var(--radius-xs)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-          active && "text-[var(--text-primary)]",
-          align === "right" && "flex-row-reverse",
-        )}
-      >
-        {label}
-        {active ? (
-          ascending ? (
-            <ArrowUp size={12} aria-hidden="true" />
-          ) : (
-            <ArrowDown size={12} aria-hidden="true" />
-          )
-        ) : (
-          <ArrowDown size={12} aria-hidden="true" className="opacity-25" />
-        )}
-        <span className="sr-only">{t("admin.orders.sortHint")}</span>
-      </button>
-    </th>
-  );
-}
 
 /** Time of day beside the date: two orders on the same day need separating. */
 function placedCell(placedAt: string, locale: string): { day: string; time: string } {
@@ -168,6 +120,8 @@ export function OrdersTable(props: OrdersTableProps) {
                 {t("admin.orders.colCustomer")}
               </th>
               <SortableHead
+                className={headCell}
+                hint={t("admin.orders.sortHint")}
                 label={t("admin.orders.colDate")}
                 ascKey="dateAsc"
                 descKey="dateDesc"
@@ -178,6 +132,8 @@ export function OrdersTable(props: OrdersTableProps) {
                 {t("admin.orders.colItems")}
               </th>
               <SortableHead
+                className={headCell}
+                hint={t("admin.orders.sortHint")}
                 label={t("admin.orders.colTotal")}
                 ascKey="totalAsc"
                 descKey="totalDesc"

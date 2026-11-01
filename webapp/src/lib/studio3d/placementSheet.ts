@@ -307,7 +307,7 @@ export function placementSheetFileName(prefix: string, name: string, date: Date 
 }
 
 /** One gem reference of the design — a product in one colour and one size — with the numbers of its gems. */
-export interface ReferenceGroup {
+interface ReferenceGroup {
   productId: string;
   variantId: string | null;
   size: GemSize;

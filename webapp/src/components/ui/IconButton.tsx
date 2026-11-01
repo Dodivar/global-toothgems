@@ -2,8 +2,8 @@ import type { ButtonHTMLAttributes } from "react";
 import type { LucideIcon } from "lucide-react";
 import clsx from "clsx";
 
-export type IconButtonVariant = "ghost" | "solid" | "outline" | "glass";
-export type IconButtonSize = "sm" | "md" | "lg";
+type IconButtonVariant = "ghost" | "solid" | "outline" | "glass";
+type IconButtonSize = "sm" | "md" | "lg";
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: LucideIcon;

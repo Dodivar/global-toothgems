@@ -35,7 +35,7 @@ import { ScheduleTimeline } from "./Timeline";
  * error marker so a folded section cannot hide a problem.
  */
 
-export interface SectionProps {
+interface SectionProps {
   draft: Promotion;
   update: (recipe: (p: Promotion) => Promotion) => void;
   issues: Issue[];

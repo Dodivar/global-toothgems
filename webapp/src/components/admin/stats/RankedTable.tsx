@@ -14,7 +14,7 @@ import clsx from "clsx";
  * channel on re-encoding what bar length already says.
  */
 
-export interface RankedColumn {
+interface RankedColumn {
   key: string;
   label: string;
   /** Rendered per row; already formatted. */
@@ -23,7 +23,7 @@ export interface RankedColumn {
   secondary?: boolean;
 }
 
-export interface RankedRow {
+interface RankedRow {
   id: string;
   label: string;
   sub?: string;

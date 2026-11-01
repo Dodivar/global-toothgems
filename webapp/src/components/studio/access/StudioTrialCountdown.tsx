@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { Clock, Sparkles, X } from "lucide-react";
-import { Link } from "../../../lib/navigation";
+import { Clock, Sparkles } from "lucide-react";
 import { useStudioAccess } from "../../../lib/studioAccess";
 import {
   countdownTickMs,
@@ -15,11 +14,9 @@ import {
   trialRemainingMs,
   type StudioAccessInfo,
 } from "../../../lib/studioAccessState";
-import { trackStudioOnce } from "../../../lib/studioAnalytics";
-import { STUDIO_PATH } from "../../../lib/studioUrl";
 
 /** "1 day, 4 hours" / "36 hours"… in the reader's language. */
-export function formatRemaining(t: TFunction, ms: number): string {
+function formatRemaining(t: TFunction, ms: number): string {
   const parts = remainingParts(ms);
   const k = "studio.access.countdown";
   switch (parts.unit) {
@@ -106,68 +103,5 @@ export function StudioAccessBadge() {
       <span className="max-sm:sr-only">{t("studio.access.countdown.label")} · </span>
       {time}
     </span>
-  );
-}
-
-/**
- * A small, dismissible reminder under the editor bar in the trial's last
- * hours, with a link to the plans. Shown once per trial and browser after
- * being dismissed; never a pop-up.
- */
-export function StudioTrialReminder() {
-  const { t } = useTranslation();
-  const { info, readAtPerf } = useTrialInfo();
-  const left = useTrialRemaining(info, readAtPerf);
-  const key = info ? `gt-studio-trial-reminder:${info.trialExpiresAt}` : null;
-  const [dismissed, setDismissed] = useState<string | null>(null);
-  const warning = isTrialWarning(left);
-
-  const hiddenByChoice = (() => {
-    if (!key) return true;
-    if (dismissed === key) return true;
-    try {
-      return window.localStorage.getItem(key) === "1";
-    } catch {
-      return false;
-    }
-  })();
-  const visible = warning && !hiddenByChoice;
-
-  useEffect(() => {
-    if (visible && info) trackStudioOnce(`warning:${info.trialExpiresAt}`, "studio_trial_expiration_warning_shown", {}, "browser");
-  }, [visible, info]);
-
-  if (!visible || left === null) return null;
-
-  const dismiss = () => {
-    setDismissed(key);
-    try {
-      if (key) window.localStorage.setItem(key, "1");
-    } catch {
-      /* storage blocked: dismissed for this page only */
-    }
-  };
-
-  return (
-    <div
-      role="status"
-      className="relative z-20 flex items-start gap-3 border-b border-[var(--border-subtle)] bg-[var(--status-warning-bg)] px-3 py-2 text-[12.5px] text-[var(--status-warning-fg)] sm:items-center sm:px-4"
-    >
-      <Clock size={15} aria-hidden="true" className="mt-0.5 flex-none sm:mt-0" />
-      <p className="m-0 min-w-0 flex-1">
-        {t("studio.access.warning.body", { time: formatRemaining(t, left) })}{" "}
-        <Link to={`${STUDIO_PATH}#studio-b-formules`} className="font-semibold underline underline-offset-2">
-          {t("studio.access.warning.plans")}
-        </Link>
-      </p>
-      <button
-        type="button"
-        onClick={dismiss}
-        aria-label={t("studio.access.warning.dismiss")}
-        className="grid h-7 w-7 flex-none place-items-center rounded-[var(--radius-sm)] hover:bg-black/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-      >
-        <X size={14} aria-hidden="true" />
-      </button>
-    </div>
   );
 }

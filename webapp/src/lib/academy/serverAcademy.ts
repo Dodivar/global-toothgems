@@ -19,7 +19,7 @@ import { findCourseByKey, type PublicCourse } from "./publicCourse";
  * them in the database).
  */
 
-export const ACADEMY_CACHE_TAG = "academy";
+const ACADEMY_CACHE_TAG = "academy";
 
 const readCourses = unstable_cache(() => fetchPublicCourses(undefined, createPublicServerSupabase()), ["academy", "courses"], {
   revalidate: CATALOGUE_TTL_SECONDS,

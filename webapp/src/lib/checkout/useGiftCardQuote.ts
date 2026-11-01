@@ -9,7 +9,7 @@ import type { GiftCardQuote, GiftCardQuoteError } from "./giftCardQuote";
  * and amount it answers; while a new answer is on its way, `previous` keeps the
  * last one so the summary does not jump.
  */
-export type GiftCardQuoteState =
+type GiftCardQuoteState =
   | { status: "idle" }
   | { status: "loading"; previous: GiftCardQuote | null }
   | { status: "ready"; quote: GiftCardQuote }

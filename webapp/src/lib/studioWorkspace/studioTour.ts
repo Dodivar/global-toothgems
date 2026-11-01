@@ -224,7 +224,7 @@ export interface Box {
   height: number;
 }
 
-export type CardDock = "beside" | "bottom" | "top";
+type CardDock = "beside" | "bottom" | "top";
 
 /**
  * The part of the stage actually in view.
@@ -249,7 +249,7 @@ export function visibleStage(stage: Box, panels: readonly Box[]): Box {
   return { left, top: stage.top, width: Math.max(right - left, 0), height: stage.height };
 }
 
-export interface CardPlacement {
+interface CardPlacement {
   left: number;
   top: number;
   dock: CardDock;
@@ -258,7 +258,7 @@ export interface CardPlacement {
 /** Below this the card spans the width of the screen and docks away from the anchor. */
 export const NARROW_WIDTH = 760;
 /** A phone held sideways: docking at the bottom would cover the stage's camera bar. */
-export const SHORT_HEIGHT = 560;
+const SHORT_HEIGHT = 560;
 const GUTTER = 12;
 const GAP = 14;
 
@@ -353,7 +353,7 @@ export function placeTourCard(anchor: Box | null, card: { width: number; height:
  * welcome dialog, the help page and the stage's own button all start it, and
  * the overlay is mounted once, beside the editor.
  */
-export interface TourState {
+interface TourState {
   running: boolean;
   /** Bumped by every `startTour`, so a second run is never mistaken for the first. */
   runId: number;
@@ -402,11 +402,6 @@ export function startTour({ withStage = true }: { withStage?: boolean } = {}) {
 export function exitTour() {
   if (!state.running) return;
   set({ ...IDLE, runId: state.runId });
-}
-
-export function goToTourStep(index: number) {
-  if (!state.running) return;
-  set({ ...state, index: clamp(index, 0, state.steps.length - 1) });
 }
 
 export function nextTourStep() {

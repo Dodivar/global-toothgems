@@ -33,7 +33,7 @@ export const CLIENT_SPACES: Record<ClientSpaceId, ClientSpace> = {
 /** What the Studio rail offers beside its own sections. The account is the rail's avatar. */
 export const STUDIO_EXPLORE: ClientSpace[] = [CLIENT_SPACES.shop, CLIENT_SPACES.academy];
 
-export interface StudioShortcut {
+interface StudioShortcut {
   id: "workshop" | "creations" | "groups";
   to: string;
   icon: LucideIcon;

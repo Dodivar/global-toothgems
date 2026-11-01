@@ -18,9 +18,6 @@ import { parseGemAttributes } from "../gemOptions";
  * storefront's `Product` model. No network, no React: unit-tested on its own.
  */
 
-/** Language of the base columns (`languages.is_default` in the database). */
-export const DEFAULT_CONTENT_LOCALE = "fr";
-
 /** Languages the storefront UI offers, besides the default one. */
 const TRANSLATED_LOCALES = ["en"] as const;
 
@@ -32,7 +29,7 @@ interface TranslationRow {
 }
 
 /** The characteristic columns, on `products` (French) and `product_translations`. */
-export type SpecColumns = Partial<Record<`spec_${(typeof SPEC_KEYS)[number]}`, string | null>>;
+type SpecColumns = Partial<Record<`spec_${(typeof SPEC_KEYS)[number]}`, string | null>>;
 
 export interface ProductTranslationRow extends TranslationRow, SpecColumns {
   name: string;
@@ -43,8 +40,6 @@ export interface ProductTranslationRow extends TranslationRow, SpecColumns {
   meta_title?: string | null;
   meta_description?: string | null;
 }
-
-export type StockStatus = "in_stock" | "low_stock" | "out_of_stock" | "preorder";
 
 interface InventoryRow {
   stock_status: string | null;

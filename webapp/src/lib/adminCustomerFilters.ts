@@ -25,13 +25,15 @@ import {
 
 export {
   PAGE_SIZES,
-  DEFAULT_PAGE_SIZE,
+  
   paginate,
-  pageWindow,
-  type Page,
+  
+  
 } from "./adminOrderFilters";
 
 import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from "./adminOrderFilters";
+import { oneOf } from "./oneOf";
+import { addDays } from "./calendar";
 
 export type CustomerDatePreset = "all" | "today" | "last7" | "last30" | "thisYear" | "custom";
 
@@ -77,7 +79,7 @@ export const SPEND_BANDS: SpendBand[] = ["all", "none", "low", "mid", "high"];
  * Inclusive floor and exclusive ceiling of each band, in minor units of the
  * store currency (`spendRank`): "none" is nothing spent, "low" under 250 €.
  */
-export const SPEND_RANGES: Record<Exclude<SpendBand, "all">, { min: number; max: number }> = {
+const SPEND_RANGES: Record<Exclude<SpendBand, "all">, { min: number; max: number }> = {
   none: { min: Number.NEGATIVE_INFINITY, max: 1 },
   low: { min: 1, max: 25_000 },
   mid: { min: 25_000, max: 100_000 },
@@ -94,7 +96,7 @@ export type CustomerSortKey =
   | "ordersDesc"
   | "ordersAsc";
 
-export const CUSTOMER_SORT_KEYS: CustomerSortKey[] = [
+const CUSTOMER_SORT_KEYS: CustomerSortKey[] = [
   "recentDesc",
   "recentAsc",
   "nameAsc",
@@ -147,16 +149,6 @@ export function localToday(now: Date = new Date()): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-function addDays(isoDate: string, days: number): string {
-  const d = new Date(`${isoDate}T12:00:00`);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function oneOf<T extends string>(value: string | null, allowed: T[], fallback: T): T {
-  return value && (allowed as string[]).includes(value) ? (value as T) : fallback;
-}
-
 const STATUS_VALUES: string[] = ["active", "suspended", "deactivated"];
 const SEGMENT_VALUES: (CustomerSegment | "all")[] = ["all", "customer", "student", "vip"];
 
@@ -185,7 +177,7 @@ export function readFilters(params: URLSearchParams): CustomerFilters {
 }
 
 /** Inclusive `[from, to]` registration window implied by the preset. */
-export function dateWindow(filters: CustomerFilters, today: string = localToday()): { from: string; to: string } | null {
+function dateWindow(filters: CustomerFilters, today: string = localToday()): { from: string; to: string } | null {
   switch (filters.datePreset) {
     case "today":
       return { from: today, to: today };

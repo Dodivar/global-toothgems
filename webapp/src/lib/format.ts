@@ -14,7 +14,7 @@ const PRICE_LOCALES: Record<string, string> = {
 };
 
 /** The number and date locale of a UI language: `en` → `en-IE`. */
-export function formatLocale(language: string | undefined): string {
+function formatLocale(language: string | undefined): string {
   return PRICE_LOCALES[(language ?? "fr").slice(0, 2)] ?? PRICE_LOCALES.fr;
 }
 
@@ -24,7 +24,7 @@ function priceLocale(): string {
   return formatLocale(i18n.language);
 }
 
-export function formatPrice(value: number, locale: string = priceLocale(), currency: string = "EUR") {
+function formatPrice(value: number, locale: string = priceLocale(), currency: string = "EUR") {
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
@@ -45,17 +45,17 @@ export function formatMoney(minor: number, currency: string, locale: string = pr
  * Dates in the UI language, from the ISO strings the mock data stores.
  * Same locale map as prices, so a language switch moves both at once.
  */
-export function formatDate(iso: string, locale: string = priceLocale()) {
+function formatDate(iso: string, locale: string = priceLocale()) {
   return new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
 }
 
 /** Short form for compact rows: "9 sept. 2026" / "9 Sep 2026". */
-export function formatDateShort(iso: string, locale: string = priceLocale()) {
+function formatDateShort(iso: string, locale: string = priceLocale()) {
   return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
 }
 
 /** "Member since" only needs the month: "mars 2026" / "March 2026". */
-export function formatMonthYear(iso: string, locale: string = priceLocale()) {
+function formatMonthYear(iso: string, locale: string = priceLocale()) {
   return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(new Date(iso));
 }
 

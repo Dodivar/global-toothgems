@@ -6,7 +6,7 @@ import { courseSlug, lessonCount } from "../../lib/academy/publicCourse";
 import { courseHref } from "../../lib/academyUrl";
 import { formatDuration } from "../../lib/trainingFilters";
 
-export interface AcademyMenuEntry {
+interface AcademyMenuEntry {
   key: string;
   title: string;
   sub: string;

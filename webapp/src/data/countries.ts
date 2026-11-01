@@ -8,8 +8,6 @@
  */
 export const DELIVERY_COUNTRIES = ["fr", "de", "be", "ie"] as const;
 
-export type DeliveryCountry = (typeof DELIVERY_COUNTRIES)[number];
-
 /** i18n key of a country label, so callers never hard-code the namespace. */
 export function countryLabelKey(code: string): string {
   return `countries.${code}`;

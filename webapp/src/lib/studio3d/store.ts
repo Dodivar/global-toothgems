@@ -52,7 +52,7 @@ export interface ActiveCreation {
 }
 
 /** A scene waiting for the engine: its pieces are re-seated on the enamel, its camera restored. */
-export interface PendingLoad {
+interface PendingLoad {
   camera: SceneCamera | null;
   /** The model the scene was saved on. */
   model: ModelMode;

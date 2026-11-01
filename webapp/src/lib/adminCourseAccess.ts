@@ -74,7 +74,7 @@ interface HolderRow {
   certificate_code: string | null;
 }
 
-export function rowToHolder(row: HolderRow): CourseHolder {
+function rowToHolder(row: HolderRow): CourseHolder {
   return {
     id: row.id,
     email: row.email,
@@ -91,14 +91,14 @@ export function rowToHolder(row: HolderRow): CourseHolder {
   };
 }
 
-export interface GrantInput {
+interface GrantInput {
   email: string;
   /** End of access (ISO), or null for no end. */
   expiresAt: string | null;
   note: string;
 }
 
-export interface CourseAccessBackend {
+interface CourseAccessBackend {
   list: (courseId: string) => Promise<CourseHolder[]>;
   grant: (courseId: string, input: GrantInput) => Promise<void>;
   revoke: (entitlementId: string) => Promise<void>;

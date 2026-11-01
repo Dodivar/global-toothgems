@@ -43,8 +43,8 @@ import type { TablesUpdate } from "./supabase/database.types";
  */
 
 export type { UserDraft, UserWriteError };
-export type UserWriteResult = { ok: true } | { ok: false; error: UserWriteError };
-export type InviteResult = { ok: true; outcome: "invited" | "promoted" } | { ok: false; error: UserWriteError };
+type UserWriteResult = { ok: true } | { ok: false; error: UserWriteError };
+type InviteResult = { ok: true; outcome: "invited" | "promoted" } | { ok: false; error: UserWriteError };
 
 interface AdminUsersContextValue {
   users: AdminUser[];

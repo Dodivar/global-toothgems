@@ -343,7 +343,7 @@ export interface SelectionAnchor {
   width: number;
   height: number;
 }
-export type SelectionAnchorListener = (anchor: SelectionAnchor | null) => void;
+type SelectionAnchorListener = (anchor: SelectionAnchor | null) => void;
 
 /** A piece with a problem, framed on screen (CSS pixels from the stage's top-left corner). */
 export interface IssueFrame {
@@ -352,10 +352,10 @@ export interface IssueFrame {
   top: number;
   size: number;
 }
-export type IssueFramesListener = (frames: IssueFrame[]) => void;
+type IssueFramesListener = (frames: IssueFrame[]) => void;
 
 /** The lasso being drawn, in CSS pixels from the stage's top-left corner; `null` when none is. */
-export type LassoListener = (points: readonly Point2[] | null) => void;
+type LassoListener = (points: readonly Point2[] | null) => void;
 /** A lasso point is kept once the pointer has moved this far (CSS pixels) from the last one. */
 const LASSO_STEP = 4;
 /** Longest outline kept: enough for any loop drawn by hand, bounded all the same. */
@@ -368,7 +368,7 @@ const LONG_PRESS_MS = 480;
 const LASSO_OCCLUSION_SLACK = 1;
 
 /** A group turn in progress: every piece's start, so each step is computed afresh and nothing drifts. */
-export interface GroupTurn {
+interface GroupTurn {
   patchesFor(clockwiseDeg: number): { id: string; patch: Partial<PlacedJewelry> }[];
 }
 
@@ -381,7 +381,7 @@ function toothIdFromObject(o: THREE.Object3D | null): string | null {
   return null;
 }
 
-export interface EngineOptions {
+interface EngineOptions {
   /**
    * View a design without editing it (a shared link): orbit, zoom and
    * double-click focus work, but no press selects, drags or places a piece.

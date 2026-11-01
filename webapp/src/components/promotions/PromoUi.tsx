@@ -97,7 +97,7 @@ export function PromoTabs({ items, current, label }: { items: TabItem[]; current
 /* KPI tile                                                                   */
 /* -------------------------------------------------------------------------- */
 
-export type KpiTone = "success" | "brand" | "highlight" | "neutral" | "warning";
+type KpiTone = "success" | "brand" | "highlight" | "neutral" | "warning";
 
 const KPI_TONE: Record<KpiTone, string> = {
   success: "bg-[var(--status-success-bg)] text-[var(--status-success-fg)]",

@@ -19,7 +19,7 @@ import { photo } from "../../lib/images";
  */
 
 /** Shared page gutter, matched to the rest of the site. */
-export const AUTH_GUTTER = "px-[clamp(14px,4vw,48px)]";
+const AUTH_GUTTER = "px-[clamp(14px,4vw,48px)]";
 
 /**
  * The three reasons to hold an account. The catalogue's own gem cuts stand in
@@ -32,7 +32,7 @@ const BENEFITS = [
 ] as const;
 
 /** Four-point mark. Decorative only — every instance is hidden from assistive tech. */
-export function Sparkle({ size = 16, className = "", color = "currentColor" }: { size?: number; className?: string; color?: string }) {
+function Sparkle({ size = 16, className = "", color = "currentColor" }: { size?: number; className?: string; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" className={className}>
       <path
@@ -48,7 +48,7 @@ export function Sparkle({ size = 16, className = "", color = "currentColor" }: {
  * it. It is the catalogue's own `round` glyph, scaled up until the facet lines
  * read as architecture rather than as an icon.
  */
-export function FacetField() {
+function FacetField() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gt-blue-50)]" />
@@ -104,7 +104,7 @@ export function AuthCard({ children, crown, label }: { children: ReactNode; crow
  * and the reminder that the shop never asks for one. Entirely non-interactive
  * apart from that last link, so the tab order stays in the form.
  */
-export function EditorialColumn({ image = "mouth-02.jpg" }: { image?: string }) {
+function EditorialColumn({ image = "mouth-02.jpg" }: { image?: string }) {
   const { t } = useTranslation();
   return (
     <div className="grid w-full gap-[clamp(24px,3vw,40px)]">

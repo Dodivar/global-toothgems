@@ -13,7 +13,7 @@ import { BUCKETS, SIGNED_URL_TTL_SECONDS } from "./supabase/storage";
  * Supabase the page says the feature is unavailable — no invented entries.
  */
 
-export type GlowbookQueueLoad = "unavailable" | "loading" | "ready" | "forbidden" | "error";
+type GlowbookQueueLoad = "unavailable" | "loading" | "ready" | "forbidden" | "error";
 
 export function useAdminGlowbook() {
   const [entries, setEntries] = useState<QueueEntry[]>([]);

@@ -7,10 +7,11 @@ import { AdminSheet, SheetBody, SheetFooter } from "../admin/AdminSheet";
 import { ToggleSwitch } from "../admin/ToggleSwitch";
 import { Segmented } from "../promotions/PromoUi";
 import { centsToInput, parseEuros } from "../../lib/promotionRules";
-import { countryName, flagOf, gramsToInput, parseKg, validateRate, validateZone, zoneOwning } from "../../lib/settingsRules";
+import { flagOf, gramsToInput, parseKg, validateRate, validateZone, zoneOwning } from "../../lib/settingsRules";
 import { COUNTRY_GROUPS, RATE_KINDS, type RateKind, type ShippingRate, type ShippingZone } from "../../data/adminSettings";
 import { RATE_ICON, useRateText } from "./shippingFormat";
 import { Eyebrow, SubHeading, TextField, focusRing } from "./SettingsUi";
+import { countryName } from "../../lib/countryName";
 
 /* -------------------------------------------------------------------------- */
 /* Zone                                                                       */

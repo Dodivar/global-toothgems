@@ -50,7 +50,7 @@ export const GEM_SHAPES: GemShape[] = [
  * the crystal makers' English names in every language, never translated
  * ("Starflower", not "Fleur" nor "Flower"), so they match the product names.
  */
-export const SHAPE_NAMES: Record<GemShape, string> = {
+const SHAPE_NAMES: Record<GemShape, string> = {
   round: "Round",
   heart: "Heart",
   drop: "Raindrop",
@@ -580,7 +580,7 @@ export function sortByShapeLabel<T>(
   return [...items].sort((a, b) => collator.compare(label(shapeOf(a)), label(shapeOf(b))));
 }
 
-export interface ColorGroup {
+interface ColorGroup {
   color: GemColorDef;
   count: number;
 }

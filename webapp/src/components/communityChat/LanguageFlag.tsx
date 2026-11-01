@@ -1,7 +1,7 @@
 import clsx from "clsx";
 
 /** Languages with a lounge, open or announced. */
-export type FlagCode = "en" | "fr" | "de" | "es" | "it" | "pt";
+type FlagCode = "en" | "fr" | "de" | "es" | "it" | "pt";
 
 /**
  * Small flags drawn in SVG rather than flag emoji, which Windows does not

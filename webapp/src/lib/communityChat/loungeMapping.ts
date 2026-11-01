@@ -178,7 +178,7 @@ export function mapOverview(value: Json | null): Overview {
   return overview;
 }
 
-export type NotificationKindRow = "mention" | "reply" | "reaction";
+type NotificationKindRow = "mention" | "reply" | "reaction";
 
 export interface NotificationRow {
   id: string;

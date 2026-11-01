@@ -9,7 +9,7 @@ import { readErrorOf, rowToRequest, type AdminBackInStockRequest, type BackInSto
  * feature is unavailable rather than showing invented requests.
  */
 
-export type BackInStockLoad = "unavailable" | "loading" | "ready" | "forbidden" | "error";
+type BackInStockLoad = "unavailable" | "loading" | "ready" | "forbidden" | "error";
 
 export function useAdminBackInStock() {
   const [requests, setRequests] = useState<AdminBackInStockRequest[]>([]);

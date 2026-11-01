@@ -40,7 +40,7 @@ import type {
  * `limitReached`: the member already holds as many creations or Gem Groups as their plan allows
  *   (decision 113); the message is the kind, `creations` or `gemGroups` (`limitKind()`).
  */
-export type StudioStoreErrorCode = "storage" | "notFound" | "invalid" | "unavailable" | "accessDenied" | "duplicate" | "limitReached";
+type StudioStoreErrorCode = "storage" | "notFound" | "invalid" | "unavailable" | "accessDenied" | "duplicate" | "limitReached";
 
 export class StudioStoreError extends Error {
   readonly code: StudioStoreErrorCode;

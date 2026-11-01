@@ -31,14 +31,14 @@ export function LessonBlocks({ blocks, lang }: { blocks: ContentBlock[]; lang: C
   );
 }
 
-export function LessonBlock({ block, lang }: { block: ContentBlock; lang: ContentLang }) {
+function LessonBlock({ block, lang }: { block: ContentBlock; lang: ContentLang }) {
   if (block.type === "text") return <RichText html={block.html[lang]} />;
   if (block.type === "image") return <LessonImage block={block} lang={lang} />;
   return <LessonVideo block={block} lang={lang} />;
 }
 
 /** Authored HTML, sanitised on the way in (see `sanitizeHtml`). */
-export function RichText({ html, className }: { html: string; className?: string }) {
+function RichText({ html, className }: { html: string; className?: string }) {
   const safe = useMemo(() => sanitizeHtml(html), [html]);
   return <div className={clsx("gt-rich-text gt-learn-prose", className)} dangerouslySetInnerHTML={{ __html: safe }} />;
 }

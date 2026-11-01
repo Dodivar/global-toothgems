@@ -203,7 +203,7 @@ export interface SubmissionJson {
 /* -------------------------------------------------------------------------- */
 
 /** French base, English translation; English falls back to the French. */
-export function loc(fr: string | null | undefined, english: string | null | undefined): Localized {
+function loc(fr: string | null | undefined, english: string | null | undefined): Localized {
   const base = fr ?? "";
   return { fr: base, en: english || base };
 }
@@ -301,7 +301,7 @@ function toModule(json: ModuleJson): Module {
 }
 
 /** The course content a holder reads; null while the course is withdrawn. */
-export function toTraining(json: LearnerCourseJson): TrainingCourse | null {
+function toTraining(json: LearnerCourseJson): TrainingCourse | null {
   if (json.status !== "published" || !json.modules) return null;
   return {
     id: json.id,

@@ -11,7 +11,7 @@ import { l } from "./types";
  * customer-facing page. Ticking an item records nothing but the reviewer's own
  * progress in their browser.
  */
-export interface ChecklistItem {
+interface ChecklistItem {
   id: string;
   label: Localized;
   /** Where the item is addressed in the prototype, if anywhere. */

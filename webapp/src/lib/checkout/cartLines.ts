@@ -111,7 +111,7 @@ export const cartCount = (lines: CartLine[]) => lines.reduce((sum, l) => sum + l
 /** Integer arithmetic only: unit prices are already in minor units. */
 export const cartSubtotal = (lines: CartLine[]) => lines.reduce((sum, l) => sum + l.unitPrice * l.qty, 0);
 
-export interface CheckoutGiftCard {
+interface CheckoutGiftCard {
   amount_minor: number;
   recipient_email: string;
   recipient_name: string | null;

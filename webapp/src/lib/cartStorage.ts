@@ -13,7 +13,7 @@ import { MAX_LINE_QTY, type CartGiftCard, type CartLine } from "./checkout/cartL
  * never stored (bearer credentials, kept in memory).
  */
 
-export const CART_STORAGE_KEY = "gt-cart";
+const CART_STORAGE_KEY = "gt-cart";
 
 const isText = (value: unknown): value is string => typeof value === "string" && value.length > 0;
 const isOptionalText = (value: unknown) => value === undefined || typeof value === "string";

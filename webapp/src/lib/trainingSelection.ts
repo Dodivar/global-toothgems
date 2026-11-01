@@ -58,11 +58,3 @@ export function resolveSelection(course: TrainingCourse, selection: Selection): 
   }
   return selection;
 }
-
-export function sameSelection(a: Selection, b: Selection): boolean {
-  if (a.kind !== b.kind) return false;
-  if (a.kind === "course" || b.kind === "course") return true;
-  if (a.moduleId !== (b as { moduleId: string }).moduleId) return false;
-  if (a.kind === "step" && b.kind === "step") return a.stepId === b.stepId;
-  return true;
-}

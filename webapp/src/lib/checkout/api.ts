@@ -81,7 +81,7 @@ export interface PaymentStep {
   expiresAt: number;
 }
 
-export type CheckoutResult =
+type CheckoutResult =
   | { kind: "payment"; payment: PaymentStep }
   | { kind: "paid"; orderNumber: string }
   | { kind: "error"; error: CheckoutError };
@@ -94,7 +94,7 @@ export const isClientSecret = (value: unknown): value is string =>
   typeof value === "string" && /^cs_(test|live)_[A-Za-z0-9]{10,250}_secret_[A-Za-z0-9%_.~-]{8,1000}$/.test(value);
 
 /** A Stripe publishable key; only ever a `pk_` key reaches Stripe.js. */
-export const isPublishableKey = (value: unknown): value is string =>
+const isPublishableKey = (value: unknown): value is string =>
   typeof value === "string" && /^pk_(test|live)_[A-Za-z0-9]{10,250}$/.test(value);
 
 function readPaymentStep(body: Record<string, unknown>): PaymentStep | null {

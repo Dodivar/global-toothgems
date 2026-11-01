@@ -64,7 +64,7 @@ const GUM_FILL = "#f2c6cb";
 const MIDLINE = "#c0392b";
 const GEM_EDGE = "#1d2733";
 
-export interface TryOnMap {
+interface TryOnMap {
   svg: string;
   width: number;
   height: number;

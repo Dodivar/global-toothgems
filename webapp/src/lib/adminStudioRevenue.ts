@@ -29,7 +29,7 @@ export interface StudioInvoiceRow {
   occurred_at: string;
 }
 
-export interface StudioWithdrawalRow {
+interface StudioWithdrawalRow {
   stripe_invoice_id: string;
   status: string;
   refund_amount: number | string;
@@ -43,7 +43,7 @@ export interface StudioRevenueWeek {
   refunded: number;
 }
 
-export interface StudioRevenueFigures {
+interface StudioRevenueFigures {
   currency: string | null;
   received: number;
   settled: number;
@@ -160,7 +160,7 @@ async function readAll<T>(query: (from: number, to: number) => PromiseLike<{ dat
   }
 }
 
-export type StudioRevenueState =
+type StudioRevenueState =
   | { kind: "loading" }
   | { kind: "unavailable" }
   | { kind: "error" }

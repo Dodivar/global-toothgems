@@ -13,9 +13,9 @@ import { EXPORT_AVAILABLE_DAYS } from "./accountSecurity";
  * `processing` and `ready` follow a request; `expired` is a ready archive whose
  * download window has closed, which puts the request button back.
  */
-export type ExportStatus = "none" | "processing" | "ready" | "expired";
+type ExportStatus = "none" | "processing" | "ready" | "expired";
 
-export interface DataExport {
+interface DataExport {
   status: ExportStatus;
   requestedAt: string | null;
   readyAt: string | null;

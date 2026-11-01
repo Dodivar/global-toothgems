@@ -4,6 +4,7 @@ import { isActiveStaff, type StaffProfileRow } from "./staffProfile";
 import type { User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
 import { useHydrated } from "./useHydrated";
+import { initialsOf } from "./initials";
 
 /**
  * Administrator session.
@@ -20,7 +21,7 @@ import { useHydrated } from "./useHydrated";
  * verifies nothing and exists only so the back office can be clicked through.
  */
 
-export interface AdminIdentity {
+interface AdminIdentity {
   name: string;
   email: string;
   /** Role key (`admin`, `manager`, `viewer`, or the prototype's `owner`). Display only. */
@@ -29,7 +30,7 @@ export interface AdminIdentity {
 }
 
 /** Outcome of a sign-in attempt, each with its own message on the access screen. */
-export type AdminSignInResult = "accepted" | "rejected" | "notStaff" | "unavailable";
+type AdminSignInResult = "accepted" | "rejected" | "notStaff" | "unavailable";
 
 interface AdminAuthValue {
   admin: AdminIdentity | null;
@@ -45,17 +46,11 @@ interface AdminAuthValue {
 const AdminAuthContext = createContext<AdminAuthValue | null>(null);
 
 /** The single demo account the prototype accepts when Supabase is not configured. */
-export const DEMO_ADMIN_EMAIL = "camille@globaltoothgems.com";
-export const DEMO_ADMIN_PASSWORD = "toothgems2026";
+const DEMO_ADMIN_EMAIL = "camille@globaltoothgems.com";
+const DEMO_ADMIN_PASSWORD = "toothgems2026";
 
 /** How long the fake sign-in takes. Long enough to read the loading state. */
 const SIGN_IN_DELAY_MS = 900;
-
-function initialsOf(name: string): string {
-  const parts = name.split(" ").filter(Boolean);
-  if (parts.length === 0) return "?";
-  return (parts[0].charAt(0) + (parts.length > 1 ? parts[parts.length - 1].charAt(0) : "")).toUpperCase();
-}
 
 function nameFromEmail(email: string): string {
   const local = email.split("@")[0].replace(/[._-]+/g, " ").trim();

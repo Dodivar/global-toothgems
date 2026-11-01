@@ -19,7 +19,7 @@ import { loadStripeFor, STRIPE_FONTS, stripeAppearance } from "../../lib/checkou
  * webhook, which the page the payer is taken to waits for.
  */
 
-export interface StripePaymentFormProps {
+interface StripePaymentFormProps {
   clientSecret: string;
   publishableKey: string;
   /** When the session stops accepting a payment (ms since epoch). */

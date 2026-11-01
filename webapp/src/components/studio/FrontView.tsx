@@ -30,7 +30,7 @@ const FONT = 'Montserrat, "Helvetica Neue", Arial, sans-serif';
 /** Number badge radius, mm of the drawing. */
 const BADGE = 1.25;
 
-export interface FrontViewGemsProps {
+interface FrontViewGemsProps {
   projection: FrontViewProjection;
   /** Number badges beside the gems (default true). */
   numbered?: boolean;
@@ -43,7 +43,7 @@ export interface FrontViewGemsProps {
  * y down, origin of the world — `box.x`/`box.y` is the frame's corner). Put
  * it in any SVG whose coordinates map onto those of `projection.box`.
  */
-export function FrontViewGems({ projection, numbered = true, highlightIds }: FrontViewGemsProps) {
+function FrontViewGems({ projection, numbered = true, highlightIds }: FrontViewGemsProps) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const highlighted = new Set(highlightIds ?? []);
   const drawn = projection.gems.filter((g) => g.at);
@@ -105,7 +105,7 @@ export function FrontViewGems({ projection, numbered = true, highlightIds }: Fro
   );
 }
 
-export interface FrontViewProps extends FrontViewGemsProps {
+interface FrontViewProps extends FrontViewGemsProps {
   /** Draw the teeth and gums (default true). Without them, gems alone on a transparent ground. */
   showTeeth?: boolean;
   /** Accessible name; omitted, the drawing is decorative (the list beside it says it all). */

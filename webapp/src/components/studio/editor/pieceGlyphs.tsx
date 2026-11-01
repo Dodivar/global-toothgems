@@ -29,7 +29,7 @@ const STARFLOWER = (() => {
 
 const wire = (d: string) => <path d={d} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" />;
 
-export const SHAPE_GLYPHS: Record<StudioShape, ReactNode> = {
+const SHAPE_GLYPHS: Record<StudioShape, ReactNode> = {
   round: (
     <>
       <circle cx="8" cy="8" r="6.2" />

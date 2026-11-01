@@ -1,6 +1,5 @@
 {
   "title": "Médiathèque des formations",
-  "subtitle": "Les images et vidéos des formations, modules et leçons. Distincte des photos produits de la boutique.",
   "close": "Fermer la médiathèque",
   "search": "Rechercher un média de formation",
   "searchPlaceholder": "Rechercher par nom, description ou mot-clé",
@@ -156,7 +155,6 @@
     "languageFr": "français",
     "languageEn": "anglais"
   },
-  "addedOn": "Ajouté le {{date}}",
   "more": "Afficher plus ({{count}} restants)",
   "sort": {
     "label": "Trier",

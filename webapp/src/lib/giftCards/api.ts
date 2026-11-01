@@ -30,7 +30,7 @@ export interface GiftCardProductText {
   description: string;
 }
 
-export interface StorefrontGiftCard {
+interface StorefrontGiftCard {
   /** Null when the shop has not published the gift card (or it cannot be sold). */
   config: GiftCardConfig | null;
   product: GiftCardProductText | null;
@@ -77,7 +77,7 @@ async function orderNumbers(ids: (string | null)[]): Promise<Map<string, string>
   return new Map(data.map((row) => [row.id, row.order_number]));
 }
 
-export interface AdminGiftCardsSnapshot {
+interface AdminGiftCardsSnapshot {
   cards: AdminGiftCard[];
   settings: GiftCardConfig | null;
   /** From `my_permissions()`: decides what the screens offer, not what the database allows. */

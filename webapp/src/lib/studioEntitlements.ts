@@ -18,7 +18,7 @@ export type StudioFeature = "ownLogo" | "postLayouts" | "transparentExport" | "t
 /** The features that show the "comes with the … plan" panel when the plan lacks them (`PlanLocked`). */
 export type LockedFeature = Extract<StudioFeature, "glowbook" | "templates" | "collections" | "transparentExport" | "tryOn">;
 
-export type StudioCountKind = "creations" | "gemGroups";
+type StudioCountKind = "creations" | "gemGroups";
 
 const TIERS: readonly StudioTier[] = ["essential", "artist", "atelier"];
 

@@ -22,7 +22,7 @@ import {
  */
 
 /** Messages read per room. */
-export const ROOM_PAGE_SIZE = 100;
+const ROOM_PAGE_SIZE = 100;
 
 export class LoungeError extends Error {
   readonly reason: LoungeFailure;

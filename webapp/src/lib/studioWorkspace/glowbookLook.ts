@@ -1,4 +1,5 @@
 import { placeFromJson, samePlace, validatePlace, type GlowbookPlace, type PlaceProblem } from "./glowbookPlace";
+import { oneOf } from "../oneOf";
 
 /**
  * The Glowbook's own look (decision 100): what an artist chooses so the page
@@ -42,7 +43,7 @@ export const LAYOUTS = ["grid", "large"] as const;
 export type Layout = (typeof LAYOUTS)[number];
 
 export const LOCATION_MAX = 60;
-export const LINK_MAX = 300;
+const LINK_MAX = 300;
 
 /** The pictures and links that wait for a moderator. */
 export const MODERATED_KEYS = ["avatarPath", "bannerPath", "bookingUrl", "websiteUrl", "tiktok"] as const;
@@ -91,16 +92,15 @@ const COLUMN: Record<Exclude<keyof GlowbookLook, "place">, string> = {
   tiktok: "tiktok",
 };
 
-const oneOf = <T extends string>(list: readonly T[], v: unknown, fallback: T): T => (list.includes(v as T) ? (v as T) : fallback);
 const text = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v : null);
 
 /** A look from a row or a JSON object using the database's column names. */
 export function lookFromColumns(o: Record<string, unknown> | null | undefined): GlowbookLook {
   if (!o) return DEFAULT_LOOK;
   return {
-    accent: oneOf(ACCENTS, o.accent, "ink"),
-    background: oneOf(BACKGROUNDS, o.background, "light"),
-    layout: oneOf(LAYOUTS, o.layout, "grid"),
+    accent: oneOf(o.accent, ACCENTS, "ink"),
+    background: oneOf(o.background, BACKGROUNDS, "light"),
+    layout: oneOf(o.layout, LAYOUTS, "grid"),
     location: text(o.location),
     place: placeFromJson(o),
     featuredItemId: text(o.featured_item_id),
@@ -136,7 +136,7 @@ export function lookPatch(from: GlowbookLook, to: GlowbookLook): Record<string, 
 
 export type LookProblem = "locationLength" | "bookingUrl" | "websiteUrl" | "tiktok" | PlaceProblem;
 
-export const isHttpsLink = (url: string) => /^https:\/\/[^\s<>"]+$/.test(url) && url.length >= 11 && url.length <= LINK_MAX;
+const isHttpsLink = (url: string) => /^https:\/\/[^\s<>"]+$/.test(url) && url.length >= 11 && url.length <= LINK_MAX;
 
 /** A link as typed ("monsite.fr", "https://…") → the https address to store, or the text unchanged to be refused. */
 export function normalizeLink(raw: string): string {

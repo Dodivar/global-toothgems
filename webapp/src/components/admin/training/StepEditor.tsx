@@ -9,7 +9,6 @@ import { Section } from "./TrainingPrimitives";
 import {
   AddContentMenu,
   BlockCard,
-  BlockView,
   ImageBlockEditor,
   TextBlockEditor,
   VideoBlockEditor,
@@ -279,21 +278,4 @@ function BlockEditor({
     );
   }
   return <VideoBlockEditor block={block} lang={lang} onChange={onChange as (p: Partial<VideoBlock>) => void} />;
-}
-
-/** The step as a learner sees it. Used by the step-level preview drawer. */
-export function StepView({ step, lang }: { step: Step; lang: ContentLang }) {
-  return (
-    <div className="grid gap-6">
-      <header className="grid gap-1">
-        <h2 className="text-[length:var(--text-h3)]">{step.title[lang]}</h2>
-        {step.summary[lang] && (
-          <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{step.summary[lang]}</p>
-        )}
-      </header>
-      {step.blocks.map((block) => (
-        <BlockView key={block.id} block={block} lang={lang} />
-      ))}
-    </div>
-  );
 }

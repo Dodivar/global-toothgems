@@ -11,6 +11,7 @@ import {
   type ReviewSubject,
   type ReviewTag,
 } from "../data/reviewSystem";
+import { foldText } from "./foldText";
 
 /**
  * Pure rules of the review system: what the storefront shows, how it is
@@ -129,7 +130,7 @@ export interface ReviewInput {
   photos: { src: string; alt: string }[];
 }
 
-export type ReviewFieldError = "ratingRequired" | "titleRequired" | "titleTooLong" | "bodyTooShort" | "bodyTooLong";
+type ReviewFieldError = "ratingRequired" | "titleRequired" | "titleTooLong" | "bodyTooShort" | "bodyTooLong";
 
 /**
  * Presentation-side checks only. The real endpoint validates the same limits
@@ -195,7 +196,7 @@ export function activityDate(review: CustomerReview): string {
   return review.editedAt ?? review.submittedAt;
 }
 
-export function matchesView(review: CustomerReview, view: QueueView): boolean {
+function matchesView(review: CustomerReview, view: QueueView): boolean {
   if (view === "all") return true;
   if (view === "edited") return isEditedPending(review);
   if (view === "reported") return isReported(review);
@@ -211,10 +212,6 @@ function withinRange(iso: string, range: DateRange): boolean {
   return now.getTime() - date.getTime() <= days * 24 * 60 * 60 * 1000;
 }
 
-function normalise(text: string): string {
-  return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
 /**
  * The queue's filtering. `subjectName` resolves a subject to its display name
  * in the current language so a search for "aurora" or "fondation" finds it.
@@ -225,7 +222,7 @@ export function filterQueue(
   subjectName: (subject: ReviewSubject) => string,
   customerName: (review: CustomerReview) => string,
 ): CustomerReview[] {
-  const query = normalise(filters.search.trim());
+  const query = foldText(filters.search.trim());
   const rows = reviews.filter((r) => {
     if (!matchesView(r, filters.view)) return false;
     if (filters.kind !== "all" && r.subject.kind !== filters.kind) return false;
@@ -233,7 +230,7 @@ export function filterQueue(
     if (filters.rating !== "all" && r.rating !== Number(filters.rating)) return false;
     if (!withinRange(activityDate(r), filters.range)) return false;
     if (!query) return true;
-    const haystack = normalise(
+    const haystack = foldText(
       [customerName(r), r.customer.email, r.title, r.body, r.orderRef ?? "", r.id, subjectName(r.subject)].join(" "),
     );
     return haystack.includes(query);
@@ -267,7 +264,7 @@ export interface SubjectRating {
   count: number;
 }
 
-export interface ReviewStats {
+interface ReviewStats {
   total: number;
   pending: number;
   published: number;

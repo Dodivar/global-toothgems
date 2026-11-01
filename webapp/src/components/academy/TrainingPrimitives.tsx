@@ -15,7 +15,7 @@ import { useReveal } from "../../lib/useReveal";
  */
 
 /** Background bands the page alternates between. `ink` is the dark treatment. */
-export type SectionTone = "paper" | "sand" | "wash" | "ink";
+type SectionTone = "paper" | "sand" | "wash" | "ink";
 
 const sectionTone: Record<SectionTone, string> = {
   paper: "bg-[var(--surface-page)]",
@@ -115,7 +115,7 @@ export function SectionIntro({
 }
 
 /** The icon tile every card and step is introduced by. */
-export function IconTile({
+function IconTile({
   icon: Icon,
   tone = "brand",
   size = "md",

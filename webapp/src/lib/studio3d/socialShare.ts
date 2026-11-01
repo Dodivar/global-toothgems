@@ -55,7 +55,7 @@ export interface ShareContent {
  *   copyThenOpen  the link is copied, then the network opens (no link intent);
  *   mail          the mail app.
  */
-export type ShareAction = { kind: "open" | "copyThenOpen" | "mail"; url: string };
+type ShareAction = { kind: "open" | "copyThenOpen" | "mail"; url: string };
 
 export function networkShareAction(network: ShareNetwork, { url, text, title }: ShareContent): ShareAction {
   const u = encodeURIComponent(url);

@@ -2104,9 +2104,9 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       template's own variables as non-empty short strings, locale fr/en/de, event key prefixed by the template
       (`contact_acknowledgement:<ticket>`, `newsletter_confirmation:<hash of the token>`), body ≤ 8 KB, and the
       newsletter link must start with `SITE_URL`. Answers `{ok, status: sent|duplicate}` or a generic error; never the
-      e-mail content or the provider's text. Webapp side: `webapp/src/lib/visitorEmail.ts` (request builder + never-throwing
-      caller, tested) and `visitorEmailServer.ts` (`server-only`; reads `EMAIL_INTERNAL_SECRET` and
-      `SUPABASE_FUNCTIONS_URL` or `<NEXT_PUBLIC_SUPABASE_URL>/functions/v1`).
+      e-mail content or the provider's text. The webapp no longer calls it: its former Next.js caller
+      (`webapp/src/lib/visitorEmail*.ts`) was removed on 2026-11-01, unused — the visitor forms go through
+      Edge Functions (the Next.js server holds no e-mail secret).
       **The contact form is wired (2026-10-08) through its own Edge Function `submit-contact-request`, not through `send-email`**
       (see Contact form above). **The newsletter form is not**: `newsletter_subscribe()` is service-role only, and the Next.js server must not hold the service-role key
       (AGENTS.md §4). The guest path therefore needs a small Edge Function (captcha / IP limit, then the RPC, then

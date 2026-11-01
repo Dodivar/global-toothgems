@@ -21,9 +21,9 @@ import type { PublicCourse } from "../../lib/academy/publicCourse";
 import { useHydrated } from "../../lib/useHydrated";
 
 /** From this many courses the catalogue gets its filters and lists every course (the featured one included). */
-export const CONTROLS_FROM = 3;
+const CONTROLS_FROM = 3;
 /** From this many, the starting-point picker (it needs a choice to steer). */
-export const PATHWAYS_FROM = 2;
+const PATHWAYS_FROM = 2;
 /** From this many, a search field. */
 const SEARCH_FROM = 7;
 
@@ -160,7 +160,7 @@ export function CourseCatalog({
 }
 
 /** No course to show: still loading, failed to load (with a retry), or none published yet. */
-export function CatalogState({ status, onRetry }: { status: AcademyStatus; onRetry: () => void }) {
+function CatalogState({ status, onRetry }: { status: AcademyStatus; onRetry: () => void }) {
   const { t } = useTranslation();
   if (status === "error") {
     return (

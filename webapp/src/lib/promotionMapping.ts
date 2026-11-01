@@ -88,7 +88,7 @@ export interface PromotionRow {
 }
 
 /** One row of `promotion_overview`: paid-order performance, per promotion. */
-export interface PromotionOverviewRow {
+interface PromotionOverviewRow {
   id: string | null;
   orders: number | null;
   revenue_amount: number | string | null;
@@ -133,7 +133,7 @@ export interface CollectionRow {
   collection_products: { product_id: string; position: number }[];
 }
 
-export interface SegmentRow {
+interface SegmentRow {
   id: string | null;
   name: string | null;
   size: number | null;

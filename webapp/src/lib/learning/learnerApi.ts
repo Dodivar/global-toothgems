@@ -13,7 +13,7 @@ import type { CorrectionJson, LearnerCourseJson, ProgressJson, SubmissionJson } 
 
 const BUCKET = "training-media";
 /** Long enough for a lesson video to be watched and sought through; re-signed before it ends. */
-export const LEARNER_SIGNED_URL_SECONDS = 4 * 60 * 60;
+const LEARNER_SIGNED_URL_SECONDS = 4 * 60 * 60;
 /** A URL with less than this left is signed again (a video started then still has time to play). */
 const LEARNER_RESIGN_MARGIN_SECONDS = 60 * 60;
 

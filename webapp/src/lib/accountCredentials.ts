@@ -1,7 +1,7 @@
-import type { AuthError } from "@supabase/supabase-js";
 import { supabase } from "./supabase/client";
 import { VERIFY_PATH } from "./accountSecurity";
 import { authConfirmUrl } from "./authRoutes";
+import { isAuthRateLimit } from "./supabase/authErrors";
 
 /**
  * Changing the sign-in credentials of the signed-in member through Supabase
@@ -15,15 +15,12 @@ import { authConfirmUrl } from "./authRoutes";
  * recent-login requirement for the update.
  */
 
-export type PasswordChangeResult = "updated" | "wrongPassword" | "weak" | "same" | "rateLimited" | "failed";
-export type EmailChangeResult = "sent" | "wrongPassword" | "emailTaken" | "rateLimited" | "failed";
-export type EmailResendResult = "sent" | "rateLimited" | "failed";
-
-const isRateLimit = (error: AuthError) =>
-  error.status === 429 || error.code === "over_email_send_rate_limit" || error.code === "over_request_rate_limit";
+type PasswordChangeResult = "updated" | "wrongPassword" | "weak" | "same" | "rateLimited" | "failed";
+type EmailChangeResult = "sent" | "wrongPassword" | "emailTaken" | "rateLimited" | "failed";
+type EmailResendResult = "sent" | "rateLimited" | "failed";
 
 /** Where the links confirming an email change land, through `/auth/confirm`. */
-export function emailChangeRedirect(): string {
+function emailChangeRedirect(): string {
   return authConfirmUrl(`${VERIFY_PATH}?type=changement`, window.location.origin);
 }
 
@@ -37,7 +34,7 @@ async function verifyCurrentPassword(currentPassword: string): Promise<Verified>
 
   const { error } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
   if (!error) return { ok: true };
-  if (isRateLimit(error)) return { ok: false, result: "rateLimited" };
+  if (isAuthRateLimit(error)) return { ok: false, result: "rateLimited" };
   return { ok: false, result: error.code === "invalid_credentials" || error.status === 400 ? "wrongPassword" : "failed" };
 }
 
@@ -49,7 +46,7 @@ export async function changeOwnPassword(currentPassword: string, newPassword: st
   if (error) {
     if (error.code === "weak_password") return "weak";
     if (error.code === "same_password") return "same";
-    if (isRateLimit(error)) return "rateLimited";
+    if (isAuthRateLimit(error)) return "rateLimited";
     return "failed";
   }
   return "updated";
@@ -70,7 +67,7 @@ export async function requestOwnEmailChange(newEmail: string, currentPassword: s
   );
   if (error) {
     if (error.code === "email_exists" || error.code === "user_already_exists") return "emailTaken";
-    if (isRateLimit(error)) return "rateLimited";
+    if (isAuthRateLimit(error)) return "rateLimited";
     return "failed";
   }
   return "sent";
@@ -84,7 +81,7 @@ export async function resendEmailChangeLink(newEmail: string): Promise<EmailRese
     options: { emailRedirectTo: emailChangeRedirect() },
   });
   if (!error) return "sent";
-  return isRateLimit(error) ? "rateLimited" : "failed";
+  return isAuthRateLimit(error) ? "rateLimited" : "failed";
 }
 
 /**

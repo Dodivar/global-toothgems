@@ -8,6 +8,7 @@ import {
 } from "../data/adminCatalog";
 import { GEM_SHAPES, type GemColor, type GemShape } from "../data/products";
 import { pick } from "../data/types";
+import { foldText } from "./foldText";
 
 /**
  * Search, filtering and sorting of the product list.
@@ -113,21 +114,13 @@ export function isFiltered(filters: ProductFilterState): boolean {
   );
 }
 
-/** Ignores case and accents, so "etoile" finds "Étoile". */
-function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
-}
-
 /**
  * Matches the query against both languages of the name plus the SKU and tags.
  * Searching in one language while the interface is in the other is a normal
  * thing to do on a bilingual catalogue, and failing it would look broken.
  */
 function matchesSearch(product: AdminProduct, query: string): boolean {
-  const needle = normalize(query.trim());
+  const needle = foldText(query.trim());
   if (!needle) return true;
   const haystack = [
     product.name.fr,
@@ -137,7 +130,7 @@ function matchesSearch(product: AdminProduct, query: string): boolean {
     product.shortDescription.en,
     ...product.tags,
   ]
-    .map(normalize)
+    .map(foldText)
     .join(" ");
   return haystack.includes(needle);
 }

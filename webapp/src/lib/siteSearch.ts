@@ -48,7 +48,7 @@ export const SEARCH_LIMITS: Record<SearchKind, number> = { product: 5, course: 3
 export const MIN_QUERY_LENGTH = 2;
 
 /** The informational pages offered, in the order they win a tie. */
-export const SEARCHABLE_PAGES: readonly PublicRouteId[] = [
+const SEARCHABLE_PAGES: readonly PublicRouteId[] = [
   "help",
   "faq",
   "contact",

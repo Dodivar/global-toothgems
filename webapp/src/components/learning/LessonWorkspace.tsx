@@ -35,7 +35,7 @@ import { formatDuration } from "../../lib/trainingFilters";
  * One primary action at a time, always named for where it leads: next lesson,
  * the knowledge check, next module, or completing the training.
  */
-export interface LessonWorkspaceProps {
+interface LessonWorkspaceProps {
   course: TrainingCourse;
   summary: CourseSummary;
   record: LearnerRecord;

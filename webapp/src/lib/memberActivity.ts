@@ -22,7 +22,7 @@ export type ActivitySection = "orders" | "reviews" | "loyalty";
 export const ACTIVITY_SECTIONS: readonly ActivitySection[] = ["orders", "reviews", "loyalty"];
 
 /** Where each section lives: being on it (or under it) marks it seen. */
-export const ACTIVITY_PATHS: Record<ActivitySection, string> = {
+const ACTIVITY_PATHS: Record<ActivitySection, string> = {
   orders: "/compte/commandes",
   reviews: "/compte/avis",
   loyalty: "/compte/fidelite",

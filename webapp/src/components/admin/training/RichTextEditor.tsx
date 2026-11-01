@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bold, Heading3, Italic, Link2, List, ListOrdered, Pilcrow, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
-import { sanitizeHtml } from "../../../lib/learning/sanitizeHtml";
 
 /**
  * The text block's editor.
@@ -124,9 +123,4 @@ export function RichTextEditor({
       />
     </div>
   );
-}
-
-/** Read-only rendering of a text block, used by the previews. */
-export function RichTextView({ html, className }: { html: string; className?: string }) {
-  return <div className={clsx("gt-rich-text", className)} dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }} />;
 }

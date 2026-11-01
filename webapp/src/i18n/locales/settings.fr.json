@@ -82,7 +82,6 @@
     "cancel": "Annuler",
     "close": "Fermer",
     "actions": "Actions",
-    "moreInfo": "En savoir plus : {{topic}}",
     "appliesOnSave": "Mis en ligne à l'enregistrement de la page."
   },
   "errors": {

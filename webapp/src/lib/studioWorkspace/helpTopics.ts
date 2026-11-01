@@ -21,7 +21,7 @@ export interface HelpTopic {
   staffOnly?: boolean;
 }
 
-export interface HelpChapter {
+interface HelpChapter {
   id: string;
   topics: HelpTopic[];
 }
@@ -71,7 +71,7 @@ export type HelpTopicId = string;
 
 const TOPIC_IDS = new Set(HELP_CHAPTERS.flatMap((c) => c.topics.map((t) => t.id)));
 
-export function isHelpTopic(id: string | null | undefined): id is HelpTopicId {
+function isHelpTopic(id: string | null | undefined): id is HelpTopicId {
   return !!id && TOPIC_IDS.has(id);
 }
 
@@ -88,7 +88,7 @@ export function helpTopicFromHash(hash: string): HelpTopicId | null {
 }
 
 /** Lower case, accents and punctuation folded: "Écart à l’émail" ~ "ecart a l email". */
-export function foldForSearch(text: string): string {
+function foldForSearch(text: string): string {
   return text
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")

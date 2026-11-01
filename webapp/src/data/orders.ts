@@ -250,7 +250,7 @@ export function spentByCurrency(
 /* ------------------------------------------------------------------ */
 
 /** A catalogue product as it was bought (back office prototype). `unitPrice` defaults to the price it still has. */
-export function productLine(id: string, qty: number, unitPrice?: number): OrderLine {
+function productLine(id: string, qty: number, unitPrice?: number): OrderLine {
   const product = getProduct(id);
   if (!product) throw new Error(`Unknown product in order history: ${id}`);
   return {
@@ -264,7 +264,7 @@ export function productLine(id: string, qty: number, unitPrice?: number): OrderL
 }
 
 /** A course as it was bought (back office prototype). Courses are digital: one seat, no shipping. */
-export function courseLine(id: string, unitPrice?: number): OrderLine {
+function courseLine(id: string, unitPrice?: number): OrderLine {
   const course = getCourse(id);
   if (!course) throw new Error(`Unknown course in order history: ${id}`);
   return {

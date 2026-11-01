@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { CircleAlert, CircleCheck, Info, TriangleAlert, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 
-export type NoticeTone = "info" | "success" | "warning" | "error";
+type NoticeTone = "info" | "success" | "warning" | "error";
 
 const TONE: Record<NoticeTone, { icon: LucideIcon; box: string; fg: string }> = {
   info: { icon: Info, box: "border-[var(--gt-blue-200)] bg-[var(--status-info-bg)]", fg: "text-[var(--status-info-fg)]" },

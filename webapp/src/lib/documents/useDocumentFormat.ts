@@ -1,16 +1,8 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useFormat } from "../format";
+import { countryName } from "../countryName";
 import type { InvoiceFormat } from "./invoiceDocument";
-
-/** A country's name in a locale, else its ISO code. */
-export function countryName(code: string, locale: string): string {
-  try {
-    return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-}
 
 /** How the documents format money, dates, countries and VAT rates: in the page's language. */
 export function useDocumentFormat(): InvoiceFormat {

@@ -15,7 +15,7 @@ import { offerPrice, type ProductOffer } from "../../lib/storefrontOffers";
 /** Named variants shown as chips before the rest collapse into "+n". */
 const MAX_VARIANT_CHIPS = 4;
 
-export interface ProductCardData {
+interface ProductCardData {
   id: string;
   name: string;
   subtitle?: string;

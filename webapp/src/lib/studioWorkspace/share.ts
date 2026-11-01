@@ -22,7 +22,7 @@ import { DESCRIPTION_MAX, NAME_MAX } from "./validation";
  * always passed through `sanitizeScene`.
  */
 
-export const SHARE_VERSION = 1;
+const SHARE_VERSION = 1;
 
 export interface SharedDesign {
   name: string;
@@ -146,7 +146,7 @@ export async function encodeSharedDesign(design: SharedDesign): Promise<string> 
 }
 
 /** The full link to send: `https://…/studio-3d/partage#z1.…`. */
-export async function createShareUrl(design: SharedDesign, sharePath: string, origin = window.location.origin): Promise<string> {
+async function createShareUrl(design: SharedDesign, sharePath: string, origin = window.location.origin): Promise<string> {
   return `${origin}${sharePath}#${await encodeSharedDesign(design)}`;
 }
 

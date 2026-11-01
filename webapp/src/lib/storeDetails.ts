@@ -54,7 +54,7 @@ export type StoreSettingsRow = Pick<
   | "support_message"
 >;
 
-export interface StoreTranslationRow {
+interface StoreTranslationRow {
   locale: string;
   support_message: string | null;
 }

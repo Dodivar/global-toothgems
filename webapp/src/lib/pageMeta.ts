@@ -7,7 +7,7 @@ import { SHIPPING } from "../data/legal/shipping";
 import { TERMS } from "../data/legal/terms";
 import { TERMS_OF_USE } from "../data/legal/termsOfUse";
 import type { LegalDocument } from "../data/legal/types";
-import { alternates, parsePath, type Locale, type ParsedPath, type PublicRouteId } from "./localeRoutes";
+import { alternates, type Locale, type ParsedPath, type PublicRouteId } from "./localeRoutes";
 
 /**
  * Title and description of each public page, in each language — for the
@@ -63,7 +63,7 @@ function read(text: Text, part: "title" | "intro", locale: Locale): string {
   return uiText(locale, text.key);
 }
 
-export interface PageMeta {
+interface PageMeta {
   title: string;
   description?: string;
   /** Both languages of the page, when it is a public page. */
@@ -97,9 +97,4 @@ export function pageText(id: PublicRouteId, locale: Locale): { title: string; de
     title: read(page.title, "title", locale).replace(/[.!]$/, ""),
     description: page.description ? read(page.description, "intro", locale) : undefined,
   };
-}
-
-/** The tab title for an address. */
-export function titleFor(address: string | ParsedPath): string {
-  return pageMeta(typeof address === "string" ? parsePath(address) : address).title;
 }

@@ -10,7 +10,7 @@ import { toMajorUnits } from "../../lib/catalog/money";
 import type { RegistrationContext } from "../../lib/registration";
 
 /** What the summary card shows, resolved from the context and the live cart. */
-export interface ContextItem {
+interface ContextItem {
   image: string;
   title: string;
   subtitle?: string;

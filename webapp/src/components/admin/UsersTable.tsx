@@ -1,8 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import {
-  ArrowDown,
-  ArrowUp,
   Ban,
   ChevronRight,
   CircleAlert,
@@ -24,6 +22,7 @@ import { formatDate, useAdminLocale } from "./userMeta";
 import type { UserSortKey } from "../../lib/adminUserFilters";
 import { blocksEditing, type GuardReason } from "../../lib/adminUserFilters";
 import { userName, type AdminUser } from "../../data/adminUsers";
+import { SortableHead } from "./SortableHead";
 
 /**
  * The user list: a table above `xl`, cards below it.
@@ -41,7 +40,7 @@ import { userName, type AdminUser } from "../../data/adminUsers";
  *   information for the width instead.
  */
 
-export interface UsersListProps {
+interface UsersListProps {
   users: AdminUser[];
   sort: UserSortKey;
   onSort: (sort: UserSortKey) => void;
@@ -61,53 +60,6 @@ export interface UsersListProps {
 
 const headCell =
   "sticky top-0 z-10 border-b border-[var(--border-subtle)] bg-[var(--admin-panel-sunken)] px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)]";
-
-function SortableHead({
-  label,
-  ascKey,
-  descKey,
-  sort,
-  onSort,
-  className,
-  firstKey,
-}: {
-  label: string;
-  ascKey: UserSortKey;
-  descKey: UserSortKey;
-  /** What the first press sorts by: newest first for dates, A–Z for names. */
-  firstKey?: UserSortKey;
-  sort: UserSortKey;
-  onSort: (sort: UserSortKey) => void;
-  className?: string;
-}) {
-  const { t } = useTranslation();
-  const active = sort === ascKey || sort === descKey;
-  const ascending = sort === ascKey;
-  return (
-    <th scope="col" className={clsx(headCell, className)} aria-sort={active ? (ascending ? "ascending" : "descending") : "none"}>
-      <button
-        type="button"
-        onClick={() => onSort(active ? (ascending ? descKey : ascKey) : (firstKey ?? ascKey))}
-        className={clsx(
-          "inline-flex items-center gap-1 rounded-[var(--radius-xs)] uppercase transition-colors hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-          active && "text-[var(--text-primary)]",
-        )}
-      >
-        {label}
-        {active ? (
-          ascending ? (
-            <ArrowUp size={12} aria-hidden="true" />
-          ) : (
-            <ArrowDown size={12} aria-hidden="true" />
-          )
-        ) : (
-          <ArrowDown size={12} aria-hidden="true" className="opacity-25" />
-        )}
-        <span className="sr-only">{t("admin.users.sortHint")}</span>
-      </button>
-    </th>
-  );
-}
 
 /**
  * Secondary actions for one user.
@@ -176,15 +128,17 @@ export function UsersTable(props: UsersListProps) {
           </colgroup>
           <thead>
             <tr>
-              <SortableHead label={t("admin.users.colUser")} ascKey="nameAsc" descKey="nameDesc" sort={sort} onSort={onSort} className="pl-5" />
+              <SortableHead label={t("admin.users.colUser")} ascKey="nameAsc" descKey="nameDesc" sort={sort} onSort={onSort} className={clsx(headCell, "pl-5")} hint={t("admin.users.sortHint")} />
               <th scope="col" className={headCell}>
                 {t("admin.users.colEmail")}
               </th>
-              <SortableHead label={t("admin.users.colRole")} ascKey="roleAsc" descKey="roleDesc" firstKey="roleDesc" sort={sort} onSort={onSort} />
+              <SortableHead className={headCell} hint={t("admin.users.sortHint")} label={t("admin.users.colRole")} ascKey="roleAsc" descKey="roleDesc" firstKey="roleDesc" sort={sort} onSort={onSort} />
               <th scope="col" className={headCell}>
                 {t("admin.users.colStatus")}
               </th>
               <SortableHead
+                className={headCell}
+                hint={t("admin.users.sortHint")}
                 label={t("admin.users.colLastActivity")}
                 ascKey="activityAsc"
                 descKey="activityDesc"
@@ -193,6 +147,8 @@ export function UsersTable(props: UsersListProps) {
                 onSort={onSort}
               />
               <SortableHead
+                className={headCell}
+                hint={t("admin.users.sortHint")}
                 label={t("admin.users.colCreated")}
                 ascKey="createdAsc"
                 descKey="createdDesc"

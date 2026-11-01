@@ -6,10 +6,11 @@ import { AdminSelect } from "../admin/AdminSelect";
 import { FormField } from "../admin/FormField";
 import { ToggleSwitch } from "../admin/ToggleSwitch";
 import { useAdminSettings } from "../../lib/adminSettings";
-import { SUPPORT_MESSAGE_MAX, countryName, flagOf, validateStore, type StoreErrors } from "../../lib/settingsRules";
+import { SUPPORT_MESSAGE_MAX, flagOf, validateStore, type StoreErrors } from "../../lib/settingsRules";
 import { addressLines, hasOpeningHours, hoursSummary, weekdayName } from "../../lib/storeDetails";
 import { COUNTRY_GROUPS, STORE_CURRENCY, WEEKDAYS, type StoreDetails, type Weekday } from "../../data/adminSettings";
 import { Eyebrow, FieldGrid, RowSwitch, SettingsCard, SubHeading, TextField } from "./SettingsUi";
+import { countryName } from "../../lib/countryName";
 
 /**
  * The store's identity, from the legal facts to the friendly ones: who the

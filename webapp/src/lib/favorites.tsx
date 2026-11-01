@@ -32,7 +32,7 @@ import {
  * and added as soon as a session opens (`favoritesState.ts`).
  */
 
-export type FavoritesStatus = "idle" | "loading" | "ready" | "error";
+type FavoritesStatus = "idle" | "loading" | "ready" | "error";
 
 interface FavoritesContextValue {
   /** `idle` while signed out; `error` when the list could not be read. */

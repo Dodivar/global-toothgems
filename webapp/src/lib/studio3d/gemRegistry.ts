@@ -21,10 +21,6 @@ export function studioGem(key: string): StudioGem | undefined {
   return byKey.get(key);
 }
 
-export function studioGems(): StudioGem[] {
-  return gems;
-}
-
 /** The indicative shop value of these pieces, at the prices last loaded. */
 export function currentEstimate(pieces: EstimatedPiece[]): CompositionEstimate {
   return estimateComposition(pieces, studioGem);

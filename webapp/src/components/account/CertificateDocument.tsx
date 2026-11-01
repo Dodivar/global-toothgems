@@ -33,7 +33,7 @@ export interface CertificateCourse {
   duration: string;
 }
 
-export interface CertificateInput {
+interface CertificateInput {
   course: CertificateCourse;
   holder: string;
   /** ISO date of completion. */
@@ -43,7 +43,7 @@ export interface CertificateInput {
 }
 
 /** The document's text in the given language — shared by the screen and the exported file. */
-export function certificateContent(
+function certificateContent(
   { course, holder, awardedOn, reference, lang }: CertificateInput,
   t: TFunction,
   formatDate: (iso: string) => string,

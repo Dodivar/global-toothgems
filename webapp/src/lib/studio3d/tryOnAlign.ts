@@ -69,7 +69,7 @@ function halve(img: Luma): Luma {
 }
 
 /** The strength of the edges at each pixel (central differences); the border is 0. */
-export function edges(img: Luma): Luma {
+function edges(img: Luma): Luma {
   const { width, height, data } = img;
   const out = new Float32Array(width * height);
   for (let y = 1; y < height - 1; y++) {
@@ -98,7 +98,7 @@ function sample(img: Luma, x: number, y: number): number {
  * the region `fit` of it: the correlation over the pixels of the answer that
  * fall inside the original (−1 when too few do).
  */
-export function fitScore(original: Luma, edited: Luma, fit: CloseUpFit): number {
+function fitScore(original: Luma, edited: Luma, fit: CloseUpFit): number {
   const { width, height } = edited;
   const sx = (fit.scale * original.width) / width;
   const sy = (fit.scale * original.height) / height;
@@ -161,7 +161,7 @@ const range = (from: number, to: number, step: number) => {
   return out;
 };
 
-export interface AlignResult {
+interface AlignResult {
   fit: CloseUpFit;
   /** The match found, and the answer left where it is (logged in tests, compared here). */
   score: number;
