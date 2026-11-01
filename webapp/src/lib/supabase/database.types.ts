@@ -7649,6 +7649,7 @@ export type Database = {
           publisher_legal_form: string | null
           publisher_legal_name: string | null
           publisher_name: string | null
+          publisher_phone: string | null
           publisher_registration_number: string | null
           publication_director: string | null
           publication_director_role: string | null
@@ -7693,6 +7694,7 @@ export type Database = {
           publisher_legal_form?: string | null
           publisher_legal_name?: string | null
           publisher_name?: string | null
+          publisher_phone?: string | null
           publisher_registration_number?: string | null
           publication_director?: string | null
           publication_director_role?: string | null
@@ -7737,6 +7739,7 @@ export type Database = {
           publisher_legal_form?: string | null
           publisher_legal_name?: string | null
           publisher_name?: string | null
+          publisher_phone?: string | null
           publisher_registration_number?: string | null
           publication_director?: string | null
           publication_director_role?: string | null

@@ -169,7 +169,8 @@
       "publisherLegalForm": "Publisher's legal entity type",
       "publisherRegistrationNumber": "Publisher's registration number",
       "publisherAddress": "Publisher's address",
-      "publisherEmail": "Publisher's email"
+      "publisherEmail": "Publisher's email",
+      "publisherPhone": "Publisher's phone"
     },
     "hints": {
       "storeName": "The website's name, as customers know it.",

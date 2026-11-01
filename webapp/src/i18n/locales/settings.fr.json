@@ -169,7 +169,8 @@
       "publisherLegalForm": "Forme juridique de l'éditeur",
       "publisherRegistrationNumber": "Immatriculation de l'éditeur",
       "publisherAddress": "Adresse de l'éditeur",
-      "publisherEmail": "E-mail de l'éditeur"
+      "publisherEmail": "E-mail de l'éditeur",
+      "publisherPhone": "Téléphone de l'éditeur"
     },
     "hints": {
       "storeName": "Le nom du site, tel que les clients le connaissent.",

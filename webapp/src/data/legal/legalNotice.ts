@@ -116,6 +116,7 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
                 placeholder: l("Numéro et registre d’immatriculation", "Registration number and register"),
               },
               { label: l("E-mail de contact", "Contact email"), value: same(store?.publisherEmail), placeholder: l("Adresse e-mail de l’éditeur", "Publisher’s email address") },
+              { label: l("Téléphone", "Telephone"), value: same(store?.publisherPhone), placeholder: l("Numéro de téléphone de l’éditeur", "Publisher’s telephone number") },
             ],
           },
         ],

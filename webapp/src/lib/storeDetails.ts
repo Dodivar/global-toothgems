@@ -14,7 +14,7 @@ import type { Database, Json } from "./supabase/database.types";
  */
 
 export const STORE_SETTINGS_SELECT =
-  "store_name, trading_name, publisher_name, publisher_legal_name, publisher_legal_form, publisher_registration_number, publisher_address, publisher_email, legal_name, legal_form, share_capital, registration_number, vat_number, vat_franchise, business_email, support_email, phone, address_line1, address_line2, postal_code, city, region, country_code, publication_director, publication_director_role, host_name, host_address, host_contact, show_email, show_phone, show_address, opening_hours, support_message";
+  "store_name, trading_name, publisher_name, publisher_legal_name, publisher_legal_form, publisher_registration_number, publisher_address, publisher_email, publisher_phone, legal_name, legal_form, share_capital, registration_number, vat_number, vat_franchise, business_email, support_email, phone, address_line1, address_line2, postal_code, city, region, country_code, publication_director, publication_director_role, host_name, host_address, host_contact, show_email, show_phone, show_address, opening_hours, support_message";
 
 type StoreSettingsTable = Database["public"]["Tables"]["store_settings"]["Row"];
 export type StoreSettingsRow = Pick<
@@ -27,6 +27,7 @@ export type StoreSettingsRow = Pick<
   | "publisher_registration_number"
   | "publisher_address"
   | "publisher_email"
+  | "publisher_phone"
   | "legal_name"
   | "legal_form"
   | "share_capital"
@@ -89,6 +90,7 @@ export function mapStoreDetails(row: StoreSettingsRow, translations: StoreTransl
     publisherRegistrationNumber: text(row.publisher_registration_number),
     publisherAddress: text(row.publisher_address),
     publisherEmail: text(row.publisher_email),
+    publisherPhone: text(row.publisher_phone),
     legalName: text(row.legal_name),
     legalForm: text(row.legal_form),
     shareCapital: text(row.share_capital),
@@ -131,6 +133,7 @@ export function storeDetailsPayload(d: StoreDetails) {
     publisher_registration_number: d.publisherRegistrationNumber.trim(),
     publisher_address: d.publisherAddress.trim(),
     publisher_email: d.publisherEmail.trim().toLowerCase(),
+    publisher_phone: d.publisherPhone.trim(),
     legal_name: d.legalName.trim(),
     legal_form: d.legalForm.trim(),
     share_capital: d.shareCapital.trim(),

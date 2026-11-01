@@ -1,6 +1,7 @@
 -- =============================================================================
 -- Trading name and publisher validation suite (migrations
--- 20261101094412_store_trading_name, 20261101100230_store_publisher)
+-- 20261101094412_store_trading_name, 20261101100230_store_publisher,
+-- 20261101102156_store_publisher_phone)
 -- =============================================================================
 -- Proves (decision 120):
 --   T1  admin_save_store_details(): a manage_settings admin saves the trading
@@ -104,10 +105,10 @@ begin
   perform public.admin_save_store_details(v_det || jsonb_build_object(
     'publisher_name', ' Studio Test ', 'publisher_legal_name', 'Bob Test', 'publisher_legal_form', 'EI',
     'publisher_registration_number', 'SIRET 987 654 321 00010', 'publisher_address', '2 rue Fictive, 67000 Strasbourg',
-    'publisher_email', 'Hello@Example.com'));
+    'publisher_email', 'Hello@Example.com', 'publisher_phone', '+33 6 00 00 00 00'));
   select * into v_s from public.store_settings where id;
   if v_s.publisher_name is distinct from 'Studio Test' or v_s.publisher_email is distinct from 'hello@example.com'
-     or v_s.publisher_legal_name is distinct from 'Bob Test' then
+     or v_s.publisher_legal_name is distinct from 'Bob Test' or v_s.publisher_phone is distinct from '+33 6 00 00 00 00' then
     raise exception 'FAIL T4: publisher not saved: %', to_jsonb(v_s);
   end if;
   perform public.admin_save_store_details(v_det);
@@ -117,6 +118,11 @@ begin
   begin
     perform public.admin_save_store_details(v_det || '{"publisher_email": "nope"}');
     raise exception 'FAIL T4: a malformed publisher e-mail was accepted';
+  exception when check_violation then null;
+  end;
+  begin
+    perform public.admin_save_store_details(v_det || '{"publisher_phone": "call me"}');
+    raise exception 'FAIL T4: a malformed publisher phone was accepted';
   exception when check_violation then null;
   end;
   begin

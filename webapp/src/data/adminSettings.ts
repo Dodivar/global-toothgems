@@ -52,6 +52,8 @@ export interface StoreDetails {
   publisherRegistrationNumber: string;
   publisherAddress: string;
   publisherEmail: string;
+  /** Required for an individual publisher (LCEN art. 6 III 1). */
+  publisherPhone: string;
   legalForm: string;
   shareCapital: string;
   /** Registration number and register (RCS, SIREN…). */

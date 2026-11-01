@@ -198,6 +198,7 @@ describe("store details", () => {
     publisher_legal_form: null,
     publisher_legal_name: null,
     publisher_name: null,
+    publisher_phone: null,
     publisher_registration_number: null,
     legal_name: "Global Toothgems SAS",
     legal_form: "SAS",
@@ -296,6 +297,7 @@ describe("legal notice", () => {
           publisher_legal_form: null,
           publisher_legal_name: null,
           publisher_name: null,
+          publisher_phone: null,
           publisher_registration_number: null,
           legal_name: "Global Toothgems SAS",
           legal_form: "SAS",
@@ -351,6 +353,7 @@ describe("trading name (decision 120)", () => {
         publisher_legal_form: "Entrepreneur individuel (EI)",
         publisher_legal_name: "Bob Test",
         publisher_name: "Studio Test",
+        publisher_phone: "+33 6 00 00 00 00",
         publisher_registration_number: "SIRET 987 654 321 00010",
         legal_name: "Ada Test",
         legal_form: "Entrepreneur individuel (EI)",
@@ -401,6 +404,7 @@ describe("trading name (decision 120)", () => {
     expect(intro("publisher")).toBe("Le site Global Toothgems est détenu et édité par Studio Test, entreprise identifiée ci-dessous.");
     expect(fieldsOf("publisher").find((f) => f.label.fr === "Dénomination")?.value?.fr).toBe("Bob Test");
     expect(fieldsOf("publisher").find((f) => f.label.fr === "Numéro d’immatriculation")?.value?.fr).toBe("SIRET 987 654 321 00010");
+    expect(fieldsOf("publisher").find((f) => f.label.fr === "Téléphone")?.value?.fr).toBe("+33 6 00 00 00 00");
     expect(intro("seller")).toContain("vendus par Pimp ton smile, avec qui les ventes sont conclues");
     expect(intro("seller")).not.toContain("Ada Test");
     expect(fieldsOf("seller").find((f) => f.label.fr === "Nom commercial")?.value?.fr).toBe("Pimp ton smile");

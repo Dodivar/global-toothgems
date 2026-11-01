@@ -124,6 +124,7 @@ export function StoreDetailsSection() {
             {text("publisherRegistrationNumber", { placeholder: t("settings.store.placeholders.registrationNumber") })}
             {text("publisherAddress", { className: "md:col-span-2", autoComplete: "off" })}
             {text("publisherEmail", { type: "email", inputMode: "email", autoComplete: "off" })}
+            {text("publisherPhone", { type: "tel", inputMode: "tel", autoComplete: "off", placeholder: "+33 6 12 34 56 78" })}
           </FieldGrid>
           <SubHeading>{t("settings.store.legal.director")}</SubHeading>
           <FieldGrid>

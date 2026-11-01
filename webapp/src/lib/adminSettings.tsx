@@ -89,6 +89,7 @@ const EMPTY: SectionValues = {
     publisherRegistrationNumber: "",
     publisherAddress: "",
     publisherEmail: "",
+    publisherPhone: "",
     legalName: "",
     legalForm: "",
     shareCapital: "",
