@@ -45,3 +45,6 @@ next-env.d.ts
 
 # Unit-test coverage reports (npm run test:coverage)
 /coverage/
+
+# Studio try-on trial output (photos and renders: personal data, scripts/try-on-trial/README.md)
+try-on-trial-results/
