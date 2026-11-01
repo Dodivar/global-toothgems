@@ -21,11 +21,13 @@ const PHOTOS = opt("photos");
 const OUT = resolve(opt("out", "try-on-trial-results"));
 const ONLY = opt("only");
 const HEADED = argv.includes("--headed");
+// Seconds between runs: back-to-back renders hit the image model's per-minute quota (HTTP 429).
+const PAUSE_S = Number(opt("pause", "45"));
 const SITE = process.env.TRIAL_SITE || "http://localhost:5173";
 const EMAIL = process.env.TRIAL_EMAIL;
 const PASSWORD = process.env.TRIAL_PASSWORD;
 if (!PHOTOS || !EMAIL || !PASSWORD) {
-  console.error("Usage: TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --photos <folder> [--out <folder>] [--only P1:S1,…] [--headed]");
+  console.error("Usage: TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --photos <folder> [--out <folder>] [--only P1:S1,…] [--skip-done] [--pause 45] [--headed]");
   process.exit(1);
 }
 
@@ -69,28 +71,40 @@ function parseMultipart(buf, contentType) {
 mkdirSync(OUT, { recursive: true });
 // Behind a proxy (HTTPS_PROXY set), the browser uses it too; local pages stay direct.
 const proxy = process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY, bypass: "localhost,127.0.0.1" } } : {};
-const browser = await chromium.launch({ headless: !HEADED, ...proxy });
-const context = await browser.newContext({ locale: "fr-FR", viewport: { width: 1280, height: 1000 } });
 // The guide (a Blob in a FormData) is not visible to Playwright's request events: the page hands it over itself.
 let onGuide = null;
-await context.exposeBinding("__trialGuide", (_source, b64) => onGuide?.(b64));
-await context.addInitScript(() => {
-  const original = window.fetch;
-  window.fetch = function (input, init) {
-    const body = init?.body;
-    if (body instanceof FormData && body.get("guide") instanceof Blob) {
-      body.get("guide").arrayBuffer().then((buf) => {
-        const bytes = new Uint8Array(buf);
-        let s = "";
-        for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-        window.__trialGuide(btoa(s));
-      });
-    }
-    return original.apply(this, arguments);
-  };
-});
-const page = await context.newPage();
-page.setDefaultTimeout(60_000);
+let browser = null;
+let context = null;
+let page = null;
+
+/** A fresh browser, signed in. Called again whenever the browser closed (crash, window closed). */
+async function launch() {
+  await browser?.close().catch(() => {});
+  browser = await chromium.launch({ headless: !HEADED, ...proxy });
+  context = await browser.newContext({ locale: "fr-FR", viewport: { width: 1280, height: 1000 } });
+  await context.exposeBinding("__trialGuide", (_source, b64) => onGuide?.(b64));
+  await context.addInitScript(() => {
+    const original = window.fetch;
+    window.fetch = function (input, init) {
+      const body = init?.body;
+      if (body instanceof FormData && body.get("guide") instanceof Blob) {
+        body.get("guide").arrayBuffer().then((buf) => {
+          const bytes = new Uint8Array(buf);
+          let s = "";
+          for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+          window.__trialGuide(btoa(s));
+        });
+      }
+      return original.apply(this, arguments);
+    };
+  });
+  page = await context.newPage();
+  page.setDefaultTimeout(60_000);
+  await signIn();
+}
+
+const alive = () => !!browser?.isConnected() && !!page && !page.isClosed();
+const sleep = (s) => new Promise((r) => setTimeout(r, s * 1000));
 
 async function signIn() {
   // A first `npm run dev` compiles each page on its first visit: generous waits.
@@ -196,6 +210,15 @@ async function runOne(photo, scene) {
     const first = log.report?.split("\n").filter(Boolean).slice(0, 2).join(" · ") ?? log.error?.split("\n")[0] ?? "";
     console.log(`${photo}-${scene}  ${log.outcome}  ${Math.round(log.total / 1000)}s  ${first}`);
   }
+  return log;
+}
+
+/** A run already settled: a result, or a photo the check refused (running it again changes nothing). */
+function settled(photo, scene) {
+  const file = join(OUT, `${photo}-${scene}`, "log.json");
+  if (!existsSync(file)) return false;
+  const log = JSON.parse(readFileSync(file, "utf8"));
+  return log.outcome === "result" || (log.outcome === "error" && /ne permet pas un bon rendu/.test(log.error ?? ""));
 }
 
 /** One contact sheet per photo: each creation's guide (computed marks) beside its result close-up, with the figures. */
@@ -234,13 +257,27 @@ async function contactSheets() {
   writeFileSync(join(OUT, "summary.json"), JSON.stringify(summary, null, 1));
 }
 
-await signIn();
+await launch();
 console.log(`Signed in as ${EMAIL}. ${pairs.length} runs, results in ${OUT}`);
+let first = true;
 for (const [p, s] of pairs) {
   if (!PHOTO_BY_KEY[p] || !SCENES[s]) continue;
-  if (argv.includes("--skip-done") && existsSync(join(OUT, `${p}-${s}`, "result.jpg"))) continue;
-  await runOne(p, s);
+  if (argv.includes("--skip-done") && settled(p, s)) continue;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    if (!alive()) {
+      console.log("  (browser closed: relaunching and signing in again)");
+      await launch();
+    }
+    if (!first) await sleep(PAUSE_S);
+    first = false;
+    const log = await runOne(p, s);
+    const passing = log.outcome === "harness_error" || (log.outcome === "error" && /n’a pas abouti|connexion/i.test(log.error ?? ""));
+    if (!passing || attempt === 2) break;
+    console.log("  (passing failure: trying again in 60 s)");
+    await sleep(60);
+  }
 }
+if (!alive()) await launch();
 await contactSheets();
 console.log(`Done. Send back: ${join(OUT, "summary.json")} and the five ${join(OUT, "sheet-P*.jpg")}`);
-await browser.close();
+await browser?.close();

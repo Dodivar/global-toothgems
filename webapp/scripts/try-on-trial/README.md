@@ -31,8 +31,10 @@ node scripts/try-on-trial/run.mjs --photos "C:\path\to\photos" --out try-on-tria
 
 bash: `TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --photos ~/photos --out try-on-trial-results`
 
-Options: `--only P3:S1,P5:S2` (some pairs only), `--skip-done` (resume, skipping pairs that have a result),
-`--headed` (watch the browser). 25 runs take about 30–40 minutes; each counts as a render (the staff account
+Options: `--only P3:S1,P5:S2` (some pairs only), `--skip-done` (resume: skips pairs with a result or whose photo
+the check refused), `--pause 45` (seconds between runs, default 45: back-to-back renders hit the image model's
+per-minute quota, HTTP 429), `--headed` (watch the browser). A failed render or a closed browser is retried once
+(the browser relaunched and signed in again). 25 runs take about 30–40 minutes; each counts as a render (the staff account
 has no daily limit) and is billed by the image model.
 
 ## Output (`--out`, not committed: it holds the photos' renders)
