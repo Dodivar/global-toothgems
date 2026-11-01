@@ -139,7 +139,7 @@ describe("invoice PDF", () => {
       ...invoiceRow,
       seller: {
         ...seller,
-        trading_name: "Pimp ton smile",
+        trading_name: "PIMP TON SMILE",
         legal_name: "Ada Test",
         legal_form: "Entrepreneur individuel (EI)",
         share_capital: "",
@@ -150,9 +150,9 @@ describe("invoice PDF", () => {
     };
     const doc = invoiceDocument(mapInvoice(ei), t, fmt);
     expect(doc.parties.map((p) => p.title)).toEqual(["Client"]);
-    expect(doc.footer[0]).toBe("Pimp ton smile · Ada Test, Entrepreneur individuel (EI) · Immatriculation SIREN 123 456 789");
+    expect(doc.footer[0]).toBe("PIMP TON SMILE · Ada Test, Entrepreneur individuel (EI) · Immatriculation SIREN 123 456 789");
     expect(doc.footer[1]).toBe("1 rue de l’Exemple, 69001 Lyon · contact@example.com");
-    expect(doc.info.author).toBe("Pimp ton smile");
+    expect(doc.info.author).toBe("PIMP TON SMILE");
   });
 
   it("draws a credit note against its invoice", () => {

@@ -12,7 +12,7 @@ import type { LegalDocument } from "./types";
  *
  * Two businesses (decision 121): the website publisher, which holds the site
  * and its content (terms of use: publisher, intellectual property), and the
- * seller, named by its trading name ("Pimp ton smile"), whose legal identity
+ * seller, named by its trading name ("PIMP TON SMILE"), whose legal identity
  * (for an individual entrepreneur, their own name) appears only where the law
  * asks for the seller's identification — the seller clause of the terms of
  * sale —, never put forward (decision 120). Pure.
@@ -20,7 +20,7 @@ import type { LegalDocument } from "./types";
 
 type Replacements = { fr: Record<string, string>; en: Record<string, string> };
 
-/** "Pimp ton smile — <legal name>, Entrepreneur individuel (EI)", or what of it is known. */
+/** "PIMP TON SMILE — <legal name>, Entrepreneur individuel (EI)", or what of it is known. */
 export function sellerIdentity(store: StoreDetails): string {
   const trading = store.tradingName.trim();
   const legal = store.legalName.trim();

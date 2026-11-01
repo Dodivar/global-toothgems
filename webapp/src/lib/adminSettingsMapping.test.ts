@@ -347,7 +347,7 @@ describe("trading name (decision 120)", () => {
     ...mapStoreDetails(
       {
         store_name: "Global Toothgems",
-        trading_name: "Pimp ton smile",
+        trading_name: "PIMP TON SMILE",
         publisher_address: "2 rue Fictive, 67000 Strasbourg, France",
         publisher_email: "Hello@Example.com",
         publisher_legal_form: "Entrepreneur individuel (EI)",
@@ -386,8 +386,8 @@ describe("trading name (decision 120)", () => {
   };
 
   it("is read and saved like the other details", () => {
-    expect(ei.tradingName).toBe("Pimp ton smile");
-    expect(storeDetailsPayload(ei).trading_name).toBe("Pimp ton smile");
+    expect(ei.tradingName).toBe("PIMP TON SMILE");
+    expect(storeDetailsPayload(ei).trading_name).toBe("PIMP TON SMILE");
     expect(storeDetailsPayload(ei).publisher_name).toBe("Studio Test");
     expect(storeDetailsPayload(ei).publisher_email).toBe("hello@example.com");
   });
@@ -405,9 +405,9 @@ describe("trading name (decision 120)", () => {
     expect(fieldsOf("publisher").find((f) => f.label.fr === "Dénomination")?.value?.fr).toBe("Bob Test");
     expect(fieldsOf("publisher").find((f) => f.label.fr === "Numéro d’immatriculation")?.value?.fr).toBe("SIRET 987 654 321 00010");
     expect(fieldsOf("publisher").find((f) => f.label.fr === "Téléphone")?.value?.fr).toBe("+33 6 00 00 00 00");
-    expect(intro("seller")).toContain("vendus par Pimp ton smile, avec qui les ventes sont conclues");
+    expect(intro("seller")).toContain("vendus par PIMP TON SMILE, avec qui les ventes sont conclues");
     expect(intro("seller")).not.toContain("Ada Test");
-    expect(fieldsOf("seller").find((f) => f.label.fr === "Nom commercial")?.value?.fr).toBe("Pimp ton smile");
+    expect(fieldsOf("seller").find((f) => f.label.fr === "Nom commercial")?.value?.fr).toBe("PIMP TON SMILE");
     expect(fieldsOf("seller").find((f) => f.label.fr === "Dénomination")?.value?.fr).toBe("Ada Test");
     const ip = section("intellectual-property")?.blocks[0];
     expect(ip?.kind === "p" && ip.text.fr).toContain("appartiennent à Studio Test");
@@ -419,9 +419,9 @@ describe("trading name (decision 120)", () => {
     const { TERMS_OF_USE } = await import("../data/legal/termsOfUse");
     const seller = withStoreDetails(TERMS, ei).sections.find((s) => s.id === "seller")?.blocks[0];
     expect(seller?.kind === "p" && seller.text.fr).toContain(
-      "conclues avec Pimp ton smile — Ada Test, Entrepreneur individuel (EI), dont le siège est situé 1 rue Fictive, 75004 Paris, France, immatriculée sous le numéro SIREN 123 456 789.",
+      "conclues avec PIMP TON SMILE — Ada Test, Entrepreneur individuel (EI), dont le siège est situé 1 rue Fictive, 75004 Paris, France, immatriculée sous le numéro SIREN 123 456 789.",
     );
-    expect(seller?.kind === "p" && seller.text.en).toContain("concluded with Pimp ton smile — Ada Test");
+    expect(seller?.kind === "p" && seller.text.en).toContain("concluded with PIMP TON SMILE — Ada Test");
     const publisher = withStoreDetails(TERMS_OF_USE, ei).sections.find((s) => s.id === "publisher")?.blocks[0];
     expect(publisher?.kind === "p" && publisher.text.fr).toContain("Le site est édité par Studio Test.");
     expect(withStoreDetails(TERMS, null)).toBe(TERMS);

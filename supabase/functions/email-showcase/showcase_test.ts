@@ -8,7 +8,7 @@ const ctx = {
   mediaBaseUrl: "https://example.supabase.co/storage/v1/object/public/product-media",
   seller: {
     store_name: "Global Toothgems",
-    trading_name: "Pimp ton smile",
+    trading_name: "PIMP TON SMILE",
     legal_name: "Ada Test",
     legal_form: "Entrepreneur individuel (EI)",
     registration_number: "SIRET 123",

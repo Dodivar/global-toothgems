@@ -35,7 +35,7 @@ export interface StoreDetails {
   /** The site's brand (Global Toothgems), shown to customers. */
   storeName: string;
   /**
-   * The business's trading name ("nom commercial", e.g. "Pimp ton smile"):
+   * The business's trading name ("nom commercial", e.g. "PIMP TON SMILE"):
    * what invoices and the legal notice put forward (decision 120).
    */
   tradingName: string;
