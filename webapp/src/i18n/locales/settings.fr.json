@@ -124,11 +124,13 @@
       "description": "L'adresse publiée dans les mentions légales — et sur la page contact si vous choisissez de l'afficher."
     },
     "legal": {
-      "title": "Publication et hébergement",
+      "title": "Éditeur, publication et hébergement",
       "description": "Les autres mentions obligatoires du site.",
       "director": "Directeur de la publication",
       "host": "Hébergeur",
-      "hostHint": "L'entreprise qui héberge le site. Si plusieurs prestataires hébergent l'application et ses données, citez le principal ici."
+      "hostHint": "L'entreprise qui héberge le site. Si plusieurs prestataires hébergent l'application et ses données, citez le principal ici.",
+      "publisher": "Éditeur du site",
+      "publisherHint": "L'entreprise qui détient et publie le site, si ce n'est pas le vendeur ci-dessus. Vide : les mentions légales l'indiquent comme à compléter."
     },
     "public": {
       "title": "Page contact",
@@ -162,7 +164,13 @@
       "hostAddress": "Adresse de l'hébergeur",
       "hostContact": "Téléphone ou site de l'hébergeur",
       "supportMessage": "Délai de réponse (français)",
-      "supportMessageEn": "Délai de réponse (anglais)"
+      "supportMessageEn": "Délai de réponse (anglais)",
+      "publisherName": "Nom commercial de l'éditeur",
+      "publisherLegalName": "Dénomination de l'éditeur",
+      "publisherLegalForm": "Forme juridique de l'éditeur",
+      "publisherRegistrationNumber": "Immatriculation de l'éditeur",
+      "publisherAddress": "Adresse de l'éditeur",
+      "publisherEmail": "E-mail de l'éditeur"
     },
     "hints": {
       "storeName": "Le nom du site, tel que les clients le connaissent.",
@@ -177,7 +185,9 @@
       "address2": "Facultatif",
       "region": "Facultatif dans la plupart des pays",
       "supportMessage": "Une phrase courte, par exemple « Nous répondons sous un jour ouvré ».",
-      "supportMessageEn": "La même phrase pour la page contact en anglais."
+      "supportMessageEn": "La même phrase pour la page contact en anglais.",
+      "publisherLegalName": "Raison sociale, ou nom et prénom pour une entreprise individuelle.",
+      "publisherAddress": "Sur une ligne : rue, code postal, ville, pays."
     },
     "placeholders": {
       "legalForm": "SAS, SARL, entreprise individuelle…",

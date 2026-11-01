@@ -7644,6 +7644,12 @@ export type Database = {
           opening_hours: Json
           phone: string | null
           postal_code: string | null
+          publisher_address: string | null
+          publisher_email: string | null
+          publisher_legal_form: string | null
+          publisher_legal_name: string | null
+          publisher_name: string | null
+          publisher_registration_number: string | null
           publication_director: string | null
           publication_director_role: string | null
           region: string | null
@@ -7682,6 +7688,12 @@ export type Database = {
           opening_hours?: Json
           phone?: string | null
           postal_code?: string | null
+          publisher_address?: string | null
+          publisher_email?: string | null
+          publisher_legal_form?: string | null
+          publisher_legal_name?: string | null
+          publisher_name?: string | null
+          publisher_registration_number?: string | null
           publication_director?: string | null
           publication_director_role?: string | null
           region?: string | null
@@ -7720,6 +7732,12 @@ export type Database = {
           opening_hours?: Json
           phone?: string | null
           postal_code?: string | null
+          publisher_address?: string | null
+          publisher_email?: string | null
+          publisher_legal_form?: string | null
+          publisher_legal_name?: string | null
+          publisher_name?: string | null
+          publisher_registration_number?: string | null
           publication_director?: string | null
           publication_director_role?: string | null
           region?: string | null

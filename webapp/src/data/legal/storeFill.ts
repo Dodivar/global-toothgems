@@ -10,15 +10,17 @@ import type { LegalDocument } from "./types";
  * as the legal notice does. A detail that has not been supplied keeps its
  * marker, so the page still shows what is missing instead of inventing it.
  *
- * The business is named by its trading name ("Pimp son smile"); the legal
- * identity (for an individual entrepreneur, their own name) appears only
- * where the law asks for the seller's identification — the seller clause of
- * the terms of sale —, never put forward (decision 120). Pure.
+ * Two businesses (decision 121): the website publisher, which holds the site
+ * and its content (terms of use: publisher, intellectual property), and the
+ * seller, named by its trading name ("Pimp ton smile"), whose legal identity
+ * (for an individual entrepreneur, their own name) appears only where the law
+ * asks for the seller's identification — the seller clause of the terms of
+ * sale —, never put forward (decision 120). Pure.
  */
 
 type Replacements = { fr: Record<string, string>; en: Record<string, string> };
 
-/** "Pimp son smile — Lorine Christin, Entrepreneur individuel (EI)", or what of it is known. */
+/** "Pimp ton smile — <legal name>, Entrepreneur individuel (EI)", or what of it is known. */
 export function sellerIdentity(store: StoreDetails): string {
   const trading = store.tradingName.trim();
   const legal = store.legalName.trim();
@@ -26,26 +28,26 @@ export function sellerIdentity(store: StoreDetails): string {
   return [trading, who].filter(Boolean).join(" — ");
 }
 
-/** The name the business is known by on the legal pages: trading name, else legal name. */
-export function businessName(store: StoreDetails): string {
-  return store.tradingName.trim() || store.legalName.trim();
+/** The website publisher's name: its trading name, else its legal name; empty when not supplied. */
+export function publisherName(store: StoreDetails): string {
+  return store.publisherName.trim() || store.publisherLegalName.trim();
 }
 
 function replacements(store: StoreDetails): Replacements {
-  const name = businessName(store);
+  const publisher = publisherName(store);
   const seller = store.legalName.trim() ? sellerIdentity(store) : "";
   const lines = store.address1.trim() ? addressLines(store) : [];
   const office = (lang: "fr" | "en") => (lines.length ? [...lines, countryName(store.country, lang)].join(", ") : "");
   const registration = store.registrationNumber.trim();
   return {
     fr: {
-      "[[!Dénomination sociale]]": name,
+      "[[!Dénomination sociale]]": publisher,
       "[[!Dénomination et forme juridique]]": seller,
       "[[!Adresse du siège]]": office("fr"),
       "[[!Numéro d’immatriculation]]": registration,
     },
     en: {
-      "[[!Legal business name]]": name,
+      "[[!Legal business name]]": publisher,
       "[[!Legal name and entity type]]": seller,
       "[[!Registered office address]]": office("en"),
       "[[!Registration number]]": registration,

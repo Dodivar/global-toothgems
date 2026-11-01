@@ -124,11 +124,13 @@
       "description": "The address published on the legal notice — and on the contact page if you choose to show it."
     },
     "legal": {
-      "title": "Publisher and hosting",
+      "title": "Publisher, publication and hosting",
       "description": "The website's other mandatory disclosures.",
       "director": "Publication director",
       "host": "Hosting provider",
-      "hostHint": "The company hosting the website. If several providers host the application and its data, name the main one here."
+      "hostHint": "The company hosting the website. If several providers host the application and its data, name the main one here.",
+      "publisher": "Website publisher",
+      "publisherHint": "The business that owns and publishes the website, if it is not the seller above. Empty: the legal notice shows it as to be supplied."
     },
     "public": {
       "title": "Contact page",
@@ -162,7 +164,13 @@
       "hostAddress": "Hosting provider address",
       "hostContact": "Hosting provider phone or website",
       "supportMessage": "Response time (French)",
-      "supportMessageEn": "Response time (English)"
+      "supportMessageEn": "Response time (English)",
+      "publisherName": "Publisher's trading name",
+      "publisherLegalName": "Publisher's legal name",
+      "publisherLegalForm": "Publisher's legal entity type",
+      "publisherRegistrationNumber": "Publisher's registration number",
+      "publisherAddress": "Publisher's address",
+      "publisherEmail": "Publisher's email"
     },
     "hints": {
       "storeName": "The website's name, as customers know it.",
@@ -177,7 +185,9 @@
       "address2": "Optional",
       "region": "Optional in most countries",
       "supportMessage": "One short sentence, e.g. “Nous répondons sous un jour ouvré”.",
-      "supportMessageEn": "The same sentence for the English contact page."
+      "supportMessageEn": "The same sentence for the English contact page.",
+      "publisherLegalName": "Company name, or first and last name for a sole trader.",
+      "publisherAddress": "On one line: street, postal code, city, country."
     },
     "placeholders": {
       "legalForm": "SAS, SARL, sole trader…",

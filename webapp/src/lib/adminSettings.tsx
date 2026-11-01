@@ -83,6 +83,12 @@ const EMPTY: SectionValues = {
   store: {
     storeName: "",
     tradingName: "",
+    publisherName: "",
+    publisherLegalName: "",
+    publisherLegalForm: "",
+    publisherRegistrationNumber: "",
+    publisherAddress: "",
+    publisherEmail: "",
     legalName: "",
     legalForm: "",
     shareCapital: "",

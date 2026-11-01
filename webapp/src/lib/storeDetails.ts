@@ -14,13 +14,19 @@ import type { Database, Json } from "./supabase/database.types";
  */
 
 export const STORE_SETTINGS_SELECT =
-  "store_name, trading_name, legal_name, legal_form, share_capital, registration_number, vat_number, vat_franchise, business_email, support_email, phone, address_line1, address_line2, postal_code, city, region, country_code, publication_director, publication_director_role, host_name, host_address, host_contact, show_email, show_phone, show_address, opening_hours, support_message";
+  "store_name, trading_name, publisher_name, publisher_legal_name, publisher_legal_form, publisher_registration_number, publisher_address, publisher_email, legal_name, legal_form, share_capital, registration_number, vat_number, vat_franchise, business_email, support_email, phone, address_line1, address_line2, postal_code, city, region, country_code, publication_director, publication_director_role, host_name, host_address, host_contact, show_email, show_phone, show_address, opening_hours, support_message";
 
 type StoreSettingsTable = Database["public"]["Tables"]["store_settings"]["Row"];
 export type StoreSettingsRow = Pick<
   StoreSettingsTable,
   | "store_name"
   | "trading_name"
+  | "publisher_name"
+  | "publisher_legal_name"
+  | "publisher_legal_form"
+  | "publisher_registration_number"
+  | "publisher_address"
+  | "publisher_email"
   | "legal_name"
   | "legal_form"
   | "share_capital"
@@ -77,6 +83,12 @@ export function mapStoreDetails(row: StoreSettingsRow, translations: StoreTransl
   return {
     storeName: row.store_name,
     tradingName: text(row.trading_name),
+    publisherName: text(row.publisher_name),
+    publisherLegalName: text(row.publisher_legal_name),
+    publisherLegalForm: text(row.publisher_legal_form),
+    publisherRegistrationNumber: text(row.publisher_registration_number),
+    publisherAddress: text(row.publisher_address),
+    publisherEmail: text(row.publisher_email),
     legalName: text(row.legal_name),
     legalForm: text(row.legal_form),
     shareCapital: text(row.share_capital),
@@ -113,6 +125,12 @@ export function storeDetailsPayload(d: StoreDetails) {
   return {
     store_name: d.storeName.trim(),
     trading_name: d.tradingName.trim(),
+    publisher_name: d.publisherName.trim(),
+    publisher_legal_name: d.publisherLegalName.trim(),
+    publisher_legal_form: d.publisherLegalForm.trim(),
+    publisher_registration_number: d.publisherRegistrationNumber.trim(),
+    publisher_address: d.publisherAddress.trim(),
+    publisher_email: d.publisherEmail.trim().toLowerCase(),
     legal_name: d.legalName.trim(),
     legal_form: d.legalForm.trim(),
     share_capital: d.shareCapital.trim(),

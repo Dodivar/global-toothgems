@@ -115,6 +115,15 @@ export function StoreDetailsSection() {
       {/* Legal notice: publisher and host --------------------------------- */}
       <SettingsCard icon={Landmark} title={t("settings.store.legal.title")} description={t("settings.store.legal.description")}>
         <div className="grid gap-5">
+          <SubHeading hint={t("settings.store.legal.publisherHint")}>{t("settings.store.legal.publisher")}</SubHeading>
+          <FieldGrid>
+            {text("publisherName")}
+            {text("publisherLegalName")}
+            {text("publisherLegalForm", { placeholder: t("settings.store.placeholders.legalForm") })}
+            {text("publisherRegistrationNumber", { placeholder: t("settings.store.placeholders.registrationNumber") })}
+            {text("publisherAddress", { className: "md:col-span-2", autoComplete: "off" })}
+            {text("publisherEmail", { type: "email", inputMode: "email", autoComplete: "off" })}
+          </FieldGrid>
           <SubHeading>{t("settings.store.legal.director")}</SubHeading>
           <FieldGrid>
             {text("publicationDirector")}

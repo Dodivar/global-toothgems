@@ -3,7 +3,7 @@
 -- The shop is run by an individual entrepreneur (EI) whose legal name is
 -- their own first and last name. The owner asked (2026-11-01) that this name
 -- appear only where the law requires it, never put forward, and that the
--- business present itself under its trading name, "Pimp son smile":
+-- business present itself under its trading name, "Pimp ton smile":
 --
 --   * `store_settings.trading_name`: the business's trading name, distinct
 --     from `store_name` (the site's brand, Global Toothgems) and from

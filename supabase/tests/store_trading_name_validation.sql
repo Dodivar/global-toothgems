@@ -1,5 +1,6 @@
 -- =============================================================================
--- Trading name validation suite (migration 20261101094412_store_trading_name)
+-- Trading name and publisher validation suite (migrations
+-- 20261101094412_store_trading_name, 20261101100230_store_publisher)
 -- =============================================================================
 -- Proves (decision 120):
 --   T1  admin_save_store_details(): a manage_settings admin saves the trading
@@ -7,7 +8,11 @@
 --       non-string is refused (22023), a customer is refused (42501);
 --   T2  everyone (anon) reads it, like the rest of the store row;
 --   T3  private.invoice_seller() freezes it in the seller snapshot, next to
---       the legal name.
+--       the legal name;
+--   T4  the website publisher (decision 121): an admin saves the publisher_*
+--       keys (trimmed, e-mail lower-cased), a missing key leaves them
+--       unchanged, a malformed e-mail is refused (23514), a non-string (22023),
+--       a customer is refused (42501); the seller snapshot does not carry them.
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL TRADING NAME TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -86,6 +91,44 @@ begin
     raise exception 'FAIL T3: seller snapshot %', private.invoice_seller();
   end if;
   passed := passed || 'T3'::text;
+
+  -- T4 -------------------------------------------------------------------------
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  begin
+    perform public.admin_save_store_details(v_det || '{"publisher_name": "Hacked"}');
+    raise exception 'FAIL T4: a customer saved the publisher';
+  exception when insufficient_privilege then null;
+  end;
+  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform public.admin_save_store_details(v_det || jsonb_build_object(
+    'publisher_name', ' Studio Test ', 'publisher_legal_name', 'Bob Test', 'publisher_legal_form', 'EI',
+    'publisher_registration_number', 'SIRET 987 654 321 00010', 'publisher_address', '2 rue Fictive, 67000 Strasbourg',
+    'publisher_email', 'Hello@Example.com'));
+  select * into v_s from public.store_settings where id;
+  if v_s.publisher_name is distinct from 'Studio Test' or v_s.publisher_email is distinct from 'hello@example.com'
+     or v_s.publisher_legal_name is distinct from 'Bob Test' then
+    raise exception 'FAIL T4: publisher not saved: %', to_jsonb(v_s);
+  end if;
+  perform public.admin_save_store_details(v_det);
+  if (select publisher_name from public.store_settings where id) is distinct from 'Studio Test' then
+    raise exception 'FAIL T4: a missing key changed the publisher';
+  end if;
+  begin
+    perform public.admin_save_store_details(v_det || '{"publisher_email": "nope"}');
+    raise exception 'FAIL T4: a malformed publisher e-mail was accepted';
+  exception when check_violation then null;
+  end;
+  begin
+    perform public.admin_save_store_details(v_det || '{"publisher_address": true}');
+    raise exception 'FAIL T4: a non-string publisher address was accepted';
+  exception when sqlstate '22023' then null;
+  end;
+  execute 'reset role';
+  if private.invoice_seller() ? 'publisher_name' then
+    raise exception 'FAIL T4: the seller snapshot carries the publisher';
+  end if;
+  passed := passed || 'T4'::text;
 
   raise exception 'ALL TRADING NAME TESTS PASSED: %', array_to_string(passed, ' ');
 end;
