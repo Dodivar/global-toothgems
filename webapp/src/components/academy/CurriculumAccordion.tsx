@@ -1,17 +1,21 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Award, ChevronDown, CircleCheck, Clock, ListVideo, PlayCircle } from "lucide-react";
+import { Award, ChevronDown, CircleCheck, Clock, ListVideo, Lock, PlayCircle } from "lucide-react";
 import clsx from "clsx";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { pick } from "../../data/types";
-import { checkCount, moduleMinutes, type PublicCourse } from "../../lib/academy/publicCourse";
+import { checkCount, moduleMinutes, PREVIEW_MODULES, type PublicCourse } from "../../lib/academy/publicCourse";
 import { formatDuration } from "../../lib/trainingFilters";
 
 /**
  * The curriculum, module by module: the published course's outline (modules,
  * steps and their authored lengths, each module's knowledge check and its pass
- * mark). Titles only — what a step contains is the paid content.
+ * mark). Titles only — what a step contains is the paid content. Past the
+ * first `PREVIEW_MODULES` modules not even the steps' titles are shown (they
+ * never reach the browser: `previewStepTitle()`): each step is a blurred
+ * placeholder bar with its length, while the module's title, summary and
+ * knowledge check stay readable.
  *
  * Every module is a disclosure: an `aria-expanded` button owning a region that
  * is really hidden when collapsed, so the lessons inside are out of the tab
@@ -23,12 +27,17 @@ import { formatDuration } from "../../lib/trainingFilters";
  * actually closes the training. Showing it in the same progression is what makes
  * the assessment read as the final stage rather than as a hurdle bolted on.
  */
+/** Widths of the placeholder bars standing for hidden step titles, varied so the list does not read as a table of blanks. */
+const PLACEHOLDER_WIDTHS = [72, 54, 86, 63, 78, 48];
+
 export function CurriculumAccordion({ course, lang }: { course: PublicCourse; lang: string }) {
   const { t } = useTranslation();
   const baseId = useId();
-  // The first module is open on arrival: the section has to show what a module
-  // looks like inside without asking for a click first.
-  const [open, setOpen] = useState<number[]>([0]);
+  // The last previewed module (the third) is open on arrival: the section has
+  // to show what a module looks like inside without asking for a click first.
+  const [open, setOpen] = useState<number[]>(() =>
+    course.modules.length > 0 ? [Math.min(PREVIEW_MODULES, course.modules.length) - 1] : [],
+  );
 
   const modules = course.modules;
   const checks = checkCount(course);
@@ -109,16 +118,39 @@ export function CurriculumAccordion({ course, lang }: { course: PublicCourse; la
                       {pick(module.summary, lang)}
                     </p>
                   )}
+                  {module.steps.some((step) => !step.title) && (
+                    <p className="m-0 flex items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
+                      <Lock size={13} aria-hidden="true" className="flex-none" />
+                      {t("training.stepsLockedNote")}
+                    </p>
+                  )}
                   <ol className="m-0 grid list-none gap-1 p-0">
-                    {module.steps.map((step) => (
+                    {module.steps.map((step, s) => (
                       <li
                         key={step.id}
-                        className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[var(--radius-sm)] px-2 py-2 text-[length:var(--text-body-sm)] odd:bg-[var(--surface-sunken)]"
+                        className="flex items-center gap-x-3 rounded-[var(--radius-sm)] px-2 py-2 text-[length:var(--text-body-sm)] odd:bg-[var(--surface-sunken)]"
                       >
-                        <PlayCircle size={15} aria-hidden="true" className="flex-none text-[var(--gt-blue-500)]" />
-                        <span className="flex-1 text-[var(--text-primary)]">{pick(step.title, lang)}</span>
+                        {step.title ? (
+                          <>
+                            <PlayCircle size={15} aria-hidden="true" className="flex-none text-[var(--gt-blue-500)]" />
+                            <span className="flex-1 text-[var(--text-primary)]">{pick(step.title, lang)}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Lock size={14} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
+                            <span className="sr-only">{t("training.stepLocked", { number: s + 1 })}</span>
+                            {/* A blurred bar in place of the title: the rhythm of
+                                the module shows, its content does not. */}
+                            <span aria-hidden="true" className="flex-1">
+                              <span
+                                className="block h-2.5 rounded-full bg-[var(--border-default)] blur-[2px]"
+                                style={{ width: `${PLACEHOLDER_WIDTHS[s % PLACEHOLDER_WIDTHS.length]}%` }}
+                              />
+                            </span>
+                          </>
+                        )}
                         {step.minutes > 0 && (
-                          <span className="tabular-nums text-[var(--text-muted)]">{formatDuration(step.minutes, lang)}</span>
+                          <span className="flex-none tabular-nums text-[var(--text-muted)]">{formatDuration(step.minutes, lang)}</span>
                         )}
                       </li>
                     ))}

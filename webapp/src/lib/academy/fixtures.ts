@@ -1,7 +1,7 @@
 import { COURSES } from "../../data/courses";
 import { MODULES, PASS_SCORE, parseDuration } from "../../data/lessons";
 import { toMinorUnits } from "../catalog/money";
-import type { CourseCategory, CourseLevel, PublicCourse, PublicModule } from "./publicCourse";
+import { previewStepTitle, type CourseCategory, type CourseLevel, type PublicCourse, type PublicModule } from "./publicCourse";
 
 /**
  * The public Academy in mock mode (no Supabase configured): the prototype's
@@ -28,7 +28,7 @@ const OUTLINE: PublicModule[] = MODULES.map((module, m) => ({
   summary: module.summary,
   steps: module.lessons.map((lesson, s) => ({
     id: `module-${m + 1}-step-${s + 1}`,
-    title: lesson.title,
+    title: previewStepTitle(m, lesson.title),
     minutes: Math.round(parseDuration(lesson.duration) / 60),
   })),
   check: { title: { fr: "Contrôle des acquis", en: "Knowledge check" }, passingScore: PASS_SCORE },

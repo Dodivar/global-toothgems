@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findCourseByKey, lessonCount, checkCount, resolveCourseAddress, courseAddresses, isDiscounted } from "./publicCourse";
+import { findCourseByKey, lessonCount, checkCount, resolveCourseAddress, courseAddresses, isDiscounted, PREVIEW_MODULES } from "./publicCourse";
 import { coverSrc, mapPublicCourse, mapPublicCourses, type PublicCourseRow } from "./publicCourseMapping";
 import { productSlugTranslator } from "../catalog/productSlugs";
 import { FIXTURE_COURSES } from "./fixtures";
@@ -88,11 +88,30 @@ describe("mapPublicCourse", () => {
     expect(course.modules.map((m) => m.id)).toEqual(["m1", "m2"]);
     expect(course.modules[0].title).toEqual({ fr: "Préparer", en: "Préparer" });
     expect(course.modules[0].steps.map((s) => s.id)).toEqual(["s1", "s2"]);
-    expect(course.modules[0].steps[0].title.en).toBe("Hygiene");
+    expect(course.modules[0].steps[0].title?.en).toBe("Hygiene");
     expect(course.modules[0].check).toEqual({ title: { fr: "Contrôle", en: "Check" }, passingScore: 80 });
     expect(course.modules[1].check).toBeNull();
     expect(lessonCount(course)).toBe(3);
     expect(checkCount(course)).toBe(1);
+  });
+
+  it("drops the step titles of the modules past the preview, keeping the rest of the outline", () => {
+    const base = row();
+    const template = base.course_modules![0];
+    const modules = Array.from({ length: PREVIEW_MODULES + 1 }, (_, i) => ({
+      ...template,
+      id: `m${i}`,
+      position: i,
+      course_steps: [{ id: `s${i}`, position: 0, title: `Étape ${i}`, duration_minutes: 10, course_step_translations: [] }],
+    }));
+    const course = mapPublicCourse({ ...base, course_modules: modules }, undefined);
+    expect(course.modules[PREVIEW_MODULES - 1].steps[0].title?.fr).toBe(`Étape ${PREVIEW_MODULES - 1}`);
+    const hidden = course.modules[PREVIEW_MODULES];
+    expect(hidden.steps[0].title).toBeNull();
+    expect(hidden.steps[0].minutes).toBe(10);
+    expect(hidden.title.fr).toBe(template.title);
+    expect(hidden.check).toEqual(course.modules[0].check);
+    expect(JSON.stringify(course)).not.toContain(`Étape ${PREVIEW_MODULES}`);
   });
 
   it("reads one-to-one quizzes returned as an object", () => {

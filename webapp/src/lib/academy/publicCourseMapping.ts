@@ -1,6 +1,6 @@
 import type { Localized } from "../../data/types";
 import { toMinorUnits } from "../catalog/money";
-import { COURSE_CATEGORIES, COURSE_LEVELS, type CourseCategory, type CourseLevel, type PublicCourse, type PublicModule } from "./publicCourse";
+import { COURSE_CATEGORIES, COURSE_LEVELS, type CourseCategory, type CourseLevel, type PublicCourse, type PublicModule, previewStepTitle } from "./publicCourse";
 
 /**
  * Rows of the published Academy (`lib/academy/api.ts`) → `PublicCourse`.
@@ -113,7 +113,7 @@ export function coverSrc(mediaId: string, updatedAt: string): string {
   return `/media/formations/${mediaId}${Number.isFinite(version) ? `?v=${version}` : ""}`;
 }
 
-function mapModule(row: NonNullable<PublicCourseRow["course_modules"]>[number]): PublicModule {
+function mapModule(row: NonNullable<PublicCourseRow["course_modules"]>[number], index: number): PublicModule {
   const t = english(row.course_module_translations);
   const quiz = Array.isArray(row.course_quizzes) ? row.course_quizzes[0] : row.course_quizzes;
   return {
@@ -122,7 +122,7 @@ function mapModule(row: NonNullable<PublicCourseRow["course_modules"]>[number]):
     summary: optional(row.description, t?.description),
     steps: byPosition(row.course_steps).map((step) => ({
       id: step.id,
-      title: localized(step.title, english(step.course_step_translations)?.title),
+      title: previewStepTitle(index, localized(step.title, english(step.course_step_translations)?.title)),
       minutes: step.duration_minutes,
     })),
     check: quiz
