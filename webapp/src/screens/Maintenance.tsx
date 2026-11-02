@@ -8,7 +8,7 @@ import { Button } from "../components/ui/Button";
 import { SystemPage } from "../components/system/SystemPage";
 import { SettingInProgressVisual } from "../components/system/SystemVisuals";
 import { useRouterLink } from "../components/system/useRouterLink";
-import logoBlack from "../assets/logo-wordmark-black.png";
+import logoWordmark from "../assets/logo-wordmark.svg";
 
 /**
  * Maintenance — planned, not broken.
@@ -37,7 +37,7 @@ export function Maintenance() {
     <div className="flex min-h-[100svh] flex-col bg-[var(--surface-page)]">
       <div className="flex justify-center px-[var(--gutter-page)] pb-2 pt-6 sm:pt-8">
         <Link to="/" className="inline-flex rounded-[var(--radius-xs)] p-1">
-          <img src={logoBlack.src} alt={t("errors.maintenance.logoAlt")} className="h-5 w-auto sm:h-6" />
+          <img src={logoWordmark.src} alt={t("errors.maintenance.logoAlt")} className="h-5 w-auto sm:h-6" />
         </Link>
       </div>
 

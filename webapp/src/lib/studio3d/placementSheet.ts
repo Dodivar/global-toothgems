@@ -74,7 +74,7 @@ export interface PlacementSheetInput {
 
 const M = { x: 40, top: 40, bottom: 44 };
 const WIDTH = A4.width - M.x * 2;
-const LOGO = { w: 110, ratio: 1019 / 281 };
+const LOGO = { w: 110, ratio: 1400 / 375 };
 const ENAMEL = "#fbf8f1";
 const ENAMEL_EDGE = "#b9ab95";
 const GUM = "#f3d3d5";

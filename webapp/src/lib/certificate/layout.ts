@@ -57,8 +57,8 @@ const INK = {
 /** Brand images the document draws. */
 export type CertificateAsset = "wordmark";
 
-/** Width over height of `assets/logo-wordmark-black.png` (1019 × 281). */
-export const WORDMARK_RATIO = 1019 / 281;
+/** Width over height of `assets/logo-wordmark-black.png` (1400 × 375). */
+export const WORDMARK_RATIO = 1400 / 375;
 
 export interface GradientStop {
   offset: number;

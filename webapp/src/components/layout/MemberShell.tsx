@@ -39,7 +39,7 @@ import { useMemberActivity, type MemberActivity } from "../../lib/useMemberActiv
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import { CLIENT_SPACES, STUDIO_SHORTCUTS } from "./clientSpaces";
 import monogram from "../../assets/monogram-blue.png";
-import logoBlack from "../../assets/logo-wordmark-black.png";
+import logoWordmark from "../../assets/logo-wordmark.svg";
 
 /**
  * Shell of the member space: the account and the Members' Lounge.
@@ -317,7 +317,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
     <>
       <div className="flex h-16 flex-none items-center gap-2 border-b border-[var(--border-subtle)] px-5">
         <Link to="/" onClick={onNavigate} className={clsx("flex-1 rounded-[var(--radius-sm)]", focusRing)}>
-          <img src={logoBlack.src} alt={t("account.shell.homeAlt")} className="h-5 w-auto" />
+          <img src={logoWordmark.src} alt={t("account.shell.homeAlt")} className="h-5 w-auto" />
         </Link>
         {closeButton}
       </div>

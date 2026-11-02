@@ -31,7 +31,8 @@ This starts the Next.js dev server on [http://localhost:5173](http://localhost:5
 How the app is mounted (`docs/migration-nextjs.md`, phases 1–5):
 
 ```
-app/layout.tsx                 root layout: <html lang>, fonts, favicon, src/index.css, the stores
+app/layout.tsx                 root layout: <html lang>, fonts, default share card, src/index.css, the stores
+app/favicon.ico, icon.svg, apple-icon.png, manifest.ts   brand icons (file conventions; exports of assets/logo/vector/)
                                (src/AppProviders.tsx) with the catalogue the server read for a public page
 app/(public)/                  the public zone, in the storefront's chrome, rendered on the server:
   fr/…, en/…                   public pages, one segment per page and language (app/_public/publicPage.tsx),
@@ -128,7 +129,7 @@ npm run test:e2e  # Playwright: smoke tests in mock mode (dev server on 5199) + 
 
 ## Deploying (Vercel)
 
-The Vercel project builds from the **Root Directory** `webapp` with the **Next.js** framework preset (`next build`, output managed by Vercel). There is no `vercel.json` any more: every screen is an App Router segment, and real files in `public/` (`favicon.svg`, `icons.svg`, videos) are served as themselves. An address without a screen, and a product slug the shop does not sell, answer HTTP 404 (the 404 page); the member space and back office answer 200 for their unknown sub-addresses (their 404 screen lives inside their shell).
+The Vercel project builds from the **Root Directory** `webapp` with the **Next.js** framework preset (`next build`, output managed by Vercel). There is no `vercel.json` any more: every screen is an App Router segment, and real files in `public/` (`icons/`, `og-default.png`, `email/`, videos) are served as themselves. An address without a screen, and a product slug the shop does not sell, answer HTTP 404 (the 404 page); the member space and back office answer 200 for their unknown sub-addresses (their 404 screen lives inside their shell).
 
 Environment variables (Production and Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. They are inlined at build time, so a change needs a redeploy.
 

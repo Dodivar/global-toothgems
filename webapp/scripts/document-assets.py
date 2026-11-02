@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 LOGO = ROOT / "src/assets/logo-wordmark-blue.png"
 OUT = ROOT / "src/lib/documents/assets.generated.ts"
 LOGO_WIDTH = 720  # px: 300 dpi at 61 mm, wider than the documents print it
-INK = (195, 203, 226)  # the wordmark's own blue (#c3cbe2)
+INK = (185, 205, 229)  # the site's main blue, --gt-blue-300 (#b9cde5)
 
 
 def widths(font_name: str) -> str:

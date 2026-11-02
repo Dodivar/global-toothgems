@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { parsePath, type Locale } from "../../src/lib/localeRoutes";
 import { pageMeta } from "../../src/lib/pageMeta";
+import { DEFAULT_SHARE_IMAGE } from "../../src/lib/brand";
 
 /**
  * The `<head>` of an indexed public page, in its language: canonical, the
@@ -34,7 +35,8 @@ export function publicPageMetadata(page: {
       url: canonical,
       locale: page.locale === "fr" ? "fr_FR" : "en_GB",
       alternateLocale: page.locale === "fr" ? "en_GB" : "fr_FR",
-      ...(page.image ? { images: [page.image] } : {}),
+      // The page's own picture (product, course, Glowbook), else the brand card.
+      images: [page.image ?? DEFAULT_SHARE_IMAGE],
     },
   };
 }
