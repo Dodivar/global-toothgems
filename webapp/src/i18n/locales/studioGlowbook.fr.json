@@ -430,5 +430,52 @@
       "share": "Partager"
     },
     "deleteHint": "Votre page disparaît et toutes vos créations en sont retirées. Vos créations restent dans Mes créations."
+  },
+  "intro": {
+    "metaTitle": "Glowbook : votre vitrine d’artiste tooth gems",
+    "metaDescription": "Une page publique pour vos créations en 3D, à mettre dans votre bio Instagram : vos clientes les découvrent, vous trouvent et commandent les gems en un clic.",
+    "back": "Studio 3D",
+    "eyebrow": "Glowbook · formule {{plan}}",
+    "title": "Toutes vos créations, en un seul lien.",
+    "body": "Le Glowbook est votre vitrine d’artiste : une page publique à mettre dans votre bio Instagram, où vos clientes font tourner vos créations en 3D avant de prendre rendez-vous.",
+    "price": "Inclus dans la formule {{plan}}, dès {{price}} / mois.",
+    "see": "Voir ce qu’il contient",
+    "ctaOpen": "Ouvrir mon Glowbook",
+    "ctaUpgrade": "Passer à la formule {{plan}}",
+    "ctaChoose": "Choisir la formule {{plan}}",
+    "lockedNote": "Votre formule actuelle n’inclut pas le Glowbook.",
+    "previewLabel": "Aperçu d’une page Glowbook sur téléphone",
+    "previewCta": "Prendre rendez-vous",
+    "benefits": {
+      "eyebrow": "Ce que vos clientes voient",
+      "title": "Une page qui travaille pour vous",
+      "items": {
+        "link": {
+          "title": "Un lien pour votre bio",
+          "body": "Une adresse à votre nom, à coller sur Instagram ou TikTok — et un QR code et une affiche A4 à imprimer pour le salon."
+        },
+        "creations": {
+          "title": "Vos créations en 3D",
+          "body": "Vos clientes font tourner chaque design, voient votre création phare en vidéo et mettent ses gems au panier en un clic."
+        },
+        "identity": {
+          "title": "Votre identité",
+          "body": "Photo, couleur, mise en page, sections et liens de réservation : la page vous ressemble."
+        },
+        "found": {
+          "title": "On vous trouve",
+          "body": "Votre salon ou votre secteur sur une carte, et le badge « Artiste certifiée » quand vous avez suivi une formation de l’Academy."
+        }
+      }
+    },
+    "steps": {
+      "title": "En ligne en trois étapes",
+      "items": {
+        "plan": "Passez à la formule {{plan}}.",
+        "page": "Créez votre page et ajoutez-y vos créations depuis « Mes créations ».",
+        "share": "Notre équipe valide votre page, puis vous partagez votre lien."
+      },
+      "note": "Chaque page et chaque création est vérifiée par l’équipe Global Toothgems avant d’être publique."
+    }
   }
 }

@@ -430,5 +430,52 @@
       "share": "Share"
     },
     "deleteHint": "Your page goes away and every creation is taken off it. Your creations stay in My creations."
+  },
+  "intro": {
+    "metaTitle": "Glowbook: your tooth gem artist showcase",
+    "metaDescription": "A public page for your 3D creations, to link from your Instagram bio: clients discover them, find you and order the gems in one click.",
+    "back": "3D Studio",
+    "eyebrow": "Glowbook · {{plan}} plan",
+    "title": "All your creations, in one link.",
+    "body": "The Glowbook is your artist showcase: a public page to put in your Instagram bio, where clients spin your creations in 3D before booking.",
+    "price": "Included in the {{plan}} plan, from {{price}} / month.",
+    "see": "See what’s inside",
+    "ctaOpen": "Open my Glowbook",
+    "ctaUpgrade": "Switch to the {{plan}} plan",
+    "ctaChoose": "Choose the {{plan}} plan",
+    "lockedNote": "Your current plan does not include the Glowbook.",
+    "previewLabel": "Preview of a Glowbook page on a phone",
+    "previewCta": "Book an appointment",
+    "benefits": {
+      "eyebrow": "What your clients see",
+      "title": "A page that works for you",
+      "items": {
+        "link": {
+          "title": "One link for your bio",
+          "body": "An address in your name to paste on Instagram or TikTok — plus a QR code and an A4 poster to print for the salon."
+        },
+        "creations": {
+          "title": "Your creations in 3D",
+          "body": "Clients spin every design, watch your spotlight creation as a video and put its gems in the cart in one click."
+        },
+        "identity": {
+          "title": "Your identity",
+          "body": "Photo, colour, layout, sections and booking links: the page looks like you."
+        },
+        "found": {
+          "title": "Easy to find",
+          "body": "Your salon or your area on a map, and the “Certified artist” badge once you have completed an Academy course."
+        }
+      }
+    },
+    "steps": {
+      "title": "Online in three steps",
+      "items": {
+        "plan": "Switch to the {{plan}} plan.",
+        "page": "Create your page and add your creations from “My creations”.",
+        "share": "Our team approves your page, then you share your link."
+      },
+      "note": "Every page and every creation is checked by the Global Toothgems team before it goes public."
+    }
   }
 }

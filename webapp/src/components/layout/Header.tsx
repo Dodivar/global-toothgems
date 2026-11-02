@@ -9,7 +9,7 @@ import { FAVORITES_HREF } from "../../lib/favoritesState";
 import { useCart } from "../../lib/cart";
 import { useAcademyMenu } from "./useAcademyMenu";
 import { ShopMenu } from "./ShopMenu";
-import { STUDIO_SHORTCUTS } from "./clientSpaces";
+import { STUDIO_MENU } from "./clientSpaces";
 import { HeaderSearch } from "./HeaderSearch";
 import { CartAddedNotice } from "./CartAddedNotice";
 import { STUDIO_PATH } from "../../lib/studioUrl";
@@ -312,7 +312,7 @@ export function Header() {
                 <ShopMenu layout="columns" onNavigate={closeAll} />
               ) : panel === "studio" ? (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-                  {STUDIO_SHORTCUTS.map((shortcut) => (
+                  {STUDIO_MENU.map((shortcut) => (
                     <Link
                       key={shortcut.id}
                       to={shortcut.to}
@@ -433,7 +433,7 @@ export function Header() {
               <ShopMenu layout="stack" onNavigate={closeAll} />
             ) : menuTab === "studio" ? (
               <ul className="m-0 grid list-none gap-2 p-0">
-                {STUDIO_SHORTCUTS.map((shortcut) => (
+                {STUDIO_MENU.map((shortcut) => (
                   <li key={shortcut.id}>
                     <MobileMenuCard
                       to={shortcut.to}

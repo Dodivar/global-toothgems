@@ -165,6 +165,7 @@
     },
     "planLocked": {
       "cta": "Switch to {{plan}}",
+      "discoverGlowbook": "Discover the Glowbook",
       "withPlan": "With the {{plan}} plan",
       "glowbook": {
         "title": "The Glowbook comes with the {{plan}} plan",
