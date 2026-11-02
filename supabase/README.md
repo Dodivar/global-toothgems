@@ -1572,7 +1572,9 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
   asks for another photo rather than rendering a guess (decision to confirm with the owner). An analysis is counted
   against the daily requests, never the renders (`failed` / `analysis`; rows of the trial carry `diagnostic`). The
   render trusts the browser's guide and crop (validated: a JPEG, a crop inside the photo, 1–200 marks): at worst a
-  member edits their own photo within their own render quota.
+  member edits their own photo within their own render quota. Deployed: version 33 of the function, pinned at
+  commit `97228ec` (2026-11-02, gem photos included); until then version 32 still served the former AI placement
+  to the site's new requests, which is where some plastic-looking renders came from.
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
   `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The
   photo step says the photo is sent to Google only while the AI is connected.
