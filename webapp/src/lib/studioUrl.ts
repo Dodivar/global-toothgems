@@ -5,6 +5,12 @@
 export const STUDIO_PATH = "/studio-3d";
 export const STUDIO_SUBSCRIBE_PATH = "/studio-3d/abonnement";
 /**
+ * The Glowbook's presentation page (`/fr/glowbook`, `/en/glowbook`): what an
+ * artist's public page offers and the plan that opens it (decision 113).
+ * Members below that plan land here from the Studio's Glowbook section.
+ */
+export const GLOWBOOK_INTRO_PATH = "/glowbook";
+/**
  * The subscription's checkout, a page of its own (signed-in members only,
  * `gateFor`): `?plan=<id>&interval=month|year&from=<surface>`. Paid, it opens
  * the editor.

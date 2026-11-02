@@ -40,6 +40,7 @@ export type PublicRouteId =
   | "studio"
   | "studioSubscribe"
   | "glowbook"
+  | "glowbookIntro"
   | "academy"
   | "course"
   | "help"
@@ -78,6 +79,8 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { id: "studioSubscribe", fr: "/studio-3d/abonnement", en: "/3d-studio/subscribe", indexed: true },
   // An artist's public showcase, linked from their Instagram bio (decision 99): same word in both languages (decided by the owner).
   { id: "glowbook", fr: "/glowbook/:id", en: "/glowbook/:id", indexed: true },
+  // The Glowbook's presentation, where members below its plan land (the handle "glowbook" is reserved, so no artist's page lives here).
+  { id: "glowbookIntro", fr: "/glowbook", en: "/glowbook", indexed: true },
   { id: "academy", fr: "/academy", en: "/academy", indexed: true },
   { id: "course", fr: "/academy/formation/:id", en: "/academy/course/:id", indexed: true },
   { id: "help", fr: "/aide", en: "/help", indexed: true },

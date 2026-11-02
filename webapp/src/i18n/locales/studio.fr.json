@@ -165,6 +165,7 @@
     },
     "planLocked": {
       "cta": "Passer à {{plan}}",
+      "discoverGlowbook": "Découvrir le Glowbook",
       "withPlan": "Avec l’abonnement {{plan}}",
       "glowbook": {
         "title": "Le Glowbook est inclus dans la formule {{plan}}",

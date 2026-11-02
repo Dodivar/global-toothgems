@@ -1,5 +1,5 @@
-import { Box, Component, GraduationCap, House, Images, PencilRuler, Store, UserRound, type LucideIcon } from "lucide-react";
-import { STUDIO_EDITOR_PATH, studioSectionPath } from "../../lib/studioUrl";
+import { Box, Component, GraduationCap, House, Images, PencilRuler, Sparkles, Store, UserRound, type LucideIcon } from "lucide-react";
+import { GLOWBOOK_INTRO_PATH, STUDIO_EDITOR_PATH, studioSectionPath } from "../../lib/studioUrl";
 import { MEMBER_SPACE_PATH } from "../../lib/memberSpace";
 
 /**
@@ -34,7 +34,7 @@ export const CLIENT_SPACES: Record<ClientSpaceId, ClientSpace> = {
 export const STUDIO_EXPLORE: ClientSpace[] = [CLIENT_SPACES.shop, CLIENT_SPACES.academy];
 
 interface StudioShortcut {
-  id: "workshop" | "creations" | "groups";
+  id: "workshop" | "creations" | "groups" | "glowbook";
   to: string;
   icon: LucideIcon;
   labelKey: string;
@@ -70,5 +70,23 @@ export const STUDIO_SHORTCUTS: StudioShortcut[] = [
     labelKey: "nav.studioGroups",
     descKey: "studio.workspace.nav.desc.groups",
     shortKey: "groups",
+  },
+];
+
+/**
+ * The storefront header's Studio entries (panel and phone menu): the ways
+ * into the workspace, then the Glowbook's presentation page — a public page
+ * open to everyone, which leads members whose plan includes the Glowbook to
+ * theirs and the others to the plan.
+ */
+export const STUDIO_MENU: StudioShortcut[] = [
+  ...STUDIO_SHORTCUTS,
+  {
+    id: "glowbook",
+    to: GLOWBOOK_INTRO_PATH,
+    icon: Sparkles,
+    labelKey: "nav.studioGlowbook",
+    descKey: "nav.studioGlowbookSub",
+    shortKey: "glowbook",
   },
 ];
