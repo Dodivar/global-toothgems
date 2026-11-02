@@ -1,4 +1,4 @@
-import { Box, GraduationCap, House, LayoutGrid, Layers, Store, UserRound, type LucideIcon } from "lucide-react";
+import { Box, Component, GraduationCap, House, Images, PencilRuler, Store, UserRound, type LucideIcon } from "lucide-react";
 import { STUDIO_EDITOR_PATH, studioSectionPath } from "../../lib/studioUrl";
 import { MEMBER_SPACE_PATH } from "../../lib/memberSpace";
 
@@ -47,16 +47,18 @@ interface StudioShortcut {
 /**
  * The ways into the Studio workspace, held once for the member-space sidebar
  * (its Studio group) and the storefront header's Studio panel: the workshop, the saved creations
- * and the Gem Groups, with the icons the Studio's own rail gives them. Every
+ * and the Gem Groups, with the icons the Studio's own rail gives them
+ * (a drawing tool for the workshop, a gallery for the creations, a cluster of
+ * stones for the Gem Groups). Every
  * one of them sits under the editor route, so whoever may not open the Studio
  * is turned away by `RequireStudioAccess` there, not by these links.
  */
 export const STUDIO_SHORTCUTS: StudioShortcut[] = [
-  { id: "workshop", to: STUDIO_EDITOR_PATH, icon: Box, labelKey: "nav.studioWorkshop", descKey: "nav.studioWorkshopSub", shortKey: "studio" },
+  { id: "workshop", to: STUDIO_EDITOR_PATH, icon: PencilRuler, labelKey: "nav.studioWorkshop", descKey: "nav.studioWorkshopSub", shortKey: "studio" },
   {
     id: "creations",
     to: studioSectionPath("creations"),
-    icon: LayoutGrid,
+    icon: Images,
     labelKey: "studio.workspace.nav.creations",
     descKey: "studio.workspace.nav.desc.creations",
     shortKey: "creations",
@@ -64,7 +66,7 @@ export const STUDIO_SHORTCUTS: StudioShortcut[] = [
   {
     id: "groups",
     to: studioSectionPath("groups"),
-    icon: Layers,
+    icon: Component,
     labelKey: "nav.studioGroups",
     descKey: "studio.workspace.nav.desc.groups",
     shortKey: "groups",

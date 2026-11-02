@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Layers, PencilLine } from "lucide-react";
+import { Component, PencilLine } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { useCompositionEstimate } from "../../../lib/studio3d/useStudioGems";
@@ -68,7 +68,7 @@ export function SaveGemGroupDialog({
       size="lg"
       title={editing ? t("studio.workspace.groups.editTitle") : t("studio.workspace.groups.saveTitle", { count })}
       description={editing ? t("studio.workspace.save.editSub") : t("studio.workspace.groups.saveSub")}
-      icon={editing ? <PencilLine size={17} /> : <Layers size={17} />}
+      icon={editing ? <PencilLine size={17} /> : <Component size={17} />}
       closeLabel={t("studio.workspace.close")}
     >
       <form id="gt-save-group" onSubmit={submit} className="grid gap-5 sm:grid-cols-[180px_minmax(0,1fr)]">
@@ -108,7 +108,7 @@ export function SaveGemGroupDialog({
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t("studio.workspace.cancel")}
         </Button>
-        <Button type="submit" form="gt-save-group" variant="primary" size="sm" loading={busy} iconLeft={editing ? undefined : Layers}>
+        <Button type="submit" form="gt-save-group" variant="primary" size="sm" loading={busy} iconLeft={editing ? undefined : Component}>
           {editing ? t("studio.workspace.save.saveDetails") : t("studio.workspace.groups.createCta")}
         </Button>
       </div>

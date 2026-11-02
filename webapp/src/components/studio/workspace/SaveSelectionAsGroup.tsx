@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Layers } from "lucide-react";
+import { Component } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { GROUP_MAX_PIECES, GROUP_MIN_PIECES } from "../../../lib/studioWorkspace/gemGroup";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
@@ -19,7 +19,7 @@ export function SaveSelectionAsGroup({ ids }: { ids: string[] }) {
   if (count < GROUP_MIN_PIECES) {
     return (
       <p className="m-0 mt-4 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-sunken)] p-2.5 text-[11.5px] leading-snug text-[var(--text-muted)]">
-        <Layers size={14} aria-hidden="true" className="mt-px flex-none text-[var(--gt-blue-500)]" />
+        <Component size={14} aria-hidden="true" className="mt-px flex-none text-[var(--gt-blue-500)]" />
         {t("studio.workspace.groups.needsTwo")}
       </p>
     );
@@ -29,7 +29,7 @@ export function SaveSelectionAsGroup({ ids }: { ids: string[] }) {
   return (
     <div className="mt-4 grid gap-2.5 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-3">
       <p className="m-0 flex items-start gap-2 text-[12.5px] font-semibold leading-snug text-[var(--text-primary)]">
-        <Layers size={15} aria-hidden="true" className="mt-px flex-none text-[var(--gt-blue-600)]" />
+        <Component size={15} aria-hidden="true" className="mt-px flex-none text-[var(--gt-blue-600)]" />
         {tooMany ? t("studio.workspace.groups.tooMany", { max: GROUP_MAX_PIECES }) : t("studio.workspace.groups.prompt", { count })}
       </p>
       <button

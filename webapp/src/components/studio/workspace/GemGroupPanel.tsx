@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
-import { ArrowRight, Layers } from "lucide-react";
+import { ArrowRight, Component } from "lucide-react";
 import { Link } from "../../../lib/navigation";
 import { FREE_TOOTH } from "../../../data/studioEditor";
 import { getEngine } from "../../../lib/studio3d/engine";
@@ -164,7 +164,7 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
 
       {ws.status === "ready" && groups.length === 0 && (
         <div className="grid justify-items-start gap-2 rounded-[var(--radius-md)] border border-dashed border-[var(--gt-blue-300)] p-3.5">
-          <Layers size={18} aria-hidden="true" className="text-[var(--gt-blue-500)]" />
+          <Component size={18} aria-hidden="true" className="text-[var(--gt-blue-500)]" />
           <p className="m-0 text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.workspace.panel.emptyTitle")}</p>
           <p className="m-0 text-[12px] leading-snug text-[var(--text-muted)]">{t("studio.workspace.panel.emptyBody")}</p>
         </div>
@@ -222,7 +222,7 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
             className="gt-editor-chip pointer-events-none fixed z-[600] grid gap-0.5 rounded-[var(--radius-md)] border border-white/70 bg-white/90 px-3 py-2 shadow-[var(--shadow-lg)] backdrop-blur-[8px]"
           >
             <span className="flex items-center gap-1.5 text-[12.5px] font-bold text-[var(--gt-ink-900)]">
-              <Layers size={13} className="text-[var(--gt-blue-600)]" />
+              <Component size={13} className="text-[var(--gt-blue-600)]" />
               {drag.group.name}
               <span className="font-semibold text-[var(--text-muted)]">· {t("studio.workspace.gems", { count: drag.group.elementCount })}</span>
             </span>
