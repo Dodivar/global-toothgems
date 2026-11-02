@@ -4,7 +4,7 @@ import { configProblem, generateImage, generateJson, imageModelConfig, type Inli
 import { handleStudioTryOn, NOT_RENDERED_CODES, toBase64, type TryOnCreationRow } from "./handler.ts";
 import { DEFAULT_CHECK_MODEL, PHOTO_CHECK_PROMPT, PHOTO_CHECK_SCHEMA } from "./photoCheck.ts";
 import { TEETH_PROMPT, TEETH_SCHEMA } from "./teeth.ts";
-import { designGems, gemPhotosText, pickMedia, type DesignGem, type MediaRow } from "./gems.ts";
+import { designGems, gemListText } from "./gems.ts";
 import { TRY_ON_SYSTEM_PROMPT } from "./systemPrompt.ts";
 
 /*
@@ -65,50 +65,14 @@ async function references(): Promise<InlineImage[]> {
   return images;
 }
 
-// The shop photo of each kind of gem of the design (`gems.ts`): the public product photos, read with the service role.
-const MEDIA_BUCKET = "product-media";
-/** Per photo and in all, raw bytes: the photos are inlined in the render request with the other images. */
-const GEM_PHOTO_MAX_BYTES = 1.5 * 1024 * 1024;
-const GEM_PHOTOS_MAX_BYTES = 5 * 1024 * 1024;
-const GEM_PHOTO_TTL_MS = 30 * 60 * 1000;
-const gemPhotoCache = new Map<string, { at: number; image: InlineImage | null }>();
-
-async function gemPhoto(path: string): Promise<InlineImage | null> {
-  const cached = gemPhotoCache.get(path);
-  if (cached && Date.now() - cached.at < GEM_PHOTO_TTL_MS) return cached.image;
-  const { data: blob, error } = await supabase.storage.from(MEDIA_BUCKET).download(path);
-  let image: InlineImage | null = null;
-  if (!error && blob && blob.size > 0 && blob.size <= GEM_PHOTO_MAX_BYTES) {
-    const mimeType = /\.png$/i.test(path) ? "image/png" : /\.webp$/i.test(path) ? "image/webp" : "image/jpeg";
-    image = { mimeType, data: toBase64(new Uint8Array(await blob.arrayBuffer())) };
-  }
-  gemPhotoCache.set(path, { at: Date.now(), image });
-  return image;
-}
-
-async function gemPhotos(scene: unknown): Promise<{ images: InlineImage[]; text: string | null }> {
+/** The gem list of the stored design (`gems.ts`), with the shop names of its gems. */
+async function gemList(scene: unknown): Promise<string | null> {
   const gems = designGems(scene);
-  if (gems.length === 0) return { images: [], text: null };
-  const ids = [...new Set(gems.map((g) => g.productId))];
-  const [products, media] = await Promise.all([
-    supabase.from("products").select("id, name").in("id", ids),
-    supabase.from("product_media").select("product_id, variant_id, storage_path, is_primary, position").in("product_id", ids).eq("media_type", "image"),
-  ]);
-  if (products.error) throw new Error(products.error.message);
-  if (media.error) throw new Error(media.error.message);
-  const nameOf = new Map((products.data ?? []).map((p) => [String(p.id).toLowerCase(), p.name as string]));
-  const entries: { gem: DesignGem; name: string | null }[] = [];
-  const images: InlineImage[] = [];
-  let total = 0;
-  for (const gem of gems) {
-    const path = pickMedia((media.data ?? []) as MediaRow[], gem);
-    const image = path ? await gemPhoto(path).catch(() => null) : null;
-    if (!image || total + image.data.length * 0.75 > GEM_PHOTOS_MAX_BYTES) continue;
-    total += image.data.length * 0.75;
-    images.push(image);
-    entries.push({ gem, name: nameOf.get(gem.productId) ?? null });
-  }
-  return { images, text: gemPhotosText(entries) };
+  if (gems.length === 0) return null;
+  const { data, error } = await supabase.from("products").select("id, name").in("id", [...new Set(gems.map((g) => g.productId))]);
+  if (error) throw new Error(error.message);
+  const nameOf = new Map((data ?? []).map((p) => [String(p.id).toLowerCase(), p.name as string]));
+  return gemListText(gems.map((gem) => ({ gem, name: nameOf.get(gem.productId) ?? null })));
 }
 
 Deno.serve((req) =>
@@ -171,7 +135,7 @@ Deno.serve((req) =>
       if (error) throw new Error(error.message);
     },
     references,
-    gemPhotos,
+    gemList,
     // The second reading is sampled (temperature 0.6), so it is not a copy of the first.
     checkPhoto: checkConfig
       ? (photo, reading) => generateJson(checkConfig, PHOTO_CHECK_PROMPT, [photo], PHOTO_CHECK_SCHEMA, null, fetch, undefined, reading === 0 ? 0 : 0.6)

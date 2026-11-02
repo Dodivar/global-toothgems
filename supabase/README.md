@@ -1500,10 +1500,10 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
                             → same gates, renders cap (TRY_ON_DAILY_LIMIT, default 10) → row 'pending'
                             → Gemini (Vertex AI via GOOGLE_ADC_JSON, or GEMINI_API_KEY), GEMINI_IMAGE_MODEL,
                               systemInstruction = systemPrompt.ts TRY_ON_SYSTEM_PROMPT ("v4"): IMAGE 1 the guide,
-                              IMAGE 2 the same close-up cut by the function, IMAGE 3 the design, then the GEM
-                              PHOTOS (gems.ts: the shop's primary photo of each kind of gem of the STORED design,
-                              bucket product-media, ≤ 6, cached 30 min), then up to 6 reference pictures (bucket
-                              studio-try-on-references); text: how many marks, then each gem photo named in order
+                              IMAGE 2 the same close-up cut by the function, IMAGE 3 the design, then up to 6
+                              reference pictures (bucket studio-try-on-references); text: how many marks, then the
+                              GEM LIST (gems.ts: what each kind of gem of the STORED design really is — faceted
+                              crystal and its cut and coating, or polished gold charm — with its shop name and colour)
                             → row 'generated' / 'failed' → 200 {image, crop}
                             → the browser lines the answer up with the close-up (tryOnAlign.ts) and pastes it back
                               into the photo (tryOnComposite.ts, pasteBack.ts) → before/after, download, share
@@ -1541,9 +1541,11 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
 - **Prompt** (`supabase/functions/studio-try-on/systemPrompt.ts`, `TRY_ON_SYSTEM_PROMPT`, the "v4" of decision
   111 (k)): the gems are already placed as flat marks; the model turns each mark into a real gem at the same place,
   size and turn, keeps everything else of the photo, takes cut and turn from the 3D design (IMAGE 3) and each gem's
-  real look from its GEM PHOTO (2026-11-02: renders came out plastic like the 3D preview — the reference bucket was
-  empty, so the model's only material cues were the preview and the flat marks; the prompt now also says both look
-  like plastic and must never be copied). The former prompts v1 (the owner's original) and v3 (where the model
+  material from the GEM LIST (2026-11-02: renders came out plastic like the 3D preview — the reference bucket was
+  empty, so the model's only material cues were the preview and the flat marks; the prompt now says both look like
+  plastic and must never be copied, with sharper crystal and gold cues). Product photos of the gems were sent as
+  images for a few hours the same day, then dropped (owner's decision: a design can hold many different gems, too
+  many images for the model's input) — the gem list is text only. The former prompts v1 (the owner's original) and v3 (where the model
   placed the gems itself from the design render, a flat map, the gems' seats as text and a scale read from the
   photo), the `TRY_ON_PROMPT_VERSION` and `TRY_ON_MOUTH_CROP` secrets, the close-up gem-spot check and the progress
   stream were removed on 2026-11-01 (owner's decision after the trial: computed placement clearly better); commit
@@ -1572,8 +1574,8 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
   asks for another photo rather than rendering a guess (decision to confirm with the owner). An analysis is counted
   against the daily requests, never the renders (`failed` / `analysis`; rows of the trial carry `diagnostic`). The
   render trusts the browser's guide and crop (validated: a JPEG, a crop inside the photo, 1–200 marks): at worst a
-  member edits their own photo within their own render quota. Deployed: version 33 of the function, pinned at
-  commit `97228ec` (2026-11-02, gem photos included); until then version 32 still served the former AI placement
+  member edits their own photo within their own render quota. Deployed from a pinned commit (see the change log
+  `docs/studio-try-on-changelog.md`); until version 33 (2026-11-02) version 32 still served the former AI placement
   to the site's new requests, which is where some plastic-looking renders came from.
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
   `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The

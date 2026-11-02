@@ -41,8 +41,9 @@ import { readTeeth } from "./teeth.ts";
  *     marks   how many marks the guide holds (1–200)
  *     The model turns the marks into real gems (`TRY_ON_SYSTEM_PROMPT`): IMAGE 1
  *     the guide, IMAGE 2 the same close-up cut here from the photo, IMAGE 3 the
- *     design, then one shop photo per kind of gem of the stored design (`gems.ts`),
- *     then the owner's reference pictures. Counted as a render.
+ *     design, then the owner's reference pictures; the text after them gives the
+ *     mark count and what each gem of the stored design really is (`gems.ts`).
+ *     Counted as a render.
  *     200 { ok: true, image: { mime_type, data }, crop }   base64, never stored
  *
  *   Errors: 4xx/5xx { ok: false, code }  invalid_request | sign_in_required |
@@ -83,11 +84,8 @@ export interface StudioTryOnDeps {
   startRequest(userId: string, row: TryOnCreationRow): Promise<string>;
   finishRequest(id: string, status: "generated" | "failed", errorCode: string | null): Promise<void>;
   references(): Promise<InlineImage[]>;
-  /**
-   * The shop photo of each kind of gem of the stored design (`gems.ts`), and the
-   * text naming them in that order; absent or failing: the render goes without.
-   */
-  gemPhotos?(scene: unknown): Promise<{ images: InlineImage[]; text: string | null }>;
+  /** What each gem of the stored design really is, as text (`gems.ts`); absent or failing: the render goes without. */
+  gemList?(scene: unknown): Promise<string | null>;
   /**
    * One reading of the photo by the check model (`photoCheck.ts`), or why there is none; absent: no check.
    * Called `PHOTO_READINGS` times at once; `reading` tells them apart (0 the first).
@@ -382,21 +380,21 @@ async function renderPlaced(
     deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
     return [] as InlineImage[];
   });
-  // The real look of each gem: never blocks the render.
-  const gems = deps.gemPhotos
-    ? await deps.gemPhotos(scene).catch((error) => {
-        deps.log("gem photos unavailable", error instanceof Error ? error.message : error);
-        return { images: [] as InlineImage[], text: null };
+  // What each gem really is: never blocks the render.
+  const gemList = deps.gemList
+    ? await deps.gemList(scene).catch((error) => {
+        deps.log("gem list unavailable", error instanceof Error ? error.message : error);
+        return null;
       })
-    : { images: [] as InlineImage[], text: null };
+    : null;
   const plural = marks === 1 ? "" : "s";
   const text = [
     "PLACEMENT DATA",
     `IMAGE 1 holds ${marks} gem mark${plural}: your output holds exactly ${marks} gem${plural}, one on each mark, nowhere else.`,
     "IMAGE 2 is the same close-up of the customer's mouth, untouched. IMAGE 3 is the design in 3D (cut, colour, rotation only — its gems look like plastic: never their look).",
-    ...(gems.text && gems.images.length ? ["", gems.text] : []),
+    ...(gemList ? ["", gemList] : []),
   ].join("\n");
-  deps.log("render", { marks, crop: rect, guide: guide.size, gem_photos: gems.images.length, references: references.length });
+  deps.log("render", { marks, crop: rect, guide: guide.size, gem_list: gemList !== null, references: references.length });
   const aspectRatio = nearestAspectRatio({ width: rect.width, height: rect.height });
   let outcome: GenerateOutcome;
   try {
@@ -405,7 +403,6 @@ async function renderPlaced(
         { mimeType: guide.mimeType, data: guide.data },
         { mimeType: "image/jpeg", data: toBase64(original) },
         { mimeType: design.mimeType, data: design.data },
-        ...gems.images,
         ...references,
       ],
       text,

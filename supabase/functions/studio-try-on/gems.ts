@@ -1,14 +1,15 @@
 /**
- * The real look of the design's gems for the try-on render (decision 111 (k),
- * 2026-11-02): one studio photograph per kind of gem in the creation — the
- * shop's own product photo (bucket `product-media`) — sent after the design
- * render, so the image model draws real faceted crystals and polished gold
+ * What the design's gems really are, in words, for the try-on render
+ * (decision 111 (k), 2026-11-02): one line per kind of gem — "a faceted
+ * crystal, teardrop cut, with an iridescent AB coating", "a polished solid 18k
+ * yellow gold charm (cherries)" — so the image model renders real jewellery
  * rather than the smooth, plastic-looking gems of the 3D preview and the flat
- * marks of the guide.
+ * marks of the guide. Text only: product photos were tried and dropped the
+ * same day (owner's decision: a design can hold many different gems, too many
+ * images for the model's input).
  *
  * The gems come from the STORED scene (read from the database by the
- * function), never from the browser. Pure: the database and storage reads are
- * in `index.ts`.
+ * function), never from the browser. Pure: the product names are read in `index.ts`.
  */
 
 export interface DesignGem {
@@ -22,22 +23,13 @@ export interface DesignGem {
   iridescent: boolean;
 }
 
-/** A row of `product_media`, as `pickMedia` reads it. */
-export interface MediaRow {
-  product_id: string;
-  variant_id: string | null;
-  storage_path: string;
-  is_primary: boolean;
-  position: number;
-}
-
-/** At most this many gem photos per render: the request inlines every image. */
-export const MAX_GEM_PHOTOS = 6;
+/** At most this many kinds of gem are listed, the most used first. */
+export const MAX_GEM_KINDS = 12;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The distinct gems of a stored scene (product + variant), the most used first; malformed pieces are skipped. */
-export function designGems(scene: unknown, max = MAX_GEM_PHOTOS): DesignGem[] {
+export function designGems(scene: unknown, max = MAX_GEM_KINDS): DesignGem[] {
   const pieces = scene && typeof scene === "object" ? (scene as Record<string, unknown>).pieces : null;
   if (!Array.isArray(pieces)) return [];
   const byKey = new Map<string, DesignGem>();
@@ -65,21 +57,6 @@ export function designGems(scene: unknown, max = MAX_GEM_PHOTOS): DesignGem[] {
     });
   }
   return [...byKey.values()].sort((a, b) => b.count - a.count).slice(0, max);
-}
-
-/**
- * The photo of a gem among its product's media: the variant's own primary
- * image, else any of the variant's, else the product's primary, else its
- * first by position. Null when the product has no image.
- */
-export function pickMedia(rows: readonly MediaRow[], gem: Pick<DesignGem, "productId" | "variantId">): string | null {
-  const own = rows.filter((r) => r.product_id.toLowerCase() === gem.productId && /\.(webp|jpe?g|png)$/i.test(r.storage_path));
-  const order = (list: MediaRow[]) => [...list].sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.position - b.position);
-  const variant = gem.variantId ? order(own.filter((r) => r.variant_id?.toLowerCase() === gem.variantId)) : [];
-  if (variant.length) return variant[0].storage_path;
-  const product = order(own.filter((r) => !r.variant_id));
-  if (product.length) return product[0].storage_path;
-  return order(own)[0]?.storage_path ?? null;
 }
 
 const CUTS: Record<string, string> = {
@@ -111,18 +88,14 @@ export function gemWords(gem: DesignGem): string {
   return `a faceted crystal, ${cut}${gem.iridescent ? ", with an iridescent AB coating" : ""}`;
 }
 
-/** The text after the images naming each gem photo, in the order the photos are sent; null without any photo. */
-export function gemPhotosText(entries: readonly { gem: DesignGem; name: string | null }[]): string | null {
+/** The gem list sent after the images, the most used gem first; null for no gem. */
+export function gemListText(entries: readonly { gem: DesignGem; name: string | null }[]): string | null {
   if (entries.length === 0) return null;
-  const lines = entries.map((e, i) => {
+  const lines = entries.map((e) => {
     const marks = `${e.gem.count} mark${e.gem.count === 1 ? "" : "s"}`;
     // The shop name is data from the database, kept short and plain.
-    const name = e.name ? `${e.name.replace(/[^\p{L}\p{N}®™ .,'’()-]/gu, "").slice(0, 80)} — ` : "";
-    return `GEM PHOTO ${i + 1}: ${name}${gemWords(e.gem)}; ${marks} in IMAGE 1.`;
+    const name = e.name ? ` (${e.name.replace(/[^\p{L}\p{N}®™ .,'’-]/gu, "").slice(0, 80)})` : "";
+    return `- ${gemWords(e.gem)}${name}: ${marks}, drawn in its colour #${e.gem.color.slice(1)}.`;
   });
-  return [
-    "GEM PHOTOS — after IMAGE 3, one studio photograph of each kind of gem in this design, in this order:",
-    ...lines,
-    "Each mark in IMAGE 1 is one of these gems (match it by its cut and colour): render it exactly like its photo.",
-  ].join("\n");
+  return ["GEM LIST — what each gem of IMAGE 1 really is (match a mark by its cut and colour):", ...lines].join("\n");
 }
