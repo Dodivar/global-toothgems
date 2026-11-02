@@ -90,7 +90,9 @@ Settings → Rules → Rulesets → New branch ruleset, target **`main` only**:
 
 Do **not** add required checks or a pull-request rule on `dev`: agents and the `Stop` hook push to it directly (AGENTS.md §14), and such a rule would refuse every push. CI still runs on each push to `dev`; a red run there is fixed before anything else, and the `dev` → `main` pull request cannot be merged while `CI result` is red.
 
-Until this is set, a red CI does not block a merge.
+Until this is set, a red CI does not block a merge: pull request #84 (`dev` → `main`, 2026-11-02) was merged with the Database job red since 2026-10-28.
+
+SQL suites in CI run on an empty database + every migration + `supabase/seed.sql`, never on the project's rows: a suite that only passes on the project's data fails here (`guidelines/09`, step 4).
 
 ## What covers what
 

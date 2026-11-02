@@ -431,4 +431,59 @@ update public.products
    and jsonb_typeof(metadata -> 'material') = 'string'
    and nullif(btrim(metadata ->> 'material'), '') is not null;
 
+-- -----------------------------------------------------------------------------
+-- Search-engine title and description (migration …_product_content_seo): every
+-- active product carries them in French and English, as on the project
+-- (product_content_validation C1). Titles ≤ 70, descriptions ≤ 170 characters;
+-- no brand, the site appends it.
+-- -----------------------------------------------------------------------------
+update public.products p
+   set meta_title = v.fr_mt, meta_description = v.fr_md
+  from (values
+    ('etoile-cristal',          'Étoile cristal pour tooth gem, 2,2 mm',
+     'Étoile cinq branches en cristal taillé à dos plat, calibrée 2,2 mm pour les incisives latérales, livrée en capsule stérile.'),
+    ('charm-etoile-or-18k',     'Charm étoile en or jaune 18 carats',
+     'Charm étoile en or jaune 18 carats à dos plat micro-texturé, poinçonné et livré avec certificat d’authenticité.'),
+    ('coeur-chrome',            'Cœur chromé effet miroir, 2,5 mm',
+     'Cœur en alliage chromé hypoallergénique, finition miroir : un classique lumineux pour tooth gems.'),
+    ('goutte-opale',            'Goutte en opale synthétique irisée',
+     'Goutte en opale synthétique aux reflets irisés bleu-vert, taille unique 2 × 3 mm, pour tooth gems.'),
+    ('kit-application-premium', 'Kit d’application tooth gems professionnel',
+     'Mordançage, adhésif, composite fluide, applicateurs, écarteurs et 20 cristaux : le kit complet pour une pose professionnelle.'),
+    ('pince-de-depose',         'Pince de dépose inox pour tooth gems',
+     'Pince en acier inoxydable à mors protégés pour retirer une gem sans altérer l’émail. Autoclavable.'),
+    ('gel-de-suivi',            'Gel de suivi post-pose, 15 ml',
+     'Gel doux au fluor pour les jours suivant la pose : préserve l’éclat de la gem et le confort de l’émail.'),
+    ('capsules-steriles',       'Capsules stériles à usage unique',
+     'Capsules stériles transparentes à usage unique pour présenter et manipuler les gems en cabine.'),
+    ('strass-cristal',          'Strass cristal à dos plat en packs',
+     'Strass cristal à dos plat pour tooth gems, en packs de 20, 50 ou 100 pierres, plusieurs tailles SS.')
+  ) as v(slug, fr_mt, fr_md)
+ where p.slug = v.slug and p.meta_title is null;
+
+update public.product_translations t
+   set meta_title = v.en_mt, meta_description = v.en_md
+  from (values
+    ('etoile-cristal',          'Crystal star tooth gem, 2.2mm',
+     'Five-point cut-crystal star with a flat back, calibrated at 2.2mm for lateral incisors, delivered in a sterile capsule.'),
+    ('charm-etoile-or-18k',     '18K yellow gold star charm',
+     'Star charm in 18-carat yellow gold with a micro-textured flat back, hallmarked and delivered with a certificate.'),
+    ('coeur-chrome',            'Mirror-finish chrome heart, 2.5mm',
+     'Heart in hypoallergenic chrome alloy with a mirror finish: a bright classic for tooth gems.'),
+    ('goutte-opale',            'Iridescent synthetic opal drop',
+     'Synthetic opal drop with blue-green iridescent reflections, one size 2 × 3mm, for tooth gems.'),
+    ('kit-application-premium', 'Professional tooth gem application kit',
+     'Etchant, adhesive, flowable composite, applicators, retractors and 20 crystals: the complete kit for a professional application.'),
+    ('pince-de-depose',         'Stainless steel tooth gem removal pliers',
+     'Stainless steel pliers with protected jaws to remove a gem without harming the enamel. Autoclavable.'),
+    ('gel-de-suivi',            'Tooth gem aftercare gel, 15ml',
+     'Gentle fluoride gel for the days after application: keeps the gem shining and the enamel comfortable.'),
+    ('capsules-steriles',       'Single-use sterile capsules',
+     'Transparent single-use sterile capsules to present and handle gems in the studio.'),
+    ('strass-cristal',          'Flat-back crystal rhinestones in packs',
+     'Flat-back crystal rhinestones for tooth gems, in packs of 20, 50 or 100 stones, several SS sizes.')
+  ) as v(slug, en_mt, en_md)
+  join public.products p on p.slug = v.slug
+ where t.product_id = p.id and t.locale = 'en' and t.meta_title is null;
+
 commit;

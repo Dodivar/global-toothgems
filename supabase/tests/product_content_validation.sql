@@ -42,8 +42,12 @@ begin
    where status = 'active' and description ~ 'Couleur *(\n|$)';
   if n <> 0 then raise exception 'FAIL C2: % description(s) with an empty colour', n; end if;
 
-  if (select count(*) from public.products where slug = 'global-lipgloss-cleo') <> 1
-     or exists (select 1 from public.products where slug = 'global-lipgloss-nova') then
+  -- CLEO is a product of the project's catalogue, not of the local seed: the
+  -- old address must be gone everywhere, and a CLEO lip gloss, where there is
+  -- one, sits at the new address.
+  if exists (select 1 from public.products where slug = 'global-lipgloss-nova')
+     or exists (select 1 from public.products
+                 where name ilike '%lip%gloss%cleo%' and slug <> 'global-lipgloss-cleo') then
     raise exception 'FAIL C2: the CLEO address did not move';
   end if;
   if exists (select 1 from public.products p join public.product_translations t on t.product_id = p.id and t.locale = 'en'
