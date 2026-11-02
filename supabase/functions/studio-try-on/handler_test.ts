@@ -473,3 +473,19 @@ Deno.test("photo readings: the photo is read twice and the strictest reading dec
   });
   assertEquals((await handleStudioTryOn(post(analyseForm()), half.deps)).status, 200);
 });
+
+Deno.test("render: the gem photos come after the design, named in the text; failing, the render goes without", async () => {
+  const { deps, calls } = fake({
+    gemPhotos: (scene) => {
+      assertEquals(scene, SCENE);
+      return Promise.resolve({ images: [{ mimeType: "image/webp", data: "Z2Vt" }], text: "GEM PHOTOS — test" });
+    },
+  });
+  assertEquals((await handleStudioTryOn(post(renderForm()), deps)).status, 200);
+  assertEquals(calls.images.slice(2), ["image/png:BAU=", "image/webp:Z2Vt", "image/jpeg:cmVm"]);
+  assertStringIncludes(calls.text, "GEM PHOTOS — test");
+  assertStringIncludes(TRY_ON_SYSTEM_PROMPT, "THE GEM PHOTOS");
+  const broken = fake({ gemPhotos: () => Promise.reject(new Error("storage down")) });
+  assertEquals((await handleStudioTryOn(post(renderForm()), broken.deps)).status, 200);
+  assertEquals(broken.calls.images.length, 4);
+});

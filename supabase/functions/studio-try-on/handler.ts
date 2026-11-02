@@ -41,7 +41,8 @@ import { readTeeth } from "./teeth.ts";
  *     marks   how many marks the guide holds (1–200)
  *     The model turns the marks into real gems (`TRY_ON_SYSTEM_PROMPT`): IMAGE 1
  *     the guide, IMAGE 2 the same close-up cut here from the photo, IMAGE 3 the
- *     design, then the owner's reference pictures. Counted as a render.
+ *     design, then one shop photo per kind of gem of the stored design (`gems.ts`),
+ *     then the owner's reference pictures. Counted as a render.
  *     200 { ok: true, image: { mime_type, data }, crop }   base64, never stored
  *
  *   Errors: 4xx/5xx { ok: false, code }  invalid_request | sign_in_required |
@@ -82,6 +83,11 @@ export interface StudioTryOnDeps {
   startRequest(userId: string, row: TryOnCreationRow): Promise<string>;
   finishRequest(id: string, status: "generated" | "failed", errorCode: string | null): Promise<void>;
   references(): Promise<InlineImage[]>;
+  /**
+   * The shop photo of each kind of gem of the stored design (`gems.ts`), and the
+   * text naming them in that order; absent or failing: the render goes without.
+   */
+  gemPhotos?(scene: unknown): Promise<{ images: InlineImage[]; text: string | null }>;
   /**
    * One reading of the photo by the check model (`photoCheck.ts`), or why there is none; absent: no check.
    * Called `PHOTO_READINGS` times at once; `reading` tells them apart (0 the first).
@@ -236,11 +242,13 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   if (!userId) return json({ ok: false, code: "session_expired" }, 401, cors);
 
   let requestId: string;
+  let scene: unknown = null;
   try {
     const row = await deps.loadCreation(userId, ref);
     if (!row) return json({ ok: false, code: "not_found" }, 404, cors);
     if (!row.allowed) return json({ ok: false, code: "not_allowed" }, 403, cors);
     if (!hasPieces(row.scene)) return json({ ok: false, code: "not_found" }, 404, cors);
+    scene = row.scene;
     if (!(await deps.unlimited(userId)) && (await (analyse ? remainingChecks : remainingRenders)(deps, userId)) === 0) {
       return json({ ok: false, code: "daily_limit" }, 429, cors);
     }
@@ -250,7 +258,7 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
     return json({ ok: false, code: "server_error" }, 500, cors);
   }
 
-  const ending = await (render ? renderPlaced(deps, requestId, photo, render) : analysePhoto(deps, requestId, photo)).catch((error): Ending => {
+  const ending = await (render ? renderPlaced(deps, requestId, photo, render, scene) : analysePhoto(deps, requestId, photo)).catch((error): Ending => {
     deps.log(render ? "render failed" : "analysis failed", error instanceof Error ? error.message : error);
     deps.finishRequest(requestId, "failed", "server_error").catch(() => {});
     return { status: 500, body: { ok: false, code: "server_error" } };
@@ -362,6 +370,7 @@ async function renderPlaced(
   requestId: string,
   photo: Photo,
   render: { design: Photo; guide: Photo; rect: CropRect; marks: number },
+  scene: unknown,
 ): Promise<Ending> {
   const { design, guide, rect, marks } = render;
   const original = cropJpeg(photo.bytes, rect);
@@ -373,13 +382,21 @@ async function renderPlaced(
     deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
     return [] as InlineImage[];
   });
+  // The real look of each gem: never blocks the render.
+  const gems = deps.gemPhotos
+    ? await deps.gemPhotos(scene).catch((error) => {
+        deps.log("gem photos unavailable", error instanceof Error ? error.message : error);
+        return { images: [] as InlineImage[], text: null };
+      })
+    : { images: [] as InlineImage[], text: null };
   const plural = marks === 1 ? "" : "s";
   const text = [
     "PLACEMENT DATA",
     `IMAGE 1 holds ${marks} gem mark${plural}: your output holds exactly ${marks} gem${plural}, one on each mark, nowhere else.`,
-    "IMAGE 2 is the same close-up of the customer's mouth, untouched. IMAGE 3 is the design in 3D (cut, colour, rotation only).",
+    "IMAGE 2 is the same close-up of the customer's mouth, untouched. IMAGE 3 is the design in 3D (cut, colour, rotation only — its gems look like plastic: never their look).",
+    ...(gems.text && gems.images.length ? ["", gems.text] : []),
   ].join("\n");
-  deps.log("render", { marks, crop: rect, guide: guide.size });
+  deps.log("render", { marks, crop: rect, guide: guide.size, gem_photos: gems.images.length, references: references.length });
   const aspectRatio = nearestAspectRatio({ width: rect.width, height: rect.height });
   let outcome: GenerateOutcome;
   try {
@@ -388,6 +405,7 @@ async function renderPlaced(
         { mimeType: guide.mimeType, data: guide.data },
         { mimeType: "image/jpeg", data: toBase64(original) },
         { mimeType: design.mimeType, data: design.data },
+        ...gems.images,
         ...references,
       ],
       text,

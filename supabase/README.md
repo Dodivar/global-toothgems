@@ -1500,8 +1500,10 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
                             → same gates, renders cap (TRY_ON_DAILY_LIMIT, default 10) → row 'pending'
                             → Gemini (Vertex AI via GOOGLE_ADC_JSON, or GEMINI_API_KEY), GEMINI_IMAGE_MODEL,
                               systemInstruction = systemPrompt.ts TRY_ON_SYSTEM_PROMPT ("v4"): IMAGE 1 the guide,
-                              IMAGE 2 the same close-up cut by the function, IMAGE 3 the design, then up to 6
-                              reference pictures (bucket studio-try-on-references); text: how many marks
+                              IMAGE 2 the same close-up cut by the function, IMAGE 3 the design, then the GEM
+                              PHOTOS (gems.ts: the shop's primary photo of each kind of gem of the STORED design,
+                              bucket product-media, ≤ 6, cached 30 min), then up to 6 reference pictures (bucket
+                              studio-try-on-references); text: how many marks, then each gem photo named in order
                             → row 'generated' / 'failed' → 200 {image, crop}
                             → the browser lines the answer up with the close-up (tryOnAlign.ts) and pastes it back
                               into the photo (tryOnComposite.ts, pasteBack.ts) → before/after, download, share
@@ -1538,8 +1540,10 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
   skipped — cached 10 min per instance; Google's inline request limit is to check when connecting). No storage policy: only the service role and the dashboard see them.
 - **Prompt** (`supabase/functions/studio-try-on/systemPrompt.ts`, `TRY_ON_SYSTEM_PROMPT`, the "v4" of decision
   111 (k)): the gems are already placed as flat marks; the model turns each mark into a real gem at the same place,
-  size and turn, keeps everything else of the photo, takes cut, colour and material from the 3D design (IMAGE 3) and
-  realism only from the reference pictures. The former prompts v1 (the owner's original) and v3 (where the model
+  size and turn, keeps everything else of the photo, takes cut and turn from the 3D design (IMAGE 3) and each gem's
+  real look from its GEM PHOTO (2026-11-02: renders came out plastic like the 3D preview — the reference bucket was
+  empty, so the model's only material cues were the preview and the flat marks; the prompt now also says both look
+  like plastic and must never be copied). The former prompts v1 (the owner's original) and v3 (where the model
   placed the gems itself from the design render, a flat map, the gems' seats as text and a scale read from the
   photo), the `TRY_ON_PROMPT_VERSION` and `TRY_ON_MOUTH_CROP` secrets, the close-up gem-spot check and the progress
   stream were removed on 2026-11-01 (owner's decision after the trial: computed placement clearly better); commit
