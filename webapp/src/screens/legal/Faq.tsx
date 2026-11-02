@@ -10,6 +10,7 @@ import { pick } from "../../data/types";
 import { LegalLayout } from "../../components/legal/LegalLayout";
 import { RichText } from "../../components/legal/RichText";
 import { ICONS } from "../../components/legal/tones";
+import { foldText } from "../../lib/foldText";
 
 /** The words a reader sees, without the inline markup. */
 function plain(text: string) {
@@ -17,11 +18,6 @@ function plain(text: string) {
     .replace(/\[\[!?(.+?)\]\]/g, "$1")
     .replace(/<<(.+?)\|.+?>>/g, "$1")
     .replace(/\*\*(.+?)\*\*/g, "$1");
-}
-
-/** Case- and accent-insensitive, so "delai" finds "délai". */
-function normalise(text: string) {
-  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 /**
@@ -41,12 +37,12 @@ export function Faq() {
   const searching = deferred.trim().length > 1;
 
   const groups = useMemo(() => {
-    const needle = normalise(deferred.trim());
+    const needle = foldText(deferred.trim());
     return FAQ.map((category) => ({
       category,
       items: searching
         ? category.items.filter((item) =>
-            normalise(`${pick(item.question, lang)} ${item.answer.map((a) => plain(pick(a, lang))).join(" ")}`).includes(needle),
+            foldText(`${pick(item.question, lang)} ${item.answer.map((a) => plain(pick(a, lang))).join(" ")}`).includes(needle),
           )
         : category.items,
     })).filter((group) => group.items.length > 0);

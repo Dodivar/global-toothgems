@@ -17,11 +17,14 @@ import {
   type TryOnSource,
   type TryOnStage,
 } from "../../../lib/studio3d/tryOn";
+import { projectFrontView } from "../../../lib/studio3d/frontView";
+import { guideMarks } from "../../../lib/studio3d/tryOnGuide";
+import { registerDesign } from "../../../lib/studio3d/tryOnRegistration";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
-import { tryOnSeats } from "../../../lib/studio3d/tryOnSeats";
-import { renderDesignImages, renderDesignMap } from "./designImage";
+import { renderDesignImage } from "./designImage";
 import { pasteBack } from "./pasteBack";
 import { PhotoStep, type AiState } from "./PhotoStep";
+import { renderPlacementGuide } from "./placementGuide";
 import type { PreparedPhoto } from "./preparePhoto";
 import { ProcessingStep } from "./ProcessingStep";
 import { ResultStep } from "./ResultStep";
@@ -32,25 +35,28 @@ type Step =
   | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[]; stage: TryOnStage }
   | { kind: "result"; image: Blob; url: string; leftOut: number };
 
-/** The stepper: photo, the photo check, the render, the result. An error stays on the stage it happened at. */
+/** The stepper: photo, the analysis, the render, the result. An error stays on the stage it happened at. */
 const STAGE_INDEX: Record<TryOnStage, number> = { checking: 1, rendering: 2 };
-const stepIndex = (step: Step) =>
-  step.kind === "photo" ? 0 : step.kind === "result" ? 3 : STAGE_INDEX[step.stage];
+const stepIndex = (step: Step) => (step.kind === "photo" ? 0 : step.kind === "result" ? 3 : STAGE_INDEX[step.stage]);
 
 /**
- * "Try it on a smile": a creation on a photo of a smile, rendered by AI
- * (decision 111). Photo + consent → the photo check (a small model, shown as
- * its own step from the function's progress events) → the render (Nano Banana behind the Edge
- * Function `studio-try-on`) → the result, downloaded or shared. The photo
- * and the image stay in this tab; closing the dialog forgets them. While the
- * AI is not connected, the dialog says so and sends nothing.
+ * "Try it on a smile": a creation on a photo of a smile (decision 111, the
+ * computed placement since 2026-11-01: decision 111 (k)). Photo + consent →
+ * the analysis (the function checks the photo, cuts the mouth close-up and
+ * finds each tooth) → the placement, here (`tryOnRegistration.ts`: each gem on
+ * its tooth, at its real size; `tryOnGuide.ts`: the gems drawn as marks on the
+ * close-up) → the render (Nano Banana only turns the marks into real gems) →
+ * the result, pasted back into the photo, downloaded or shared. A placement
+ * the teeth do not support well enough asks for another photo rather than
+ * guessing. The photo and the image stay in this tab; closing the dialog
+ * forgets them. While the AI is not connected, the dialog says so and sends nothing.
  *
  * Opened by the artist on their own creation (`audience="artist"`, a
  * client's photo) and by visitors on a Glowbook creation or a share link
  * (`audience="visitor"`, their own smile). `source` names the creation for
- * the function (the viewers only open the dialog with one). Whether the AI may be used for a creation
- * (the owner's plan) is decided by the database: the viewers only show the
- * entry point when it says so, and the function checks again.
+ * the function. Whether the AI may be used for a creation (the owner's plan)
+ * is decided by the database: the viewers only show the entry point when it
+ * says so, and the function checks again.
  */
 export function TryOnDialog({
   creation,
@@ -118,38 +124,43 @@ export function TryOnDialog({
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
-    let stage: TryOnStage = "checking";
-    setStep({ kind: "processing", stage });
-    const { design, overview } = await renderDesignImages(creation).catch(() => ({ design: null, overview: null }));
-    if (controller.signal.aborted) return;
-    if (!design) {
+    const aborted = () => controller.signal.aborted;
+    const fail = (code: TryOnErrorCode, stage: TryOnStage, reasons?: PhotoIssue[]) => {
       request.current = null;
-      return setStep({ kind: "error", code: "failed", stage });
-    }
-    const seats = tryOnSeats(creation.scene.pieces, creation.scene.model);
-    const map = await renderDesignMap(creation, seats);
-    if (controller.signal.aborted) return;
-    const onStage = (next: TryOnStage) => {
-      if (controller.signal.aborted) return;
-      stage = next;
-      setStep({ kind: "processing", stage: next });
+      if (code === "not_available") {
+        setAi("unavailable");
+        return setStep({ kind: "photo" });
+      }
+      setStep({ kind: "error", code, reasons, stage });
     };
-    const outcome = await service.render({ photo: photo.blob, source, design, overview, map, seats }, { signal: controller.signal, onStage });
-    if (controller.signal.aborted) return; // cancelled or closed: nothing to show
+
+    // 1. The analysis: the photo check, the close-up and its teeth.
+    setStep({ kind: "processing", stage: "checking" });
+    const analysed = await service.analyse({ photo: photo.blob, source }, { signal: controller.signal });
+    if (aborted()) return;
+    if (!analysed.ok) return fail(analysed.code, "checking", analysed.reasons);
+
+    // 2. The placement: each gem on its tooth, drawn as a mark on the close-up.
+    const { crop, teeth } = analysed.analysis;
+    const registration = registerDesign(projectFrontView(creation.scene.pieces, creation.scene.model), teeth);
+    const { marks, leftOut } = guideMarks(registration, creation.scene.pieces);
+    if (!registration.reliable || marks.length === 0) return fail("photo_unsuitable", "checking", ["placement_uncertain"]);
+    setStep({ kind: "processing", stage: "rendering" });
+    const [design, guide] = await Promise.all([renderDesignImage(creation), renderPlacementGuide(photo.blob, crop, marks)]);
+    if (aborted()) return;
+    if (!design || !guide) return fail("failed", "rendering");
+
+    // 3. The render: the marks made real, pasted back into the photo.
+    const outcome = await service.render({ photo: photo.blob, source, design, guide, crop, marks: marks.length }, { signal: controller.signal });
+    if (aborted()) return; // cancelled or closed: nothing to show
+    if (!outcome.ok) return fail(outcome.code, "rendering", outcome.reasons);
     request.current = null;
-    if (outcome.ok) {
-      // A mouth close-up goes back into the photo; if the browser cannot draw it, the close-up is shown alone.
-      const image = outcome.crop ? ((await pasteBack(photo.blob, outcome.image, outcome.crop)) ?? outcome.image) : outcome.image;
-      if (controller.signal.aborted) return;
-      if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
-      resultUrl.current = URL.createObjectURL(image);
-      return setStep({ kind: "result", image, url: resultUrl.current, leftOut: outcome.leftOut ?? 0 });
-    }
-    if (outcome.code === "not_available") {
-      setAi("unavailable");
-      return setStep({ kind: "photo" });
-    }
-    setStep({ kind: "error", code: outcome.code, reasons: outcome.reasons, stage });
+    // If the browser cannot draw the close-up back into the photo, the close-up is shown alone.
+    const image = (await pasteBack(photo.blob, outcome.image, outcome.crop ?? crop)) ?? outcome.image;
+    if (aborted()) return;
+    if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
+    resultUrl.current = URL.createObjectURL(image);
+    setStep({ kind: "result", image, url: resultUrl.current, leftOut });
   };
 
   const cancel = () => {
@@ -250,7 +261,6 @@ export function TryOnDialog({
               onNewPhoto={() => setStep({ kind: "photo" })}
             />
           )}
-
         </>
       )}
     </Dialog>

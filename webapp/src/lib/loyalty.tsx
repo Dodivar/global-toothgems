@@ -26,9 +26,9 @@ import { isSupabaseConfigured, supabase } from "./supabase/client";
  * backend, `card` is null.
  */
 
-export type LoyaltyLoadState = "idle" | "loading" | "ready" | "error";
+type LoyaltyLoadState = "idle" | "loading" | "ready" | "error";
 
-export type LoyaltyCardState = LoyaltyState & {
+type LoyaltyCardState = LoyaltyState & {
   /** Stamps ever earned and still standing. */
   lifetime: number;
 };

@@ -27,7 +27,7 @@ export const BUCKETS = {
   studioShareLogos: "studio-share-logos",
 } as const;
 
-export type PrivateBucket =
+type PrivateBucket =
   | typeof BUCKETS.avatars
   | typeof BUCKETS.reviewPhotos
   | typeof BUCKETS.studioThumbnails
@@ -67,13 +67,4 @@ export async function signedUrls(
     if (entry.path && entry.signedUrl && !entry.error) result.set(entry.path, entry.signedUrl);
   }
   return result;
-}
-
-/** Signed URL of a single private object, or `null` when it is not readable. */
-export async function signedUrl(
-  bucket: PrivateBucket,
-  path: string,
-  expiresIn: number = SIGNED_URL_TTL_SECONDS,
-): Promise<string | null> {
-  return (await signedUrls(bucket, [path], expiresIn)).get(path) ?? null;
 }

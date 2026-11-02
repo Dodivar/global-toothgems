@@ -61,14 +61,14 @@ export interface Layout {
   markTone: "dark" | "light";
 }
 
-export interface LayoutText {
+interface LayoutText {
   title?: string;
   handle?: string;
 }
 
 export type LayoutTemplateId = "plain" | "gallery" | "spotlight" | "band";
 
-export interface LayoutTemplate {
+interface LayoutTemplate {
   id: LayoutTemplateId;
   version: number;
   /** Atelier only. */
@@ -243,10 +243,6 @@ export const LAYOUT_TEMPLATES: Record<LayoutTemplateId, LayoutTemplate> = { plai
 
 /** In the order the dialog offers them. */
 export const LAYOUT_TEMPLATE_IDS: readonly LayoutTemplateId[] = ["plain", "gallery", "spotlight", "band"];
-
-export function isLayoutTemplateId(value: unknown): value is LayoutTemplateId {
-  return typeof value === "string" && (LAYOUT_TEMPLATE_IDS as readonly string[]).includes(value);
-}
 
 /** The layout for a template, falling back to "plain" when templates are not allowed. */
 export function layoutFor(id: LayoutTemplateId, templatesAllowed: boolean, format: ShareFormat, size: FormatSize, text: LayoutText = {}): Layout {

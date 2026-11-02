@@ -21,7 +21,7 @@ import { useWorkspace } from "./workspace";
  */
 
 /** `locked`: the member's plan does not open the templates (decision 113 (b): Artist and above). */
-export type TemplatesStatus = "signedOut" | "unavailable" | "locked" | "loading" | "ready" | "error";
+type TemplatesStatus = "signedOut" | "unavailable" | "locked" | "loading" | "ready" | "error";
 
 interface TemplatesValue {
   status: TemplatesStatus;

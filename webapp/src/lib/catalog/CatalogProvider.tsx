@@ -6,7 +6,7 @@ import { fetchCatalog, fetchGemColors, fetchTaxonomy } from "./api";
 import { findProductByKey, productSlugTranslator } from "./productSlugs";
 import type { ParamTranslator } from "../localeRoutes";
 
-export type CatalogStatus = "loading" | "ready" | "error";
+type CatalogStatus = "loading" | "ready" | "error";
 
 interface CatalogContextValue {
   status: CatalogStatus;

@@ -16,7 +16,7 @@ import { useToast } from "./toast";
  * never replaced by a document that would look like one.
  */
 
-export function invoiceOf(order: Pick<AdminOrder, "invoices">): OrderInvoice | undefined {
+function invoiceOf(order: Pick<AdminOrder, "invoices">): OrderInvoice | undefined {
   return order.invoices?.find((doc) => doc.kind === "invoice");
 }
 

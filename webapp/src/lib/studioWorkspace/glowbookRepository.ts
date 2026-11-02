@@ -74,7 +74,7 @@ export interface GlowbookRepository {
 }
 
 /** `handleTaken` / `handleReserved` / `full` / `sectionTaken` / `sectionsFull`: refusals the forms explain. */
-export type GlowbookErrorCode = "handleTaken" | "handleReserved" | "full" | "sectionTaken" | "sectionsFull";
+type GlowbookErrorCode = "handleTaken" | "handleReserved" | "full" | "sectionTaken" | "sectionsFull";
 
 export class GlowbookError extends Error {
   readonly code: GlowbookErrorCode;

@@ -103,7 +103,7 @@ export function groupToPayload(group: AdminFaqGroup): Json {
   };
 }
 
-export type FaqGroupError = "name" | "noQuestion" | "tooMany" | "question" | "answer";
+type FaqGroupError = "name" | "noQuestion" | "tooMany" | "question" | "answer";
 
 /** What blocks a save, in the order the form shows it; empty = ready. */
 export function validateGroup(group: AdminFaqGroup): { group: FaqGroupError[]; items: Record<string, ("question" | "answer")[]> } {

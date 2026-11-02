@@ -13,9 +13,9 @@ import {
   ShareBrandingError,
 } from "../../../lib/studioWorkspace/shareBrandingRepository";
 
-export type LogoErrorKey = "type" | "size" | "decode" | "forbidden" | "unavailable" | "load";
+type LogoErrorKey = "type" | "size" | "decode" | "forbidden" | "unavailable" | "load";
 
-export interface ShareBrandingState {
+interface ShareBrandingState {
   /** Still asking the database. */
   loading: boolean;
   /** The plan could not be read: essential rights apply (the safe side). */

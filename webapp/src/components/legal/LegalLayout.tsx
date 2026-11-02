@@ -17,7 +17,7 @@ import {
 } from "./PageChrome";
 import { useDocumentTitle, useHashScroll } from "./hooks";
 
-export const LEGAL_TITLE_ID = "legal-page-title";
+const LEGAL_TITLE_ID = "legal-page-title";
 
 /**
  * The frame every help-centre and legal page shares: breadcrumb, a modest

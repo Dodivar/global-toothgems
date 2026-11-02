@@ -4,7 +4,7 @@ import type { FrontViewGem } from "../../lib/studio3d/frontView";
 import { useEditorLabels } from "./editor/editorLabels";
 
 /** One gem in words, in the UI language: what the list beside the front view and the placement sheet say. */
-export interface GemDescription {
+interface GemDescription {
   /** "11 · Central incisor · upper right" — the FDI number the Studio shows, then the tooth's name. */
   tooth: string;
   shape: string;

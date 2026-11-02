@@ -1,6 +1,6 @@
 /** Pure helpers behind the editor's layout tools (see the engine's align and centre commands). */
 
-export interface LevelItem {
+interface LevelItem {
   id: string;
   /** Height of the piece on the enamel (world Y). */
   y: number;

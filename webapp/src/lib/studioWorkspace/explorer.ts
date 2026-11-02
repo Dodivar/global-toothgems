@@ -22,7 +22,7 @@ export interface ExplorerFolder {
   previews: Creation[];
 }
 
-export interface ExplorerRoot {
+interface ExplorerRoot {
   folders: ExplorerFolder[];
   /** Not searching: the creations in no collection. Searching: every matching creation, wherever it is filed. */
   creations: Creation[];

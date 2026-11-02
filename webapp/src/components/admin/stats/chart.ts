@@ -56,7 +56,7 @@ export function axisScale(rawMax: number, segments = 4): { max: number; ticks: n
   };
 }
 
-export interface Plot {
+interface Plot {
   width: number;
   height: number;
   padding: { top: number; right: number; bottom: number; left: number };

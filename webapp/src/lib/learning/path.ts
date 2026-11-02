@@ -37,11 +37,11 @@ export interface PathNode {
  * Estimated minutes per knowledge-check question. Not authored anywhere in the
  * builder, so it is a documented estimate rather than a hidden constant.
  */
-export const MINUTES_PER_QUESTION = 1;
+const MINUTES_PER_QUESTION = 1;
 
 export const quizKey = (moduleId: string) => `quiz-${moduleId}`;
 
-export function quizMinutes(quiz: Quiz): number {
+function quizMinutes(quiz: Quiz): number {
   return Math.max(1, quiz.questions.length * MINUTES_PER_QUESTION);
 }
 
@@ -183,7 +183,7 @@ export interface CourseSummary {
   remainingMinutes: number;
 }
 
-export function averageQuizScore(record: LearnerRecord, path: PathNode[]): number | null {
+function averageQuizScore(record: LearnerRecord, path: PathNode[]): number | null {
   const scores = path
     .filter((node) => node.kind === "quiz" && record.quizResults[node.key])
     .map((node) => record.quizResults[node.key].bestScore);

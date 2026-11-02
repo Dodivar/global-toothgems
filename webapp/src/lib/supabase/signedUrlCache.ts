@@ -22,7 +22,7 @@ export interface CachedSignedUrl {
   expiresAt: number;
 }
 
-export interface StableSignOptions {
+interface StableSignOptions {
   bucket: string;
   /** Lifetime asked for newly signed URLs. */
   ttlSeconds: number;

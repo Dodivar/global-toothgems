@@ -77,7 +77,7 @@ export function componentKey(item: Pick<BundleComponent, "productId" | "variantI
 }
 
 /** A component's stock as the back office last read it. */
-export interface ComponentStock {
+interface ComponentStock {
   component: BundleComponent;
   product?: AdminProduct;
   /** Sellable units (on hand − reserved), never below 0; undefined when not tracked. */
@@ -86,7 +86,7 @@ export interface ComponentStock {
   makes?: number;
 }
 
-export interface BundleCapacity {
+interface BundleCapacity {
   /** Kits the components can make; undefined when no component is tracked and none is out of stock. */
   buildable?: number;
   components: ComponentStock[];

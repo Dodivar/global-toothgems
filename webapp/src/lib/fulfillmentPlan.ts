@@ -11,14 +11,14 @@ import type { AdminOrder } from "../data/adminOrders";
 type Line = AdminOrder["lines"][number];
 
 /** A physical line: courses and gift cards are delivered, not shipped. */
-export function isShippableLine(line: Pick<Line, "courseId" | "giftCardDesign">): boolean {
+function isShippableLine(line: Pick<Line, "courseId" | "giftCardDesign">): boolean {
   return !line.courseId && !line.giftCardDesign;
 }
 
 /** Parcels in these states no longer hold units. */
 const RELEASED_PARCELS = new Set(["cancelled", "returned", "lost"]);
 
-export interface LineBalance {
+interface LineBalance {
   lineId: string;
   ordered: number;
   /** Units in a parcel that is preparing, shipped or delivered. */

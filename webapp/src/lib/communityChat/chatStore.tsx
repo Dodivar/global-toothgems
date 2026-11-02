@@ -8,12 +8,12 @@ import { MockChatProvider } from "./mockChatStore";
 export { useChat } from "./chatContext";
 export type {
   ChannelView,
-  ChatContextValue,
+  
   ChatNotification,
   ConversationView,
-  LoadStatus,
+  
   NotificationKind,
-  SendResult,
+  
 } from "./chatContext";
 
 /**

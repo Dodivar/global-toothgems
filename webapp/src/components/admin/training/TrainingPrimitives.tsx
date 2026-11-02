@@ -4,7 +4,6 @@ import {
   Check,
   CircleDashed,
   CircleDot,
-  Clock,
   FileText,
   Image as ImageIcon,
   Layers,
@@ -78,7 +77,7 @@ export function MetaPill({ icon: Icon, children }: { icon?: LucideIcon; children
  * alone would leave the list unreadable to anyone who does not already know
  * which glyph means video.
  */
-export const BLOCK_STYLE: Record<BlockType, { icon: LucideIcon; className: string }> = {
+const BLOCK_STYLE: Record<BlockType, { icon: LucideIcon; className: string }> = {
   text: { icon: FileText, className: "bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]" },
   image: { icon: ImageIcon, className: "bg-[var(--gt-fuchsia-50)] text-[var(--accent-highlight-ink)]" },
   video: { icon: Video, className: "bg-[var(--gt-emerald-50)] text-[var(--accent-cta-ink)]" },
@@ -283,5 +282,3 @@ export function CountRow({
     </div>
   );
 }
-
-export { Clock };

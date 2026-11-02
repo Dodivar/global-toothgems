@@ -50,9 +50,9 @@ import { isSupabaseConfigured, requireSupabase } from "./supabase/client";
 export type { CustomerProfileDraft, CustomerWriteError };
 export type CustomerWriteResult = { ok: true } | { ok: false; error: CustomerWriteError };
 /** A bulk status change: how many accounts actually changed. */
-export type CustomerBulkResult = { ok: true; changed: number } | { ok: false; error: CustomerWriteError };
+type CustomerBulkResult = { ok: true; changed: number } | { ok: false; error: CustomerWriteError };
 
-export interface AdminCustomersContextValue {
+interface AdminCustomersContextValue {
   customers: AdminCustomerRecord[];
   /** True until the first read (base and order book) has answered. */
   loading: boolean;

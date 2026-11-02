@@ -4,14 +4,12 @@
  */
 export const STUDIO_PATH = "/studio-3d";
 export const STUDIO_SUBSCRIBE_PATH = "/studio-3d/abonnement";
-/** English alias of the subscription page, like `/gift-card` for `/carte-cadeau`. */
-export const STUDIO_SUBSCRIBE_ALIAS = "/studio-3d/subscribe";
 /**
  * The subscription's checkout, a page of its own (signed-in members only,
  * `gateFor`): `?plan=<id>&interval=month|year&from=<surface>`. Paid, it opens
  * the editor.
  */
-export const STUDIO_CHECKOUT_PATH = "/studio-3d/paiement";
+const STUDIO_CHECKOUT_PATH = "/studio-3d/paiement";
 /** The editor itself — the Studio's workshop ("atelier"). */
 export const STUDIO_EDITOR_PATH = "/studio-3d/atelier";
 /**
@@ -27,7 +25,7 @@ export const STUDIO_SHARE_PATH = "/studio-3d/partage";
  * viewer, open to everyone; the Glowbook page itself is a public page
  * (`/fr/glowbook/<handle>`).
  */
-export const STUDIO_GLOWBOOK_VIEW_PATH = "/studio-3d/glowbook";
+const STUDIO_GLOWBOOK_VIEW_PATH = "/studio-3d/glowbook";
 
 export function glowbookCreationPath(handle: string, itemId: string): string {
   return `${STUDIO_GLOWBOOK_VIEW_PATH}/${encodeURIComponent(handle)}/${encodeURIComponent(itemId)}`;

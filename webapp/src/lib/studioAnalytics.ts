@@ -18,7 +18,7 @@ import { hoursSince, trialRemainingMs, type StudioAccessInfo } from "./studioAcc
  * from them are documented in `docs/studio-trial-analytics.md`.
  */
 
-export type StudioEvent =
+type StudioEvent =
   | "studio_trial_offer_viewed"
   | "studio_trial_started"
   | "studio_first_design_created"
@@ -61,10 +61,6 @@ export function setStudioAnalyticsConsent(value: boolean) {
 export function setStudioAnalyticsAccess(info: StudioAccessInfo | null, readAtPerf = 0) {
   access = info;
   accessReadAt = readAtPerf;
-}
-
-export function studioAnalyticsAllowed() {
-  return consented;
 }
 
 function deviceCategory(): string {
@@ -117,7 +113,7 @@ function storageFor(scope: "tab" | "browser"): Storage | null {
  * ("browser"), then false. Without storage it answers true once per page.
  */
 const seenInPage = new Set<string>();
-export function once(key: string, scope: "tab" | "browser" = "tab"): boolean {
+function once(key: string, scope: "tab" | "browser" = "tab"): boolean {
   const full = `gt-studio-evt:${key}`;
   if (seenInPage.has(full)) return false;
   seenInPage.add(full);

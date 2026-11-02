@@ -23,7 +23,7 @@ import { useProductsByCategory } from "./ProductPicker";
 
 const STANDARD_SHIPPING_CENTS = 690;
 
-export function toCents(euros: number): number {
+function toCents(euros: number): number {
   return Math.round(euros * 100);
 }
 

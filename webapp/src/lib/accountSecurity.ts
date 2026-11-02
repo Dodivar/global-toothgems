@@ -31,7 +31,7 @@ export const VERIFY_LINK_HOURS = 24;
 export const EXPORT_AVAILABLE_DAYS = 7;
 
 /** Seconds the resend buttons stay locked after a send. */
-export const SECURITY_RESEND_COOLDOWN = 30;
+const SECURITY_RESEND_COOLDOWN = 30;
 
 /**
  * The password the demo account "has". The login form is prefilled with it,

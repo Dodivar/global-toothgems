@@ -1144,7 +1144,7 @@ export function blankCustomVariant(id: string): CustomVariant {
 }
 
 /** The stock rows a product's other variants put under it in the list. */
-export function customVariantStock(variants: CustomVariant[] | undefined): VariantStock[] {
+function customVariantStock(variants: CustomVariant[] | undefined): VariantStock[] {
   return (variants ?? []).map((variant) => ({
     key: variant.id,
     name: variant.name,

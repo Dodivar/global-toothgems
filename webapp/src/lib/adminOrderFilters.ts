@@ -1,6 +1,7 @@
 import { customerName, orderItemCount, type AdminOrder } from "../data/adminOrders";
 import type { SpentTotal } from "../data/orders";
 import { pick } from "../data/types";
+import { addDays } from "./calendar";
 
 /**
  * Filtering, searching, sorting and paging of the order book — all of it
@@ -23,7 +24,7 @@ export const DATE_PRESETS: DatePreset[] = ["all", "today", "yesterday", "last7",
 
 export type SortKey = "dateDesc" | "dateAsc" | "totalDesc" | "totalAsc";
 
-export const SORT_KEYS: SortKey[] = ["dateDesc", "dateAsc", "totalDesc", "totalAsc"];
+const SORT_KEYS: SortKey[] = ["dateDesc", "dateAsc", "totalDesc", "totalAsc"];
 
 /**
  * "Today" for the date presets: the calendar day in the browser's time zone.
@@ -35,14 +36,8 @@ export function bookToday(): string {
 }
 
 /** Calendar day (YYYY-MM-DD, browser time zone) of a recorded timestamp. */
-export function localDay(iso: string): string {
+function localDay(iso: string): string {
   return new Date(iso).toLocaleDateString("sv-SE");
-}
-
-function addDays(isoDate: string, days: number): string {
-  const d = new Date(`${isoDate}T12:00:00`);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
 }
 
 export interface OrderFilters {

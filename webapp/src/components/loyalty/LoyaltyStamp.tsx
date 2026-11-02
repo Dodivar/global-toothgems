@@ -18,7 +18,7 @@ import type { GemShape } from "../../data/products";
  * survives greyscale, which colour alone would not.
  */
 
-export type LoyaltyStampState = "filled" | "empty" | "next";
+type LoyaltyStampState = "filled" | "empty" | "next";
 
 /** One cut per position, building to the star: a card is a set, not five copies. */
 const SEQUENCE: GemShape[] = ["round", "heart", "flower", "navette", "star"];

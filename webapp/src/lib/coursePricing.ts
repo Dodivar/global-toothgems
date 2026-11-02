@@ -32,13 +32,13 @@ export function discountedPrice(priceMinor: number, type: CourseDiscountType, va
   return Math.max(priceMinor - value, 0);
 }
 
-export function isRunning(promotion: CoursePromotion, at: Date): boolean {
+function isRunning(promotion: CoursePromotion, at: Date): boolean {
   if (!promotion.active) return false;
   const now = at.getTime();
   return new Date(promotion.startsAt).getTime() <= now && (promotion.endsAt === null || new Date(promotion.endsAt).getTime() > now);
 }
 
-export type PromotionState = "running" | "scheduled" | "ended" | "inactive";
+type PromotionState = "running" | "scheduled" | "ended" | "inactive";
 
 export function promotionState(promotion: CoursePromotion, at: Date): PromotionState {
   if (!promotion.active) return "inactive";
@@ -59,7 +59,7 @@ export function currentPrice(
   return { priceMinor: discountedPrice(priceMinor, running.discountType, running.value), promotion: running };
 }
 
-export type PromotionProblem = "label" | "value" | "percentRange" | "amountTooHigh" | "start" | "period" | "overlap";
+type PromotionProblem = "label" | "value" | "percentRange" | "amountTooHigh" | "start" | "period" | "overlap";
 
 /** Same rules as the database guard, checked before saving. */
 export function promotionProblems(

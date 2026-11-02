@@ -13,9 +13,9 @@ const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
 ];
 
 /** Below this, the moment reads as "just now" (a translation key, not a number). */
-export const JUST_NOW_MS = 45_000;
+const JUST_NOW_MS = 45_000;
 
-export function relativeParts(iso: string, now = Date.now()): { value: number; unit: Intl.RelativeTimeFormatUnit } | null {
+function relativeParts(iso: string, now = Date.now()): { value: number; unit: Intl.RelativeTimeFormatUnit } | null {
   const diff = Date.parse(iso) - now;
   if (!Number.isFinite(diff) || Math.abs(diff) < JUST_NOW_MS) return null;
   for (const [unit, ms] of UNITS) {

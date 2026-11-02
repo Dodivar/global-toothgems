@@ -8,7 +8,7 @@
  */
 
 /** Shop query parameter that narrows the collection to the member's favourites. */
-export const FAVORITES_PARAM = "favoris";
+const FAVORITES_PARAM = "favoris";
 
 /** The shop, showing only the member's favourites: the header's heart links here. */
 export const FAVORITES_HREF = `/boutique?${FAVORITES_PARAM}=1`;

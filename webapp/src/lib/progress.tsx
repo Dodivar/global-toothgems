@@ -49,7 +49,7 @@ import {
  * a demo history and graded locally with the same rules (`lib/learning/path.ts`).
  */
 
-export type Enrollment = LearnerRecord;
+type Enrollment = LearnerRecord;
 export type { LearnerCourseCard } from "./learning/learnerCourse";
 
 export interface CourseProgress {
@@ -79,7 +79,7 @@ export interface CourseProgress {
   quizAverage: number | null;
 }
 
-export type LearningStatus = "idle" | "loading" | "ready" | "error";
+type LearningStatus = "idle" | "loading" | "ready" | "error";
 
 interface ProgressContextValue {
   source: "mock" | "supabase";

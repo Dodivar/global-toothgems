@@ -12,8 +12,6 @@ import { isStudioTier, type StudioTier } from "./studioEntitlements";
  * nothing but the countdown text, and never reopens the Studio.
  */
 
-/** Length of the free trial. Display value: the database fixes the real window. */
-export const STUDIO_TRIAL_HOURS = 48;
 /** From this much time left the countdown takes its warning dress. */
 export const TRIAL_WARNING_MS = 6 * 60 * 60 * 1000;
 
@@ -131,7 +129,7 @@ export function trialRemainingMs(info: StudioAccessInfo, serverNow: number): num
   return Math.max(0, info.trialExpiresAt - serverNow);
 }
 
-export type RemainingParts =
+type RemainingParts =
   | { unit: "daysHours"; days: number; hours: number }
   | { unit: "hours"; hours: number }
   | { unit: "hoursMinutes"; hours: number; minutes: number }

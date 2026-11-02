@@ -28,7 +28,7 @@ import {
   type ReviewsContextValue,
 } from "./reviewsContext";
 
-export { useReviews, type FormTarget, type PhotoViewerTarget, type ReviewDemoMode } from "./reviewsContext";
+export { useReviews, type FormTarget } from "./reviewsContext";
 
 /**
  * The review store: every review, the moderation actions on them, and the
@@ -430,7 +430,7 @@ export function subjectPath(subject: ReviewSubject): string {
 /* Eligibility                                                                */
 /* -------------------------------------------------------------------------- */
 
-export type Eligibility =
+type Eligibility =
   | { state: "signedOut" }
   | { state: "notPurchased" }
   | { state: "awaitingShipment"; orderRef: string }

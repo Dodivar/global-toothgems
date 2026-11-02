@@ -12,6 +12,8 @@ import { useTranslation } from "react-i18next";
 import { X, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import type { AvatarTone, ChatMember, Presence } from "../../lib/communityChat/model";
+import { initialsOf } from "../../lib/initials";
+import { countryName } from "../../lib/countryName";
 
 /*
  * Small pieces shared by every part of the Members' Lounge. The lounge reuses
@@ -25,12 +27,6 @@ const TONE_SOLID: Record<AvatarTone, string> = {
   fuchsia: "bg-[var(--gt-fuchsia-300)] text-[var(--gt-ink-900)]",
   ink: "bg-[var(--surface-inverse)] text-[var(--text-inverse)]",
 };
-
-function initialsOf(name: string): string {
-  const parts = name.split(" ").filter(Boolean);
-  if (parts.length === 0) return "?";
-  return (parts[0].charAt(0) + (parts.length > 1 ? parts[parts.length - 1].charAt(0) : "")).toUpperCase();
-}
 
 export const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
@@ -447,20 +443,7 @@ export function useChatTime() {
 export function useCountryName() {
   const { i18n } = useTranslation();
   return useCallback(
-    (code: string) => {
-      if (!code) return "";
-      try {
-        return new Intl.DisplayNames([i18n.language || "en"], { type: "region" }).of(code) ?? code;
-      } catch {
-        return code;
-      }
-    },
+    (code: string) => (code ? countryName(code, i18n.language || "en") : ""),
     [i18n.language],
   );
-}
-
-/** Flag emoji of an ISO country code (regional indicator letters). */
-export function flagOf(code: string): string {
-  if (!/^[A-Z]{2}$/.test(code)) return "";
-  return String.fromCodePoint(...[...code].map((letter) => 0x1f1e6 + letter.charCodeAt(0) - 65));
 }

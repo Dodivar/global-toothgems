@@ -4,7 +4,7 @@ import { Link } from "../../lib/navigation";
 import { ChevronRight, Menu } from "lucide-react";
 import clsx from "clsx";
 
-export interface Crumb {
+interface Crumb {
   label: string;
   /** Omitted on the current page, which is not a link. */
   to?: string;

@@ -12,9 +12,9 @@ import { FormDialog } from "../promotions/PromoUi";
 import { useMoney } from "../promotions/PromoBadges";
 import { useToast } from "../../lib/toast";
 import { useAdminSettings } from "../../lib/adminSettings";
+import { countryName } from "../../lib/countryName";
 import {
   bpToInput,
-  countryName,
   flagOf,
   formatPercent,
   inVatArea,

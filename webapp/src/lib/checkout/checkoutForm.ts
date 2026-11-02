@@ -18,7 +18,7 @@ export interface CheckoutForm {
   country: string;
 }
 
-export type CheckoutField = keyof CheckoutForm | "shipping";
+type CheckoutField = keyof CheckoutForm | "shipping";
 
 export const EMPTY_CHECKOUT_FORM: CheckoutForm = {
   firstName: "",

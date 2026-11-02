@@ -42,11 +42,11 @@ import { copyName } from "./validation";
  * "Creation saved" and "Unable to save" read the same from any control.
  */
 
-export type LibraryStatus = "signedOut" | "loading" | "ready" | "error";
+type LibraryStatus = "signedOut" | "loading" | "ready" | "error";
 /** `locked`: the member's plan has no folders (decision 113 (b)): none is shown, the library is a plain grid. */
-export type CollectionsStatus = LibraryStatus | "locked";
+type CollectionsStatus = LibraryStatus | "locked";
 /** What the stage's design is, relative to the account. */
-export type SaveState = "empty" | "unsaved" | "saving" | "saved" | "failed";
+type SaveState = "empty" | "unsaved" | "saving" | "saved" | "failed";
 
 interface WorkspaceValue {
   userId: string | null;

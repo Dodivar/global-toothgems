@@ -28,17 +28,17 @@ export interface GlowbookPlace {
   lng: number;
 }
 
-export const PLACE_LABEL_MIN = 2;
+const PLACE_LABEL_MIN = 2;
 export const PLACE_LABEL_MAX = 120;
 /** Decimals kept per mode: 2 ≈ 1.1 km for an area, 5 ≈ 1 m for a salon (the database rounds the same way). */
-export const PLACE_DECIMALS: Record<PlaceMode, number> = { area: 2, exact: 5 };
+const PLACE_DECIMALS: Record<PlaceMode, number> = { area: 2, exact: 5 };
 /** The circle drawn around an area: wider than the rounding, so it always holds the real place. */
 export const AREA_RADIUS_METERS = 1500;
 
 /** The map's tiles and style: OpenFreeMap (free, no key, commercial use allowed). Swap here to change provider. */
 export const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 /** OpenStreetMap's public geocoder, used only by the artist's explicit search. */
-export const GEOCODER_URL = "https://nominatim.openstreetmap.org/search";
+const GEOCODER_URL = "https://nominatim.openstreetmap.org/search";
 
 const round = (v: number, decimals: number) => {
   const f = 10 ** decimals;
@@ -86,7 +86,7 @@ export const samePlace = (a: GlowbookPlace | null, b: GlowbookPlace | null) =>
 
 /* ------------------------------------------------------------- directions */
 
-export type DirectionsApp = "google" | "apple" | "osm";
+type DirectionsApp = "google" | "apple" | "osm";
 
 /**
  * Links that open the visitor's maps app on the salon — plain URLs, nothing

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * window above the rest of the page — iPhone Safari only grants the real thing
  * to videos.
  */
-export type StageFullscreenMode = "native" | "overlay";
+type StageFullscreenMode = "native" | "overlay";
 
 interface FullscreenDocument {
   fullscreenEnabled?: boolean;

@@ -192,6 +192,14 @@ describe("languages", () => {
 describe("store details", () => {
   const row: StoreSettingsRow = {
     store_name: "Global Toothgems",
+    trading_name: null,
+    publisher_address: null,
+    publisher_email: null,
+    publisher_legal_form: null,
+    publisher_legal_name: null,
+    publisher_name: null,
+    publisher_phone: null,
+    publisher_registration_number: null,
     legal_name: "Global Toothgems SAS",
     legal_form: "SAS",
     share_capital: null,
@@ -283,6 +291,14 @@ describe("legal notice", () => {
       ...mapStoreDetails(
         {
           store_name: "Global Toothgems",
+          trading_name: null,
+          publisher_address: null,
+          publisher_email: null,
+          publisher_legal_form: null,
+          publisher_legal_name: null,
+          publisher_name: null,
+          publisher_phone: null,
+          publisher_registration_number: null,
           legal_name: "Global Toothgems SAS",
           legal_form: "SAS",
           share_capital: "10 000 €",
@@ -313,9 +329,9 @@ describe("legal notice", () => {
       ),
     };
     const doc = legalNotice(store);
-    const fields = doc.sections.flatMap((s) => s.blocks).flatMap((b) => (b.kind === "fields" ? b.fields : []));
+    const fields = (doc.sections.find((s) => s.id === "seller")?.blocks ?? []).flatMap((b) => (b.kind === "fields" ? b.fields : []));
     const valueOf = (fr: string) => fields.find((f) => f.label.fr === fr)?.value;
-    expect(valueOf("Dénomination sociale")?.fr).toBe("Global Toothgems SAS");
+    expect(valueOf("Dénomination")?.fr).toBe("Global Toothgems SAS");
     expect(valueOf("Forme juridique")).toEqual({ fr: "SAS au capital de 10 000 €", en: "SAS with share capital of 10 000 €" });
     expect(valueOf("Siège social / adresse")?.fr).toBe("1 rue Fictive, 75004 Paris, France");
     expect(valueOf("E-mail de contact")?.fr).toBe("support@example.com");
@@ -323,5 +339,91 @@ describe("legal notice", () => {
     expect(valueOf("Téléphone")).toBeUndefined(); // not shown to customers
     const contact = doc.sections.find((s) => s.id === "contact")?.blocks[0];
     expect(contact?.kind === "p" && contact.text.en).toContain("write to us at support@example.com");
+  });
+});
+
+describe("trading name (decision 120)", () => {
+  const ei: StoreDetails = {
+    ...mapStoreDetails(
+      {
+        store_name: "Global Toothgems",
+        trading_name: "PIMP TON SMILE",
+        publisher_address: "2 rue Fictive, 67000 Strasbourg, France",
+        publisher_email: "Hello@Example.com",
+        publisher_legal_form: "Entrepreneur individuel (EI)",
+        publisher_legal_name: "Bob Test",
+        publisher_name: "Studio Test",
+        publisher_phone: "+33 6 00 00 00 00",
+        publisher_registration_number: "SIRET 987 654 321 00010",
+        legal_name: "Ada Test",
+        legal_form: "Entrepreneur individuel (EI)",
+        share_capital: null,
+        registration_number: "SIREN 123 456 789",
+        vat_number: null,
+        vat_franchise: true,
+        business_email: null,
+        support_email: "support@example.com",
+        phone: null,
+        address_line1: "1 rue Fictive",
+        address_line2: null,
+        postal_code: "75004",
+        city: "Paris",
+        region: null,
+        country_code: "FR",
+        publication_director: null,
+        publication_director_role: null,
+        host_name: null,
+        host_address: null,
+        host_contact: null,
+        show_email: true,
+        show_phone: false,
+        show_address: false,
+        opening_hours: {},
+        support_message: null,
+      },
+      [],
+    ),
+  };
+
+  it("is read and saved like the other details", () => {
+    expect(ei.tradingName).toBe("PIMP TON SMILE");
+    expect(storeDetailsPayload(ei).trading_name).toBe("PIMP TON SMILE");
+    expect(storeDetailsPayload(ei).publisher_name).toBe("Studio Test");
+    expect(storeDetailsPayload(ei).publisher_email).toBe("hello@example.com");
+  });
+
+  it("names the publisher and the seller apart, the seller's legal identity only in its field list", async () => {
+    const { legalNotice } = await import("../data/legal/legalNotice");
+    const doc = legalNotice(ei);
+    const section = (id: string) => doc.sections.find((s) => s.id === id);
+    const fieldsOf = (id: string) => (section(id)?.blocks ?? []).flatMap((b) => (b.kind === "fields" ? b.fields : []));
+    const intro = (id: string) => {
+      const first = section(id)?.blocks[0];
+      return first?.kind === "p" ? first.text.fr : "";
+    };
+    expect(intro("publisher")).toBe("Le site Global Toothgems est détenu et édité par Studio Test, entreprise identifiée ci-dessous.");
+    expect(fieldsOf("publisher").find((f) => f.label.fr === "Dénomination")?.value?.fr).toBe("Bob Test");
+    expect(fieldsOf("publisher").find((f) => f.label.fr === "Numéro d’immatriculation")?.value?.fr).toBe("SIRET 987 654 321 00010");
+    expect(fieldsOf("publisher").find((f) => f.label.fr === "Téléphone")?.value?.fr).toBe("+33 6 00 00 00 00");
+    expect(intro("seller")).toContain("vendus par PIMP TON SMILE, avec qui les ventes sont conclues");
+    expect(intro("seller")).not.toContain("Ada Test");
+    expect(fieldsOf("seller").find((f) => f.label.fr === "Nom commercial")?.value?.fr).toBe("PIMP TON SMILE");
+    expect(fieldsOf("seller").find((f) => f.label.fr === "Dénomination")?.value?.fr).toBe("Ada Test");
+    const ip = section("intellectual-property")?.blocks[0];
+    expect(ip?.kind === "p" && ip.text.fr).toContain("appartiennent à Studio Test");
+  });
+
+  it("fills the seller in the terms of sale and the publisher in the terms of use", async () => {
+    const { withStoreDetails } = await import("../data/legal/storeFill");
+    const { TERMS } = await import("../data/legal/terms");
+    const { TERMS_OF_USE } = await import("../data/legal/termsOfUse");
+    const seller = withStoreDetails(TERMS, ei).sections.find((s) => s.id === "seller")?.blocks[0];
+    expect(seller?.kind === "p" && seller.text.fr).toContain(
+      "conclues avec PIMP TON SMILE — Ada Test, Entrepreneur individuel (EI), dont le siège est situé 1 rue Fictive, 75004 Paris, France, immatriculée sous le numéro SIREN 123 456 789.",
+    );
+    expect(seller?.kind === "p" && seller.text.en).toContain("concluded with PIMP TON SMILE — Ada Test");
+    const publisher = withStoreDetails(TERMS_OF_USE, ei).sections.find((s) => s.id === "publisher")?.blocks[0];
+    expect(publisher?.kind === "p" && publisher.text.fr).toContain("Le site est édité par Studio Test.");
+    expect(withStoreDetails(TERMS, null)).toBe(TERMS);
   });
 });

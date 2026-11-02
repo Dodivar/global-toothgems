@@ -15,6 +15,9 @@ export interface DocumentFormat {
 
 /** What the legal mentions of a document are made of: the store now, or the seller frozen on an invoice. */
 export interface LegalIdentity {
+  /** The trading name the business presents itself under; empty when it has none. */
+  tradingName: string;
+  /** The legal name (for an individual entrepreneur, their own name). */
   name: string;
   legalForm: string;
   shareCapital: string;
@@ -24,14 +27,21 @@ export interface LegalIdentity {
   email: string;
 }
 
-/** The legal mentions printed at the foot of every page. */
+/**
+ * The legal mentions printed small at the foot of every page: the trading
+ * name, then the legal identity ("Lorine Christin, Entrepreneur individuel
+ * (EI)") — present, as the law requires, without being put forward
+ * (decision 120) —, registration, VAT number, address and e-mail.
+ */
 export function legalFooterLines(identity: LegalIdentity, t: Translate): string[] {
   const form = [identity.legalForm, identity.shareCapital && t("documents.footer.capital", { amount: identity.shareCapital })]
     .filter(Boolean)
     .join(" ");
+  const trading = identity.tradingName.trim();
+  const legal = identity.name.trim() === trading ? "" : identity.name.trim();
   const line1 = [
-    identity.name,
-    form,
+    trading,
+    [legal, form].filter(Boolean).join(", "),
     identity.registrationNumber && t("documents.footer.registration", { number: identity.registrationNumber }),
     identity.vatNumber && t("documents.footer.vat", { number: identity.vatNumber }),
   ].filter(Boolean);

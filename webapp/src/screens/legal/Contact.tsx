@@ -28,7 +28,7 @@ import { LegalLayout } from "../../components/legal/LegalLayout";
 import { CONTACT_CATEGORY_PARAM, LEGAL_PATHS } from "../../data/legal/routes";
 import type { ContactCategory } from "../../data/legal/types";
 import type { StoreDetails } from "../../data/adminSettings";
-import { countryName } from "../../lib/settingsRules";
+import { countryName } from "../../lib/countryName";
 import { addressLines, hasOpeningHours, hasVisibleContact, hoursSummary, supportMessageIn } from "../../lib/storeDetails";
 import { sendContactMessage, type ContactError } from "../../lib/contact/api";
 import { ACCEPTED_ATTACHMENTS, attachmentProblem, MAX_ATTACHMENTS, mergeAttachments } from "../../lib/contact/attachments";

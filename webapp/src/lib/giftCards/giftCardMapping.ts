@@ -94,7 +94,7 @@ export function settingsUpdate(config: GiftCardConfig): TablesUpdate<"gift_card_
   };
 }
 
-export type ConfigIssue = "noAmount" | "invalidAmount" | "minMax" | "noDesign" | "defaultDisabled";
+type ConfigIssue = "noAmount" | "invalidAmount" | "minMax" | "noDesign" | "defaultDisabled";
 
 /** What stops a save, in the order the form shows it (the database refuses the same things). */
 export function configIssues(config: GiftCardConfig): ConfigIssue[] {
@@ -270,7 +270,7 @@ export function mapLedger(
     .sort((a, b) => a.at.localeCompare(b.at) || a.id - b.id);
 }
 
-export interface GiftCardMetrics {
+interface GiftCardMetrics {
   /** Cards that exist as value: issued by staff or paid by a customer. */
   issued: number;
   /** Face value of the cards customers paid for. */
@@ -360,7 +360,7 @@ export function writeErrorOf(error: { code?: string; message?: string } | null |
 /* -------------------------------------------------------------------------- */
 
 /** Same shape the checkout function accepts (`_shared/checkoutInput.ts`). */
-export const GIFT_CARD_CODE_RE = /^GT-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+const GIFT_CARD_CODE_RE = /^GT-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 export const MAX_GIFT_CARD_CODES = 5;
 
 /** What a customer types → the canonical code, or null when it cannot be one. Spaces and missing dashes are forgiven. */
@@ -371,7 +371,7 @@ export function normalizeGiftCardCode(input: string): string | null {
   return GIFT_CARD_CODE_RE.test(code) ? code : null;
 }
 
-export type AddCodeResult = { ok: true; codes: string[] } | { ok: false; reason: "format" | "duplicate" | "limit" };
+type AddCodeResult = { ok: true; codes: string[] } | { ok: false; reason: "format" | "duplicate" | "limit" };
 
 export function addGiftCardCode(codes: string[], input: string): AddCodeResult {
   const code = normalizeGiftCardCode(input);

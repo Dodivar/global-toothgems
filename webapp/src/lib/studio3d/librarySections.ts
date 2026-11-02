@@ -26,7 +26,7 @@ export interface LibraryLabels {
   gemName: (gem: StudioGem) => string;
 }
 
-export function sectionIdOf(gem: StudioGem): string {
+function sectionIdOf(gem: StudioGem): string {
   return gem.shopShape !== null ? `shape-${gem.shopShape}` : `family-${gem.family ?? "other"}`;
 }
 

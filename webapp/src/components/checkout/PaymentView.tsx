@@ -22,7 +22,7 @@ const PaymentStep = lazy(() => import("./PaymentStep"));
  * summary with the amount the database computed. Amounts are minor units.
  */
 
-export interface PaymentAmounts {
+interface PaymentAmounts {
   subtotal: number;
   shipping: number;
   /** Discounts the database quoted in the cart (promotions, codes, loyalty reward), already worded. */

@@ -25,7 +25,7 @@ import { setStudioAnalyticsAccess, setStudioAnalyticsConsent, trackStudio, track
  * account to hold a trial: the editor stays open as the labelled preview.
  */
 
-export type StudioAccessStatus =
+type StudioAccessStatus =
   | { kind: "preview" }
   | { kind: "loading" }
   | { kind: "signedOut" }

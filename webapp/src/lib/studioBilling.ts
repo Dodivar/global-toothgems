@@ -35,7 +35,7 @@ import type { StudioBillingInterval, StudioPaidPlanId } from "../data/studio";
  * reads back from the database.
  */
 
-export async function fetchStudioPlanPrices(): Promise<StudioPlanPrice[]> {
+async function fetchStudioPlanPrices(): Promise<StudioPlanPrice[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.from("studio_plan_prices").select("plan, billing_interval, amount, currency");
   if (error) throw new Error("studio_plan_prices unavailable");

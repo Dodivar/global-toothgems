@@ -104,11 +104,6 @@
       "lessThanMinute": "moins d’une minute",
       "ended": "Essai terminé"
     },
-    "warning": {
-      "body": "Votre essai gratuit se termine bientôt — il reste {{time}}. Enregistrez vos designs et jetez un œil aux formules pour continuer à créer.",
-      "plans": "Voir les formules",
-      "dismiss": "Fermer"
-    },
     "denied": {
       "title": "Votre accès au Studio a pris fin",
       "body": "Cette modification n’a pas pu être enregistrée. Vos designs enregistrés sont conservés."
@@ -891,30 +886,23 @@
     "processing": {
       "checking": {
         "title": "Vérification de la photo…",
-        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées avant de créer le rendu. Quelques secondes.",
+        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées, puis repère chaque dent. Quelques secondes.",
         "lines": [
           "Lecture de la photo…",
           "Repérage du sourire…",
           "Contrôle de la netteté et de la lumière…",
-          "Vérification que les dents sont bien visibles…"
+          "Repérage de chaque dent…"
         ]
       },
       "rendering": {
         "title": "Création du rendu…",
-        "body": "L’IA pose les pierres de la création sur la photo. Cela prend en général moins d’une minute.",
+        "body": "Les pierres sont placées sur vos dents à leur taille réelle, puis l’IA les rend réalistes. En général moins d’une minute.",
         "lines": [
+          "Placement de chaque pierre sur sa dent…",
           "Préparation de la création 3D…",
-          "Repérage de chaque dent sur la photo…",
-          "Mesure de la forme de votre sourire…",
-          "Choix de l’emplacement de chaque pierre…",
-          "Placement des pierres sur les dents…",
-          "Ajustement de la taille de chaque gemme…",
+          "Rendu réaliste des pierres…",
           "Ajustement des reflets et de la lumière…",
-          "Les facettes se mettent à briller…",
-          "Respect des teintes naturelles de vos dents…",
-          "Fondu de la retouche dans la photo…",
-          "Dernier polissage des pierres…",
-          "Derniers détails, presque prêt…"
+          "Finitions…"
         ]
       },
       "cancel": "Annuler"
@@ -993,7 +981,7 @@
       "too_dark": "avec plus de lumière, sans contre-jour ;",
       "too_bright": "avec une lumière moins forte, sans flash direct sur les dents ;",
       "blurry": "nette : tenez le téléphone immobile et laissez-le faire la mise au point.",
-      "design_hidden": "en montrant bien les dents où vont les gemmes de cette création : sur cette photo, aucune n’est visible."
+      "placement_uncertain": "Les dents ne ressortent pas assez nettement pour placer les gemmes avec précision : reprenez la photo bien de face, plus près, lèvres écartées."
     },
     "allowance": {
       "remaining_one": "Il vous reste {{count}} essai sur {{limit}} (sur 24 h glissantes).",

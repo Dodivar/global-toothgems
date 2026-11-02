@@ -37,7 +37,7 @@ export interface BackInStockRow {
 export type BackInStockState = "waiting" | "due" | "paused" | "failed" | "notified";
 
 /** email_log's attempt cap (as `email_log_claim`): past it, nobody retries. */
-export const EMAIL_ATTEMPT_CAP = 5;
+const EMAIL_ATTEMPT_CAP = 5;
 
 export interface AdminBackInStockRequest {
   id: string;
@@ -78,9 +78,9 @@ export function rowToRequest(row: BackInStockRow): AdminBackInStockRequest {
 }
 
 /** The open requests: everything not yet notified. */
-export const isOpen = (request: AdminBackInStockRequest) => request.state !== "notified";
+const isOpen = (request: AdminBackInStockRequest) => request.state !== "notified";
 
-export interface BackInStockFigures {
+interface BackInStockFigures {
   waiting: number;
   due: number;
   notified: number;
@@ -93,7 +93,7 @@ export function figuresOf(requests: readonly AdminBackInStockRequest[]): BackInS
   return { waiting: count("waiting"), due: count("due"), notified: count("notified"), attention: count("failed", "paused") };
 }
 
-export interface DemandedProduct {
+interface DemandedProduct {
   productId: string;
   productName: string;
   variantName: string | null;

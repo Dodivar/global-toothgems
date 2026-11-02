@@ -63,8 +63,8 @@ export const STONE_SIZES: { ss: number; mm: number }[] = [
 ];
 
 /** Same bounds as the database check. */
-export const SS_MIN = 1;
-export const SS_MAX = 60;
+const SS_MIN = 1;
+const SS_MAX = 60;
 export const MM_MIN = 0.5;
 export const MM_MAX = 30;
 
@@ -135,7 +135,7 @@ export function parseSizeInput(input: string, mode: SizeMode): GemSize | null {
   return mm ? { mm } : null;
 }
 
-export function stoneSizeMm(ss: number): number | undefined {
+function stoneSizeMm(ss: number): number | undefined {
   return STONE_SIZES.find((size) => size.ss === ss)?.mm;
 }
 
@@ -202,7 +202,7 @@ export function formatSizeFull(size: GemSize, lang: string): string {
 }
 
 /** The SKU spelling of a size, as the database writes it: "SS6", "2P5X5MM". */
-export function sizeSkuCode(size: GemSize): string {
+function sizeSkuCode(size: GemSize): string {
   return size.ss != null ? `SS${size.ss}` : `${size.mm.map((v) => String(tenth(v)).replace(".", "P")).join("X")}MM`;
 }
 

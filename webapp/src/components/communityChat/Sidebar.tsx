@@ -22,7 +22,7 @@ import monogram from "../../assets/monogram-blue.png";
  * in; the list shows each lounge's unread activity, and the lounges still to
  * open, so the community visibly has room to grow.
  */
-export function ServerSwitcher() {
+function ServerSwitcher() {
   const { t, i18n } = useTranslation();
   const { servers, server, selectServer, serverUnread } = useChat();
   const locale = i18n.language?.startsWith("fr") ? "fr-FR" : "en-GB";
@@ -173,7 +173,7 @@ function SectionHeading({ children, action }: { children: string; action?: React
   );
 }
 
-export function ChannelList() {
+function ChannelList() {
   const { t } = useTranslation();
   const { channels, room, markServerRead, server, serverUnread } = useChat();
   const activity = serverUnread(server.id);
@@ -245,7 +245,7 @@ function ConversationRow({ view, active, now }: { view: ConversationView; active
   );
 }
 
-export function DirectMessageList() {
+function DirectMessageList() {
   const { t } = useTranslation();
   const { conversations, room } = useChat();
   const { openNewMessage } = useLoungeUi();
@@ -283,7 +283,7 @@ export function DirectMessageList() {
 
 const STATUSES: Presence[] = ["online", "away", "offline"];
 
-export function UserPanel() {
+function UserPanel() {
   const { t } = useTranslation();
   const { viewer, presence, setPresence } = useChat();
   const { openProfile } = useLoungeUi();

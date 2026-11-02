@@ -46,7 +46,7 @@ import {
  * Screens never use a course's media reference as a URL: they ask `urlOf()`.
  */
 
-export interface PendingUpload {
+interface PendingUpload {
   id: string;
   name: string;
   kind: MediaKind;
@@ -62,14 +62,14 @@ export interface RejectedUpload {
   reason: UploadFailure;
 }
 
-export type MediaPatch = Partial<Pick<TrainingMedia, "name" | "alt" | "category" | "tags" | "folderId">>;
+type MediaPatch = Partial<Pick<TrainingMedia, "name" | "alt" | "category" | "tags" | "folderId">>;
 
-export interface UploadOptions {
+interface UploadOptions {
   category: MediaCategory;
   folderId: string | null;
 }
 
-export type FolderFailure = "taken" | "invalid" | "failed";
+type FolderFailure = "taken" | "invalid" | "failed";
 
 interface TrainingMediaValue {
   source: "mock" | "supabase";

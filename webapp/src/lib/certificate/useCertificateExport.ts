@@ -13,7 +13,7 @@ import { certificateFileName } from "./share";
  */
 
 export type ExportStatus = "idle" | "working" | "done" | "error";
-export type ExportAction = "pdf" | "png" | "share";
+type ExportAction = "pdf" | "png" | "share";
 
 const RESET_MS = 4000;
 

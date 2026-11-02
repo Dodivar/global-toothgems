@@ -104,11 +104,6 @@
       "lessThanMinute": "less than a minute",
       "ended": "Trial ended"
     },
-    "warning": {
-      "body": "Your free trial ends soon — {{time}}. Save your designs, and have a look at the plans to keep creating.",
-      "plans": "See the plans",
-      "dismiss": "Dismiss"
-    },
     "denied": {
       "title": "Your Studio access has ended",
       "body": "This change could not be saved. Your saved designs are kept."
@@ -891,30 +886,23 @@
     "processing": {
       "checking": {
         "title": "Checking the photo…",
-        "body": "An AI checks that the teeth are clearly visible, face-on, sharp and well lit before creating the render. A few seconds.",
+        "body": "An AI checks that the teeth are clearly visible, face-on, sharp and well lit, then finds each tooth. A few seconds.",
         "lines": [
           "Reading the photo…",
           "Finding the smile…",
           "Checking sharpness and light…",
-          "Making sure the teeth are clearly visible…"
+          "Finding each tooth…"
         ]
       },
       "rendering": {
         "title": "Creating the render…",
-        "body": "The AI is setting the creation’s gems on the photo. It usually takes less than a minute.",
+        "body": "The gems are placed on the teeth at their real size, then the AI makes them look real. It usually takes less than a minute.",
         "lines": [
+          "Placing each gem on its tooth…",
           "Preparing the 3D creation…",
-          "Finding each tooth on the photo…",
-          "Measuring the shape of the smile…",
-          "Choosing where each gem sits…",
-          "Setting the gems on the teeth…",
-          "Sizing each gem to its tooth…",
+          "Rendering the gems realistically…",
           "Adjusting reflections and light…",
-          "The facets are starting to sparkle…",
-          "Keeping the natural shade of the teeth…",
-          "Blending the edit into the photo…",
-          "One last polish of the stones…",
-          "Final touches, almost ready…"
+          "Finishing…"
         ]
       },
       "cancel": "Cancel"
@@ -993,7 +981,7 @@
       "too_dark": "with more light, no backlight;",
       "too_bright": "with softer light, no direct flash on the teeth;",
       "blurry": "sharp: hold the phone still and let it focus.",
-      "design_hidden": "showing the teeth this creation's gems go on: none of them is visible on this photo."
+      "placement_uncertain": "The teeth do not show clearly enough to place the gems precisely: take the photo again face-on, closer, lips apart."
     },
     "allowance": {
       "remaining_one": "You have {{count}} try left out of {{limit}} (rolling 24 hours).",

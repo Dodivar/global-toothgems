@@ -19,7 +19,7 @@ export interface PlacementSheetRequest {
   modifiedAt?: string;
 }
 
-export type PlacementSheetStatus = "idle" | "working" | "error";
+type PlacementSheetStatus = "idle" | "working" | "error";
 
 /** The PDF fonts lack "≈": the sheet writes "~" instead. */
 const forPdf = (value: string) => value.replace(/≈\s?/g, "~");

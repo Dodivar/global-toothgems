@@ -45,7 +45,7 @@ const ADMIN_ROUTE_PREFIX = "/admin";
  * During maintenance the storefront's navigation leads nowhere, so the page
  * wears its own quiet chrome and the header and footer are left out.
  */
-export const MAINTENANCE_ROUTE = "/maintenance";
+const MAINTENANCE_ROUTE = "/maintenance";
 
 /**
  * The 3D Studio editor is a full-screen workspace with its own application

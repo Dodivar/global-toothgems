@@ -6,7 +6,7 @@ import {
   TRY_ON_ERROR_CODES,
   TRY_ON_ERROR_MESSAGES,
   errorAllowsRetry,
-  parseTryOnEvent,
+  parseTryOnAnalysis,
   parseTryOnResponse,
   parseTryOnStatus,
   resultExtension,
@@ -18,7 +18,9 @@ import { checkPhotoFile, checkPhotoLight, checkPhotoSize, fitWithin, PHOTO_MAX_B
 describe("try-on service contract", () => {
   it("the not-available service says so at once, without a photo leaving", async () => {
     expect(await unavailableTryOnService.status()).toEqual({ available: false, dailyLimit: null, quota: null });
-    expect(await unavailableTryOnService.render({ photo: new Blob(), design: new Blob(), source: { kind: "own", creationId: "c1" } })).toEqual({
+    expect(await unavailableTryOnService.analyse({ photo: new Blob(), source: { kind: "own", creationId: "c1" } })).toEqual({ ok: false, code: "not_available" });
+    const crop = { x: 0, y: 0, width: 10, height: 10, photoWidth: 10, photoHeight: 10 };
+    expect(await unavailableTryOnService.render({ photo: new Blob(), design: new Blob(), guide: new Blob(), crop, marks: 1, source: { kind: "own", creationId: "c1" } })).toEqual({
       ok: false,
       code: "not_available",
     });
@@ -75,14 +77,7 @@ describe("try-on service contract", () => {
     });
     expect(parseTryOnResponse({ ok: false, code: "photo_unsuitable" })).toEqual({ ok: false, code: "photo_unsuitable", reasons: [] });
     expect(errorAllowsRetry("photo_unsuitable")).toBe(false);
-    expect(parseTryOnResponse({ ok: false, code: "photo_unsuitable", reasons: ["design_hidden"] })).toMatchObject({ reasons: ["design_hidden"] });
-  });
-
-  it("reads how many gems were left out because their spot does not show", () => {
-    const image = { mime_type: "image/png", data: "aW1n" };
-    expect(parseTryOnResponse({ ok: true, image, left_out: 2 })).toMatchObject({ ok: true, leftOut: 2 });
-    expect("leftOut" in parseTryOnResponse({ ok: true, image, left_out: 0 })).toBe(false);
-    expect("leftOut" in parseTryOnResponse({ ok: true, image, left_out: "2" })).toBe(false);
+    expect(parseTryOnResponse({ ok: false, code: "photo_unsuitable", reasons: ["placement_uncertain"] })).toMatchObject({ reasons: ["placement_uncertain"] });
   });
 
   it("has a message in both languages for every error code", () => {
@@ -141,20 +136,39 @@ describe("photo checks", () => {
   });
 });
 
-describe("progress events", () => {
-  it("reads the stages, then the final answer like a plain response", () => {
-    expect(parseTryOnEvent('data: {"stage":"checking"}')).toEqual({ stage: "checking" });
-    expect(parseTryOnEvent('data: {"stage":"rendering"}')).toEqual({ stage: "rendering" });
-    expect(parseTryOnEvent('data: {"result":{"ok":false,"code":"photo_unsuitable","reasons":["blurry"]}}')).toEqual({
-      outcome: { ok: false, code: "photo_unsuitable", reasons: ["blurry"] },
+describe("parseTryOnAnalysis", () => {
+  const crop = { x: 10, y: 20, width: 400, height: 300, photo_width: 800, photo_height: 600 };
+
+  it("reads the crop and the teeth inside it; drops the rest", () => {
+    const outcome = parseTryOnAnalysis({
+      ok: true,
+      crop,
+      teeth: [
+        { fdi: "11", x: 100, y: 50, width: 60, height: 120 },
+        { fdi: "11", x: 200, y: 50, width: 60, height: 120 }, // twice
+        { fdi: "18", x: 0, y: 0, width: 10, height: 10 }, // not a front tooth
+        { fdi: "21", x: 380, y: 50, width: 60, height: 120 }, // past the crop
+        { fdi: "22", x: 1, y: 1, width: 0, height: 5 }, // no width
+        "nonsense",
+      ],
     });
-    expect(parseTryOnEvent('data: {"result":{"ok":false,"code":"server_error"}}')).toEqual({ outcome: { ok: false, code: "failed" } });
+    expect(outcome).toEqual({
+      ok: true,
+      analysis: {
+        crop: { x: 10, y: 20, width: 400, height: 300, photoWidth: 800, photoHeight: 600 },
+        teeth: [{ fdi: "11", x: 100, y: 50, width: 60, height: 120 }],
+      },
+    });
   });
 
-  it("skips anything else", () => {
-    expect(parseTryOnEvent(": keep-alive")).toBeNull();
-    expect(parseTryOnEvent('data: {"stage":"done"}')).toBeNull();
-    expect(parseTryOnEvent("data: {broken")).toBeNull();
-    expect(parseTryOnEvent("data: null")).toBeNull();
+  it("needs a crop; refusals read like a render's", () => {
+    expect(parseTryOnAnalysis({ ok: true, teeth: [] })).toEqual({ ok: false, code: "failed" });
+    expect(parseTryOnAnalysis({ ok: false, code: "not_allowed" })).toEqual({ ok: false, code: "not_allowed" });
+    expect(parseTryOnAnalysis({ ok: false, code: "photo_unsuitable", reasons: ["blurry", "x"] })).toEqual({
+      ok: false,
+      code: "photo_unsuitable",
+      reasons: ["blurry"],
+    });
+    expect(parseTryOnAnalysis(null)).toEqual({ ok: false, code: "failed" });
   });
 });

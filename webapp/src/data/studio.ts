@@ -1,4 +1,3 @@
-import type { Localized } from "./types";
 import type { GemShape } from "./products";
 
 /**
@@ -24,7 +23,7 @@ export interface PlacedPiece {
   material: StudioMaterial;
 }
 
-export type CompositionId = "signature" | "minimal" | "statement" | "symmetrical" | "mixed" | "sparkle" | "custom";
+type CompositionId = "signature" | "minimal" | "statement" | "symmetrical" | "mixed" | "sparkle" | "custom";
 
 let seq = 0;
 const p = (
@@ -82,60 +81,6 @@ export const COMPOSITIONS: Record<CompositionId, PlacedPiece[]> = {
     p("lower", 3, 0.5, 0.45, 10, "round", "crystal"),
   ],
 };
-
-/** Editorial inspiration boards. Names are the styles, notes are fictional. */
-export interface InspirationBoard {
-  id: CompositionId;
-  title: Localized;
-  note: Localized;
-  pieces: Localized;
-  tone: "blue" | "sand" | "ink" | "blush";
-}
-
-export const INSPIRATION: InspirationBoard[] = [
-  {
-    id: "minimal",
-    title: { fr: "Minimal", en: "Minimal" },
-    note: { fr: "Un seul éclat, posé là où le sourire accroche la lumière.", en: "A single glint, placed where the smile catches the light." },
-    pieces: { fr: "1 pièce · cristal SS5", en: "1 piece · SS5 crystal" },
-    tone: "sand",
-  },
-  {
-    id: "statement",
-    title: { fr: "Statement", en: "Statement" },
-    note: { fr: "Or 18k au centre, rose en écho — une composition qui se remarque.", en: "18k gold at the centre, rose as an echo — a look that gets noticed." },
-    pieces: { fr: "6 pièces · or, rose, cristal", en: "6 pieces · gold, rose, crystal" },
-    tone: "ink",
-  },
-  {
-    id: "symmetrical",
-    title: { fr: "Symétrique", en: "Symmetrical" },
-    note: { fr: "Deux gouttes émeraude en miroir, un équilibre presque architectural.", en: "Two mirrored emerald drops, an almost architectural balance." },
-    pieces: { fr: "4 pièces · émeraude, cristal", en: "4 pieces · emerald, crystal" },
-    tone: "blue",
-  },
-  {
-    id: "mixed",
-    title: { fr: "Formes mixtes", en: "Mixed shapes" },
-    note: { fr: "Navette, fleur, étoile, baguette : chaque dent raconte autre chose.", en: "Navette, flower, star, baguette: every tooth tells its own story." },
-    pieces: { fr: "4 pièces · 4 formes", en: "4 pieces · 4 shapes" },
-    tone: "sand",
-  },
-  {
-    id: "sparkle",
-    title: { fr: "Sparkle", en: "Sparkle" },
-    note: { fr: "Une constellation de micro-cristaux, dispersée comme une poussière d’étoiles.", en: "A constellation of micro crystals, scattered like stardust." },
-    pieces: { fr: "7 pièces · cristal, opale", en: "7 pieces · crystal, opal" },
-    tone: "blush",
-  },
-  {
-    id: "custom",
-    title: { fr: "Composition libre", en: "Custom composition" },
-    note: { fr: "Une fleur or sertie d’un cœur rose : la vôtre ne ressemblera qu’à vous.", en: "A gold flower set with a rose heart: yours will only look like you." },
-    pieces: { fr: "4 pièces · or, rose, émeraude", en: "4 pieces · gold, rose, emerald" },
-    tone: "blue",
-  },
-];
 
 /**
  * The Studio's offers: a free trial, then three plans billed monthly or yearly

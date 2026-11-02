@@ -1,0 +1,89 @@
+import type { StoreDetails } from "../adminSettings";
+import type { Localized } from "../types";
+import { countryName } from "../../lib/countryName";
+import { addressLines } from "../../lib/storeDetails";
+import type { LegalDocument } from "./types";
+
+/**
+ * Fills the "business information to supply" markers of a static legal page
+ * (terms of sale, terms of use) with the details saved in Settings › Store,
+ * as the legal notice does. A detail that has not been supplied keeps its
+ * marker, so the page still shows what is missing instead of inventing it.
+ *
+ * Two businesses (decision 121): the website publisher, which holds the site
+ * and its content (terms of use: publisher, intellectual property), and the
+ * seller, named by its trading name ("PIMP TON SMILE"), whose legal identity
+ * (for an individual entrepreneur, their own name) appears only where the law
+ * asks for the seller's identification — the seller clause of the terms of
+ * sale —, never put forward (decision 120). Pure.
+ */
+
+type Replacements = { fr: Record<string, string>; en: Record<string, string> };
+
+/** "PIMP TON SMILE — <legal name>, Entrepreneur individuel (EI)", or what of it is known. */
+export function sellerIdentity(store: StoreDetails): string {
+  const trading = store.tradingName.trim();
+  const legal = store.legalName.trim();
+  const who = [legal === trading ? "" : legal, store.legalForm.trim()].filter(Boolean).join(", ");
+  return [trading, who].filter(Boolean).join(" — ");
+}
+
+/** The website publisher's name: its trading name, else its legal name; empty when not supplied. */
+export function publisherName(store: StoreDetails): string {
+  return store.publisherName.trim() || store.publisherLegalName.trim();
+}
+
+function replacements(store: StoreDetails): Replacements {
+  const publisher = publisherName(store);
+  const seller = store.legalName.trim() ? sellerIdentity(store) : "";
+  const lines = store.address1.trim() ? addressLines(store) : [];
+  const office = (lang: "fr" | "en") => (lines.length ? [...lines, countryName(store.country, lang)].join(", ") : "");
+  const registration = store.registrationNumber.trim();
+  return {
+    fr: {
+      "[[!Dénomination sociale]]": publisher,
+      "[[!Dénomination et forme juridique]]": seller,
+      "[[!Adresse du siège]]": office("fr"),
+      "[[!Numéro d’immatriculation]]": registration,
+    },
+    en: {
+      "[[!Legal business name]]": publisher,
+      "[[!Legal name and entity type]]": seller,
+      "[[!Registered office address]]": office("en"),
+      "[[!Registration number]]": registration,
+    },
+  };
+}
+
+function fillText(text: string, map: Record<string, string>): string {
+  let out = text;
+  for (const [marker, value] of Object.entries(map)) {
+    if (value) out = out.split(marker).join(value);
+  }
+  return out;
+}
+
+function isLocalized(value: unknown): value is Localized {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Localized).fr === "string" &&
+    typeof (value as Localized).en === "string" &&
+    Object.keys(value).length === 2
+  );
+}
+
+function walk(value: unknown, r: Replacements): unknown {
+  if (isLocalized(value)) return { fr: fillText(value.fr, r.fr), en: fillText(value.en, r.en) };
+  if (Array.isArray(value)) return value.map((item) => walk(item, r));
+  if (typeof value === "object" && value !== null) {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, walk(v, r)]));
+  }
+  return value;
+}
+
+/** The page with the store's details in place of their markers; unchanged without details. */
+export function withStoreDetails(doc: LegalDocument, store: StoreDetails | null): LegalDocument {
+  if (!store) return doc;
+  return walk(doc, replacements(store)) as LegalDocument;
+}

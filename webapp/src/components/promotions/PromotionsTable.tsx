@@ -35,7 +35,7 @@ import { UsageMeter } from "./PromoUi";
  * checkbox, the quick pause/activate and the "…" menu keep their own clicks.
  */
 
-export interface PromotionListProps {
+interface PromotionListProps {
   promotions: Promotion[];
   selected: Set<string>;
   pending: Set<string>;

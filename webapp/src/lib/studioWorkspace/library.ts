@@ -13,10 +13,10 @@ export const CREATION_FILTERS = ["all", "favorites", "minimal", "complex", "symm
 export type CreationFilter = (typeof CREATION_FILTERS)[number];
 
 /** At most this many pieces reads as "minimal"; at least `COMPLEX_FROM` as "complex". */
-export const MINIMAL_UP_TO = 3;
-export const COMPLEX_FROM = 8;
+const MINIMAL_UP_TO = 3;
+const COMPLEX_FROM = 8;
 /** "Recently used": opened or edited within this many days. */
-export const RECENT_DAYS = 7;
+const RECENT_DAYS = 7;
 const DAY_MS = 86_400_000;
 
 const fold = (s: string) =>
@@ -54,7 +54,7 @@ export function matchesFilter(c: Creation, filter: CreationFilter, now = Date.no
   }
 }
 
-export function sortCreations(list: Creation[], sort: CreationSort, locale?: string): Creation[] {
+function sortCreations(list: Creation[], sort: CreationSort, locale?: string): Creation[] {
   const byDateDesc = (a: string, b: string) => Date.parse(b) - Date.parse(a);
   const out = [...list];
   switch (sort) {

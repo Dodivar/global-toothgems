@@ -9,7 +9,7 @@ import { quoteKey, type BasketQuote, type QuoteError, type QuoteItem } from "./b
  * on its way the previous one is not shown as current: `quote` is only set for
  * the exact basket it answers.
  */
-export type QuoteState =
+type QuoteState =
   | { status: "idle" }
   | { status: "loading"; previous: BasketQuote | null }
   | { status: "ready"; quote: BasketQuote }

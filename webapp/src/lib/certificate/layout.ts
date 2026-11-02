@@ -34,7 +34,7 @@ export interface CertificateContent {
   issuerLabel: string;
 }
 
-export const INK = {
+const INK = {
   paper: "#fafaf8",
   ink: "#111111",
   body: "#444444",
@@ -154,12 +154,12 @@ export function wrapLines(text: string, size: number, max: number, weight: numbe
 /* -------------------------------------------------------------------------- */
 
 /** A four-pointed sparkle centred on (cx, cy). */
-export function sparklePath(cx: number, cy: number, r: number): string {
+function sparklePath(cx: number, cy: number, r: number): string {
   return `M${cx} ${cy - r}Q${cx} ${cy} ${cx + r} ${cy}Q${cx} ${cy} ${cx} ${cy + r}Q${cx} ${cy} ${cx - r} ${cy}Q${cx} ${cy} ${cx} ${cy - r}Z`;
 }
 
 /** A cut gem seen from the side, in the box (x, y, w, h): outline then facets. */
-export function gemPaths(x: number, y: number, w: number, h: number): { outline: string; facets: string } {
+function gemPaths(x: number, y: number, w: number, h: number): { outline: string; facets: string } {
   const px = (f: number) => +(x + w * f).toFixed(2);
   const py = (f: number) => +(y + h * f).toFixed(2);
   const outline = `M${px(0.24)} ${py(0)}L${px(0.76)} ${py(0)}L${px(1)} ${py(0.34)}L${px(0.5)} ${py(1)}L${px(0)} ${py(0.34)}Z`;

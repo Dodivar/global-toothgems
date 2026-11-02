@@ -67,7 +67,7 @@ export function FrontViewFigure({
 }
 
 /** The gems in words, numbered like the drawing. */
-export function FrontViewList({ projection }: { projection: FrontViewProjection }) {
+function FrontViewList({ projection }: { projection: FrontViewProjection }) {
   const { t, describe } = useFrontViewLabels();
   if (!projection.gems.length) return <p className="m-0 text-[11.5px] leading-relaxed text-[var(--text-muted)]">{t("studio.frontView.empty")}</p>;
   return (
@@ -99,7 +99,7 @@ export function FrontViewList({ projection }: { projection: FrontViewProjection 
 }
 
 /** "Placement sheet · PDF": downloads the sheet of a design; says when it is being made or failed. */
-export function PlacementSheetButton({
+function PlacementSheetButton({
   request,
   variant = "outline",
   className,

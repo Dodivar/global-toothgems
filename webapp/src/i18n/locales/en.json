@@ -6,23 +6,13 @@
     "home": "Home",
     "shop": "Shop",
     "academy": "Academy",
-    "gems": "Gems",
-    "myCourse": "My course",
     "cart": "Cart",
-    "search": "Search",
     "wishlist": "Favourites",
     "wishlistWithCount": "Favourites ({{count}})",
-    "account": "My account",
     "menu": "Menu",
     "closeMenu": "Close menu",
     "viewAllShop": "View the whole shop",
-    "viewAllShopSub": "42 gems, tools and kits",
     "viewAllAcademy": "View the whole Academy",
-    "viewAllAcademySub": "Certified track · 4 stages",
-    "shapesHeading": "Shapes",
-    "colorsHeading": "Colours",
-    "viewAllShapes": "View all shapes",
-    "viewAllColors": "View all colours",
     "menuTabShop": "Shop",
     "menuTabAcademy": "Academy",
     "menuTabStudio": "Studio 3D",
@@ -40,7 +30,6 @@
     "primary": "Primary navigation",
     "signIn": "Sign in",
     "studio": "Studio 3D",
-    "studioSub": "Design your own compositions",
     "studioWorkshop": "Open the workshop",
     "studioWorkshopSub": "Compose a design in 3D",
     "studioGroups": "My groups",
@@ -80,8 +69,6 @@
     "shapeTileAria_other": "See {{shape}} shaped gems ({{count}} items)",
     "shapeCount_one": "{{count}} item",
     "shapeCount_other": "{{count}} items",
-    "shapePrev": "Previous shapes",
-    "shapeNext": "Next shapes",
     "bestSellersEyebrow": "Top picks",
     "bestSellersTitle": "Best sellers",
     "bestSellersCta": "Full catalog",
@@ -185,8 +172,6 @@
     "colors": {
       "all": "All colours"
     },
-    "colorPrev": "Previous colours",
-    "colorNext": "Next colours",
     "colorTileAria_one": "View {{color}} gems ({{count}} product)",
     "colorTileAria_other": "View {{color}} gems ({{count}} products)"
   },
@@ -473,7 +458,6 @@
     "lastName": "Last name",
     "email": "Email",
     "password": "Password",
-    "passwordHint": "Forgot your password? Recovery ships with authentication.",
     "newsletter": "Send me new releases and course dates",
     "newsletterDescription": "One email a month, unsubscribe in one click.",
     "submitSignIn": "Sign in",
@@ -493,8 +477,7 @@
     "signedInAcademy": "Go to the Academy",
     "signOut": "Sign out",
     "toastSignInTitle": "Signed in",
-    "toastSignInBody": "Your training space is open.",
-    "forgotPassword": "Forgot your password?"
+    "toastSignInBody": "Your training space is open."
   },
   "termsAccept": {
     "before": "By continuing, you accept the",
@@ -513,7 +496,6 @@
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "forgot": "Forgot your password?",
-    "forgotToastTitle": "Password recovery",
     "orContinue": "or continue with",
     "google": "Continue with Google",
     "googleErrorTitle": "Google sign-in unavailable",
@@ -854,7 +836,6 @@
     "curriculumCollapseAll": "Collapse all",
     "moduleValidationTitle": "Validation",
     "moduleValidationSummary": "The training's validation questions — replay them as many times as you need to reach the required score.",
-    "moduleValidationItem": "Validation questions and diploma award",
     "journeyEyebrow": "The journey",
     "journeyTitle": "How the training works",
     "journeyLead": "Five steps, always in the same order.",
@@ -1000,7 +981,6 @@
     "navCertificates": "Certificates",
     "navOrders": "Orders",
     "navProfile": "Profile",
-    "navCatalogue": "Course catalogue",
     "greeting": "Hi {{name}}",
     "memberSince": "Member since {{date}}",
     "shell": {
@@ -1069,7 +1049,6 @@
     "certificatesTitle": "My certificates",
     "certificatesBody": "A certificate is issued as soon as a course reaches 100 %.",
     "certificatesEmpty": "Finish a course to unlock your first certificate.",
-    "certificateUnlocked": "Unlocked",
     "certificateAwardedOn": "Awarded on {{date}}",
     "certificateDownload": "Download PDF",
     "certificateRemaining_one": "{{count}} lesson left before the certificate",
@@ -1276,12 +1255,7 @@
     },
     "academyAll": "All courses"
   },
-  "toasts": {
-    "outOfScopeTitle": "Screen out of scope"
-  },
   "review": {
-    "verified": "Verified purchase",
-    "photoPlaceholder": "Customer photo",
     "starsAria": "Rated {{rating}} out of 5"
   },
   "course": {
@@ -1549,9 +1523,7 @@
       "search": "Search",
       "searchValue": "“{{query}}”",
       "shape": "Shape",
-      "color": "Colour",
       "allShapes": "All shapes",
-      "allColors": "All colours",
       "chipCount_one": "({{count}} product)",
       "chipCount_other": "({{count}} products)",
       "active": "Active filters",
@@ -1590,7 +1562,6 @@
       "noImage": "No image",
       "showOptions": "Show the options of {{name}}",
       "hideOptions": "Hide the options of {{name}}",
-      "optionsOf": "Options of {{name}}",
       "editOption": "Edit {{option}} of {{name}}",
       "loading": "Loading the catalogue…",
       "emptyTitle": "No products yet",
@@ -1953,17 +1924,8 @@
     },
     "activity": {
       "kind": {
-        "created": "was created",
-        "updated": "was updated",
-        "archived": "was archived",
-        "restored": "was restored",
-        "status": "changed status",
-        "stock": "changed availability",
-        "deleted": "was deleted",
-        "duplicated": "was duplicated"
-      },
-      "emptyTitle": "No activity",
-      "emptyBody": "Changes to the catalogue will appear here."
+        "status": "changed status"
+      }
     },
     "products": {
       "title": "Products",
@@ -3460,21 +3422,14 @@
         "learners_one": "{{count}} learner",
         "learners_other": "{{count}} learners",
         "noQuiz": "No quiz",
-        "quizComplete": "Quizzes ready",
-        "quizPartial": "Quizzes incomplete",
-        "duration": "Duration",
         "completion": "Completion",
         "updated": "Edited",
-        "structure": "Structure",
-        "course": "Course",
         "thumbAlt": "Cover image for {{name}}",
         "noCompletion": "No data yet",
         "metricTotal": "Courses",
         "metricPublished": "Published",
         "metricDrafts": "In progress",
         "metricLearners": "Learners",
-        "viewCards": "Card view",
-        "viewTable": "Table view",
         "sections": "Courses by status",
         "sectionCount_one": "{{count}} course",
         "sectionCount_other": "{{count}} courses"
@@ -3502,8 +3457,6 @@
         "creative": "Creative"
       },
       "actions": {
-        "edit": "Edit details",
-        "builder": "Open builder",
         "openBuilder": "Open builder",
         "preview": "Learner preview",
         "duplicate": "Duplicate",
@@ -3512,15 +3465,12 @@
         "review": "Review & publish",
         "delete": "Delete",
         "more": "More actions for {{name}}",
-        "back": "Back to training",
         "mediaLibrary": "Media library",
         "access": "Member access"
       },
       "create": {
         "title": "Create training",
         "description": "Describe the course. You will build its structure next.",
-        "editTitle": "Course details",
-        "editDescription": "What members see before they enrol.",
         "sectionInfo": "Details",
         "sectionInfoHint": "The title and descriptions appear in the Academy catalogue.",
         "sectionMedia": "Cover",
@@ -3540,7 +3490,6 @@
         "fieldFullPlaceholder": "Introduce the modules, the pace and what awaits the learner.",
         "fieldCover": "Cover image",
         "fieldCoverHint": "Landscape format recommended.",
-        "coverAlt": "Selected cover",
         "fieldCategory": "Category",
         "fieldLevel": "Difficulty level",
         "fieldDuration": "Estimated duration",
@@ -3567,15 +3516,11 @@
         "previewHint": "This is how the course will appear to members.",
         "previewEmptyTitle": "Nothing to preview yet",
         "previewEmptyBody": "Fill in a title and a short description to see the preview.",
-        "previewLevel": "Level",
         "submit": "Create & build",
-        "submitShort": "Create course",
         "save": "Save details",
         "cancel": "Cancel",
         "structureNote": "What happens next",
         "structureNoteBody": "Once created, the course opens in the builder where you add modules, steps and quizzes.",
-        "langLabel": "Content language",
-        "langHint": "Content is authored in both languages. Switch tabs to edit the other version.",
         "errorTitle": "A title is required",
         "errorShort": "A short description is required"
       },
@@ -3583,39 +3528,27 @@
         "title": "Course builder",
         "description": "Build the course: modules, steps and knowledge checks.",
         "structure": "Course structure",
-        "structureHint": "Drag to reorder, or use the arrow buttons.",
         "addModule": "Add module",
         "addFirstModule": "Add first module",
         "emptyTitle": "No modules yet.",
         "emptyBody": "Start building your training by adding your first module.",
         "properties": "Properties",
-        "openProperties": "Show properties",
         "closeProperties": "Hide properties",
         "nothingTitle": "Nothing selected",
         "nothingBody": "Pick a module, a step or a quiz in the structure on the left.",
         "course": "Course",
-        "module": "Module",
-        "step": "Step",
-        "quiz": "Quiz",
         "moduleLabel": "Module {{number}}",
         "stepLabel": "Step {{number}}",
         "collapseModule": "Collapse {{name}}",
         "expandModule": "Expand {{name}}",
         "moveUp": "Move up",
         "moveDown": "Move down",
-        "dragHandle": "Move {{name}}",
         "dragHint": "Use the Move up and Move down buttons to reorder with the keyboard.",
         "tabStructure": "Structure",
         "tabEditor": "Editor",
-        "backToStructure": "Back to structure",
         "addStep": "Add step",
         "addQuiz": "Add quiz",
-        "noQuizYet": "No quiz",
         "rename": "Rename",
-        "renameDone": "Confirm name",
-        "renameCancel": "Cancel rename",
-        "selected": "Selected",
-        "courseSettings": "Course details",
         "reviewAndPublish": "Review & publish",
         "quizQuestions_one": "{{count}} question",
         "quizQuestions_other": "{{count}} questions",
@@ -3633,7 +3566,6 @@
         "fieldDescriptionHint": "One or two sentences shown at the top of the module.",
         "fieldCover": "Module image",
         "fieldCoverHint": "Shown in the learner's navigation.",
-        "replaceCover": "Replace image",
         "objectives": "Module objectives",
         "objectivesHint": "What the learner will be able to do by the end.",
         "objectiveAdd": "Add objective",
@@ -3643,8 +3575,6 @@
         "summaryWithQuiz_other": "{{count}} learning steps + a final knowledge check",
         "summaryNoQuiz_one": "{{count}} learning step, no knowledge check",
         "summaryNoQuiz_other": "{{count}} learning steps, no knowledge check",
-        "duration": "Estimated duration",
-        "durationHint": "Calculated from the module's steps.",
         "steps": "Steps",
         "stepsHint": "Drag to reorder, or use the arrow buttons.",
         "addStep": "Add content step",
@@ -3795,8 +3725,6 @@
         "moveQuestionUp": "Move this question up",
         "moveQuestionDown": "Move this question down",
         "duplicateQuestion": "Duplicate this question",
-        "editQuestion": "Edit this question",
-        "collapseQuestion": "Collapse this question",
         "noCorrect": "No correct answer selected"
       },
       "preview": {
@@ -3811,8 +3739,7 @@
         "backToBuilder": "Back to the builder",
         "emptyTitle": "Nothing to preview",
         "emptyBody": "This course doesn't contain any modules yet.",
-        "videoMock": "Video",
-        "answersRevealed": "The correct answers are shown below."
+        "videoMock": "Video"
       },
       "review": {
         "title": "Review & publish",
@@ -3860,7 +3787,6 @@
           "videoMissing": "Step {{step}} in module {{module}} contains a video block without a video."
         },
         "fix": "Fix",
-        "summaryTitle": "Summary",
         "blocking_one": "{{count}} blocking item",
         "blocking_other": "{{count}} blocking items",
         "warnings_one": "{{count}} recommendation",
@@ -3874,7 +3800,6 @@
         "saveDraft": "Save draft",
         "save": "Save",
         "lastSaved": "Saved at {{time}}",
-        "neverSaved": "Not saved in this session",
         "savePublished": "Save (live)",
         "savePublishedHint": "Live course: every save is visible to its buyers straight away."
       },
@@ -3897,7 +3822,6 @@
         "createdBody": "“{{name}}” is ready to be built.",
         "savedTitle": "Changes saved",
         "savedBody": "The course is up to date.",
-        "structureTitle": "Training structure updated",
         "publishedTitle": "Course published",
         "publishedBody": "“{{name}}” is now available to members.",
         "unpublishedTitle": "Course unpublished",
@@ -3922,8 +3846,7 @@
         "quizDeletedTitle": "Quiz deleted",
         "questionAddedTitle": "Question added",
         "questionDuplicatedTitle": "Question duplicated",
-        "questionDeletedTitle": "Question deleted",
-        "reorderedTitle": "Order updated"
+        "questionDeletedTitle": "Question deleted"
       },
       "price": {
         "section": "Price",
@@ -5006,7 +4929,6 @@
     "nameLockedHint": "Add your first and last name to download or share this certificate."
   },
   "documents": {
-    "seller": "Seller",
     "page": "Page {{page}} of {{count}}",
     "meta": {
       "reference": "Reference",

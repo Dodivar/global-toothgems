@@ -33,7 +33,7 @@ export interface ReadinessIssue {
   stepId?: string;
 }
 
-export interface ReadinessCheck {
+interface ReadinessCheck {
   id: string;
   ok: boolean;
   /** Key under `admin.training.review.checks`. */
@@ -41,7 +41,7 @@ export interface ReadinessCheck {
   params?: Record<string, string | number>;
 }
 
-export interface Readiness {
+interface Readiness {
   checks: ReadinessCheck[];
   issues: ReadinessIssue[];
   blocking: ReadinessIssue[];

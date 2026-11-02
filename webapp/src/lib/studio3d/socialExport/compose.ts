@@ -22,7 +22,7 @@ export interface MarkImage {
   height: number;
 }
 
-export interface FrameContent {
+interface FrameContent {
   /** The engine's canvas, holding the render at the layout's render size. */
   render: CanvasImageSource;
   texts: { title?: string; handle?: string };

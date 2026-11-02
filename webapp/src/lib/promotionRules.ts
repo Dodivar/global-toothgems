@@ -194,7 +194,7 @@ export function campaignRollup(campaign: Campaign, promotions: Promotion[]): Cam
 /* Overview KPIs                                                              */
 /* -------------------------------------------------------------------------- */
 
-export interface PromotionOverview {
+interface PromotionOverview {
   active: number;
   scheduled: number;
   expired: number;

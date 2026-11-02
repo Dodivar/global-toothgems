@@ -1,6 +1,7 @@
 import { jpegToPdf } from "./pdf";
 import { CERTIFICATE_ASSETS } from "./assets";
 import { layoutCertificate, PAGE, type CertificateAsset, type CertificateContent, type CertificateOp, type Paint } from "./layout";
+import { loadImage, canvasToBlob } from "../canvasImage";
 
 /**
  * The certificate as a file: the operations of `layout.ts` drawn on a canvas,
@@ -61,16 +62,6 @@ function drawText(ctx: CanvasRenderingContext2D, op: Extract<CertificateOp, { ki
   ctx.restore();
 }
 
-/** Loads a brand image; the export fails rather than ship a certificate without its logo. */
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("image unavailable"));
-    image.src = src;
-  });
-}
-
 type Images = Partial<Record<CertificateAsset, HTMLImageElement>>;
 
 function draw(ctx: CanvasRenderingContext2D, op: CertificateOp, k: number, images: Images) {
@@ -120,21 +111,15 @@ async function renderCanvas(content: CertificateContent, scale: number): Promise
   return canvas;
 }
 
-function toBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("export failed"))), type, quality);
-  });
-}
-
 /** The certificate as an image, for social posts. */
 export async function certificatePng(content: CertificateContent): Promise<Blob> {
-  return toBlob(await renderCanvas(content, SCALE.png), "image/png");
+  return canvasToBlob(await renderCanvas(content, SCALE.png), "image/png");
 }
 
 /** The certificate as an A4 landscape PDF, for keeping and printing. */
 export async function certificatePdf(content: CertificateContent): Promise<Blob> {
   const canvas = await renderCanvas(content, SCALE.pdf);
-  const jpeg = new Uint8Array(await (await toBlob(canvas, "image/jpeg", 0.92)).arrayBuffer());
+  const jpeg = new Uint8Array(await (await canvasToBlob(canvas, "image/jpeg", 0.92)).arrayBuffer());
   const pdf = jpegToPdf(jpeg, { width: canvas.width, height: canvas.height }, {
     title: `${content.title} — ${content.courseTitle}`,
     author: content.issuer,

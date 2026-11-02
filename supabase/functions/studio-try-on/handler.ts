@@ -2,61 +2,58 @@ import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./gemini.ts";
 import { cropJpeg, mouthCrop, type CropRect } from "./crop.ts";
-import { coherentScale, imageSize, judgeReadings, PHOTO_READINGS, photoScale } from "./photoCheck.ts";
-import { buildDesignData, gemSpots, leftOutGems, piecesFromScene, readSeats } from "./prompt.ts";
+import { imageSize, judgeReadings, PHOTO_READINGS } from "./photoCheck.ts";
+import { readTeeth } from "./teeth.ts";
 
 /**
- * POST /functions/v1/studio-try-on   (decision 111)
+ * POST /functions/v1/studio-try-on   (decision 111, computed placement since 2026-11-01: decision 111 (k))
  *
- * Two calls:
+ * A try-on is two calls from the browser. The gems' places are computed in
+ * the browser from the teeth found on the photo; the image model only makes
+ * the placed gems look real.
  *
  *   { "action": "status" }  (JSON, no account needed)
- *     200 { available }   whether the AI is connected — the browser asks before
- *                         any photo leaves the device.
+ *     200 { available, daily_limit, quota }   whether the AI is connected — the
+ *             browser asks before any photo leaves the device; quota: the
+ *             signed-in caller's { limit, remaining } renders over the last
+ *             24 hours, { unlimited: true } for an active administrator, null
+ *             for a visitor
  *
- *   multipart/form-data  (the member's token)
+ *   1. multipart/form-data, `action` = "analyse"  (the member's token)
  *     source  JSON: { "creation_id" } (one's own creation) | { "token" } (share
  *             link) | { "handle", "item_id" } (approved Glowbook creation)
  *     photo   the smile photo (JPEG / PNG / WebP, ≤ 6 MB), prepared in the browser
- *     design  the browser's 3D render of the creation (≤ 3 MB): IMAGE 1 of
- *             the system instructions (`systemPrompt.ts`), the photo IMAGE 2
- *     map     optional PNG (≤ 2 MB): the flat design map drawn by the browser
- *             (`webapp/src/lib/studio3d/tryOnMap.ts`), IMAGE 3 with prompt v3,
- *             each gem tagged like its design data line; ignored with v1
- *     overview  optional JPEG (≤ 3 MB): the same 3D design seen from further
- *             away, the whole smile around the gems (`designImage.ts`),
- *             IMAGE 4 — sent to the model only with the map (v3)
- *     seats   optional JSON: each gem's place and size on its tooth, measured
- *             by the browser (`prompt.ts` `readSeats`), matched to the stored
- *             gems by id
- *     progress  optional "1": the answer is an event stream instead (see
- *             `progressStream`), so the browser shows the photo check as a step
- *     200 { ok: true, image: { mime_type, data }, crop?, left_out? }   base64, never stored;
- *             crop { x, y, width, height, photo_width, photo_height }: the image
- *             is the edited mouth close-up, to paste back at that place of the photo (`crop.ts`);
- *             left_out: how many gems were not drawn because the photo check
- *             found their spot not visible (`prompt.ts` `gemSpots`, 2026-10-28)
- *     422 { ok: false, code: "photo_unsuitable", reasons }  the photo check
- *             (`photoCheck.ts`) refused the photo: too_far | not_frontal | no_teeth |
- *             teeth_hidden | too_dark | too_bright | blurry | design_hidden (no
- *             gem's spot visible) — no generation
- *   status call (JSON `{ "action": "status" }`, no account needed):
- *     200 { available, daily_limit, quota }  quota: the signed-in caller's
- *             { limit, remaining } renders over the last 24 hours,
- *             { unlimited: true } for an active administrator, null for a visitor
- *     4xx/5xx { ok: false, code }  invalid_request | sign_in_required |
- *             session_expired | not_found | not_allowed | daily_limit |
- *             not_available | blocked | failed | server_error
+ *     The photo check (`photoCheck.ts`), the mouth close-up (`crop.ts`), then
+ *     each tooth on it with its FDI number (`teeth.ts`). No image generated.
+ *     200 { ok: true, crop: { x, y, width, height, photo_width, photo_height },
+ *           teeth: [{ fdi, x, y, width, height }] }   boxes in the close-up's pixels
+ *     422 { ok: false, code: "photo_unsuitable", reasons }  too_far | not_frontal |
+ *             no_teeth | teeth_hidden | too_dark | too_bright | blurry
+ *     Recorded as failed / `analysis`: counted against the daily requests
+ *     (TRY_ON_DAILY_CHECKS), never against the renders.
+ *
+ *   2. multipart/form-data, the render  (the member's token)
+ *     source, photo  as above (the photo a JPEG)
+ *     design  the browser's 3D render of the creation (≤ 3 MB): cut, colour, rotation
+ *     guide   JPEG (≤ 3 MB): the close-up with every gem drawn as a flat mark where
+ *             the browser placed it (`webapp/src/lib/studio3d/tryOnRegistration.ts`)
+ *     crop    JSON { x, y, width, height }: where that close-up was cut (the analysis's crop)
+ *     marks   how many marks the guide holds (1–200)
+ *     The model turns the marks into real gems (`TRY_ON_SYSTEM_PROMPT`): IMAGE 1
+ *     the guide, IMAGE 2 the same close-up cut here from the photo, IMAGE 3 the
+ *     design, then the owner's reference pictures. Counted as a render.
+ *     200 { ok: true, image: { mime_type, data }, crop }   base64, never stored
+ *
+ *   Errors: 4xx/5xx { ok: false, code }  invalid_request | sign_in_required |
+ *     session_expired | not_found | not_allowed | daily_limit | not_available |
+ *     blocked | failed | server_error
  *
  * The creation and the owner's plan switch are read from the database
  * (`studio_try_on_creation`), so only a creation the requester may see, and
- * whose owner has the option, is ever rendered; a request is counted before the provider is
- * called (`studio_try_on_requests`, daily limits per account: the renders —
- * photos refused by the check do not count — and every request, checks
- * included; active administrators have none, their requests are still
- * recorded). The photo is checked first by a small text model; a failed
- * check (provider down, no answer) never blocks the render. The photo and
- * the image only pass through memory.
+ * whose owner has the option, is ever analysed or rendered. Every request is
+ * recorded (`studio_try_on_requests`) before a provider is called; active
+ * administrators have no daily limit. The photo and the image only pass
+ * through memory.
  */
 
 export type TryOnSourceRef = { creationId: string } | { token: string } | { handle: string; itemId: string };
@@ -72,48 +69,39 @@ export interface StudioTryOnDeps {
   origins: SiteOrigins;
   /** Whether the provider is connected (secrets set). */
   available: boolean;
-  /** Renders per account per 24 h (photos refused by the check not counted). */
+  /** Renders per account per 24 h. */
   dailyLimit: number;
-  /** Requests per account per 24 h, refused photos included. */
+  /** Requests per account per 24 h, analyses and refused photos included. */
   dailyChecks: number;
   userFromToken(token: string): Promise<string | null>;
   loadCreation(requester: string, ref: TryOnSourceRef): Promise<TryOnCreationRow | null>;
   /** Whether the account has no daily limit: an active administrator (owner's decision, 2026-10-26, to test freely). */
   unlimited(userId: string): Promise<boolean>;
-  /** The account's requests since then: all of them, and those that were not refused by the photo check. */
+  /** The account's requests since then: all of them, and the renders among them. */
   countRecent(userId: string, since: Date): Promise<{ requests: number; renders: number }>;
   startRequest(userId: string, row: TryOnCreationRow): Promise<string>;
   finishRequest(id: string, status: "generated" | "failed", errorCode: string | null): Promise<void>;
   references(): Promise<InlineImage[]>;
-  /** Whether the model edits a close-up of the mouth (`crop.ts`) instead of the whole photo. */
-  cropMouth: boolean;
-  /** Whether the prompt reads the flat design map (IMAGE 3): v3 only; v1 never gets it. */
-  readsMap: boolean;
   /**
    * One reading of the photo by the check model (`photoCheck.ts`), or why there is none; absent: no check.
    * Called `PHOTO_READINGS` times at once; `reading` tells them apart (0 the first).
    */
   checkPhoto?(photo: InlineImage, reading: number): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
-  /**
-   * The second look, on the image the model edits (the mouth close-up): the teeth's boxes for the scale and
-   * each gem's spot (`CLOSE_UP_CHECK_PROMPT`); `spots`: the design's gem spots (`gemSpots`). Absent: none.
-   */
-  checkCloseUp?(image: InlineImage, spots: string | null): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
-  /**
-   * Sends the images, in this order, with the system instructions; `designData`
-   * (the gems as text, from the database) follows them when the prompt version reads it.
-   */
-  generate(images: InlineImage[], designData: string, aspectRatio: string | null): Promise<GenerateOutcome>;
+  /** Each tooth on the close-up, by the teeth model (`teeth.ts`). */
+  findTeeth(image: InlineImage): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
+  /** Sends the images, in this order, with the system instructions and the text after them. */
+  generate(images: InlineImage[], text: string, aspectRatio: string | null): Promise<GenerateOutcome>;
   now?: () => Date;
   log(message: string, detail?: unknown): void;
 }
 
 export const PHOTO_MAX_BYTES = 6 * 1024 * 1024;
-export const DESIGN_MAX_BYTES = 3 * 1024 * 1024;
-export const MAP_MAX_BYTES = 2 * 1024 * 1024;
-const BODY_MAX_BYTES = PHOTO_MAX_BYTES + 2 * DESIGN_MAX_BYTES + MAP_MAX_BYTES + 64 * 1024;
+export const IMAGE_MAX_BYTES = 3 * 1024 * 1024;
+const BODY_MAX_BYTES = PHOTO_MAX_BYTES + 2 * IMAGE_MAX_BYTES + 64 * 1024;
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Error codes of requests that produced no image: they never count as renders. */
+export const NOT_RENDERED_CODES = ["photo_unsuitable", "analysis", "diagnostic"];
 
 /** The reference the browser names, or null when malformed (exactly one kind). */
 export function readSourceRef(raw: unknown): TryOnSourceRef | null {
@@ -135,10 +123,10 @@ export function readSourceRef(raw: unknown): TryOnSourceRef | null {
   return null;
 }
 
-async function inlineFile(
-  value: FormDataEntryValue | null,
-  maxBytes: number,
-): Promise<Photo | null | "invalid"> {
+type Photo = InlineImage & { bytes: Uint8Array; size: { width: number; height: number } | null };
+type Ending = { status: number; body: Record<string, unknown> };
+
+async function inlineFile(value: FormDataEntryValue | null, maxBytes: number): Promise<Photo | null | "invalid"> {
   if (value === null) return null;
   if (typeof value === "string" || !IMAGE_TYPES.has(value.type) || value.size === 0 || value.size > maxBytes) return "invalid";
   const bytes = new Uint8Array(await value.arrayBuffer());
@@ -160,6 +148,30 @@ export function headerSize(base64: string): { width: number; height: number } | 
   } catch {
     return null;
   }
+}
+
+/** The browser's crop of the photo (`{ x, y, width, height }`, whole pixels inside it), or null. */
+export function readCropRect(raw: FormDataEntryValue | null, size: { width: number; height: number } | null): CropRect | null {
+  if (typeof raw !== "string" || raw.length > 200 || !size) return null;
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!data || typeof data !== "object") return null;
+  const { x, y, width, height } = data as Record<string, unknown>;
+  const ints = [x, y, width, height];
+  if (!ints.every((n) => typeof n === "number" && Number.isInteger(n))) return null;
+  const [cx, cy, cw, ch] = ints as number[];
+  if (cx < 0 || cy < 0 || cw < 64 || ch < 64 || cx + cw > size.width || cy + ch > size.height) return null;
+  return { x: cx, y: cy, width: cw, height: ch };
+}
+
+/** Whether a stored scene holds at least one piece. */
+function hasPieces(scene: unknown): boolean {
+  const pieces = scene && typeof scene === "object" ? (scene as Record<string, unknown>).pieces : null;
+  return Array.isArray(pieces) && pieces.length > 0;
 }
 
 export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Promise<Response> {
@@ -196,15 +208,23 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   }
   const ref = readSourceRef(form.get("source"));
   const photo = await inlineFile(form.get("photo"), PHOTO_MAX_BYTES);
-  const design = await inlineFile(form.get("design"), DESIGN_MAX_BYTES);
-  // The flat map is optional (a site older than the map sends none); a malformed one is dropped, never fatal.
-  const mapFile = deps.readsMap ? await inlineFile(form.get("map"), MAP_MAX_BYTES) : null;
-  const map = mapFile && mapFile !== "invalid" ? mapFile : null;
-  // The overview goes only with the map (it is IMAGE 4); optional and never fatal, like the map.
-  const overviewFile = map ? await inlineFile(form.get("overview"), DESIGN_MAX_BYTES) : null;
-  const overview = overviewFile && overviewFile !== "invalid" ? overviewFile : null;
-  const seats = readSeats(form.get("seats"));
-  if (!ref || !photo || photo === "invalid" || !design || design === "invalid") return json({ ok: false, code: "invalid_request" }, 400, cors);
+  if (!ref || !photo || photo === "invalid") return json({ ok: false, code: "invalid_request" }, 400, cors);
+
+  const analyse = form.get("action") === "analyse";
+  let render: { design: Photo; guide: Photo; rect: CropRect; marks: number } | null = null;
+  if (!analyse) {
+    const design = await inlineFile(form.get("design"), IMAGE_MAX_BYTES);
+    const guide = await inlineFile(form.get("guide"), IMAGE_MAX_BYTES);
+    const rect = readCropRect(form.get("crop"), photo.size);
+    const marks = Number(form.get("marks"));
+    if (
+      !design || design === "invalid" || !guide || guide === "invalid" || guide.mimeType !== "image/jpeg" ||
+      photo.mimeType !== "image/jpeg" || !rect || !Number.isInteger(marks) || marks < 1 || marks > 200
+    ) {
+      return json({ ok: false, code: "invalid_request" }, 400, cors);
+    }
+    render = { design, guide, rect, marks };
+  }
 
   let userId: string | null;
   try {
@@ -216,44 +236,47 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   if (!userId) return json({ ok: false, code: "session_expired" }, 401, cors);
 
   let requestId: string;
-  let row: TryOnCreationRow | null;
   try {
-    row = await deps.loadCreation(userId, ref);
+    const row = await deps.loadCreation(userId, ref);
     if (!row) return json({ ok: false, code: "not_found" }, 404, cors);
     if (!row.allowed) return json({ ok: false, code: "not_allowed" }, 403, cors);
-    if (!(await deps.unlimited(userId)) && (await remainingRenders(deps, userId)) === 0) return json({ ok: false, code: "daily_limit" }, 429, cors);
+    if (!hasPieces(row.scene)) return json({ ok: false, code: "not_found" }, 404, cors);
+    if (!(await deps.unlimited(userId)) && (await (analyse ? remainingChecks : remainingRenders)(deps, userId)) === 0) {
+      return json({ ok: false, code: "daily_limit" }, 429, cors);
+    }
     requestId = await deps.startRequest(userId, row);
   } catch (error) {
     deps.log("preparing the request failed", error instanceof Error ? error.message : error);
     return json({ ok: false, code: "server_error" }, 500, cors);
   }
 
-  const pieces = piecesFromScene(row.scene);
-  if (pieces.length === 0) {
-    await deps.finishRequest(requestId, "failed", "empty_creation").catch(() => {});
-    return json({ ok: false, code: "not_found" }, 404, cors);
-  }
-
-  const run = (onRendering: () => void) => checkAndRender(deps, requestId, photo, design, map, overview, pieces, seats, onRendering);
-  if (form.get("progress") !== "1") {
-    const ending = await run(() => {});
-    return json(ending.body, ending.status, cors);
-  }
-  return progressStream(run, cors);
+  const ending = await (render ? renderPlaced(deps, requestId, photo, render) : analysePhoto(deps, requestId, photo)).catch((error): Ending => {
+    deps.log(render ? "render failed" : "analysis failed", error instanceof Error ? error.message : error);
+    deps.finishRequest(requestId, "failed", "server_error").catch(() => {});
+    return { status: 500, body: { ok: false, code: "server_error" } };
+  });
+  return json(ending.body, ending.status, cors);
 }
+
+const since24h = (deps: StudioTryOnDeps) => new Date((deps.now?.() ?? new Date()).getTime() - 24 * 3600 * 1000);
 
 /** Renders the account may still ask for in the last 24 hours: none once either daily cap is reached. */
 async function remainingRenders(deps: StudioTryOnDeps, userId: string): Promise<number> {
-  const now = deps.now?.() ?? new Date();
-  const used = await deps.countRecent(userId, new Date(now.getTime() - 24 * 3600 * 1000));
+  const used = await deps.countRecent(userId, since24h(deps));
   return used.requests >= deps.dailyChecks ? 0 : Math.max(0, deps.dailyLimit - used.renders);
+}
+
+/** Requests the account may still make in the last 24 hours, refused photos and analyses included. */
+async function remainingChecks(deps: StudioTryOnDeps, userId: string): Promise<number> {
+  const used = await deps.countRecent(userId, since24h(deps));
+  return Math.max(0, deps.dailyChecks - used.requests);
 }
 
 /**
  * The signed-in caller's daily allowance, for the status call: `{ limit,
  * remaining }`, `{ unlimited: true }` for an active administrator, or null
  * without a valid member token (a visitor) or when it cannot be read — the
- * status itself never fails on it. Display only: a generation counts again.
+ * status itself never fails on it. Display only: a render counts again.
  */
 async function quotaFor(req: Request, deps: StudioTryOnDeps): Promise<Record<string, unknown> | null> {
   const token = bearer(req);
@@ -269,190 +292,129 @@ async function quotaFor(req: Request, deps: StudioTryOnDeps): Promise<Record<str
   }
 }
 
-type Ending = { status: number; body: Record<string, unknown> };
-type Photo = InlineImage & { bytes: Uint8Array; size: { width: number; height: number } | null };
-
 /**
- * The browser asked to follow the request (`progress=1`): an event stream
- * (`text/event-stream`, always 200) of `{ "stage": "checking" }`, then
- * `{ "stage": "rendering" }` once the photo passed the check (or the check
- * could not run), then `{ "result": <the usual body> }`. The dialog shows
- * the check as its own step from these events. A browser that leaves mid-way
- * does not stop the request: it is still closed in `studio_try_on_requests`.
+ * The photo check (several readings, the strictest kept): the refusal to send,
+ * or the teeth's box read from the photo (null when the check could not run —
+ * a failed check never blocks).
  */
-function progressStream(run: (onRendering: () => void) => Promise<Ending>, cors: Record<string, string>): Response {
-  const encoder = new TextEncoder();
-  const body = new ReadableStream<Uint8Array>({
-    start(controller) {
-      let open = true;
-      const send = (event: Record<string, unknown>) => {
-        if (!open) return;
-        try {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
-        } catch {
-          open = false; // the browser left: the request still runs to its end
-        }
-      };
-      send({ stage: "checking" });
-      void run(() => send({ stage: "rendering" }))
-        .catch((): Ending => ({ status: 500, body: { ok: false, code: "server_error" } }))
-        .then((ending) => {
-          send({ result: ending.body });
-          if (open) controller.close();
-        });
-    },
+async function checkPhoto(deps: StudioTryOnDeps, requestId: string, photo: Photo): Promise<{ refused: Ending } | { teethBox: unknown }> {
+  if (!deps.checkPhoto) return { teethBox: null };
+  const readings = await Promise.all(
+    Array.from({ length: PHOTO_READINGS }, (_, i) =>
+      deps.checkPhoto!({ mimeType: photo.mimeType, data: photo.data }, i).catch((error) => ({
+        ok: false as const,
+        detail: error instanceof Error ? error.message : String(error),
+      })),
+    ),
+  );
+  const answers = readings.flatMap((r) => (r.ok ? [r.value] : []));
+  if (answers.length === 0) {
+    deps.log("photo check unavailable, analysing anyway", readings.map((r) => (r.ok ? "ok" : r.detail)));
+    return { teethBox: null };
+  }
+  const { verdict, reading, spans } = judgeReadings(answers, photo.size);
+  // Facts only, never the photo: they tune the thresholds.
+  deps.log("photo check", {
+    span: verdict.span,
+    spans,
+    issues: verdict.issues,
+    lighting: answers.map((a) => a.lighting),
+    sharpness: answers.map((a) => a.sharpness),
+    pose: answers.map((a) => a.head_pose),
+    centrals: answers.map((a) => a.central_incisors_visible),
   });
-  return new Response(body, {
-    status: 200,
-    headers: { ...cors, "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store" },
-  });
+  if (verdict.issues.length > 0) {
+    await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
+    return { refused: { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: verdict.issues } } };
+  }
+  return { teethBox: reading.teeth_box };
 }
 
-/** The photo check, then the render; the request is closed whatever happens. */
-async function checkAndRender(
+/** Step 1: the photo check, the mouth close-up, then each tooth on it. Nothing is generated. */
+async function analysePhoto(deps: StudioTryOnDeps, requestId: string, photo: Photo): Promise<Ending> {
+  const checked = await checkPhoto(deps, requestId, photo);
+  if ("refused" in checked) return checked.refused;
+  const edited = closeUp(photo, checked.teethBox);
+  const target = edited?.image ?? photo;
+  const size = target.size;
+  const found = size
+    ? await deps.findTeeth({ mimeType: target.mimeType, data: target.data }).catch((error) => ({
+        ok: false as const,
+        detail: error instanceof Error ? error.message : String(error),
+      }))
+    : ({ ok: false, detail: "image size unknown" } as const);
+  await deps.finishRequest(requestId, "failed", "analysis").catch(() => {});
+  if (!found.ok || !size) {
+    deps.log("teeth detection unavailable", found.ok ? "image size unknown" : found.detail);
+    return { status: 502, body: { ok: false, code: "failed" } };
+  }
+  const teeth = readTeeth(found.value, size);
+  // Facts only: which teeth were found, never the photo.
+  deps.log("analysis", { crop: edited?.crop ?? null, teeth: teeth.map((t) => t.fdi) });
+  const crop = edited?.crop ?? { x: 0, y: 0, width: size.width, height: size.height };
+  const photoSize = photo.size ?? size;
+  return { status: 200, body: { ok: true, crop: { ...crop, photo_width: photoSize.width, photo_height: photoSize.height }, teeth } };
+}
+
+/** Step 2: the model turns the guide's marks into real gems, the untouched close-up beside it. */
+async function renderPlaced(
   deps: StudioTryOnDeps,
   requestId: string,
   photo: Photo,
-  design: Photo,
-  map: Photo | null,
-  overview: Photo | null,
-  pieces: ReturnType<typeof piecesFromScene>,
-  seats: ReturnType<typeof readSeats>,
-  onRendering: () => void,
+  render: { design: Photo; guide: Photo; rect: CropRect; marks: number },
 ): Promise<Ending> {
-  let mmShare: number | null = null;
-  let teethBox: unknown = null;
-  if (deps.checkPhoto) {
-    // Several readings of the same photo, the strictest kept (`judgeReadings`): one reading alone let a photo through.
-    const readings = await Promise.all(
-      Array.from({ length: PHOTO_READINGS }, (_, i) =>
-        deps.checkPhoto!({ mimeType: photo.mimeType, data: photo.data }, i).catch((error) => ({
-          ok: false as const,
-          detail: error instanceof Error ? error.message : String(error),
-        })),
-      ),
-    );
-    const answers = readings.flatMap((r) => (r.ok ? [r.value] : []));
-    if (answers.length > 0) {
-      const { verdict, reading, spans } = judgeReadings(answers, photo.size);
-      mmShare = coherentScale(reading, photo.size);
-      teethBox = reading.teeth_box;
-      // Facts only, never the photo: they tune the thresholds.
-      deps.log("photo check", {
-        span: verdict.span,
-        spans,
-        issues: verdict.issues,
-        lighting: answers.map((a) => a.lighting),
-        sharpness: answers.map((a) => a.sharpness),
-        pose: answers.map((a) => a.head_pose),
-        centrals: answers.map((a) => a.central_incisors_visible),
-        mm: mmShare === null ? null : Math.round(mmShare * 10000) / 10000,
-        mm_incoherent: mmShare === null && photoScale(reading, photo.size) !== null,
-      });
-      if (verdict.issues.length > 0) {
-        await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
-        return { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: verdict.issues } };
-      }
-    } else {
-      deps.log("photo check unavailable, rendering anyway", readings.map((r) => (r.ok ? "ok" : r.detail)));
-    }
+  const { design, guide, rect, marks } = render;
+  const original = cropJpeg(photo.bytes, rect);
+  if (!original || !photo.size) {
+    await deps.finishRequest(requestId, "failed", "crop_failed").catch(() => {});
+    return { status: 502, body: { ok: false, code: "failed" } };
   }
-
-  // The mouth close-up: the model edits the teeth and lips only, the browser pastes them back (`crop.ts`).
-  const edited = deps.cropMouth ? closeUp(photo, teethBox) : null;
-  if (deps.cropMouth) {
-    deps.log("mouth crop", edited ? { photo: photo.size, crop: edited.crop } : { photo: photo.size, crop: null });
-  }
-  const target = edited?.image ?? photo;
-  // One millimetre as a share of the edited image's width, from the whole photo: the fallback scale.
-  const photoMm = mmShare !== null && edited && photo.size ? (mmShare * photo.size.width) / edited.crop.width : mmShare;
-
-  // The second look, on the image the model edits: the scale measured where the teeth are large, and each gem's spot.
-  let scale = photoMm;
-  let leftOut = new Set<string>();
-  if (deps.checkCloseUp) {
-    const spots = gemSpots(pieces, seats);
-    const look = await deps.checkCloseUp({ mimeType: target.mimeType, data: target.data }, spots.text).catch((error) => ({
-      ok: false as const,
-      detail: error instanceof Error ? error.message : String(error),
-    }));
-    if (look.ok) {
-      const closeMm = coherentScale(look.value, target.size);
-      // A close-up measure that does not hold together: no scale at all rather than the whole face's, less precise.
-      scale = closeMm ?? (photoScale(look.value, target.size) === null ? photoMm : null);
-      leftOut = leftOutGems(look.value, spots.ids);
-      deps.log("close-up check", {
-        mm: closeMm === null ? null : Math.round(closeMm * 10000) / 10000,
-        mm_from_photo: photoMm === null ? null : Math.round(photoMm * 10000) / 10000,
-        scale_sent: scale !== null,
-        spots: spots.ids.size,
-        left_out: leftOut.size,
-      });
-      // Not one gem the model could draw: the photo does not show the design's teeth.
-      const drawable = pieces.filter((p) => seats.get(p.id)?.front !== false && !leftOut.has(p.id)).length;
-      if (drawable === 0) {
-        await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
-        return { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: ["design_hidden"] } };
-      }
-    } else {
-      deps.log("close-up check unavailable, the whole photo's scale is used", look.detail);
-    }
-  }
-
-  onRendering();
-
-  // Counts only: whether the browser sent the gems' places (a site older than the seats sends none).
-  deps.log("design data", { gems: pieces.length, seats: seats.size, map: map !== null, overview: overview !== null });
-  const aspectRatio = nearestAspectRatio(target.size);
-
+  const references = await deps.references().catch((error) => {
+    deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
+    return [] as InlineImage[];
+  });
+  const plural = marks === 1 ? "" : "s";
+  const text = [
+    "PLACEMENT DATA",
+    `IMAGE 1 holds ${marks} gem mark${plural}: your output holds exactly ${marks} gem${plural}, one on each mark, nowhere else.`,
+    "IMAGE 2 is the same close-up of the customer's mouth, untouched. IMAGE 3 is the design in 3D (cut, colour, rotation only).",
+  ].join("\n");
+  deps.log("render", { marks, crop: rect, guide: guide.size });
+  const aspectRatio = nearestAspectRatio({ width: rect.width, height: rect.height });
   let outcome: GenerateOutcome;
   try {
-    const references = await deps.references().catch((error) => {
-      deps.log("reference pictures unavailable", error instanceof Error ? error.message : error);
-      return [] as InlineImage[];
-    });
-    const images = [{ mimeType: design.mimeType, data: design.data }, { mimeType: target.mimeType, data: target.data }];
-    if (map) images.push({ mimeType: map.mimeType, data: map.data });
-    if (map && overview) images.push({ mimeType: overview.mimeType, data: overview.data });
     outcome = await deps.generate(
-      [...images, ...references],
-      buildDesignData(pieces, seats, scale, map !== null, edited !== null, overview !== null, leftOut),
+      [
+        { mimeType: guide.mimeType, data: guide.data },
+        { mimeType: "image/jpeg", data: toBase64(original) },
+        { mimeType: design.mimeType, data: design.data },
+        ...references,
+      ],
+      text,
       aspectRatio,
     );
   } catch (error) {
     outcome = { ok: false, code: "failed", detail: error instanceof Error ? error.message : String(error) };
   }
-
   if (!outcome.ok) {
-    deps.log(`generation ${outcome.code}`, outcome.detail);
+    deps.log(`render ${outcome.code}`, outcome.detail);
     await deps.finishRequest(requestId, "failed", outcome.code).catch(() => {});
     return { status: 502, body: { ok: false, code: outcome.code } };
   }
   await deps.finishRequest(requestId, "generated", null).catch((error) => deps.log("could not close the request", error));
   // Sizes only: what was sent against what came back, to see the model change the proportions.
-  deps.log("render size", {
-    sent: target.size,
-    asked: aspectRatio,
-    received: headerSize(outcome.image.data),
-    ratio_dropped: outcome.aspectRatioDropped === true,
-  });
-  const image = { mime_type: outcome.image.mimeType, data: outcome.image.data };
-  // How many gems were left out because their spot does not show on the photo: the dialog says so.
-  const omitted = leftOut.size ? { left_out: leftOut.size } : {};
-  if (!edited || !photo.size) return { status: 200, body: { ok: true, image, ...omitted } };
-  const { crop } = edited;
+  deps.log("render size", { sent: { width: rect.width, height: rect.height }, asked: aspectRatio, received: headerSize(outcome.image.data) });
   return {
     status: 200,
     body: {
       ok: true,
-      image,
-      ...omitted,
-      crop: { x: crop.x, y: crop.y, width: crop.width, height: crop.height, photo_width: photo.size.width, photo_height: photo.size.height },
+      image: { mime_type: outcome.image.mimeType, data: outcome.image.data },
+      crop: { ...rect, photo_width: photo.size.width, photo_height: photo.size.height },
     },
   };
 }
 
-/** The photo's mouth close-up, or null to edit the whole photo (no box, not a JPEG, no useful crop, decoding failed). */
+/** The photo's mouth close-up, or null to work on the whole photo (no box, not a JPEG, no useful crop, decoding failed). */
 function closeUp(photo: Photo, teethBox: unknown): { image: Photo; crop: CropRect } | null {
   if (photo.mimeType !== "image/jpeg") return null;
   const crop = mouthCrop(teethBox, photo.size);

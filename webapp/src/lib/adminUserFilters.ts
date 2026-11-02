@@ -8,6 +8,8 @@ import {
   type UserStatus,
 } from "../data/adminUsers";
 import { PAGE_SIZES, paginate, type Page } from "./adminOrderFilters";
+import { foldText } from "./foldText";
+import { oneOf } from "./oneOf";
 
 /**
  * Search, filters, sorting and paging for the Users workspace.
@@ -58,10 +60,6 @@ export const USER_PARAM = {
   user: "utilisateur",
 } as const;
 
-function oneOf<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
-  return value && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
-}
-
 export function readUserFilters(params: URLSearchParams): UserFilters {
   const rawSize = Number(params.get(USER_PARAM.pageSize));
   return {
@@ -83,15 +81,6 @@ export function activeUserFilterCount(filters: UserFilters): number {
     (filters.status !== "all" ? 1 : 0) +
     (filters.activity !== "all" ? 1 : 0)
   );
-}
-
-/** Accent- and case-insensitive, so "ines" finds Inès. */
-export function normalize(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
 }
 
 const HOUR = 3_600_000;
@@ -143,10 +132,10 @@ function compare(a: AdminUser, b: AdminUser, sort: UserSortKey): number {
 }
 
 export function applyUserFilters(users: AdminUser[], filters: UserFilters, now = Date.now()): AdminUser[] {
-  const term = normalize(filters.search);
+  const term = foldText(filters.search.trim());
   return users
     .filter((user) => {
-      if (term && !normalize(`${userName(user)} ${user.email}`).includes(term)) return false;
+      if (term && !foldText(`${userName(user)} ${user.email}`).includes(term)) return false;
       if (filters.role !== "all" && user.role !== filters.role) return false;
       if (filters.status !== "all" && user.status !== filters.status) return false;
       return matchesActivity(user, filters.activity, now);
@@ -196,7 +185,7 @@ export function userMetrics(users: AdminUser[]): UserMetrics {
  */
 export type GuardReason = "noPermission" | "self" | "rank" | "lastAdmin" | null;
 
-export interface GuardContext {
+interface GuardContext {
   currentUserId: string | null;
   /** `my_permissions()` holds `manage_users`. */
   canManage: boolean;

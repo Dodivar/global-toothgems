@@ -10,7 +10,7 @@ import { ARCH_K, seeded, xForArc } from "./math";
  * designs' 2D previews draw the very same arch without a WebGL context.
  */
 
-export interface ToothFrame {
+interface ToothFrame {
   fdi: string;
   spec: ToothSpec;
   /** Full mesiodistal crown width, in millimetres. */

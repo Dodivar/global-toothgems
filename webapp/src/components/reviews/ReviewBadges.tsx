@@ -32,10 +32,6 @@ const STATUS_META: Record<ReviewStatus, { tone: BadgeTone; icon: LucideIcon }> =
   hidden: { tone: "neutral", icon: EyeOff },
 };
 
-export function statusIcon(status: ReviewStatus): LucideIcon {
-  return STATUS_META[status].icon;
-}
-
 export function ReviewStatusBadge({
   status,
   size = "sm",

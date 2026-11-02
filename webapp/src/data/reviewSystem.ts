@@ -50,8 +50,6 @@ export function subjectKey(subject: ReviewSubject): string {
  */
 export type ReviewStatus = "pending" | "published" | "needsChanges" | "rejected" | "hidden";
 
-export const REVIEW_STATUSES: ReviewStatus[] = ["pending", "published", "needsChanges", "rejected", "hidden"];
-
 export type ReportReason = "inappropriate" | "spam" | "fake" | "personal" | "offensive" | "irrelevant" | "other";
 
 export const REPORT_REASONS: ReportReason[] = ["inappropriate", "spam", "fake", "personal", "offensive", "irrelevant", "other"];

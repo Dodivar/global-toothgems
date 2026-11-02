@@ -38,6 +38,9 @@ verify_jwt = false
 [functions.send-pending-emails]
 verify_jwt = false
 
+[functions.email-showcase]
+verify_jwt = false
+
 [functions.resend-webhook]
 verify_jwt = false
 

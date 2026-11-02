@@ -4,9 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const SCROLL_EPSILON = 1;
 
 /**
- * State and paging for a horizontal rail whose arrows live outside the track
- * (the same arithmetic as `CarouselTrack`, which owns its own arrows). The
- * items stay ordinary links, so keyboard users tab through them and the
+ * State and paging for a horizontal rail whose arrows live outside the track.
+ * The items stay ordinary links, so keyboard users tab through them and the
  * browser scrolls the focused one into view; the arrows are a pointer
  * convenience.
  */

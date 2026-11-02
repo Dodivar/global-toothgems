@@ -101,7 +101,7 @@ const seconds = (value: unknown): number | null => (Number.isSafeInteger(value) 
 const currencyOf = (value: unknown) => (typeof value === "string" && /^[A-Za-z]{3}$/.test(value) ? value.toUpperCase() : null);
 
 /** The function's `{ error }`, else `unavailable`. */
-export function readManageError(body: unknown): StudioManageError {
+function readManageError(body: unknown): StudioManageError {
   const error = record(body)?.error;
   return ERRORS.includes(error as StudioManageError) ? (error as StudioManageError) : "unavailable";
 }

@@ -38,6 +38,7 @@ import {
 } from "./adminAnalyticsTraining";
 import { isSupabaseConfigured, requireSupabase } from "./supabase/client";
 import { productMediaUrl } from "./supabase/storage";
+import { oneOf } from "./oneOf";
 
 /**
  * The Statistics screen's single persistence boundary (screens never call
@@ -74,11 +75,6 @@ export type ChartMetric = "revenue" | "orders" | "both";
 export const CHART_METRICS: ChartMetric[] = ["revenue", "orders", "both"];
 
 export type ProductSortKey = "revenue" | "units" | "orders";
-export const PRODUCT_SORT_KEYS: ProductSortKey[] = ["revenue", "units", "orders"];
-
-function oneOf<T extends string>(value: string | null, allowed: readonly T[], fallback: T): T {
-  return value && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
-}
 
 /** Guards the date inputs: anything that is not a plain ISO day is ignored. */
 function isoDay(value: string | null): string {
@@ -111,7 +107,7 @@ export function readMetric(params: URLSearchParams): ChartMetric {
 }
 
 /** Today in the shop's time zone (the day the database reports in). */
-export function shopToday(now: Date = new Date()): string {
+function shopToday(now: Date = new Date()): string {
   return dayIn(now, SHOP_TIME_ZONE);
 }
 
@@ -293,9 +289,9 @@ async function readSnapshot(
  * - `invalidRange`: a custom period longer than the database accepts;
  * - `unavailable`: no database (local mock mode).
  */
-export type LoadState = "ready" | "loading" | "error" | "invalidRange" | "unavailable";
+type LoadState = "ready" | "loading" | "error" | "invalidRange" | "unavailable";
 
-export interface AnalyticsController {
+interface AnalyticsController {
   snapshot: AnalyticsSnapshot | null;
   options: AnalyticsOptions;
   /** The days the filters stand for; null when the custom period is too long. */

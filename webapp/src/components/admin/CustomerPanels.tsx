@@ -560,7 +560,7 @@ const TONE_CLASS = {
  * The connecting line is drawn by the markers themselves rather than by a
  * border on the list, so the last event has no trailing stub.
  */
-export function ActivityTimeline({ events }: { events: CustomerEvent[] }) {
+function ActivityTimeline({ events }: { events: CustomerEvent[] }) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const locale = lang.startsWith("en") ? "en-IE" : "fr-FR";

@@ -32,7 +32,7 @@ export interface SubscriptionRow {
 export const CONVERSION_WINDOW_DAYS = 30;
 const DAY = 86_400_000;
 
-export interface StudioTrialFigures {
+interface StudioTrialFigures {
   started: number;
   /** Trials running now, whenever they started. */
   activeNow: number;
@@ -128,7 +128,7 @@ async function readAll<T>(query: (from: number, to: number) => PromiseLike<{ dat
   }
 }
 
-export type StudioTrialState =
+type StudioTrialState =
   | { kind: "loading" }
   | { kind: "unavailable" }
   | { kind: "error" }

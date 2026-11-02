@@ -9,8 +9,8 @@
  */
 
 export const SIGN_IN_PATH = "/connexion";
-export const ADMIN_SIGN_IN_PATH = "/admin/connexion";
-export const AUTH_CONFIRM_PATH = "/auth/confirm";
+const ADMIN_SIGN_IN_PATH = "/admin/connexion";
+const AUTH_CONFIRM_PATH = "/auth/confirm";
 
 /** The query key carrying the page to return to (also used by `/confirmation-compte`). */
 export const RETURN_PARAM = "suite";
@@ -19,7 +19,7 @@ export const RETURN_PARAM = "suite";
 export const CONFIRM_ACCOUNT_PATH = "/confirmation-compte";
 export const RESET_PASSWORD_PATH = "/reinitialiser-mot-de-passe";
 export const VERIFY_EMAIL_PATH = "/verifier-email";
-export const EMAIL_CHANGE_LANDING = `${VERIFY_EMAIL_PATH}?type=changement`;
+const EMAIL_CHANGE_LANDING = `${VERIFY_EMAIL_PATH}?type=changement`;
 
 /** Only same-site paths: never let a link send someone to another origin. */
 export function isSafeNext(path: string): boolean {
@@ -29,7 +29,7 @@ export function isSafeNext(path: string): boolean {
   return path.startsWith("/") && !path.startsWith("//") && !/[\\\u0000-\u001f\u007f]/.test(path);
 }
 
-export type Gate = "account" | "staff";
+type Gate = "account" | "staff";
 
 /**
  * The session a path needs, or null when it is open. Mirrors the client
@@ -60,7 +60,7 @@ export function returnPathFrom(search: string): string | undefined {
 }
 
 /** E-mail link kinds `/auth/confirm` accepts: the ones the app sends. */
-export type ConfirmType = "signup" | "email" | "recovery" | "email_change" | "invite";
+type ConfirmType = "signup" | "email" | "recovery" | "email_change" | "invite";
 
 const DEFAULT_NEXT: Record<ConfirmType, string> = {
   signup: CONFIRM_ACCOUNT_PATH,

@@ -65,7 +65,7 @@ export interface TrainingSources {
   courses: CourseInfo[];
 }
 
-export interface TimeWindow {
+interface TimeWindow {
   start: Date;
   end: Date;
 }

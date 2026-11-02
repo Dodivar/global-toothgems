@@ -18,7 +18,7 @@ import clsx from "clsx";
  * text alternative.
  */
 
-export interface FieldState {
+interface FieldState {
   label: string;
   hint?: ReactNode;
   error?: string | null;

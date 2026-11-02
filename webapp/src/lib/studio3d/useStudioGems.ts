@@ -48,7 +48,7 @@ function built(products: Product[], rows: GemAppearanceRow[], colors: GemColorDe
   return last.value;
 }
 
-export interface StudioGemsState {
+interface StudioGemsState {
   /** `loading` until both the catalogue and the drawing rows are in. */
   status: "loading" | "ready" | "error";
   gems: StudioGem[];

@@ -157,7 +157,7 @@ export const LOWER_TEETH = ["47", "46", "45", "44", "43", "42", "41", "31", "32"
 export const ALL_TEETH = [...UPPER_TEETH, ...LOWER_TEETH];
 
 /** The quadrant of a tooth, as a translation key under `studio.editor.sides`. */
-export type ToothSide = "right" | "left" | "lowerRight" | "lowerLeft";
+type ToothSide = "right" | "left" | "lowerRight" | "lowerLeft";
 const QUADRANT_SIDES: Record<string, ToothSide> = { "1": "right", "2": "left", "3": "lowerLeft", "4": "lowerRight" };
 
 /**

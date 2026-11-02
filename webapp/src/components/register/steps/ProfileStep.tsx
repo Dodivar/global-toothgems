@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SelectField, TextField } from "../Field";
 import { StepHeading } from "./StepHeading";
-import { REGISTRATION_COUNTRIES, countryName, dialCodeOf, validateField } from "../../../lib/registration";
+import { REGISTRATION_COUNTRIES, dialCodeOf, validateField } from "../../../lib/registration";
 import type { StepProps } from "./types";
+import { countryName } from "../../../lib/countryName";
 
 /**
  * Step 2 — who the account belongs to.

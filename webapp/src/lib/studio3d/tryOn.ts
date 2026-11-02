@@ -1,19 +1,21 @@
 import type { Creation } from "../studioWorkspace/types";
 import { parseTryOnCrop, type TryOnCrop } from "./tryOnComposite";
-import type { TryOnSeat } from "./tryOnSeats";
+import type { FoundTooth } from "./tryOnRegistration";
 
 /**
  * "Try it on a smile": a Studio creation on a photo of a smile, rendered by an
  * image model (Google's "Nano Banana 2", decision 111) behind the Edge
  * Function `studio-try-on` — the provider's key never reaches the browser.
  *
- * The browser sends the prepared photo, the creation's front view drawn here
- * (IMAGE 1 and IMAGE 2 of the owner's system instructions, `systemPrompt.ts`
- * in the function) and a REFERENCE to the creation: the function reads the
- * creation and the owner's plan switch from the database. The
- * answer is a generated image, read through `parseTryOnResponse` like any
- * untrusted input. Nothing is stored: the photo and the image only pass
- * through the function's memory.
+ * Two calls (decision 111 (k), the computed placement): `analyse` sends the
+ * prepared photo and a REFERENCE to the creation — the function checks the
+ * photo, cuts the mouth close-up and finds each tooth; the browser then places
+ * the gems on those teeth (`tryOnRegistration.ts`) and draws them as marks on
+ * the close-up (`tryOnGuide.ts`); `render` sends that guide with the creation's
+ * 3D render, and the image model only makes the marks look real. The function
+ * reads the creation and the owner's plan switch from the database. Answers
+ * are read like any untrusted input. Nothing is stored: the photo and the
+ * image only pass through the function's memory.
  *
  * While the owner has not connected the provider, the function says so
  * (`status()` → not available, `render()` → `not_available`): the dialog says the
@@ -36,14 +38,14 @@ export interface TryOnRenderRequest {
   /** The prepared photo (oriented, downscaled, metadata stripped). */
   photo: Blob;
   source: TryOnSource;
-  /** The creation rendered in 3D from the front, in the browser (`renderDesignImages`), framed on the gems. */
+  /** The creation rendered in 3D from the front, in the browser (`renderDesignImage`): the gems' cut, colour and turn. */
   design: Blob;
-  /** The same design seen from further away, the whole smile around the gems (`renderDesignImages`). */
-  overview?: Blob | null;
-  /** The flat design map (`tryOnMap`, PNG): every tooth labelled, every gem tagged like the design data. */
-  map?: Blob | null;
-  /** Each gem's place and size on its tooth (`tryOnSeats`), read by the AI as text. */
-  seats?: readonly TryOnSeat[];
+  /** The mouth close-up with every gem drawn as a mark where it was placed (`renderPlacementGuide`), a JPEG. */
+  guide: Blob;
+  /** Where the close-up was cut from the photo (the analysis's crop). */
+  crop: TryOnCrop;
+  /** How many marks the guide holds. */
+  marks: number;
 }
 
 export const TRY_ON_ERROR_CODES = [
@@ -63,17 +65,18 @@ export type TryOnErrorCode = (typeof TRY_ON_ERROR_CODES)[number];
  * Why the function's photo check refused a photo (`photo_unsuitable`,
  * `photoCheck.ts` in the function): each one has a message saying what to change.
  */
-export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry", "design_hidden"] as const;
+/**
+ * `placement_uncertain` is the browser's own: the teeth found on the photo do
+ * not agree enough to place the gems precisely (`tryOnRegistration.ts`).
+ */
+export const PHOTO_ISSUES = ["too_far", "not_frontal", "no_teeth", "teeth_hidden", "too_dark", "too_bright", "blurry", "placement_uncertain"] as const;
 export type PhotoIssue = (typeof PHOTO_ISSUES)[number];
 
 /** Where a render is, as the function reports it: the photo check, then the AI render. */
 export type TryOnStage = "checking" | "rendering";
 
-/**
- * `crop`: the image is the edited mouth close-up, to paste back into the photo there (`tryOnComposite.ts`).
- * `leftOut`: gems not drawn because their spot does not show on the photo (said under the result).
- */
-export type TryOnOutcome = { ok: true; image: Blob; crop?: TryOnCrop; leftOut?: number } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
+/** `crop`: the image is the edited mouth close-up, to paste back into the photo there (`tryOnComposite.ts`). */
+export type TryOnOutcome = { ok: true; image: Blob; crop?: TryOnCrop } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
 
 /**
  * The signed-in member's daily allowance of AI renders (over the last 24
@@ -111,25 +114,35 @@ export function parseTryOnStatus(json: unknown): TryOnStatus {
   return { available: data.available === true, dailyLimit: dailyLimit && dailyLimit > 0 ? dailyLimit : null, quota };
 }
 
+/** The analysis (step 1): the mouth close-up the function cut and each tooth it found there, boxes in the close-up's pixels. */
+export interface TryOnAnalysis {
+  crop: TryOnCrop;
+  teeth: FoundTooth[];
+}
+
+export type TryOnAnalysisOutcome = { ok: true; analysis: TryOnAnalysis } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
+
 export interface SmileTryOnService {
   /**
    * Whether the AI is connected, and the caller's daily allowance. Asked
    * before any photo leaves the device; never throws (unavailable).
    */
   status(): Promise<TryOnStatus>;
+  /** Step 1: the photo check, the close-up and the teeth found on it; no image generated. Never throws. */
+  analyse(request: { photo: Blob; source: TryOnSource }, options?: { signal?: AbortSignal }): Promise<TryOnAnalysisOutcome>;
   /**
-   * Render the creation on the photo. Never throws: every failure is an error
+   * Step 2: the placed gems made real. Never throws: every failure is an error
    * code. An aborted call (cancelled, dialog closed) resolves with `failed`;
-   * the caller ignores it. `onStage` follows the function's progress: the
-   * photo check, then the render once the photo passed.
+   * the caller ignores it.
    */
-  render(request: TryOnRenderRequest, options?: { signal?: AbortSignal; onStage?: (stage: TryOnStage) => void }): Promise<TryOnOutcome>;
+  render(request: TryOnRenderRequest, options?: { signal?: AbortSignal }): Promise<TryOnOutcome>;
 }
 
 /** Used without a backend (mock mode): the AI is simply not there. */
 export const unavailableTryOnService: SmileTryOnService = {
   status: async () => UNAVAILABLE_STATUS,
   render: async () => ({ ok: false, code: "not_available" }),
+  analyse: async () => ({ ok: false, code: "not_available" }),
 };
 
 /** The `source` field the function reads (`readSourceRef` in the function). */
@@ -147,7 +160,7 @@ export function sourcePayload(source: TryOnSource): Record<string, string> {
 /* ------------------------------------------------- reading the answer */
 
 /** A generated image above this (decoded) is refused. */
-export const RESULT_MAX_BYTES = 15 * 1024 * 1024;
+const RESULT_MAX_BYTES = 15 * 1024 * 1024;
 const RESULT_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const isCode = (v: unknown): v is TryOnErrorCode => typeof v === "string" && (TRY_ON_ERROR_CODES as readonly string[]).includes(v);
 
@@ -162,16 +175,7 @@ const ALIASES: Record<string, TryOnErrorCode> = { session_expired: "sign_in_requ
 export function parseTryOnResponse(json: unknown): TryOnOutcome {
   if (!json || typeof json !== "object") return { ok: false, code: "failed" };
   const data = json as Record<string, unknown>;
-  if (data.ok !== true) {
-    const code = typeof data.code === "string" ? (ALIASES[data.code] ?? data.code) : null;
-    if (code === "photo_unsuitable") {
-      const reasons = Array.isArray(data.reasons)
-        ? PHOTO_ISSUES.filter((issue) => (data.reasons as unknown[]).includes(issue))
-        : [];
-      return { ok: false, code, reasons };
-    }
-    return { ok: false, code: isCode(code) ? code : "failed" };
-  }
+  if (data.ok !== true) return readFailure(data);
   const image = (data.image && typeof data.image === "object" ? data.image : {}) as Record<string, unknown>;
   const type = image.mime_type;
   const b64 = image.data;
@@ -182,31 +186,48 @@ export function parseTryOnResponse(json: unknown): TryOnOutcome {
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     const crop = parseTryOnCrop(data.crop);
-    const leftOut = count(data.left_out);
-    return { ok: true, image: new Blob([bytes], { type }), ...(crop ? { crop } : {}), ...(leftOut ? { leftOut } : {}) };
+    return { ok: true, image: new Blob([bytes], { type }), ...(crop ? { crop } : {}) };
   } catch {
     return { ok: false, code: "failed" };
   }
 }
 
-/**
- * One event of the function's progress stream (`data: <json>`, `progress=1`):
- * a stage, or the final answer read by `parseTryOnResponse`. Anything else
- * (comments, unknown stages, broken JSON) is null and skipped.
- */
-export function parseTryOnEvent(chunk: string): { stage: TryOnStage } | { outcome: TryOnOutcome } | null {
-  const line = chunk.split("\n").find((l) => l.startsWith("data:"));
-  if (!line) return null;
-  let event: unknown;
-  try {
-    event = JSON.parse(line.slice(5));
-  } catch {
-    return null;
+/** A refusal of the function (`{ ok: false, code, reasons? }`), its code narrowed to the dialog's. */
+function readFailure(data: Record<string, unknown>): { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] } {
+  const code = typeof data.code === "string" ? (ALIASES[data.code] ?? data.code) : null;
+  if (code === "photo_unsuitable") {
+    const reasons = Array.isArray(data.reasons) ? PHOTO_ISSUES.filter((issue) => (data.reasons as unknown[]).includes(issue)) : [];
+    return { ok: false, code, reasons };
   }
-  if (!event || typeof event !== "object") return null;
-  const data = event as Record<string, unknown>;
-  if ("result" in data) return { outcome: parseTryOnResponse(data.result) };
-  return data.stage === "checking" || data.stage === "rendering" ? { stage: data.stage } : null;
+  return { ok: false, code: isCode(code) ? code : "failed" };
+}
+
+const TOOTH_FDI = /^[1-4][1-6]$/;
+const MAX_TEETH = 20;
+
+/**
+ * Read the analysis's answer (`{ ok: true, crop, teeth }`):
+ * a crop inside its photo, and teeth with a front-tooth FDI number and a box
+ * inside the crop — the others are dropped, a missing crop is `failed`.
+ */
+export function parseTryOnAnalysis(json: unknown): TryOnAnalysisOutcome {
+  if (!json || typeof json !== "object") return { ok: false, code: "failed" };
+  const data = json as Record<string, unknown>;
+  if (data.ok !== true) return readFailure(data);
+  const crop = parseTryOnCrop(data.crop);
+  if (!crop) return { ok: false, code: "failed" };
+  const seen = new Set<string>();
+  const teeth = (Array.isArray(data.teeth) ? data.teeth : []).flatMap((raw): FoundTooth[] => {
+    if (!raw || typeof raw !== "object") return [];
+    const { fdi, x, y, width, height } = raw as Record<string, unknown>;
+    if (typeof fdi !== "string" || !TOOTH_FDI.test(fdi) || seen.has(fdi)) return [];
+    if (![x, y, width, height].every((n) => typeof n === "number" && Number.isFinite(n))) return [];
+    const [bx, by, bw, bh] = [x, y, width, height] as number[];
+    if (bx < 0 || by < 0 || bw <= 0 || bh <= 0 || bx + bw > crop.width + 1 || by + bh > crop.height + 1) return [];
+    seen.add(fdi);
+    return [{ fdi, x: bx, y: by, width: bw, height: bh }];
+  });
+  return { ok: true, analysis: { crop, teeth: teeth.slice(0, MAX_TEETH) } };
 }
 
 /* ------------------------------------------------------- the interface */

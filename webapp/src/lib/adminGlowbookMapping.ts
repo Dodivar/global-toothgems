@@ -105,7 +105,7 @@ export function toQueueEntry(row: GlowbookQueueRow): QueueEntry {
 }
 
 /** Waiting entries first (oldest first: first come, first served), then the rest, latest first. */
-export function sortQueue(entries: QueueEntry[]): QueueEntry[] {
+function sortQueue(entries: QueueEntry[]): QueueEntry[] {
   return [...entries].sort((a, b) => {
     if ((a.status === "pending") !== (b.status === "pending")) return a.status === "pending" ? -1 : 1;
     return a.status === "pending" ? a.submittedAt.localeCompare(b.submittedAt) : b.submittedAt.localeCompare(a.submittedAt);

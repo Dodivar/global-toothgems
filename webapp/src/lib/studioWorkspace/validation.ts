@@ -9,7 +9,7 @@ import { COLLECTION_COLORS, FEEDBACK_CATEGORIES, type CollectionDetails, type Fe
 export const NAME_MAX = 60;
 export const DESCRIPTION_MAX = 280;
 export const COLLECTION_NAME_MAX = 40;
-export const FEEDBACK_MESSAGE_MIN = 3;
+const FEEDBACK_MESSAGE_MIN = 3;
 export const FEEDBACK_MESSAGE_MAX = 2000;
 
 /** "  butterfly   wings " → "butterfly wings". */

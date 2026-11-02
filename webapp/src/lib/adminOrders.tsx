@@ -55,7 +55,7 @@ const FULFILLMENT_FOR: Partial<Record<AdminOrderStatus, FulfillmentStatus>> = {
 /** PostgREST answers at most this many rows per request (Supabase `max_rows`). */
 const PAGE_ROWS = 1000;
 
-export interface AdminOrdersContextValue {
+interface AdminOrdersContextValue {
   orders: AdminOrder[];
   /** True until the first read of the book has answered. */
   loading: boolean;
