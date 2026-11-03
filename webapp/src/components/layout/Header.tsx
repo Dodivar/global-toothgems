@@ -9,11 +9,11 @@ import { FAVORITES_HREF } from "../../lib/favoritesState";
 import { useCart } from "../../lib/cart";
 import { useAcademyMenu } from "./useAcademyMenu";
 import { ShopMenu } from "./ShopMenu";
-import { STUDIO_SHORTCUTS } from "./clientSpaces";
+import { STUDIO_MENU } from "./clientSpaces";
 import { HeaderSearch } from "./HeaderSearch";
 import { CartAddedNotice } from "./CartAddedNotice";
 import { STUDIO_PATH } from "../../lib/studioUrl";
-import logoBlack from "../../assets/logo-wordmark-black.png";
+import logoWordmark from "../../assets/logo-wordmark.svg";
 
 type PanelKey = "shop" | "academy" | "studio" | null;
 type MobileTab = "shop" | "academy" | "studio";
@@ -66,8 +66,9 @@ export function Header() {
    *  nav item — otherwise the next mouse move reopens what they dismissed. */
   const dismissed = useRef<PanelKey>(null);
 
+  /* No "Home" entry: the logo is the way home, as on most shops, and the
+     three pillars read better on their own (owner's call, 2026-11-02). */
   const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string; withIcon?: boolean }[] = [
-    { id: "home", label: t("nav.home"), to: "/" },
     { id: "shop", label: t("nav.shop"), to: "/boutique", panel: "shop", panelLabel: t("nav.openPanelShop") },
     { id: "academy", label: t("nav.academy"), to: "/academy", panel: "academy", panelLabel: t("nav.openPanelAcademy") },
     /* Last, after the two pillars. The label leads to the Studio's
@@ -192,11 +193,15 @@ export function Header() {
     <div ref={rootRef} className="sticky top-0 z-[60] border-b border-[var(--border-subtle)] bg-[var(--surface-chrome)]">
       {/* Desktop */}
       <div className="relative hidden md:block" onMouseLeave={() => hoverTo(null)}>
-        <header className="flex h-[76px] items-center gap-8 px-[var(--gutter-page-lg)]">
-          <Link to="/" className="flex-none" onClick={closeAll}>
-            <img src={logoBlack.src} alt="Global Toothgems" className="h-6 w-auto" />
+        {/* Three columns, the outer two equal, so the nav sits in the middle
+            of the screen rather than after the logo. Where the actions need
+            more than their share (narrow screens, "My space" pill), the grid
+            gives it to them and the nav shifts left instead of overlapping. */}
+        <header className="grid h-[76px] grid-cols-[1fr_auto_1fr] items-center gap-8 px-[var(--gutter-page-lg)]">
+          <Link to="/" aria-label={t("nav.homeLogo")} className="justify-self-start" onClick={closeAll}>
+            <img src={logoWordmark.src} alt="Global Toothgems" className="h-6 w-auto" />
           </Link>
-          <nav aria-label={t("nav.primary")} className="flex flex-1 items-center gap-6 overflow-hidden">
+          <nav aria-label={t("nav.primary")} className="flex items-center gap-6">
             {links.map((link) => {
               const onRoute = location.pathname === link.to;
               const expanded = link.panel != null && panel === link.panel;
@@ -252,7 +257,7 @@ export function Header() {
               );
             })}
           </nav>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 justify-self-end">
             {langButton}
             <IconButton
               icon={searchOpen ? X : Search}
@@ -307,7 +312,7 @@ export function Header() {
                 <ShopMenu layout="columns" onNavigate={closeAll} />
               ) : panel === "studio" ? (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-                  {STUDIO_SHORTCUTS.map((shortcut) => (
+                  {STUDIO_MENU.map((shortcut) => (
                     <Link
                       key={shortcut.id}
                       to={shortcut.to}
@@ -391,10 +396,11 @@ export function Header() {
           <div className="flex-1" />
           <Link
             to="/"
+            aria-label={t("nav.homeLogo")}
             onClick={closeAll}
             className="absolute left-1/2 top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center"
           >
-            <img src={logoBlack.src} alt="Global Toothgems" className="h-4 w-auto" />
+            <img src={logoWordmark.src} alt="Global Toothgems" className="h-4 w-auto" />
           </Link>
           <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
           <IconButton icon={User} label={signedIn ? t("nav.mySpace") : t("nav.signIn")} onClick={openAccount} />
@@ -427,7 +433,7 @@ export function Header() {
               <ShopMenu layout="stack" onNavigate={closeAll} />
             ) : menuTab === "studio" ? (
               <ul className="m-0 grid list-none gap-2 p-0">
-                {STUDIO_SHORTCUTS.map((shortcut) => (
+                {STUDIO_MENU.map((shortcut) => (
                   <li key={shortcut.id}>
                     <MobileMenuCard
                       to={shortcut.to}

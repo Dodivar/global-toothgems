@@ -23,9 +23,9 @@ import {
   UserRound,
 } from "lucide-react";
 import { Button } from "../../ui/Button";
-import { useNavigate } from "../../../lib/navigation";
+import { Navigate, useNavigate } from "../../../lib/navigation";
 import { isLocale, localizedPath } from "../../../lib/localeRoutes";
-import { studioSectionPath } from "../../../lib/studioUrl";
+import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../../lib/studioUrl";
 import {
   BIO_MAX,
   DISPLAY_NAME_MAX,
@@ -46,7 +46,6 @@ import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useToast } from "../../../lib/toast";
 import { CreationThumb } from "./CreationCard";
 import { LibrarySkeleton } from "./CreationLibrary";
-import { PlanLocked } from "./PlanLocked";
 import { GlowbookLookEditor } from "./GlowbookLookEditor";
 import { GlowbookSections } from "./GlowbookSections";
 import { GlowbookBadgeCard, GlowbookQrCard } from "./GlowbookShare";
@@ -66,7 +65,8 @@ import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat, workspa
 export function GlowbookManager() {
   const { t } = useWorkspaceFormat();
   const gb = useGlowbook();
-  // Below the Atelier plan the Glowbook is closed (decision 113): the database refuses its writes.
+  // Below the Atelier plan the Glowbook is closed (decision 113): the database refuses its writes,
+  // and the section hands over to the presentation page (`GlowbookIntro`).
   const locked = useGlowbookPlan() === false;
 
   return (
@@ -80,7 +80,8 @@ export function GlowbookManager() {
       </header>
 
       {gb.status === "signedOut" && <SignInPrompt />}
-      {gb.status !== "signedOut" && locked && <PlanLocked feature="glowbook" />}
+      {/* Below the plan, the member lands on the Glowbook's presentation, which offers the plan. */}
+      {gb.status !== "signedOut" && locked && <Navigate to={GLOWBOOK_INTRO_PATH} replace />}
       {gb.status === "unavailable" && <EmptyState art="search" title={t("studio.glowbook.unavailableTitle")} body={t("studio.glowbook.unavailableBody")} />}
       {gb.status === "error" && (
         <EmptyState

@@ -1,0 +1,43 @@
+import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
+import { designGems, gemListText, gemWords } from "./gems.ts";
+
+const P1 = "0d73ff19-1bef-44c0-a745-c7e3d2c1be5a";
+const P2 = "f9b64149-6aa7-4539-886b-a611dcfc5b0c";
+const V2 = "0c9f90af-0883-4028-b57d-ca12b6a3ef07";
+const crystal = { shape: "raindrop", material: "crystal", color: "#F1F3FF", effect: "iridescent" };
+const gold = { shape: "cherries", material: "metal", color: "#f2c25c", effect: "none" };
+
+Deno.test("designGems: one entry per product and variant, the most used first; malformed pieces skipped", () => {
+  const gems = designGems({
+    pieces: [
+      { productId: P2, variantId: V2, look: gold },
+      { productId: P1, look: crystal },
+      { productId: P1, look: crystal },
+      { productId: "not-a-uuid", look: crystal },
+      "nonsense",
+    ],
+  });
+  assertEquals(gems.map((g) => [g.productId, g.variantId, g.count]), [
+    [P1, null, 2],
+    [P2, V2, 1],
+  ]);
+  assertEquals(gems[0].color, "#f1f3ff");
+  assertEquals(gems[0].iridescent, true);
+  assertEquals(gems[1].material, "metal");
+  assertEquals(designGems(null), []);
+  assertEquals(designGems({ pieces: Array.from({ length: 15 }, () => ({ productId: crypto.randomUUID(), look: crystal })) }).length, 12);
+});
+
+Deno.test("gem words and the gem list: what each gem is, the most used first", () => {
+  const [drop, cherries] = designGems({ pieces: [{ productId: P1, look: crystal }, { productId: P1, look: crystal }, { productId: P2, look: gold }] });
+  assertEquals(gemWords(drop), "a faceted crystal, teardrop cut, with an iridescent AB coating");
+  assertEquals(gemWords(cherries), "a polished solid 18k yellow gold charm (cherries)");
+  assertEquals(gemWords({ ...cherries, color: "#e3e6ea" }), "a polished solid 18k white gold charm (cherries)");
+  const text = gemListText([
+    { gem: drop, name: "SWAROVSKI® Raindrop - Crystal AB" },
+    { gem: cherries, name: "Cerises en or 18 carats <script>" },
+  ])!;
+  assertStringIncludes(text, "- a faceted crystal, teardrop cut, with an iridescent AB coating (SWAROVSKI® Raindrop - Crystal AB): 2 marks, drawn in its colour #f1f3ff.");
+  assertStringIncludes(text, "- a polished solid 18k yellow gold charm (cherries) (Cerises en or 18 carats script): 1 mark, drawn in its colour #f2c25c.");
+  assertEquals(gemListText([]), null);
+});

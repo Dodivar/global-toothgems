@@ -32,8 +32,21 @@ export interface Money {
 
 export interface PublicStep {
   id: string;
-  title: Localized;
+  /**
+   * Null past the preview: the sales page names the steps of the first
+   * `PREVIEW_MODULES` modules only, so how the rest of the training unfolds is
+   * not given away (owner's request, 2026-11-02).
+   */
+  title: Localized | null;
   minutes: number;
+}
+
+/** How many modules show their steps' titles on the public pages; the others show their title, summary and knowledge check. */
+export const PREVIEW_MODULES = 3;
+
+/** A step's title as the public pages may carry it: dropped past the preview modules. */
+export function previewStepTitle(moduleIndex: number, title: Localized): Localized | null {
+  return moduleIndex < PREVIEW_MODULES ? title : null;
 }
 
 export interface PublicModule {

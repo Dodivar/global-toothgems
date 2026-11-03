@@ -2,25 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "../lib/navigation";
+import { useNavigate } from "../lib/navigation";
 import {
-  ArrowRight,
   BookOpen,
-  Check,
-  CircleCheck,
-  Clock,
   HeartHandshake,
   ShieldCheck,
   Sparkles,
   Target,
-  Users,
 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { AssessmentPanel } from "../components/academy/AssessmentPanel";
 import { CurriculumAccordion } from "../components/academy/CurriculumAccordion";
 import { DiplomaPanel } from "../components/academy/DiplomaPanel";
 import { TrainingHero } from "../components/academy/TrainingHero";
-import { CheckItem, FeatureCard, Section, SectionIntro, StepCard } from "../components/academy/TrainingPrimitives";
+import { OutcomesPanel } from "../components/academy/OutcomesPanel";
+import { FeatureCard, Section, SectionIntro, StepCard } from "../components/academy/TrainingPrimitives";
 import { ReviewsSection } from "../components/reviews/ReviewsSection";
 import { pick } from "../data/types";
 import { lessonCount, type PublicCourse } from "../lib/academy/publicCourse";
@@ -38,8 +34,8 @@ import { useFormat } from "../lib/format";
  *
  * It answers the visitor's questions in the order they ask them — what this is,
  * why it matters, what they will be able to do, what is inside, how it runs, how
- * the assessment works, what they earn, who they join, why now — and only then
- * asks for the decision. Nothing on it is invented: the title, level, price,
+ * the assessment works, what they earn, what other learners say. The decision
+ * stays in the hero and, on phones, in the sticky bar. Nothing on it is invented: the title, level, price,
  * duration, objectives, modules, steps and pass marks are the published
  * course's (`lib/academy`, read by the server page: `app/_public/coursePage.tsx`),
  * the diploma is the member area's own document, and what the platform does
@@ -174,15 +170,6 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
     body: t(`training.journey${n}Body`),
   }));
 
-  const why = [
-    { icon: Sparkles, title: t("training.why1Title"), body: t("training.why1Body") },
-    { icon: Clock, title: t("training.why2Title"), body: t("training.why2Body") },
-    { icon: CircleCheck, title: t("training.why3Title"), body: t("training.why3Body") },
-    { icon: Users, title: t("training.why4Title"), body: t("training.why4Body") },
-  ];
-
-  const finalPoints = [1, 2, 3, 4].map((n) => t(`training.finalPoint${n}`));
-
   return (
     <div>
       <TrainingHero
@@ -222,43 +209,16 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
         </div>
       </Section>
 
-      {/* 3 — Learning outcomes: the course's own objectives and prerequisites */}
+      {/* 3 — Learning outcomes: the course's own objectives (authored in the back
+          office), its description and prerequisites. */}
       {(outcomes.length > 0 || requirements.length > 0 || description.length > 0) && (
         <Section tone="sand" labelledBy="training-outcomes">
-          <div className="grid gap-[clamp(24px,4vw,56px)] lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)] lg:items-start">
-            <div className="grid gap-4">
-              <SectionIntro
-                id="training-outcomes"
-                eyebrow={t("training.outcomesEyebrow")}
-                title={t("training.outcomesTitle")}
-                lead={t("training.outcomesLead", { count: lessons })}
-              />
-              {description.map((paragraph, i) => (
-                <p key={i} className="m-0 max-w-[var(--max-width-prose)] whitespace-pre-line text-[length:var(--text-body-md)] text-[var(--text-body)]">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-            <div className="grid gap-6">
-              {outcomes.length > 0 && (
-                <ul aria-label={t("training.outcomesListLabel")} className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2">
-                  {outcomes.map((outcome) => (
-                    <CheckItem key={outcome}>{outcome}</CheckItem>
-                  ))}
-                </ul>
-              )}
-              {requirements.length > 0 && (
-                <div className="grid gap-3">
-                  <h3 className="text-[length:var(--text-h4)]">{t("training.requirementsTitle")}</h3>
-                  <ul className="m-0 grid list-disc gap-1.5 pl-5 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
-                    {requirements.map((requirement) => (
-                      <li key={requirement}>{requirement}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
+          <OutcomesPanel
+            outcomes={outcomes}
+            description={description}
+            requirements={requirements}
+            lessons={lessons}
+          />
         </Section>
       )}
 
@@ -332,62 +292,6 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
 
       {/* 8 — Student reviews: one artist telling the next what the training changed. */}
       <ReviewsSection subject={{ kind: "course", id: course.id }} />
-
-      {/* 9 — Why this training */}
-      <Section tone="sand" labelledBy="training-why">
-        <SectionIntro id="training-why" eyebrow={t("training.whyEyebrow")} title={t("training.whyTitle")} center />
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-4">
-          {why.map((item) => (
-            <FeatureCard key={item.title} icon={item.icon} title={item.title} body={item.body} />
-          ))}
-        </div>
-      </Section>
-
-      {/* 10 — Final call to action */}
-      <section
-        aria-labelledby="training-final"
-        className="relative overflow-hidden bg-[var(--surface-inverse)] px-[clamp(14px,4vw,48px)] py-[clamp(56px,8vw,104px)] text-center"
-      >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[.18]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 20% 20%, var(--gt-blue-300) 0, transparent 38%), radial-gradient(circle at 80% 30%, var(--gt-emerald-400) 0, transparent 34%), radial-gradient(circle at 55% 95%, var(--gt-fuchsia-400) 0, transparent 40%)",
-          }}
-        />
-        <div className="relative mx-auto grid max-w-[var(--max-width-prose)] justify-items-center gap-5">
-          <span className="gt-accent text-[clamp(18px,2.2vw,24px)] text-[var(--gt-blue-300)]">
-            {t("training.finalScript")}
-          </span>
-          <h2
-            id="training-final"
-            className="text-[length:var(--text-display-2)] font-[var(--weight-black)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)] text-[var(--gt-off-white)]"
-          >
-            {t("training.finalTitle")}
-          </h2>
-          <p className="m-0 text-[length:var(--text-body-lg)] text-[var(--gt-ink-300)]">{t("training.finalBody")}</p>
-          {ctaLabel && (
-            <Button variant="primary" size="lg" iconRight={ArrowRight} onClick={start} loading={checkingAccess} disabled={checkingAccess}>
-              {ctaLabel}
-            </Button>
-          )}
-          <ul className="m-0 flex list-none flex-wrap justify-center gap-x-5 gap-y-2 p-0">
-            {finalPoints.map((point) => (
-              <li key={point} className="flex items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)]">
-                <Check size={14} strokeWidth={2.5} aria-hidden="true" className="text-[var(--accent-cta)]" />
-                {point}
-              </li>
-            ))}
-          </ul>
-          <Link
-            to="/academy"
-            className="text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)] underline decoration-1 underline-offset-4 hover:text-[var(--gt-off-white)]"
-          >
-            {t("training.notFoundCta")}
-          </Link>
-        </div>
-      </section>
 
       {/* Sticky mobile bar: the page is long, and the decision should never be
           more than a thumb away once the hero's own button has scrolled off.

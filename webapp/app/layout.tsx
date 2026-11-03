@@ -7,15 +7,18 @@ import { loadCatalogSeed } from "../src/lib/catalog/serverCatalog";
 import { loadAcademySeed } from "../src/lib/academy/serverAcademy";
 import { AppProviders } from "../src/AppProviders";
 import { siteUrl } from "../src/lib/siteUrl";
+import { DEFAULT_SHARE_IMAGE } from "../src/lib/brand";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "../src/index.css";
 
 /* What `index.html` carried under Vite. Next.js adds the charset and viewport
-   tags itself. Each page adds its own title and description. */
+   tags itself. Each page adds its own title and description. The icons are
+   file conventions in `app/` (`favicon.ico`, `icon.svg`, `apple-icon.png`)
+   and `app/manifest.ts`; their source is `assets/logo/vector/`. */
 export const metadata: Metadata = {
   metadataBase: siteUrl(),
   title: "Global Toothgems",
-  icons: { icon: { url: "/favicon.svg", type: "image/svg+xml" } },
+  openGraph: { siteName: "Global Toothgems", images: [DEFAULT_SHARE_IMAGE] },
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

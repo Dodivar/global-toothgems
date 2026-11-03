@@ -27,7 +27,7 @@ For non-trivial tasks, state briefly: objective, affected layers (browser / Post
 
 ## 4. Validate
 
-Narrowest useful checks first, then broader (`07-testing-and-quality.md`): lint, unit tests, SQL suite, build. If a check cannot run, say why. When a failure appears, determine whether your change caused it, it pre-existed, or it is environmental — never ignore it silently.
+Narrowest useful checks first, then broader (`07-testing-and-quality.md`): lint, unit tests, SQL suite, build. Run what CI runs for the area you touched, in the same environment where you can (a SQL suite on a local stack with `seed.sql`, not only on the project). If a check cannot run, say why. When a failure appears, determine whether your change caused it, it pre-existed, or it is environmental — never ignore it silently.
 
 ## 5. Review your diff
 
@@ -36,6 +36,7 @@ Accidental changes, secrets, authorization gaps (RLS, function checks), untransl
 ## 6. Commit, push, report
 
 - Commit and push per `AGENTS.md` §14 with a clear English message you wrote.
+- Then read the CI run of the pushed commit (`AGENTS.md` §13). Report its real result; a red job is yours to fix if your change caused it, and to report if it pre-existed.
 - Report to the user in their language, concisely:
   - what changed and where it now runs (live vs still mock);
   - checks run and their real results;

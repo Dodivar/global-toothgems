@@ -13,8 +13,8 @@ import { QR_QUIET_ZONE } from "./qr";
 
 export const POSTER_PAGE = { width: 210, height: 297 } as const;
 
-/** The wordmark's aspect ratio (`assets/logo-wordmark-black.png`, 1019 × 281). */
-const WORDMARK_RATIO = 1019 / 281;
+/** The wordmark's aspect ratio (`assets/logo-wordmark-black.png`, 1400 × 375). */
+const WORDMARK_RATIO = 1400 / 375;
 
 export const POSTER_INK = "#16171b";
 const POSTER_MUTED = "#5d6068";

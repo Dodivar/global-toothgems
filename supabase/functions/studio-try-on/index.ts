@@ -4,6 +4,7 @@ import { configProblem, generateImage, generateJson, imageModelConfig, type Inli
 import { handleStudioTryOn, NOT_RENDERED_CODES, toBase64, type TryOnCreationRow } from "./handler.ts";
 import { DEFAULT_CHECK_MODEL, PHOTO_CHECK_PROMPT, PHOTO_CHECK_SCHEMA } from "./photoCheck.ts";
 import { TEETH_PROMPT, TEETH_SCHEMA } from "./teeth.ts";
+import { designGems, gemListText } from "./gems.ts";
 import { TRY_ON_SYSTEM_PROMPT } from "./systemPrompt.ts";
 
 /*
@@ -62,6 +63,16 @@ async function references(): Promise<InlineImage[]> {
   }
   referenceCache = { at: Date.now(), images };
   return images;
+}
+
+/** The gem list of the stored design (`gems.ts`), with the shop names of its gems. */
+async function gemList(scene: unknown): Promise<string | null> {
+  const gems = designGems(scene);
+  if (gems.length === 0) return null;
+  const { data, error } = await supabase.from("products").select("id, name").in("id", [...new Set(gems.map((g) => g.productId))]);
+  if (error) throw new Error(error.message);
+  const nameOf = new Map((data ?? []).map((p) => [String(p.id).toLowerCase(), p.name as string]));
+  return gemListText(gems.map((gem) => ({ gem, name: nameOf.get(gem.productId) ?? null })));
 }
 
 Deno.serve((req) =>
@@ -124,6 +135,7 @@ Deno.serve((req) =>
       if (error) throw new Error(error.message);
     },
     references,
+    gemList,
     // The second reading is sampled (temperature 0.6), so it is not a copy of the first.
     checkPhoto: checkConfig
       ? (photo, reading) => generateJson(checkConfig, PHOTO_CHECK_PROMPT, [photo], PHOTO_CHECK_SCHEMA, null, fetch, undefined, reading === 0 ? 0 : 0.6)

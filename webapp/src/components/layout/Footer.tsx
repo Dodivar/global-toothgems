@@ -2,7 +2,7 @@ import { Link, useLanguageSwitch } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { useFooterColumns } from "./useFooterColumns";
 import { useVatFranchise } from "../../lib/vatRegime";
-import logoBlue from "../../assets/logo-wordmark-blue.png";
+import logoBlue from "../../assets/logo-wordmark-blue.svg";
 
 export function Footer() {
   const { t } = useTranslation();

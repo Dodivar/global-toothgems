@@ -85,6 +85,19 @@ test("public pages carry their canonical, hreflang and description; private ones
   expect(signIn).toContain('<meta name="robots" content="noindex, nofollow"/>');
 });
 
+test("every page carries the brand icons, the manifest and a share card", async ({ request }) => {
+  const faq = await (await request.get("/fr/aide/faq")).text();
+  expect(faq).toMatch(/<link rel="icon" href="\/favicon\.ico[^"]*"/);
+  expect(faq).toMatch(/<link rel="icon" href="\/icon\.svg[^"]*"[^>]*type="image\/svg\+xml"/);
+  expect(faq).toMatch(/<link rel="apple-touch-icon" href="\/apple-icon\.png[^"]*"/);
+  expect(faq).toContain('<link rel="manifest" href="/manifest.webmanifest"');
+  // A page without a picture of its own shares the brand card.
+  expect(faq).toMatch(/<meta property="og:image" content="[^"]*\/og-default\.png"\/>/);
+  const manifest = await (await request.get("/manifest.webmanifest")).json();
+  expect(manifest.name).toBe("Global Toothgems");
+  for (const icon of manifest.icons) expect((await request.get(icon.src)).ok()).toBe(true);
+});
+
 test("a product page is titled and described by its product, with structured data", async ({ request }) => {
   const html = await (await request.get("/fr/boutique/aurora-heart")).text();
   expect(html).toContain("<title>Aurora Heart · Global Toothgems</title>");

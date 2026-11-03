@@ -3,6 +3,7 @@ import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { useNavigate } from "../../../lib/navigation";
 import { ACCOUNT_STUDIO_PATH } from "../StudioPlans";
+import { GLOWBOOK_INTRO_PATH } from "../../../lib/studioUrl";
 import { lowestPlanWith, type LockedFeature } from "../../../lib/studioEntitlements";
 import { useWorkspaceFormat } from "./workspaceStyles";
 
@@ -17,7 +18,7 @@ const ICON: Record<LockedFeature, LucideIcon> = {
 /**
  * A Studio feature below its plan (decision 113): what it does, the lowest
  * plan that opens it (`lib/studioEntitlements.ts`) and the way to the
- * subscription page. `compact` is the one-line version (a creation's detail);
+ * subscription page (the Glowbook: to its presentation page, `GlowbookIntro`). `compact` is the one-line version (a creation's detail);
  * the full version adds a note on what the member keeps (`.kept`).
  * The database refuses the feature anyway — this only says why.
  */
@@ -27,9 +28,11 @@ export function PlanLocked({ feature, compact = false, onLeave }: { feature: Loc
   const k = `studio.access.planLocked.${feature}`;
   const plan = t(`studio.plans.items.${lowestPlanWith(feature)}.name`);
   const Icon = ICON[feature];
+  // The Glowbook has its own presentation page, which offers the plan too.
+  const toIntro = feature === "glowbook";
   const go = () => {
     onLeave?.();
-    navigate(ACCOUNT_STUDIO_PATH);
+    navigate(toIntro ? GLOWBOOK_INTRO_PATH : ACCOUNT_STUDIO_PATH);
   };
 
   return (
@@ -53,7 +56,7 @@ export function PlanLocked({ feature, compact = false, onLeave }: { feature: Loc
       </div>
       <div>
         <Button variant="dark" size="sm" iconRight={ArrowRight} onClick={go}>
-          {t("studio.access.planLocked.cta", { plan })}
+          {toIntro ? t("studio.access.planLocked.discoverGlowbook") : t("studio.access.planLocked.cta", { plan })}
         </Button>
       </div>
     </section>

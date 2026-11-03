@@ -7,7 +7,7 @@ import {
   ChevronsUpDown,
   Gem,
   Keyboard,
-  Layers,
+  Component,
   MessageSquareHeart,
   MousePointer2,
   PlayCircle,
@@ -41,7 +41,7 @@ const TUTORIALS: { id: string; icon: LucideIcon; accent?: boolean }[] = [
   { id: "place", icon: MousePointer2 },
   { id: "compose", icon: Sparkles },
   { id: "save", icon: Save, accent: true },
-  { id: "groups", icon: Layers, accent: true },
+  { id: "groups", icon: Component, accent: true },
   { id: "reuse", icon: Repeat },
 ];
 

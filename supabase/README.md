@@ -190,6 +190,7 @@ supabase/
 | 20261028143732 | `product_content_seo` | **Applied 2026-10-28** (decision 116). Data only: names, descriptions (FR + EN) and search tags (`meta_title` / `meta_description`, FR on `products`, EN on `product_translations`) of the 102 active products, written from the shape / colour of each Swarovski® gem and by hand for the rest; the French slug of CLEO moves to `global-lipgloss-cleo`. What is still unknown is written `[A COMPLÉTER]` in the descriptions. Suite `product_content_validation.sql` (C1–C4) |
 | 20261029181304 | `product_bundles` | **Applied 2026-10-29** (decision 117; suite K1–K12 passed on the project in a rolled-back transaction and on a local stack with every migration; types regenerated from the project, unchanged). Advisors: `admin_save_product_bundle` joins the SECURITY DEFINER staff functions (permission checked inside), the audit columns' FKs are unindexed like every other table's. Kits and packs whose stock is their components': `product_bundle_items` (kit → component product or option, units per kit; RLS: public reads active kits, staff all; written only by `admin_save_product_bundle(product, components)`, `manage_products`), `order_item_components` (composition snapshot of a kit line, written by `create_order()`; owner and staff read); a kit's `inventory_items` row is derived (buildable kits, reserved 0) and refreshed by the deferred constraint trigger `inventory_items_refresh_bundles` (`private.refresh_bundle_stock`, advisory lock, fresh snapshot), guarded by `inventory_items_bundle_guard` (22023 hint `bundle`) and left out of the ledger; `create_order()` reserves a kit line's components; `apply_order_stock_transitions()` and `apply_refund_success()` read `private.order_stock_lines()` / `private.refund_stock_lines()` (snapshot, else current composition for a line older than the kit); `product_variants_bundle_guard` (no option on a kit, none on a product held whole by one); `pending_stock_digest()` leaves kits out. Suite `product_bundles_validation.sql` (K1–K12); live test in `e2e-live/live.spec.ts` |
 | 20261029181630 | `lounge_direct_messages_closed` | **Applied 2026-10-29** (decision 118, owner's request). Members' Lounge private messages closed for everyone: one-row switch `private.lounge_settings.direct_messages_enabled` (false), read by `private.lounge_direct_messages_enabled()`; insert triggers on `lounge_conversations`, `lounge_messages` (conversation rows) and `lounge_reactions` (on a private message) raise `42501 lounge: private messages closed`; restrictive select policies hide conversations and their messages (attachments, images and Realtime follow). Existing rows kept, logic untouched. Suite `lounge_validation.sql` X1 (opens the switch first so C1 still covers the dormant logic) |
+| 20261102173016 | `lounge_guard_direct_messages_fix` | **Applied 2026-11-02** (fix of decision 118). `private.lounge_guard_direct_messages()` tested its three tables in one PL/pgSQL expression; PL/pgSQL resolves every `new.<column>` of an expression first, so on a table without the column it failed with 42703: from 2026-10-29 to 2026-11-02 **no channel message and no reaction could be written on the project**, and a new conversation failed with 42703 instead of 42501. Same rules, one branch per table. Caught by CI (`lounge_validation.sql` X1), verified on the project in a rolled-back block (channel message and reaction accepted, conversation and private message 42501) |
 | 20261029190000 | `product_variant_options` | **Not applied yet — validated in a rolled-back transaction pending** (decision 119). Options a product's variants combine (colour × plug…): `product_options`, `product_option_values` (+ colour dot), their `*_translations`, `product_variant_option_values` (one value per variant and option, composite key to the option), `product_media.option_value_id` (a photo shows a value, never with `variant_id`); RLS: visitors read active products' rows and published translations, `manage_products` writes; `admin_save_product()` optional `variant_options` + `custom_variants[].option_values` (names and dot derived from the values) + `media[].option_value_id`. Suite: `supabase/tests/product_variant_options_validation.sql` |
 | 20261026190000 | `studio_templates_collections_artist` | **Not applied — awaits the owner's go-ahead** (decision 113 (b)). `private.studio_artist_plan()` (Artist tier or above); `studio_templates()`, `studio_use_template()` and the template-render policy require it; collection read / create / rename / file policies replaced by "owners on the Artist plan" ones (take out and delete stay owner-only, on rows the member can no longer see below the plan). Suites `studio_templates_validation.sql` T10, `studio_collections_validation.sql` C8 (both moved to Artist subscriptions) |
 | 20261007072552 | `quiz_unlimited_attempts_cleanup` | **Partly applied 2026-10-07.** `admin_save_course()` and `private.learner_course_json()` rewritten without `allow_retry` / `max_attempts` (applied live through SQL, not recorded in the migration history). `drop column` on `course_quizzes` **not applied yet**: the MCP call timed out three times with no lock or session visible; the columns are unused and keep their defaults, so nothing depends on the drop |
@@ -1197,7 +1198,9 @@ lounge_notifications  (recipient, kind mention|reply|reaction, message, actor, r
   message or reaction to one can be written (`42501 lounge: private messages closed`) and none is readable, staff
   included. `lounge_overview()` (SECURITY DEFINER) still lists the caller's own conversations (other member, unread
   count, last message preview); the webapp ignores them (`LOUNGE_DIRECT_MESSAGES_ENABLED = false` in
-  `lib/communityChat/model.ts`: no entry point, `/compte/salons/messages/…` is the 404). Reopening = a migration setting
+  `lib/communityChat/model.ts`: no entry point, `/compte/salons/messages/…` is the 404). The trigger reads only
+  the inserted table's own columns (fix `20261102173016`: a shared expression made every channel message fail while
+  the switch was off). Reopening = a migration setting
   the switch to true + the flag.
 - Suite: `tests/lounge_validation.sql` — the door (no course, suspended, staff), handles and directory without
   personal data, posting rules (no direct writes, reply across rooms, unknown mention, empty, unknown part, extra
@@ -1498,7 +1501,9 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
                             → Gemini (Vertex AI via GOOGLE_ADC_JSON, or GEMINI_API_KEY), GEMINI_IMAGE_MODEL,
                               systemInstruction = systemPrompt.ts TRY_ON_SYSTEM_PROMPT ("v4"): IMAGE 1 the guide,
                               IMAGE 2 the same close-up cut by the function, IMAGE 3 the design, then up to 6
-                              reference pictures (bucket studio-try-on-references); text: how many marks
+                              reference pictures (bucket studio-try-on-references); text: how many marks, then the
+                              GEM LIST (gems.ts: what each kind of gem of the STORED design really is — faceted
+                              crystal and its cut and coating, or polished gold charm — with its shop name and colour)
                             → row 'generated' / 'failed' → 200 {image, crop}
                             → the browser lines the answer up with the close-up (tryOnAlign.ts) and pastes it back
                               into the photo (tryOnComposite.ts, pasteBack.ts) → before/after, download, share
@@ -1535,8 +1540,12 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
   skipped — cached 10 min per instance; Google's inline request limit is to check when connecting). No storage policy: only the service role and the dashboard see them.
 - **Prompt** (`supabase/functions/studio-try-on/systemPrompt.ts`, `TRY_ON_SYSTEM_PROMPT`, the "v4" of decision
   111 (k)): the gems are already placed as flat marks; the model turns each mark into a real gem at the same place,
-  size and turn, keeps everything else of the photo, takes cut, colour and material from the 3D design (IMAGE 3) and
-  realism only from the reference pictures. The former prompts v1 (the owner's original) and v3 (where the model
+  size and turn, keeps everything else of the photo, takes cut and turn from the 3D design (IMAGE 3) and each gem's
+  material from the GEM LIST (2026-11-02: renders came out plastic like the 3D preview — the reference bucket was
+  empty, so the model's only material cues were the preview and the flat marks; the prompt now says both look like
+  plastic and must never be copied, with sharper crystal and gold cues). Product photos of the gems were sent as
+  images for a few hours the same day, then dropped (owner's decision: a design can hold many different gems, too
+  many images for the model's input) — the gem list is text only. The former prompts v1 (the owner's original) and v3 (where the model
   placed the gems itself from the design render, a flat map, the gems' seats as text and a scale read from the
   photo), the `TRY_ON_PROMPT_VERSION` and `TRY_ON_MOUTH_CROP` secrets, the close-up gem-spot check and the progress
   stream were removed on 2026-11-01 (owner's decision after the trial: computed placement clearly better); commit
@@ -1565,7 +1574,9 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
   asks for another photo rather than rendering a guess (decision to confirm with the owner). An analysis is counted
   against the daily requests, never the renders (`failed` / `analysis`; rows of the trial carry `diagnostic`). The
   render trusts the browser's guide and crop (validated: a JPEG, a crop inside the photo, 1–200 marks): at worst a
-  member edits their own photo within their own render quota.
+  member edits their own photo within their own render quota. Deployed from a pinned commit (see the change log
+  `docs/studio-try-on-changelog.md`); until version 33 (2026-11-02) version 32 still served the former AI placement
+  to the site's new requests, which is where some plastic-looking renders came from.
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
   `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The
   photo step says the photo is sent to Google only while the AI is connected.
@@ -2050,7 +2061,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
       contract; the optional `content` (eyebrow, title — defaults to the subject —, intro, actions, blocks,
       unsubscribe URL) is built by the calling code, never from substituted values, and passed as
       `SendRequest.content` (an object, or a function of the template's locale so labels match the body). Logo:
-      `webapp/public/email/logo-wordmark.png` (360×99, flattened on white so dark-mode clients keep it legible),
+      `webapp/public/email/logo-wordmark.png` (540×145, 3× its 180 px display width, exported from `assets/logo/vector/wordmark.svg`, flattened on white so dark-mode clients keep it legible),
       served at `<SITE_URL>/email/logo-wordmark.png` — it shows only once the webapp is deployed with it. Montserrat
       loads where clients allow web fonts, else Helvetica/Arial (Outlook forced to Arial). Brand name in the layout:
       "Global Toothgems", as on the site (the `EMAIL_FROM` display name is a secret, unchanged).

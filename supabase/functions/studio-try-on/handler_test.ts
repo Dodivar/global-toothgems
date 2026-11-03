@@ -473,3 +473,19 @@ Deno.test("photo readings: the photo is read twice and the strictest reading dec
   });
   assertEquals((await handleStudioTryOn(post(analyseForm()), half.deps)).status, 200);
 });
+
+Deno.test("render: the gem list follows the mark count in the text, no extra image; failing, the render goes without", async () => {
+  const { deps, calls } = fake({
+    gemList: (scene) => {
+      assertEquals(scene, SCENE);
+      return Promise.resolve("GEM LIST — test");
+    },
+  });
+  assertEquals((await handleStudioTryOn(post(renderForm()), deps)).status, 200);
+  assertEquals(calls.images.length, 4);
+  assertStringIncludes(calls.text, "GEM LIST — test");
+  assertStringIncludes(TRY_ON_SYSTEM_PROMPT, "The gem list, not the drawings, says what each gem is made of");
+  const broken = fake({ gemList: () => Promise.reject(new Error("db down")) });
+  assertEquals((await handleStudioTryOn(post(renderForm()), broken.deps)).status, 200);
+  assertEquals(broken.calls.text.includes("GEM LIST"), false);
+});
