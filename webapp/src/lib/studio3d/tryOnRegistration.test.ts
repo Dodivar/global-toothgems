@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FRONT_VIEW_TEETH, type FrontViewGem, type FrontViewPoint } from "./frontView";
-import { applySimilarity, fitSimilarity, registerDesign, RELIABLE_CONFIDENCE, type FoundTooth } from "./tryOnRegistration";
+import { applySimilarity, fitSimilarity, LOWER_OVERBITE_MM, registerDesign, RELIABLE_CONFIDENCE, type FoundTooth } from "./tryOnRegistration";
 
 const tooth = (fdi: string) => FRONT_VIEW_TEETH.find((t) => t.fdi === fdi)!;
 
@@ -137,5 +137,35 @@ describe("registerDesign", () => {
     expect(reg.transform!.scale).toBeCloseTo(20, 4);
     expect(reg.issues).toContain("few_teeth");
     expect(reg.reliable).toBe(false);
+  });
+
+  /** Upper front teeth, and lower incisors whose visible part starts at the upper teeth's edge and shows `visibleMm`. */
+  function overbitePhoto(visibleMm: number): { found: FoundTooth[]; upperEdge: number } {
+    const s = 20;
+    const upper = photoTeeth(UPPER_FRONT, s, 600, 300);
+    const upperEdge = tooth("11").incisal * s + 300;
+    const lower = ["42", "41", "31", "32"].map((fdi) => {
+      const t = tooth(fdi);
+      return { fdi, x: t.x0 * s + 600, y: upperEdge, width: (t.x1 - t.x0) * s, height: visibleMm * s };
+    });
+    return { found: [...upper, ...lower], upperEdge };
+  }
+
+  it("takes a lower tooth's edge above the upper teeth that cover it, and keeps its gem on the visible part", () => {
+    const { found, upperEdge } = overbitePhoto(5);
+    const t41 = tooth("41");
+    // 4 mm from the biting edge: 2 mm under the upper teeth's edge with the overbite.
+    const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "41", { y: t41.incisal + 4 })] }, found);
+    const a = reg.gems[0];
+    expect(a.y).toBeCloseTo(upperEdge + (4 - LOWER_OVERBITE_MM) * 20, -1);
+    expect(a.tooth).toBe("found");
+  });
+
+  it("hides a gem whose place is outside the visible part of its tooth (behind a lip)", () => {
+    const { found } = overbitePhoto(2.5);
+    const t41 = tooth("41");
+    const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "41", { y: t41.incisal + 6.5 }), gem("b", "11")] }, found);
+    expect(reg.gems.find((g) => g.id === "a")!.tooth).toBe("hidden");
+    expect(reg.gems.find((g) => g.id === "b")!.tooth).toBe("found");
   });
 });

@@ -1570,6 +1570,9 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
   diagnostic, a comparison and a drift check, evaluated on the owner's photos (`webapp/scripts/try-on-trial/`), then
   made the only try-on the same day (owner's decision): one "Generate" button for everyone the owner's plan allows,
   the staff tools removed. **Gem size is physical** (owner's decision): real millimetres × the fitted scale.
+  Since 2026-11-03 (owner's trial, drops drawn on the lower lip) a lower tooth cut by the upper teeth gets its biting
+  edge 2 mm above its box (`LOWER_OVERBITE_MM`, a first value), and a gem outside its tooth's visible box is left out
+  and counted, never drawn on a lip or a gum (browser only, no function change).
   A placement the teeth do not support (`RELIABLE_CONFIDENCE` 0.6, at least three teeth agreeing — first values)
   asks for another photo rather than rendering a guess (decision to confirm with the owner). An analysis is counted
   against the daily requests, never the renders (`failed` / `analysis`; rows of the trial carry `diagnostic`). The

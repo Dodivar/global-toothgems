@@ -183,7 +183,7 @@ export function Dialog({
         )}
 
         {footer && (
-          <footer className="flex flex-none flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-[var(--space-4)] px-[var(--space-5)]">
+          <footer className="flex flex-none flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] bg-[var(--surface-sunken)] p-[var(--space-4)] px-[var(--space-5)] pb-[max(var(--space-4),env(safe-area-inset-bottom))]">
             {footer}
           </footer>
         )}

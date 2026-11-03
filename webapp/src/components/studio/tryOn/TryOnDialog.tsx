@@ -27,7 +27,7 @@ import { PhotoStep, type AiState } from "./PhotoStep";
 import { renderPlacementGuide } from "./placementGuide";
 import type { PreparedPhoto } from "./preparePhoto";
 import { ProcessingStep } from "./ProcessingStep";
-import { ResultStep } from "./ResultStep";
+import { ResultActions, ResultStep } from "./ResultStep";
 
 type Step =
   | { kind: "photo" }
@@ -180,6 +180,7 @@ export function TryOnDialog({
       description={t(`studio.tryOn.subtitle.${audience}`, { name: creation.name })}
       icon={<ScanFace size={17} />}
       closeLabel={t("studio.workspace.close")}
+      footer={!empty && step.kind === "result" && photo ? <ResultActions image={step.image} creation={creation} /> : undefined}
     >
       {empty ? (
         <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("studio.tryOn.empty")}</p>
@@ -253,7 +254,6 @@ export function TryOnDialog({
           {step.kind === "result" && photo && (
             <ResultStep
               photo={photo}
-              image={step.image}
               imageUrl={step.url}
               leftOut={step.leftOut}
               creation={creation}

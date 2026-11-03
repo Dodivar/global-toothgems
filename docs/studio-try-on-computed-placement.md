@@ -38,6 +38,14 @@ of commit `7ba69d1`.
 Tunable values to revisit with real photos: `RELIABLE_CONFIDENCE` (0.6), `OUTLIER_RESIDUAL` (0.5 of a tooth's
 width), the confidence weights in `registerDesign`, `TRY_ON_TEETH_MODEL` (a stronger model if teeth are misnumbered).
 
+Fixes after the owner's trial of 2026-11-03 ("Test 3": drops on the lower incisors drawn on the lower lip, stars
+and hearts 1–2 mm off): a lower tooth whose box starts at the upper teeth's edge is taken as covered by them and its
+biting edge is put `LOWER_OVERBITE_MM` (2 mm) above its box; a gem whose centre falls outside its tooth's visible box
+is `hidden` (left out and counted, never drawn on a lip or a gum). Replaying the registration on that photo (tooth
+boxes measured by hand) put every gem within the visible teeth; the rest of the gap seen on the render (hearts drawn
+~40 % larger than their marks, stars ~1.5 mm off) comes from the image model not keeping the marks exactly — not
+measured on the real boxes, since neither the photo nor the model's answers are stored.
+
 Known limits: the teeth model sometimes numbers the teeth one tooth off (seen on one trial photo: the whole design
 then moves one tooth, with a high confidence, since the fit stays consistent); a mirrored selfie puts the person's
 left teeth on the image's left; lower teeth are often partly hidden by the upper ones.

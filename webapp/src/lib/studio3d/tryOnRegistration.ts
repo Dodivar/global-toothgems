@@ -23,11 +23,18 @@ import type { FrontViewProjection, FrontViewTooth } from "./frontView";
  * 3. Its size is physical (owner's decision, 2026-11-01): its real size in
  *    millimetres times the fitted scale — a 2 mm gem stays 2 mm, whatever the
  *    width of the customer's teeth.
+ * 4. A gem whose centre falls outside the visible part of its tooth (the
+ *    found box: a lip or the upper teeth hide the rest) is `hidden`: never
+ *    drawn on a lip or a gum (2026-11-03).
+ *
+ * A lower tooth whose top is tucked under the upper teeth (the usual
+ * overbite) does not show its biting edge: its box starts where the upper
+ * teeth end. Its edge is then taken `LOWER_OVERBITE_MM` above the box, so its
+ * gems are not pushed down by the overlap (2026-11-03: drops on the lower
+ * incisors landed on the lower lip).
  *
  * A confidence (0–1) says how far the result can be trusted; below
- * `RELIABLE_CONFIDENCE` the computed placement is not to be used. For now
- * only the staff's placement diagnostic shows it; renders still place the
- * gems the current way.
+ * `RELIABLE_CONFIDENCE` the try-on asks for another photo.
  *
  * Coordinates: pixels of the close-up, y down. Pure: no React, no DOM.
  */
@@ -75,8 +82,12 @@ export interface RegisteredGem {
   stretch: readonly [number, number];
   /** Turn on screen, degrees, clockwise: its own, plus the smile's tilt. */
   rotation: number;
-  /** Whether its tooth was found (`found`) or only expected there by the fit (`fitted`). */
-  tooth: "found" | "fitted";
+  /**
+   * `found`: on a tooth found on the photo, inside its visible part; `fitted`:
+   * its tooth was only expected there by the fit; `hidden`: its tooth was found
+   * but its place is outside the part that shows (behind a lip or the upper teeth).
+   */
+  tooth: "found" | "fitted" | "hidden";
 }
 
 export type RegistrationIssue =
@@ -116,6 +127,14 @@ export const RELIABLE_CONFIDENCE = 0.6;
 export const MIN_RELIABLE_TEETH = 3;
 /** A found tooth farther than this from where the others put it (share of its width) is set aside. */
 export const OUTLIER_RESIDUAL = 0.5;
+/**
+ * How far a lower tooth's biting edge sits above its visible top when the
+ * upper teeth cover it, mm: a typical overbite (1–3 mm). A first value, to
+ * tune on real photos.
+ */
+export const LOWER_OVERBITE_MM = 2;
+/** A lower tooth's top within this distance (mm) of the upper teeth's edge above it is cut by them. */
+const COVERED_TOLERANCE_MM = 0.6;
 /** The fitted scale and the teeth's widths may disagree by this factor before it is an issue. */
 const SCALE_TOLERANCE = 1.25;
 
@@ -126,8 +145,39 @@ const widthOf = (t: FrontViewTooth) => t.x1 - t.x0;
 const heightOf = (t: FrontViewTooth) => Math.abs(t.incisal - t.cervical);
 /** The biting-edge centre of a reference tooth, mm. */
 const refEdge = (t: FrontViewTooth): Point => ({ x: (t.x0 + t.x1) / 2, y: t.incisal });
-/** The biting-edge centre of a found tooth: the bottom of an upper tooth's box, the top of a lower one's. */
-const foundEdge = (f: FoundTooth, lower: boolean): Point => ({ x: f.x + f.width / 2, y: lower ? f.y : f.y + f.height });
+/**
+ * The biting-edge centre of a found tooth: the bottom of an upper tooth's box,
+ * the top of a lower one's — moved up by the overbite when the upper teeth
+ * cover it (`edgeLift`, pixels, by FDI number).
+ */
+const foundEdge = (f: FoundTooth, lower: boolean, edgeLift?: ReadonlyMap<string, number>): Point => ({
+  x: f.x + f.width / 2,
+  y: lower ? f.y - (edgeLift?.get(f.fdi) ?? 0) : f.y + f.height,
+});
+
+/**
+ * Lower teeth whose top touches the upper teeth above them (their biting edge
+ * is hidden behind them), with how far up their real edge is, pixels.
+ * `pxPerMm`: a first scale, from the teeth's widths.
+ */
+export function coveredLowerEdges(found: readonly { found: FoundTooth; lower: boolean }[], pxPerMm: number): Map<string, number> {
+  const uppers = found.filter((p) => !p.lower).map((p) => p.found);
+  const lift = new Map<string, number>();
+  if (!(pxPerMm > 0)) return lift;
+  for (const p of found) {
+    if (!p.lower) continue;
+    const f = p.found;
+    const above = uppers.filter((u) => Math.min(u.x + u.width, f.x + f.width) - Math.max(u.x, f.x) >= 0.3 * f.width);
+    if (above.length === 0) continue;
+    const edges = above.map((u) => u.y + u.height);
+    const tolerance = COVERED_TOLERANCE_MM * pxPerMm;
+    // Its top on the upper teeth's edge (between the edges of the one or two teeth above it):
+    // cut by them. A box reaching well above takes the hidden part in already; one well
+    // below is an open bite.
+    if (f.y >= Math.min(...edges) - tolerance && f.y <= Math.max(...edges) + tolerance) lift.set(f.fdi, LOWER_OVERBITE_MM * pxPerMm);
+  }
+  return lift;
+}
 
 export function applySimilarity(t: Similarity, p: Point): Point {
   const a = (t.angle * Math.PI) / 180;
@@ -215,21 +265,29 @@ export function registerDesign(projection: Pick<FrontViewProjection, "teeth" | "
   });
   if (pairs.length === 0) return empty(["no_teeth"]);
 
+  // Lower teeth covered by the upper ones: their real biting edge is above their box.
+  const firstScale = median(pairs.map((p) => p.found.width / widthOf(p.ref)));
+  const edgeLift = coveredLowerEdges(
+    pairs.map((p) => ({ found: p.found, lower: p.ref.lower })),
+    firstScale,
+  );
+  const edgeOf = (f: FoundTooth, lower: boolean) => foundEdge(f, lower, edgeLift);
+
   // 1. The fit, setting aside the tooth that disagrees most while three or more remain.
   let kept = [...pairs];
   const setAside = new Set<string>();
   const residualOf = (t: Similarity, p: (typeof pairs)[number]) => {
     const expected = applySimilarity(t, refEdge(p.ref));
-    const actual = foundEdge(p.found, p.ref.lower);
+    const actual = edgeOf(p.found, p.ref.lower);
     return Math.hypot(expected.x - actual.x, expected.y - actual.y) / (widthOf(p.ref) * t.scale);
   };
   const fit = (list: typeof pairs): Similarity | null => {
-    if (list.length >= 2) return fitSimilarity(list.map((p) => refEdge(p.ref)), list.map((p) => foundEdge(p.found, p.ref.lower)));
+    if (list.length >= 2) return fitSimilarity(list.map((p) => refEdge(p.ref)), list.map((p) => edgeOf(p.found, p.ref.lower)));
     // One tooth: its width gives the scale, no tilt.
     const [p] = list;
     const scale = p.found.width / widthOf(p.ref);
     const edge = refEdge(p.ref);
-    const target = foundEdge(p.found, p.ref.lower);
+    const target = edgeOf(p.found, p.ref.lower);
     return { scale, angle: 0, tx: target.x - edge.x * scale, ty: target.y - edge.y * scale };
   };
   let transform = fit(kept);
@@ -278,7 +336,7 @@ export function registerDesign(projection: Pick<FrontViewProjection, "teeth" | "
     if (box) {
       // Across: its share of the customer's tooth; up: its real distance from the biting edge.
       const across = (at.x - ref.x0) / widthOf(ref) - 0.5;
-      const edge = foundEdge(box, ref.lower);
+      const edge = edgeOf(box, ref.lower);
       const dx = across * box.width;
       const dy = (at.y - ref.incisal) * t.scale;
       x = edge.x + dx * Math.cos(a) - dy * Math.sin(a);
@@ -297,7 +355,7 @@ export function registerDesign(projection: Pick<FrontViewProjection, "teeth" | "
         r: at.r * t.scale,
         stretch: at.stretch,
         rotation: at.rotation + t.angle,
-        tooth: box ? "found" : "fitted",
+        tooth: !box ? "fitted" : x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height ? "found" : "hidden",
       },
     ];
   });
