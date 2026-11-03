@@ -531,22 +531,24 @@ export function relatedProducts(product: Product, list: Product[] = PRODUCTS): P
 export interface ShapeGroup {
   shape: GemShape;
   count: number;
-  /** Picture of the cut: its Crystal AB gem's photo, when the group has one. */
+  /** Picture of the cut: its plain Crystal gem's photo, when the group has one. */
   image?: string;
 }
 
 /** Colour whose photo stands for a cut on the shape tiles. */
-const SHAPE_PICTURE_COLOR = "crystal-ab";
+const SHAPE_PICTURE_COLOR = "crystal";
 
 /**
- * The Crystal AB gem's photo, which shows the cut best (decided by the owner,
- * 2026-10-29). A gem whose colour was not set yet is recognised by the
- * "Crystal AB" in its name.
+ * The plain Crystal gem's photo: clear, without the Crystal AB's iridescent
+ * reflections, so the tile shows the cut itself (decided by the owner,
+ * 2026-11-03; Crystal AB from 2026-10-29). A gem whose colour was not set yet
+ * is recognised by a name ending in "Crystal" ("Diamond Shape - Crystal",
+ * never "Crystal AB" or "Crystal Shimmer").
  */
 function shapePicture(gems: Product[]): string | undefined {
-  const isCrystalAb = (p: Product) =>
-    p.color === SHAPE_PICTURE_COLOR || (!p.color && /\bcrystal ab\b/i.test(`${p.name.fr} ${p.name.en}`));
-  return gems.find((p) => p.image && isCrystalAb(p))?.image;
+  const isPlainCrystal = (p: Product) =>
+    p.color === SHAPE_PICTURE_COLOR || (!p.color && [p.name.fr, p.name.en].some((name) => /\bcrystal\s*$/i.test(name)));
+  return gems.find((p) => p.image && isPlainCrystal(p))?.image;
 }
 
 /**
