@@ -226,7 +226,7 @@
     },
     "estimate": {
       "question": "Comment le prix estimé est-il calculé ?",
-      "answer": "Une valeur indicative aux prix de la boutique : chaque gemme dans sa couleur et sa taille, dans le plus petit pack qui couvre vos pièces, un bijou par pièce. C’est un support d’échange avec votre cliente ou votre client, pas un devis : rien n’est facturé à partir de ce montant."
+      "answer": "Une valeur indicative aux prix de la boutique : chaque gemme dans sa couleur et sa taille, dans la combinaison de packs la moins chère qui couvre vos pièces, un bijou par pièce. C’est un support d’échange avec votre cliente ou votre client, pas un devis : rien n’est facturé à partir de ce montant."
     }
   },
   "help": {
@@ -549,7 +549,7 @@
       "estimate": {
         "title": "Comment l’estimation est-elle calculée ?",
         "body": [
-          "L’estimation est une valeur indicative aux prix de la boutique : chaque gemme dans sa couleur et sa taille ; pour les cristaux vendus en packs, le pack le moins cher qui couvre vos pièces (2 pièces → au moins le pack de 10) ; pour les bijoux, un par pièce.",
+          "L’estimation est une valeur indicative aux prix de la boutique : chaque gemme dans sa couleur et sa taille ; pour les cristaux vendus en packs, la combinaison de packs la moins chère qui couvre vos pièces (2 pièces → le plus petit pack ; 120 pièces → un pack de 100 et un pack de 20) ; pour les bijoux, un par pièce.",
           "Ce n’est ni un devis ni une facture : rien n’est facturé à partir de ce montant, et votre tarif de pose n’y figure pas. Les gemmes que la boutique ne vend plus ne sont pas comptées. C’est un support pour échanger avec votre client·e et préparer votre commande."
         ]
       },

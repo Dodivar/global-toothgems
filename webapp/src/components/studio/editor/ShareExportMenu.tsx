@@ -190,7 +190,7 @@ export function ShareExportMenu() {
           tooth: teeth.join(", "),
           size: sizes.map(labels.sizeShort).join(", "),
           finish: labels.finishName(pieces[0]) ?? "—",
-          price: `${line.quantity} × ${labels.formatEstimate(line.unitMinor)}`,
+          price: line.items.map((item) => `${item.quantity} × ${labels.formatEstimate(item.unitMinor)}`).join(" + "),
         };
       });
       if (estimate.unavailable)

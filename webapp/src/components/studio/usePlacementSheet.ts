@@ -71,12 +71,17 @@ export function usePlacementSheet() {
           // A line covering several sizes is said once, on its first reference.
           if (used.has(line)) return t("studio.placementSheet.sameAsAbove");
           used.add(line);
-          const offer = [
-            line.offer.name && line.offer.pack == null && line.offer.size == null ? l(line.offer.name) : null,
-            line.offer.pack != null ? t("studio.editor.shopping.pack", { count: line.offer.pack }) : null,
-            line.offer.size != null ? labels.sizeShort(line.offer.size) : null,
-          ].filter(Boolean);
-          return offer.length ? `${line.quantity} × ${offer.join(" · ")}` : `× ${line.quantity}`;
+          // One or several packs ("1 × Pack of 100 · SS5 + 1 × Pack of 20 · SS5").
+          return line.items
+            .map(({ offer, quantity }) => {
+              const name = [
+                offer.name && offer.pack == null && offer.size == null ? l(offer.name) : null,
+                offer.pack != null ? t("studio.editor.shopping.pack", { count: offer.pack }) : null,
+                offer.size != null ? labels.sizeShort(offer.size) : null,
+              ].filter(Boolean);
+              return name.length ? `${quantity} × ${name.join(" · ")}` : `× ${quantity}`;
+            })
+            .join(" + ");
         };
         const { referenceGroups } = sheet;
         const totals = referenceGroups(projection).map((group) => {
