@@ -48,8 +48,8 @@ bash: `TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --ph
 
 Options: `--only P3:S1,P12:S2` (some pairs only), `--skip-done` (resume: skips pairs with a result or whose photo
 the check refused), `--pause 45` (seconds between runs, default 45: back-to-back renders hit the image model's
-per-minute quota, HTTP 429) — the pause follows a run that reached the image model only, 5 s otherwise; a photo the check refuses is
-not tried on its other creations (they are recorded as refused), unless `--keep-refused`, `--headed` (watch the browser). A failed render or a closed browser is retried once
+per-minute quota, HTTP 429) — the pause follows a run that reached the image model only, 5 s otherwise; a photo the check refuses twice
+in a row is not tried on its remaining creations (recorded as refused; the other photos go on), `--headed` (watch the browser). A failed render or a closed browser is retried once
 (the browser relaunched and signed in again). Each photo means 5 runs: 20 photos are 100 runs, about 2 to 2½ hours with
 the default pause; each counts as a render (the staff account has no daily limit) and is billed by the image model.
 

@@ -27,7 +27,7 @@ const SITE = process.env.TRIAL_SITE || "http://localhost:5173";
 const EMAIL = process.env.TRIAL_EMAIL;
 const PASSWORD = process.env.TRIAL_PASSWORD;
 if (!PHOTOS || !EMAIL || !PASSWORD) {
-  console.error("Usage: TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --photos <folder> [--out <folder>] [--only P1:S1,…] [--skip-done] [--keep-refused] [--pause 45] [--headed]");
+  console.error("Usage: TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --photos <folder> [--out <folder>] [--only P1:S1,…] [--skip-done] [--pause 45] [--headed]");
   process.exit(1);
 }
 
@@ -312,20 +312,35 @@ await checkCreations();
 console.log(`Signed in as ${EMAIL}. ${photoFiles.length} photo(s) × ${Object.keys(SCENES).length} creations: ${pairs.length} runs, results in ${OUT}`);
 /** The photo check refused the photo itself: every other creation would be refused the same way. */
 const isPhotoRefusal = (log) => log.outcome === "error" && /ne permet pas un bon rendu/.test(log.error ?? "");
-const refusedPhotos = new Map(); // photo key → the refusal's log
+/** Refused twice in a row by the photo check: the photo is not tried on its remaining creations. */
+const REFUSALS_TO_SKIP = 2;
+const refusalStreak = new Map(); // photo key → refusals in a row (a result or another outcome resets it)
+const refusedPhotos = new Map(); // photo key → its last refusal's log, once the streak is reached
+/** Counts a run's outcome in its photo's streak of refusals; true when the photo is now to be skipped. */
+function countRefusal(photo, log) {
+  const streak = isPhotoRefusal(log) ? (refusalStreak.get(photo) ?? 0) + 1 : 0;
+  refusalStreak.set(photo, streak);
+  if (streak < REFUSALS_TO_SKIP) return false;
+  refusedPhotos.set(photo, log);
+  return true;
+}
 let first = true;
 let rendered = false; // whether the previous run reached the image model (its per-minute quota)
 for (const [p, s] of pairs) {
   if (!PHOTO_BY_KEY[p] || !SCENES[s]) continue;
-  if (argv.includes("--skip-done") && settled(p, s)) continue;
+  if (argv.includes("--skip-done") && settled(p, s)) {
+    // A run settled earlier still counts in the photo's streak of refusals.
+    countRefusal(p, JSON.parse(readFileSync(join(OUT, `${p}-${s}`, "log.json"), "utf8")));
+    continue;
+  }
   const refusal = refusedPhotos.get(p);
   if (refusal) {
     // Recorded as refused too (same reasons), so the summary and the sheets show it, without another check.
     const dir = join(OUT, `${p}-${s}`);
     mkdirSync(dir, { recursive: true });
-    const log = { photo: p, photoFile: refusal.photoFile, scene: s, sceneName: SCENES[s].name, outcome: "error", error: refusal.error, skipped: `photo refused on ${refusal.scene}`, total: 0, calls: [] };
+    const log = { photo: p, photoFile: refusal.photoFile, scene: s, sceneName: SCENES[s].name, outcome: "error", error: refusal.error, skipped: `photo refused ${REFUSALS_TO_SKIP} times in a row (last on ${refusal.scene})`, total: 0, calls: [] };
     writeFileSync(join(dir, "log.json"), JSON.stringify(log, null, 1));
-    console.log(`${p}-${s}  skipped (photo refused on ${refusal.scene})`);
+    console.log(`${p}-${s}  skipped (photo refused ${REFUSALS_TO_SKIP} times in a row)`);
     continue;
   }
   for (let attempt = 1; attempt <= 2; attempt++) {
@@ -341,9 +356,10 @@ for (const [p, s] of pairs) {
     first = false;
     const log = await runOne(p, s);
     rendered = log.calls.some((c) => typeof c.kind === "string" && c.kind.startsWith("render"));
-    if (isPhotoRefusal(log) && !argv.includes("--keep-refused")) {
-      refusedPhotos.set(p, log);
-      console.log(`  (${basename(PHOTO_BY_KEY[p])} refused by the photo check: its other creations are skipped)`);
+    if (countRefusal(p, log)) {
+      console.log(`  (${basename(PHOTO_BY_KEY[p])} refused ${REFUSALS_TO_SKIP} times in a row by the photo check: its other creations are skipped)`);
+    } else if (isPhotoRefusal(log)) {
+      console.log(`  (${basename(PHOTO_BY_KEY[p])} refused by the photo check: tried on the next creation, skipped after ${REFUSALS_TO_SKIP} refusals in a row)`);
     }
     const passing = log.outcome === "harness_error" || (log.outcome === "error" && /n’a pas abouti|connexion/i.test(log.error ?? ""));
     if (!passing || attempt === 2) break;
