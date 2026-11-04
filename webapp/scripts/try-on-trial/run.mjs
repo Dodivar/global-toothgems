@@ -1,10 +1,10 @@
 // Studio try-on trial (decision 111 (k)): drives the real try-on dialog of the local site, connected to the real
-// Supabase project, for every photo × test creation — exactly as a member would: sign in, open the creation,
+// Supabase project, for every photo (all of the folder's, up to 20) × test creation — exactly as a member would: sign in, open the creation,
 // add the photo, tick the consent, "Generate the AI render" (the computed placement, decision 111 (k)).
 // See README.md next to this file. Nothing here holds a secret: the test account's password comes from the
 // environment. The photos and the results stay on this machine.
 //
-//   node scripts/try-on-trial/run.mjs --photos <folder of 5 photos> [--out <folder>] [--only P3:S1,P5:S2] [--headed]
+//   node scripts/try-on-trial/run.mjs --photos <folder of up to 20 photos> [--out <folder>] [--only P3:S1,P12:S2] [--headed]
 //
 // Env: TRIAL_EMAIL, TRIAL_PASSWORD (the test staff account); TRIAL_SITE (default http://localhost:5173).
 import { chromium } from "@playwright/test";
@@ -31,18 +31,25 @@ if (!PHOTOS || !EMAIL || !PASSWORD) {
   process.exit(1);
 }
 
-// The five test creations, saved on the test account (names as in My Creations).
+// The five test creations, saved on the test account (names exactly as in My Creations).
 const SCENES = {
-  S1: { name: "Essai 1 — Référence (un carré au centre de la 11)", what: "One 3 mm square crystal, centre of 11" },
-  S2: { name: "Essai 2 — Symétrie (cœurs sur 12 et 22)", what: "Mirror pair: 4 mm fuchsia hearts on 12 and 22" },
-  S3: { name: "Essai 3 — Petit groupe (4 gemmes de 3 mm sur la 21)", what: "Cluster: four 3 mm gems on 21" },
-  S4: { name: "Essai 4 — Côtés et bas (canines 13/23, incisive 31)", what: "Canines 13/23 (4 mm drops) + lower incisor 31 (3 mm baguette, 90°)" },
-  S5: { name: "Essai 5 — Formes et matières", what: "Gold bolt 30° on 11, AB drop 180° on 21, AB rivoli star on 22" },
+  S1: { name: "Essai 1 — Ligne du sourire (6 ronds SS7, de 13 à 23)", what: "Smile line: one SS7 crystal round centred on each of 13, 12, 11, 21, 22, 23 (registration across the whole front arch)" },
+  S2: { name: "Essai 2 — Symétrie (3 paires miroir, de 11/21 à 13/23)", what: "Three mirror pairs: 4 mm red hearts on 11/21, 4 mm emerald navettes on 12 (330°) / 22 (30°), 4 mm crystal drops on 13/23" },
+  S3: { name: "Essai 3 — Grappe dense (10 gemmes sur 11 et 21)", what: "Dense cluster: 4 mm AB starflower + four SS5 AB rounds on 21; 3 mm blue rivoli + three SS5 crystal + one SS5 sapphire on 11, two of them by the midline" },
+  S4: { name: "Essai 4 — Zones difficiles (prémolaires, collet, bord, bas)", what: "Hard spots: 3 mm kites on premolars 14/24, SS5 sapphire on 15, SS7 at the gum line of 11 and the incisal edge of 21, lower 41 drop, 31 baguette 1.5×2 mm at 90°, 33 AB heart" },
+  S5: { name: "Essai 5 — Formes, matières et rotations (10 pièces)", what: "Charms and stones: gold bolt 30° (11), silver halo star (21), gold snake 90° (12), gold cherries (22), silver dachshund 315° (13), blue rivoli (23), black-diamond kite 180° (14), heliotrope drop 135° (24), gold open heart (42), sapphire baguette 2×5 mm (32)" },
 };
-const photoFiles = readdirSync(PHOTOS)
+// Every photo of the folder, sorted by name, up to MAX_PHOTOS (P1…P20).
+const MAX_PHOTOS = 20;
+const allPhotos = readdirSync(PHOTOS)
   .filter((f) => /\.(jpe?g|png|webp|heic)$/i.test(f))
-  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-  .slice(0, 5);
+  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+if (!allPhotos.length) {
+  console.error(`No photo (.jpg, .jpeg, .png, .webp, .heic) in ${PHOTOS}.`);
+  process.exit(1);
+}
+if (allPhotos.length > MAX_PHOTOS) console.warn(`${allPhotos.length} photos in ${PHOTOS}: only the first ${MAX_PHOTOS} (by name) are used.`);
+const photoFiles = allPhotos.slice(0, MAX_PHOTOS);
 const PHOTO_BY_KEY = Object.fromEntries(photoFiles.map((f, i) => [`P${i + 1}`, join(PHOTOS, f)]));
 const pairs = ONLY
   ? ONLY.split(",").map((x) => x.split(":"))
@@ -258,7 +265,7 @@ async function contactSheets() {
 }
 
 await launch();
-console.log(`Signed in as ${EMAIL}. ${pairs.length} runs, results in ${OUT}`);
+console.log(`Signed in as ${EMAIL}. ${photoFiles.length} photo(s) × ${Object.keys(SCENES).length} creations: ${pairs.length} runs, results in ${OUT}`);
 let first = true;
 for (const [p, s] of pairs) {
   if (!PHOTO_BY_KEY[p] || !SCENES[s]) continue;
@@ -279,5 +286,5 @@ for (const [p, s] of pairs) {
 }
 if (!alive()) await launch();
 await contactSheets();
-console.log(`Done. Send back: ${join(OUT, "summary.json")} and the five ${join(OUT, "sheet-P*.jpg")}`);
+console.log(`Done. Send back: ${join(OUT, "summary.json")} and the ${Object.keys(PHOTO_BY_KEY).length} ${join(OUT, "sheet-P*.jpg")}`);
 await browser?.close();
