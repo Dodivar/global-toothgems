@@ -8,7 +8,7 @@
 //
 // Env: TRIAL_EMAIL, TRIAL_PASSWORD (the test staff account); TRIAL_SITE (default http://localhost:5173).
 import { chromium } from "@playwright/test";
-import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -26,19 +26,21 @@ const PAUSE_S = Number(opt("pause", "45"));
 const SITE = process.env.TRIAL_SITE || "http://localhost:5173";
 const EMAIL = process.env.TRIAL_EMAIL;
 const PASSWORD = process.env.TRIAL_PASSWORD;
-if (!PHOTOS || !EMAIL || !PASSWORD) {
-  console.error("Usage: TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --photos <folder> [--out <folder>] [--only P1:S1,…] [--skip-done] [--pause 45] [--headed]");
+// --report-only: rebuild summary.json, report.md and the sheets from the results already in --out, without any run.
+const REPORT_ONLY = argv.includes("--report-only");
+if (!PHOTOS || (!REPORT_ONLY && (!EMAIL || !PASSWORD))) {
+  console.error("Usage: TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --photos <folder> [--out <folder>] [--only P1:S1,…] [--skip-done] [--pause 45] [--headed]\n       node scripts/try-on-trial/run.mjs --photos <folder> --out <folder> --report-only");
   process.exit(1);
 }
 
 // The five test creations, saved on the test account. They are found in My Creations by the start of their name
 // ("Essai 1 —" …), so a creation can be renamed after the dash without breaking the trial.
 const SCENES = {
-  S1: { name: "Essai 1 — Ligne du sourire (6 ronds SS7, de 13 à 23)", what: "Smile line: one SS7 crystal round centred on each of 13, 12, 11, 21, 22, 23 (registration across the whole front arch)" },
-  S2: { name: "Essai 2 — Symétrie (3 paires miroir, de 11/21 à 13/23)", what: "Three mirror pairs: 4 mm red hearts on 11/21, 4 mm emerald navettes on 12 (330°) / 22 (30°), 4 mm crystal drops on 13/23" },
-  S3: { name: "Essai 3 — Grappe dense (10 gemmes sur 11 et 21)", what: "Dense cluster: 4 mm AB starflower + four SS5 AB rounds on 21; 3 mm blue rivoli + three SS5 crystal + one SS5 sapphire on 11, two of them by the midline" },
-  S4: { name: "Essai 4 — Zones difficiles (prémolaires, collet, bord, bas)", what: "Hard spots: 3 mm kites on premolars 14/24, SS5 sapphire on 15, SS7 at the gum line of 11 and the incisal edge of 21, lower 41 drop, 31 baguette 1.5×2 mm at 90°, 33 AB heart" },
-  S5: { name: "Essai 5 — Formes, matières et rotations (10 pièces)", what: "Charms and stones: gold bolt 30° (11), silver halo star (21), gold snake 90° (12), gold cherries (22), silver dachshund 315° (13), blue rivoli (23), black-diamond kite 180° (14), heliotrope drop 135° (24), gold open heart (42), sapphire baguette 2×5 mm (32)" },
+  S1: { name: "Essai 1 — Deux lignes (12 ronds, de 13 à 23 et de 43 à 33)", what: "Two lines: SS7 crystal rounds centred on 13…23, SS5 AB rounds on 43…33 (registration of both arches)" },
+  S2: { name: "Essai 2 — Symétrie haut et bas (5 paires miroir)", what: "Mirror pairs: 4 mm red hearts 11/21, 4 mm drops 13/23; lower 3 mm AB hearts 41/31, emerald navettes 42 (330°) / 32 (30°), heliotrope drops 43/33" },
+  S3: { name: "Essai 3 — Grappes denses (21 en haut, 41 et 31 en bas)", what: "Dense clusters: 4 mm AB starflower + four SS5 on 21; 3 mm blue rivoli + two SS5 on 31; three SS5 (one sapphire) on 41" },
+  S4: { name: "Essai 4 — Zones difficiles (prémolaires, collets, bords)", what: "Hard spots: kites on premolars 14/24/44, SS5 sapphire on 34, gum line of 11/43/33, incisal edges of 21/41/31 (baguette 1.5×2 mm at 90°), SS5 on 32" },
+  S5: { name: "Essai 5 — Formes, matières et rotations (haut et bas)", what: "Charms and stones: gold bolt 30° (11), silver halo star (21), silver dachshund 315° (13), blue rivoli (23); lower gold snake 90° (41), gold cherries (31), gold open heart (42), sapphire baguette 2×5 mm (32), black-diamond kite 180° (43), heliotrope drop 135° (33)" },
 };
 // Every photo of the folder, sorted by name, up to MAX_PHOTOS (P1…P20).
 const MAX_PHOTOS = 20;
@@ -52,6 +54,8 @@ if (!allPhotos.length) {
 if (allPhotos.length > MAX_PHOTOS) console.warn(`${allPhotos.length} photos in ${PHOTOS}: only the first ${MAX_PHOTOS} (by name) are used.`);
 const photoFiles = allPhotos.slice(0, MAX_PHOTOS);
 const PHOTO_BY_KEY = Object.fromEntries(photoFiles.map((f, i) => [`P${i + 1}`, join(PHOTOS, f)]));
+/** The photo check refused the photo itself: every other creation would be refused the same way. */
+const isPhotoRefusal = (log) => log.outcome === "error" && /ne permet pas un bon rendu/.test(log.error ?? "");
 /** "Essai 3 — …" → "Essai 3 —": what the trial matches a creation by. */
 const prefixOf = (scene) => SCENES[scene].name.split("—")[0].trim() + " —";
 const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -82,6 +86,33 @@ function parseMultipart(buf, contentType) {
 }
 
 mkdirSync(OUT, { recursive: true });
+// One trial at a time per output folder: two at once share the image model's per-minute quota (HTTP 429) and
+// write the same folders.
+const LOCK = join(OUT, ".running");
+if (existsSync(LOCK)) {
+  const pid = Number(readFileSync(LOCK, "utf8"));
+  let running = false;
+  try {
+    process.kill(pid, 0);
+    running = pid !== process.pid;
+  } catch {
+    running = false; // a lock left by a run that crashed
+  }
+  if (running) {
+    console.error(`Another trial (process ${pid}) is already writing to ${OUT}: close it first (Ctrl+C in its window).`);
+    process.exit(1);
+  }
+}
+writeFileSync(LOCK, String(process.pid));
+const unlock = () => {
+  try {
+    if (existsSync(LOCK) && readFileSync(LOCK, "utf8") === String(process.pid)) unlinkSync(LOCK);
+  } catch {
+    /* nothing to undo */
+  }
+};
+process.on("exit", unlock);
+process.on("SIGINT", () => process.exit(130));
 // Behind a proxy (HTTPS_PROXY set), the browser uses it too; local pages stay direct.
 const proxy = process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY, bypass: "localhost,127.0.0.1" } } : {};
 // The guide (a Blob in a FormData) is not visible to Playwright's request events: the page hands it over itself.
@@ -297,7 +328,21 @@ async function contactSheets() {
       const log = JSON.parse(readFileSync(join(dir, "log.json"), "utf8"));
       const analysis = existsSync(join(dir, "analysis.json")) ? JSON.parse(readFileSync(join(dir, "analysis.json"), "utf8")) : null;
       const crop = analysis?.crop;
-      summary.push({ photo, scene, outcome: log.outcome, seconds: Math.round(log.total / 1000), teeth: analysis?.teeth?.map((t) => t.fdi) ?? null, report: log.report ?? null, error: log.error ?? null, notes: log.notes ?? [] });
+      const teeth = analysis?.teeth?.map((t) => t.fdi) ?? null;
+      summary.push({
+        photo,
+        photoFile: log.photoFile,
+        scene,
+        outcome: log.outcome,
+        skipped: log.skipped ?? null,
+        seconds: Math.round((log.total ?? 0) / 1000),
+        teeth,
+        upperTeeth: teeth?.filter((f) => f[0] === "1" || f[0] === "2").length ?? null,
+        lowerTeeth: teeth?.filter((f) => f[0] === "3" || f[0] === "4").length ?? null,
+        centrals: analysis?.centrals ?? null,
+        error: log.error ?? null,
+        notes: log.notes ?? [],
+      });
       const file = (n) => (existsSync(join(dir, n)) ? pathToFileURL(join(dir, n)).href : null);
       const result = file("result.jpg");
       // The result's close-up: the same region as the guide, cut from the full result by CSS.
@@ -319,13 +364,48 @@ async function contactSheets() {
     await page.screenshot({ path: join(OUT, `sheet-${photo}.jpg`), fullPage: true, type: "jpeg", quality: 82 });
   }
   writeFileSync(join(OUT, "summary.json"), JSON.stringify(summary, null, 1));
+  writeFileSync(join(OUT, "report.md"), report(summary));
 }
 
+/** A short text report of the trial, to read or send as is (no photo in it). */
+function report(summary) {
+  const count = (pred) => summary.filter(pred).length;
+  const first = (t) => (t ?? "").split("\n")[0].trim();
+  const lines = [`# Try-on trial — ${new Date().toISOString().slice(0, 16).replace("T", " ")}`, ""];
+  lines.push(`${Object.keys(PHOTO_BY_KEY).length} photo(s) × ${Object.keys(SCENES).length} creations, ${summary.length} runs:`);
+  lines.push(`- results: ${count((r) => r.outcome === "result")}`);
+  lines.push(`- photo refused by the check: ${count((r) => isPhotoRefusal(r) && !r.skipped)} (+ ${count((r) => r.skipped)} skipped after two refusals in a row)`);
+  lines.push(`- render failed: ${count((r) => r.outcome === "error" && /n’a pas abouti/.test(r.error ?? ""))}`);
+  lines.push(`- other errors: ${count((r) => r.outcome === "error" && !isPhotoRefusal(r) && !/n’a pas abouti/.test(r.error ?? ""))}, harness errors: ${count((r) => r.outcome === "harness_error")}`);
+  lines.push("", "## Per creation", "", "| Creation | Results | Refused | Failed | Notes (gems left out…) |", "| --- | --- | --- | --- | --- |");
+  for (const s of Object.keys(SCENES)) {
+    const rows = summary.filter((r) => r.scene === s);
+    const notes = rows.flatMap((r) => r.notes).map((n) => n.replace(/\s+/g, " ").trim());
+    lines.push(`| ${s} ${prefixOf(s)} | ${rows.filter((r) => r.outcome === "result").length}/${rows.length} | ${rows.filter((r) => isPhotoRefusal(r)).length} | ${rows.filter((r) => r.outcome !== "result" && !isPhotoRefusal(r)).length} | ${[...new Set(notes)].slice(0, 3).join(" · ") || "—"} |`);
+  }
+  lines.push("", "## Per photo", "", "| Photo | File | Upper / lower teeth found | Centrals | Outcomes | First error |", "| --- | --- | --- | --- | --- | --- |");
+  for (const p of Object.keys(PHOTO_BY_KEY)) {
+    const rows = summary.filter((r) => r.photo === p);
+    if (!rows.length) continue;
+    const a = rows.find((r) => r.teeth);
+    const outcomes = rows.map((r) => `${r.scene}:${r.outcome === "result" ? "ok" : isPhotoRefusal(r) ? "refused" : r.outcome === "error" ? "failed" : r.outcome}`).join(" ");
+    lines.push(`| ${p} | ${basename(PHOTO_BY_KEY[p])} | ${a ? `${a.upperTeeth} / ${a.lowerTeeth}` : "—"} | ${a?.centrals ?? "—"} | ${outcomes} | ${first(rows.find((r) => r.error)?.error) || "—"} |`);
+  }
+  lines.push("", "Send this file and the sheets (sheet-P*.jpg) for the analysis.", "");
+  return lines.join("\n");
+}
+
+if (REPORT_ONLY) {
+  browser = await chromium.launch();
+  page = await browser.newPage();
+  await contactSheets();
+  console.log(`Report: ${join(OUT, "report.md")}, sheets: ${join(OUT, "sheet-P*.jpg")}`);
+  await browser.close();
+  process.exit(0);
+}
 await launch();
 await checkCreations();
 console.log(`Signed in as ${EMAIL}. ${photoFiles.length} photo(s) × ${Object.keys(SCENES).length} creations: ${pairs.length} runs, results in ${OUT}`);
-/** The photo check refused the photo itself: every other creation would be refused the same way. */
-const isPhotoRefusal = (log) => log.outcome === "error" && /ne permet pas un bon rendu/.test(log.error ?? "");
 /** Refused twice in a row by the photo check: the photo is not tried on its remaining creations. */
 const REFUSALS_TO_SKIP = 2;
 const refusalStreak = new Map(); // photo key → refusals in a row (a result or another outcome resets it)
@@ -387,5 +467,5 @@ for (const [p, s] of pairs) {
 }
 if (!alive()) await launch();
 await contactSheets();
-console.log(`Done. Send back: ${join(OUT, "summary.json")} and the ${Object.keys(PHOTO_BY_KEY).length} ${join(OUT, "sheet-P*.jpg")}`);
+console.log(`Done. Send back: ${join(OUT, "report.md")} and the ${Object.keys(PHOTO_BY_KEY).length} ${join(OUT, "sheet-P*.jpg")}`);
 await browser?.close();

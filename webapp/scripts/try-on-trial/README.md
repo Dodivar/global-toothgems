@@ -20,17 +20,17 @@ with a GPU and minutes in a container without one.
 - A folder with the smile photos: every photo in it (`.jpg`, `.jpeg`, `.png`, `.webp`, `.heic`) is used, sorted by
   name, up to 20 (P1…P20); beyond 20 the script warns and keeps the first 20.
 
-## Test creations (since 2026-11-04)
+## Test creations (since 2026-11-05)
 
-Made to probe the limits of the computed placement, not just its centre case (44 pieces in all):
+Made to probe the limits of the computed placement, on both arches (54 pieces, 31 of them on the lower teeth):
 
 | | Creation | What it tests |
 | --- | --- | --- |
-| S1 | Ligne du sourire — 6 SS7 rounds, 13 to 23 | registration across the whole front arch, one gem per tooth |
-| S2 | Symétrie — 3 mirror pairs 11/21, 12/22, 13/23 | left/right symmetry, rotated navettes (330° / 30°) |
-| S3 | Grappe dense — 10 gems on 11 and 21 | small SS5 stones close together and by the midline, mixed sizes |
-| S4 | Zones difficiles — premolars, gum line, incisal edge, lower arch | gems often hidden (14/24/15, lower 41/31/33), smallest piece (baguette 1.5×2 mm at 90°) |
-| S5 | Formes, matières et rotations — 10 pieces | gold and silver charms, dark stones (black diamond), rotations, an elongated 2×5 mm baguette |
+| S1 | Deux lignes — 12 rounds, 13 to 23 and 43 to 33 | registration of both arches, one gem per tooth |
+| S2 | Symétrie haut et bas — 5 mirror pairs | left/right symmetry on both arches, rotated navettes (330° / 30°) on 42/32 |
+| S3 | Grappes denses — 21 above, 41 and 31 below | small SS5 stones close together on a large and on narrow lower incisors |
+| S4 | Zones difficiles — premolars, gum lines, edges | gems often hidden (14/24/44/34, the lower gum line), incisal edges, smallest piece (baguette 1.5×2 mm at 90°) |
+| S5 | Formes, matières et rotations — upper and lower | gold and silver charms, a dark stone (black diamond), rotations, an elongated 2×5 mm baguette, mostly on the lower arch |
 
 ## Run
 
@@ -59,7 +59,13 @@ the default pause; each counts as a render (the staff account has no daily limit
   found and the close-up), `guide.jpg` (the marks sent to the model), `answer.*` (the model's close-up),
   `result.jpg` (pasted back), `dialog.png`.
 - `sheet-P1.jpg` … `sheet-P20.jpg`: one contact sheet per photo — guide beside result close-up for each creation.
-- `summary.json`: one line per run.
+- `summary.json`: one line per run (outcome, teeth found on each arch, notes such as gems left out).
+- `report.md`: the trial in figures — outcomes, per creation, per photo (teeth found upper / lower, first error). No
+  photo in it: it can be sent as is, with the sheets, for the analysis.
 
-Send `summary.json` and the sheets back for the report. The photos and results are personal data: keep them
+`--report-only` rebuilds `summary.json`, `report.md` and the sheets from the results already in `--out`, without
+any run (no account needed). Only one trial can write to an `--out` folder at a time: a second one stops at once
+(two in parallel share the image model's per-minute quota and fail with HTTP 429).
+
+Send `report.md` and the sheets back for the report. The photos and results are personal data: keep them
 out of the repository and delete them once the trial is analysed.
