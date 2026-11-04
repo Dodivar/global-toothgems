@@ -359,7 +359,7 @@ src/
   screens/legal/    Help centre, FAQ, contact and about pages
   data/legal/       Legal and help content (bilingual data rendered by components/legal/)
   components/ui/     Design-system primitives (Button, Badge, ProductCard, CourseCard, QuizQuestion, ...)
-  components/account/ Dashboard pieces (stat tile, course row, certificate card, order card)
+  components/account/ Member-area pieces (stat tile, course row, certificate card, order card; `dashboard/` = the dashboard's cards)
   components/academy/ The training detail page: hero, curriculum accordion, assessment, diploma, community, shared primitives
   components/reviews/ Customer reviews: stars, badges, review card, section, form, request, overlays; admin/ holds the moderation workspace
   components/studio/ The 3D Studio mockups (and editor/, the working editor UI): smile canvas, rendered gems, demo film, plans, inspiration boards, pricing card (subscription page), FAQ
@@ -561,7 +561,7 @@ The signed-in area is an administration dashboard: a full-height left sidebar on
 
 | Route | Section |
 | --- | --- |
-| `/compte` | Dashboard — summary tiles, the "resume where you left off" card, the courses being followed with their module breakdown, and the courses still available |
+| `/compte` | Dashboard, phone first (redesigned 2026-11-04, owner's request; `screens/account/Dashboard.tsx`, choices in `lib/memberDashboard.ts`, cards in `components/account/dashboard/`). Each card shows only when it has something true to say, no bare counts (the orders / lessons / certificates figures and the "all up to date" band are gone): first what needs the member — the newest parcel still on its way with its tracking (`ordersOnTheirWay`), the lesson to resume (the course last opened, else the most advanced one), the review request; then "Your account" — the loyalty card with the stamps and what is missing for the reward (dark once the reward is ready), the Studio plan with creations used and renewal date (trial, plan, staff or pending only; dark when a payment failed), the latest certificate earned, the favourites with how many are on sale or nearly gone; then the Members' Lounge (course holders and staff), the courses held, and the courses still available (only when there are some) |
 | `/compte/attestations` | Certificates — the collection (newest featured), each with view (zoomable viewer), download (A4 PDF) and share (image + caption); courses under way as locked cards; an encouraging empty state. The document is `lib/certificate/layout.ts`, drawn as SVG on screen and on a canvas for the files (`lib/certificate/render.ts`, `pdf.ts`); sharing is `components/certificate/ShareAchievementDialog.tsx` (no public certificate page, by decision) |
 | `/compte/commandes` | Order history, with parcel tracking and lifetime spend per currency |
 | `/compte/commandes/:reference` | One order: lines as bought, recorded amounts, parcels and tracking, refunds, addresses; the legal invoice and each credit note as PDFs (issued by the database, `invoices`; an order paid before 2026-10-09 offers the order form instead) and "Print the summary" (not an invoice) |
