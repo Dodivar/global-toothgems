@@ -371,7 +371,9 @@ for (const [p, s] of pairs) {
     }
     first = false;
     const log = await runOne(p, s);
-    rendered = log.calls.some((c) => typeof c.kind === "string" && c.kind.startsWith("render"));
+    // A run that pressed Generate reached the image model, unless the photo check refused the photo first. (The
+    // render request itself carries Blobs, which Playwright's request events cannot read: it is not in log.calls.)
+    rendered = log.clicked != null && !isPhotoRefusal(log);
     if (countRefusal(p, log)) {
       console.log(`  (${basename(PHOTO_BY_KEY[p])} refused ${REFUSALS_TO_SKIP} times in a row by the photo check: its other creations are skipped)`);
     } else if (isPhotoRefusal(log)) {
