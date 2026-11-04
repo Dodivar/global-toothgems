@@ -10,6 +10,7 @@ import { useCart } from "../../lib/cart";
 import { useAcademyMenu } from "./useAcademyMenu";
 import { ShopMenu } from "./ShopMenu";
 import { STUDIO_MENU } from "./clientSpaces";
+import { useGlowbookMenuTarget } from "./useGlowbookMenuTarget";
 import { HeaderSearch } from "./HeaderSearch";
 import { CartAddedNotice } from "./CartAddedNotice";
 import { STUDIO_PATH } from "../../lib/studioUrl";
@@ -68,6 +69,9 @@ export function Header() {
 
   /* No "Home" entry: the logo is the way home, as on most shops, and the
      three pillars read better on their own (owner's call, 2026-11-02). */
+  const glowbookTarget = useGlowbookMenuTarget(panel === "studio" || (menuOpen && menuTab === "studio"));
+  const studioMenu = STUDIO_MENU.map((entry) => (entry.id === "glowbook" ? { ...entry, to: glowbookTarget } : entry));
+
   const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string; withIcon?: boolean }[] = [
     { id: "shop", label: t("nav.shop"), to: "/boutique", panel: "shop", panelLabel: t("nav.openPanelShop") },
     { id: "academy", label: t("nav.academy"), to: "/academy", panel: "academy", panelLabel: t("nav.openPanelAcademy") },
@@ -312,7 +316,7 @@ export function Header() {
                 <ShopMenu layout="columns" onNavigate={closeAll} />
               ) : panel === "studio" ? (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-                  {STUDIO_MENU.map((shortcut) => (
+                  {studioMenu.map((shortcut) => (
                     <Link
                       key={shortcut.id}
                       to={shortcut.to}
@@ -433,7 +437,7 @@ export function Header() {
               <ShopMenu layout="stack" onNavigate={closeAll} />
             ) : menuTab === "studio" ? (
               <ul className="m-0 grid list-none gap-2 p-0">
-                {STUDIO_MENU.map((shortcut) => (
+                {studioMenu.map((shortcut) => (
                   <li key={shortcut.id}>
                     <MobileMenuCard
                       to={shortcut.to}
