@@ -20,12 +20,12 @@ const piece = (id: string, color: string) => ({ id, look: { shape: "round", mate
 
 describe("guideMarks", () => {
   it("draws the gems of found teeth in their colour; the others are left out", () => {
-    const { marks, leftOut } = guideMarks({ gems: [gem("a"), gem("b", { tooth: "fitted" }), gem("c")] }, [piece("a", "#ff0066"), piece("c", "red")]);
+    const { marks, leftOut } = guideMarks({ gems: [gem("a"), gem("b", { tooth: "fitted" }), gem("c"), gem("d", { tooth: "hidden" })] }, [piece("a", "#ff0066"), piece("c", "red")]);
     expect(marks.map((m) => [m.id, m.color])).toEqual([
       ["a", "#ff0066"],
       ["c", "#ffffff"], // not a hex colour: drawn white
     ]);
-    expect(leftOut).toBe(1);
+    expect(leftOut).toBe(2);
   });
 });
 

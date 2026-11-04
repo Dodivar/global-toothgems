@@ -8,7 +8,7 @@ import { useCart, type CartLine } from "../../../lib/cart";
 import { sizeKey } from "../../../lib/gemOptions";
 import { useLocalized } from "../../../lib/localized";
 import { Link } from "../../../lib/navigation";
-import type { EstimateLine, StudioGem } from "../../../lib/studio3d/gemCatalog";
+import { estimateItemCount, type EstimateItem, type StudioGem } from "../../../lib/studio3d/gemCatalog";
 import { notify } from "../../../lib/studio3d/notices";
 import { useCompositionEstimate, useStudioGems } from "../../../lib/studio3d/useStudioGems";
 
@@ -16,8 +16,9 @@ const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:o
 
 /**
  * The design's shopping list: the shop items it takes (the pieces' colour and
- * size, in the smallest pack that covers them — `estimateComposition`), their
- * stock, and one button that puts every orderable item in the customer's cart.
+ * size, in the cheapest mix of the gem's packs that covers them —
+ * `estimateComposition`), their stock, and one button that puts every
+ * orderable item in the customer's cart.
  *
  * The prices shown are the catalogue's display prices; the cart is priced
  * again by the database at checkout (AGENTS.md §8).
@@ -27,7 +28,7 @@ export function ShoppingList({ jewels, withCart = true }: { jewels: PlacedJewelr
   const l = useLocalized();
   const { byKey } = useStudioGems();
   const estimate = useCompositionEstimate(jewels);
-  const outOfStock = estimate.lines.filter((line) => line.stock === "out").length;
+  const outOfStock = estimateItemCount(estimate.lines.filter((line) => line.stock === "out"));
 
   if (!jewels.length) return <p className="m-0 text-[11.5px] leading-relaxed text-[var(--text-muted)]">{t("studio.editor.inspector.designEmpty")}</p>;
 
@@ -38,13 +39,17 @@ export function ShoppingList({ jewels, withCart = true }: { jewels: PlacedJewelr
           const gem = byKey.get(line.productId);
           if (!gem) return null;
           const finish = gem.finishes.find((f) => f.variantId === line.variantId) ?? gem.finishes[0];
-          // A colour or another kind of option is named as the shop names it; packs and sizes are spelled out.
-          const size = line.size ?? line.offer.size;
+          const first = line.items[0].offer;
+          // A colour or another kind of option is named as the shop names it; sizes are spelled out, packs per item below.
+          const size = line.size ?? first.size;
           const detail = [
-            line.offer.name && line.offer.pack == null && line.offer.size == null ? l(line.offer.name) : null,
-            line.offer.pack != null ? t("studio.editor.shopping.pack", { count: line.offer.pack }) : null,
+            line.items.length === 1 && first.name && first.pack == null && first.size == null ? l(first.name) : null,
             size != null ? sizeShort(size) : null,
           ].filter(Boolean);
+          // "1 × Pack of 100 + 1 × Pack of 20"; a charm or an item without a pack: its quantity alone.
+          const toOrder = line.items
+            .map((item) => (item.offer.pack != null ? `${item.quantity} × ${t("studio.editor.shopping.pack", { count: item.offer.pack })}` : String(item.quantity)))
+            .join(" + ");
           const out = line.stock === "out";
           return (
             <li
@@ -52,7 +57,7 @@ export function ShoppingList({ jewels, withCart = true }: { jewels: PlacedJewelr
               className="flex items-start gap-2.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-2.5 py-2"
             >
               <span aria-hidden="true" className="grid h-9 w-9 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--surface-card)]">
-                <GemPhoto src={line.offer.image ?? finish.image ?? gem.image} look={finish.look} size={30} />
+                <GemPhoto src={first.image ?? finish.image ?? gem.image} look={finish.look} size={30} />
               </span>
               <div className="grid min-w-0 flex-1 gap-0.5">
                 <Link
@@ -66,7 +71,7 @@ export function ShoppingList({ jewels, withCart = true }: { jewels: PlacedJewelr
                 </Link>
                 {detail.length > 0 && <span className="truncate text-[11px] text-[var(--text-body)]">{detail.join(" · ")}</span>}
                 <span className="text-[11px] text-[var(--text-muted)]">
-                  {t("studio.editor.shopping.cover", { count: line.pieces, quantity: line.quantity })}
+                  {t("studio.editor.shopping.cover", { count: line.pieces, quantity: toOrder })}
                 </span>
                 {line.stock && (
                   <span
@@ -125,26 +130,28 @@ export function AddDesignToCart({
   const { addLines } = useCart();
   const estimate = useCompositionEstimate(jewels);
   const [added, setAdded] = useState(false);
-  const orderable = estimate.lines.filter((line) => line.stock !== "out");
-  const outOfStock = estimate.lines.length - orderable.length;
+  // Counted in shop items (one cart line each): a line may buy two packs of different sizes.
+  const orderableLines = estimate.lines.filter((line) => line.stock !== "out");
+  const orderable = estimateItemCount(orderableLines);
+  const outOfStock = estimateItemCount(estimate.lines) - orderable;
 
-  const cartLine = (line: EstimateLine, gem: StudioGem): Omit<CartLine, "id"> => ({
+  const cartLine = (item: EstimateItem, gem: StudioGem): Omit<CartLine, "id"> => ({
     productId: gem.slug,
     dbProductId: gem.key,
-    ...(line.offer.variantId ? { variantId: line.offer.variantId } : {}),
-    ...(line.offer.name ? { variant: l(line.offer.name) } : {}),
+    ...(item.offer.variantId ? { variantId: item.offer.variantId } : {}),
+    ...(item.offer.name ? { variant: l(item.offer.name) } : {}),
     name: l(gem.name),
-    image: line.offer.image ?? gem.image,
+    image: item.offer.image ?? gem.image,
     // Indicative only: the checkout recomputes every price server-side.
-    unitPrice: line.unitMinor,
+    unitPrice: item.unitMinor,
     currency: gem.currency,
-    qty: line.quantity,
+    qty: item.quantity,
   });
 
   const addAll = () => {
-    const toAdd = orderable.flatMap((line) => {
+    const toAdd = orderableLines.flatMap((line) => {
       const gem = byKey.get(line.productId);
-      return gem ? [cartLine(line, gem)] : [];
+      return gem ? line.items.map((item) => cartLine(item, gem)) : [];
     });
     if (!toAdd.length) return;
     addLines(toAdd);
@@ -159,7 +166,7 @@ export function AddDesignToCart({
       <button
         type="button"
         onClick={addAll}
-        disabled={!orderable.length}
+        disabled={!orderable}
         className={clsx(
           "inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--accent-cta)] font-black uppercase tracking-[var(--tracking-wide)] text-[var(--gt-ink-900)] transition-colors hover:bg-[var(--accent-cta-hover)] disabled:cursor-not-allowed disabled:bg-[var(--gt-ink-100)] disabled:text-[var(--text-muted)]",
           compact ? "h-10 whitespace-nowrap px-3 text-[11px]" : "h-11 px-4 text-[12px]",
@@ -167,15 +174,15 @@ export function AddDesignToCart({
         )}
       >
         <ShoppingBag size={15} aria-hidden="true" className="flex-none" />
-        {!orderable.length ? (
+        {!orderable ? (
           t("studio.editor.shopping.noneAvailable")
         ) : compact ? (
           <>
             {t("studio.editor.shopping.addToCart")}
-            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[var(--gt-ink-900)]/10 px-1.5 text-[10.5px] tabular-nums">{orderable.length}</span>
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[var(--gt-ink-900)]/10 px-1.5 text-[10.5px] tabular-nums">{orderable}</span>
           </>
         ) : (
-          t("studio.editor.shopping.addAll", { count: orderable.length })
+          t("studio.editor.shopping.addAll", { count: orderable })
         )}
       </button>
       {outNote && outOfStock > 0 && (

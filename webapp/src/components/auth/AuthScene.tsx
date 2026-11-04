@@ -259,7 +259,7 @@ export function GoogleButton({ label, onClick, disabled }: { label: string; onCl
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-14 w-full items-center justify-center gap-3 whitespace-nowrap rounded-[var(--radius-control)] border border-[var(--border-strong)] bg-[var(--surface-card)] px-4 text-[length:var(--text-body-sm)] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-[background-color,border-color,box-shadow] duration-[var(--duration-fast)] hover:bg-[var(--gt-ink-100)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 sm:px-[30px] sm:text-[length:var(--text-body-md)]"
+      className="inline-flex h-12 w-full items-center justify-center gap-3 whitespace-nowrap rounded-[var(--radius-control)] border border-[var(--border-strong)] bg-[var(--surface-card)] px-4 text-[length:var(--text-body-sm)] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-[background-color,border-color,box-shadow] duration-[var(--duration-fast)] hover:bg-[var(--gt-ink-100)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 sm:h-14 sm:px-[30px] sm:text-[length:var(--text-body-md)]"
     >
       <GoogleMark />
       <span>{label}</span>

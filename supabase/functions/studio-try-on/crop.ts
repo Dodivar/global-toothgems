@@ -82,6 +82,26 @@ export function mouthCrop(teethBox: unknown, size: { width: number; height: numb
   return { x: Math.round(x), y: Math.round(y), width: Math.floor(width), height: Math.floor(height) };
 }
 
+/**
+ * A box the photo check gave ([ymin, xmin, ymax, xmax], 0–1000 of the photo)
+ * in the pixels of `crop` (a region of that photo), cut to it; null when it is
+ * not a valid box or does not fall in the crop (2026-11-04: the central
+ * incisors' box, the midline the browser checks its placement against).
+ */
+export function boxInCrop(box: unknown, photo: { width: number; height: number }, crop: CropRect): CropRect | null {
+  if (!Array.isArray(box) || box.length !== 4 || !box.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1000)) return null;
+  const [ymin, xmin, ymax, xmax] = box as number[];
+  if (!(xmax > xmin) || !(ymax > ymin) || !(photo.width > 0) || !(photo.height > 0)) return null;
+  const x0 = Math.max(0, (xmin / 1000) * photo.width - crop.x);
+  const y0 = Math.max(0, (ymin / 1000) * photo.height - crop.y);
+  const x1 = Math.min(crop.width, (xmax / 1000) * photo.width - crop.x);
+  const y1 = Math.min(crop.height, (ymax / 1000) * photo.height - crop.y);
+  if (!(x1 - x0 >= 1) || !(y1 - y0 >= 1)) return null;
+  const x = Math.round(x0);
+  const y = Math.round(y0);
+  return { x, y, width: Math.max(1, Math.round(x1) - x), height: Math.max(1, Math.round(y1) - y) };
+}
+
 /** The crop of a JPEG, as a JPEG; null when the bytes cannot be decoded. */
 export function cropJpeg(bytes: Uint8Array, rect: CropRect, quality = 92): Uint8Array | null {
   let image: { width: number; height: number; data: Uint8Array };

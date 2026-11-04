@@ -253,9 +253,20 @@ export function swapPatch(piece: Pick<PlacedJewelry, "size">, gem: StudioGem, fi
 
 /* ------------------------------------------------------------ shopping list */
 
+/** One shop item of a shopping-list line, and how many of it to buy. */
+export interface EstimateItem {
+  /** The shop item bought: the variant added to the cart (`variantId` null = the product itself). */
+  offer: StudioGemOffer;
+  /** Items to buy (packs, or one per piece for a charm sold singly). */
+  quantity: number;
+  unitMinor: number;
+  totalMinor: number;
+}
+
 /**
- * A line of a composition's shopping list: one shop item (a variant, or the
- * product itself) and how many of it cover the pieces it stands for.
+ * A line of a composition's shopping list: the pieces of one gem in one
+ * colour (and size, when the shop sells it per size), and the shop items that
+ * cover them — one pack, or a mix of the gem's packs (100 + 20 for 120 pieces).
  */
 export interface EstimateLine {
   /** The gem (`StudioGem.key`). */
@@ -264,15 +275,12 @@ export interface EstimateLine {
   variantId: string | null;
   /** The pieces' size, when the gem is sold per size; null = one line whatever the size. */
   size: GemSize | null;
-  /** The shop item bought: the variant added to the cart (null = the product itself). */
-  offer: StudioGemOffer;
+  /** What to buy, largest pack first; at least one item. */
+  items: EstimateItem[];
   /** Pieces of this gem, colour (and size) in the design. */
   pieces: number;
-  /** Items to buy: packs covering the pieces, or one per piece for a charm sold singly. */
-  quantity: number;
-  unitMinor: number;
   totalMinor: number;
-  /** The item's stock badge: "out" = it cannot be ordered now. */
+  /** The items' stock badge: "out" = they cannot be ordered now (only bought from out-of-stock packs when nothing else is). */
   stock?: "low" | "out";
 }
 
@@ -286,33 +294,61 @@ export interface CompositionEstimate {
 
 export type EstimatedPiece = Pick<PlacedJewelry, "productId" | "variantId" | "look"> & { size?: GemSize };
 
+/** A way to hold at least n stones: compared on cost, then stones bought, then items. */
+interface CoverPlan {
+  cost: number;
+  stones: number;
+  count: number;
+  /** The offer added last (index in the pool) and the stones still covered before it. */
+  last: number;
+  rest: number;
+}
+
+function cheaper(a: CoverPlan, b: CoverPlan): boolean {
+  if (a.cost !== b.cost) return a.cost < b.cost;
+  if (a.stones !== b.stones) return a.stones < b.stones;
+  return a.count < b.count;
+}
+
 /**
- * The cheapest way to cover `pieces` stones with ONE of these offers, in
- * stock first: each offer is bought `ceil(pieces / pack)` times. An offer
+ * The cheapest mix of these offers that covers `pieces` stones, in stock
+ * first: out-of-stock offers are used only when no offer is in stock. Every
+ * offer can be bought any number of times, and packs of different sizes mix
+ * (owner's request, 2026-11-03: "add to cart according to the packs
+ * available" — 120 pieces → 100 + 20, not 2 × 100 or 3 × 50). An offer
  * without a pack covers every piece at once for a crystal, one piece for a
- * metal charm (sold singly). Ties go to fewer stones, then the smaller pack.
+ * metal charm (sold singly). Ties go to fewer stones, then fewer items.
+ * Exact: a small dynamic programme over the number of stones.
  */
-export function coverPieces(
-  offers: StudioGemOffer[],
-  pieces: number,
-  metal: boolean,
-): { offer: StudioGemOffer; quantity: number } | null {
+export function coverPieces(offers: StudioGemOffer[], pieces: number, metal: boolean): EstimateItem[] | null {
+  if (!offers.length || pieces <= 0) return null;
   const inStock = offers.filter((o) => o.stock !== "out");
   const pool = inStock.length ? inStock : offers;
-  let best: { offer: StudioGemOffer; quantity: number; cost: number; stones: number } | null = null;
-  for (const offer of pool) {
-    const per = offer.pack ?? (metal ? 1 : pieces);
-    const quantity = Math.ceil(pieces / per);
-    const cost = quantity * offer.priceMinor;
-    const stones = quantity * per;
-    if (
-      !best ||
-      cost < best.cost ||
-      (cost === best.cost && (stones < best.stones || (stones === best.stones && per < (best.offer.pack ?? Infinity))))
-    )
-      best = { offer, quantity, cost, stones };
+  const per = pool.map((o) => Math.max(1, Math.floor(o.pack ?? (metal ? 1 : pieces))));
+
+  // best[n]: the cheapest way to hold at least n stones.
+  const best: CoverPlan[] = [{ cost: 0, stones: 0, count: 0, last: -1, rest: 0 }];
+  for (let n = 1; n <= pieces; n++) {
+    let plan: CoverPlan | null = null;
+    for (let i = 0; i < pool.length; i++) {
+      const rest = Math.max(0, n - per[i]);
+      const before = best[rest];
+      const candidate = { cost: before.cost + pool[i].priceMinor, stones: before.stones + per[i], count: before.count + 1, last: i, rest };
+      if (!plan || cheaper(candidate, plan)) plan = candidate;
+    }
+    best[n] = plan!;
   }
-  return best && { offer: best.offer, quantity: best.quantity };
+
+  const counts = new Map<number, number>();
+  for (let n = pieces; n > 0; n = best[n].rest) counts.set(best[n].last, (counts.get(best[n].last) ?? 0) + 1);
+  return [...counts]
+    .sort(([a], [b]) => per[b] - per[a] || a - b)
+    .map(([i, quantity]) => ({ offer: pool[i], quantity, unitMinor: pool[i].priceMinor, totalMinor: quantity * pool[i].priceMinor }));
+}
+
+/** How many shop items a list holds: what "Add to cart" puts in the cart (one cart line each). */
+export function estimateItemCount(lines: EstimateLine[]): number {
+  return lines.reduce((sum, line) => sum + line.items.length, 0);
 }
 
 /**
@@ -320,14 +356,13 @@ export function coverPieces(
  * minor units — never a price charged: the cart is priced again by the
  * database at checkout.
  *
- * Rule (owner's request, 2026-10-11; replaces "one pack per crystal and
- * colour" of 2026-10-07):
+ * Rule (owner's request, 2026-10-11, packs mixed since 2026-11-03):
  * - a gem in colours (gold charms…) is bought in the pieces' colour, one per
  *   piece (or by its pack, if the variant has one);
  * - a crystal sold in packs is bought in the pieces' size (when the shop sells
- *   it per size), in the cheapest single pack that covers them, in stock
- *   first: 2 pieces → at least the pack of 10; 30 pieces → 3 × 10 or 2 × 25,
- *   whichever costs less;
+ *   it per size), in the cheapest mix of its packs that covers them, in stock
+ *   first: 2 pieces → the smallest pack; 120 pieces in packs of 20 / 50 / 100
+ *   → one 100 and one 20 when that costs least (`coverPieces`);
  * - a crystal without packs counts once whatever the number of pieces.
  * A piece whose gem, colour or size the shop does not sell counts as `unavailable`.
  */
@@ -369,18 +404,17 @@ export function estimateComposition(
 
   const lines: EstimateLine[] = [];
   for (const g of groups.values()) {
-    const plan = coverPieces(g.candidates, g.pieces, g.finish.look.material === "metal");
-    if (!plan) continue;
+    const items = coverPieces(g.candidates, g.pieces, g.finish.look.material === "metal");
+    if (!items) continue;
+    const stock = items.some((i) => i.offer.stock === "out") ? "out" : items.some((i) => i.offer.stock === "low") ? "low" : undefined;
     lines.push({
       productId: g.gem.key,
       variantId: g.finish.variantId,
       size: g.size,
-      offer: plan.offer,
+      items,
       pieces: g.pieces,
-      quantity: plan.quantity,
-      unitMinor: plan.offer.priceMinor,
-      totalMinor: plan.quantity * plan.offer.priceMinor,
-      ...(plan.offer.stock ? { stock: plan.offer.stock } : {}),
+      totalMinor: items.reduce((sum, i) => sum + i.totalMinor, 0),
+      ...(stock ? { stock } : {}),
     });
   }
   return { lines, totalMinor: lines.reduce((sum, l) => sum + l.totalMinor, 0), currency: cur, unavailable };

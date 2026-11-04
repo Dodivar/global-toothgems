@@ -226,7 +226,7 @@
     },
     "estimate": {
       "question": "How is the estimated price calculated?",
-      "answer": "An indicative value at shop prices: each gem in its colour and size, in the smallest pack that covers your pieces, one charm per piece. It is a support for talking with your client, not a quote: nothing is charged from this amount."
+      "answer": "An indicative value at shop prices: each gem in its colour and size, in the cheapest mix of packs that covers your pieces, one charm per piece. It is a support for talking with your client, not a quote: nothing is charged from this amount."
     }
   },
   "help": {
@@ -549,7 +549,7 @@
       "estimate": {
         "title": "How is the estimate calculated?",
         "body": [
-          "The estimate is an indicative value at shop prices: each gem in its colour and size; for crystals sold in packs, the cheapest pack that covers your pieces (2 pieces → at least the pack of 10); for charms, one per piece.",
+          "The estimate is an indicative value at shop prices: each gem in its colour and size; for crystals sold in packs, the cheapest mix of packs that covers your pieces (2 pieces → the smallest pack; 120 pieces → a pack of 100 and a pack of 20); for charms, one per piece.",
           "It is neither a quote nor an invoice: nothing is charged from this amount, and your own placing fee is not in it. Gems the shop no longer sells are not counted. It is a support for talking with your client and preparing your order."
         ]
       },

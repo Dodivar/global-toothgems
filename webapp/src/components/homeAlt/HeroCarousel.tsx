@@ -20,7 +20,7 @@ const DWELL_MS = 7000;
 /** Horizontal travel, in px, that turns a touch drag into a slide change. */
 const SWIPE_PX = 48;
 
-/** Phones (Tailwind's `sm` breakpoint): no rotation, big arrows, compact slides. */
+/** Phones (Tailwind's `sm` breakpoint): no rotation, compact slides. */
 const PHONE_QUERY = "(max-width: 639px)";
 
 /**
@@ -181,7 +181,7 @@ export function HeroCarousel() {
               );
             })}
           </div>
-          {/* On a phone the arrows flank the picker (display: contents + order). */}
+          {/* On a phone the arrows flank the picker (display: contents + order), at the regular size. */}
           <div className="contents sm:flex sm:flex-none sm:items-center sm:gap-2">
             {!reduced && !phone && (
               <IconButton
@@ -192,8 +192,8 @@ export function HeroCarousel() {
                 onClick={() => setUserPaused((p) => !p)}
               />
             )}
-            <IconButton icon={ChevronLeft} label={t("homeAlt.hero.prev")} variant="glass" size={phone ? "lg" : "md"} className="order-1 flex-none sm:order-none" onClick={() => go(index - 1)} />
-            <IconButton icon={ChevronRight} label={t("homeAlt.hero.next")} variant="glass" size={phone ? "lg" : "md"} className="order-3 flex-none sm:order-none" onClick={() => go(index + 1)} />
+            <IconButton icon={ChevronLeft} label={t("homeAlt.hero.prev")} variant="glass" size="md" className="order-1 flex-none sm:order-none" onClick={() => go(index - 1)} />
+            <IconButton icon={ChevronRight} label={t("homeAlt.hero.next")} variant="glass" size="md" className="order-3 flex-none sm:order-none" onClick={() => go(index + 1)} />
           </div>
         </div>
       </div>

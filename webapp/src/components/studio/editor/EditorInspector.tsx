@@ -25,7 +25,7 @@ import { GemPhoto, PieceIcon } from "./PieceIcon";
 import { useEditorLabels } from "./editorLabels";
 import { ALL_TEETH, FREE_TOOTH, OFFSET_RANGE, UPPER_TEETH, type PlacedJewelry } from "../../../data/studioEditor";
 import { Link } from "../../../lib/navigation";
-import { estimateComposition, findFinish } from "../../../lib/studio3d/gemCatalog";
+import { estimateComposition, estimateItemCount, findFinish } from "../../../lib/studio3d/gemCatalog";
 import { useStudioGems } from "../../../lib/studio3d/useStudioGems";
 import {
   alignSelection,
@@ -574,7 +574,7 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
     <>
       <h2 className="sr-only">{t("studio.editor.inspector.overview")}</h2>
       {snap.jewels.length > 0 && (
-        <BuyGemsPanel jewels={snap.jewels} products={estimate.lines.length} teeth={zones} totalMinor={estimate.totalMinor} formatEstimate={formatEstimate} />
+        <BuyGemsPanel jewels={snap.jewels} products={estimateItemCount(estimate.lines)} teeth={zones} totalMinor={estimate.totalMinor} formatEstimate={formatEstimate} />
       )}
 
       <FrontViewSection snap={snap} />

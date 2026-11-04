@@ -1,7 +1,7 @@
 import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./gemini.ts";
-import { cropJpeg, mouthCrop, type CropRect } from "./crop.ts";
+import { boxInCrop, cropJpeg, mouthCrop, type CropRect } from "./crop.ts";
 import { imageSize, judgeReadings, PHOTO_READINGS } from "./photoCheck.ts";
 import { readTeeth } from "./teeth.ts";
 
@@ -26,7 +26,8 @@ import { readTeeth } from "./teeth.ts";
  *     The photo check (`photoCheck.ts`), the mouth close-up (`crop.ts`), then
  *     each tooth on it with its FDI number (`teeth.ts`). No image generated.
  *     200 { ok: true, crop: { x, y, width, height, photo_width, photo_height },
- *           teeth: [{ fdi, x, y, width, height }] }   boxes in the close-up's pixels
+ *           teeth: [{ fdi, x, y, width, height }],   boxes in the close-up's pixels
+ *           centrals: { x, y, width, height } | null }  the upper central incisors the check saw
  *     422 { ok: false, code: "photo_unsuitable", reasons }  too_far | not_frontal |
  *             no_teeth | teeth_hidden | too_dark | too_bright | blurry
  *     Recorded as failed / `analysis`: counted against the daily requests
@@ -303,8 +304,12 @@ async function quotaFor(req: Request, deps: StudioTryOnDeps): Promise<Record<str
  * or the teeth's box read from the photo (null when the check could not run —
  * a failed check never blocks).
  */
-async function checkPhoto(deps: StudioTryOnDeps, requestId: string, photo: Photo): Promise<{ refused: Ending } | { teethBox: unknown }> {
-  if (!deps.checkPhoto) return { teethBox: null };
+async function checkPhoto(
+  deps: StudioTryOnDeps,
+  requestId: string,
+  photo: Photo,
+): Promise<{ refused: Ending } | { teethBox: unknown; centralsBox: unknown }> {
+  if (!deps.checkPhoto) return { teethBox: null, centralsBox: null };
   const readings = await Promise.all(
     Array.from({ length: PHOTO_READINGS }, (_, i) =>
       deps.checkPhoto!({ mimeType: photo.mimeType, data: photo.data }, i).catch((error) => ({
@@ -316,7 +321,7 @@ async function checkPhoto(deps: StudioTryOnDeps, requestId: string, photo: Photo
   const answers = readings.flatMap((r) => (r.ok ? [r.value] : []));
   if (answers.length === 0) {
     deps.log("photo check unavailable, analysing anyway", readings.map((r) => (r.ok ? "ok" : r.detail)));
-    return { teethBox: null };
+    return { teethBox: null, centralsBox: null };
   }
   const { verdict, reading, spans } = judgeReadings(answers, photo.size);
   // Facts only, never the photo: they tune the thresholds.
@@ -333,7 +338,7 @@ async function checkPhoto(deps: StudioTryOnDeps, requestId: string, photo: Photo
     await deps.finishRequest(requestId, "failed", "photo_unsuitable").catch(() => {});
     return { refused: { status: 422, body: { ok: false, code: "photo_unsuitable", reasons: verdict.issues } } };
   }
-  return { teethBox: reading.teeth_box };
+  return { teethBox: reading.teeth_box, centralsBox: reading.central_incisors_box };
 }
 
 /** Step 1: the photo check, the mouth close-up, then each tooth on it. Nothing is generated. */
@@ -355,11 +360,13 @@ async function analysePhoto(deps: StudioTryOnDeps, requestId: string, photo: Pho
     return { status: 502, body: { ok: false, code: "failed" } };
   }
   const teeth = readTeeth(found.value, size);
-  // Facts only: which teeth were found, never the photo.
-  deps.log("analysis", { crop: edited?.crop ?? null, teeth: teeth.map((t) => t.fdi) });
   const crop = edited?.crop ?? { x: 0, y: 0, width: size.width, height: size.height };
   const photoSize = photo.size ?? size;
-  return { status: 200, body: { ok: true, crop: { ...crop, photo_width: photoSize.width, photo_height: photoSize.height }, teeth } };
+  // The two upper central incisors as the check saw them: the browser checks the teeth's numbers against this midline.
+  const centrals = boxInCrop(checked.centralsBox, photoSize, crop);
+  // Facts only: which teeth were found, never the photo.
+  deps.log("analysis", { crop: edited?.crop ?? null, teeth: teeth.map((t) => t.fdi), centrals: centrals !== null });
+  return { status: 200, body: { ok: true, crop: { ...crop, photo_width: photoSize.width, photo_height: photoSize.height }, teeth, centrals } };
 }
 
 /** Step 2: the model turns the guide's marks into real gems, the untouched close-up beside it. */

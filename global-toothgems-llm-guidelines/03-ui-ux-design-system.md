@@ -19,7 +19,7 @@ It should feel like a premium beauty/lifestyle brand with strong digital-product
 
 ## Logo
 
-The masters are the SVGs in `assets/logo/vector/` (reconstructed on 2026-11-02 from the original PNGs, which stay in `assets/logo/` as references): the full wordmark (`wordmark*.svg`) and the monogram, the italic G with its sparkle (`monogram*.svg`), plus the app icon (`app-icon.svg`: main-blue tile, ink G and sparkle; and `app-icon-small.svg` with a thicker sparkle for 16–48 px). The sparkle is the site's main blue `--gt-blue-300` (`#B9CDE5`), on the ink or white letters; one-colour versions (ink, white, blue) exist for single-colour uses. On screen use the SVG (`webapp/src/assets/logo-wordmark.svg` in the header, `logo-wordmark-blue.svg` in the footer); PNG only where SVG cannot go (e-mails, canvas and PDF drawing, print files `*-4000.png`). The favicon, Apple and Android icons and the default share card (`public/og-default.png`) are exports of these masters: regenerate them all when the logo changes, and the PDF wordmark too (`python3 webapp/scripts/document-assets.py`, then `npm run sync:documents`).
+The masters are the SVGs in `assets/logo/vector/` (reconstructed on 2026-11-02 from the original PNGs, which stay in `assets/logo/` as references): the full wordmark (`wordmark*.svg`) and the monogram, the italic G with its sparkle (`monogram*.svg`), plus the app icon (`app-icon.svg`: white tile, G and sparkle in the main blue; and `app-icon-small.svg` with a thicker sparkle for 16–48 px). The sparkle is the site's main blue `--gt-blue-300` (`#B9CDE5`), on the ink or white letters; one-colour versions (ink, white, blue) exist for single-colour uses. On screen use the SVG (`webapp/src/assets/logo-wordmark.svg` in the header, `logo-wordmark-blue.svg` in the footer); PNG only where SVG cannot go (e-mails, canvas and PDF drawing, print files `*-4000.png`). The favicon, Apple and Android icons and the default share card (`public/og-default.png`) are exports of these masters: regenerate them all when the logo changes, and the PDF wordmark too (`python3 webapp/scripts/document-assets.py`, then `npm run sync:documents`).
 
 ## Palette
 
@@ -90,6 +90,13 @@ or must exist for:
 - quiz questions;
 - review blocks;
 - badges/statuses.
+
+Control sizes adapt to phones inside the primitives, never per screen: below the
+`sm` breakpoint (640 px) `Button` `lg` is 48 px high with 14 px text (56 px /
+16 px from `sm` up), `md` 44 px / 13 px (46 px / 14 px), and `IconButton` `lg`
+44 px (48 px). Pick the size for the role and let the primitive scale it; do not
+force a bigger height on phones (`max-sm:min-h-14`), and keep 44 px touch
+targets everywhere except dense rows (`sm`).
 
 Components must have predictable states:
 - default;

@@ -151,14 +151,28 @@ describe("parseTryOnAnalysis", () => {
         { fdi: "22", x: 1, y: 1, width: 0, height: 5 }, // no width
         "nonsense",
       ],
+      centrals: { x: 90, y: 40, width: 130, height: 130 },
     });
     expect(outcome).toEqual({
       ok: true,
       analysis: {
         crop: { x: 10, y: 20, width: 400, height: 300, photoWidth: 800, photoHeight: 600 },
         teeth: [{ fdi: "11", x: 100, y: 50, width: 60, height: 120 }],
+        centrals: { x: 90, y: 40, width: 130, height: 130 },
       },
     });
+  });
+
+  it("reads the central incisors' box only when it is one inside the crop", () => {
+    const centralsOf = (centrals: unknown) => {
+      const outcome = parseTryOnAnalysis({ ok: true, crop, teeth: [], centrals });
+      return outcome.ok ? outcome.analysis.centrals : "refused";
+    };
+    expect(centralsOf(undefined)).toBeNull();
+    expect(centralsOf(null)).toBeNull();
+    expect(centralsOf({ x: 350, y: 10, width: 100, height: 50 })).toBeNull(); // past the crop
+    expect(centralsOf({ x: 1, y: 1, width: "2", height: 3 })).toBeNull();
+    expect(centralsOf({ x: 0, y: 0, width: 400, height: 300 })).toEqual({ x: 0, y: 0, width: 400, height: 300 });
   });
 
   it("needs a crop; refusals read like a render's", () => {

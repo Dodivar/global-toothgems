@@ -6,8 +6,8 @@
  * (`webapp/src/lib/studio3d/tryOnRegistration.ts`) and computes where each
  * gem goes, instead of leaving the image model to decide.
  *
- * For now only the staff's placement diagnostic reads it (the `analyse` call
- * of `handler.ts`): renders still place the gems the current way.
+ * Read by the `analyse` call of `handler.ts`, with the photo check's box of
+ * the upper central incisors (the midline the browser checks the numbers against).
  *
  * Pure apart from the prompt text: `readTeeth` checks the model's answer like
  * any untrusted input.

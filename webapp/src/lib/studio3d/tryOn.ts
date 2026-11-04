@@ -1,6 +1,6 @@
 import type { Creation } from "../studioWorkspace/types";
 import { parseTryOnCrop, type TryOnCrop } from "./tryOnComposite";
-import type { FoundTooth } from "./tryOnRegistration";
+import type { CloseUpBox, FoundTooth } from "./tryOnRegistration";
 
 /**
  * "Try it on a smile": a Studio creation on a photo of a smile, rendered by an
@@ -118,6 +118,8 @@ export function parseTryOnStatus(json: unknown): TryOnStatus {
 export interface TryOnAnalysis {
   crop: TryOnCrop;
   teeth: FoundTooth[];
+  /** The two upper central incisors as the photo check saw them, close-up pixels: the midline the placement checks its numbers against. */
+  centrals: CloseUpBox | null;
 }
 
 export type TryOnAnalysisOutcome = { ok: true; analysis: TryOnAnalysis } | { ok: false; code: TryOnErrorCode; reasons?: PhotoIssue[] };
@@ -203,12 +205,23 @@ function readFailure(data: Record<string, unknown>): { ok: false; code: TryOnErr
 }
 
 const TOOTH_FDI = /^[1-4][1-6]$/;
+
+/** A box (`{ x, y, width, height }`) inside the crop, or null. */
+function boxInside(raw: unknown, crop: TryOnCrop): CloseUpBox | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { x, y, width, height } = raw as Record<string, unknown>;
+  if (![x, y, width, height].every((n) => typeof n === "number" && Number.isFinite(n))) return null;
+  const [bx, by, bw, bh] = [x, y, width, height] as number[];
+  if (bx < 0 || by < 0 || bw <= 0 || bh <= 0 || bx + bw > crop.width + 1 || by + bh > crop.height + 1) return null;
+  return { x: bx, y: by, width: bw, height: bh };
+}
 const MAX_TEETH = 20;
 
 /**
- * Read the analysis's answer (`{ ok: true, crop, teeth }`):
+ * Read the analysis's answer (`{ ok: true, crop, teeth, centrals }`):
  * a crop inside its photo, and teeth with a front-tooth FDI number and a box
- * inside the crop — the others are dropped, a missing crop is `failed`.
+ * inside the crop — the others are dropped, a missing crop is `failed`; the
+ * central incisors' box when it is one inside the crop, else null.
  */
 export function parseTryOnAnalysis(json: unknown): TryOnAnalysisOutcome {
   if (!json || typeof json !== "object") return { ok: false, code: "failed" };
@@ -227,7 +240,7 @@ export function parseTryOnAnalysis(json: unknown): TryOnAnalysisOutcome {
     seen.add(fdi);
     return [{ fdi, x: bx, y: by, width: bw, height: bh }];
   });
-  return { ok: true, analysis: { crop, teeth: teeth.slice(0, MAX_TEETH) } };
+  return { ok: true, analysis: { crop, teeth: teeth.slice(0, MAX_TEETH), centrals: boxInside(data.centrals, crop) } };
 }
 
 /* ------------------------------------------------------- the interface */

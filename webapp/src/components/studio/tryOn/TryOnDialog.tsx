@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { CircleAlert, ImageUp, LogIn, RefreshCw, ScanFace } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../lib/auth";
+import { useCookieConsent } from "../../../lib/cookieConsent";
 import { useLocation, useNavigate } from "../../../lib/navigation";
 import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
@@ -18,16 +19,18 @@ import {
   type TryOnStage,
 } from "../../../lib/studio3d/tryOn";
 import { projectFrontView } from "../../../lib/studio3d/frontView";
+import { placementProps, resultProps } from "../../../lib/studio3d/tryOnAnalytics";
 import { guideMarks } from "../../../lib/studio3d/tryOnGuide";
 import { registerDesign } from "../../../lib/studio3d/tryOnRegistration";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
+import { setStudioAnalyticsConsent, trackStudio } from "../../../lib/studioAnalytics";
 import { renderDesignImage } from "./designImage";
 import { pasteBack } from "./pasteBack";
 import { PhotoStep, type AiState } from "./PhotoStep";
 import { renderPlacementGuide } from "./placementGuide";
 import type { PreparedPhoto } from "./preparePhoto";
 import { ProcessingStep } from "./ProcessingStep";
-import { ResultStep } from "./ResultStep";
+import { ResultActions, ResultStep } from "./ResultStep";
 
 type Step =
   | { kind: "photo" }
@@ -82,6 +85,10 @@ export function TryOnDialog({
   const request = useRef<AbortController | null>(null);
   const photoUrl = useRef<string | null>(null);
   const resultUrl = useRef<string | null>(null);
+  const { record } = useCookieConsent();
+
+  // The try-on's events (facts only, `tryOnAnalytics.ts`) follow the visitor's analytics choice, on Glowbook pages too.
+  useEffect(() => setStudioAnalyticsConsent(record?.analytics === true), [record]);
 
   // Ask once whether the AI is connected: no photo leaves before the answer.
   // Keyed on whether there is a source, not on the object (callers pass it inline).
@@ -138,13 +145,23 @@ export function TryOnDialog({
     setStep({ kind: "processing", stage: "checking" });
     const analysed = await service.analyse({ photo: photo.blob, source }, { signal: controller.signal });
     if (aborted()) return;
-    if (!analysed.ok) return fail(analysed.code, "checking", analysed.reasons);
+    const context = { audience, source: source.kind };
+    if (!analysed.ok) {
+      if (analysed.code === "photo_unsuitable") trackStudio("studio_try_on_photo_refused", { ...context, reasons: [...(analysed.reasons ?? [])] });
+      return fail(analysed.code, "checking", analysed.reasons);
+    }
 
     // 2. The placement: each gem on its tooth, drawn as a mark on the close-up.
-    const { crop, teeth } = analysed.analysis;
-    const registration = registerDesign(projectFrontView(creation.scene.pieces, creation.scene.model), teeth);
+    const { crop, teeth, centrals } = analysed.analysis;
+    const registration = registerDesign(projectFrontView(creation.scene.pieces, creation.scene.model), teeth, { centrals });
     const { marks, leftOut } = guideMarks(registration, creation.scene.pieces);
-    if (!registration.reliable || marks.length === 0) return fail("photo_unsuitable", "checking", ["placement_uncertain"]);
+    const usable = registration.reliable && marks.length > 0;
+    trackStudio("studio_try_on_placement", {
+      ...context,
+      ...placementProps(registration, { marks: marks.length, leftOut }, centrals !== null),
+      outcome: usable ? "render" : "uncertain",
+    });
+    if (!usable) return fail("photo_unsuitable", "checking", ["placement_uncertain"]);
     setStep({ kind: "processing", stage: "rendering" });
     const [design, guide] = await Promise.all([renderDesignImage(creation), renderPlacementGuide(photo.blob, crop, marks)]);
     if (aborted()) return;
@@ -153,11 +170,17 @@ export function TryOnDialog({
     // 3. The render: the marks made real, pasted back into the photo.
     const outcome = await service.render({ photo: photo.blob, source, design, guide, crop, marks: marks.length }, { signal: controller.signal });
     if (aborted()) return; // cancelled or closed: nothing to show
-    if (!outcome.ok) return fail(outcome.code, "rendering", outcome.reasons);
+    if (!outcome.ok) {
+      trackStudio("studio_try_on_result", { ...context, outcome: outcome.code });
+      return fail(outcome.code, "rendering", outcome.reasons);
+    }
     request.current = null;
-    // If the browser cannot draw the close-up back into the photo, the close-up is shown alone.
-    const image = (await pasteBack(photo.blob, outcome.image, outcome.crop ?? crop)) ?? outcome.image;
+    // Only the gems are taken from the AI's answer (`tryOnGemBlend.ts`), else the whole close-up;
+    // if the browser cannot draw it back into the photo, the close-up is shown alone.
+    const pasted = await pasteBack(photo.blob, outcome.image, outcome.crop ?? crop, marks);
     if (aborted()) return;
+    trackStudio("studio_try_on_result", { ...context, outcome: pasted ? "ok" : "close_up_only", ...resultProps(pasted?.checks ?? null, pasted?.masked ?? false) });
+    const image = pasted?.image ?? outcome.image;
     if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
     resultUrl.current = URL.createObjectURL(image);
     setStep({ kind: "result", image, url: resultUrl.current, leftOut });
@@ -180,6 +203,7 @@ export function TryOnDialog({
       description={t(`studio.tryOn.subtitle.${audience}`, { name: creation.name })}
       icon={<ScanFace size={17} />}
       closeLabel={t("studio.workspace.close")}
+      footer={!empty && step.kind === "result" && photo ? <ResultActions image={step.image} creation={creation} /> : undefined}
     >
       {empty ? (
         <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("studio.tryOn.empty")}</p>
@@ -253,7 +277,6 @@ export function TryOnDialog({
           {step.kind === "result" && photo && (
             <ResultStep
               photo={photo}
-              image={step.image}
               imageUrl={step.url}
               leftOut={step.leftOut}
               creation={creation}

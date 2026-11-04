@@ -44,7 +44,13 @@ type StudioEvent =
   | "studio_access_denied"
   | "studio_access_restored"
   /** A social network button of the export dialog (decision 101): network, output, format, method. */
-  | "studio_social_share_clicked";
+  | "studio_social_share_clicked"
+  /** Try-on (decision 111 (k)): the photo check refused the photo, with its reasons. */
+  | "studio_try_on_photo_refused"
+  /** Try-on: the computed placement — teeth found, fit, gems placed (`tryOnAnalytics.ts`). */
+  | "studio_try_on_placement"
+  /** Try-on: the render's end — how the AI kept the marks, or the failure code. */
+  | "studio_try_on_result";
 
 type Props = Record<string, string | number | boolean | null | string[]>;
 

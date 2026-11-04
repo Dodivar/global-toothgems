@@ -120,37 +120,70 @@ describe("studio gems from the shop catalogue", () => {
     const value = estimateComposition([crystal, crystal, crystal, gold, gold, { ...crystal, productId: "gone" }], byKey);
     expect(value.totalMinor).toBe(995 + 2 * 4495);
     expect(value.unavailable).toBe(1);
-    expect(value.lines.map((l) => [l.pieces, l.quantity, l.offer.variantId])).toEqual([
+    expect(value.lines.map((l) => [l.pieces, l.items[0].quantity, l.items[0].offer.variantId])).toEqual([
       [3, 1, null],
       [2, 2, "v-gold"],
     ]);
   });
 
-  it("buys a crystal in the pieces' size, in the cheapest pack that covers them, in stock first", () => {
+  it("buys a crystal in the pieces' size, in the cheapest mix of packs that covers them, in stock first", () => {
     const look = byKey("p-baguette")!.finishes[0].look;
     const piece = (size: GemSize) => ({ productId: "p-baguette", size, look });
     const small: GemSize = { mm: [2, 4] };
     // 2 pieces in 2 × 4 → the pack of 10 (not 25); 1 piece in 3 × 6 → its own pack of 10
     const value = estimateComposition([piece(small), piece(small), piece({ mm: [3, 6] })], byKey);
-    expect(value.lines.map((l) => [l.size, l.offer.variantId, l.quantity])).toEqual([
-      [small, "v3", 1],
-      [{ mm: [3, 6] }, "v1", 1],
+    expect(value.lines.map((l) => [l.size, l.items.map((i) => [i.offer.variantId, i.quantity])])).toEqual([
+      [small, [["v3", 1]]],
+      [{ mm: [3, 6] }, [["v1", 1]]],
     ]);
     expect(value.totalMinor).toBe(995 + 995);
-    // 30 pieces in 2 × 4: 3 × pack of 10 (29.85) beats 2 × pack of 25 (37.90)
-    expect(estimateComposition(Array.from({ length: 30 }, () => piece(small)), byKey).lines[0]).toMatchObject({ offer: { variantId: "v3" }, quantity: 3 });
+    // 30 pieces in 2 × 4: a pack of 25 + a pack of 10 (28.90) beats 3 × 10 (29.85) and 2 × 25 (37.90)
+    const thirty = estimateComposition(Array.from({ length: 30 }, () => piece(small)), byKey);
+    expect(thirty.lines[0].items.map((i) => [i.offer.variantId, i.quantity])).toEqual([
+      ["v2", 1],
+      ["v3", 1],
+    ]);
+    expect(thirty.lines[0].totalMinor).toBe(1895 + 995);
+    expect(thirty.totalMinor).toBe(1895 + 995);
     // a size the shop does not sell is not counted
     expect(estimateComposition([piece({ mm: [5] })], byKey)).toMatchObject({ lines: [], unavailable: 1 });
   });
 
-  it("covers pieces with one offer: in stock first, out of stock only when nothing else is", () => {
-    const offer = (variantId: string, pack: number, priceMinor: number, stock?: "out") => ({ variantId, name: null, pack, size: null, colour: false, priceMinor, ...(stock ? { stock } : {}) });
+  it("covers pieces with the cheapest mix of packs: in stock first, out of stock only when nothing else is", () => {
+    const offer = (variantId: string, pack: number | null, priceMinor: number, stock?: "out" | "low") => ({ variantId, name: null, pack, size: null, colour: false, priceMinor, ...(stock ? { stock } : {}) });
+    const plan = (items: ReturnType<typeof coverPieces>) => items?.map((i) => [i.offer.variantId, i.quantity, i.totalMinor]);
     const ten = offer("p10", 10, 500, "out");
     const tf = offer("p25", 25, 1000);
-    expect(coverPieces([ten, tf], 2, false)).toMatchObject({ offer: { variantId: "p25" }, quantity: 1 });
-    expect(coverPieces([ten], 2, false)).toMatchObject({ offer: { variantId: "p10", stock: "out" }, quantity: 1 });
-    expect(coverPieces([offer("a", 10, 500), offer("b", 25, 1000)], 26, false)).toMatchObject({ offer: { variantId: "a" }, quantity: 3 });
+    expect(plan(coverPieces([ten, tf], 2, false))).toEqual([["p25", 1, 1000]]);
+    expect(plan(coverPieces([ten], 2, false))).toEqual([["p10", 1, 500]]);
+    // same cost (15.00): fewer stones wins (3 × 10 = 30 over 25 + 10 = 35)
+    expect(plan(coverPieces([offer("a", 10, 500), offer("b", 25, 1000)], 26, false))).toEqual([["a", 3, 1500]]);
     expect(coverPieces([], 1, false)).toBeNull();
+    expect(coverPieces([tf], 0, false)).toBeNull();
+
+    // The shop's Xilion Rose packs (SS5): 20 at 6.90, 50 at 11.90, 100 at 22.90
+    const xilion = [offer("x20", 20, 690), offer("x50", 50, 1190), offer("x100", 100, 2290)];
+    expect(plan(coverPieces(xilion, 12, false))).toEqual([["x20", 1, 690]]);
+    expect(plan(coverPieces(xilion, 25, false))).toEqual([["x50", 1, 1190]]);
+    expect(plan(coverPieces(xilion, 70, false))).toEqual([["x50", 1, 1190], ["x20", 1, 690]]);
+    expect(plan(coverPieces(xilion, 120, false))).toEqual([["x100", 1, 2290], ["x20", 1, 690]]);
+    expect(plan(coverPieces(xilion, 150, false))).toEqual([["x100", 1, 2290], ["x50", 1, 1190]]);
+    // a pack out of stock is left out of the mix while another is in stock
+    expect(plan(coverPieces([offer("x20", 20, 690), offer("x50", 50, 1190, "out"), offer("x100", 100, 2290)], 70, false))).toEqual([["x100", 1, 2290]]);
+
+    // without packs: a crystal once for every piece, a metal charm one per piece
+    expect(plan(coverPieces([offer("solo", null, 690)], 40, false))).toEqual([["solo", 1, 690]]);
+    expect(plan(coverPieces([offer("charm", null, 4495)], 3, true))).toEqual([["charm", 3, 3 * 4495]]);
+  });
+
+  it("marks a line out of stock when it can only be bought from packs out of stock, low when one of its packs is low", () => {
+    const base = byKey("p-baguette")!;
+    const withStock = (stock: Record<string, "out" | "low">) => (key: string) =>
+      key === base.key ? { ...base, offers: base.offers.map((o) => (o.variantId && stock[o.variantId] ? { ...o, stock: stock[o.variantId] } : o)) } : byKey(key);
+    const pieces = Array.from({ length: 3 }, () => ({ productId: "p-baguette", size: { mm: [3, 6] } as GemSize, look: base.finishes[0].look }));
+    expect(estimateComposition(pieces, withStock({ v1: "out" })).lines[0]).toMatchObject({ stock: "out", totalMinor: 995 });
+    expect(estimateComposition(pieces, withStock({ v1: "low" })).lines[0]).toMatchObject({ stock: "low" });
+    expect(estimateComposition(pieces, withStock({})).lines[0]).not.toHaveProperty("stock");
   });
 });
 
