@@ -13,7 +13,7 @@ import "../src/index.css";
 
 /* What `index.html` carried under Vite. Next.js adds the charset and viewport
    tags itself. Each page adds its own title and description. The icons are
-   file conventions in `app/` (`favicon.ico`, `icon.svg`, `apple-icon.png`)
+   file conventions in `app/` (`favicon.ico`, `icon.png`, `apple-icon.png`)
    and `app/manifest.ts`; their source is `assets/logo/vector/`. */
 export const metadata: Metadata = {
   metadataBase: siteUrl(),

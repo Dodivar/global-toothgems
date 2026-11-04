@@ -32,7 +32,7 @@ How the app is mounted (`docs/migration-nextjs.md`, phases 1–5):
 
 ```
 app/layout.tsx                 root layout: <html lang>, fonts, default share card, src/index.css, the stores
-app/favicon.ico, icon.svg, apple-icon.png, manifest.ts   brand icons (file conventions; exports of assets/logo/vector/)
+app/favicon.ico, icon.png, apple-icon.png, manifest.ts   brand icons (file conventions; cut from assets/logo/MONOGRAM-BLUE.png, master assets/logo/app-icon-from-monogram.png)
                                (src/AppProviders.tsx) with the catalogue the server read for a public page
 app/(public)/                  the public zone, in the storefront's chrome, rendered on the server:
   fr/…, en/…                   public pages, one segment per page and language (app/_public/publicPage.tsx),
