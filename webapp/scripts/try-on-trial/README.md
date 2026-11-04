@@ -14,7 +14,8 @@ with a GPU and minutes in a container without one.
 - `webapp/.env.local` pointing at the project (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
 - `npm install` in `webapp/`, then the browser once: `npx playwright install chromium`.
 - The test staff account (active `admin`, so no daily limit) and its five creations "Essai 1 … Essai 5" in
-  My Creations (names must match `SCENES` in `run.mjs`). Its e-mail and password are given to the person running
+  My Creations, found by the start of their name ("Essai 1 —" … "Essai 5 —"; what follows the dash can change).
+  The script checks they are all there before the first run, else lists the creations it sees and stops. Its e-mail and password are given to the person running
   the trial, never committed.
 - A folder with the smile photos: every photo in it (`.jpg`, `.jpeg`, `.png`, `.webp`, `.heic`) is used, sorted by
   name, up to 20 (P1…P20); beyond 20 the script warns and keeps the first 20.

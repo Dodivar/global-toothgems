@@ -31,7 +31,8 @@ if (!PHOTOS || !EMAIL || !PASSWORD) {
   process.exit(1);
 }
 
-// The five test creations, saved on the test account (names exactly as in My Creations).
+// The five test creations, saved on the test account. They are found in My Creations by the start of their name
+// ("Essai 1 —" …), so a creation can be renamed after the dash without breaking the trial.
 const SCENES = {
   S1: { name: "Essai 1 — Ligne du sourire (6 ronds SS7, de 13 à 23)", what: "Smile line: one SS7 crystal round centred on each of 13, 12, 11, 21, 22, 23 (registration across the whole front arch)" },
   S2: { name: "Essai 2 — Symétrie (3 paires miroir, de 11/21 à 13/23)", what: "Three mirror pairs: 4 mm red hearts on 11/21, 4 mm emerald navettes on 12 (330°) / 22 (30°), 4 mm crystal drops on 13/23" },
@@ -51,6 +52,11 @@ if (!allPhotos.length) {
 if (allPhotos.length > MAX_PHOTOS) console.warn(`${allPhotos.length} photos in ${PHOTOS}: only the first ${MAX_PHOTOS} (by name) are used.`);
 const photoFiles = allPhotos.slice(0, MAX_PHOTOS);
 const PHOTO_BY_KEY = Object.fromEntries(photoFiles.map((f, i) => [`P${i + 1}`, join(PHOTOS, f)]));
+/** "Essai 3 — …" → "Essai 3 —": what the trial matches a creation by. */
+const prefixOf = (scene) => SCENES[scene].name.split("—")[0].trim() + " —";
+const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** The "see details" button of a creation's card in My Creations. */
+const detailsButton = (scene) => page.getByRole("button", { name: new RegExp(`^Voir le détail de ${escapeRe(prefixOf(scene))}`) });
 const pairs = ONLY
   ? ONLY.split(",").map((x) => x.split(":"))
   : Object.keys(PHOTO_BY_KEY).flatMap((p) => Object.keys(SCENES).map((s) => [p, s]));
@@ -134,6 +140,38 @@ async function signIn() {
   }
 }
 
+/** One line per step, so a run that stops shows where. */
+const step = (what) => console.log(`    · ${what}`);
+
+/** The cookie banner covers the bottom of the page (and the cards under it): refuse the optional cookies once. */
+async function dismissCookies() {
+  const refuse = page.getByRole("button", { name: /Refuser les non essentiels/i });
+  if (await refuse.first().isVisible().catch(() => false)) await refuse.first().click().catch(() => {});
+}
+
+async function openCreations() {
+  await page.goto(`${SITE}/studio-3d/atelier/mes-creations`, { waitUntil: "domcontentloaded", timeout: 180_000 });
+  await dismissCookies();
+}
+
+/** Before any run: every test creation must be in My Creations, else say which are missing and what is there. */
+async function checkCreations() {
+  await openCreations();
+  const cards = page.getByRole("button", { name: /^Voir le détail de / });
+  await cards.first().waitFor({ timeout: 120_000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  const seen = (await cards.evaluateAll((els) => els.map((e) => e.getAttribute("aria-label") ?? ""))).map((l) => l.replace(/^Voir le détail de /, ""));
+  const missing = Object.keys(SCENES).filter((s) => !seen.some((n) => n.startsWith(prefixOf(s))));
+  if (!missing.length) return;
+  const shot = join(OUT, "creations-missing.png");
+  await page.screenshot({ path: shot, fullPage: true }).catch(() => {});
+  console.error(`Missing in My Creations of ${EMAIL}: ${missing.map((s) => `"${prefixOf(s)} …"`).join(", ")}.`);
+  console.error(seen.length ? `Creations found:\n${seen.map((n) => `  - ${n}`).join("\n")}` : "No creation found on the page (still loading, or another account).");
+  console.error(`Screenshot: ${shot}`);
+  await browser.close();
+  process.exit(1);
+}
+
 async function runOne(photo, scene) {
   const dir = join(OUT, `${photo}-${scene}`);
   mkdirSync(dir, { recursive: true });
@@ -170,18 +208,23 @@ async function runOne(photo, scene) {
   page.on("request", onRequest);
   page.on("response", onResponse);
   try {
-    await page.goto(`${SITE}/studio-3d/atelier/mes-creations`, { waitUntil: "domcontentloaded" });
-    const details = page.getByRole("button", { name: `Voir le détail de ${SCENES[scene].name}` });
+    console.log(`${photo}-${scene}`);
+    await openCreations();
+    const details = detailsButton(scene);
     await details.first().waitFor({ timeout: 90_000 });
+    step(`open "${prefixOf(scene)}"`);
     await details.first().click();
+    step("Essayer sur un sourire");
     await page.getByRole("button", { name: "Essayer sur un sourire" }).first().click();
     const dialog = page.getByRole("dialog").filter({ hasText: "Essayer sur un sourire" }).last();
+    step(`photo ${basename(PHOTO_BY_KEY[photo])}`);
     await dialog.locator('input[type="file"][accept^="image/jpeg"]').setInputFiles(PHOTO_BY_KEY[photo]);
     await dialog.getByText("La personne photographiée m’a donné son accord", { exact: false }).click();
     const generate = dialog.getByRole("button", { name: "Générer le rendu IA" });
     await generate.waitFor({ timeout: 60_000 });
     await page.waitForFunction((el) => !el.disabled, await generate.elementHandle(), { timeout: 60_000 });
     log.clicked = Date.now() - t0;
+    step("Générer le rendu IA");
     await generate.click();
     const img = dialog.locator('img[alt*="essayé sur la photo"]');
     const error = dialog.getByRole("alert");
@@ -265,6 +308,7 @@ async function contactSheets() {
 }
 
 await launch();
+await checkCreations();
 console.log(`Signed in as ${EMAIL}. ${photoFiles.length} photo(s) × ${Object.keys(SCENES).length} creations: ${pairs.length} runs, results in ${OUT}`);
 let first = true;
 for (const [p, s] of pairs) {
