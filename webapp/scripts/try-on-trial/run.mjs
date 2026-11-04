@@ -141,7 +141,8 @@ async function signIn() {
 }
 
 /** One line per step, so a run that stops shows where. */
-const step = (what) => console.log(`    · ${what}`);
+let runStart = Date.now();
+const step = (what) => console.log(`    · ${String(Math.round((Date.now() - runStart) / 1000)).padStart(3)} s  ${what}`);
 
 /** The cookie banner covers the bottom of the page (and the cards under it): refuse the optional cookies once. */
 async function dismissCookies() {
@@ -149,7 +150,19 @@ async function dismissCookies() {
   if (await refuse.first().isVisible().catch(() => false)) await refuse.first().click().catch(() => {});
 }
 
+/**
+ * My Creations, ready for the next run. Already on it (the previous run's dialogs still open): close them with
+ * Escape instead of loading the Studio again, which takes several seconds; otherwise, or if a dialog stays, load it.
+ */
 async function openCreations() {
+  if (new URL(page.url()).pathname === "/studio-3d/atelier/mes-creations") {
+    const dialogs = page.getByRole("dialog");
+    for (let i = 0; i < 4 && (await dialogs.count()) > 0; i++) {
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+    }
+    if ((await dialogs.count()) === 0) return;
+  }
   await page.goto(`${SITE}/studio-3d/atelier/mes-creations`, { waitUntil: "domcontentloaded", timeout: 180_000 });
   await dismissCookies();
 }
@@ -208,6 +221,7 @@ async function runOne(photo, scene) {
   page.on("request", onRequest);
   page.on("response", onResponse);
   try {
+    runStart = Date.now();
     console.log(`${photo}-${scene}`);
     await openCreations();
     const details = detailsButton(scene);
@@ -246,7 +260,7 @@ async function runOne(photo, scene) {
       log.outcome = "error";
       log.error = (await error.first().innerText()).trim();
     }
-    await dialog.screenshot({ path: join(dir, "dialog.png") }).catch(() => {});
+    await dialog.screenshot({ path: join(dir, "dialog.png"), timeout: 5_000 }).catch(() => {});
   } catch (e) {
     log.outcome = "harness_error";
     log.error = String(e).slice(0, 600);
@@ -349,9 +363,11 @@ for (const [p, s] of pairs) {
       await launch();
     }
     if (!first) {
-      const pause = rendered ? PAUSE_S : Math.min(PAUSE_S, 5);
-      if (pause > 5) console.log(`  (pause ${pause} s: the image model's per-minute quota)`);
-      await sleep(pause);
+      // Only a run that reached the image model uses its per-minute quota: no pause after a refusal or an error.
+      if (rendered) {
+        console.log(`  (pause ${PAUSE_S} s: the image model's per-minute quota)`);
+        await sleep(PAUSE_S);
+      }
     }
     first = false;
     const log = await runOne(p, s);
