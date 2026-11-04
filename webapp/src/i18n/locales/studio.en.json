@@ -828,6 +828,8 @@
   "tryOn": {
     "action": "Try on a smile",
     "editorSub": "The saved creation, rendered by AI on a smile photo",
+    "editorNoticeSave": "Save the creation first: the try-on uses its saved version.",
+    "editorNoticeEmpty": "Add at least one gem and save the creation to try it on.",
     "title": "Try on a smile",
     "subtitle": {
       "artist": "“{{name}}” on a photo of your client’s smile.",

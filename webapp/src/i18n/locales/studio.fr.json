@@ -828,6 +828,8 @@
   "tryOn": {
     "action": "Essayer sur un sourire",
     "editorSub": "La création enregistrée, rendue par IA sur une photo de sourire",
+    "editorNoticeSave": "Enregistrez d’abord la création : l’essai utilise sa version enregistrée.",
+    "editorNoticeEmpty": "Ajoutez au moins une pierre et enregistrez la création pour l’essayer.",
     "title": "Essayer sur un sourire",
     "subtitle": {
       "artist": "« {{name}} » sur la photo du sourire de votre client·e.",

@@ -363,6 +363,14 @@ export function ShareExportMenu() {
       <PlacementSheetMenuItem onDone={close} />
       {tryOnAllowed === false ? (
         <PopoverItem locked icon={<ScanFace size={14} />} label={t("studio.tryOn.action")} sub={withPlan("tryOn")} onClick={() => showLocked("tryOn")} />
+      ) : tryOnAllowed && !saved ? (
+        // Try-on renders the saved creation (read by the function from the database): shown greyed until then.
+        <PopoverItem
+          icon={<ScanFace size={14} />}
+          label={t("studio.tryOn.action")}
+          notice={t(snap.jewels.length === 0 ? "studio.tryOn.editorNoticeEmpty" : "studio.tryOn.editorNoticeSave")}
+          onClick={() => {}}
+        />
       ) : (
         tryOnAllowed &&
         saved && (
