@@ -88,7 +88,7 @@ test("public pages carry their canonical, hreflang and description; private ones
 test("every page carries the brand icons, the manifest and a share card", async ({ request }) => {
   const faq = await (await request.get("/fr/aide/faq")).text();
   expect(faq).toMatch(/<link rel="icon" href="\/favicon\.ico[^"]*"/);
-  expect(faq).toMatch(/<link rel="icon" href="\/icon\.svg[^"]*"[^>]*type="image\/svg\+xml"/);
+  expect(faq).toMatch(/<link rel="icon" href="\/icon\.png[^"]*"[^>]*type="image\/png"/);
   expect(faq).toMatch(/<link rel="apple-touch-icon" href="\/apple-icon\.png[^"]*"/);
   expect(faq).toContain('<link rel="manifest" href="/manifest.webmanifest"');
   // A page without a picture of its own shares the brand card.
