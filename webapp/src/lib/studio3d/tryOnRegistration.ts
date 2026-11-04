@@ -7,23 +7,34 @@ import type { FrontViewProjection, FrontViewTooth } from "./frontView";
  * teeth found on it — so the image model no longer decides where to draw.
  *
  * Input: the teeth the function found on the mouth close-up, each with its
- * FDI number and box (`teeth.ts` in `studio-try-on`), and the creation's front
+ * FDI number and box (`teeth.ts` in `studio-try-on`), the box of the two upper
+ * central incisors the photo check saw (optional), and the creation's front
  * view (`projectFrontView`): the Studio's reference dentition in real
  * millimetres, every gem at its place and real size on its tooth.
  *
  * 1. The reference dentition is fitted onto the found teeth by one
  *    similarity (scale, turn, shift), on each tooth's biting-edge centre — the
- *    part lips hide least. Teeth that do not agree with the others (a wrong
- *    number, a box on two teeth) are set aside, one at a time, while three or
- *    more remain.
- * 2. Each gem is put on its own tooth: across it, at its share of the found
+ *    part lips hide least. The reference has its teeth closed; on the photo
+ *    the mouth may be open, so the lower arch also gets its own offset down
+ *    (`lowerOffset`, 2026-11-04: with a 6 mm opening every lower tooth was set
+ *    aside and its gems left out). Teeth that do not agree with the others (a
+ *    wrong number, a box on two teeth) are set aside, one at a time, while
+ *    three or more remain.
+ * 2. The teeth's numbers are questioned (2026-11-04): the teeth model
+ *    sometimes numbers a whole arch one tooth off, which the fit alone cannot
+ *    see (it stays consistent and moves the design one tooth). Each arch is
+ *    also tried one tooth to either side; a numbering is kept or replaced on
+ *    how well the teeth agree in place and width (a central incisor is wider
+ *    than a lateral one) and with the photo check's central incisors (the
+ *    midline, a tie-breaker). Another numbering is taken only when clearly better.
+ * 3. Each gem is put on its own tooth: across it, at its share of the found
  *    box's width (the customer's own tooth); up from its biting edge, at its
  *    real distance in millimetres times the fitted scale. A design tooth that
  *    was not found, or was set aside, takes the fitted reference tooth.
- * 3. Its size is physical (owner's decision, 2026-11-01): its real size in
+ * 4. Its size is physical (owner's decision, 2026-11-01): its real size in
  *    millimetres times the fitted scale — a 2 mm gem stays 2 mm, whatever the
  *    width of the customer's teeth.
- * 4. A gem whose centre falls outside the visible part of its tooth (the
+ * 5. A gem whose centre falls outside the visible part of its tooth (the
  *    found box: a lip or the upper teeth hide the rest) is `hidden`: never
  *    drawn on a lip or a gum (2026-11-03).
  *
@@ -42,6 +53,14 @@ import type { FrontViewProjection, FrontViewTooth } from "./frontView";
 /** A tooth the function found: its FDI number and box, in the close-up's pixels. */
 export interface FoundTooth {
   fdi: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** A box in the close-up's pixels. */
+export interface CloseUpBox {
   x: number;
   y: number;
   width: number;
@@ -102,11 +121,21 @@ export type RegistrationIssue =
   /** The fitted scale and the teeth's own widths disagree. */
   | "scale_mismatch"
   /** Some teeth carrying gems were not found: their gems sit where the fit expects them. */
-  | "design_teeth_missing";
+  | "design_teeth_missing"
+  /** The function's tooth numbers were shifted by a tooth on an arch: another numbering fitted clearly better. */
+  | "renumbered"
+  /** The fitted midline is far from the central incisors the photo check saw. */
+  | "midline_mismatch";
 
 export interface Registration {
   /** Reference millimetres → close-up pixels: `scale` px per mm, `angle` degrees clockwise, then the shift. */
   transform: { scale: number; angle: number; tx: number; ty: number } | null;
+  /** How far down the lower arch sits from where the reference (teeth closed) puts it, mm, before `transform`: the mouth's opening. */
+  lowerOffset: number;
+  /** Places each arch's numbers were moved by (positive: toward the image's right); 0 when the function's numbers were kept. */
+  renumbered: { upper: number; lower: number };
+  /** Distance between the fitted midline and the photo check's central incisors, in central incisor widths; null when not measured. */
+  midlineError: number | null;
   teeth: RegisteredTooth[];
   /** The gems placed on the photo; empty when nothing could be placed. */
   gems: RegisteredGem[];
@@ -133,13 +162,39 @@ export const OUTLIER_RESIDUAL = 0.5;
  * tune on real photos.
  */
 export const LOWER_OVERBITE_MM = 2;
+/** The lower arch's offset is looked for in this range, mm, down: a little higher than closed (a deep bite) to a wide-open smile. */
+export const LOWER_OFFSET_RANGE: readonly [number, number] = [-4, 20];
+/** A midline farther than this from the photo check's (central incisor widths) is an issue, and lowers the confidence. */
+export const MIDLINE_TOLERANCE = 0.5;
+/** Another numbering is taken only if it lowers the cost by this much... */
+const RENUMBER_MARGIN = 0.08;
+/** ...and to this share of the function's numbering's cost or less. */
+const RENUMBER_RATIO = 0.6;
+/** Weight of the teeth's width disagreement in a numbering's cost (log-ratio variance). */
+const WIDTH_WEIGHT = 4;
+/**
+ * Weight of the midline in a numbering's cost: a tie-breaker, not a verdict —
+ * the check model's box may hold a lateral incisor too, and must not outvote
+ * teeth that agree with their numbers.
+ */
+const MIDLINE_WEIGHT = 0.3;
 /** A lower tooth's top within this distance (mm) of the upper teeth's edge above it is cut by them. */
 const COVERED_TOLERANCE_MM = 0.6;
 /** The fitted scale and the teeth's widths may disagree by this factor before it is an issue. */
 const SCALE_TOLERANCE = 1.25;
 
+/** Each arch's teeth in their order on the photo, from the image's left: the order a renumbering shifts them along. */
+const UPPER_ROW = ["16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26"];
+const LOWER_ROW = ["46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36"];
+
 type Point = { x: number; y: number };
 type Similarity = { scale: number; angle: number; tx: number; ty: number };
+type Pair = { ref: FrontViewTooth; found: FoundTooth };
+/** The fit: the lower arch moved down by `lowerOffset` (mm), then the similarity. */
+interface ArchFit {
+  t: Similarity;
+  lowerOffset: number;
+}
 
 const widthOf = (t: FrontViewTooth) => t.x1 - t.x0;
 const heightOf = (t: FrontViewTooth) => Math.abs(t.incisal - t.cervical);
@@ -186,6 +241,14 @@ export function applySimilarity(t: Similarity, p: Point): Point {
   return { x: p.x * cos - p.y * sin + t.tx, y: p.x * sin + p.y * cos + t.ty };
 }
 
+/** The point of the reference frame that `t` takes to `q`. */
+function invertSimilarity(t: Similarity, q: Point): Point {
+  const a = (t.angle * Math.PI) / 180;
+  const dx = q.x - t.tx;
+  const dy = q.y - t.ty;
+  return { x: (dx * Math.cos(a) + dy * Math.sin(a)) / t.scale, y: (-dx * Math.sin(a) + dy * Math.cos(a)) / t.scale };
+}
+
 /**
  * The similarity taking `from` onto `to` in the least-squares sense (2D
  * Umeyama, no reflection). Two points or more; null when they all coincide.
@@ -217,6 +280,37 @@ export function fitSimilarity(from: Point[], to: Point[]): Similarity | null {
   return { ...t, tx: tm.x - moved.x, ty: tm.y - moved.y };
 }
 
+/** A reference point on the photo: on the lower arch, moved down by the offset first. */
+function placeRef(fit: ArchFit, p: Point, lower: boolean): Point {
+  return applySimilarity(fit.t, lower ? { x: p.x, y: p.y + fit.lowerOffset } : p);
+}
+
+/**
+ * The similarity, and the lower arch's offset when both arches have teeth and
+ * there are three teeth or more (with fewer, the offset would always fit).
+ * Found by turns: the similarity for an offset, then the offset (the lower
+ * teeth's mean gap, in the reference's frame) for that similarity; a few
+ * rounds settle it. The offset stays within `LOWER_OFFSET_RANGE`.
+ */
+export function fitArches(refs: readonly { p: Point; lower: boolean }[], targets: readonly Point[]): ArchFit | null {
+  const n = refs.length;
+  const lowers = refs.filter((r) => r.lower).length;
+  const moved = (d: number) => refs.map((r) => (r.lower ? { x: r.p.x, y: r.p.y + d } : r.p));
+  let t = fitSimilarity(moved(0), [...targets]);
+  if (!t || lowers === 0 || lowers === n || n < 3) return t ? { t, lowerOffset: 0 } : null;
+  let d = 0;
+  for (let round = 0; round < 12; round++) {
+    const gaps = refs.flatMap((r, i) => (r.lower ? [invertSimilarity(t!, targets[i]).y - r.p.y] : []));
+    const next = Math.min(LOWER_OFFSET_RANGE[1], Math.max(LOWER_OFFSET_RANGE[0], gaps.reduce((s, g) => s + g, 0) / gaps.length));
+    if (Math.abs(next - d) < 1e-4) break;
+    d = next;
+    const refit = fitSimilarity(moved(d), [...targets]);
+    if (!refit) break;
+    t = refit;
+  }
+  return { t, lowerOffset: d };
+}
+
 const median = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b);
   const m = Math.floor(s.length / 2);
@@ -224,7 +318,7 @@ const median = (xs: number[]) => {
 };
 
 /** Pairs of teeth of one arch whose left-to-right order on the photo contradicts their numbers. */
-function outOfOrder(pairs: { ref: FrontViewTooth; found: FoundTooth }[]): boolean {
+function outOfOrder(pairs: Pair[]): boolean {
   for (const lower of [false, true]) {
     const arch = pairs.filter((p) => p.ref.lower === lower);
     for (let i = 0; i < arch.length; i++) {
@@ -239,31 +333,42 @@ function outOfOrder(pairs: { ref: FrontViewTooth; found: FoundTooth }[]): boolea
 }
 
 /**
- * Place the creation's gems on the photo from the teeth found on it (see the
- * module comment). `found` comes from the function, already checked; teeth the
- * front view does not know are ignored.
+ * The found teeth with each arch's numbers moved `upper` / `lower` places
+ * along it (positive: toward the image's right); a tooth moved off its arch is
+ * dropped. The boxes do not move: only their names.
  */
-export function registerDesign(projection: Pick<FrontViewProjection, "teeth" | "gems">, found: readonly FoundTooth[]): Registration {
-  const refByFdi = new Map(projection.teeth.map((t) => [t.fdi, t]));
+export function shiftNumbering(found: readonly FoundTooth[], upper: number, lower: number): FoundTooth[] {
+  return found.flatMap((f) => {
+    for (const [row, shift] of [
+      [UPPER_ROW, upper],
+      [LOWER_ROW, lower],
+    ] as const) {
+      const i = row.indexOf(f.fdi);
+      if (i < 0) continue;
+      const fdi = row[i + shift];
+      return fdi ? [{ ...f, fdi }] : [];
+    }
+    return [];
+  });
+}
+
+/** One numbering's fit: the teeth paired with the reference, the fit, the teeth kept and set aside. */
+interface Solution {
+  pairs: Pair[];
+  fit: ArchFit;
+  kept: Pair[];
+  setAside: Set<string>;
+  edgeOf: (f: FoundTooth, lower: boolean) => Point;
+  residualOf: (p: Pair) => number;
+}
+
+/** The fit of the reference onto `found`, setting aside the tooth that disagrees most while three or more remain. */
+function solve(refByFdi: ReadonlyMap<string, FrontViewTooth>, found: readonly FoundTooth[]): Solution | null {
   const pairs = found.flatMap((f) => {
     const ref = refByFdi.get(f.fdi);
     return ref && widthOf(ref) > 0 && f.width > 0 && f.height > 0 ? [{ ref, found: f }] : [];
   });
-  const front = projection.gems.filter((g) => g.at && g.at.facing === "front");
-  const skipped = projection.gems.length - front.length;
-  const designTeeth = [...new Set(front.map((g) => g.toothId))];
-
-  const empty = (issues: RegistrationIssue[]): Registration => ({
-    transform: null,
-    teeth: [],
-    gems: [],
-    skipped,
-    rms: null,
-    confidence: 0,
-    reliable: false,
-    issues,
-  });
-  if (pairs.length === 0) return empty(["no_teeth"]);
+  if (pairs.length === 0) return null;
 
   // Lower teeth covered by the upper ones: their real biting edge is above their box.
   const firstScale = median(pairs.map((p) => p.found.width / widthOf(p.ref)));
@@ -273,36 +378,125 @@ export function registerDesign(projection: Pick<FrontViewProjection, "teeth" | "
   );
   const edgeOf = (f: FoundTooth, lower: boolean) => foundEdge(f, lower, edgeLift);
 
-  // 1. The fit, setting aside the tooth that disagrees most while three or more remain.
-  let kept = [...pairs];
-  const setAside = new Set<string>();
-  const residualOf = (t: Similarity, p: (typeof pairs)[number]) => {
-    const expected = applySimilarity(t, refEdge(p.ref));
+  const residualFor = (fit: ArchFit, p: Pair) => {
+    const expected = placeRef(fit, refEdge(p.ref), p.ref.lower);
     const actual = edgeOf(p.found, p.ref.lower);
-    return Math.hypot(expected.x - actual.x, expected.y - actual.y) / (widthOf(p.ref) * t.scale);
+    return Math.hypot(expected.x - actual.x, expected.y - actual.y) / (widthOf(p.ref) * fit.t.scale);
   };
-  const fit = (list: typeof pairs): Similarity | null => {
-    if (list.length >= 2) return fitSimilarity(list.map((p) => refEdge(p.ref)), list.map((p) => edgeOf(p.found, p.ref.lower)));
+  const fitOf = (list: Pair[]): ArchFit | null => {
+    if (list.length >= 2) return fitArches(list.map((p) => ({ p: refEdge(p.ref), lower: p.ref.lower })), list.map((p) => edgeOf(p.found, p.ref.lower)));
     // One tooth: its width gives the scale, no tilt.
     const [p] = list;
     const scale = p.found.width / widthOf(p.ref);
     const edge = refEdge(p.ref);
     const target = edgeOf(p.found, p.ref.lower);
-    return { scale, angle: 0, tx: target.x - edge.x * scale, ty: target.y - edge.y * scale };
+    return { t: { scale, angle: 0, tx: target.x - edge.x * scale, ty: target.y - edge.y * scale }, lowerOffset: 0 };
   };
-  let transform = fit(kept);
-  while (transform && kept.length >= 3) {
-    const residuals = kept.map((p) => residualOf(transform!, p));
+
+  let kept = [...pairs];
+  const setAside = new Set<string>();
+  let fit = fitOf(kept);
+  while (fit && kept.length >= 3) {
+    const residuals = kept.map((p) => residualFor(fit!, p));
     const worst = residuals.indexOf(Math.max(...residuals));
     if (residuals[worst] <= OUTLIER_RESIDUAL) break;
     setAside.add(kept[worst].found.fdi);
     kept = kept.filter((_, i) => i !== worst);
-    transform = fit(kept);
+    fit = fitOf(kept);
   }
-  if (!transform) return empty(["no_teeth"]);
-  const t = transform;
+  if (!fit) return null;
+  const final = fit;
+  return { pairs, fit: final, kept, setAside, edgeOf, residualOf: (p) => residualFor(final, p) };
+}
 
-  // 2. The teeth: found (kept or set aside), and the fitted reference for design teeth not kept.
+/**
+ * How far the fitted midline (between the upper central incisors' edges) is
+ * from the centre of the photo check's central incisors box, along the
+ * smile, in central incisor widths. Null without the box, or when the box is
+ * not about two central incisors wide (it is then about something else).
+ */
+function midlineError(fit: ArchFit, centrals: CloseUpBox | null, refByFdi: ReadonlyMap<string, FrontViewTooth>): number | null {
+  const r11 = refByFdi.get("11");
+  const r21 = refByFdi.get("21");
+  if (!centrals || !r11 || !r21 || !(centrals.width > 0)) return null;
+  const unit = ((widthOf(r11) + widthOf(r21)) / 2) * fit.t.scale;
+  if (!(unit > 0)) return null;
+  const span = centrals.width / (2 * unit);
+  if (span < 0.6 || span > 1.6) return null;
+  const at = placeRef(fit, { x: (r11.x1 + r21.x0) / 2, y: (r11.incisal + r21.incisal) / 2 }, false);
+  const a = (fit.t.angle * Math.PI) / 180;
+  const dx = centrals.x + centrals.width / 2 - at.x;
+  const dy = centrals.y + centrals.height / 2 - at.y;
+  return Math.abs(dx * Math.cos(a) + dy * Math.sin(a)) / unit;
+}
+
+/**
+ * How badly a numbering fits, per tooth found: each tooth's distance from
+ * where the fit puts it (capped at a tooth's width, a tooth the numbering
+ * drops counting as a full width), how far the teeth's widths disagree with
+ * their numbers' (a central incisor named lateral is too wide), and the
+ * midline's distance from the photo check's.
+ */
+function numberingCost(solution: Solution | null, total: number, centrals: CloseUpBox | null, refByFdi: ReadonlyMap<string, FrontViewTooth>) {
+  if (!solution) return { cost: Infinity, midline: null };
+  const { pairs } = solution;
+  const place = pairs.reduce((s, p) => s + Math.min(1, solution.residualOf(p)) ** 2, 0) + Math.max(0, total - pairs.length);
+  const logs = pairs.map((p) => Math.log(p.found.width / widthOf(p.ref)));
+  const middle = median(logs);
+  const width = WIDTH_WEIGHT * logs.reduce((s, l) => s + Math.min(0.16, (l - middle) ** 2), 0);
+  const midline = midlineError(solution.fit, centrals, refByFdi);
+  return { cost: (place + width) / Math.max(1, total) + (midline === null ? 0 : MIDLINE_WEIGHT * Math.min(1.5, midline) ** 2), midline };
+}
+
+/**
+ * Place the creation's gems on the photo from the teeth found on it (see the
+ * module comment). `found` comes from the function, already checked; teeth the
+ * front view does not know are ignored. `centrals`: the photo check's box
+ * around the two upper central incisors, in the close-up's pixels, when it gave one.
+ */
+export function registerDesign(
+  projection: Pick<FrontViewProjection, "teeth" | "gems">,
+  found: readonly FoundTooth[],
+  options: { centrals?: CloseUpBox | null } = {},
+): Registration {
+  const refByFdi = new Map(projection.teeth.map((t) => [t.fdi, t]));
+  const centrals = options.centrals ?? null;
+  const front = projection.gems.filter((g) => g.at && g.at.facing === "front");
+  const skipped = projection.gems.length - front.length;
+  const designTeeth = [...new Set(front.map((g) => g.toothId))];
+
+  const empty = (issues: RegistrationIssue[]): Registration => ({
+    transform: null,
+    lowerOffset: 0,
+    renumbered: { upper: 0, lower: 0 },
+    midlineError: null,
+    teeth: [],
+    gems: [],
+    skipped,
+    rms: null,
+    confidence: 0,
+    reliable: false,
+    issues,
+  });
+
+  // 1–2. The fit for the function's numbering, and for each arch one tooth to either side.
+  const total = found.filter((f) => refByFdi.has(f.fdi)).length;
+  const hasArch = (row: readonly string[]) => found.some((f) => row.includes(f.fdi));
+  const candidates: { upper: number; lower: number; solution: Solution | null; cost: number; midline: number | null }[] = [];
+  for (const upper of hasArch(UPPER_ROW) ? [0, -1, 1] : [0]) {
+    for (const lower of hasArch(LOWER_ROW) ? [0, -1, 1] : [0]) {
+      const solution = solve(refByFdi, upper || lower ? shiftNumbering(found, upper, lower) : found);
+      candidates.push({ upper, lower, solution, ...numberingCost(solution, total, centrals, refByFdi) });
+    }
+  }
+  const given = candidates[0];
+  if (!given.solution) return empty(["no_teeth"]);
+  const best = candidates.reduce((a, b) => (b.cost < a.cost ? b : a));
+  const chosen = best !== given && best.cost <= given.cost - RENUMBER_MARGIN && best.cost <= given.cost * RENUMBER_RATIO ? best : given;
+  const { pairs, fit, kept, setAside, edgeOf, residualOf } = chosen.solution!;
+  const t = fit.t;
+
+  // 3a. The teeth: found (kept or set aside), and the fitted reference for design teeth not kept.
   const teeth: RegisteredTooth[] = pairs.map((p) => ({
     fdi: p.found.fdi,
     lower: p.ref.lower,
@@ -311,20 +505,20 @@ export function registerDesign(projection: Pick<FrontViewProjection, "teeth" | "
     width: p.found.width,
     height: p.found.height,
     source: setAside.has(p.found.fdi) ? "outlier" : "found",
-    residual: residualOf(t, p),
+    residual: residualOf(p),
   }));
   const keptByFdi = new Map(kept.map((p) => [p.found.fdi, p.found]));
   for (const fdi of designTeeth) {
     if (keptByFdi.has(fdi)) continue;
     const ref = refByFdi.get(fdi);
     if (!ref) continue;
-    const centre = applySimilarity(t, { x: (ref.x0 + ref.x1) / 2, y: (ref.cervical + ref.incisal) / 2 });
+    const centre = placeRef(fit, { x: (ref.x0 + ref.x1) / 2, y: (ref.cervical + ref.incisal) / 2 }, ref.lower);
     const width = widthOf(ref) * t.scale;
     const height = heightOf(ref) * t.scale;
     teeth.push({ fdi, lower: ref.lower, x: centre.x - width / 2, y: centre.y - height / 2, width, height, source: "fitted", residual: null });
   }
 
-  // 3. The gems on their teeth, at their real size.
+  // 3b–5. The gems on their teeth, at their real size.
   const a = (t.angle * Math.PI) / 180;
   const gems: RegisteredGem[] = front.flatMap((g): RegisteredGem[] => {
     const ref = refByFdi.get(g.toothId);
@@ -342,7 +536,7 @@ export function registerDesign(projection: Pick<FrontViewProjection, "teeth" | "
       x = edge.x + dx * Math.cos(a) - dy * Math.sin(a);
       y = edge.y + dx * Math.sin(a) + dy * Math.cos(a);
     } else {
-      ({ x, y } = applySimilarity(t, { x: at.x, y: at.y }));
+      ({ x, y } = placeRef(fit, { x: at.x, y: at.y }, ref.lower));
     }
     return [
       {
@@ -360,7 +554,7 @@ export function registerDesign(projection: Pick<FrontViewProjection, "teeth" | "
     ];
   });
 
-  // 4. How far to trust it.
+  // How far to trust it.
   const issues: RegistrationIssue[] = [];
   if (kept.length < MIN_RELIABLE_TEETH) issues.push("few_teeth");
   if (setAside.size > 0) issues.push("outliers");
@@ -372,16 +566,22 @@ export function registerDesign(projection: Pick<FrontViewProjection, "teeth" | "
   if (!scaleOk) issues.push("scale_mismatch");
   const covered = designTeeth.filter((fdi) => keptByFdi.has(fdi)).length;
   if (covered < designTeeth.length) issues.push("design_teeth_missing");
+  if (chosen !== given) issues.push("renumbered");
+  const midlineOk = chosen.midline === null || chosen.midline <= MIDLINE_TOLERANCE;
+  if (!midlineOk) issues.push("midline_mismatch");
 
-  const rms = kept.length >= 3 ? Math.sqrt(kept.reduce((s, p) => s + residualOf(t, p) ** 2, 0) / kept.length) : null;
+  const rms = kept.length >= 3 ? Math.sqrt(kept.reduce((s, p) => s + residualOf(p) ** 2, 0) / kept.length) : null;
   const coverage = designTeeth.length ? covered / designTeeth.length : 1;
   const agreement = rms === null ? 0.5 : Math.max(0, 1 - rms / 0.35);
   const evidence = Math.min(1, kept.length / 4);
   const raw = 0.4 * coverage + 0.3 * agreement + 0.3 * evidence;
-  const confidence = Math.round(raw * (ordered ? 1 : 0.5) * (scaleOk ? 1 : 0.6) * 100) / 100;
+  const confidence = Math.round(raw * (ordered ? 1 : 0.5) * (scaleOk ? 1 : 0.6) * (midlineOk ? 1 : 0.7) * 100) / 100;
 
   return {
     transform: t,
+    lowerOffset: Math.round(fit.lowerOffset * 100) / 100,
+    renumbered: { upper: chosen.upper, lower: chosen.lower },
+    midlineError: chosen.midline === null ? null : Math.round(chosen.midline * 1000) / 1000,
     teeth,
     gems,
     skipped,

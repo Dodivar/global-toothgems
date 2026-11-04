@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { FRONT_VIEW_TEETH, type FrontViewGem, type FrontViewPoint } from "./frontView";
-import { applySimilarity, fitSimilarity, LOWER_OVERBITE_MM, registerDesign, RELIABLE_CONFIDENCE, type FoundTooth } from "./tryOnRegistration";
+import {
+  applySimilarity,
+  fitArches,
+  fitSimilarity,
+  LOWER_OVERBITE_MM,
+  registerDesign,
+  RELIABLE_CONFIDENCE,
+  shiftNumbering,
+  type FoundTooth,
+} from "./tryOnRegistration";
 
 const tooth = (fdi: string) => FRONT_VIEW_TEETH.find((t) => t.fdi === fdi)!;
 
@@ -167,5 +176,80 @@ describe("registerDesign", () => {
     const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "41", { y: t41.incisal + 6.5 }), gem("b", "11")] }, found);
     expect(reg.gems.find((g) => g.id === "a")!.tooth).toBe("hidden");
     expect(reg.gems.find((g) => g.id === "b")!.tooth).toBe("found");
+  });
+});
+
+describe("the lower arch's opening", () => {
+  it("fits the lower arch's offset down with the similarity", () => {
+    const truth = { scale: 18, angle: -4, tx: 300, ty: 200 };
+    const refs = ["12", "11", "21", "22", "41", "31"].map((fdi) => {
+      const t = tooth(fdi);
+      return { p: { x: (t.x0 + t.x1) / 2, y: t.incisal }, lower: t.lower };
+    });
+    const targets = refs.map((r) => applySimilarity(truth, r.lower ? { x: r.p.x, y: r.p.y + 7 } : r.p));
+    const fit = fitArches(refs, targets)!;
+    expect(fit.lowerOffset).toBeCloseTo(7, 3);
+    expect(fit.t.scale).toBeCloseTo(18, 3);
+    expect(fit.t.angle).toBeCloseTo(-4, 3);
+  });
+
+  it("keeps the lower teeth and their gems when the mouth is open", () => {
+    const s = 20;
+    const lower = photoTeeth(["42", "41", "31", "32"], s, 600, 300).map((t) => ({ ...t, y: t.y + 8 * s }));
+    const found = [...photoTeeth(UPPER_FRONT, s, 600, 300), ...lower];
+    const t41 = tooth("41");
+    const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11"), gem("b", "41")] }, found);
+    expect(reg.lowerOffset).toBeGreaterThan(5);
+    expect(reg.teeth.filter((t) => t.source === "outlier")).toEqual([]);
+    const b = reg.gems.find((g) => g.id === "b")!;
+    expect(b.tooth).toBe("found");
+    expect(b.y).toBeCloseTo(((t41.cervical + t41.incisal) / 2 + 8) * s + 300, 0);
+    expect(reg.reliable).toBe(true);
+  });
+});
+
+describe("the teeth's numbers", () => {
+  const s = 20;
+  /** Real teeth named one tooth to the left on the upper arch (11 called 12, 21 called 11…). */
+  const UPPER_NAMED_LEFT: Record<string, string> = { "13": "14", "12": "13", "11": "12", "21": "11", "22": "21", "23": "22" };
+  const misnamed = (found: FoundTooth[]) => found.map((t) => ({ ...t, fdi: UPPER_NAMED_LEFT[t.fdi] ?? t.fdi }));
+  const centrals = () => {
+    const a = tooth("11");
+    const b = tooth("21");
+    return { x: a.x0 * s + 600, y: a.cervical * s + 300, width: (b.x1 - a.x0) * s, height: (a.incisal - a.cervical) * s };
+  };
+
+  it("moves an arch's numbers along it, dropping teeth moved off it", () => {
+    const found = [{ fdi: "16", x: 0, y: 0, width: 1, height: 1 }, { fdi: "11", x: 0, y: 0, width: 1, height: 1 }, { fdi: "41", x: 0, y: 0, width: 1, height: 1 }];
+    expect(shiftNumbering(found, 1, -1).map((t) => t.fdi)).toEqual(["15", "21", "42"]);
+    expect(shiftNumbering(found, -1, 0).map((t) => t.fdi)).toEqual(["12", "41"]);
+  });
+
+  it("renumbers an arch named one tooth off, and puts the gem back on its tooth", () => {
+    const truth = photoTeeth(UPPER_FRONT, s, 600, 300);
+    const t11 = tooth("11");
+    for (const options of [{}, { centrals: centrals() }]) {
+      const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11")] }, misnamed(truth), options);
+      expect(reg.renumbered).toEqual({ upper: 1, lower: 0 });
+      expect(reg.issues).toContain("renumbered");
+      expect(reg.gems[0].x).toBeCloseTo(((t11.x0 + t11.x1) / 2) * s + 600, 0);
+    }
+  });
+
+  it("keeps the function's numbers when they are right, even with uneven teeth", () => {
+    const found = photoTeeth(UPPER_FRONT, s, 600, 300).map((t, i) => ({ ...t, width: t.width * (i % 2 ? 1.12 : 0.9), x: t.x + (i % 3) * 6 }));
+    const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11")] }, found, { centrals: centrals() });
+    expect(reg.renumbered).toEqual({ upper: 0, lower: 0 });
+    expect(reg.issues).not.toContain("renumbered");
+    expect(reg.midlineError).toBeLessThan(0.5);
+  });
+
+  it("flags a midline far from the photo check's central incisors", () => {
+    const box = { ...centrals(), x: centrals().x + 0.8 * (tooth("11").x1 - tooth("11").x0) * s };
+    const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11")] }, photoTeeth(UPPER_FRONT, s, 600, 300), { centrals: box });
+    expect(reg.issues).toContain("midline_mismatch");
+    expect(reg.midlineError).toBeGreaterThan(0.5);
+    const clean = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11")] }, photoTeeth(UPPER_FRONT, s, 600, 300));
+    expect(reg.confidence).toBeLessThan(clean.confidence);
   });
 });

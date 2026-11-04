@@ -47,6 +47,14 @@ design content.
 | `studio_access_check_failed` | Reading the state or starting the trial failed | per failure | `operation` |
 | `studio_access_denied` | The database refused a write (42501) | per refusal | `operation` |
 | `studio_access_restored` | Access came back after a locked state (subscription) | per transition | `from_state` |
+| `studio_try_on_photo_refused` | "Try it on a smile": the photo check refused the photo (decision 111) | per refusal | `audience` (artist / visitor), `source` (own / share / glowbook), `reasons` |
+| `studio_try_on_placement` | Try-on: the computed placement is done, before the render (decision 111 (k)) | per attempt | `audience`, `source`, `outcome` (`render` / `uncertain`: another photo asked), `teeth_found`, `teeth_kept`, `teeth_set_aside`, `centrals_box`, `confidence`, `reliable`, `issues`, `rms`, `lower_offset_mm`, `renumbered_upper`, `renumbered_lower`, `midline_error`, `gems_placed`, `gems_hidden`, `gems_on_fitted_teeth`, `gems_skipped`, `marks`, `left_out` |
+| `studio_try_on_result` | Try-on: the render came back (or failed) | per render | `audience`, `source`, `outcome` (`ok`, `close_up_only`, or the error code), `masked` (only the gems taken from the AI's answer), `gems_checked`, `gems_drawn`, `gems_missing`, `gems_drifted` (> 0.5 half-size from the mark), `gems_resized` (> 30 % off), `drift_mean`, `drift_max`, `size_mean`, `size_max` |
+
+The three `studio_try_on_*` events (2026-11-04, `lib/studio3d/tryOnAnalytics.ts`) carry facts about the try-on's
+placement and render only — counts, scores and codes, never the photo, the image or the design — to tune the
+placement's thresholds on real use (`docs/studio-try-on-computed-placement.md`). They also go out from Glowbook and
+share-link pages, under the same analytics consent.
 
 `studio_subscription_completed` is sent by the browser (so it respects the analytics consent like every other
 event), but only once the verified state flips to `subscribed` — never because the return address says

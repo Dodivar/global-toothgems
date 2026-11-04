@@ -1,7 +1,7 @@
 import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import jpegCodec from "npm:jpeg-js@0.4.4";
 import { readSiteOrigins } from "../_shared/http.ts";
-import { mouthCrop, nearestRatio } from "./crop.ts";
+import { boxInCrop, mouthCrop, nearestRatio } from "./crop.ts";
 import { accessToken, generateImage, generateUrl, imageModelConfig, nearestAspectRatio, readAdcJson, readImage, resetTokenCache } from "./gemini.ts";
 import { handleStudioTryOn, headerSize, readCropRect, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
 import { imageSize, judgePhoto, judgeReadings, MIN_TEETH_SPAN } from "./photoCheck.ts";
@@ -160,6 +160,9 @@ Deno.test("analysis: the close-up and its teeth, nothing generated, recorded as 
   // The teeth are found on the close-up, their boxes in its pixels.
   assertEquals(calls.teethSize, { width: crop.width, height: crop.height });
   assertEquals(body.teeth, readTeeth(TEETH_ANSWER, { width: crop.width, height: crop.height }));
+  // The check's central incisors, in the close-up's pixels.
+  assertEquals(body.centrals, boxInCrop(GOOD_PHOTO.central_incisors_box, { width: 768, height: 1024 }, crop));
+  assertEquals(body.centrals !== null, true);
   assertEquals(generated, false);
   assertEquals(calls.finished, ["failed:analysis"]);
 });
@@ -174,6 +177,20 @@ Deno.test("analysis: an unsuitable photo is refused with its reasons, recorded; 
   const whole = await (await handleStudioTryOn(post(analyseForm()), down.deps)).json();
   // No check: no teeth box, so no crop — the whole photo is analysed.
   assertEquals(whole.crop, { x: 0, y: 0, width: 768, height: 1024, photo_width: 768, photo_height: 1024 });
+  assertEquals(whole.centrals, null);
+});
+
+Deno.test("boxInCrop: a check box in the close-up's pixels, cut to it", () => {
+  const crop = { x: 100, y: 200, width: 400, height: 300 };
+  // 0–1000 of a 1000 × 1000 photo: pixels.
+  assertEquals(boxInCrop([250, 200, 350, 300], { width: 1000, height: 1000 }, crop), { x: 100, y: 50, width: 100, height: 100 });
+  // Partly outside: cut to the crop.
+  assertEquals(boxInCrop([150, 50, 250, 150], { width: 1000, height: 1000 }, crop), { x: 0, y: 0, width: 50, height: 50 });
+  // Outside, empty, inverted or not a box: nothing.
+  assertEquals(boxInCrop([0, 0, 100, 50], { width: 1000, height: 1000 }, crop), null);
+  assertEquals(boxInCrop([], { width: 1000, height: 1000 }, crop), null);
+  assertEquals(boxInCrop([300, 300, 250, 350], { width: 1000, height: 1000 }, crop), null);
+  assertEquals(boxInCrop("box", { width: 1000, height: 1000 }, crop), null);
 });
 
 Deno.test("analysis: the teeth model failing is a failure, still recorded", async () => {

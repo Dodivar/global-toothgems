@@ -1574,6 +1574,13 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
   Since 2026-11-03 (owner's trial, drops drawn on the lower lip) a lower tooth cut by the upper teeth gets its biting
   edge 2 mm above its box (`LOWER_OVERBITE_MM`, a first value), and a gem outside its tooth's visible box is left out
   and counted, never drawn on a lip or a gum (browser only, no function change).
+  Since 2026-11-04 (owner's go-ahead; no manual adjustment of the gems, owner's decision): the lower arch gets its own
+  vertical offset in the fit (an open mouth no longer sets the lower teeth aside), each arch's tooth numbers are also
+  tried one tooth to either side and replaced only when clearly better, the analysis answers the photo check's
+  central incisors box (`centrals`, close-up pixels; function change) as the midline the browser checks against,
+  only the gems are taken from the AI's answer (the rest of the photo stays the customer's, `tryOnGemBlend.ts`),
+  and the browser sends facts-only analytics events (`studio_try_on_*`). Details in
+  `docs/studio-try-on-computed-placement.md`.
   A placement the teeth do not support (`RELIABLE_CONFIDENCE` 0.6, at least three teeth agreeing — first values)
   asks for another photo rather than rendering a guess (decision to confirm with the owner). An analysis is counted
   against the daily requests, never the renders (`failed` / `analysis`; rows of the trial carry `diagnostic`). The
