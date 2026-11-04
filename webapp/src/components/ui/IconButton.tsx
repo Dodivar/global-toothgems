@@ -13,7 +13,12 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   badge?: number | string;
 }
 
-const dims: Record<IconButtonSize, number> = { sm: 32, md: 40, lg: 48 };
+/** Box and glyph per size; `lg` is 44 px on phones, 48 px from `sm` up. */
+const sizeClasses: Record<IconButtonSize, string> = {
+  sm: "size-8 [&>svg]:size-3.5",
+  md: "size-10 [&>svg]:size-[18px]",
+  lg: "size-11 [&>svg]:size-5 sm:size-12 sm:[&>svg]:size-[22px]",
+};
 
 const variantClasses: Record<IconButtonVariant, string> = {
   ghost: "bg-transparent text-[var(--text-primary)] border border-transparent hover:bg-[var(--gt-ink-100)]",
@@ -32,7 +37,6 @@ export function IconButton({
   disabled,
   ...rest
 }: IconButtonProps) {
-  const d = dims[size];
   return (
     <button
       type="button"
@@ -41,13 +45,13 @@ export function IconButton({
       disabled={disabled}
       className={clsx(
         "relative inline-flex items-center justify-center rounded-[var(--radius-pill)] transition-colors duration-[var(--duration-fast)] active:scale-[0.96] disabled:opacity-45 disabled:pointer-events-none",
+        sizeClasses[size],
         variantClasses[variant],
         className,
       )}
-      style={{ width: d, height: d }}
       {...rest}
     >
-      <Icon size={Math.round(d * 0.45)} strokeWidth={1.75} />
+      <Icon strokeWidth={1.75} />
       {badge != null && badge !== 0 && (
         <span
           className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-[var(--radius-pill)] px-[5px] text-[10px] font-bold text-white"

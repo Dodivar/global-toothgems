@@ -18,10 +18,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children?: ReactNode;
 }
 
+/**
+ * Phones get a tighter scale (the uppercase, tracked label reads large on a
+ * narrow screen): `lg` is 48 px / 14 px text there and 56 px / 16 px from `sm`
+ * up; `md` is 44 px / 13 px, then 46 px / 14 px. Every size keeps a 44 px touch
+ * target except `sm`, which is for dense rows.
+ */
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-9 px-4 text-[length:var(--text-caption)]",
-  md: "h-[46px] px-[18px] sm:px-[22px] text-[length:var(--text-body-sm)]",
-  lg: "h-14 px-6 sm:px-[30px] text-[length:var(--text-body-md)]",
+  sm: "h-9 px-4 text-[length:var(--text-caption)] [&>svg]:size-3.5",
+  md: "h-11 px-4 text-[13px] [&>svg]:size-4 sm:h-[46px] sm:px-[22px] sm:text-[length:var(--text-body-sm)]",
+  lg: "h-12 px-5 text-[length:var(--text-body-sm)] [&>svg]:size-4 sm:h-14 sm:px-[30px] sm:text-[length:var(--text-body-md)] sm:[&>svg]:size-[18px]",
 };
 
 const iconSize: Record<ButtonSize, number> = { sm: 14, md: 16, lg: 18 };

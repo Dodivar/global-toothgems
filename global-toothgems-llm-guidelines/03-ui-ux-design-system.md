@@ -91,6 +91,13 @@ or must exist for:
 - review blocks;
 - badges/statuses.
 
+Control sizes adapt to phones inside the primitives, never per screen: below the
+`sm` breakpoint (640 px) `Button` `lg` is 48 px high with 14 px text (56 px /
+16 px from `sm` up), `md` 44 px / 13 px (46 px / 14 px), and `IconButton` `lg`
+44 px (48 px). Pick the size for the role and let the primitive scale it; do not
+force a bigger height on phones (`max-sm:min-h-14`), and keep 44 px touch
+targets everywhere except dense rows (`sm`).
+
 Components must have predictable states:
 - default;
 - hover;

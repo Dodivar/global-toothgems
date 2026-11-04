@@ -76,7 +76,7 @@ export function StudioVideoFeature() {
           </div>
           <div className="grid justify-items-start gap-6 lg:justify-self-end">
             <p className="m-0 max-w-[48ch] text-[length:var(--text-body-lg)] text-[var(--gt-ink-300)]">{t("homeAlt.studio.body")}</p>
-            <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta max-sm:!h-auto max-sm:min-h-14 max-sm:py-3 max-sm:!whitespace-normal max-sm:text-center" onClick={() => navigate(STUDIO_PATH)}>
+            <Button variant="primary" size="lg" iconRight={ArrowRight} className="gt-alt-cta max-sm:!h-auto max-sm:min-h-12 max-sm:py-3 max-sm:!whitespace-normal max-sm:text-center" onClick={() => navigate(STUDIO_PATH)}>
               {t("homeAlt.studio.cta")}
             </Button>
           </div>

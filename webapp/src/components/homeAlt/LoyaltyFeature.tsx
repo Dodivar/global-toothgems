@@ -45,7 +45,7 @@ export function LoyaltyFeature() {
               </li>
             ))}
           </ul>
-          <Button variant="dark" size="lg" iconRight={ArrowRight} className="max-sm:!h-auto max-sm:min-h-14 max-sm:py-3 max-sm:!whitespace-normal max-sm:text-center" onClick={() => navigate("/fidelite")}>
+          <Button variant="dark" size="lg" iconRight={ArrowRight} className="max-sm:!h-auto max-sm:min-h-12 max-sm:py-3 max-sm:!whitespace-normal max-sm:text-center" onClick={() => navigate("/fidelite")}>
             {t("homeAlt.loyalty.cta")}
           </Button>
         </div>

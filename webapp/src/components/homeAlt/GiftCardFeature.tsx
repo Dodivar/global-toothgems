@@ -97,7 +97,7 @@ export function GiftCardFeature() {
             ))}
           </ul>
 
-          <Button variant="dark" size="lg" iconRight={ArrowRight} className="max-sm:!h-auto max-sm:min-h-14 max-sm:py-3 max-sm:!whitespace-normal max-sm:text-center" onClick={() => navigate("/carte-cadeau")}>
+          <Button variant="dark" size="lg" iconRight={ArrowRight} className="max-sm:!h-auto max-sm:min-h-12 max-sm:py-3 max-sm:!whitespace-normal max-sm:text-center" onClick={() => navigate("/carte-cadeau")}>
             {t("homeAlt.gift.cta")}
           </Button>
         </div>

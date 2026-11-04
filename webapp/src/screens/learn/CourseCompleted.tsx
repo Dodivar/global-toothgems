@@ -224,8 +224,8 @@ function CompletionMoment({
             <>
               {holder.complete ? (
                 <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
-                  <DownloadCertificateButton status={status.pdf} onDownload={onDownload} size="lg" className="w-full sm:w-auto max-sm:h-auto max-sm:min-h-[52px] max-sm:whitespace-normal max-sm:px-5 max-sm:py-3 max-sm:text-[length:var(--text-body-sm)]" />
-                  <Button variant="dark" size="lg" iconLeft={Share2} className="gt-cert-cta w-full sm:w-auto max-sm:h-auto max-sm:min-h-[52px] max-sm:whitespace-normal max-sm:px-5 max-sm:py-3 max-sm:text-[length:var(--text-body-sm)]" onClick={() => setSharing(true)}>
+                  <DownloadCertificateButton status={status.pdf} onDownload={onDownload} size="lg" className="w-full sm:w-auto max-sm:h-auto max-sm:min-h-12 max-sm:whitespace-normal max-sm:px-5 max-sm:py-3 max-sm:text-[length:var(--text-body-sm)]" />
+                  <Button variant="dark" size="lg" iconLeft={Share2} className="gt-cert-cta w-full sm:w-auto max-sm:h-auto max-sm:min-h-12 max-sm:whitespace-normal max-sm:px-5 max-sm:py-3 max-sm:text-[length:var(--text-body-sm)]" onClick={() => setSharing(true)}>
                     {t("certificate.shareCta")}
                   </Button>
                 </div>
