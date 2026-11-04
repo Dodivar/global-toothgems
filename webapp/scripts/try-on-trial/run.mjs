@@ -27,7 +27,7 @@ const SITE = process.env.TRIAL_SITE || "http://localhost:5173";
 const EMAIL = process.env.TRIAL_EMAIL;
 const PASSWORD = process.env.TRIAL_PASSWORD;
 if (!PHOTOS || !EMAIL || !PASSWORD) {
-  console.error("Usage: TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --photos <folder> [--out <folder>] [--only P1:S1,…] [--skip-done] [--pause 45] [--headed]");
+  console.error("Usage: TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --photos <folder> [--out <folder>] [--only P1:S1,…] [--skip-done] [--keep-refused] [--pause 45] [--headed]");
   process.exit(1);
 }
 
@@ -268,7 +268,7 @@ function settled(photo, scene) {
   const file = join(OUT, `${photo}-${scene}`, "log.json");
   if (!existsSync(file)) return false;
   const log = JSON.parse(readFileSync(file, "utf8"));
-  return log.outcome === "result" || (log.outcome === "error" && /ne permet pas un bon rendu/.test(log.error ?? ""));
+  return log.outcome === "result" || isPhotoRefusal(log);
 }
 
 /** One contact sheet per photo: each creation's guide (computed marks) beside its result close-up, with the figures. */
@@ -310,18 +310,41 @@ async function contactSheets() {
 await launch();
 await checkCreations();
 console.log(`Signed in as ${EMAIL}. ${photoFiles.length} photo(s) × ${Object.keys(SCENES).length} creations: ${pairs.length} runs, results in ${OUT}`);
+/** The photo check refused the photo itself: every other creation would be refused the same way. */
+const isPhotoRefusal = (log) => log.outcome === "error" && /ne permet pas un bon rendu/.test(log.error ?? "");
+const refusedPhotos = new Map(); // photo key → the refusal's log
 let first = true;
+let rendered = false; // whether the previous run reached the image model (its per-minute quota)
 for (const [p, s] of pairs) {
   if (!PHOTO_BY_KEY[p] || !SCENES[s]) continue;
   if (argv.includes("--skip-done") && settled(p, s)) continue;
+  const refusal = refusedPhotos.get(p);
+  if (refusal) {
+    // Recorded as refused too (same reasons), so the summary and the sheets show it, without another check.
+    const dir = join(OUT, `${p}-${s}`);
+    mkdirSync(dir, { recursive: true });
+    const log = { photo: p, photoFile: refusal.photoFile, scene: s, sceneName: SCENES[s].name, outcome: "error", error: refusal.error, skipped: `photo refused on ${refusal.scene}`, total: 0, calls: [] };
+    writeFileSync(join(dir, "log.json"), JSON.stringify(log, null, 1));
+    console.log(`${p}-${s}  skipped (photo refused on ${refusal.scene})`);
+    continue;
+  }
   for (let attempt = 1; attempt <= 2; attempt++) {
     if (!alive()) {
       console.log("  (browser closed: relaunching and signing in again)");
       await launch();
     }
-    if (!first) await sleep(PAUSE_S);
+    if (!first) {
+      const pause = rendered ? PAUSE_S : Math.min(PAUSE_S, 5);
+      if (pause > 5) console.log(`  (pause ${pause} s: the image model's per-minute quota)`);
+      await sleep(pause);
+    }
     first = false;
     const log = await runOne(p, s);
+    rendered = log.calls.some((c) => typeof c.kind === "string" && c.kind.startsWith("render"));
+    if (isPhotoRefusal(log) && !argv.includes("--keep-refused")) {
+      refusedPhotos.set(p, log);
+      console.log(`  (${basename(PHOTO_BY_KEY[p])} refused by the photo check: its other creations are skipped)`);
+    }
     const passing = log.outcome === "harness_error" || (log.outcome === "error" && /n’a pas abouti|connexion/i.test(log.error ?? ""));
     if (!passing || attempt === 2) break;
     console.log("  (passing failure: trying again in 60 s)");
