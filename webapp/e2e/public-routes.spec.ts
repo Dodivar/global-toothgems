@@ -128,20 +128,35 @@ test("a visit from a campaign link sees the Studio pages without the storefront'
   // An ordinary visit keeps the storefront chrome.
   await open(page, "/fr/studio-3d");
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Imaginez-le\. Dessinez-le\. Il est à vous\./);
-  await expect(nav.first()).toBeAttached();
+  await expect(nav.first()).toBeVisible();
 
   // A tagged link (social network, ad) hides it, and the page is the same.
   await open(page, "/fr/studio-3d?utm_source=instagram&utm_medium=paid&utm_campaign=studio");
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Imaginez-le\. Dessinez-le\. Il est à vous\./);
   await expect(page.getByRole("button", { name: "Se connecter" })).toBeVisible();
-  await expect(nav).toHaveCount(0);
+  await expect(nav).toBeHidden();
   await expect(page.getByRole("link", { name: "Mentions légales" })).toBeVisible();
 
   // Moving to the plans in the same tab keeps it; leaving the Studio's pages brings the storefront back.
   await page.goto("/fr/studio-3d/abonnement");
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Débloquez le Studio 3D/);
-  await expect(nav).toHaveCount(0);
+  await expect(nav).toBeHidden();
   await page.goto("/fr/boutique");
-  await expect(nav.first()).toBeAttached();
+  await expect(nav.first()).toBeVisible();
+  await expect(page.locator("html")).not.toHaveAttribute("data-gt-focus");
   expect(problems).toEqual([]);
+});
+
+test("the campaign chrome is in place before the page's scripts run", async ({ page }) => {
+  // Nothing of the application loads: what shows is the server's markup plus the inline head script.
+  await page.route("**/_next/static/**/*.js", (route) => route.abort());
+  await page.goto("/fr/studio-3d?utm_source=instagram", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("html")).toHaveAttribute("data-gt-focus", "");
+  await expect(page.getByRole("navigation", { name: "Navigation principale" })).toBeHidden();
+  await expect(page.getByRole("link", { name: "Mentions légales" })).toBeVisible();
+  // An ordinary visit (a fresh tab) shows the storefront's header, not the slim bar.
+  await page.evaluate(() => sessionStorage.clear());
+  await page.goto("/fr/studio-3d", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("html")).not.toHaveAttribute("data-gt-focus");
+  await expect(page.getByRole("link", { name: "Mentions légales" }).first()).toBeVisible();
 });

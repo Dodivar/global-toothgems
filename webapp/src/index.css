@@ -2483,3 +2483,10 @@
   .gt-cert-network:hover { transform: none; }
   .gt-cert-zoom { transition: none; }
 }
+
+/* Focus visits (lib/adFocus.ts): the head script marks <html> before the first
+   paint; the storefront header/footer give way to the slim focus chrome.
+   Outside the layers so it wins over the utilities. */
+.gt-focus-chrome { display: none; }
+html[data-gt-focus] .gt-focus-chrome { display: block; }
+html[data-gt-focus] .gt-storefront-chrome { display: none; }

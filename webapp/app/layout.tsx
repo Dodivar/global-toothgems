@@ -9,6 +9,7 @@ import { AppProviders } from "../src/AppProviders";
 import { siteUrl } from "../src/lib/siteUrl";
 import { DEFAULT_SHARE_IMAGE } from "../src/lib/brand";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { focusBootScript } from "../src/lib/adFocus";
 import "../src/index.css";
 
 /* What `index.html` carried under Vite. Next.js adds the charset and viewport
@@ -34,8 +35,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const route = parsePath((requestHeaders.get(PATH_HEADER) ?? "/").split("?")[0]).route;
   const [catalog, academy] = route ? await Promise.all([loadCatalogSeed(route.id), loadAcademySeed()]) : [undefined, undefined];
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
       <head>
+        {/* Before the first paint: marks a visit from a campaign link, so the storefront chrome never shows on the Studio pages (lib/adFocus.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: focusBootScript() }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
