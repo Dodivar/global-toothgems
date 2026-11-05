@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type Ref } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import { ArrowUpRight, GraduationCap, ShoppingBag } from "lucide-react";
@@ -14,6 +14,7 @@ import { courseHref } from "../../lib/academyUrl";
 import { useFormat } from "../../lib/format";
 import { publicDate } from "../../lib/reviewRules";
 import { useReviewAuthor, useReviews } from "../../lib/reviews";
+import { distributeMasonry } from "../../lib/masonry";
 import { useReveal } from "../../lib/useReveal";
 
 type Filter = "all" | "academy" | "product";
@@ -27,6 +28,41 @@ const PHONE_LIMIT = 6;
 
 /** Placeholder heights while the reviews load: enough to hint at a mosaic. */
 const SKELETON_HEIGHTS = [260, 180, 220, 300];
+
+/** Media queries of the layout: Tailwind's sm, lg and xl breakpoints. */
+const SM = "(min-width: 640px)";
+const LG = "(min-width: 1024px)";
+const XL = "(min-width: 1280px)";
+
+type Layout = { columns: number; phone: boolean };
+const PHONE_LAYOUT = "2:phone";
+
+function readLayout(): string {
+  const columns = window.matchMedia(XL).matches ? 4 : window.matchMedia(LG).matches ? 3 : 2;
+  return `${columns}:${window.matchMedia(SM).matches ? "wide" : "phone"}`;
+}
+
+function subscribeLayout(onChange: () => void) {
+  const lists = [SM, LG, XL].map((q) => window.matchMedia(q));
+  lists.forEach((l) => l.addEventListener("change", onChange));
+  return () => lists.forEach((l) => l.removeEventListener("change", onChange));
+}
+
+/**
+ * Columns of the feed and whether the screen is a phone. The server and the
+ * hydrating render use the phone layout (phone first), then the browser's.
+ */
+function useFeedLayout(): Layout {
+  const key = useSyncExternalStore(subscribeLayout, readLayout, () => PHONE_LAYOUT);
+  const [columns, kind] = key.split(":");
+  return { columns: Number(columns), phone: kind === "phone" };
+}
+
+/** Rough height of a pin, only to balance the columns. */
+function estimateHeight(review: CustomerReview): number {
+  const text = Math.min(review.body.length, 320) * 0.6 + (review.title ? 40 : 0);
+  return (review.photos.length > 0 ? 260 : 40) + text + 110;
+}
 
 function kindOf(review: CustomerReview): Exclude<Filter, "all"> {
   return review.subject.kind === "course" ? "academy" : "product";
@@ -85,7 +121,10 @@ function FeedSection({ published, loading }: { published: CustomerReview[]; load
   const showFilters = filters.length > 2;
   const active = filters.includes(filter) ? filter : "all";
   const items = published.filter((r) => active === "all" || kindOf(r) === active);
-  const hasMore = !expanded && items.length > PHONE_LIMIT;
+  const { columns, phone } = useFeedLayout();
+  const hasMore = phone && !expanded && items.length > PHONE_LIMIT;
+  // On a phone, the first pins until "Show more"; elsewhere all of them.
+  const shown = hasMore ? items.slice(0, PHONE_LIMIT) : items;
 
   return (
     <section
@@ -135,30 +174,38 @@ function FeedSection({ published, loading }: { published: CustomerReview[]; load
           )}
         </div>
 
-        {/* Masonry by CSS columns: two on a phone, as the app does, four on a
-            wide screen. Keyed on the filter so the pins settle in again. */}
+        {/* Masonry as flex columns (not CSS columns, which iOS Safari paints
+            badly with animated pins): two on a phone, as the app does, up to
+            four on a wide screen. Keyed on the filter so the pins settle in again. */}
         {loading && published.length === 0 ? (
-          <ul aria-hidden="true" className="m-0 list-none columns-2 gap-3 p-0 sm:gap-4 lg:columns-3 xl:columns-4 xl:gap-5">
-            {SKELETON_HEIGHTS.map((h, i) => (
-              <li
-                key={i}
-                className="mb-3 break-inside-avoid animate-pulse rounded-[var(--radius-xl)] bg-white/60 sm:mb-4 xl:mb-5"
-                style={{ height: h }}
-              />
+          <div aria-hidden="true" className="flex items-start gap-3 sm:gap-4 xl:gap-5">
+            {distributeMasonry(SKELETON_HEIGHTS, columns, (h) => h).map((column, c) => (
+              <div key={c} className="grid min-w-0 flex-1 gap-3 sm:gap-4 xl:gap-5">
+                {column.map((h, i) => (
+                  <div key={i} className="animate-pulse rounded-[var(--radius-xl)] bg-white/60" style={{ height: h }} />
+                ))}
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
-          <ul key={active} className="m-0 list-none columns-2 gap-3 p-0 sm:gap-4 lg:columns-3 xl:columns-4 xl:gap-5">
-            {items.map((review, i) => (
-              <li
-                key={review.id}
-                className={clsx("gt-alt-pin-in mb-3 break-inside-avoid sm:mb-4 xl:mb-5", i >= PHONE_LIMIT && !expanded && "hidden sm:block")}
-                style={{ "--gt-delay": `${Math.min(i, 8) * 60}ms` } as CSSProperties}
-              >
-                <ReviewPin review={review} pinRef={i === PHONE_LIMIT ? firstMore : undefined} />
-              </li>
+          <div key={active} className="flex items-start gap-3 sm:gap-4 xl:gap-5">
+            {distributeMasonry(shown, columns, estimateHeight).map((column, c) => (
+              <ul key={c} className="m-0 grid min-w-0 flex-1 list-none content-start gap-3 p-0 sm:gap-4 xl:gap-5">
+                {column.map((review) => {
+                  const i = shown.indexOf(review);
+                  return (
+                    <li
+                      key={review.id}
+                      className="gt-alt-pin-in"
+                      style={{ "--gt-delay": `${Math.min(i, 8) * 60}ms` } as CSSProperties}
+                    >
+                      <ReviewPin review={review} pinRef={i === PHONE_LIMIT ? firstMore : undefined} />
+                    </li>
+                  );
+                })}
+              </ul>
             ))}
-          </ul>
+          </div>
         )}
 
         {hasMore && (

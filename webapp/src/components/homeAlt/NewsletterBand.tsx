@@ -79,7 +79,9 @@ export function NewsletterBand() {
               <label htmlFor={emailId} className="sr-only">
                 {t("homeAlt.newsletter.emailLabel")}
               </label>
-              <div className="flex flex-col gap-2 rounded-[var(--radius-xl)] bg-[var(--surface-card)] p-1.5 shadow-[var(--shadow-card)] ring-1 ring-[var(--border-subtle)] focus-within:ring-2 focus-within:ring-[var(--focus-ring)] sm:flex-row sm:items-center sm:rounded-[var(--radius-pill)]">
+              {/* On a phone the field and the button are stacked, each full width and
+                  the same height; from sm up they share one pill. */}
+              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-2 sm:rounded-[var(--radius-pill)] sm:bg-[var(--surface-card)] sm:p-1.5 sm:shadow-[var(--shadow-card)] sm:ring-1 sm:ring-[var(--border-subtle)] sm:focus-within:ring-2 sm:focus-within:ring-[var(--focus-ring)]">
                 <input
                   id={emailId}
                   type="email"
@@ -93,9 +95,9 @@ export function NewsletterBand() {
                   }}
                   aria-invalid={error === "email" ? true : undefined}
                   aria-describedby={error ? errorId : undefined}
-                  className="h-12 min-w-0 flex-1 rounded-[var(--radius-pill)] bg-transparent px-5 text-[16px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-subtle)]"
+                  className="h-[52px] w-full min-w-0 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] px-5 text-[16px] text-[var(--text-primary)] shadow-[var(--shadow-sm)] outline-none placeholder:text-[var(--text-subtle)] focus:border-[var(--focus-ring)] focus:ring-2 focus:ring-[var(--focus-ring)] aria-[invalid=true]:border-[var(--status-error-fg)] sm:h-12 sm:flex-1 sm:border-0 sm:bg-transparent sm:shadow-none sm:focus:ring-0"
                 />
-                <Button type="submit" variant="primary" size="md" iconRight={ArrowRight} loading={status === "sending"} className="gt-alt-cta h-12">
+                <Button type="submit" variant="primary" size="md" iconRight={ArrowRight} loading={status === "sending"} className="gt-alt-cta h-[52px] w-full sm:h-12 sm:w-auto">
                   {t("homeAlt.newsletter.submit")}
                 </Button>
               </div>
