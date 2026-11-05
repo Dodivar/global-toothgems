@@ -3,7 +3,7 @@ import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
 import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./gemini.ts";
 import { boxInCrop, cropJpeg, mouthCrop, type CropRect } from "./crop.ts";
 import { imageSize, judgeReadings, PHOTO_READINGS } from "./photoCheck.ts";
-import { readTeeth } from "./teeth.ts";
+import { mergeTeeth, readTeeth } from "./teeth.ts";
 
 /**
  * POST /functions/v1/studio-try-on   (decision 111, computed placement since 2026-11-01: decision 111 (k))
@@ -24,10 +24,12 @@ import { readTeeth } from "./teeth.ts";
  *             link) | { "handle", "item_id" } (approved Glowbook creation)
  *     photo   the smile photo (JPEG / PNG / WebP, ≤ 6 MB), prepared in the browser
  *     The photo check (`photoCheck.ts`), the mouth close-up (`crop.ts`), then
- *     each tooth on it with its FDI number (`teeth.ts`). No image generated.
+ *     each tooth on it with its FDI number (`teeth.ts`; TRY_ON_TEETH_READINGS
+ *     readings merged, 1 by default). No image generated.
  *     200 { ok: true, crop: { x, y, width, height, photo_width, photo_height },
  *           teeth: [{ fdi, x, y, width, height }],   boxes in the close-up's pixels
- *           centrals: { x, y, width, height } | null }  the upper central incisors the check saw
+ *           centrals: { x, y, width, height } | null,  the upper central incisors the check saw
+ *           teeth_readings: { asked, answered, kept } }  readings of the teeth merged
  *     422 { ok: false, code: "photo_unsuitable", reasons }  too_far | not_frontal |
  *             no_teeth | teeth_hidden | too_dark | too_bright | blurry
  *     Recorded as failed / `analysis`: counted against the daily requests
@@ -92,8 +94,13 @@ export interface StudioTryOnDeps {
    * Called `PHOTO_READINGS` times at once; `reading` tells them apart (0 the first).
    */
   checkPhoto?(photo: InlineImage, reading: number): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
-  /** Each tooth on the close-up, by the teeth model (`teeth.ts`). */
-  findTeeth(image: InlineImage): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
+  /**
+   * Each tooth on the close-up, by the teeth model (`teeth.ts`). Called
+   * `teethReadings` times at once (1 when unset); `reading` tells them apart (0 the first).
+   */
+  findTeeth(image: InlineImage, reading: number): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; detail: string }>;
+  /** How many readings of the teeth to merge (`TRY_ON_TEETH_READINGS`, `teethReadings` in `teeth.ts`). */
+  teethReadings?: number;
   /** Sends the images, in this order, with the system instructions and the text after them. */
   generate(images: InlineImage[], text: string, aspectRatio: string | null): Promise<GenerateOutcome>;
   now?: () => Date;
@@ -348,25 +355,34 @@ async function analysePhoto(deps: StudioTryOnDeps, requestId: string, photo: Pho
   const edited = closeUp(photo, checked.teethBox);
   const target = edited?.image ?? photo;
   const size = target.size;
-  const found = size
-    ? await deps.findTeeth({ mimeType: target.mimeType, data: target.data }).catch((error) => ({
-        ok: false as const,
-        detail: error instanceof Error ? error.message : String(error),
-      }))
-    : ({ ok: false, detail: "image size unknown" } as const);
+  const readings = size
+    ? await Promise.all(
+        Array.from({ length: Math.max(1, deps.teethReadings ?? 1) }, (_, i) =>
+          deps.findTeeth({ mimeType: target.mimeType, data: target.data }, i).catch((error) => ({
+            ok: false as const,
+            detail: error instanceof Error ? error.message : String(error),
+          })),
+        ),
+      )
+    : [{ ok: false, detail: "image size unknown" } as const];
   await deps.finishRequest(requestId, "failed", "analysis").catch(() => {});
-  if (!found.ok || !size) {
-    deps.log("teeth detection unavailable", found.ok ? "image size unknown" : found.detail);
+  const answers = readings.flatMap((r) => (r.ok ? [r.value] : []));
+  if (answers.length === 0 || !size) {
+    deps.log("teeth detection unavailable", readings.map((r) => (r.ok ? "image size unknown" : r.detail)));
     return { status: 502, body: { ok: false, code: "failed" } };
   }
-  const teeth = readTeeth(found.value, size);
+  // Several readings merged: one reading numbering the teeth a tooth off is outvoted (`mergeTeeth`).
+  const merged = mergeTeeth(answers.map((value) => readTeeth(value, size)));
+  const teeth = merged.teeth;
+  // Facts for the trial: readings asked, answered and kept in the merge.
+  const teethReadings = { asked: readings.length, answered: answers.length, kept: merged.kept };
   const crop = edited?.crop ?? { x: 0, y: 0, width: size.width, height: size.height };
   const photoSize = photo.size ?? size;
   // The two upper central incisors as the check saw them: the browser checks the teeth's numbers against this midline.
   const centrals = boxInCrop(checked.centralsBox, photoSize, crop);
   // Facts only: which teeth were found, never the photo.
-  deps.log("analysis", { crop: edited?.crop ?? null, teeth: teeth.map((t) => t.fdi), centrals: centrals !== null });
-  return { status: 200, body: { ok: true, crop: { ...crop, photo_width: photoSize.width, photo_height: photoSize.height }, teeth, centrals } };
+  deps.log("analysis", { crop: edited?.crop ?? null, teeth: teeth.map((t) => t.fdi), readings: teethReadings, centrals: centrals !== null });
+  return { status: 200, body: { ok: true, crop: { ...crop, photo_width: photoSize.width, photo_height: photoSize.height }, teeth, centrals, teeth_readings: teethReadings } };
 }
 
 /** Step 2: the model turns the guide's marks into real gems, the untouched close-up beside it. */

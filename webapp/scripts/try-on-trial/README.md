@@ -49,19 +49,26 @@ bash: `TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --ph
 Options: `--only P3:S1,P12:S2` (some pairs only), `--skip-done` (resume: skips pairs with a result or whose photo
 the check refused), `--pause 45` (seconds between runs, default 45: back-to-back renders hit the image model's
 per-minute quota, HTTP 429) — the pause follows a run that reached the image model only, none otherwise; a photo the check refuses twice
-in a row is not tried on its remaining creations (recorded as refused; the other photos go on), `--headed` (watch the browser). A failed render or a closed browser is retried once
+in a row (the function's 422) is not tried on its remaining creations (recorded as refused; the other photos go on) — a placement
+too uncertain is not a refusal of the photo (it depends on the creation) and does not count, `--headed` (watch the browser). A failed render or a closed browser is retried once
 (the browser relaunched and signed in again). Each photo means 5 runs: 20 photos are 100 runs, about 2 to 2½ hours with
 the default pause; each counts as a render (the staff account has no daily limit) and is billed by the image model.
 
 ## Output (`--out`, not committed: it holds the photos' renders)
 
-- `P<n>-S<m>/`: `log.json` (calls, timings, errors), `analysis.json` (teeth
+- `P<n>-S<m>/`: `log.json` (calls, timings, errors; `placement` and `result`: the facts of the Studio's
+  `studio_try_on_placement` and `studio_try_on_result` events — confidence, issues, midline error, renumbering, gems
+  placed and left out; gems the image model drew, moved or resized), `analysis.json` (teeth
   found and the close-up), `guide.jpg` (the marks sent to the model), `answer.*` (the model's close-up),
   `result.jpg` (pasted back), `dialog.png`.
 - `sheet-P1.jpg` … `sheet-P20.jpg`: one contact sheet per photo — guide beside result close-up for each creation.
 - `summary.json`: one line per run (outcome, teeth found on each arch, notes such as gems left out).
-- `report.md`: the trial in figures — outcomes, per creation, per photo (teeth found upper / lower, first error). No
-  photo in it: it can be sent as is, with the sheets, for the analysis.
+- `report.md`: the trial in figures — outcomes (photo refused by the check apart from placement too uncertain), per
+  creation, placement and render per run, per photo (teeth found upper / lower, first error). No photo in it: it can be
+  sent as is, with the sheets, for the analysis.
+
+A run's folder is emptied of the previous run's files before it runs, so a folder never mixes two runs (the trial of
+2026-11-05 had guides and results of 2026-11-01 beside newer logs).
 
 `--report-only` rebuilds `summary.json`, `report.md` and the sheets from the results already in `--out`, without
 any run (no account needed). Only one trial can write to an `--out` folder at a time: a second one stops at once

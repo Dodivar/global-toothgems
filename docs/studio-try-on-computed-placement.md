@@ -68,6 +68,47 @@ owner's decision):
    drawn beside its mark is kept whole where it was drawn. Each gem is measured (drawn or not, drift, size) for the
    analytics. When the answer differs from the photo everywhere (`MAX_BACKGROUND`), it is pasted whole as before.
 
+Review of the trial of 2026-11-05 (the former five test creations — the lower-arch ones of `c36f487` were not run
+yet — on 6 photos; 22 runs with an analysis, 4 of whose photos could be scored). Method: the real midline and
+central incisor width measured by hand on each photo; the stored analyses replayed through `registerDesign` with one
+gem on each upper tooth 13 to 23; a gem's tooth read from its distance to the midline (tooth limits approximated from
+the central incisor's width: 1, 1.75 and 2.45 widths). Findings:
+
+- **32 of 120 gems (27 %) landed on a neighbouring tooth**, all in placements read as reliable; per photo 7 % to 38 %.
+- The cause is the teeth model, not the fit: on the same photo the boxes moved by half a tooth to a whole tooth from
+  one analysis to the next (the upper arch named a tooth off on one analysis of a photo; an upper lateral incisor
+  named 11 with the real 11 missing on another), and on one photo most analyses drew 11 half a tooth off.
+- The midline check was skipped on 8 of the 22 analyses: the check model draws the central incisors' box 1.1 to 1.8
+  times too wide, past the former bound (1.6); among them the two analyses with a tooth-off upper arch. When run, a
+  mismatch only lowered the confidence, which stayed above `RELIABLE_CONFIDENCE`.
+
+Changes:
+
+1. **The midline check always runs** (`MAX_CENTRALS_SPAN` 1.6 → 2.5) **and a mismatch makes the placement uncertain**.
+   Replayed: wrong-tooth gems 32 → 25; one analysis more is uncertain (its 6 gems: 5 wrong, 1 right); on another, a
+   renumbering now puts two gems right and one wrong. To confirm on the next trial.
+2. **Readings of the teeth merged** (`TRY_ON_TEETH_READINGS`, 1 by default — no change until set; `mergeTeeth`: a
+   reading whose midline disagrees is left out, then each tooth's box is the median of the readings that found it;
+   the analysis answers `teeth_readings` { asked, answered, kept }). Simulated by merging three analyses of different
+   runs of a photo (different crops, all at temperature 0; the function reads the same close-up, the extra readings
+   at 0.6): with change 1, per photo 17 → 20 %, 7 → 0 %, 29 → 35 %, 22 → 21 % — even on average, hence off by
+   default: to measure on a trial (two more text model calls per analysis when set to 3).
+3. **The trial records the placement and the render** (`log.json` `placement` / `result`, a table in `report.md`)
+   from a copy of the Studio's analytics events dispatched on the page only when the trial flags it
+   (`STUDIO_EVENT_DOM`, `window.__gtTrial`); tells a placement too uncertain from a photo refused by the check (only
+   the latter skips the photo's other creations, no pause after either); empties a run's folder first (stale guides
+   and results of 2026-11-01 sat beside newer logs); records each creation's real title and warns when it is not
+   the one described.
+
+Tried and left out: renaming one half of an arch (a tooth missed beside the midline) on top of the whole-arch shift:
+on the replay it fixed one analysis and broke another.
+
+Still open: the wrong-tooth gems left come mostly from one photo where nearly every reading draws 11 half a tooth
+off — a systematic error of the teeth model; `TRY_ON_TEETH_MODEL` (a stronger model) is the next thing to try. The
+message of an uncertain placement ("les dents ne ressortent pas assez nettement…") blames sharpness, which is no
+longer the usual reason; its wording is the owner's call. When the photo-check reading kept has no teeth box, the
+whole photo is analysed (seen once).
+
 Known limits: the teeth model sometimes numbers the teeth one tooth off (seen on one trial photo: the whole design
 then moves one tooth, with a high confidence, since the fit stays consistent; since 2026-11-04 the renumbering above
 catches a whole arch off by one, a single misnamed tooth is still only set aside); a mirrored selfie puts the person's

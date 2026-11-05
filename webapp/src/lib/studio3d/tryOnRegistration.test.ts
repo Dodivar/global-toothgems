@@ -5,6 +5,7 @@ import {
   fitArches,
   fitSimilarity,
   LOWER_OVERBITE_MM,
+  MAX_CENTRALS_SPAN,
   registerDesign,
   RELIABLE_CONFIDENCE,
   shiftNumbering,
@@ -251,5 +252,33 @@ describe("the teeth's numbers", () => {
     expect(reg.midlineError).toBeGreaterThan(0.5);
     const clean = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11")] }, photoTeeth(UPPER_FRONT, s, 600, 300));
     expect(reg.confidence).toBeLessThan(clean.confidence);
+    expect(reg.reliable).toBe(false);
+    expect(clean.reliable).toBe(true);
+  });
+
+  /** The check model's box drawn `k` times too wide, around the same centre (as on the trial photos of 2026-11-05). */
+  const widened = (k: number, shift = 0) => {
+    const c = centrals();
+    const width = c.width * k;
+    return { ...c, x: c.x + c.width / 2 - width / 2 + shift * (tooth("11").x1 - tooth("11").x0) * s, width };
+  };
+
+  it("still checks the midline against a box drawn too wide", () => {
+    const truth = photoTeeth(UPPER_FRONT, s, 600, 300);
+    const good = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11")] }, truth, { centrals: widened(1.8) });
+    expect(good.midlineError).not.toBeNull();
+    expect(good.midlineError!).toBeLessThan(0.1);
+    expect(good.reliable).toBe(true);
+    const off = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11")] }, truth, { centrals: widened(1.8, 0.8) });
+    expect(off.issues).toContain("midline_mismatch");
+    expect(off.reliable).toBe(false);
+  });
+
+  it("ignores a box far too wide to be about the central incisors", () => {
+    const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11")] }, photoTeeth(UPPER_FRONT, s, 600, 300), {
+      centrals: widened(MAX_CENTRALS_SPAN + 0.5, 0.8),
+    });
+    expect(reg.midlineError).toBeNull();
+    expect(reg.reliable).toBe(true);
   });
 });

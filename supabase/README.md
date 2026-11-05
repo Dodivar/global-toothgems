@@ -1581,6 +1581,10 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
   only the gems are taken from the AI's answer (the rest of the photo stays the customer's, `tryOnGemBlend.ts`),
   and the browser sends facts-only analytics events (`studio_try_on_*`). Details in
   `docs/studio-try-on-computed-placement.md`.
+  Since 2026-11-05 (review of the trial of that day: a quarter of the upper gems on a neighbouring tooth, the teeth's
+  boxes moving by up to a tooth between analyses of the same photo): the midline check also runs on the wide central
+  incisors boxes the check model draws and a mismatch makes the placement uncertain; `TRY_ON_TEETH_READINGS`
+  (function, 1 by default) can merge several readings of the teeth, to measure on a trial.
   A placement the teeth do not support (`RELIABLE_CONFIDENCE` 0.6, at least three teeth agreeing — first values)
   asks for another photo rather than rendering a guess (decision to confirm with the owner). An analysis is counted
   against the daily requests, never the renders (`failed` / `analysis`; rows of the trial carry `diagnostic`). The

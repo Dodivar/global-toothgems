@@ -6,7 +6,7 @@ import { accessToken, generateImage, generateUrl, imageModelConfig, nearestAspec
 import { handleStudioTryOn, headerSize, readCropRect, readSourceRef, type StudioTryOnDeps, type TryOnCreationRow } from "./handler.ts";
 import { imageSize, judgePhoto, judgeReadings, MIN_TEETH_SPAN } from "./photoCheck.ts";
 import { TRY_ON_SYSTEM_PROMPT } from "./systemPrompt.ts";
-import { readTeeth } from "./teeth.ts";
+import { mergeTeeth, readTeeth, teethReadings } from "./teeth.ts";
 
 const SITE = "https://global-toothgems.example";
 const TOKEN = "member.jwt.sig";
@@ -28,7 +28,7 @@ const GOOD_PHOTO = {
 };
 
 function fake(over: Partial<StudioTryOnDeps> = {}, row: TryOnCreationRow | null = { creationId: CREATION, source: "own", scene: SCENE, allowed: true }) {
-  const calls = { started: 0, finished: [] as string[], images: [] as string[], text: "", ratio: null as string | null, teethSize: null as unknown };
+  const calls = { started: 0, finished: [] as string[], images: [] as string[], text: "", ratio: null as string | null, teethSize: null as unknown, teethReadings: [] as number[] };
   const deps: StudioTryOnDeps = {
     origins: readSiteOrigins(SITE, undefined),
     available: true,
@@ -48,7 +48,8 @@ function fake(over: Partial<StudioTryOnDeps> = {}, row: TryOnCreationRow | null 
     },
     references: () => Promise.resolve([{ mimeType: "image/jpeg", data: "cmVm" }]),
     checkPhoto: () => Promise.resolve({ ok: true, value: GOOD_PHOTO }),
-    findTeeth: (image) => {
+    findTeeth: (image, reading) => {
+      calls.teethReadings.push(reading);
       calls.teethSize = imageSize(Uint8Array.from(atob(image.data), (c) => c.charCodeAt(0)));
       return Promise.resolve({ ok: true, value: TEETH_ANSWER });
     },
@@ -505,4 +506,49 @@ Deno.test("render: the gem list follows the mark count in the text, no extra ima
   const broken = fake({ gemList: () => Promise.reject(new Error("db down")) });
   assertEquals((await handleStudioTryOn(post(renderForm()), broken.deps)).status, 200);
   assertEquals(broken.calls.text.includes("GEM LIST"), false);
+});
+
+Deno.test("analysis: the close-up read once by default, teethReadings times when set; a failed reading is left out", async () => {
+  const single = fake();
+  const one = await (await handleStudioTryOn(post(analyseForm()), single.deps)).json();
+  assertEquals(single.calls.teethReadings, [0]);
+  assertEquals(one.teeth_readings, { asked: 1, answered: 1, kept: 1 });
+  const { deps, calls } = fake({ teethReadings: 3 });
+  const res = await handleStudioTryOn(post(analyseForm()), deps);
+  assertEquals(res.status, 200);
+  assertEquals(calls.teethReadings, [0, 1, 2]);
+  const oneFails = fake({
+    teethReadings: 3,
+    findTeeth: (_image, reading) => (reading === 1 ? Promise.reject(new Error("boom")) : Promise.resolve({ ok: true, value: TEETH_ANSWER })),
+  });
+  const body = await (await handleStudioTryOn(post(analyseForm()), oneFails.deps)).json();
+  assertEquals(body.ok, true);
+  assertEquals(body.teeth.map((t: { fdi: string }) => t.fdi), ["11", "21"]);
+  assertEquals(body.teeth_readings, { asked: 3, answered: 2, kept: 2 });
+});
+
+Deno.test("teethReadings: 1 to 5, 1 when missing or malformed", () => {
+  assertEquals([undefined, "", "x", "0", "-2", "1", "3", "9"].map(teethReadings), [1, 1, 1, 1, 1, 1, 3, 5]);
+});
+
+Deno.test("mergeTeeth: a reading numbered a tooth off is outvoted, boxes are the median of the others", () => {
+  const box = (fdi: string, x: number, width = 100) => ({ fdi, x, y: 50, width, height: 150 });
+  const good = [box("12", 120, 80), box("11", 200), box("21", 300), box("22", 400, 80)];
+  const close = [box("12", 124, 80), box("11", 204), box("21", 306), box("22", 404, 82)];
+  // The real 12 named 11, the real 11 named 21…: its midline is a whole tooth to the left.
+  const shifted = [box("13", 120, 80), box("12", 200), box("11", 120, 80), box("21", 200), box("22", 300)];
+  const { teeth: merged, kept } = mergeTeeth([shifted, good, close]);
+  assertEquals(kept, 2);
+  assertEquals(merged.map((t) => t.fdi), ["12", "11", "21", "22"]);
+  assertEquals(merged.find((t) => t.fdi === "11")!.x, 202);
+  assertEquals(merged.find((t) => t.fdi === "22")!.width, 81);
+});
+
+Deno.test("mergeTeeth: one usable reading as is; a tooth seen once among agreeing readings dropped", () => {
+  const box = (fdi: string, x: number) => ({ fdi, x, y: 0, width: 100, height: 100 });
+  const one = [box("11", 200), box("21", 300)];
+  assertEquals(mergeTeeth([one, [], []]), { teeth: one, kept: 1 });
+  assertEquals(mergeTeeth([]), { teeth: [], kept: 0 });
+  const merged = mergeTeeth([[...one, box("23", 500)], one]);
+  assertEquals(merged.teeth.map((t) => t.fdi), ["11", "21"]);
 });

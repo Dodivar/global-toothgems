@@ -96,8 +96,23 @@ function contextProps(): Props {
   return props;
 }
 
+/**
+ * A local copy of each event, dispatched on `window` only when the try-on
+ * trial (`scripts/try-on-trial/`) set `window.__gtTrial` before the page
+ * loaded: it reads the placement and result facts into its report
+ * (2026-11-05). Never for a visitor, and it never leaves the page.
+ */
+export const STUDIO_EVENT_DOM = "gt-studio-analytics";
+
 /** Sends one event, if allowed. Never throws. */
 export function trackStudio(event: StudioEvent, props: Props = {}) {
+  try {
+    if (typeof window !== "undefined" && (window as { __gtTrial?: boolean }).__gtTrial === true) {
+      window.dispatchEvent(new CustomEvent(STUDIO_EVENT_DOM, { detail: { event, props } }));
+    }
+  } catch {
+    /* never breaks the Studio */
+  }
   if (!consented) return;
   try {
     posthog.capture(event, { ...contextProps(), ...props });

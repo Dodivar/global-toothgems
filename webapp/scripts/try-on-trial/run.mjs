@@ -54,8 +54,18 @@ if (!allPhotos.length) {
 if (allPhotos.length > MAX_PHOTOS) console.warn(`${allPhotos.length} photos in ${PHOTOS}: only the first ${MAX_PHOTOS} (by name) are used.`);
 const photoFiles = allPhotos.slice(0, MAX_PHOTOS);
 const PHOTO_BY_KEY = Object.fromEntries(photoFiles.map((f, i) => [`P${i + 1}`, join(PHOTOS, f)]));
-/** The photo check refused the photo itself: every other creation would be refused the same way. */
-const isPhotoRefusal = (log) => log.outcome === "error" && /ne permet pas un bon rendu/.test(log.error ?? "");
+/**
+ * The photo check refused the photo itself (the function answered 422): every other creation would be refused the
+ * same way. The dialog shows the same title when the placement was too uncertain, which depends on the creation:
+ * that one is `isPlacementUncertain` and does not skip the photo.
+ */
+const refusedByFunction = (log) => log.checkRefused ?? (log.calls ?? []).some((c) => c.response?.status === 422);
+const isPhotoRefusal = (log) =>
+  log.outcome === "error" && /ne permet pas un bon rendu/.test(log.error ?? "") && (!!log.skipped || refusedByFunction(log));
+const isPlacementUncertain = (log) =>
+  log.outcome === "error" && /ne permet pas un bon rendu/.test(log.error ?? "") && !log.skipped && !refusedByFunction(log);
+/** A run's files, removed before it runs again so a folder never mixes two runs. */
+const RUN_FILES = /^(log\.json|analysis\.json|guide\.jpg|answer\.(png|jpg)|result\.jpg|dialog\.png|harness-error\.png)$/;
 /** "Essai 3 — …" → "Essai 3 —": what the trial matches a creation by. */
 const prefixOf = (scene) => SCENES[scene].name.split("—")[0].trim() + " —";
 const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -117,6 +127,8 @@ process.on("SIGINT", () => process.exit(130));
 const proxy = process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY, bypass: "localhost,127.0.0.1" } } : {};
 // The guide (a Blob in a FormData) is not visible to Playwright's request events: the page hands it over itself.
 let onGuide = null;
+// The Studio's analytics events of the run in progress (placement, result).
+let onEvent = null;
 let browser = null;
 let context = null;
 let page = null;
@@ -127,6 +139,12 @@ async function launch() {
   browser = await chromium.launch({ headless: !HEADED, ...proxy });
   context = await browser.newContext({ locale: "fr-FR", viewport: { width: 1280, height: 1000 } });
   await context.exposeBinding("__trialGuide", (_source, b64) => onGuide?.(b64));
+  // The Studio's analytics, copied on window (STUDIO_EVENT_DOM in src/lib/studioAnalytics.ts): the placement and result facts.
+  await context.exposeBinding("__trialEvent", (_source, detail) => onEvent?.(detail));
+  await context.addInitScript(() => {
+    window.__gtTrial = true; // the Studio copies its analytics events on window only then
+    window.addEventListener("gt-studio-analytics", (e) => window.__trialEvent(e.detail));
+  });
   await context.addInitScript(() => {
     const original = window.fetch;
     window.fetch = function (input, init) {
@@ -219,7 +237,12 @@ async function checkCreations() {
 async function runOne(photo, scene) {
   const dir = join(OUT, `${photo}-${scene}`);
   mkdirSync(dir, { recursive: true });
+  for (const f of readdirSync(dir)) if (RUN_FILES.test(f)) unlinkSync(join(dir, f));
   const log = { photo, photoFile: basename(PHOTO_BY_KEY[photo]), scene, sceneName: SCENES[scene].name, started: new Date().toISOString(), calls: [] };
+  onEvent = ({ event, props } = {}) => {
+    if (event === "studio_try_on_placement") log.placement = props;
+    if (event === "studio_try_on_result") log.result = props;
+  };
   const t0 = Date.now();
   const onRequest = (req) => {
     if (!req.url().includes("/functions/v1/studio-try-on") || req.method() !== "POST") return;
@@ -257,6 +280,8 @@ async function runOne(photo, scene) {
     await openCreations();
     const details = detailsButton(scene);
     await details.first().waitFor({ timeout: 90_000 });
+    // The creation's real title: the trial finds it by its prefix only, so an older "Essai N" would run unnoticed.
+    log.creationTitle = ((await details.first().getAttribute("aria-label")) ?? (await details.first().innerText())).replace(/^Voir le détail de /, "").trim();
     step(`open "${prefixOf(scene)}"`);
     await details.first().click();
     step("Essayer sur un sourire");
@@ -298,6 +323,7 @@ async function runOne(photo, scene) {
     await page.screenshot({ path: join(dir, "harness-error.png") }).catch(() => {});
   } finally {
     onGuide = null;
+    onEvent = null;
     page.off("request", onRequest);
     page.off("response", onResponse);
     log.total = Date.now() - t0;
@@ -342,6 +368,11 @@ async function contactSheets() {
         centrals: analysis?.centrals ?? null,
         error: log.error ?? null,
         notes: log.notes ?? [],
+        checkRefused: refusedByFunction(log),
+        creationTitle: log.creationTitle ?? null,
+        teethReadings: analysis?.teeth_readings ?? null,
+        placement: log.placement ?? null,
+        result: log.result ?? null,
       });
       const file = (n) => (existsSync(join(dir, n)) ? pathToFileURL(join(dir, n)).href : null);
       const result = file("result.jpg");
@@ -353,7 +384,9 @@ async function contactSheets() {
             ? `<img src="${result}" style="width:420px">`
             : `<div class="none">no result</div>`;
       const guide = file("guide.jpg") ? `<img src="${file("guide.jpg")}" style="width:420px">` : `<div class="none">no guide (fallback or error)</div>`;
-      rows.push(`<tr><td class="t"><b>${scene}</b><br>${esc(SCENES[scene].what)}<br><br><b>${esc(log.outcome)}</b> · ${Math.round(log.total / 1000)} s<br>teeth: ${esc(analysis?.teeth?.map((t) => t.fdi).join(" ") ?? "—")}<br><br>${esc(log.report ?? log.error ?? "").replace(/\n+/g, "<br>")}</td><td>${guide}</td><td>${closeUp}</td></tr>`);
+      const pl = log.placement;
+      const fit = pl ? `<br>fit: confidence ${pl.confidence}${pl.midline_error != null ? `, midline ${pl.midline_error}` : ""}${pl.issues?.length ? `, ${esc(pl.issues.join(", "))}` : ""}` : "";
+      rows.push(`<tr><td class="t"><b>${scene}</b><br>${esc(SCENES[scene].what)}<br><br><b>${esc(isPlacementUncertain(log) ? "placement uncertain" : log.outcome)}</b> · ${Math.round(log.total / 1000)} s<br>teeth: ${esc(analysis?.teeth?.map((t) => t.fdi).join(" ") ?? "—")}${fit}<br><br>${esc(log.report ?? log.error ?? "").replace(/\n+/g, "<br>")}</td><td>${guide}</td><td>${closeUp}</td></tr>`);
     }
     if (!rows.length) continue;
     const html = `<!doctype html><meta charset="utf-8"><style>body{font:13px system-ui;margin:12px;background:#fff}td{vertical-align:top;padding:6px;border-bottom:1px solid #ddd}.t{width:330px}.none{width:420px;height:80px;background:#eee;display:grid;place-items:center;color:#777}h1{font-size:16px}</style><h1>${esc(photo)} — ${esc(basename(PHOTO_BY_KEY[photo]))}</h1><table><tr><th></th><th>Guide (computed marks)</th><th>Result (close-up)</th></tr>${rows.join("")}</table>`;
@@ -375,21 +408,36 @@ function report(summary) {
   lines.push(`${Object.keys(PHOTO_BY_KEY).length} photo(s) × ${Object.keys(SCENES).length} creations, ${summary.length} runs:`);
   lines.push(`- results: ${count((r) => r.outcome === "result")}`);
   lines.push(`- photo refused by the check: ${count((r) => isPhotoRefusal(r) && !r.skipped)} (+ ${count((r) => r.skipped)} skipped after two refusals in a row)`);
+  lines.push(`- placement too uncertain (the fit, not the photo check): ${count(isPlacementUncertain)}`);
   lines.push(`- render failed: ${count((r) => r.outcome === "error" && /n’a pas abouti/.test(r.error ?? ""))}`);
-  lines.push(`- other errors: ${count((r) => r.outcome === "error" && !isPhotoRefusal(r) && !/n’a pas abouti/.test(r.error ?? ""))}, harness errors: ${count((r) => r.outcome === "harness_error")}`);
+  const otherTitles = [...new Set(summary.filter((r) => r.creationTitle && r.creationTitle !== SCENES[r.scene].name).map((r) => `${r.scene}: "${r.creationTitle}"`))];
+  if (otherTitles.length) lines.push(`- **creations not the ones described below** (another design under the same "Essai N —"): ${otherTitles.join(", ")}`);
+  lines.push(`- other errors: ${count((r) => r.outcome === "error" && !isPhotoRefusal(r) && !isPlacementUncertain(r) && !/n’a pas abouti/.test(r.error ?? ""))}, harness errors: ${count((r) => r.outcome === "harness_error")}`);
   lines.push("", "## Per creation", "", "| Creation | Results | Refused | Failed | Notes (gems left out…) |", "| --- | --- | --- | --- | --- |");
   for (const s of Object.keys(SCENES)) {
     const rows = summary.filter((r) => r.scene === s);
     const notes = rows.flatMap((r) => r.notes).map((n) => n.replace(/\s+/g, " ").trim());
     lines.push(`| ${s} ${prefixOf(s)} | ${rows.filter((r) => r.outcome === "result").length}/${rows.length} | ${rows.filter((r) => isPhotoRefusal(r)).length} | ${rows.filter((r) => r.outcome !== "result" && !isPhotoRefusal(r)).length} | ${[...new Set(notes)].slice(0, 3).join(" · ") || "—"} |`);
   }
+  // The placement (studio_try_on_placement) and how the image model kept the marks (studio_try_on_result), per run.
+  const placed = summary.filter((r) => r.placement);
+  if (placed.length) {
+    const v = (x) => (x === null || x === undefined ? "—" : x);
+    lines.push("", "## Placement and render, per run", "", "Midline: distance between the fitted midline and the photo check's central incisors (central incisor widths; over 0.5 makes the placement uncertain). Drawn / drifted / resized: gems the image model drew, drew more than half a gem away from its mark, drew more than 30 % larger or smaller.", "", "| Run | Outcome | Confidence | Midline | Renumbered (upper, lower) | Issues | Marks / left out | Drawn | Drifted | Resized |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    for (const r of placed) {
+      const p = r.placement;
+      const res = r.result;
+      const outcome = r.outcome === "result" ? "ok" : isPlacementUncertain(r) ? "uncertain" : r.outcome;
+      lines.push(`| ${r.photo}-${r.scene} | ${outcome} | ${v(p.confidence)} | ${v(p.midline_error)} | ${v(p.renumbered_upper)}, ${v(p.renumbered_lower)} | ${(p.issues ?? []).join(", ") || "—"} | ${v(p.marks)} / ${v(p.left_out)} | ${res ? `${v(res.gems_drawn)}/${v(res.gems_checked)}` : "—"} | ${v(res?.gems_drifted)} | ${v(res?.gems_resized)} |`);
+    }
+  }
   lines.push("", "## Per photo", "", "| Photo | File | Upper / lower teeth found | Centrals | Outcomes | First error |", "| --- | --- | --- | --- | --- | --- |");
   for (const p of Object.keys(PHOTO_BY_KEY)) {
     const rows = summary.filter((r) => r.photo === p);
     if (!rows.length) continue;
     const a = rows.find((r) => r.teeth);
-    const outcomes = rows.map((r) => `${r.scene}:${r.outcome === "result" ? "ok" : isPhotoRefusal(r) ? "refused" : r.outcome === "error" ? "failed" : r.outcome}`).join(" ");
-    lines.push(`| ${p} | ${basename(PHOTO_BY_KEY[p])} | ${a ? `${a.upperTeeth} / ${a.lowerTeeth}` : "—"} | ${a?.centrals ?? "—"} | ${outcomes} | ${first(rows.find((r) => r.error)?.error) || "—"} |`);
+    const outcomes = rows.map((r) => `${r.scene}:${r.outcome === "result" ? "ok" : isPhotoRefusal(r) ? "refused" : isPlacementUncertain(r) ? "uncertain" : r.outcome === "error" ? "failed" : r.outcome}`).join(" ");
+    lines.push(`| ${p} | ${basename(PHOTO_BY_KEY[p])} | ${a ? `${a.upperTeeth} / ${a.lowerTeeth}` : "—"} | ${a ? (a.centrals ? "yes" : "no") : "—"} | ${outcomes} | ${first(rows.find((r) => r.error)?.error) || "—"} |`);
   }
   lines.push("", "Send this file and the sheets (sheet-P*.jpg) for the analysis.", "");
   return lines.join("\n");
@@ -451,9 +499,10 @@ for (const [p, s] of pairs) {
     }
     first = false;
     const log = await runOne(p, s);
-    // A run that pressed Generate reached the image model, unless the photo check refused the photo first. (The
+    // A run that pressed Generate reached the image model, unless the photo check refused the photo first or the
+    // placement was too uncertain to render. (The
     // render request itself carries Blobs, which Playwright's request events cannot read: it is not in log.calls.)
-    rendered = log.clicked != null && !isPhotoRefusal(log);
+    rendered = log.clicked != null && !isPhotoRefusal(log) && !isPlacementUncertain(log);
     if (countRefusal(p, log)) {
       console.log(`  (${basename(PHOTO_BY_KEY[p])} refused ${REFUSALS_TO_SKIP} times in a row by the photo check: its other creations are skipped)`);
     } else if (isPhotoRefusal(log)) {

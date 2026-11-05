@@ -145,7 +145,7 @@ export interface Registration {
   rms: number | null;
   /** 0–1. */
   confidence: number;
-  /** `confidence >= RELIABLE_CONFIDENCE`, at least `MIN_RELIABLE_TEETH` teeth agreeing, and something placed. */
+  /** `confidence >= RELIABLE_CONFIDENCE`, at least `MIN_RELIABLE_TEETH` teeth agreeing, no `midline_mismatch`, and something placed. */
   reliable: boolean;
   issues: RegistrationIssue[];
 }
@@ -164,8 +164,22 @@ export const OUTLIER_RESIDUAL = 0.5;
 export const LOWER_OVERBITE_MM = 2;
 /** The lower arch's offset is looked for in this range, mm, down: a little higher than closed (a deep bite) to a wide-open smile. */
 export const LOWER_OFFSET_RANGE: readonly [number, number] = [-4, 20];
-/** A midline farther than this from the photo check's (central incisor widths) is an issue, and lowers the confidence. */
+/**
+ * A midline farther than this from the photo check's (central incisor widths)
+ * is an issue, lowers the confidence and makes the placement unreliable
+ * (2026-11-05: it only lowered the confidence, which stayed above
+ * `RELIABLE_CONFIDENCE` on a trial photo whose whole upper arch was a tooth off).
+ */
 export const MIDLINE_TOLERANCE = 0.5;
+/**
+ * The photo check's central incisors box is compared with the midline only
+ * when it is 0.6 to this many fitted central incisors wide per tooth (else it
+ * is about something else). The check model draws it wide: 1.13 to 1.83 on the
+ * 22 analyses of the trial of 2026-11-05, so the former bound (1.6) skipped a
+ * third of them, among them two whose upper numbering was a tooth off; its
+ * centre stayed within a quarter of a central incisor of the real midline.
+ */
+export const MAX_CENTRALS_SPAN = 2.5;
 /** Another numbering is taken only if it lowers the cost by this much... */
 const RENUMBER_MARGIN = 0.08;
 /** ...and to this share of the function's numbering's cost or less. */
@@ -422,7 +436,7 @@ function midlineError(fit: ArchFit, centrals: CloseUpBox | null, refByFdi: Reado
   const unit = ((widthOf(r11) + widthOf(r21)) / 2) * fit.t.scale;
   if (!(unit > 0)) return null;
   const span = centrals.width / (2 * unit);
-  if (span < 0.6 || span > 1.6) return null;
+  if (span < 0.6 || span > MAX_CENTRALS_SPAN) return null;
   const at = placeRef(fit, { x: (r11.x1 + r21.x0) / 2, y: (r11.incisal + r21.incisal) / 2 }, false);
   const a = (fit.t.angle * Math.PI) / 180;
   const dx = centrals.x + centrals.width / 2 - at.x;
@@ -587,7 +601,7 @@ export function registerDesign(
     skipped,
     rms: rms === null ? null : Math.round(rms * 1000) / 1000,
     confidence,
-    reliable: gems.length > 0 && kept.length >= MIN_RELIABLE_TEETH && confidence >= RELIABLE_CONFIDENCE,
+    reliable: gems.length > 0 && kept.length >= MIN_RELIABLE_TEETH && confidence >= RELIABLE_CONFIDENCE && midlineOk,
     issues,
   };
 }
