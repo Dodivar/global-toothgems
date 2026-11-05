@@ -19,9 +19,10 @@ import type { Product } from "../../data/products";
  * `feature`: a product picture from the catalogue, framed close up on white
  * (the kits), or shown whole (`whole`: the lip gloss bottle), with a
  * photograph to show until the catalogue holds it. `burst`: loose stones thrown apart like a bouquet going off, the
- * same visual as the hero's shop slide on a phone: gem pictures cut out of
- * their white background (`gem-*.webp`, transparent, so the stones keep their
- * own colours on the tint). `productBurst`: the same
+ * same visual as the hero's shop slide on a phone: the shop's own gems (cuts,
+ * colours, gold jewels), their product pictures cut out of the white
+ * background by `scripts/gem-cutouts.py` (`gem-*.webp`, transparent, so the
+ * stones keep their own colours on the tint). `productBurst`: the same
  * explosion with the category's own product pictures from the catalogue,
  * mounted as small white prints since their backgrounds vary. On hover the
  * pieces of a burst fly a little further apart.
@@ -100,18 +101,18 @@ const TILES: Tile[] = [
       kind: "burst",
       tone: "blue",
       pieces: [
-        "gem-img-04.webp",
-        "gem-img-07.webp",
-        "gem-img-13.webp",
-        "gem-img-09.webp",
-        "gem-img-05.webp",
-        "gem-img-14.webp",
-        "gem-img-18.webp",
-        "gem-img-02.webp",
-        "gem-img-19.webp",
-        "gem-img-06.webp",
-        "gem-img-15.webp",
-        "gem-img-20.webp",
+        "gem-heart-siam.webp",
+        "gem-starflower-amethyste.webp",
+        "gem-round-saphir.webp",
+        "gem-navette-emeraude.webp",
+        "gem-diamond-sunflower.webp",
+        "gem-gold-heart.webp",
+        "gem-rivoli-bermuda-blue.webp",
+        "gem-raindrop-light-siam.webp",
+        "gem-square-aquamarine.webp",
+        "gem-baguette-fuchsia.webp",
+        "gem-gold-lightning.webp",
+        "gem-round-crystal-ab.webp",
       ],
     },
     area: "md:col-span-2 lg:col-span-6 lg:col-start-7",
@@ -223,7 +224,7 @@ function CategoryTile({ tile, index, families }: { tile: Tile; index: number; fa
           <span aria-hidden="true" className={clsx("gt-alt-tile-art absolute inset-0", TONE_BG[tile.art.tone])}>
             {tile.art.pieces.slice(0, GEM_SLOTS.length).map((name, i) => (
               <BurstPiece key={name} slot={GEM_SLOTS[i]} index={i}>
-                {(piece) => <img src={photo(name)} alt="" loading="lazy" decoding="async" className={clsx("gt-alt-gem", piece.className)} style={piece.style} />}
+                {(piece) => <img src={photo(name)} alt="" loading="lazy" decoding="async" className={clsx("gt-alt-gem aspect-square object-contain", piece.className)} style={piece.style} />}
               </BurstPiece>
             ))}
           </span>
