@@ -137,12 +137,12 @@ A renamed reading is used only if its fitted midline lands within `CORRECTED_MID
 Replayed on the 30 analyses of the trial (the module on the photos' pixels): placements refused 11 → 5, upper gems
 right 97 → 137, wrong 15 → 13, renders with a wrong gem 9 → 8. Caution: the values were set on these same photos,
 of one or two people with a marked gap between the central incisors; on someone whose central incisors touch
-tightly, the darkest gap may be elsewhere. So it ships measured only: `studio_try_on_placement` carries what it
-found and whether its placement would have been reliable (`arbiter_*`), the trial applies it with
-`TRIAL_ARBITER=1`; it is turned on for customers with `NEXT_PUBLIC_TRY_ON_MIDLINE_ARBITER=on` once checked on
-photos of other people. A risk to weigh before: a photo the phone saved mirrored (some front cameras do), whose
+tightly, the darkest gap may be elsewhere. It first shipped measured only, behind a flag; since the trial with it applied
+(below) it is on for every customer, without a flag, and `studio_try_on_placement` carries what it found and
+corrected (`arbiter_*`). A risk kept in view: a photo the phone saved mirrored (some front cameras do), whose
 teeth the model named rightly, has its 2x on the image's left — today refused (`out_of_order`), it would be named
-back as "mirrored" and its gems put on the wrong side; the pixels cannot tell it from a misnamed reading.
+back as "mirrored" and its gems put on the wrong side; the pixels cannot tell it from a misnamed reading. Watch for it in `arbiter_corrections`
+(`mirrored`).
 
 **The teeth rebuilt from the gaps** (`segmentTeeth`, same module, same flag; 2026-11-05). Comparing the model's
 boxes with the gaps showed where most wrong-tooth gems come from: the teeth model draws its boxes on a near-even grid
@@ -172,9 +172,9 @@ Check of 2026-11-05 (P4-S1, P6-S1, P7-S1, measured only): the browser's pixel mi
 exactly the replay's values on the three photos (offsets, teeth rebuilt per arch), and its placement would have been
 reliable on all three, P7's included (refused today) — so the replay stands for the browser.
 
-**The gems moved back onto their marks** (`tryOnGemBlend.ts` `reseat`, flag `NEXT_PUBLIC_TRY_ON_RESEAT_GEMS`, the
-trial's `TRIAL_ARBITER=1`; 2026-11-05). The renders showed the placement right but the gems drawn by the image model
-larger (hearts 1.3 to 1.8 times) or beside their marks, and the paste-back kept them as drawn. With `reseat`, a gem
+**The gems moved back onto their marks** (`tryOnGemBlend.ts`, 2026-11-05; first behind a flag, on for every customer
+since the trial with it). The renders showed the placement right but the gems drawn by the image model
+larger (hearts 1.3 to 1.8 times) or beside their marks, and the paste-back kept them as drawn. Now a gem
 drawn more than `RESEAT_DRIFT` (half a gem) off its mark or `RESEAT_SIZE` (1.3) times its size or more is read where it was drawn
 (its centre refined on its own changes: a neighbour's halo or a redrawn tooth edge pulled the plain centre aside),
 scaled to `RESEAT_TARGET` (1.1, the measure taking in the gem's sparkle) and laid on its mark: its body whole, its

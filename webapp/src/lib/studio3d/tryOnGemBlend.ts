@@ -11,7 +11,7 @@
  * (found by the change it made near it) is taken whole, not cut; anything the
  * model drew far from every mark is dropped.
  *
- * With `reseat` (2026-11-05): a gem drawn beside its mark or too large is not
+ * Reseated (2026-11-05): a gem drawn beside its mark or too large is not
  * kept where and as the model drew it, but moved back onto its mark at the
  * size of the design: only the pixels the model changed there (the gem, not
  * the tooth around it) are read where it was drawn, scaled down, and laid on
@@ -53,13 +53,8 @@ export interface GemCheck {
   drift: number | null;
   /** The change's size over the mark's (1: as large; above, drawn larger); approximate; null when not found. */
   size: number | null;
-  /** Moved back onto its mark and to its size (`reseat`). */
+  /** Moved back onto its mark and to its size. */
   reseated?: boolean;
-}
-
-export interface BlendOptions {
-  /** Move gems drawn beside their marks or too large back onto them, at their size. */
-  reseat?: boolean;
 }
 
 export interface GemBlend {
@@ -87,15 +82,15 @@ const MIN_FOUND_SHARE = 0.2;
 /** The answer kept around a gem: its half-size times this, plus `KEEP_PAD` px, then a soft edge. */
 const KEEP = 1.35;
 const KEEP_PAD = 2;
-/** A gem drawn this far from its mark (half-sizes) is also kept around where it was drawn (or, with `reseat`, moved back). */
+/** A gem drawn this far from its mark (half-sizes) is also kept around where it was drawn (when not moved back). */
 const DRIFT_KEPT = 0.35;
 /**
- * With `reseat`, a gem measured this many times its mark's size or more is
+ * A gem measured this many times its mark's size or more is
  * scaled down to `RESEAT_TARGET` times it: the measure takes in the gem's
  * sparkle and shadow, so a gem drawn at its size reads about 1.1.
  */
 export const RESEAT_SIZE = 1.3;
-/** With `reseat`, a gem drawn this far from its mark (half-sizes) is moved back; nearer, kept as drawn. */
+/** A gem drawn this far from its mark (half-sizes) is moved back; nearer, kept as drawn. */
 export const RESEAT_DRIFT = 0.5;
 export const RESEAT_TARGET = 1.1;
 /** A gem is moved back only when this share of its drawing's centre changed at least. */
@@ -133,7 +128,7 @@ interface Disc {
  * The photo with the answer kept around each gem, and each gem's check. Both
  * pictures have the same size and are lined up; `marks` are in their pixels.
  */
-export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMark[], options: BlendOptions = {}): GemBlend {
+export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMark[]): GemBlend {
   const { width, height } = original;
   const O = original.data;
   const E = edited.data;
@@ -170,7 +165,7 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
 
   // Each gem: the change near its mark.
   const discs: { disc: Disc; owner: number }[] = [];
-  /** Per mark, with `reseat`: where its gem was drawn and how much larger, read back onto the mark. */
+  /** Per mark: where its gem was drawn and how much larger, read back onto the mark. */
   const sources: ({ x: number; y: number; scale: number; threshold: number; extent: number } | null)[] = usable.map(() => null);
   const checks: GemCheck[] = marks.map((m) => ({ id: m.id, found: false, drift: null, size: null }));
   /** Per mark: the change above which a pixel near it is the gem's, not the tooth's. */
@@ -205,15 +200,13 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
     let { count, mass, cx, cy } = centreOf(changed);
     // The size is read on all the changes near the mark (as before), the centre refined below.
     const drawnCount = count;
-    if (options.reseat) {
-      // Onto the gem itself: the changes near the centre found, twice (a neighbour's halo or a redrawn
-      // tooth edge in the window pulls the plain centre aside).
-      for (let pass = 0; pass < 2 && count > 0; pass++) {
-        const reach = Math.max(1.5 * Math.sqrt(count / Math.PI), 1.5 * m.r);
-        const near = changed.filter((c) => Math.hypot(c.x - cx, c.y - cy) <= reach);
-        if (!near.length) break;
-        ({ count, mass, cx, cy } = centreOf(near));
-      }
+    // Onto the gem itself: the changes near the centre found, twice (a neighbour's halo or a redrawn
+    // tooth edge in the window pulls the plain centre aside).
+    for (let pass = 0; pass < 2 && count > 0; pass++) {
+      const reach = Math.max(1.5 * Math.sqrt(count / Math.PI), 1.5 * m.r);
+      const near = changed.filter((c) => Math.hypot(c.x - cx, c.y - cy) <= reach);
+      if (!near.length) break;
+      ({ count, mass, cx, cy } = centreOf(near));
     }
     const [sx, sy] = m.stretch ?? [1, 1];
     const area = Math.PI * m.r * m.r * Math.max(0.1, sx * sy);
@@ -231,7 +224,7 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
     // A gem is a dense patch of change; scattered changes (a redrawn tooth edge, a pale crystal that
     // barely changed the tooth) are not moved: kept as drawn.
     const dense = changed.filter((c) => Math.hypot(c.x - cx, c.y - cy) <= 0.6 * core).length >= RESEAT_DENSITY * Math.PI * (0.6 * core) ** 2;
-    if (options.reseat && dense && (drift > RESEAT_DRIFT || scale > 1)) {
+    if (dense && (drift > RESEAT_DRIFT || scale > 1)) {
       // Moved back: the mark's disc reads the answer around where the gem was drawn, scaled.
       sources[k] = { x: cx, y: cy, scale, threshold, extent: core };
       checks[index].reseated = true;

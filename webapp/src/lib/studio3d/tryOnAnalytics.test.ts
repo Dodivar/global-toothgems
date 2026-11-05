@@ -88,9 +88,9 @@ describe("try-on analytics", () => {
       found: [],
       centrals: null,
     };
-    const props = midlineProps(arbitration, false, registration);
+    const props = midlineProps(arbitration);
     expect(props).toEqual({
-      arbiter: "measured",
+      arbiter: "applied",
       arbiter_triggered: true,
       arbiter_gap_found: true,
       arbiter_teeth_offset: 0.99,
@@ -99,12 +99,9 @@ describe("try-on analytics", () => {
       arbiter_snapped: 9,
       arbiter_segmented_upper: 6,
       arbiter_segmented_lower: 5,
-      arbiter_would_be_reliable: true, // renamed, its midline 0.12 from the gap
-      arbiter_would_midline_error: 0.12,
     });
     expect(Object.values(props)).not.toContain(412); // never a position on the photo
     expect(Object.values(props)).not.toContain(420);
-    expect(midlineProps(null, false, null)).toMatchObject({ arbiter: "unreadable", arbiter_triggered: false, arbiter_would_be_reliable: null });
-    expect(midlineProps(arbitration, true, null)).toMatchObject({ arbiter: "applied", arbiter_would_be_reliable: null });
+    expect(midlineProps(null)).toMatchObject({ arbiter: "unreadable", arbiter_triggered: false });
   });
 });

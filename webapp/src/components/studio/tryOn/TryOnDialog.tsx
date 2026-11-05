@@ -26,7 +26,7 @@ import { registerDesign } from "../../../lib/studio3d/tryOnRegistration";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
 import { setStudioAnalyticsConsent, trackStudio } from "../../../lib/studioAnalytics";
 import { renderDesignImage } from "./designImage";
-import { arbitrateOnPhoto, gemReseatEnabled, midlineArbiterEnabled } from "./midlineArbiter";
+import { arbitrateOnPhoto } from "./midlineArbiter";
 import { pasteBack } from "./pasteBack";
 import { PhotoStep, type AiState } from "./PhotoStep";
 import { renderPlacementGuide } from "./placementGuide";
@@ -156,23 +156,20 @@ export function TryOnDialog({
     // 2. The placement: each gem on its tooth, drawn as a mark on the close-up.
     const { crop, teeth, centrals } = analysed.analysis;
     const projection = projectFrontView(creation.scene.pieces, creation.scene.model);
-    // The pixel midline arbitrates when the two readings disagree (`tryOnMidline.ts`): applied behind
-    // a flag, else only measured — with the placement it would have given, for the analytics.
+    // The pixel midline arbitrates when the two readings disagree (`tryOnMidline.ts`): the teeth renamed
+    // and rebuilt from the gaps between them, the midline checked against the darkest gap.
     const arbitration = await arbitrateOnPhoto(photo.blob, crop, teeth, centrals);
     if (aborted()) return;
-    const applied = arbitration !== null && midlineArbiterEnabled();
-    const corrected = arbitration?.midline != null;
-    const registration =
-      applied && corrected
-        ? registerDesign(projection, arbitration.found, { centrals: arbitration.centrals })
-        : registerDesign(projection, teeth, { centrals });
-    const shadow = !applied && arbitration && corrected ? registerDesign(projection, arbitration.found, { centrals: arbitration.centrals }) : null;
+    const corrected = arbitration !== null && arbitration.midline != null;
+    const registration = corrected
+      ? registerDesign(projection, arbitration.found, { centrals: arbitration.centrals })
+      : registerDesign(projection, teeth, { centrals });
     const { marks, leftOut } = guideMarks(registration, creation.scene.pieces);
-    const usable = (applied && corrected ? arbitratedReliable(registration, arbitration) : registration.reliable) && marks.length > 0;
+    const usable = (corrected ? arbitratedReliable(registration, arbitration) : registration.reliable) && marks.length > 0;
     trackStudio("studio_try_on_placement", {
       ...context,
       ...placementProps(registration, { marks: marks.length, leftOut }, centrals !== null),
-      ...midlineProps(arbitration, applied, shadow),
+      ...midlineProps(arbitration),
       outcome: usable ? "render" : "uncertain",
     });
     if (!usable) return fail("photo_unsuitable", "checking", ["placement_uncertain"]);
@@ -191,7 +188,7 @@ export function TryOnDialog({
     request.current = null;
     // Only the gems are taken from the AI's answer (`tryOnGemBlend.ts`), else the whole close-up;
     // if the browser cannot draw it back into the photo, the close-up is shown alone.
-    const pasted = await pasteBack(photo.blob, outcome.image, outcome.crop ?? crop, marks, { reseat: gemReseatEnabled() });
+    const pasted = await pasteBack(photo.blob, outcome.image, outcome.crop ?? crop, marks);
     if (aborted()) return;
     trackStudio("studio_try_on_result", { ...context, outcome: pasted ? "ok" : "close_up_only", ...resultProps(pasted?.checks ?? null, pasted?.masked ?? false) });
     const image = pasted?.image ?? outcome.image;

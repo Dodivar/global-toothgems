@@ -66,7 +66,6 @@ function pasteAroundGems(
   crop: TryOnCrop,
   place: { x: number; y: number; width: number; height: number },
   marks: readonly GuideMark[],
-  reseat: boolean,
 ): { canvas: HTMLCanvasElement | null; checks: GemCheck[] } | null {
   const sx = base.width / crop.photoWidth;
   const sy = base.height / crop.photoHeight;
@@ -89,7 +88,6 @@ function pasteAroundGems(
     before,
     after,
     marks.map((m) => ({ id: m.id, x: m.x * sx, y: m.y * sy, r: m.r * scale, stretch: m.stretch })),
-    { reseat },
   );
   if (!blend.masked || !blend.data) return { canvas: null, checks: blend.checks };
   before.data.set(blend.data);
@@ -122,7 +120,6 @@ export async function pasteBack(
   closeUp: Blob,
   crop: TryOnCrop,
   marks: readonly GuideMark[] = [],
-  options: { reseat?: boolean } = {},
 ): Promise<PastedResult | null> {
   try {
     const [base, edit] = await Promise.all([bitmapOf(photo), bitmapOf(closeUp)]);
@@ -132,7 +129,7 @@ export async function pasteBack(
 
     let checks: GemCheck[] | null = null;
     if (marks.length > 0) {
-      const around = pasteAroundGems(base, edit, crop, place, marks, options.reseat ?? false);
+      const around = pasteAroundGems(base, edit, crop, place, marks);
       checks = around?.checks ?? null;
       if (around?.canvas) {
         const image = await toJpeg(around.canvas);

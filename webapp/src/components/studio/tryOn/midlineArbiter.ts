@@ -3,34 +3,6 @@ import { arbitrateMidline, lowerToothGaps, toothGaps, type CloseUpPixels, type M
 import type { CloseUpBox, FoundTooth } from "../../../lib/studio3d/tryOnRegistration";
 import { bitmapOf } from "./pasteBack";
 
-/**
- * Whether the pixel midline and the teeth rebuilt from the gaps
- * (`lib/studio3d/tryOnMidline.ts`) correct the placement, or is only measured for the analytics: on with
- * `NEXT_PUBLIC_TRY_ON_MIDLINE_ARBITER=on`, or in the try-on trial
- * (`scripts/try-on-trial/`, `TRIAL_ARBITER=1`), which sets
- * `window.__gtTrialArbiter` next to `window.__gtTrial`. Off by default until
- * it is checked on photos of other people than the trial's.
- */
-export function midlineArbiterEnabled(): boolean {
-  if (process.env.NEXT_PUBLIC_TRY_ON_MIDLINE_ARBITER === "on") return true;
-  if (typeof window === "undefined") return false;
-  const w = window as { __gtTrial?: boolean; __gtTrialArbiter?: boolean };
-  return w.__gtTrial === true && w.__gtTrialArbiter === true;
-}
-
-/**
- * Whether the paste-back moves gems the AI drew beside their marks or too
- * large back onto them, at their size (`lib/studio3d/tryOnGemBlend.ts`
- * `reseat`): on with `NEXT_PUBLIC_TRY_ON_RESEAT_GEMS=on`, or in the try-on
- * trial with `TRIAL_ARBITER=1`. Off by default until checked on a trial.
- */
-export function gemReseatEnabled(): boolean {
-  if (process.env.NEXT_PUBLIC_TRY_ON_RESEAT_GEMS === "on") return true;
-  if (typeof window === "undefined") return false;
-  const w = window as { __gtTrial?: boolean; __gtTrialArbiter?: boolean };
-  return w.__gtTrial === true && w.__gtTrialArbiter === true;
-}
-
 /** The close-up's pixels at the close-up's size (the teeth boxes' coordinates); null when the browser cannot read them. */
 async function closeUpPixels(photo: Blob, crop: TryOnCrop): Promise<CloseUpPixels | null> {
   const image = await bitmapOf(photo);

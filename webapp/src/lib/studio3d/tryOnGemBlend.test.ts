@@ -77,9 +77,11 @@ describe("blendGems", () => {
     expect(pixel(blend.data!, 90, 105)).toEqual(pixel(original.data, 90, 105));
   });
 
-  it("keeps each drawn gem whole, even beside its mark, its surroundings matched to the photo", () => {
+  it("keeps each drawn gem whole, one drawn beside its mark moved back onto it, its surroundings matched to the photo", () => {
     expect(pixel(blend.data!, 50, 60)).toEqual([230 - 6, 20 - 6, 40 - 6]);
-    expect(pixel(blend.data!, 132, 60)[0]).toBeGreaterThan(200);
+    expect(blend.checks[1].reseated).toBe(true);
+    expect(pixel(blend.data!, 120, 60)[0]).toBeGreaterThan(200); // on its mark now
+    expect(pixel(blend.data!, 132, 60)).toEqual(pixel(original.data, 132, 60)); // not where it was drawn
     // Just outside the gem, inside the kept disc: the photo's colour, the answer's brightening taken out.
     const near = pixel(blend.data!, 50 + 10, 60);
     pixel(original.data, 60, 60).forEach((v, c) => expect(Math.abs(near[c] - v)).toBeLessThanOrEqual(1));
@@ -120,7 +122,7 @@ describe("blendGems on gems set close together", () => {
   });
 });
 
-describe("blendGems with reseat", () => {
+describe("blendGems moving gems back onto their marks", () => {
   const red = (data: ArrayLike<number>, x: number, y: number) => {
     const [r, g] = pixel(data, x, y);
     return r > 200 && g < 60;
@@ -137,29 +139,31 @@ describe("blendGems with reseat", () => {
     { x: 162, y: 60, r: 8 },
     { x: 105, y: 105, r: 8 },
   ]);
-  const before = blendGems(original, edited, marks);
-  const after = blendGems(original, edited, marks, { reseat: true });
+  const after = blendGems(original, edited, marks);
 
-  it("measures the same gems either way and says which were moved back", () => {
-    expect(after.checks.map((c) => c.size)).toEqual(before.checks.map((c) => c.size));
+  it("measures the gems as drawn and says which were moved back", () => {
+    expect(after.checks.map((c) => c.found)).toEqual([true, true, true]);
+    expect(after.checks[0].size!).toBeGreaterThan(1.3); // drawn 1.7 times too large
     expect(after.checks.map((c) => Boolean(c.reseated))).toEqual([true, true, false]);
   });
 
   it("draws a gem drawn too large at the design's size", () => {
-    expect(red(before.data!, 60 + 12, 60)).toBe(true); // as drawn: red 12 px from the centre
+    expect(red(edited.data, 60 + 12, 60)).toBe(true); // as drawn: red 12 px from the centre
     expect(red(after.data!, 60, 60)).toBe(true);
     expect(red(after.data!, 60 + 12, 60)).toBe(false); // now about RESEAT_TARGET times the mark
     expect(red(after.data!, 60 + Math.floor(8 * RESEAT_TARGET) - 2, 60)).toBe(true);
   });
 
   it("moves a gem drawn beside its mark back onto it, the photo left where it was drawn", () => {
-    expect(red(before.data!, 168, 60)).toBe(true);
+    expect(red(edited.data, 168, 60)).toBe(true);
     expect(red(after.data!, 150, 60)).toBe(true);
     expect(red(after.data!, 168, 60)).toBe(false);
   });
 
   it("leaves a gem drawn as asked as it was", () => {
-    for (const [x, y] of [[105, 105], [111, 105], [105, 99]]) expect(pixel(after.data!, x, y)).toEqual(pixel(before.data!, x, y));
+    // As it comes out when it is the only gem: kept where and as it was drawn.
+    const alone = blendGems(original, edited, [marks[2]]);
+    for (const [x, y] of [[105, 105], [111, 105], [105, 99]]) expect(pixel(after.data!, x, y)).toEqual(pixel(alone.data!, x, y));
   });
 });
 

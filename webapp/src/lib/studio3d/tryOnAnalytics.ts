@@ -1,5 +1,5 @@
 import type { GemCheck } from "./tryOnGemBlend";
-import { arbitratedReliable, type MidlineArbitration } from "./tryOnMidline";
+import type { MidlineArbitration } from "./tryOnMidline";
 import type { Registration } from "./tryOnRegistration";
 
 /**
@@ -43,13 +43,11 @@ export function placementProps(registration: Registration, drawn: { marks: numbe
 
 /**
  * `studio_try_on_placement`, the pixel midline (`tryOnMidline.ts`, 2026-11-05):
- * whether it ran, was applied (the flag) or only measured, what it found and
- * corrected and — measured only — whether its placement would have been
- * reliable, to judge it on real photos before turning it on.
+ * whether it ran (the photo's pixels read), what it found and corrected.
  */
-export function midlineProps(arbitration: MidlineArbitration | null, applied: boolean, shadow: Registration | null): Props {
+export function midlineProps(arbitration: MidlineArbitration | null): Props {
   return {
-    arbiter: arbitration === null ? "unreadable" : applied ? "applied" : "measured",
+    arbiter: arbitration === null ? "unreadable" : "applied",
     arbiter_triggered: arbitration?.triggered ?? false,
     arbiter_gap_found: arbitration?.midline != null,
     arbiter_teeth_offset: arbitration?.teethOffset ?? null,
@@ -58,8 +56,6 @@ export function midlineProps(arbitration: MidlineArbitration | null, applied: bo
     arbiter_snapped: arbitration?.snapped ?? 0,
     arbiter_segmented_upper: arbitration?.segmented.upper ?? 0,
     arbiter_segmented_lower: arbitration?.segmented.lower ?? 0,
-    arbiter_would_be_reliable: shadow && arbitration ? arbitratedReliable(shadow, arbitration) : null,
-    arbiter_would_midline_error: shadow ? shadow.midlineError : null,
   };
 }
 
