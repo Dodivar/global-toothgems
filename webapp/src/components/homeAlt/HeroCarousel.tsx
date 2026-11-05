@@ -31,7 +31,7 @@ const PHONE_QUERY = "(max-width: 639px)";
  * would break hydration). `x`/`y` are the piece's centre in % of the box.
  */
 const BOUQUET: { photo: string; x: number; y: number; size: number; rot: number }[] = [
-  { photo: "gem-round-emeraude.webp", x: 50, y: 46, size: 70, rot: -12 },
+  { photo: "gem-rivoli-bermuda-blue.webp", x: 50, y: 48, size: 50, rot: -12 },
   { photo: "gem-heart-fuchsia.webp", x: 29, y: 36, size: 54, rot: 20 },
   { photo: "gem-diamond-violet.webp", x: 69, y: 34, size: 58, rot: -25 },
   { photo: "gem-starflower-light-topaz.webp", x: 13, y: 62, size: 46, rot: 40 },
@@ -45,6 +45,8 @@ const BOUQUET: { photo: string; x: number; y: number; size: number; rot: number 
   { photo: "gem-round-saphir.webp", x: 45, y: 12, size: 38, rot: 30 },
   { photo: "gem-gold-heart.webp", x: 93, y: 88, size: 32, rot: 5 },
   { photo: "gem-heart-siam.webp", x: 21, y: 14, size: 40, rot: -18 },
+  { photo: "gem-round-emeraude.webp", x: 64, y: 58, size: 32, rot: 0 },
+  { photo: "gem-gold-lightning.webp", x: 37, y: 58, size: 30, rot: 18 },
 ];
 
 type SlideId = "shop" | "academy" | "studio";
