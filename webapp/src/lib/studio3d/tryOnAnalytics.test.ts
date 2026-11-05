@@ -54,7 +54,7 @@ describe("try-on analytics", () => {
     const props = resultProps(
       [
         { id: "a", found: true, drift: 0.1, size: 1.1 },
-        { id: "b", found: true, drift: 0.9, size: 1.5 },
+        { id: "b", found: true, drift: 0.9, size: 1.5, reseated: true },
         { id: "c", found: false, drift: null, size: null },
       ],
       true,
@@ -66,6 +66,7 @@ describe("try-on analytics", () => {
       gems_missing: 1,
       gems_drifted: 1,
       gems_resized: 1,
+      gems_reseated: 1,
       drift_mean: 0.5,
       drift_max: 0.9,
       size_mean: 1.3,

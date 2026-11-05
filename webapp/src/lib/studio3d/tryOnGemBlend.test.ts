@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blendGems, MAX_BACKGROUND, type Rgba } from "./tryOnGemBlend";
+import { blendGems, MAX_BACKGROUND, RESEAT_TARGET, type Rgba } from "./tryOnGemBlend";
 
 const W = 220;
 const H = 130;
@@ -96,3 +96,47 @@ describe("blendGems", () => {
     expect(other.checks.every((c) => !c.found)).toBe(true);
   });
 });
+
+describe("blendGems with reseat", () => {
+  const red = (data: ArrayLike<number>, x: number, y: number) => {
+    const [r, g] = pixel(data, x, y);
+    return r > 200 && g < 60;
+  };
+  const marks = [
+    { id: "big", x: 60, y: 60, r: 8 },
+    { id: "beside", x: 150, y: 60, r: 8 },
+    { id: "fine", x: 105, y: 105, r: 8 },
+  ];
+  const original = photo();
+  // "big" drawn 1.7 times too large, "beside" 12 px to the right of its mark, "fine" as asked.
+  const edited = answer(original, [
+    { x: 60, y: 60, r: 13.6 },
+    { x: 162, y: 60, r: 8 },
+    { x: 105, y: 105, r: 8 },
+  ]);
+  const before = blendGems(original, edited, marks);
+  const after = blendGems(original, edited, marks, { reseat: true });
+
+  it("measures the same gems either way and says which were moved back", () => {
+    expect(after.checks.map((c) => c.size)).toEqual(before.checks.map((c) => c.size));
+    expect(after.checks.map((c) => Boolean(c.reseated))).toEqual([true, true, false]);
+  });
+
+  it("draws a gem drawn too large at the design's size", () => {
+    expect(red(before.data!, 60 + 12, 60)).toBe(true); // as drawn: red 12 px from the centre
+    expect(red(after.data!, 60, 60)).toBe(true);
+    expect(red(after.data!, 60 + 12, 60)).toBe(false); // now about RESEAT_TARGET times the mark
+    expect(red(after.data!, 60 + Math.floor(8 * RESEAT_TARGET) - 2, 60)).toBe(true);
+  });
+
+  it("moves a gem drawn beside its mark back onto it, the photo left where it was drawn", () => {
+    expect(red(before.data!, 168, 60)).toBe(true);
+    expect(red(after.data!, 150, 60)).toBe(true);
+    expect(red(after.data!, 168, 60)).toBe(false);
+  });
+
+  it("leaves a gem drawn as asked as it was", () => {
+    for (const [x, y] of [[105, 105], [111, 105], [105, 99]]) expect(pixel(after.data!, x, y)).toEqual(pixel(before.data!, x, y));
+  });
+});
+

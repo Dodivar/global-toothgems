@@ -26,7 +26,7 @@ import { registerDesign } from "../../../lib/studio3d/tryOnRegistration";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
 import { setStudioAnalyticsConsent, trackStudio } from "../../../lib/studioAnalytics";
 import { renderDesignImage } from "./designImage";
-import { arbitrateOnPhoto, midlineArbiterEnabled } from "./midlineArbiter";
+import { arbitrateOnPhoto, gemReseatEnabled, midlineArbiterEnabled } from "./midlineArbiter";
 import { pasteBack } from "./pasteBack";
 import { PhotoStep, type AiState } from "./PhotoStep";
 import { renderPlacementGuide } from "./placementGuide";
@@ -191,7 +191,7 @@ export function TryOnDialog({
     request.current = null;
     // Only the gems are taken from the AI's answer (`tryOnGemBlend.ts`), else the whole close-up;
     // if the browser cannot draw it back into the photo, the close-up is shown alone.
-    const pasted = await pasteBack(photo.blob, outcome.image, outcome.crop ?? crop, marks);
+    const pasted = await pasteBack(photo.blob, outcome.image, outcome.crop ?? crop, marks, { reseat: gemReseatEnabled() });
     if (aborted()) return;
     trackStudio("studio_try_on_result", { ...context, outcome: pasted ? "ok" : "close_up_only", ...resultProps(pasted?.checks ?? null, pasted?.masked ?? false) });
     const image = pasted?.image ?? outcome.image;

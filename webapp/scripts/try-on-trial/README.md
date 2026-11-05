@@ -48,7 +48,8 @@ bash: `TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --ph
 
 The pixel midline (`src/lib/studio3d/tryOnMidline.ts`) is only measured by default: the report's "Pixel midline"
 column says what it found and whether its placement would have been reliable. `TRIAL_ARBITER=1` (`$env:TRIAL_ARBITER = "1"`)
-applies it, to compare two trials of the same photos.
+applies it, and moves the gems the AI drew beside their marks or too large back onto them at their size
+(`tryOnGemBlend.ts` `reseat`; "Moved back" column), to compare two trials of the same photos.
 
 Options: `--only P3:S1,P12:S2` (some pairs only), `--skip-done` (resume: skips pairs with a result or whose photo
 the check refused), `--pause 45` (seconds between runs, default 45: back-to-back renders hit the image model's

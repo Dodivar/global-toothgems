@@ -168,10 +168,25 @@ rebuilding readings that agree (and `AGREE` at 0.6, not 0.35) was set to fix one
 the vertical place of the gems (the boxes' tops and heights) is still the model's; one photo (P5) stays refused, too
 dark for its gaps.
 
+Check of 2026-11-05 (P4-S1, P6-S1, P7-S1, measured only): the browser's pixel midline and rebuilt teeth gave
+exactly the replay's values on the three photos (offsets, teeth rebuilt per arch), and its placement would have been
+reliable on all three, P7's included (refused today) — so the replay stands for the browser.
+
+**The gems moved back onto their marks** (`tryOnGemBlend.ts` `reseat`, flag `NEXT_PUBLIC_TRY_ON_RESEAT_GEMS`, the
+trial's `TRIAL_ARBITER=1`; 2026-11-05). The renders showed the placement right but the gems drawn by the image model
+larger (hearts 1.3 to 1.8 times) or beside their marks, and the paste-back kept them as drawn. With `reseat`, a gem
+drawn more than `DRIFT_KEPT` off its mark or `RESEAT_SIZE` (1.3) times its size or more is read where it was drawn
+(its centre refined on its own changes: a neighbour's halo or a redrawn tooth edge pulled the plain centre aside),
+scaled to `RESEAT_TARGET` (1.1, the measure taking in the gem's sparkle) and laid on its mark: its body whole, its
+rim only where the model changed the photo — not the tooth around it, whose shrunk copy left square seams; a drawing
+that is not a dense patch of change (a pale crystal on a pale tooth) is kept as drawn. Replayed offline on six renders
+of the trial (the photo, the model's answer, the marks read from the guide): the hearts, navettes, drops and charms
+back at the design's size and place, no seam left; a first version that moved the whole disc, and one without the
+density check, left visible artefacts on two pale crystals — tried and dropped. Not yet seen in the browser.
+
 Still open after this trial: the message for gems left out says they are hidden by a lip or other teeth even when
 the teeth were not found (separate the two); the image model drew 18 % of the gems more than half a gem off their
-mark and 20 % more than 30 % larger or smaller (worst on hearts and navettes), and the paste-back keeps a drifted gem
-where it was drawn.
+mark and 20 % more than 30 % larger or smaller (worst on hearts and navettes) — see `reseat` above.
 
 Known limits: the teeth model sometimes numbers the teeth one tooth off (seen on one trial photo: the whole design
 then moves one tooth, with a high confidence, since the fit stays consistent; since 2026-11-04 the renumbering above

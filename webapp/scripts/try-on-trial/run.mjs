@@ -7,7 +7,8 @@
 //   node scripts/try-on-trial/run.mjs --photos <folder of up to 20 photos> [--out <folder>] [--only P3:S1,P12:S2] [--headed]
 //
 // Env: TRIAL_EMAIL, TRIAL_PASSWORD (the test staff account); TRIAL_SITE (default http://localhost:5173);
-// TRIAL_ARBITER=1 applies the pixel midline (src/lib/studio3d/tryOnMidline.ts) instead of only measuring it.
+// TRIAL_ARBITER=1 applies the pixel midline (src/lib/studio3d/tryOnMidline.ts) instead of only measuring it,
+// and moves gems the AI drew beside their marks or too large back onto them (tryOnGemBlend.ts `reseat`).
 import { chromium } from "@playwright/test";
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
@@ -434,12 +435,12 @@ function report(summary) {
       const would = p.arbiter === "measured" ? `; would be ${p.arbiter_would_be_reliable ? "reliable" : "uncertain"}` : "";
       return `teeth ${v(p.arbiter_teeth_offset)}, box ${v(p.arbiter_centrals_offset)}${fixes ? `: ${fixes}` : ""}${would}`;
     };
-    lines.push("", "## Placement and render, per run", "", "Midline: distance between the fitted midline and the photo check's central incisors (central incisor widths; over 0.5 makes the placement uncertain). Pixel midline: the function's 11/21 and the check's box against the darkest gap between the teeth (central incisor widths), what it corrected and how many teeth it rebuilt from the gaps, and — measured only — whether its placement would have been reliable. Drawn / drifted / resized: gems the image model drew, drew more than half a gem away from its mark, drew more than 30 % larger or smaller.", "", "| Run | Outcome | Confidence | Midline | Renumbered (upper, lower) | Issues | Pixel midline | Marks / left out | Drawn | Drifted | Resized |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    lines.push("", "## Placement and render, per run", "", "Midline: distance between the fitted midline and the photo check's central incisors (central incisor widths; over 0.5 makes the placement uncertain). Pixel midline: the function's 11/21 and the check's box against the darkest gap between the teeth (central incisor widths), what it corrected and how many teeth it rebuilt from the gaps, and — measured only — whether its placement would have been reliable. Drawn / drifted / resized: gems the image model drew, drew more than half a gem away from its mark, drew more than 30 % larger or smaller.", "", "| Run | Outcome | Confidence | Midline | Renumbered (upper, lower) | Issues | Pixel midline | Marks / left out | Drawn | Drifted | Resized | Moved back |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
     for (const r of placed) {
       const p = r.placement;
       const res = r.result;
       const outcome = r.outcome === "result" ? "ok" : isPlacementUncertain(r) ? "uncertain" : r.outcome;
-      lines.push(`| ${r.photo}-${r.scene} | ${outcome} | ${v(p.confidence)} | ${v(p.midline_error)} | ${v(p.renumbered_upper)}, ${v(p.renumbered_lower)} | ${(p.issues ?? []).join(", ") || "—"} | ${arbiterCell(p)} | ${v(p.marks)} / ${v(p.left_out)} | ${res ? `${v(res.gems_drawn)}/${v(res.gems_checked)}` : "—"} | ${v(res?.gems_drifted)} | ${v(res?.gems_resized)} |`);
+      lines.push(`| ${r.photo}-${r.scene} | ${outcome} | ${v(p.confidence)} | ${v(p.midline_error)} | ${v(p.renumbered_upper)}, ${v(p.renumbered_lower)} | ${(p.issues ?? []).join(", ") || "—"} | ${arbiterCell(p)} | ${v(p.marks)} / ${v(p.left_out)} | ${res ? `${v(res.gems_drawn)}/${v(res.gems_checked)}` : "—"} | ${v(res?.gems_drifted)} | ${v(res?.gems_resized)} | ${v(res?.gems_reseated)} |`);
     }
   }
   lines.push("", "## Per photo", "", "| Photo | File | Upper / lower teeth found | Centrals | Outcomes | First error |", "| --- | --- | --- | --- | --- | --- |");

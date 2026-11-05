@@ -80,6 +80,7 @@ export function resultProps(checks: readonly GemCheck[] | null, masked: boolean)
     gems_missing: checks ? checks.length - found.length : 0,
     gems_drifted: drifts.filter((d) => d > DRIFTED).length,
     gems_resized: sizes.filter((s) => Math.abs(s - 1) > RESIZED).length,
+    gems_reseated: found.filter((c) => c.reseated).length,
     drift_mean: mean(drifts),
     drift_max: drifts.length ? round(Math.max(...drifts)) : null,
     size_mean: mean(sizes),

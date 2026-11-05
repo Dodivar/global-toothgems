@@ -18,6 +18,19 @@ export function midlineArbiterEnabled(): boolean {
   return w.__gtTrial === true && w.__gtTrialArbiter === true;
 }
 
+/**
+ * Whether the paste-back moves gems the AI drew beside their marks or too
+ * large back onto them, at their size (`lib/studio3d/tryOnGemBlend.ts`
+ * `reseat`): on with `NEXT_PUBLIC_TRY_ON_RESEAT_GEMS=on`, or in the try-on
+ * trial with `TRIAL_ARBITER=1`. Off by default until checked on a trial.
+ */
+export function gemReseatEnabled(): boolean {
+  if (process.env.NEXT_PUBLIC_TRY_ON_RESEAT_GEMS === "on") return true;
+  if (typeof window === "undefined") return false;
+  const w = window as { __gtTrial?: boolean; __gtTrialArbiter?: boolean };
+  return w.__gtTrial === true && w.__gtTrialArbiter === true;
+}
+
 /** The close-up's pixels at the close-up's size (the teeth boxes' coordinates); null when the browser cannot read them. */
 async function closeUpPixels(photo: Blob, crop: TryOnCrop): Promise<CloseUpPixels | null> {
   const image = await bitmapOf(photo);
