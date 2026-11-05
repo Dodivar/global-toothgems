@@ -16,11 +16,18 @@ import { parsePath, toAddress, type Locale } from "../localeRoutes";
  */
 export function useLanguageSwitch(): () => void {
   const { i18n: tree } = useTranslation();
+  const setLanguage = useSetLanguage();
+  return useCallback(() => {
+    setLanguage(tree.language?.startsWith("en") ? "fr" : "en");
+  }, [tree, setLanguage]);
+}
+
+/** Same as the switch, but to a chosen language (the header's language menu). */
+export function useSetLanguage(): (next: Locale) => void {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const translate = useSlugTranslator();
-  return useCallback(() => {
-    const next: Locale = tree.language?.startsWith("en") ? "fr" : "en";
+  return useCallback((next: Locale) => {
     saveLanguagePreference(next);
     // The UI language of the pages without one in their address.
     void i18n.changeLanguage(next);
@@ -28,5 +35,5 @@ export function useLanguageSwitch(): () => void {
       const address = toAddress(parsePath(pathname, translate).internal, next, translate);
       router.replace(`${address}${window.location.search}${window.location.hash}`, { scroll: false });
     }
-  }, [tree, pathname, router, translate]);
+  }, [pathname, router, translate]);
 }

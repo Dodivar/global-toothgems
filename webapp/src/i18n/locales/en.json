@@ -48,6 +48,8 @@
     "skipToContent": "Skip to main content",
     "langSwitchCode": "FR",
     "langSwitchAria": "View the site in French",
+    "langMenuAria": "Choose the site language",
+    "langName": { "fr": "Français", "en": "English" },
     "cancel": "Cancel"
   },
   "home": {

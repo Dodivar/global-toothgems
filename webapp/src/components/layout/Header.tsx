@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useNavigate, useLocation, useLanguageSwitch } from "../../lib/navigation";
+import { Link, useNavigate, useLocation } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
@@ -11,6 +11,7 @@ import { useAcademyMenu } from "./useAcademyMenu";
 import { ShopMenu } from "./ShopMenu";
 import { STUDIO_MENU } from "./clientSpaces";
 import { useGlowbookMenuTarget } from "./useGlowbookMenuTarget";
+import { LanguageMenu } from "./LanguageMenu";
 import { HeaderSearch } from "./HeaderSearch";
 import { CartAddedNotice } from "./CartAddedNotice";
 import { STUDIO_PATH } from "../../lib/studioUrl";
@@ -50,7 +51,6 @@ function MobileMenuCard({ to, onNavigate, title, sub, media }: { to: string; onN
 export function Header() {
   const { t } = useTranslation();
   const academyMenu = useAcademyMenu();
-  const switchLanguage = useLanguageSwitch();
   const navigate = useNavigate();
   const location = useLocation();
   const { count } = useCart();
@@ -181,17 +181,6 @@ export function Header() {
     navigate(FAVORITES_HREF);
   };
 
-  const langButton = (
-    <button
-      type="button"
-      onClick={switchLanguage}
-      aria-label={t("common.langSwitchAria")}
-      className="rounded-[var(--radius-pill)] px-2 py-1 text-xs font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
-    >
-      {/* Shows the language you switch TO, not the one you are already reading. */}
-      {t("common.langSwitchCode")}
-    </button>
-  );
 
   return (
     <div ref={rootRef} className="sticky top-0 z-[60] border-b border-[var(--border-subtle)] bg-[var(--surface-chrome)]">
@@ -262,7 +251,7 @@ export function Header() {
             })}
           </nav>
           <div className="flex items-center gap-1 justify-self-end">
-            {langButton}
+            <LanguageMenu />
             <IconButton
               icon={searchOpen ? X : Search}
               label={searchOpen ? t("siteSearch.close") : t("siteSearch.open")}
@@ -476,7 +465,7 @@ export function Header() {
               >
                 {mobileRoot.label}
               </Link>
-              {langButton}
+              <LanguageMenu placement="above" />
             </div>
           </div>
         )}
