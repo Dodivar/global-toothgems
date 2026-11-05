@@ -3,7 +3,7 @@ import { pastePlacement, type TryOnCrop } from "../../../lib/studio3d/tryOnCompo
 import { blendGems, type GemCheck } from "../../../lib/studio3d/tryOnGemBlend";
 import type { GuideMark } from "../../../lib/studio3d/tryOnGuide";
 
-async function bitmapOf(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
+export async function bitmapOf(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
   if (typeof createImageBitmap === "function") return createImageBitmap(blob);
   const img = new Image();
   img.src = URL.createObjectURL(blob);

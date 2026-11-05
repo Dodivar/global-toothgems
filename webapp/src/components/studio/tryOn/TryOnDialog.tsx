@@ -19,12 +19,14 @@ import {
   type TryOnStage,
 } from "../../../lib/studio3d/tryOn";
 import { projectFrontView } from "../../../lib/studio3d/frontView";
-import { placementProps, resultProps } from "../../../lib/studio3d/tryOnAnalytics";
+import { midlineProps, placementProps, resultProps } from "../../../lib/studio3d/tryOnAnalytics";
 import { guideMarks } from "../../../lib/studio3d/tryOnGuide";
+import { arbitratedReliable } from "../../../lib/studio3d/tryOnMidline";
 import { registerDesign } from "../../../lib/studio3d/tryOnRegistration";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
 import { setStudioAnalyticsConsent, trackStudio } from "../../../lib/studioAnalytics";
 import { renderDesignImage } from "./designImage";
+import { arbitrateOnPhoto, midlineArbiterEnabled } from "./midlineArbiter";
 import { pasteBack } from "./pasteBack";
 import { PhotoStep, type AiState } from "./PhotoStep";
 import { renderPlacementGuide } from "./placementGuide";
@@ -153,12 +155,24 @@ export function TryOnDialog({
 
     // 2. The placement: each gem on its tooth, drawn as a mark on the close-up.
     const { crop, teeth, centrals } = analysed.analysis;
-    const registration = registerDesign(projectFrontView(creation.scene.pieces, creation.scene.model), teeth, { centrals });
+    const projection = projectFrontView(creation.scene.pieces, creation.scene.model);
+    // The pixel midline arbitrates when the two readings disagree (`tryOnMidline.ts`): applied behind
+    // a flag, else only measured — with the placement it would have given, for the analytics.
+    const arbitration = await arbitrateOnPhoto(photo.blob, crop, teeth, centrals);
+    if (aborted()) return;
+    const applied = arbitration !== null && midlineArbiterEnabled();
+    const corrected = arbitration?.midline != null;
+    const registration =
+      applied && corrected
+        ? registerDesign(projection, arbitration.found, { centrals: arbitration.centrals })
+        : registerDesign(projection, teeth, { centrals });
+    const shadow = !applied && arbitration && corrected ? registerDesign(projection, arbitration.found, { centrals: arbitration.centrals }) : null;
     const { marks, leftOut } = guideMarks(registration, creation.scene.pieces);
-    const usable = registration.reliable && marks.length > 0;
+    const usable = (applied && corrected ? arbitratedReliable(registration, arbitration) : registration.reliable) && marks.length > 0;
     trackStudio("studio_try_on_placement", {
       ...context,
       ...placementProps(registration, { marks: marks.length, leftOut }, centrals !== null),
+      ...midlineProps(arbitration, applied, shadow),
       outcome: usable ? "render" : "uncertain",
     });
     if (!usable) return fail("photo_unsuitable", "checking", ["placement_uncertain"]);

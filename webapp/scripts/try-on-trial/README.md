@@ -46,6 +46,10 @@ node scripts/try-on-trial/run.mjs --photos "C:\path\to\photos" --out try-on-tria
 
 bash: `TRIAL_EMAIL=… TRIAL_PASSWORD=… node scripts/try-on-trial/run.mjs --photos ~/photos --out try-on-trial-results`
 
+The pixel midline (`src/lib/studio3d/tryOnMidline.ts`) is only measured by default: the report's "Pixel midline"
+column says what it found and whether its placement would have been reliable. `TRIAL_ARBITER=1` (`$env:TRIAL_ARBITER = "1"`)
+applies it, to compare two trials of the same photos.
+
 Options: `--only P3:S1,P12:S2` (some pairs only), `--skip-done` (resume: skips pairs with a result or whose photo
 the check refused), `--pause 45` (seconds between runs, default 45: back-to-back renders hit the image model's
 per-minute quota, HTTP 429) — the pause follows a run that reached the image model only, none otherwise; a photo the check refuses twice

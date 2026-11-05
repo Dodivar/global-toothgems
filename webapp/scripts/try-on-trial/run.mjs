@@ -6,7 +6,8 @@
 //
 //   node scripts/try-on-trial/run.mjs --photos <folder of up to 20 photos> [--out <folder>] [--only P3:S1,P12:S2] [--headed]
 //
-// Env: TRIAL_EMAIL, TRIAL_PASSWORD (the test staff account); TRIAL_SITE (default http://localhost:5173).
+// Env: TRIAL_EMAIL, TRIAL_PASSWORD (the test staff account); TRIAL_SITE (default http://localhost:5173);
+// TRIAL_ARBITER=1 applies the pixel midline (src/lib/studio3d/tryOnMidline.ts) instead of only measuring it.
 import { chromium } from "@playwright/test";
 import { existsSync, mkdirSync, readdirSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
@@ -26,6 +27,7 @@ const PAUSE_S = Number(opt("pause", "45"));
 const SITE = process.env.TRIAL_SITE || "http://localhost:5173";
 const EMAIL = process.env.TRIAL_EMAIL;
 const PASSWORD = process.env.TRIAL_PASSWORD;
+const ARBITER = process.env.TRIAL_ARBITER === "1";
 // --report-only: rebuild summary.json, report.md and the sheets from the results already in --out, without any run.
 const REPORT_ONLY = argv.includes("--report-only");
 if (!PHOTOS || (!REPORT_ONLY && (!EMAIL || !PASSWORD))) {
@@ -141,10 +143,11 @@ async function launch() {
   await context.exposeBinding("__trialGuide", (_source, b64) => onGuide?.(b64));
   // The Studio's analytics, copied on window (STUDIO_EVENT_DOM in src/lib/studioAnalytics.ts): the placement and result facts.
   await context.exposeBinding("__trialEvent", (_source, detail) => onEvent?.(detail));
-  await context.addInitScript(() => {
+  await context.addInitScript((arbiter) => {
     window.__gtTrial = true; // the Studio copies its analytics events on window only then
+    window.__gtTrialArbiter = arbiter; // the pixel midline applied, not only measured (midlineArbiter.ts)
     window.addEventListener("gt-studio-analytics", (e) => window.__trialEvent(e.detail));
-  });
+  }, ARBITER);
   await context.addInitScript(() => {
     const original = window.fetch;
     window.fetch = function (input, init) {
@@ -405,7 +408,7 @@ function report(summary) {
   const count = (pred) => summary.filter(pred).length;
   const first = (t) => (t ?? "").split("\n")[0].trim();
   const lines = [`# Try-on trial — ${new Date().toISOString().slice(0, 16).replace("T", " ")}`, ""];
-  lines.push(`${Object.keys(PHOTO_BY_KEY).length} photo(s) × ${Object.keys(SCENES).length} creations, ${summary.length} runs:`);
+  lines.push(`${Object.keys(PHOTO_BY_KEY).length} photo(s) × ${Object.keys(SCENES).length} creations, ${summary.length} runs, pixel midline ${summary.some((r) => r.placement?.arbiter === "applied") ? "applied" : "measured only"}:`);
   lines.push(`- results: ${count((r) => r.outcome === "result")}`);
   lines.push(`- photo refused by the check: ${count((r) => isPhotoRefusal(r) && !r.skipped)} (+ ${count((r) => r.skipped)} skipped after two refusals in a row)`);
   lines.push(`- placement too uncertain (the fit, not the photo check): ${count(isPlacementUncertain)}`);
@@ -423,12 +426,20 @@ function report(summary) {
   const placed = summary.filter((r) => r.placement);
   if (placed.length) {
     const v = (x) => (x === null || x === undefined ? "—" : x);
-    lines.push("", "## Placement and render, per run", "", "Midline: distance between the fitted midline and the photo check's central incisors (central incisor widths; over 0.5 makes the placement uncertain). Drawn / drifted / resized: gems the image model drew, drew more than half a gem away from its mark, drew more than 30 % larger or smaller.", "", "| Run | Outcome | Confidence | Midline | Renumbered (upper, lower) | Issues | Marks / left out | Drawn | Drifted | Resized |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    const arbiterCell = (p) => {
+      if (!p.arbiter || p.arbiter === "unreadable") return p.arbiter ?? "—";
+      if (!p.arbiter_triggered) return "readings agree";
+      if (!p.arbiter_gap_found) return "no clear gap";
+      const fixes = [...(p.arbiter_corrections ?? []), p.arbiter_snapped ? `${p.arbiter_snapped} snapped` : null].filter(Boolean).join(", ");
+      const would = p.arbiter === "measured" ? `; would be ${p.arbiter_would_be_reliable ? "reliable" : "uncertain"}` : "";
+      return `teeth ${v(p.arbiter_teeth_offset)}, box ${v(p.arbiter_centrals_offset)}${fixes ? `: ${fixes}` : ""}${would}`;
+    };
+    lines.push("", "## Placement and render, per run", "", "Midline: distance between the fitted midline and the photo check's central incisors (central incisor widths; over 0.5 makes the placement uncertain). Pixel midline: the function's 11/21 and the check's box against the darkest gap between the teeth (central incisor widths), what it corrected, and — measured only — whether its placement would have been reliable. Drawn / drifted / resized: gems the image model drew, drew more than half a gem away from its mark, drew more than 30 % larger or smaller.", "", "| Run | Outcome | Confidence | Midline | Renumbered (upper, lower) | Issues | Pixel midline | Marks / left out | Drawn | Drifted | Resized |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
     for (const r of placed) {
       const p = r.placement;
       const res = r.result;
       const outcome = r.outcome === "result" ? "ok" : isPlacementUncertain(r) ? "uncertain" : r.outcome;
-      lines.push(`| ${r.photo}-${r.scene} | ${outcome} | ${v(p.confidence)} | ${v(p.midline_error)} | ${v(p.renumbered_upper)}, ${v(p.renumbered_lower)} | ${(p.issues ?? []).join(", ") || "—"} | ${v(p.marks)} / ${v(p.left_out)} | ${res ? `${v(res.gems_drawn)}/${v(res.gems_checked)}` : "—"} | ${v(res?.gems_drifted)} | ${v(res?.gems_resized)} |`);
+      lines.push(`| ${r.photo}-${r.scene} | ${outcome} | ${v(p.confidence)} | ${v(p.midline_error)} | ${v(p.renumbered_upper)}, ${v(p.renumbered_lower)} | ${(p.issues ?? []).join(", ") || "—"} | ${arbiterCell(p)} | ${v(p.marks)} / ${v(p.left_out)} | ${res ? `${v(res.gems_drawn)}/${v(res.gems_checked)}` : "—"} | ${v(res?.gems_drifted)} | ${v(res?.gems_resized)} |`);
     }
   }
   lines.push("", "## Per photo", "", "| Photo | File | Upper / lower teeth found | Centrals | Outcomes | First error |", "| --- | --- | --- | --- | --- | --- |");

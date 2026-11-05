@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { placementProps, resultProps } from "./tryOnAnalytics";
+import { midlineProps, placementProps, resultProps } from "./tryOnAnalytics";
+import type { MidlineArbitration } from "./tryOnMidline";
 import type { Registration } from "./tryOnRegistration";
 
 const registration: Registration = {
@@ -71,5 +72,33 @@ describe("try-on analytics", () => {
       size_max: 1.5,
     });
     expect(resultProps(null, false)).toMatchObject({ masked: false, gems_checked: 0, gems_missing: 0, drift_max: null });
+  });
+
+  it("describes the pixel midline with offsets and codes only", () => {
+    const arbitration: MidlineArbitration = {
+      triggered: true,
+      midline: 412,
+      teethOffset: 0.99,
+      centralsOffset: 0.09,
+      corrections: ["shifted"],
+      snapped: 9,
+      found: [],
+      centrals: null,
+    };
+    const props = midlineProps(arbitration, false, registration);
+    expect(props).toEqual({
+      arbiter: "measured",
+      arbiter_triggered: true,
+      arbiter_gap_found: true,
+      arbiter_teeth_offset: 0.99,
+      arbiter_centrals_offset: 0.09,
+      arbiter_corrections: ["shifted"],
+      arbiter_snapped: 9,
+      arbiter_would_be_reliable: true, // renamed, its midline 0.12 from the gap
+      arbiter_would_midline_error: 0.12,
+    });
+    expect(Object.values(props)).not.toContain(412); // never a position on the photo
+    expect(midlineProps(null, false, null)).toMatchObject({ arbiter: "unreadable", arbiter_triggered: false, arbiter_would_be_reliable: null });
+    expect(midlineProps(arbitration, true, null)).toMatchObject({ arbiter: "applied", arbiter_would_be_reliable: null });
   });
 });

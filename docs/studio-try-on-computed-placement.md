@@ -109,6 +109,44 @@ message of an uncertain placement ("les dents ne ressortent pas assez nettement�
 longer the usual reason; its wording is the owner's call. When the photo-check reading kept has no teeth box, the
 whole photo is analysed (seen once).
 
+Review of the second trial of 2026-11-05 (the five lower-arch creations of `c36f487`, 7 photos, 35 runs, the
+midline check above live): 19 renders, 5 photos refused by the check (one photo shot from below, rightly), 11
+placements uncertain. Scored as above (one gem on each upper tooth 13 to 23; the midlines measured again on a 2×
+zoom: two of the first review's were off, P5 760 px not 728, P6 817 px not 797, so its per-photo figures are
+approximate):
+
+- **5 of the 11 uncertain placements were right and refused** (one photo, all five creations): the teeth were
+  named correctly (11/21 within 0.04 central incisor widths of the real midline) and the photo check's box was 0.6
+  off. The other 6 were rightly refused: the whole upper arch named a tooth off (5), named mirrored (1).
+- Of the 19 renders, 15 of 112 upper gems (13 %) on a neighbouring tooth, in 9 renders: an upper lateral incisor
+  named 11 with the real 11 missed (4 analyses of one photo), the upper boxes squeezed toward one side (5 renders of
+  another photo).
+- The lower arch is not scored (no lower midline measured); on one photo its boxes covered half the arch, a tooth
+  or more off, 14 of 20 teeth were set aside and its gems left out with the message that they are hidden by a lip.
+
+**The pixel midline** (`tryOnMidline.ts`, `components/studio/tryOn/midlineArbiter.ts`; behind a flag, off by
+default): a third source for the midline, from the photo itself — the dark gaps between the upper teeth along the
+central incisors' crowns. On the 11 distinct analyses of the trial, the darkest gap near the two readings was the
+real midline every time (within 0.03 central incisor widths). It is used only when the readings disagree (midlines
+more than 0.25 widths apart, no check box, 11 and 21 not touching, or a mirrored naming) and only when one gap
+stands out (1.3 times the next one near the readings); then the reading is named back if mirrored, renamed a tooth
+along the arch (its midline 0.65 to 1.4 widths off the gap) or on one side only (11 and 21 more than 0.4 widths
+apart), its upper boxes' edges moved onto the gaps near them, and the check box replaced by one centred on the gap.
+A renamed reading is used only if its fitted midline lands within `CORRECTED_MIDLINE_TOLERANCE` (0.3) of the gap.
+
+Replayed on the 30 analyses of the trial (the module on the photos' pixels): placements refused 11 → 5, upper gems
+right 97 → 137, wrong 15 → 13, renders with a wrong gem 9 → 8. Caution: the values were set on these same photos,
+of one or two people with a marked gap between the central incisors; on someone whose central incisors touch
+tightly, the darkest gap may be elsewhere. So it ships measured only: `studio_try_on_placement` carries what it
+found and whether its placement would have been reliable (`arbiter_*`), the trial applies it with
+`TRIAL_ARBITER=1`; it is turned on for customers with `NEXT_PUBLIC_TRY_ON_MIDLINE_ARBITER=on` once checked on
+photos of other people.
+
+Still open after this trial: the message for gems left out says they are hidden by a lip or other teeth even when
+the teeth were not found (separate the two); the image model drew 18 % of the gems more than half a gem off their
+mark and 20 % more than 30 % larger or smaller (worst on hearts and navettes), and the paste-back keeps a drifted gem
+where it was drawn.
+
 Known limits: the teeth model sometimes numbers the teeth one tooth off (seen on one trial photo: the whole design
 then moves one tooth, with a high confidence, since the fit stays consistent; since 2026-11-04 the renumbering above
 catches a whole arch off by one, a single misnamed tooth is still only set aside); a mirrored selfie puts the person's
