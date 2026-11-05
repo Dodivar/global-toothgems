@@ -82,6 +82,8 @@ describe("try-on analytics", () => {
       centralsOffset: 0.09,
       corrections: ["shifted"],
       snapped: 9,
+      segmented: { upper: 6, lower: 5 },
+      lowerMidline: 420,
       found: [],
       centrals: null,
     };
@@ -94,10 +96,13 @@ describe("try-on analytics", () => {
       arbiter_centrals_offset: 0.09,
       arbiter_corrections: ["shifted"],
       arbiter_snapped: 9,
+      arbiter_segmented_upper: 6,
+      arbiter_segmented_lower: 5,
       arbiter_would_be_reliable: true, // renamed, its midline 0.12 from the gap
       arbiter_would_midline_error: 0.12,
     });
     expect(Object.values(props)).not.toContain(412); // never a position on the photo
+    expect(Object.values(props)).not.toContain(420);
     expect(midlineProps(null, false, null)).toMatchObject({ arbiter: "unreadable", arbiter_triggered: false, arbiter_would_be_reliable: null });
     expect(midlineProps(arbitration, true, null)).toMatchObject({ arbiter: "applied", arbiter_would_be_reliable: null });
   });

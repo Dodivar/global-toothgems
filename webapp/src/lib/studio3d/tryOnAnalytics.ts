@@ -56,6 +56,8 @@ export function midlineProps(arbitration: MidlineArbitration | null, applied: bo
     arbiter_centrals_offset: arbitration?.centralsOffset ?? null,
     arbiter_corrections: [...(arbitration?.corrections ?? [])],
     arbiter_snapped: arbitration?.snapped ?? 0,
+    arbiter_segmented_upper: arbitration?.segmented.upper ?? 0,
+    arbiter_segmented_lower: arbitration?.segmented.lower ?? 0,
     arbiter_would_be_reliable: shadow && arbitration ? arbitratedReliable(shadow, arbitration) : null,
     arbiter_would_midline_error: shadow ? shadow.midlineError : null,
   };

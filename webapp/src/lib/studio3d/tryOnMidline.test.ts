@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { FRONT_VIEW_TEETH, type FrontViewGem } from "./frontView";
-import { arbitratedReliable, arbitrateMidline, CORRECTED_MIDLINE_TOLERANCE, toothGaps, type CloseUpPixels, type ToothGap } from "./tryOnMidline";
+import {
+  arbitratedReliable,
+  arbitrateMidline,
+  CORRECTED_MIDLINE_TOLERANCE,
+  LOWER_EDGES,
+  lowerToothGaps,
+  segmentTeeth,
+  toothGaps,
+  UPPER_EDGES,
+  type CloseUpPixels,
+  type ToothGap,
+} from "./tryOnMidline";
 import { registerDesign, shiftNumbering, type CloseUpBox, type FoundTooth } from "./tryOnRegistration";
 
 const S = 20; // px/mm
@@ -82,9 +93,19 @@ describe("toothGaps", () => {
 describe("arbitrateMidline", () => {
   const gaps = toothGaps(smile(), truth);
 
-  it("leaves the readings alone when they agree", () => {
+  it("keeps the names of readings that agree, the check box moved onto the gap", () => {
     const a = arbitrateMidline(truth, box(0.1), gaps);
     expect(a.triggered).toBe(false);
+    expect(a.corrections).toEqual([]);
+    expect(near(a.midline!, midline, 2)).toBe(true);
+    expect(a.found.map((t) => t.fdi).sort()).toEqual(truth.map((t) => t.fdi).sort());
+    expect(near(a.centrals!.x + a.centrals!.width / 2, midline, 2)).toBe(true);
+  });
+
+  it("leaves readings that agree alone when the gap is a tooth away from them", () => {
+    const far: ToothGap[] = [{ x: midline + 0.8 * centralWidth, strength: 60 }];
+    const a = arbitrateMidline(truth, box(0.1), far);
+    expect(a.midline).toBeNull();
     expect(a.found).toEqual(truth);
     expect(a.centrals).toEqual(box(0.1));
   });
@@ -124,13 +145,18 @@ describe("arbitrateMidline", () => {
     const a = arbitrateMidline(missed, box(0), gaps);
     expect(a.corrections).toEqual(["half_shifted"]);
     expect(near(byFdi(a.found, "12").x, byFdi(truth, "12").x)).toBe(true);
-    expect(a.found.some((t) => t.fdi === "11")).toBe(false);
     expect(near(byFdi(a.found, "21").x, byFdi(truth, "21").x)).toBe(true);
+    // The missed 11 rebuilt between the gaps, its height its mirror's.
+    const t11 = byFdi(a.found, "11");
+    expect(near(t11.x, byFdi(truth, "11").x, 8)).toBe(true);
+    expect(near(t11.x + t11.width, midline, 2)).toBe(true);
   });
 
-  it("moves box edges onto the gaps near them", () => {
+  it("moves box edges onto the gaps near them when the boxes cannot be rebuilt", () => {
     const squeezed = truth.map((t) => (t.fdi === "22" ? { ...t, x: t.x - 0.2 * centralWidth } : t));
-    const a = arbitrateMidline(squeezed, box(0.4), gaps);
+    const lone = gaps.filter((g) => Math.abs(g.x - midline) < 3 || g.x > midline + 0.3 * centralWidth); // no outer edge on the 1x side
+    const a = arbitrateMidline(squeezed, box(0.4), lone);
+    expect(a.segmented.upper).toBe(0);
     expect(a.snapped).toBeGreaterThan(0);
     expect(near(byFdi(a.found, "22").x, byFdi(truth, "22").x)).toBe(true);
   });
@@ -173,5 +199,88 @@ describe("arbitratedReliable", () => {
     const a = arbitrateMidline(truth, box(0.6), gaps);
     const reg = place(a.found, a.centrals);
     expect(arbitratedReliable(reg, a)).toBe(reg.reliable);
+  });
+});
+
+describe("segmentTeeth", () => {
+  // A smile whose teeth have the usual widths (UPPER_EDGES, LOWER_EDGES), and the model's even grid of boxes on it.
+  const M = 600; // midline
+  const U = 100; // central incisor width / UPPER_EDGES[0]
+  const LM = 610; // the lower midline, a little off the upper one
+  const upperSeams = [M, ...UPPER_EDGES.flatMap((e) => [M - e * U, M + e * U])];
+  const lowerSeams = [LM, ...LOWER_EDGES.flatMap((e) => [LM - e * U, LM + e * U])];
+  const pixels = (): CloseUpPixels => {
+    const width = 1200;
+    const height = 420;
+    const data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const upper = y >= 60 && y < 260;
+        const lower = y >= 260 && y < 380;
+        const inside = x >= M - 300 && x < M + 300 && (upper || lower);
+        const seams = upper ? upperSeams : lowerSeams;
+        let grey = inside ? 225 : 90;
+        if (inside && seams.some((e) => Math.abs(x - e) <= 2)) grey = Math.abs(x - (upper ? M : LM)) <= 2 ? 40 : 120;
+        data[i] = data[i + 1] = data[i + 2] = grey;
+        data[i + 3] = 255;
+      }
+    }
+    return { width, height, data };
+  };
+  // The model's grid: every tooth 75 px wide on the upper arch, 50 on the lower one, from a midline 20 px off.
+  const grid = (row: string[], from: number, step: number, y: number, height: number) =>
+    row.map((fdi, k) => ({ fdi, x: from + k * step, y, width: step, height }));
+  const model: FoundTooth[] = [
+    ...grid(["14", "13", "12", "11"], M + 20 - 4 * 75, 75, 60, 200),
+    ...grid(["21", "22", "23", "24"], M + 20, 75, 60, 200),
+    ...grid(["43", "42", "41"], M + 20 - 3 * 50, 50, 250, 140),
+    ...grid(["31", "32", "33"], M + 20, 50, 250, 140),
+  ];
+  const px = pixels();
+  const upperGaps = toothGaps(px, model);
+  const lowerGaps = lowerToothGaps(px, model);
+  const midlineGap = upperGaps.reduce((a, b) => (b.strength > a.strength ? b : a));
+
+  it("finds the gaps of both arches", () => {
+    expect(near(midlineGap.x, M, 2)).toBe(true);
+    for (const e of LOWER_EDGES.slice(0, 2)) expect(lowerGaps.some((g) => near(g.x, LM + e * U, 3))).toBe(true);
+  });
+
+  it("rebuilds each box between the gaps, from the midline out", () => {
+    const seg = segmentTeeth(model, midlineGap, 150, upperGaps, lowerGaps);
+    expect(seg.upper).toBeGreaterThanOrEqual(6);
+    expect(seg.lower).toBe(6);
+    expect(near(seg.lowerMidline!, LM, 2)).toBe(true);
+    const box = (fdi: string) => seg.found.find((t) => t.fdi === fdi)!;
+    const edges = (fdi: string) => [box(fdi).x, box(fdi).x + box(fdi).width];
+    const [a11, b11] = edges("11");
+    expect(near(a11, M - UPPER_EDGES[0] * U, 3) && near(b11, M, 3)).toBe(true);
+    const [a22, b22] = edges("22");
+    expect(near(a22, M + UPPER_EDGES[0] * U, 3) && near(b22, M + UPPER_EDGES[1] * U, 3)).toBe(true);
+    const [a31, b31] = edges("31");
+    expect(near(a31, LM, 3) && near(b31, LM + LOWER_EDGES[0] * U, 3)).toBe(true);
+    const [a23, b23] = edges("23");
+    expect(near(a23, M + UPPER_EDGES[1] * U, 3) && near(b23, M + UPPER_EDGES[2] * U, 3)).toBe(true);
+    expect(box("43").y).toBe(250); // the model's top and height kept
+    expect(new Set(seg.found.map((t) => t.fdi)).size).toBe(seg.found.length);
+  });
+
+  it("puts the gems on the teeth the gaps show", () => {
+    const seg = segmentTeeth(model, midlineGap, 150, upperGaps, lowerGaps);
+    const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: ["12", "22", "42", "32"].map(gem) }, seg.found, { centrals: null });
+    const onTooth = (fdi: string) => {
+      const g = reg.gems.find((x) => x.toothId === fdi)!;
+      const b = seg.found.find((t) => t.fdi === fdi)!;
+      return g.x >= b.x && g.x <= b.x + b.width;
+    };
+    for (const fdi of ["12", "22", "42", "32"]) expect(onTooth(fdi)).toBe(true);
+  });
+
+  it("rebuilds nothing without the central incisors' outer edges alike on both sides", () => {
+    const oneSided = upperGaps.filter((g) => g.x >= M - 3);
+    const seg = segmentTeeth(model, midlineGap, 150, oneSided, lowerGaps);
+    expect(seg.upper).toBe(0);
+    expect(seg.found).toEqual(model);
   });
 });

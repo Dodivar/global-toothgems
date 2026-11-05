@@ -1,11 +1,11 @@
 import type { TryOnCrop } from "../../../lib/studio3d/tryOnComposite";
-import { arbitrateMidline, toothGaps, type CloseUpPixels, type MidlineArbitration } from "../../../lib/studio3d/tryOnMidline";
+import { arbitrateMidline, lowerToothGaps, toothGaps, type CloseUpPixels, type MidlineArbitration } from "../../../lib/studio3d/tryOnMidline";
 import type { CloseUpBox, FoundTooth } from "../../../lib/studio3d/tryOnRegistration";
 import { bitmapOf } from "./pasteBack";
 
 /**
- * Whether the pixel midline (`lib/studio3d/tryOnMidline.ts`) corrects the
- * placement, or is only measured for the analytics: on with
+ * Whether the pixel midline and the teeth rebuilt from the gaps
+ * (`lib/studio3d/tryOnMidline.ts`) correct the placement, or is only measured for the analytics: on with
  * `NEXT_PUBLIC_TRY_ON_MIDLINE_ARBITER=on`, or in the try-on trial
  * (`scripts/try-on-trial/`, `TRIAL_ARBITER=1`), which sets
  * `window.__gtTrialArbiter` next to `window.__gtTrial`. Off by default until
@@ -45,7 +45,7 @@ export async function arbitrateOnPhoto(
 ): Promise<MidlineArbitration | null> {
   try {
     const pixels = await closeUpPixels(photo, crop);
-    return pixels ? arbitrateMidline(teeth, centrals, toothGaps(pixels, teeth)) : null;
+    return pixels ? arbitrateMidline(teeth, centrals, toothGaps(pixels, teeth), lowerToothGaps(pixels, teeth)) : null;
   } catch {
     return null;
   }

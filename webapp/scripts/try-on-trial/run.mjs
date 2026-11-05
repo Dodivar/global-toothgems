@@ -428,13 +428,13 @@ function report(summary) {
     const v = (x) => (x === null || x === undefined ? "—" : x);
     const arbiterCell = (p) => {
       if (!p.arbiter || p.arbiter === "unreadable") return p.arbiter ?? "—";
-      if (!p.arbiter_triggered) return "readings agree";
-      if (!p.arbiter_gap_found) return "no clear gap";
-      const fixes = [...(p.arbiter_corrections ?? []), p.arbiter_snapped ? `${p.arbiter_snapped} snapped` : null].filter(Boolean).join(", ");
+      if (!p.arbiter_gap_found) return p.arbiter_triggered ? "no clear gap" : "readings agree, no clear gap";
+      const rebuilt = p.arbiter_segmented_upper || p.arbiter_segmented_lower ? `${p.arbiter_segmented_upper ?? 0} upper / ${p.arbiter_segmented_lower ?? 0} lower rebuilt` : null;
+      const fixes = [...(p.arbiter_corrections ?? []), rebuilt, p.arbiter_snapped ? `${p.arbiter_snapped} snapped` : null].filter(Boolean).join(", ");
       const would = p.arbiter === "measured" ? `; would be ${p.arbiter_would_be_reliable ? "reliable" : "uncertain"}` : "";
       return `teeth ${v(p.arbiter_teeth_offset)}, box ${v(p.arbiter_centrals_offset)}${fixes ? `: ${fixes}` : ""}${would}`;
     };
-    lines.push("", "## Placement and render, per run", "", "Midline: distance between the fitted midline and the photo check's central incisors (central incisor widths; over 0.5 makes the placement uncertain). Pixel midline: the function's 11/21 and the check's box against the darkest gap between the teeth (central incisor widths), what it corrected, and — measured only — whether its placement would have been reliable. Drawn / drifted / resized: gems the image model drew, drew more than half a gem away from its mark, drew more than 30 % larger or smaller.", "", "| Run | Outcome | Confidence | Midline | Renumbered (upper, lower) | Issues | Pixel midline | Marks / left out | Drawn | Drifted | Resized |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    lines.push("", "## Placement and render, per run", "", "Midline: distance between the fitted midline and the photo check's central incisors (central incisor widths; over 0.5 makes the placement uncertain). Pixel midline: the function's 11/21 and the check's box against the darkest gap between the teeth (central incisor widths), what it corrected and how many teeth it rebuilt from the gaps, and — measured only — whether its placement would have been reliable. Drawn / drifted / resized: gems the image model drew, drew more than half a gem away from its mark, drew more than 30 % larger or smaller.", "", "| Run | Outcome | Confidence | Midline | Renumbered (upper, lower) | Issues | Pixel midline | Marks / left out | Drawn | Drifted | Resized |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
     for (const r of placed) {
       const p = r.placement;
       const res = r.result;

@@ -144,6 +144,27 @@ photos of other people. A risk to weigh before: a photo the phone saved mirrored
 teeth the model named rightly, has its 2x on the image's left — today refused (`out_of_order`), it would be named
 back as "mirrored" and its gems put on the wrong side; the pixels cannot tell it from a misnamed reading.
 
+**The teeth rebuilt from the gaps** (`segmentTeeth`, same module, same flag; 2026-11-05). Comparing the model's
+boxes with the gaps showed where most wrong-tooth gems come from: the teeth model draws its boxes on a near-even grid
+(about 0.7 central incisor widths a tooth) — the central incisors too narrow, the lateral ones over their outer part,
+the lower incisors about 0.5 wide instead of 0.64 — while the gaps, from photo to photo, put the upper teeth's outer
+edges at 1.05, 1.73 and 2.32 central widths from the midline and the lower ones' at 0.64, 1.28 and 1.88
+(`UPPER_EDGES`, `LOWER_EDGES`). So, once the midline gap stands out and agrees with the reading (within 0.6 central
+widths, less than a tooth; or after the corrections above): the central incisors' outer edges are taken as the
+innermost strong pair of gaps alike on both sides (within 15 %), which gives the photo's scale; from there each side
+is walked outward, each tooth ending on the gap nearest where a tooth of the usual width ends (within 30 % of its
+width), stopping at the first tooth without one; the lower arch the same from its own midline gap (the strong gap
+nearest the upper midline, within 0.45). Each rebuilt box keeps the model's top and height for that tooth (or its
+mirror's); a box the model drew inside a rebuilt one, for another tooth, is dropped.
+
+Replayed on the 30 analyses of the trial, with one gem on each tooth 13 to 23 and 43 to 33, scored against the tooth
+limits measured from the gaps: upper gems right 90 → 143, wrong 13 → 6; lower gems right 68 → 133, wrong 7 → 0;
+left out 50 → 24; placements refused 11 → 4; renders with a wrong gem 13 → 6 — the 6 wrong gems left sit on the
+limit between two teeth (2.24 for a limit at 2.24, 1.79 for 1.79). Caution, beyond the one above: the tooth limits
+the replay scores against come from the same gaps (checked by eye on the photos, not measured independently), and
+the edges' proportions were measured on these photos; the vertical place of the gems (the boxes' tops and heights)
+is still the model's.
+
 Still open after this trial: the message for gems left out says they are hidden by a lip or other teeth even when
 the teeth were not found (separate the two); the image model drew 18 % of the gems more than half a gem off their
 mark and 20 % more than 30 % larger or smaller (worst on hearts and navettes), and the paste-back keeps a drifted gem
