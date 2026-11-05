@@ -100,6 +100,13 @@ const FIRST_EDGE_RANGE: readonly [number, number] = [0.55, 1.6];
 const EDGE_SYMMETRY = 0.15;
 /** Of those pairs, the innermost at least this share as strong as the strongest. */
 const PAIR_STRENGTH = 0.6;
+/**
+ * An edge of that pair may be fainter than `SEGMENT_STRENGTH` (down to this
+ * share of the midline's) when the pair together is as strong as two edges at
+ * `SEGMENT_STRENGTH`: on a dim trial photo, one central incisor's outer edge
+ * was at 0.16 and the other at 0.26, and the teeth were not rebuilt.
+ */
+const PAIR_EDGE_STRENGTH = 0.12;
 /** The lower midline gap is the one nearest the upper midline within this many central incisor widths. */
 const LOWER_MIDLINE_REACH = 0.45;
 /**
@@ -110,6 +117,14 @@ const LOWER_MIDLINE_REACH = 0.45;
 const AGREE = 0.6;
 /** The midline gap is looked for within this many central incisor widths of either reading. */
 const SEARCH = 1.3;
+/**
+ * Readings that agree, with no gap standing out within `SEARCH` (the central
+ * incisors' outer edges can be as dark as the midline): the gap within
+ * `AGREE` of them that stands out there is taken when at least this share as
+ * strong as the strongest within `SEARCH` (on a trial photo both readings
+ * were 0.35–0.45 off, the midline gap 34 and the outer edges 32 and 29).
+ */
+const AGREE_STRENGTH = 0.75;
 /** It stands out when this many times as strong as the next gap there. */
 const DOMINANCE = 1.3;
 /** The readings disagree from this distance between their midlines, central incisor widths. */
@@ -311,10 +326,11 @@ export interface Segmentation {
 export function segmentTeeth(found: readonly FoundTooth[], midline: ToothGap, w: number, upperGaps: readonly ToothGap[], lowerGaps: readonly ToothGap[]): Segmentation {
   const none: Segmentation = { found: [...found], upper: 0, lower: 0, lowerMidline: null };
   const min = SEGMENT_STRENGTH * midline.strength;
+  const edgeMin = PAIR_EDGE_STRENGTH * midline.strength;
   const side = (dir: 1 | -1) =>
     upperGaps.filter((g) => {
       const d = dir * (g.x - midline.x);
-      return g.strength >= min && d >= FIRST_EDGE_RANGE[0] * w && d <= FIRST_EDGE_RANGE[1] * w;
+      return g.strength >= edgeMin && d >= FIRST_EDGE_RANGE[0] * w && d <= FIRST_EDGE_RANGE[1] * w;
     });
   // The pairs alike on both sides; the innermost of the strong ones (the next pair out, the lateral
   // incisors' outer edges, is alike too).
@@ -323,6 +339,7 @@ export function segmentTeeth(found: readonly FoundTooth[], midline: ToothGap, w:
     for (const r of side(1)) {
       const dl = midline.x - l.x;
       const dr = r.x - midline.x;
+      if (l.strength + r.strength < 2 * min) continue;
       if (Math.abs(dl - dr) <= EDGE_SYMMETRY * ((dl + dr) / 2)) pairs.push({ l, r, strength: l.strength + r.strength, distance: dl + dr });
     }
   }
@@ -420,11 +437,15 @@ export function arbitrateMidline(
   const near = gaps
     .filter((g) => Math.abs(g.x - teethMid) <= SEARCH * w || (centralsMid !== null && Math.abs(g.x - centralsMid) <= SEARCH * w))
     .sort((a, b) => b.strength - a.strength);
-  const clear = near.length > 0 && (near.length === 1 || near[0].strength >= DOMINANCE * near[1].strength);
+  const stands = (gs: readonly ToothGap[]) => gs.length > 0 && (gs.length === 1 || gs[0].strength >= DOMINANCE * gs[1].strength);
   const round = (n: number) => Math.round(n * 100) / 100;
   // Readings that agree are kept as named; their boxes are rebuilt only on a gap that agrees with them too.
-  if (!clear) return { ...unchanged, triggered };
-  const gap = near[0];
+  let gap: ToothGap | null = stands(near) ? near[0] : null;
+  if (!gap && !triggered) {
+    const within = near.filter((g) => Math.abs(g.x - teethMid) <= AGREE * w);
+    if (stands(within) && within[0].strength >= AGREE_STRENGTH * near[0].strength) gap = within[0];
+  }
+  if (!gap) return { ...unchanged, triggered };
   const teethOffset = (teethMid - gap.x) / w;
   if (!triggered && Math.abs(teethOffset) > AGREE) return unchanged;
 

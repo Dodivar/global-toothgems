@@ -187,7 +187,26 @@ back went from a median size of 1.39 times their mark to 1.05 (17 over 1.3 → 2
 median drift of 0.78 half-sizes to 0.1 (16 over half a gem → 0); the gems not moved stayed as they were; by eye,
 the hearts, navettes, drops and charms are back at the design's size and place, without seams. Tried and dropped: a
 version that moved the whole disc (square seams of shrunk tooth), one without the density check and with a smaller
-body (pale crystals broken or shrunk to 0.8), and moving gems drawn under half a gem off. Not yet seen in the browser.
+body (pale crystals broken or shrunk to 0.8), and moving gems drawn under half a gem off.
+
+**Trial with both flags on** (2026-11-05 11:49, `TRIAL_ARBITER=1`, the same 7 photos × 5 creations as the
+10:44 trial with the arbiter measured only): results 19 → 26, placements too uncertain 11 → 4 (P7 now all five,
+P5 one of five), photo refused unchanged (P1). By eye on the sheets, the gems of P2, P3, P4, P6 and P7 are on
+their teeth, P2's on the right teeth although the teeth model named them a whole tooth off one way (S1) and the
+other (S4) — the arbiter shifted both back. In the browser, `reseat` moved back 71 gems in 26 renders, no
+seam visible on the sheets; the hearts and charms are at the design's size. Replayed offline, the browser's arbitration matched on all 30
+analyses, and two misses showed:
+- P6-S5: both readings 0.34 and 0.45 to the left (they agree), and the midline gap (34) hardly stronger than the
+  central incisors' outer edges (32, 29), so none stood out within `SEARCH` and nothing was corrected — the 21's
+  gem sat on the midline. Readings that agree now take the gap within `AGREE` of them that stands out there, when
+  at least `AGREE_STRENGTH` (0.75) as strong as the strongest within `SEARCH`.
+- P5 (S1, S4, S5): renamed a whole tooth off and right, but the central incisors' outer edges (0.16 and 0.26 of
+  the midline's strength) were under `SEGMENT_STRENGTH` (0.2), so the boxes were only snapped (the 11 then 0.71
+  wide) and the fit missed the gap (0.358 > 0.3): refused. An edge of that pair may now be down to
+  `PAIR_EDGE_STRENGTH` (0.12) when the pair together is as strong as two edges at `SEGMENT_STRENGTH`.
+Replayed on the 60 analyses of both trials, these two changes alter only P3 (its boxes now rebuilt, on the gaps;
+its readings were right), P5 (11 to 23 rebuilt, 11 at 1.06 wide) and P6-S5 (midline on the gap); every other
+analysis is unchanged. Not yet checked in the browser: P5's fit on the rebuilt teeth (whether it now passes 0.3).
 
 Still open after this trial: the message for gems left out says they are hidden by a lip or other teeth even when
 the teeth were not found (separate the two); the image model drew 18 % of the gems more than half a gem off their

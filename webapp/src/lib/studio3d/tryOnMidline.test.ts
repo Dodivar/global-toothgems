@@ -161,6 +161,23 @@ describe("arbitrateMidline", () => {
     expect(near(byFdi(a.found, "22").x, byFdi(truth, "22").x)).toBe(true);
   });
 
+  it("takes the gap near readings that agree when the central incisors' outer edges are as dark", () => {
+    // Both readings 0.4 of a tooth off; the outer edges nearly as strong as the midline, so none stands out within reach.
+    const off = truth.map((t) => ({ ...t, x: t.x - 0.4 * centralWidth }));
+    const dark: ToothGap[] = [
+      { x: midline, strength: 34 },
+      { x: midline - 1.05 * centralWidth, strength: 32 },
+      { x: midline + 1.05 * centralWidth, strength: 29 },
+    ];
+    const a = arbitrateMidline(off, box(-0.45), dark);
+    expect(a.triggered).toBe(false);
+    expect(near(a.midline!, midline, 2)).toBe(true);
+    expect(near(a.centrals!.x + a.centrals!.width / 2, midline, 2)).toBe(true);
+    // A gap within reach much fainter than the edges is not taken.
+    const faint = dark.map((g, k) => (k === 0 ? { ...g, strength: 20 } : g));
+    expect(arbitrateMidline(off, box(-0.45), faint).midline).toBeNull();
+  });
+
   it("changes nothing when no gap stands out", () => {
     const even = toothGaps(smile(120, 120), truth);
     const a = arbitrateMidline(truth, box(0.6), even);
@@ -275,6 +292,21 @@ describe("segmentTeeth", () => {
       return g.x >= b.x && g.x <= b.x + b.width;
     };
     for (const fdi of ["12", "22", "42", "32"]) expect(onTooth(fdi)).toBe(true);
+  });
+
+  it("rebuilds from faint outer edges of the central incisors when the pair is strong enough together", () => {
+    // A dim photo: every line but the midline faint, one central incisor's outer edge fainter still.
+    const outer = (g: ToothGap) => Math.abs(Math.abs(g.x - M) - UPPER_EDGES[0] * U) <= 3;
+    const dim = (g: ToothGap, left: number, right: number) =>
+      g === midlineGap ? g : { ...g, strength: (outer(g) ? (g.x < M ? left : right) : 0.3) * midlineGap.strength };
+    const faint = upperGaps.map((g) => dim(g, 0.15, 0.27));
+    const seg = segmentTeeth(model, midlineGap, 150, faint, lowerGaps);
+    expect(seg.upper).toBeGreaterThanOrEqual(6);
+    const t11 = seg.found.find((t) => t.fdi === "11")!;
+    expect(near(t11.x, M - UPPER_EDGES[0] * U, 3)).toBe(true);
+    // Both too faint (and no other line to follow): nothing rebuilt on the upper arch.
+    const tooFaint = upperGaps.filter((g) => g === midlineGap || outer(g)).map((g) => dim(g, 0.13, 0.13));
+    expect(segmentTeeth(model, midlineGap, 150, tooFaint, lowerGaps).upper).toBe(0);
   });
 
   it("rebuilds nothing without the central incisors' outer edges alike on both sides", () => {
