@@ -84,9 +84,9 @@ export function LanguageMenu({ placement = "below", align = "end" }: { placement
         aria-label={t("common.langMenuAria")}
         aria-haspopup="true"
         aria-expanded={open}
-        className="grid h-9 w-9 place-items-center rounded-[var(--radius-md)] outline-none transition-colors hover:bg-[var(--surface-brand-wash)] focus-visible:shadow-[var(--shadow-focus)]"
+        className="grid h-8 w-9 place-items-center rounded-[var(--radius-md)] outline-none transition-colors hover:bg-[var(--surface-brand-wash)] focus-visible:shadow-[var(--shadow-focus)]"
       >
-        <Flag locale={current} />
+        <Flag locale={current} size={14} />
       </button>
       {open && (
         <ul
@@ -104,7 +104,7 @@ export function LanguageMenu({ placement = "below", align = "end" }: { placement
                   locale === current ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"
                 }`}
               >
-                <Flag locale={locale} size={18} />
+                <Flag locale={locale} size={14} />
                 {locale.toUpperCase()}
               </button>
             </li>
