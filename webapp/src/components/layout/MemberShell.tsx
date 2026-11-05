@@ -1,11 +1,11 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, NavLink, useLocation, useNavigate, useLanguageSwitch } from "../../lib/navigation";
+import { LanguageMenu } from "./LanguageMenu";
+import { Link, NavLink, useLocation, useNavigate } from "../../lib/navigation";
 import {
   Award,
   Cookie,
   CreditCard,
-  Languages,
   LayoutDashboard,
   LifeBuoy,
   Lock,
@@ -298,7 +298,6 @@ function Drawer({ onClose, everywhere = false }: { onClose: () => void; everywhe
 function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; closeButton?: ReactNode }) {
   const { formatMonthYear } = useFormat();
   const { t } = useTranslation();
-  const switchLanguage = useLanguageSwitch();
   const navigate = useNavigate();
   const { displayName, initials, email, signOut } = useAuth();
   const { memberSince } = useOrders();
@@ -388,17 +387,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
             <Cookie size={14} aria-hidden="true" className="flex-none" />
             <span className="truncate">{t("account.shell.cookies")}</span>
           </button>
-          <button
-            type="button"
-            onClick={switchLanguage}
-            aria-label={t("common.langSwitchAria")}
-            title={t("common.langSwitchAria")}
-            className={clsx(footTool, "uppercase", focusRing)}
-          >
-            <Languages size={14} aria-hidden="true" className="flex-none" />
-            {/* Shows the language you switch TO, like the storefront header. */}
-            {t("common.langSwitchCode")}
-          </button>
+          <LanguageMenu placement="above" />
         </div>
         <span aria-hidden="true" className="my-1 h-px bg-[var(--border-subtle)]" />
         <button type="button" onClick={leave} className={clsx(rowBase, "text-left text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]", focusRing)}>
