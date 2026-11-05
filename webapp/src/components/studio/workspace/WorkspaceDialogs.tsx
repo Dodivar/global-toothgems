@@ -6,13 +6,14 @@ import { Button } from "../../ui/Button";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { useStudioFeature } from "../../../lib/studioAccess";
-import { closeWorkspaceDialog, useWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { closeWorkspaceDialog, onboardingSeen, openWorkspaceDialog, useWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CollectionEditDialog, CreationCollectionsDialog } from "./Collections";
 import { CreationDetail } from "./CreationDetail";
 import { DeleteConfirmation } from "./DeleteConfirmation";
 import { FeedbackModal } from "./FeedbackModal";
 import { GlowbookDeleteNotice } from "./GlowbookStatus";
 import { OnboardingOverlay, TourCompleteDialog } from "./OnboardingOverlay";
+import { PhoneNotice } from "./PhoneNotice";
 import { PlanLockedDialog } from "./PlanLocked";
 import { PublicSaveWarning } from "./PublicSaveWarning";
 import { SaveCreationDialog } from "./SaveCreationDialog";
@@ -104,6 +105,16 @@ export function WorkspaceDialogs() {
       return <DeleteConfirmation kind="group" name={dialog.group.name} onConfirm={() => ws.deleteGroup(dialog.group)} onClose={close} />;
     case "feedback":
       return <FeedbackModal onClose={close} />;
+    case "phoneNotice":
+      return (
+        <PhoneNotice
+          onClose={() => {
+            close();
+            // The welcome waited behind this notice: it is still owed on a first visit.
+            if (!onboardingSeen()) openWorkspaceDialog({ kind: "onboarding" });
+          }}
+        />
+      );
     case "onboarding":
       return <OnboardingOverlay onClose={close} />;
     case "tourComplete":

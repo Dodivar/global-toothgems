@@ -673,6 +673,13 @@
       }
     }
   },
+  "phoneNotice": {
+    "title": "The 3D Studio is made for a bigger screen",
+    "body": "On a phone the experience is degraded: the screen is too small to place gems precisely and to handle the 3D scene comfortably. We strongly recommend using a tablet or a computer.",
+    "hint": "You can still carry on here: your creations are saved in your account and you will find them on another device.",
+    "close": "Close the notice",
+    "continue": "Continue on my phone"
+  },
   "onboarding": {
     "progress": "Step {{step}} of {{total}}",
     "trail": "Guided tour progress",

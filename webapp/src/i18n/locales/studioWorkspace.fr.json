@@ -673,6 +673,13 @@
       }
     }
   },
+  "phoneNotice": {
+    "title": "Le Studio 3D est pensé pour un grand écran",
+    "body": "Sur téléphone, l’expérience est dégradée : l’écran est trop petit pour placer précisément les gemmes et manipuler la scène 3D avec confort. Nous vous conseillons vivement d’utiliser une tablette ou un ordinateur.",
+    "hint": "Vous pouvez tout de même continuer ici : vos créations sont enregistrées dans votre compte et vous les retrouverez sur un autre appareil.",
+    "close": "Fermer l’avertissement",
+    "continue": "Continuer sur téléphone"
+  },
   "onboarding": {
     "progress": "Étape {{step}} sur {{total}}",
     "trail": "Progression de la visite guidée",

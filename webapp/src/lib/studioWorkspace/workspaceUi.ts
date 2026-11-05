@@ -35,6 +35,7 @@ export type WorkspaceDialog =
   | { kind: "planLocked"; feature: LockedFeature }
   | { kind: "signIn" }
   | { kind: "feedback" }
+  | { kind: "phoneNotice" }
   | { kind: "onboarding" }
   | { kind: "tourComplete" };
 

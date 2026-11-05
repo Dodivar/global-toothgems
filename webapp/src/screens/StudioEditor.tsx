@@ -27,6 +27,7 @@ import { StudioWorkspaceProvider } from "../lib/studioWorkspace/workspace";
 import { StudioTemplatesProvider } from "../lib/studioWorkspace/templatesStore";
 import { GlowbookProvider } from "../lib/studioWorkspace/glowbookStore";
 import { StudioTour } from "../components/studio/workspace/StudioTour";
+import { isPhoneDevice, phoneNoticeSeen } from "../lib/studioWorkspace/phoneNotice";
 import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog, useWorkspaceDialog } from "../lib/studioWorkspace/workspaceUi";
 
 /**
@@ -106,6 +107,13 @@ function StudioWorkspace() {
       showToast(t("studio.editor.toasts.restoredTitle"), t("studio.editor.toasts.restoredBody"), "info");
     }
   }, [showToast, t]);
+
+  // Opened on a phone: say once per session that a tablet or a computer is far more comfortable.
+  // It goes first; the welcome below then waits for it (and is opened by it when it closes).
+  useEffect(() => {
+    if (!isPhoneDevice() || phoneNoticeSeen()) return;
+    if (!getWorkspaceDialog()) openWorkspaceDialog({ kind: "phoneNotice" });
+  }, []);
 
   // First visit: a short welcome over the stage, once it has had a moment to draw.
   useEffect(() => {
