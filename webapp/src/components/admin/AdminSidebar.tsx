@@ -1,12 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { Link, NavLink, useNavigate, useLanguageSwitch } from "../../lib/navigation";
+import { LanguageMenu } from "../layout/LanguageMenu";
+import { Link, NavLink, useNavigate } from "../../lib/navigation";
 import {
   BarChart3,
   BellRing,
   ChevronsLeft,
   ChevronsRight,
   GraduationCap,
-  Languages,
   LayoutDashboard,
   LogOut,
   MessageCircleQuestion,
@@ -135,7 +135,6 @@ export function AdminSidebar({
   onNavigate?: () => void;
 }) {
   const { t } = useTranslation();
-  const switchLanguage = useLanguageSwitch();
   const navigate = useNavigate();
   const { admin, signOut } = useAdminAuth();
 
@@ -326,17 +325,7 @@ export function AdminSidebar({
             <Store size={14} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
             {!collapsed && t("admin.shell.viewStore")}
           </Link>
-          <button
-            type="button"
-            onClick={switchLanguage}
-            aria-label={t("common.langSwitchAria")}
-            title={t("common.langSwitchAria")}
-            className={clsx(footTool(collapsed), "uppercase")}
-          >
-            <Languages size={14} strokeWidth={1.9} aria-hidden="true" className="flex-none" />
-            {/* Shows the language you switch TO, like the storefront header. */}
-            {!collapsed && t("common.langSwitchCode")}
-          </button>
+          <LanguageMenu placement="above" align={collapsed ? "start" : "end"} />
         </div>
 
         <span aria-hidden="true" className="my-1 h-px bg-[var(--admin-rail-border)]" />
