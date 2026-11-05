@@ -122,3 +122,26 @@ test("each product card shows its own photo", async ({ page, problems }) => {
   expect(new Set(photos).size).toBeGreaterThanOrEqual(8);
   expect(problems).toEqual([]);
 });
+
+test("a visit from a campaign link sees the Studio pages without the storefront's navigation", async ({ page, problems }) => {
+  const nav = page.getByRole("navigation", { name: "Navigation principale" });
+  // An ordinary visit keeps the storefront chrome.
+  await open(page, "/fr/studio-3d");
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Imaginez-le\. Dessinez-le\. Il est à vous\./);
+  await expect(nav.first()).toBeAttached();
+
+  // A tagged link (social network, ad) hides it, and the page is the same.
+  await open(page, "/fr/studio-3d?utm_source=instagram&utm_medium=paid&utm_campaign=studio");
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Imaginez-le\. Dessinez-le\. Il est à vous\./);
+  await expect(page.getByRole("button", { name: "Se connecter" })).toBeVisible();
+  await expect(nav).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Mentions légales" })).toBeVisible();
+
+  // Moving to the plans in the same tab keeps it; leaving the Studio's pages brings the storefront back.
+  await page.goto("/fr/studio-3d/abonnement");
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Débloquez le Studio 3D/);
+  await expect(nav).toHaveCount(0);
+  await page.goto("/fr/boutique");
+  await expect(nav.first()).toBeAttached();
+  expect(problems).toEqual([]);
+});

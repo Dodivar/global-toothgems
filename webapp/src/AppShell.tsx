@@ -5,6 +5,9 @@ import { ReviewOverlays } from "./components/reviews/ReviewOverlays";
 import { FavoriteAccountDialogHost } from "./lib/favorites";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
+import { FocusBar, FocusFooter } from "./components/layout/FocusChrome";
+import { isCampaignVisit, isFocusedPage, isFocusPath, rememberFocusVisit } from "./lib/adFocus";
+import { useHydrated } from "./lib/useHydrated";
 import { isMemberSpacePath } from "./lib/memberSpace";
 import { isLessonPlayerPath } from "./lib/academyUrl";
 import { STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH } from "./lib/studioUrl";
@@ -65,7 +68,13 @@ const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH];
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  // A visit from a social network or an ad to the Studio's offer pages: its own slim chrome, nothing to lead the visitor away (lib/adFocus.ts). Browser-only, so the server's markup is the usual one.
+  const hydrated = useHydrated();
+  const focused = hydrated && isFocusedPage(pathname, search);
+  useEffect(() => {
+    if (isFocusPath(pathname) && isCampaignVisit(search)) rememberFocusVisit();
+  }, [pathname, search]);
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
   const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
   // The editor and its sections (`/studio-3d/atelier/mes-creations`…), and
@@ -84,11 +93,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           meet it before the page, though it sits at the bottom of
           the screen. Not on the back office or maintenance chrome. */}
       {!bareChrome && <CookieBanner />}
-      {!bareChrome && !workspace && <Header />}
+      {!bareChrome && !workspace && (focused ? <FocusBar /> : <Header />)}
       <main id="main" tabIndex={-1}>
         {children}
       </main>
-      {!bareChrome && !workspace && <Footer />}
+      {!bareChrome && !workspace && (focused ? <FocusFooter /> : <Footer />)}
       <CookieSettingsDialog />
       <ReviewOverlays />
       <FavoriteAccountDialogHost />
