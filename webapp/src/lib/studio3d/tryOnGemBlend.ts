@@ -95,11 +95,13 @@ const DRIFT_KEPT = 0.35;
  * sparkle and shadow, so a gem drawn at its size reads about 1.1.
  */
 export const RESEAT_SIZE = 1.3;
+/** With `reseat`, a gem drawn this far from its mark (half-sizes) is moved back; nearer, kept as drawn. */
+export const RESEAT_DRIFT = 0.5;
 export const RESEAT_TARGET = 1.1;
 /** A gem is moved back only when this share of its drawing's centre changed at least. */
 const RESEAT_DENSITY = 0.6;
 /** A gem moved back: taken whole within this many times its drawn radius of where it was drawn... */
-const GEM_CORE = 0.75;
+const GEM_CORE = 1.0;
 /** ...and where the model changed the photo, up to this many times. */
 const GEM_DISC = 1.15;
 
@@ -219,7 +221,7 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
     // A gem is a dense patch of change; scattered changes (a redrawn tooth edge, a pale crystal that
     // barely changed the tooth) are not moved: kept as drawn.
     const dense = changed.filter((c) => Math.hypot(c.x - cx, c.y - cy) <= 0.6 * core).length >= RESEAT_DENSITY * Math.PI * (0.6 * core) ** 2;
-    if (options.reseat && dense && (drift > DRIFT_KEPT || scale > 1)) {
+    if (options.reseat && dense && (drift > RESEAT_DRIFT || scale > 1)) {
       // Moved back: the mark's disc reads the answer around where the gem was drawn, scaled.
       sources[k] = { x: cx, y: cy, scale, threshold, extent: core };
       checks[index].reseated = true;

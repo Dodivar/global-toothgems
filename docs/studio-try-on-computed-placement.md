@@ -175,14 +175,19 @@ reliable on all three, P7's included (refused today) — so the replay stands fo
 **The gems moved back onto their marks** (`tryOnGemBlend.ts` `reseat`, flag `NEXT_PUBLIC_TRY_ON_RESEAT_GEMS`, the
 trial's `TRIAL_ARBITER=1`; 2026-11-05). The renders showed the placement right but the gems drawn by the image model
 larger (hearts 1.3 to 1.8 times) or beside their marks, and the paste-back kept them as drawn. With `reseat`, a gem
-drawn more than `DRIFT_KEPT` off its mark or `RESEAT_SIZE` (1.3) times its size or more is read where it was drawn
+drawn more than `RESEAT_DRIFT` (half a gem) off its mark or `RESEAT_SIZE` (1.3) times its size or more is read where it was drawn
 (its centre refined on its own changes: a neighbour's halo or a redrawn tooth edge pulled the plain centre aside),
 scaled to `RESEAT_TARGET` (1.1, the measure taking in the gem's sparkle) and laid on its mark: its body whole, its
 rim only where the model changed the photo — not the tooth around it, whose shrunk copy left square seams; a drawing
 that is not a dense patch of change (a pale crystal on a pale tooth) is kept as drawn. Replayed offline on six renders
-of the trial (the photo, the model's answer, the marks read from the guide): the hearts, navettes, drops and charms
-back at the design's size and place, no seam left; a first version that moved the whole disc, and one without the
-density check, left visible artefacts on two pale crystals — tried and dropped. Not yet seen in the browser.
+of the trial (the photo, the model's answer — already lined up, `tryOnAlign` found nothing to move — and the marks
+read back from the guide image, not the production marks: read with too high a threshold they came out split or
+missing on pale marks, which first showed as artefacts), each final image measured like an answer: the 24 gems moved
+back went from a median size of 1.39 times their mark to 1.05 (17 over 1.3 → 2; 3 left under 0.9) and from a
+median drift of 0.78 half-sizes to 0.1 (16 over half a gem → 0); the gems not moved stayed as they were; by eye,
+the hearts, navettes, drops and charms are back at the design's size and place, without seams. Tried and dropped: a
+version that moved the whole disc (square seams of shrunk tooth), one without the density check and with a smaller
+body (pale crystals broken or shrunk to 0.8), and moving gems drawn under half a gem off. Not yet seen in the browser.
 
 Still open after this trial: the message for gems left out says they are hidden by a lip or other teeth even when
 the teeth were not found (separate the two); the image model drew 18 % of the gems more than half a gem off their
