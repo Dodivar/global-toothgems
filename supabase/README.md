@@ -1594,7 +1594,10 @@ dialog                      photo + consent → POST functions/v1/studio-try-on 
   to the site's new requests, which is where some plastic-looking renders came from.
 - **Privacy**: the photo and the image only pass through the function's memory (never stored, never logged);
   `studio_try_on_requests` keeps who asked, for which creation, from where, and the outcome — no picture. The
-  photo step says the photo is sent to Google only while the AI is connected.
+  photo step says the photo is sent to Google only while the AI is connected. Since 2026-11-05 the browser keeps
+  each run's photo, analysis and result in its own IndexedDB (24 h at most, the signed-in account's only, erased
+  on sign-out; `webapp/src/lib/studio3d/tryOnLocal.ts`) so a closed dialog, a reload or a phone gone to sleep does
+  not lose the render; nothing of it reaches the server again.
 - Validated by `supabase/tests/studio_try_on_validation.sql` (T1 owner's access decides, T2 flags on the public
   readers without the owner id, T3 the function's door: one reference, own creation only, active token, approved
   Glowbook item, T4 service role only, T5 requests readable by their author only, bucket private without policy)

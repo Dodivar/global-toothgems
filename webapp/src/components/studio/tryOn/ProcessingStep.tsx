@@ -12,6 +12,7 @@ const TICK_MS = 250;
  * (photo check, then render), an indicative bar paced on the usual durations
  * and a line saying what is being done (`tryOnProgress.ts`). Only the stage
  * title is announced to screen readers; the lines change too often for that.
+ * The run goes on if the dialog is closed (`TryOnJobProvider`): a line says so.
  */
 export function ProcessingStep({ stage, onCancel }: { stage: TryOnStage; onCancel: () => void }) {
   const { t } = useTranslation();
@@ -46,6 +47,7 @@ export function ProcessingStep({ stage, onCancel }: { stage: TryOnStage; onCance
         {line}
       </p>
       {body ? <p className="m-0 max-w-sm text-[12.5px] text-[var(--text-muted)]">{body}</p> : null}
+      <p className="m-0 max-w-sm text-[12px] leading-snug text-[var(--text-muted)]">{t("studio.tryOn.processing.background")}</p>
       <Button variant="outline" size="sm" onClick={onCancel}>
         {t("studio.tryOn.processing.cancel")}
       </Button>

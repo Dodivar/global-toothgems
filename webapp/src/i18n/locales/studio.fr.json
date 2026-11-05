@@ -857,7 +857,7 @@
       "previewAlt": "Photo du sourire choisie",
       "formats": "JPEG, PNG, WebP ou HEIC · {{maxMb}} Mo max · au moins {{minWidth}} × {{minHeight}} pixels",
       "reading": "Lecture de la photo…",
-      "privacy": "Pour le rendu, la photo est envoyée de façon chiffrée à Global Toothgems puis à Google (Gemini) le temps de créer l’image : elle n’est pas conservée par Global Toothgems. Ses métadonnées (position GPS, appareil, date) sont retirées avant l’envoi.",
+      "privacy": "Pour le rendu, la photo est envoyée de façon chiffrée à Global Toothgems puis à Google (Gemini) le temps de créer l’image : elle n’est pas conservée par Global Toothgems. Ses métadonnées (position GPS, appareil, date) sont retirées avant l’envoi. La photo et le rendu restent ensuite sur cet appareil uniquement, 24 h au plus, pour les retrouver si vous fermez la page.",
       "consent": {
         "artist": "La personne photographiée m’a donné son accord pour utiliser cette photo",
         "visitor": "C’est une photo de moi et j’accepte qu’elle serve à cet essai"
@@ -907,7 +907,8 @@
           "Finitions…"
         ]
       },
-      "cancel": "Annuler"
+      "cancel": "Annuler",
+      "background": "Vous pouvez fermer cette fenêtre et continuer dans le Studio : un message vous prévient quand le rendu est prêt. Gardez cette page ouverte jusque-là."
     },
     "errors": {
       "not_available": {
@@ -960,7 +961,7 @@
       "beforeTag": "Avant",
       "disclaimer": "Image générée par IA : un aperçu pour se projeter, pas une promesse exacte du résultat posé.",
       "regenerate": "Générer à nouveau",
-      "notStored": "L’image n’est pas conservée par Global Toothgems : téléchargez-la pour la garder.",
+      "notStored": "Global Toothgems ne conserve pas l’image. Elle reste sur cet appareil 24 h au plus, puis s’efface : téléchargez-la pour la garder.",
       "before": "Avant / après",
       "download": "Télécharger l’image",
       "downloaded": "Image téléchargée.",
@@ -968,7 +969,8 @@
       "shareText": "« {{name}} », essayé avec le Studio 3D Global Toothgems",
       "shareFailed": "Le partage n’a pas abouti. Réessayez ou téléchargez l’image.",
       "leftOut_one": "{{count}} gemme de la création n’a pas été posée : l’endroit de la dent où elle va n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents).",
-      "leftOut_other": "{{count}} gemmes de la création n’ont pas été posées : l’endroit des dents où elles vont n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents)."
+      "leftOut_other": "{{count}} gemmes de la création n’ont pas été posées : l’endroit des dents où elles vont n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents).",
+      "forget": "Effacer de cet appareil"
     },
     "visitor": {
       "title": "Essayer sur mon sourire",
@@ -1000,6 +1002,25 @@
       "zoomIn": "Zoomer",
       "zoomOut": "Dézoomer",
       "hint": "Pincez ou touchez deux fois pour zoomer."
+    },
+    "job": {
+      "running": "Essayage de « {{name}} » en cours…",
+      "result": "Votre essayage de « {{name}} » est prêt",
+      "error": "L’essayage de « {{name}} » n’a pas abouti",
+      "interrupted": "L’essayage de « {{name}} » a été interrompu",
+      "open": "Voir",
+      "resume": "Reprendre",
+      "dismiss": "Masquer",
+      "tabTitle": "✨ Votre essayage est prêt",
+      "otherRunning": "Un essayage de « {{name}} » est en cours : en lancer un nouveau ici l’arrêtera.",
+      "interruptedTitle": "Le rendu a été interrompu",
+      "interruptedBody": "La page a été fermée ou rechargée pendant le rendu. Reprenez-le avec la même photo, sans la renvoyer."
+    },
+    "saved": {
+      "title": "Vos essayages sur cet appareil",
+      "body": "Gardés uniquement sur cet appareil, 24 h au plus, et effacés à la déconnexion.",
+      "show": "Revoir l’essayage de {{time}}",
+      "remove": "Effacer l’essayage de {{time}} de cet appareil"
     }
   },
   "frontView": {

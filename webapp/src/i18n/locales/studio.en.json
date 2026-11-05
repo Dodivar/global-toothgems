@@ -857,7 +857,7 @@
       "previewAlt": "Chosen smile photo",
       "formats": "JPEG, PNG, WebP or HEIC · {{maxMb}} MB max · at least {{minWidth}} × {{minHeight}} pixels",
       "reading": "Reading the photo…",
-      "privacy": "For the render, the photo is sent encrypted to Global Toothgems and then to Google (Gemini) while the image is created: Global Toothgems does not keep it. Its metadata (GPS location, device, date) is removed before sending.",
+      "privacy": "For the render, the photo is sent encrypted to Global Toothgems and then to Google (Gemini) while the image is created: Global Toothgems does not keep it. Its metadata (GPS location, device, date) is removed before sending. The photo and the render then stay on this device only, 24 hours at most, so you can find them again if you close the page.",
       "consent": {
         "artist": "The person in the photo has agreed to its use",
         "visitor": "This is a photo of me and I agree to its use for this try-on"
@@ -907,7 +907,8 @@
           "Finishing…"
         ]
       },
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "background": "You can close this window and carry on in the Studio: a message tells you when the render is ready. Keep this page open until then."
     },
     "errors": {
       "not_available": {
@@ -960,7 +961,7 @@
       "beforeTag": "Before",
       "disclaimer": "AI-generated image: a preview to picture it, not an exact promise of the finished result.",
       "regenerate": "Generate again",
-      "notStored": "Global Toothgems does not keep the image: download it to keep it.",
+      "notStored": "Global Toothgems does not keep the image. It stays on this device for 24 hours at most, then is erased: download it to keep it.",
       "before": "Before / after",
       "download": "Download image",
       "downloaded": "Image downloaded.",
@@ -968,7 +969,8 @@
       "shareText": "“{{name}}”, tried on with the Global Toothgems 3D Studio",
       "shareFailed": "Sharing did not work. Try again or download the image.",
       "leftOut_one": "{{count}} gem of the creation was not placed: the spot of the tooth it goes on does not show on this photo (hidden by a lip or other teeth).",
-      "leftOut_other": "{{count}} gems of the creation were not placed: the spots of the teeth they go on do not show on this photo (hidden by a lip or other teeth)."
+      "leftOut_other": "{{count}} gems of the creation were not placed: the spots of the teeth they go on do not show on this photo (hidden by a lip or other teeth).",
+      "forget": "Erase from this device"
     },
     "visitor": {
       "title": "Try it on my smile",
@@ -1000,6 +1002,25 @@
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
       "hint": "Pinch or double-tap to zoom."
+    },
+    "job": {
+      "running": "Trying on “{{name}}”…",
+      "result": "Your try-on of “{{name}}” is ready",
+      "error": "The try-on of “{{name}}” did not work",
+      "interrupted": "The try-on of “{{name}}” was interrupted",
+      "open": "View",
+      "resume": "Resume",
+      "dismiss": "Hide",
+      "tabTitle": "✨ Your try-on is ready",
+      "otherRunning": "A try-on of “{{name}}” is under way: starting a new one here will stop it.",
+      "interruptedTitle": "The render was interrupted",
+      "interruptedBody": "The page was closed or reloaded during the render. Resume it with the same photo, without sending it again."
+    },
+    "saved": {
+      "title": "Your try-ons on this device",
+      "body": "Kept on this device only, 24 hours at most, and erased when you sign out.",
+      "show": "View the try-on from {{time}} again",
+      "remove": "Erase the try-on from {{time}} from this device"
     }
   },
   "frontView": {

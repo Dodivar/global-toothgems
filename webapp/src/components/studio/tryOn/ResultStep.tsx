@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, Expand, Eye, EyeOff, ImageUp, Info, RefreshCw, Share, Sparkles } from "lucide-react";
+import { Download, Expand, Eye, EyeOff, ImageUp, Info, RefreshCw, Share, Sparkles, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { resultExtension, type TryOnCreation } from "../../../lib/studio3d/tryOn";
@@ -23,7 +23,8 @@ function canShareFile(file: File): boolean {
  * the dialog's fixed footer so they never scroll away on a phone). A tap on
  * the image opens it full screen with its own zoom (`ResultViewer`); the
  * page's own pinch-zoom is off on the image (it crashed Safari on iPhone).
- * The image only lives in this tab: closing the dialog forgets it. Marked
+ * The image is kept on this device only, 24 h at most (`tryOnLocal.ts`), and
+ * "Erase from this device" removes it at once. Marked
  * `ph-no-capture` so analytics session replay never records the face.
  */
 export function ResultStep({
@@ -33,15 +34,18 @@ export function ResultStep({
   creation,
   onRegenerate,
   onNewPhoto,
+  onForget,
 }: {
   photo: PreparedPhoto;
-  /** An object URL of the generated image, owned (and revoked) by the dialog. */
+  /** An object URL of the generated image, owned (and revoked) by the job store. */
   imageUrl: string;
   /** Gems not drawn because their spot does not show on the photo. */
   leftOut: number;
   creation: TryOnCreation;
   onRegenerate: () => void;
   onNewPhoto: () => void;
+  /** Erase this result from the device. */
+  onForget: () => void;
 }) {
   const { t } = useTranslation();
   const [before, setBefore] = useState(false);
@@ -95,6 +99,9 @@ export function ResultStep({
         </Button>
         <Button variant="ghost" size="sm" iconLeft={ImageUp} onClick={onNewPhoto}>
           {t("studio.tryOn.errorActions.newPhoto")}
+        </Button>
+        <Button variant="ghost" size="sm" iconLeft={Trash2} onClick={onForget}>
+          {t("studio.tryOn.result.forget")}
         </Button>
       </div>
 
