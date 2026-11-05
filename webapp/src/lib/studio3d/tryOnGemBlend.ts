@@ -105,6 +105,13 @@ const GEM_CORE = 1.0;
 /** ...and where the model changed the photo, up to this many times. */
 const GEM_DISC = 1.15;
 
+/**
+ * The colour shift is measured on at least this many tooth pixels around the gem; the ring is widened
+ * (up to `SHIFT_MAX_BANDS` times) until it has them.
+ */
+const SHIFT_MIN_PIXELS = 24;
+const SHIFT_MAX_BANDS = 4;
+
 const smooth = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
 function medianOf(values: number[]): number {
@@ -166,6 +173,8 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
   /** Per mark, with `reseat`: where its gem was drawn and how much larger, read back onto the mark. */
   const sources: ({ x: number; y: number; scale: number; threshold: number; extent: number } | null)[] = usable.map(() => null);
   const checks: GemCheck[] = marks.map((m) => ({ id: m.id, found: false, drift: null, size: null }));
+  /** Per mark: the change above which a pixel near it is the gem's, not the tooth's. */
+  const thresholds: number[] = usable.map(() => MIN_CHANGE);
   usable.forEach((m, k) => {
     const w = windowOf(m);
     const x0 = Math.max(0, Math.floor(m.x - w));
@@ -180,6 +189,7 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
       }
     }
     const threshold = Math.max(MIN_CHANGE, NOISE_FACTOR * medianOf(ring) + NOISE_MARGIN);
+    thresholds[k] = threshold;
     const changed: { x: number; y: number; weight: number }[] = [];
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
@@ -233,7 +243,17 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
 
   if (background > MAX_BACKGROUND) return { data: null, checks, masked: false, background };
 
-  // Each gem's colour shift: the answer against the photo on a ring just outside what is kept.
+  // Each gem's colour shift: the answer against the photo on the tooth just outside what is kept. Only the
+  // tooth: pixels inside any gem's disc, or changed like a gem, are left out — in a tight cluster the ring
+  // falls on the neighbouring gems, whose colours (red, or a crystal's grey facets) once tinted the tooth
+  // around every gem (a lemon-yellow halo on a heart of small crystals, 2026-11-05). The median, per channel.
+  const keptDiscs = [
+    ...discs.map((d) => d.disc),
+    ...usable.flatMap((m, k) => {
+      const source = sources[k];
+      return source ? [{ x: source.x, y: source.y, inner: 0, outer: (KEEP * m.r + KEEP_PAD + Math.max(3, 0.5 * m.r)) * source.scale }] : [];
+    }),
+  ];
   const shifts = usable.map((m, k) => {
     const source = sources[k];
     // A gem moved back: its colours are matched where it was drawn, on a ring around its drawing.
@@ -243,24 +263,31 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
     if (source) m = { ...m, x: source.x, y: source.y };
     const outer = Math.max(...own.map((d) => Math.hypot(d.x - m.x, d.y - m.y) + d.outer));
     const band = Math.max(4, 0.6 * m.r);
-    const sum = [0, 0, 0];
-    let n = 0;
-    const x0 = Math.max(0, Math.floor(m.x - outer - band));
-    const x1 = Math.min(width - 1, Math.ceil(m.x + outer + band));
-    const y0 = Math.max(0, Math.floor(m.y - outer - band));
-    const y1 = Math.min(height - 1, Math.ceil(m.y + outer + band));
-    for (let y = y0; y <= y1; y++) {
-      for (let x = x0; x <= x1; x++) {
-        if (own.some((d) => Math.hypot(x - d.x, y - d.y) < d.outer)) continue;
-        if (Math.hypot(x - m.x, y - m.y) > outer + band) continue;
-        const i = (y * width + x) * 4;
-        sum[0] += E[i] - O[i];
-        sum[1] += E[i + 1] - O[i + 1];
-        sum[2] += E[i + 2] - O[i + 2];
-        n++;
+    const threshold = thresholds[k];
+    const read = (reach: number, toothOnly: boolean) => {
+      const values: [number[], number[], number[]] = [[], [], []];
+      const x0 = Math.max(0, Math.floor(m.x - outer - reach));
+      const x1 = Math.min(width - 1, Math.ceil(m.x + outer + reach));
+      const y0 = Math.max(0, Math.floor(m.y - outer - reach));
+      const y1 = Math.min(height - 1, Math.ceil(m.y + outer + reach));
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) {
+          if (Math.hypot(x - m.x, y - m.y) > outer + reach) continue;
+          if ((toothOnly ? keptDiscs : own).some((d) => Math.hypot(x - d.x, y - d.y) < d.outer)) continue;
+          const i = (y * width + x) * 4;
+          if (toothOnly && diffAt(i) > threshold) continue;
+          for (let c = 0; c < 3; c++) values[c].push(E[i + c] - O[i + c]);
+        }
       }
+      return values;
+    };
+    for (let bands = 1; bands <= SHIFT_MAX_BANDS; bands++) {
+      const values = read(bands * band, true);
+      if (values[0].length >= SHIFT_MIN_PIXELS) return values.map(medianOf);
     }
-    return n ? sum.map((s) => s / n) : [0, 0, 0];
+    // No tooth to read around (a gem amid others on every side): the plain ring, as before.
+    const values = read(band, false);
+    return values[0].length ? values.map(medianOf) : [0, 0, 0];
   });
 
   // How much of the answer each pixel keeps (overlapping discs: the most), and whose colour shift applies.

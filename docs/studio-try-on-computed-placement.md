@@ -189,6 +189,13 @@ the hearts, navettes, drops and charms are back at the design's size and place, 
 version that moved the whole disc (square seams of shrunk tooth), one without the density check and with a smaller
 body (pale crystals broken or shrunk to 0.8), and moving gems drawn under half a gem off.
 
+**The colour match on the tooth only** (`tryOnGemBlend.ts`, 2026-11-05, for every customer). Each gem pasted
+from the answer has its colours matched to the photo by the answer's offset on a ring just outside its disc. On a
+heart of small crystals set close together, that ring fell on the neighbouring gems, so the offset was the gems'
+(red, grey facets), and taking it off lightened the tooth around every gem into a lemon-yellow patch (the photo's red
+already at 255, only green and blue rose). The ring now reads the tooth only — outside every gem's disc, without
+the pixels the model changed like a gem — widened until it has 24 of them, with the median per channel.
+
 **Trial with both flags on** (2026-11-05 11:49, `TRIAL_ARBITER=1`, the same 7 photos × 5 creations as the
 10:44 trial with the arbiter measured only): results 19 → 26, placements too uncertain 11 → 4 (P7 now all five,
 P5 one of five), photo refused unchanged (P1). By eye on the sheets, the gems of P2, P3, P4, P6 and P7 are on

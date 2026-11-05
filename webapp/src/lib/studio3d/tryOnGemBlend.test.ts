@@ -97,6 +97,29 @@ describe("blendGems", () => {
   });
 });
 
+describe("blendGems on gems set close together", () => {
+  // A tight row of red gems (centres 2.2 half-sizes apart, as in a heart of small crystals): each gem's ring
+  // around it falls on its neighbours.
+  const row = Array.from({ length: 7 }, (_, k) => ({ id: `g${k}`, x: 50 + k * 17.6, y: 60, r: 8 }));
+  const original = photo();
+  const edited = answer(original, row);
+  const blend = blendGems(original, edited, row);
+
+  it("keeps the tooth between and around them the photo's colour", () => {
+    const off = (x: number, y: number) => {
+      const o = pixel(original.data, x, y);
+      const b = pixel(blend.data!, x, y);
+      return Math.max(...o.map((v, c) => Math.abs(b[c] - v)));
+    };
+    // Between two gems, above and below the row, inside their discs but off the gems.
+    for (const [x, y] of [[59, 69], [94, 70], [129, 50], [77, 72], [112, 49]]) expect(off(x, y)).toBeLessThanOrEqual(3);
+  });
+
+  it("still draws the gems", () => {
+    for (const m of row) expect(pixel(blend.data!, Math.round(m.x), m.y)[0]).toBeGreaterThan(200);
+  });
+});
+
 describe("blendGems with reseat", () => {
   const red = (data: ArrayLike<number>, x: number, y: number) => {
     const [r, g] = pixel(data, x, y);
