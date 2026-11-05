@@ -161,9 +161,12 @@ Replayed on the 30 analyses of the trial, with one gem on each tooth 13 to 23 an
 limits measured from the gaps: upper gems right 90 → 143, wrong 13 → 6; lower gems right 68 → 133, wrong 7 → 0;
 left out 50 → 24; placements refused 11 → 4; renders with a wrong gem 13 → 6 — the 6 wrong gems left sit on the
 limit between two teeth (2.24 for a limit at 2.24, 1.79 for 1.79). Caution, beyond the one above: the tooth limits
-the replay scores against come from the same gaps (checked by eye on the photos, not measured independently), and
-the edges' proportions were measured on these photos; the vertical place of the gems (the boxes' tops and heights)
-is still the model's.
+the replay scores against come from the same gaps, so the lower figures are consistency with the gaps, not a
+measured gain — the rebuilt boxes and the gems drawn over 4 photos (P2, P4, P6, P7) were checked by eye: each
+on its tooth, the lower central incisors under the right gap; the edges' proportions were measured on these photos;
+rebuilding readings that agree (and `AGREE` at 0.6, not 0.35) was set to fix one photo (P6, both readings 0.4 off);
+the vertical place of the gems (the boxes' tops and heights) is still the model's; one photo (P5) stays refused, too
+dark for its gaps.
 
 Still open after this trial: the message for gems left out says they are hidden by a lip or other teeth even when
 the teeth were not found (separate the two); the image model drew 18 % of the gems more than half a gem off their
