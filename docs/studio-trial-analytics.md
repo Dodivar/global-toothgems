@@ -22,9 +22,6 @@ design content.
 
 | Event | When | Deduplication | Extra properties |
 | --- | --- | --- | --- |
-| `studio_landing_viewed` | The advertising landing page (`/fr/studio-3d/essayer`, `/en/3d-studio/try`) opens | once per tab | — (UTM and referrer come from PostHog) |
-| `studio_landing_cta_clicked` | A button of the landing page that starts the trial (leads to sign-up, or to the editor for a member) | per click | `placement` (`bar`, `hero`, `demo`, `plans`, `closing`, `faq`, `sticky`), `signed_in` |
-| `studio_landing_demo_used` | The landing page's 2D demo is used for the first time | once per tab | `interaction` (`look` / `colour`) |
 | `studio_trial_offer_viewed` | The trial invitation is shown | once per tab | — |
 | `studio_trial_started` | `start_studio_trial()` created the trial (`started = true`) | the database: only one call can be true | — |
 | `studio_session_started` | The editor opens with access | a reload or remount within 30 min continues the session | `session_id`, `is_first_session` |
@@ -42,7 +39,7 @@ design content.
 | `studio_trial_expired` | The state is read as `trial_expired` | once per trial and browser | `observed_in_studio` (ran out while open) |
 | `studio_trial_access_blocked` | The locked screen is shown | once per tab and state | `state` |
 | `studio_subscription_plans_viewed` | The plans are shown on the locked screen | once per tab | `surface` |
-| `studio_subscription_cta_clicked` | A plan's button is pressed by a signed-in member (before the checkout page opens) | per click | `plan_id`, `interval`, `price_minor`, `currency`, `surface` (`studio_locked`, `studio_page`, `studio_subscribe_page`, `studio_landing`), `checkout_available` |
+| `studio_subscription_cta_clicked` | A plan's button is pressed by a signed-in member (before the checkout page opens) | per click | `plan_id`, `interval`, `price_minor`, `currency`, `surface` (`studio_locked`, `studio_page`, `studio_subscribe_page`), `checkout_available` |
 | `studio_checkout_started` | the checkout page opened a payment step (`create-studio-subscription`) and the payment form shows | per checkout | `plan_id`, `interval`, `price_minor`, `currency`, `surface` |
 | `studio_checkout_failed` | The function refused or could not open the checkout, or could not record the request for immediate access before paying | per failure | same + `reason` (`terms_required`, `already_subscribed`, `plan_unavailable`, `payment_unavailable`, `network`, …) |
 | `studio_checkout_canceled` | The member leaves the checkout page unpaid ("Change plan", menu, back button) | per page left | `plan_id`, `interval`, `surface` |

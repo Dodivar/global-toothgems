@@ -19,14 +19,9 @@ describe("Studio checkout address", () => {
     expect(parseStudioCheckoutQuery(new URLSearchParams("plan=essential&interval=month&from=elsewhere"))?.surface).toBe("studio_subscribe_page");
   });
 
-  it("keeps the landing page as a checkout surface", () => {
-    expect(parseStudioCheckoutQuery(new URLSearchParams("plan=artist&interval=year&from=studio_landing"))?.surface).toBe("studio_landing");
-  });
-
   it("leads back to the plans the member chose from", () => {
     expect(studioPlansPathFor("studio_locked")).toBe("/studio-3d/atelier");
     expect(studioPlansPathFor("studio_page")).toBe("/studio-3d");
-    expect(studioPlansPathFor("studio_landing")).toBe("/studio-3d/essayer");
     expect(studioPlansPathFor("studio_subscribe_page")).toBe("/studio-3d/abonnement");
   });
 });

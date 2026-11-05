@@ -19,10 +19,6 @@ import { hoursSince, trialRemainingMs, type StudioAccessInfo } from "./studioAcc
  */
 
 type StudioEvent =
-  /** The advertising landing page: viewed, a call to action pressed, the demo used. */
-  | "studio_landing_viewed"
-  | "studio_landing_cta_clicked"
-  | "studio_landing_demo_used"
   | "studio_trial_offer_viewed"
   | "studio_trial_started"
   | "studio_first_design_created"

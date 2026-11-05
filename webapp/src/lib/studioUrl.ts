@@ -3,8 +3,6 @@
  * the navigation, the home-page teaser and the Studio pages all link here.
  */
 export const STUDIO_PATH = "/studio-3d";
-/** The advertising landing page (`/fr/studio-3d/essayer`, `/en/3d-studio/try`). */
-export const STUDIO_LANDING_PATH = "/studio-3d/essayer";
 export const STUDIO_SUBSCRIBE_PATH = "/studio-3d/abonnement";
 /**
  * The Glowbook's presentation page (`/fr/glowbook`, `/en/glowbook`): what an
@@ -69,7 +67,7 @@ export function studioSectionFromPath(pathname: string): StudioSection | null {
 
 const PAID_PLANS = ["essential", "artist", "atelier"] as const;
 const INTERVALS = ["month", "year"] as const;
-const SURFACES = ["studio_locked", "studio_page", "studio_subscribe_page", "studio_landing"] as const;
+const SURFACES = ["studio_locked", "studio_page", "studio_subscribe_page"] as const;
 
 export type StudioCheckoutSurface = (typeof SURFACES)[number];
 export interface StudioCheckoutQuery {
@@ -99,5 +97,5 @@ export function parseStudioCheckoutQuery(params: URLSearchParams): StudioCheckou
 
 /** Where "Change plan" on the checkout page leads: back to the plans the member chose from. */
 export function studioPlansPathFor(surface: StudioCheckoutSurface): string {
-  return surface === "studio_locked" ? STUDIO_EDITOR_PATH : surface === "studio_page" ? STUDIO_PATH : surface === "studio_landing" ? STUDIO_LANDING_PATH : STUDIO_SUBSCRIBE_PATH;
+  return surface === "studio_locked" ? STUDIO_EDITOR_PATH : surface === "studio_page" ? STUDIO_PATH : STUDIO_SUBSCRIBE_PATH;
 }

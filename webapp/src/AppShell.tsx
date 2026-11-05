@@ -7,7 +7,7 @@ import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { isMemberSpacePath } from "./lib/memberSpace";
 import { isLessonPlayerPath } from "./lib/academyUrl";
-import { STUDIO_EDITOR_PATH, STUDIO_LANDING_PATH, STUDIO_SHARE_PATH } from "./lib/studioUrl";
+import { STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH } from "./lib/studioUrl";
 import { CookieBanner } from "./components/legal/CookieBanner";
 import { CookieSettingsDialog } from "./components/legal/CookieSettingsDialog";
 
@@ -67,8 +67,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
-  // The Studio's advertising landing page has its own slim bar and footer: nothing leads a visitor away before they have tried it.
-  const landing = pathname === STUDIO_LANDING_PATH;
   const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
   // The editor and its sections (`/studio-3d/atelier/mes-creations`…), and
   // the member space, which carries its own sidebar (see `MemberShell`), and
@@ -86,11 +84,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           meet it before the page, though it sits at the bottom of
           the screen. Not on the back office or maintenance chrome. */}
       {!bareChrome && <CookieBanner />}
-      {!bareChrome && !workspace && !landing && <Header />}
+      {!bareChrome && !workspace && <Header />}
       <main id="main" tabIndex={-1}>
         {children}
       </main>
-      {!bareChrome && !workspace && !landing && <Footer />}
+      {!bareChrome && !workspace && <Footer />}
       <CookieSettingsDialog />
       <ReviewOverlays />
       <FavoriteAccountDialogHost />
