@@ -21,15 +21,19 @@ export function midlineArbiterEnabled(): boolean {
 /** The close-up's pixels at the close-up's size (the teeth boxes' coordinates); null when the browser cannot read them. */
 async function closeUpPixels(photo: Blob, crop: TryOnCrop): Promise<CloseUpPixels | null> {
   const image = await bitmapOf(photo);
-  const sx = image.width / crop.photoWidth;
-  const sy = image.height / crop.photoHeight;
-  const canvas = document.createElement("canvas");
-  canvas.width = crop.width;
-  canvas.height = crop.height;
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) return null;
-  ctx.drawImage(image, crop.x * sx, crop.y * sy, crop.width * sx, crop.height * sy, 0, 0, crop.width, crop.height);
-  return ctx.getImageData(0, 0, crop.width, crop.height);
+  try {
+    const sx = image.width / crop.photoWidth;
+    const sy = image.height / crop.photoHeight;
+    const canvas = document.createElement("canvas");
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(image, crop.x * sx, crop.y * sy, crop.width * sx, crop.height * sy, 0, 0, crop.width, crop.height);
+    return ctx.getImageData(0, 0, crop.width, crop.height);
+  } finally {
+    if ("close" in image) image.close(); // a decoded photo held until collected weighs on phones
+  }
 }
 
 /** The arbitration on the customer's photo; null when its pixels cannot be read. Never throws. */

@@ -140,7 +140,9 @@ of one or two people with a marked gap between the central incisors; on someone 
 tightly, the darkest gap may be elsewhere. So it ships measured only: `studio_try_on_placement` carries what it
 found and whether its placement would have been reliable (`arbiter_*`), the trial applies it with
 `TRIAL_ARBITER=1`; it is turned on for customers with `NEXT_PUBLIC_TRY_ON_MIDLINE_ARBITER=on` once checked on
-photos of other people.
+photos of other people. A risk to weigh before: a photo the phone saved mirrored (some front cameras do), whose
+teeth the model named rightly, has its 2x on the image's left — today refused (`out_of_order`), it would be named
+back as "mirrored" and its gems put on the wrong side; the pixels cannot tell it from a misnamed reading.
 
 Still open after this trial: the message for gems left out says they are hidden by a lip or other teeth even when
 the teeth were not found (separate the two); the image model drew 18 % of the gems more than half a gem off their
