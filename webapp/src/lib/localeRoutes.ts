@@ -39,6 +39,7 @@ export type PublicRouteId =
   | "giftCard"
   | "studio"
   | "studioSubscribe"
+  | "studioLanding"
   | "glowbook"
   | "glowbookIntro"
   | "academy"
@@ -77,6 +78,8 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { id: "giftCard", fr: "/carte-cadeau", en: "/gift-card", indexed: true },
   { id: "studio", fr: "/studio-3d", en: "/3d-studio", indexed: true },
   { id: "studioSubscribe", fr: "/studio-3d/abonnement", en: "/3d-studio/subscribe", indexed: true },
+  // The advertising landing page of the 3D Studio (social ads link here): no site navigation, not listed by search engines. English segment "try": to confirm with the owner.
+  { id: "studioLanding", fr: "/studio-3d/essayer", en: "/3d-studio/try", indexed: false },
   // An artist's public showcase, linked from their Instagram bio (decision 99): same word in both languages (decided by the owner).
   { id: "glowbook", fr: "/glowbook/:id", en: "/glowbook/:id", indexed: true },
   // The Glowbook's presentation, where members below its plan land (the handle "glowbook" is reserved, so no artist's page lives here).

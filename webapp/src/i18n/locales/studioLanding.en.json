@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "title": "3D Studio · Try it free for 2 days",
+    "description": "Design tooth gem looks in 3D, show them to your clients, post them on Instagram and order the gems in one click. Free trial, no credit card."
+  },
+  "bar": {
+    "signIn": "Sign in",
+    "cta": "Try it"
+  },
+  "hero": {
+    "eyebrow": "Global Toothgems 3D Studio",
+    "title": "Place your gems in 3D before you place them for real.",
+    "body": "Design the look on a 3D set of teeth, show it to your client, post it on your socials and order the exact gems in one click.",
+    "cta_one": "Try it free for {{count}} day",
+    "cta_other": "Try it free for {{count}} days",
+    "ctaOpen": "Open the 3D Studio",
+    "ctaSecondary": "See the plans",
+    "reassurance_one": "No credit card · {{count}} day to try everything · then from {{price}} / month",
+    "reassurance_other": "No credit card · {{count}} days to try everything · then from {{price}} / month",
+    "points": [
+      "The shop’s real gems",
+      "3D from every angle",
+      "Ready to share on Instagram and TikTok"
+    ]
+  },
+  "demo": {
+    "eyebrow": "Try it right now, no account",
+    "title": "Pick a look, change the colour.",
+    "body": "A 2D preview to get the idea. The real studio is in 3D: you rotate the teeth, place each gem exactly where you want it and choose its size.",
+    "canvas": "Preview of a tooth gem composition: {{name}}",
+    "looks": "Composition",
+    "colour": "Gem colour",
+    "colourOriginal": "Original colours",
+    "looksNames": {
+      "signature": "Signature",
+      "minimal": "Minimal",
+      "statement": "Statement",
+      "symmetrical": "Symmetrical",
+      "mixed": "Mix",
+      "sparkle": "Sparkle"
+    },
+    "materials": {
+      "crystal": "Crystal",
+      "sapphire": "Sapphire",
+      "rose": "Rose",
+      "emerald": "Emerald",
+      "gold": "Gold",
+      "opal": "Opal"
+    },
+    "cta": "Continue in the real 3D studio",
+    "note": "Illustrative 2D preview. This is not the studio: the 3D editor opens with your free trial."
+  },
+  "who": {
+    "eyebrow": "Who it’s for",
+    "title": "For everyone who lives and breathes tooth gems.",
+    "items": {
+      "artists": {
+        "title": "Artists",
+        "body": "Offer several ideas before the appointment, keep your creations and post them in a few clicks."
+      },
+      "salons": {
+        "title": "Salons and studios",
+        "body": "A placement sheet to print, an estimated quote and a look approved before the gem box is opened."
+      },
+      "fans": {
+        "title": "Enthusiasts",
+        "body": "Imagine your next look, try colours and shapes, then place your order."
+      }
+    }
+  },
+  "steps": {
+    "eyebrow": "How it works",
+    "title": "From first click to first look.",
+    "items": {
+      "account": {
+        "title": "Create your account",
+        "body": "Free, no credit card. One account for the Studio, the shop and the Academy."
+      },
+      "compose": {
+        "title": "Start your trial and design",
+        "body": "You start the trial when you are ready. Place, move, resize and recolour, in 3D."
+      },
+      "share": {
+        "title": "Show, post, order",
+        "body": "Share as an image, video or link, print the placement sheet, add the gems to your cart."
+      }
+    }
+  },
+  "features": {
+    "eyebrow": "What the Studio includes",
+    "title": "Everything you need to go from idea to appointment.",
+    "body": "Every feature below is in the Studio today; your plan decides what is unlocked.",
+    "items": {
+      "library": {
+        "title": "The shop’s real gems",
+        "body": "The library is the shop’s gems: real shapes, colours and sizes, in SS or millimetres. What you see is what you will order.",
+        "tag": "All plans"
+      },
+      "view3d": {
+        "title": "A 3D set of teeth, from every angle",
+        "body": "Rotate, zoom, place gems tooth by tooth, distribute them, undo, start again. A front view of the teeth sums up the composition.",
+        "tag": "All plans"
+      },
+      "appointment": {
+        "title": "Ready for the appointment",
+        "body": "Prepare the session: front view, gem budget estimate and an A4 PDF placement sheet to print.",
+        "tag": "All plans"
+      },
+      "share": {
+        "title": "Posts ready to publish",
+        "body": "HD image, 360° video or GIF, as Story, square or portrait. One button per network: Instagram, TikTok, Pinterest, Facebook, Snapchat, WhatsApp, X, Threads.",
+        "tag": "All plans · your own logo from Artist"
+      },
+      "shop": {
+        "title": "Gems in your cart in one click",
+        "body": "Your design’s shopping list is worked out for you, with the best mix of packs, and goes straight to the shop cart.",
+        "tag": "All plans"
+      },
+      "organise": {
+        "title": "Your creations, neatly kept",
+        "body": "Reusable Gem Groups, folders to sort your creations and Global Toothgems templates to copy and adapt.",
+        "tag": "Gem Groups from Essential · templates and folders from Artist"
+      },
+      "glowbook": {
+        "title": "Your public Glowbook",
+        "body": "A page for your Instagram bio: your creations in 3D, your booking links, a QR code and a printable poster. The “certified artist” badge comes with your Academy certificates.",
+        "tag": "Atelier plan"
+      }
+    }
+  },
+  "plans": {
+    "eyebrow": "Plans",
+    "title": "Start free, subscribe when you are convinced.",
+    "body": "The trial opens what the Essential plan includes. After that, monthly or yearly, with no minimum term.",
+    "note": "Prices include VAT. Cancel any time from your account."
+  },
+  "closing": {
+    "title": "Your next look starts here.",
+    "body": "Create your account, start the trial and place your first gem.",
+    "cta_one": "Try it free for {{count}} day",
+    "cta_other": "Try it free for {{count}} days"
+  },
+  "faq": {
+    "eyebrow": "Questions",
+    "title": "Before you start."
+  },
+  "sticky": {
+    "label_one": "Try it free for {{count}} day",
+    "label_other": "Try it free for {{count}} days"
+  },
+  "footer": {
+    "copyright": "© 2026 Global Toothgems",
+    "legal": "Legal information",
+    "cookiesSettings": "Manage cookies"
+  }
+}

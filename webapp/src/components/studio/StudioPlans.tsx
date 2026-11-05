@@ -37,7 +37,7 @@ type ChooseStudioPlan =(plan: StudioPaidPlanId, interval: StudioBillingInterval,
  * (decision 113), enforced by the database. Nothing is bought here: the trial opens the Studio (`onTrial`) and a
  * paid plan leads to its checkout (`onChoose`).
  */
-export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoose?: ChooseStudioPlan }) {
+export function StudioPlans({ onTrial, onChoose, surface = "studio_page" }: { onTrial: () => void; onChoose?: ChooseStudioPlan; surface?: StudioCheckoutSurface }) {
   const { t } = useTranslation();
 
   const trial = STUDIO_PLANS.find((plan) => plan.id === "trial")!;
@@ -67,7 +67,7 @@ export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoo
         </div>
       </div>
 
-      {onChoose ? <StudioPaidPlans onChoose={onChoose} /> : <StudioCheckoutPlans surface="studio_page" />}
+      {onChoose ? <StudioPaidPlans onChoose={onChoose} /> : <StudioCheckoutPlans surface={surface} />}
     </div>
   );
 }

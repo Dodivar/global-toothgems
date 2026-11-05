@@ -34,6 +34,9 @@ import shopAltEn from "./locales/shopAlt.en.json";
 // The 3D Studio presentation page (/studio-3d), under `studioPage`.
 import studioPageFr from "./locales/studioPage.fr.json";
 import studioPageEn from "./locales/studioPage.en.json";
+// The 3D Studio advertising landing page, under `studioLanding`.
+import studioLandingFr from "./locales/studioLanding.fr.json";
+import studioLandingEn from "./locales/studioLanding.en.json";
 // The learner experience (course overview, lesson player, knowledge checks),
 // under `learning`; and the back office's training image library, under
 // `trainingMedia`.
@@ -49,6 +52,6 @@ import loungeFr from "./locales/communityChat.fr.json";
 import loungeEn from "./locales/communityChat.en.json";
 
 export const resources = {
-  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr, templates: studioTemplatesFr, glowbook: studioGlowbookFr, socialExport: studioSocialExportFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, studioPage: studioPageFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr } },
-  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn, templates: studioTemplatesEn, glowbook: studioGlowbookEn, socialExport: studioSocialExportEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, studioPage: studioPageEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn } },
+  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr, templates: studioTemplatesFr, glowbook: studioGlowbookFr, socialExport: studioSocialExportFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, studioPage: studioPageFr, studioLanding: studioLandingFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr } },
+  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn, templates: studioTemplatesEn, glowbook: studioGlowbookEn, socialExport: studioSocialExportEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, studioPage: studioPageEn, studioLanding: studioLandingEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn } },
 };

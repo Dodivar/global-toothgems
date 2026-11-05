@@ -23,6 +23,7 @@ const PUBLIC_ROUTES: { path: string; heading: RegExp }[] = [
   { path: "/fr/fidelite", heading: /Vos récompenses/ },
   { path: "/fr/carte-cadeau", heading: /Offrez l’éclat d’un sourire/ },
   { path: "/fr/studio-3d", heading: /Imaginez-le\. Dessinez-le\. Il est à vous\./ },
+  { path: "/fr/studio-3d/essayer", heading: /Posez vos gemmes en 3D avant de les poser en vrai\./ },
   { path: "/fr/studio-3d/abonnement", heading: /Débloquez le Studio 3D/ },
   { path: "/fr/glowbook", heading: /Toutes vos créations, en un seul lien\./ },
   { path: "/studio-3d/partage", heading: /Ce lien ne contient pas de création lisible/ },
