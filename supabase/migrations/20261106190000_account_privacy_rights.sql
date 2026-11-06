@@ -358,7 +358,7 @@ comment on function public.my_personal_data() is
 -- What stops an erasure now. Each one is temporary and the member is told how
 -- to lift it: a staff account is closed by the team first; a running Studio
 -- subscription or a withdrawal under way still needs the account (the
--- contract is being performed); an order waiting for its payment would be paid
+-- contract is being performed); an order whose payment can still complete would be paid
 -- for a missing account.
 create or replace function private.account_erasure_blockers(p_user uuid)
 returns text[]
@@ -379,7 +379,7 @@ as $$
          then 'studio_withdrawal' end,
     case when exists (select 1 from public.orders o
                        where o.user_id = p_user and o.status = 'pending' and o.payment_status = 'pending'
-                         and (o.expires_at is null or o.expires_at > now()))
+                         and o.expires_at > now())
          then 'order_payment_pending' end
   ], null);
 $$;

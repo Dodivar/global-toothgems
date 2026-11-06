@@ -26,7 +26,7 @@ declare
   m1      uuid := '00000000-0000-4000-a000-000000123001';
   m2      uuid := '00000000-0000-4000-a000-000000123002';
   staff   uuid := '00000000-0000-4000-a000-000000123003';
-  addr    jsonb := '{"first_name":"Test","last_name":"Privacy","line1":"1 rue Test","postal_code":"75001","city":"Paris","country_code":"FR"}';
+  addr    jsonb := '{"first_name":"Test","last_name":"Privacy","address_line1":"1 rue Test","postal_code":"75001","city":"Paris","country_code":"FR"}';
   v_scene jsonb := '{"version": 2, "pieces": []}';
   v_prod  uuid;
   o1      uuid;
