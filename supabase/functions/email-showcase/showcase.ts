@@ -365,6 +365,14 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
         content: (locale) => stockDigestContent(DIGEST, locale, ctx.siteUrl),
       },
     },
+    {
+      kind: "template",
+      label: "Compte supprimé (droit à l'effacement)",
+      request: {
+        ...base, templateKey: "account_deleted", eventKey: key("account_deleted"),
+        variables: { date: "6 novembre 2026" },
+      },
+    },
   ];
 
   for (const template of AUTH_TEMPLATES) {

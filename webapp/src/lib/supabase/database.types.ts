@@ -824,7 +824,7 @@ export type Database = {
           policy_version: string
           purpose: string
           source: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -833,7 +833,7 @@ export type Database = {
           policy_version: string
           purpose: string
           source: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -842,7 +842,7 @@ export type Database = {
           policy_version?: string
           purpose?: string
           source?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -8562,7 +8562,7 @@ export type Database = {
           subscription_id: string
           total: number | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           amount: number
@@ -8576,7 +8576,7 @@ export type Database = {
           subscription_id: string
           total?: number | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           amount?: number
@@ -8590,7 +8590,7 @@ export type Database = {
           subscription_id?: string
           total?: number | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -8630,7 +8630,7 @@ export type Database = {
           stripe_price_id: string | null
           stripe_subscription_id: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           billing_interval?: string | null
@@ -8645,7 +8645,7 @@ export type Database = {
           stripe_price_id?: string | null
           stripe_subscription_id: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           billing_interval?: string | null
@@ -8660,7 +8660,7 @@ export type Database = {
           stripe_price_id?: string | null
           stripe_subscription_id?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -8794,7 +8794,7 @@ export type Database = {
           updated_at: string
           used_amount: number
           used_days: number
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           canceled_at?: string | null
@@ -8816,7 +8816,7 @@ export type Database = {
           updated_at?: string
           used_amount: number
           used_days: number
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           canceled_at?: string | null
@@ -8838,7 +8838,7 @@ export type Database = {
           updated_at?: string
           used_amount?: number
           used_days?: number
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -9506,6 +9506,13 @@ export type Database = {
       }
     }
     Functions: {
+      account_erasure_files: {
+        Args: { p_user: string }
+        Returns: {
+          bucket_id: string
+          name: string
+        }[]
+      }
       adjust_gift_card: {
         Args: { p_delta: number; p_gift_card_id: string; p_note: string }
         Returns: {
@@ -9905,6 +9912,7 @@ export type Database = {
           variables: string[]
         }[]
       }
+      erase_account: { Args: { p_user: string }; Returns: Json }
       expire_stale_orders: { Args: never; Returns: number }
       extend_gift_card: {
         Args: { p_expires_at: string; p_gift_card_id: string; p_note?: string }
@@ -10111,7 +10119,9 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      my_account_erasure_blockers: { Args: never; Returns: string[] }
       my_permissions: { Args: never; Returns: string[] }
+      my_personal_data: { Args: never; Returns: Json }
       newsletter_confirm: { Args: { p_token: string }; Returns: boolean }
       newsletter_ip_allowed: { Args: { p_ip_hash: string }; Returns: boolean }
       newsletter_resend_opt_out: {

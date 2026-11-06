@@ -60,7 +60,7 @@ Provider secrets server-side only; payment status only from verified provider ev
 
 - Collect only what the feature needs; document the purpose.
 - Consent is separate from authentication and transactions, append-only and versioned (`consent_records`, `LEGAL_POLICY_VERSION` in the webapp — bump it when legal texts change).
-- Data export and account deletion are backend jobs (Edge Functions with the service role); orders survive deletion anonymised (`user_id` set null, snapshots kept).
+- Data export and account deletion run on the server (decision 125 in `supabase/README.md`): the export is `my_personal_data()` (the caller's own rows, secrets stripped), the erasure is the Edge Function `delete-account` → `erase_account()` (service role, recent sign-in required). Orders, invoices and Studio billing survive anonymised (`user_id` set null, snapshots kept). A new table holding a member's data must be added to `my_personal_data()` and must either cascade from `profiles` or be kept on purpose (`set null`), and a new personal Storage bucket to `private.personal_file_buckets()`; the audit trigger must not copy erased rows (`gt.account_erasure`).
 - Retention periods (tickets, attachments, consent proofs) are legal decisions: flag them, do not invent them.
 - Cookie consent must actually gate non-essential scripts before any analytics/marketing tag is added.
 

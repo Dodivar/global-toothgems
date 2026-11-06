@@ -4398,20 +4398,15 @@
       "body": "Gardez vos identifiants à jour et gardez la main sur vos données personnelles.",
       "signInGroup": "Connexion",
       "privacyGroup": "Vos données",
-      "demoBody": "Toutes les actions de cette page sont simulées. Choisissez la réponse du serveur et utilisez les raccourcis pour faire avancer une demande de données.",
+      "demoBody": "Mode démonstration : les actions de cette page sont simulées. Choisissez la réponse du serveur.",
       "demoPassword": "Mot de passe actuel",
-      "demoPasswordBody": "le mot de passe du compte de démonstration. Toute autre valeur est considérée comme incorrecte.",
-      "demoExport": "Demande de données",
-      "demoFinishExport": "Terminer le traitement",
-      "demoExpireExport": "Faire expirer le téléchargement",
-      "demoBodyReal": "Le changement d’e-mail et de mot de passe agit sur votre vrai compte. Seuls l’export des données et la suppression du compte restent simulés : choisissez leur réponse et utilisez les raccourcis ci-dessous."
+      "demoPasswordBody": "le mot de passe du compte de démonstration. Toute autre valeur est considérée comme incorrecte."
     },
     "overview": {
       "okTitle": "Votre compte est bien protégé",
       "okBody": "Votre e-mail est vérifié et votre mot de passe est défini. Rien ne requiert votre attention.",
       "attentionTitle": "Une chose à terminer",
       "attentionEmail": "Confirmez votre nouvelle adresse e-mail pour finaliser le changement.",
-      "attentionExport": "Vos données personnelles sont prêtes à être téléchargées.",
       "goTo": "Aller à cette section",
       "email": "E-mail",
       "emailVerified": "Vérifié",
@@ -4423,14 +4418,10 @@
       "passwordChanged": "Modifié le {{date}}.",
       "passwordSinceSignUp": "Inchangé depuis la création du compte.",
       "data": "Données personnelles",
-      "exportNone": "Aucune demande",
-      "exportNoneDetail": "Vous pouvez demander une copie à tout moment.",
-      "exportProcessing": "En préparation",
-      "exportProcessingDetail": "Nous vous préviendrons par e-mail.",
-      "exportReady": "Prêtes",
-      "exportReadyDetail": "Téléchargement disponible jusqu’au {{date}}.",
-      "exportExpired": "Lien expiré",
-      "exportExpiredDetail": "Demandez une nouvelle copie quand vous le souhaitez."
+      "exportNone": "Disponibles",
+      "exportNoneDetail": "Téléchargez une copie à tout moment.",
+      "exportDone": "Téléchargées",
+      "exportDoneDetail": "Copie téléchargée le {{date}}."
     },
     "email": {
       "title": "Adresse e-mail",
@@ -4481,61 +4472,56 @@
     },
     "export": {
       "title": "Télécharger vos données personnelles",
-      "body": "Vous pouvez demander une copie des informations personnelles liées à votre compte, à tout moment et gratuitement.",
+      "body": "Recevez une copie de toutes les informations personnelles liées à votre compte, à tout moment et gratuitement.",
       "includedTitle": "Ce que contient votre copie",
       "items": {
         "account": {
-          "title": "Informations de compte",
-          "body": "E-mail de connexion et réglages du compte."
+          "title": "Compte",
+          "body": "E-mail de connexion, modes de connexion, dates de création et de dernière connexion."
         },
         "profile": {
-          "title": "Informations de profil",
-          "body": "Nom, téléphone, adresse de livraison et préférences."
+          "title": "Profil et préférences",
+          "body": "Nom, téléphone, adresses, consentements et newsletter."
         },
         "orders": {
-          "title": "Historique des commandes",
-          "body": "Chaque commande, avec ses articles, prix et statut."
+          "title": "Boutique",
+          "body": "Commandes, colis, remboursements, factures, cartes cadeaux, fidélité, favoris et avis."
         },
         "courses": {
-          "title": "Formations et inscriptions",
-          "body": "Vos formations, votre progression et vos attestations."
+          "title": "Academy",
+          "body": "Formations, progression, réponses aux quiz et attestations."
         },
-        "activity": {
-          "title": "Activité du compte",
-          "body": "Le cas échéant : connexions et événements de sécurité."
+        "studio": {
+          "title": "Studio 3D",
+          "body": "Créations, Gem Groups, collections, Glowbook, abonnement et paiements."
+        },
+        "community": {
+          "title": "Salons des membres",
+          "body": "Votre profil, vos messages et vos réactions."
+        },
+        "service": {
+          "title": "Service client et dossier",
+          "body": "Vos demandes, et les étiquettes et notes que l’équipe a enregistrées à votre sujet."
         }
       },
-      "format": "Fourni sous forme de fichier JSON lisible par une machine, pour le conserver ou le transférer vers un autre service.",
-      "request": "Demander mes données",
-      "requestAgain": "Demander une nouvelle copie",
-      "confirmTitle": "Demander une copie de vos données ?",
-      "confirmBody": "Voici ce qui va se passer :",
-      "step1": "Nous rassemblons vos données personnelles dans un seul fichier. Cela peut prendre un peu de temps.",
-      "step2": "Nous écrivons à {{email}} dès qu’il est prêt.",
-      "step3": "Vous le téléchargez depuis cette page, en étant connecté·e. Le téléchargement reste disponible {{days}} jours.",
-      "confirm": "Envoyer la demande",
-      "submitting": "Envoi…",
-      "failedBody": "Votre demande n’a pas pu être envoyée. Réessayez dans un instant.",
-      "sentTitle": "Demande envoyée",
-      "sentBody": "Nous préparons vos données. Vous pouvez quitter cette page — nous écrirons à {{email}} dès que votre téléchargement sera prêt.",
-      "sentClose": "C’est noté",
-      "processingTitle": "Préparation de vos données",
-      "processingBody": "Demande envoyée le {{date}} à {{time}}. Nous vous préviendrons par e-mail.",
-      "readyTitle": "Vos données sont prêtes",
-      "readyBody": "Votre téléchargement est disponible jusqu’au {{date}}.",
+      "format": "Un fichier JSON lisible par une machine, à conserver ou à transférer vers un autre service. Vos fichiers (photos, rendus, logo…) y figurent avec un lien de téléchargement valable {{days}} jours.",
       "download": "Télécharger mes données",
-      "expiredTitle": "Le lien de téléchargement a expiré",
-      "expiredBody": "Les téléchargements restent disponibles {{days}} jours pour protéger vos données. Vous pouvez demander une nouvelle copie à tout moment.",
+      "preparing": "Préparation…",
+      "doneTitle": "Téléchargement lancé",
+      "doneBody": "Le fichier contient vos données personnelles : conservez-le en lieu sûr et ne le partagez qu’en connaissance de cause.",
+      "tooSoonTitle": "Une copie vient d’être préparée",
+      "tooSoonBody": "Pour protéger votre compte, une nouvelle copie est possible à partir du {{date}} à {{time}}.",
+      "failedBody": "Votre copie n’a pas pu être préparée. Réessayez dans un instant ; si le problème persiste, contactez-nous.",
       "toastDownloadTitle": "Téléchargement lancé",
       "toastDownloadBody": "Conservez ce fichier en lieu sûr : il contient vos données personnelles.",
-      "fileNote": "Export de prototype généré dans votre navigateur à partir de cette session de démonstration."
+      "mockNote": "Fichier de démonstration généré dans votre navigateur à partir de la session de test."
     },
     "delete": {
       "title": "Supprimer le compte",
       "body": "Fermer définitivement votre compte Global Toothgems.",
-      "point1": "Vous perdez l’accès à vos formations, attestations, à la communauté et à vos avantages fidélité.",
-      "point2": "Votre profil et vos préférences sont effacés. Cette action est irréversible.",
-      "point3": "Les données de commande que la loi nous oblige à conserver le sont pendant la durée légale, puis supprimées.",
+      "point1": "Vous perdez l’accès à vos formations et attestations, au Studio 3D (créations, Glowbook), aux salons et à vos avantages fidélité.",
+      "point2": "Votre profil, vos préférences, vos avis et vos messages sont effacés. Cette action est irréversible.",
+      "point3": "Vos commandes et factures, que la loi nous oblige à garder, sont conservées sans lien avec un compte pendant la durée légale.",
       "exportHint": "Conseil : téléchargez d’abord vos données personnelles si vous souhaitez en garder une copie.",
       "open": "Supprimer mon compte",
       "dialogTitle": "Supprimer votre compte ?",
@@ -4544,10 +4530,12 @@
       "consequences": {
         "access": "Vous êtes déconnecté·e et ne pourrez plus vous connecter avec ce compte.",
         "courses": "Vos formations, votre progression et vos attestations ne sont plus accessibles.",
-        "community": "Votre profil dans la communauté est supprimé.",
-        "loyalty": "Vos tampons fidélité et récompenses non utilisées sont perdus."
+        "studio": "Vos créations, Gem Groups, liens de partage et votre Glowbook sont supprimés.",
+        "community": "Votre profil, vos messages dans les salons et vos avis sont supprimés.",
+        "loyalty": "Vos tampons fidélité et récompenses non utilisées sont perdus.",
+        "newsletter": "Vous êtes désinscrit·e de la newsletter."
       },
-      "retention": "Les factures et données de commande que nous devons légalement conserver le sont, de manière sécurisée, pendant la durée légale uniquement.",
+      "retention": "Nous conservons, sans lien avec un compte, vos commandes, factures et avoirs (y compris ceux du Studio 3D) pendant la durée légale de conservation des pièces comptables (10 ans), ainsi que vos échanges avec le service client le temps de traiter une éventuelle réclamation.",
       "phrase": "SUPPRIMER",
       "phraseLabel": "Saisissez {{phrase}} pour confirmer",
       "phraseHint": "Le bouton de suppression se débloque lorsque le mot correspond.",
@@ -4555,10 +4543,39 @@
       "keep": "Conserver mon compte",
       "confirm": "Supprimer définitivement",
       "deleting": "Suppression…",
-      "failedBody": "Nous n’avons pas pu supprimer votre compte. Rien n’a été effacé — réessayez, ou contactez-nous si le problème persiste.",
+      "failedBody": "Nous n’avons pas pu supprimer votre compte. Rien n’a été effacé de votre compte — réessayez, ou contactez-nous si le problème persiste.",
       "doneTitle": "Votre compte a été supprimé",
-      "doneBody": "Merci d’avoir fait partie de Global Toothgems. Votre compte est fermé et vous avez été déconnecté·e. Vous serez toujours le bienvenu ou la bienvenue.",
-      "doneCta": "Retour à l’accueil"
+      "doneBody": "Votre compte est fermé et vous avez été déconnecté·e. Un e-mail de confirmation part vers votre adresse. Merci d’avoir fait partie de Global Toothgems.",
+      "doneCta": "Retour à l’accueil",
+      "checking": "Vérification de votre compte…",
+      "blockedTitle": "Votre compte ne peut pas encore être supprimé",
+      "blockedBody": "Un élément en cours a encore besoin de votre compte. Dès qu’il est terminé, vous pourrez le supprimer ici.",
+      "blockers": {
+        "studio_subscription": {
+          "title": "Abonnement au Studio 3D en cours",
+          "body": "Résiliez-le (ou rétractez-vous dans les 14 jours) : le compte pourra être supprimé à la fin de l’abonnement. Pour l’arrêter tout de suite, contactez-nous.",
+          "link": "Gérer mon abonnement"
+        },
+        "studio_withdrawal": {
+          "title": "Rétractation en cours",
+          "body": "Votre remboursement est en cours de traitement. Revenez dès qu’il est confirmé.",
+          "link": "Voir mon abonnement"
+        },
+        "order_payment_pending": {
+          "title": "Paiement en cours",
+          "body": "Une commande attend la fin de son paiement. Réessayez dans quelques minutes."
+        },
+        "staff": {
+          "title": "Compte de l’équipe",
+          "body": "Ce compte donne accès au back-office : un administrateur doit d’abord le retirer de l’équipe."
+        }
+      },
+      "passwordLabel": "Votre mot de passe",
+      "googleHint": "Pour confirmer qu’il s’agit bien de vous, reconnectez-vous avec Google si votre dernière connexion date de plus de 10 minutes.",
+      "googleAgain": "Me reconnecter avec Google",
+      "reauthTitle": "Reconnectez-vous pour confirmer",
+      "reauthPasswordBody": "Votre connexion est trop ancienne pour supprimer le compte. Saisissez à nouveau votre mot de passe et réessayez.",
+      "reauthGoogleBody": "Votre dernière connexion date de plus de 10 minutes. Reconnectez-vous avec Google, puis confirmez à nouveau."
     }
   },
   "legal": {

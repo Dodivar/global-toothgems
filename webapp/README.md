@@ -424,9 +424,11 @@ the page the member was heading to. Sign-in reports unconfirmed addresses (with 
 resend), wrong credentials, suspended accounts and rate limits separately.
 `/mot-de-passe-oublie` and `/reinitialiser-mot-de-passe` use Supabase password
 recovery (`lib/passwordRecovery.ts`). On the Security page, changing the email or
-the password goes through Supabase Auth (`lib/accountCredentials.ts`); data export
-and account deletion are still simulated (their demo panels only exist on
-that page). Google sign-in goes through Supabase Auth (`signInWithGoogle`, terms
+the password goes through Supabase Auth (`lib/accountCredentials.ts`); the data
+export (`my_personal_data()`) and the account deletion (Edge Function
+`delete-account`) go through `lib/accountPrivacy.ts`, its answers read by the pure
+`lib/accountPrivacyMapping.ts` (decision 125). The demo panel of that page only
+exists in mock mode. Google sign-in goes through Supabase Auth (`signInWithGoogle`, terms
 dialog first). The registration journey itself has no simulated service any
 more: without Supabase the mock `signUp` only answers "confirmation sent", which
 is enough for the smoke tests.

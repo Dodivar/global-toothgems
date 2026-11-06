@@ -1,5 +1,5 @@
 -- =============================================================================
--- Members' privacy rights: personal-data export and account erasure (decision 123)
+-- Members' privacy rights: personal-data export and account erasure (decision 125)
 -- =============================================================================
 -- GDPR art. 15/20 (access, portability) and art. 17 (erasure), for signed-in
 -- members, replacing the simulated Security & privacy page.

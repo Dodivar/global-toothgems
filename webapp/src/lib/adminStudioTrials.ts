@@ -23,7 +23,8 @@ export interface TrialRow {
 }
 
 export interface SubscriptionRow {
-  user_id: string;
+  /** Null once the account was erased (decision 125): its trial went with it. */
+  user_id: string | null;
   status: string;
   created_at: string;
 }
@@ -73,6 +74,7 @@ export function buildStudioTrialFigures(
   for (const sub of subscriptions) {
     // An attempt that never went through is not a conversion.
     if (sub.status === "incomplete" || sub.status === "incomplete_expired") continue;
+    if (sub.user_id === null) continue;
     const at = Date.parse(sub.created_at);
     const known = firstSubscription.get(sub.user_id);
     if (known === undefined || at < known) firstSubscription.set(sub.user_id, at);

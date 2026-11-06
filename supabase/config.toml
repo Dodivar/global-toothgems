@@ -76,6 +76,9 @@ verify_jwt = false
 [functions.studio-withdraw]
 verify_jwt = false
 
+[functions.delete-account]
+verify_jwt = false
+
 [functions.studio-billing-setup]
 verify_jwt = false
 
