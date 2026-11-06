@@ -1476,8 +1476,8 @@ member with Studio access   My Creations → a creation's detail → "Create a p
                             studio_share_branding() → {tier, logo_path, has_logo}        (42501 signed out)
                             the design rendered on a hidden offscreen stage (its own store and engine) in the browser:
                               HD still PNG / JPEG, 360° video (MediaRecorder: MP4 when the browser records it, else WebM),
-                              360° GIF (gifenc, half size); Story 1080×1920, square 1080×1080, portrait 1080×1350
-                            downloaded or handed to the system share sheet — nothing is uploaded or published
+                              Story 1080×1920, square 1080×1080, portrait 1080×1350
+                            handed to the system share sheet or downloaded — nothing is uploaded or published
 logo (artist, atelier)      re-encoded to PNG ≤ 1024 px in the browser → studio-share-logos/<user>/logo-<uuid>.png
                             → studio_set_share_logo(path) (previous file removed by the page);  removes (always)
 ```
@@ -1493,14 +1493,11 @@ logo (artist, atelier)      re-encoded to PNG ≤ 1024 px in the browser → stu
 - Validated by `supabase/tests/studio_share_branding_validation.sql` (B1 visitor, B2 tier resolution incl. past_due,
   highest plan, staff, ended access, B3 essential and trial refused, B4 artist own folder only, B5 another member
   reads and records nothing, B6 after the subscription ends: no logo returned or readable, removal still allowed).
-- **One button per network** (addendum 2026-10-21, user's choice: no publishing API, no developer app, no OAuth):
-  Instagram, TikTok, Pinterest, Facebook, Snapchat, WhatsApp, X, Threads (`webapp/src/lib/studio3d/socialExport/networks.ts`).
-  A phone opens the system share menu with the file; a computer opens the network's link-share page with the
-  creation's **public page** (Facebook sharer, Pinterest pin/create with the render as `media`, X intent/post,
-  Threads intent/post, wa.me) or, without one / for TikTok, Instagram and Snapchat, downloads the file and opens
-  the network's create page. The public page is the creation's Glowbook page when it is published there, else its
-  existing share link; none is created without the member's explicit "Create the read-only link" button.
-  Preview cards: `/studio-3d/partage/<token>` and `/studio-3d/glowbook/<handle>/<item>` render `og:image` /
+- **No list of networks** (owner's choice 2026-11-06, replacing the per-network buttons of the 2026-10-21
+  addendum): the dialog ends on "Share…" (`navigator.share({ files })`, where the browser accepts the file — the
+  member picks the app) and "Download"; the member posts from their own app. The editor's Share menu and the share
+  dialog offer the render through the share sheet and the read-only link to copy (or to send through the share
+  sheet), no network page. Preview cards: `/studio-3d/partage/<token>` and `/studio-3d/glowbook/<handle>/<item>` render `og:image` /
   `twitter:card` on the server (`serverSharePreview.ts`, publishable key; renders signed for 7 days), still
   `noindex`. Suite B7: a visitor reads the preview and the render of a shared creation only, nothing once revoked.
 
@@ -2509,9 +2506,7 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     client-side — the server enforces the tier and the logo only; a server-side render would be needed to make the
     watermark unremovable; (c) video: one full turn in 6 s at 30 fps, ~10 Mbit/s, MP4 (H.264) when
     `MediaRecorder` can record it, else WebM (Firefox; Instagram may refuse it); recorded in real time, so leaving
-    the tab stops it; (d) GIF at half size (540 px wide), 36 frames, 3.6 s, 256 colours per frame (a full-size
-    GIF weighs tens of MB) — new dependency `gifenc` 1.0.3 (MIT, no dependencies, ~9 kB, loaded with the first
-    GIF only: nothing in the stack encodes GIF); (e) three Atelier layouts (Gallery, Spotlight, Studio card) plus
+    the tab stops it; (d) no GIF since 2026-11-06 (owner's choice: MP4 plays everywhere, `gifenc` removed); (e) three Atelier layouts (Gallery, Spotlight, Studio card) plus
     the full stage for everyone, texts = title (the creation's name by default) and an account handle typed by
     the member, not stored; (f) logo: PNG / JPEG / WebP up to 2 MB, no SVG, redrawn as a PNG within 1024 px in the
     browser; one per member; a member who leaves the plan keeps it stored but unusable until they come back;
@@ -2525,6 +2520,11 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
     still → square (no 2:3 format for Pinterest); (k) desktop create pages: tiktok.com/upload,
     instagram.com, snapchat.com/web, pinterest.com/pin-builder, facebook.com, x.com/compose/post, threads.net,
     web.whatsapp.com; (l) brand marks are drawn as monograms (no brand logos shipped).
+    Addendum 2026-11-06 (owner's request: too many choices, links to networks not worth keeping): (i), (j), (k) and
+    (l) are void — the per-network buttons, the "Where will you post it?" picker and the networks of the editor's
+    Share menu and of the share dialog are gone; the file goes through the system share sheet or is downloaded,
+    the link is copied. (h) stays: the preview cards of a pasted link still show the creation. The GIF output is
+    gone too (d). Agent's choice, to confirm: the three formats and the Atelier layouts stay.
 102. **3D Studio: Glowbook sections, QR poster and "certified artist" badge** (owner's request, 2026-10-19;
     migrations `20261019142050`, `20261019143019`). Built: sections the artist creates, renames, orders and
     deletes, each Glowbook creation filed in one section or none, the public page filtered by section chips;

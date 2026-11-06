@@ -6,7 +6,7 @@ import type { ShareFormat } from "./formats";
  * Pure: the browser's capabilities come in as arguments.
  */
 
-export type ShareOutput = "image" | "video" | "gif";
+export type ShareOutput = "image" | "video";
 export type ImageType = "png" | "jpeg";
 
 /** One full turn of the video, at the frame rate the canvas is captured. */
@@ -81,12 +81,6 @@ export function turntableAngle(elapsedMs: number, durationMs: number): number {
   if (durationMs <= 0) return 0;
   const k = Math.min(Math.max(elapsedMs / durationMs, 0), 1);
   return k >= 1 ? 0 : k * Math.PI * 2;
-}
-
-/** The angles of an `n`-frame loop: evenly spaced, the last one short of the first, so the loop has no doubled frame. */
-export function loopAngles(n: number): number[] {
-  const count = Math.max(1, Math.floor(n));
-  return Array.from({ length: count }, (_, i) => (i / count) * Math.PI * 2);
 }
 
 /** Share of the work done, for the progress bar: [0, 1]. */

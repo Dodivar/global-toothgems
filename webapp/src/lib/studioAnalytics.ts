@@ -43,7 +43,7 @@ type StudioEvent =
   | "studio_access_check_failed"
   | "studio_access_denied"
   | "studio_access_restored"
-  /** A social network button of the export dialog (decision 101): network, output, format, method. */
+  /** "Share" or "Download" on a file made by the post dialog (decision 101): output, format, method. */
   | "studio_social_share_clicked"
   /** Try-on (decision 111 (k)): the photo check refused the photo, with its reasons. */
   | "studio_try_on_photo_refused"

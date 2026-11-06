@@ -2,12 +2,12 @@ import { StudioEngine } from "../engine";
 import { DesignStore } from "../store";
 import type { StudioScene } from "../../studioWorkspace/scene";
 import { composeFrame, fontsReady, whiteMark, type MarkImage } from "./compose";
-import { FORMAT_SIZES, scaledSize, type FormatSize, type ShareFormat } from "./formats";
+import { FORMAT_SIZES, type FormatSize, type ShareFormat } from "./formats";
 import type { Layout } from "./layouts";
-import { loopAngles, progressShare, SPOTLIGHT_VIDEO, sweepAngle, turntableAngle, TURNTABLE_GIF, TURNTABLE_VIDEO, type ImageType, type VideoType } from "./motion";
+import { progressShare, SPOTLIGHT_VIDEO, sweepAngle, turntableAngle, TURNTABLE_VIDEO, type ImageType, type VideoType } from "./motion";
 
 /**
- * Social exports, drawn in this tab: a still, a 360° video or a GIF of a
+ * Social exports, drawn in this tab: a still or a 360° video of a
  * saved creation, at the network sizes. Nothing leaves the browser — the
  * dialog downloads the file or hands it to the system share sheet.
  *
@@ -40,12 +40,6 @@ interface ExportOptions {
 }
 
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-const yieldToPage = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
-
-function checkAbort(signal?: AbortSignal) {
-  if (signal?.aborted) throw new ExportError("cancelled");
-}
-
 function canvasBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new ExportError("encode"))), type, quality));
 }
@@ -236,28 +230,6 @@ export class ExportStage {
     return new Blob(chunks, { type: type.fileType });
   }
 
-  /** One full turn as a looping GIF, at half size, frame by frame (cancellable between frames). */
-  async gif(format: ShareFormat, look: ExportLook, { signal, onProgress }: ExportOptions = {}): Promise<Blob> {
-    // The encoder only comes with the first GIF.
-    const { GIFEncoder, quantize, applyPalette } = await import("gifenc");
-    const size = scaledSize(format, TURNTABLE_GIF.width);
-    const { ctx } = this.target(size);
-    const encoder = GIFEncoder();
-    const angles = loopAngles(TURNTABLE_GIF.frames);
-    for (let i = 0; i < angles.length; i++) {
-      checkAbort(signal);
-      this.draw(ctx, format, size, look, angles[i]);
-      const { data } = ctx.getImageData(0, 0, size.width, size.height);
-      const palette = quantize(data, TURNTABLE_GIF.maxColors);
-      const index = applyPalette(data, palette);
-      encoder.writeFrame(index, size.width, size.height, { palette, delay: TURNTABLE_GIF.delayMs, repeat: 0 });
-      onProgress?.(progressShare(i + 1, angles.length));
-      await yieldToPage();
-    }
-    checkAbort(signal);
-    encoder.finish();
-    return new Blob([encoder.bytes()], { type: "image/gif" });
-  }
 }
 
 /* The brand wordmark, decoded once; and its white copy for dark layouts. */
