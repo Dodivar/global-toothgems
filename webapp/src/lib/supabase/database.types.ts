@@ -4484,6 +4484,10 @@ export type Database = {
           confirm_token_hash: string | null
           confirmation_sent_at: string | null
           confirmed_at: string | null
+          contact_sync_attempts: number
+          contact_sync_due_at: string | null
+          contact_sync_error: string | null
+          contact_synced_at: string | null
           created_at: string
           email: string
           id: string
@@ -4501,6 +4505,10 @@ export type Database = {
           confirm_token_hash?: string | null
           confirmation_sent_at?: string | null
           confirmed_at?: string | null
+          contact_sync_attempts?: number
+          contact_sync_due_at?: string | null
+          contact_sync_error?: string | null
+          contact_synced_at?: string | null
           created_at?: string
           email: string
           id?: string
@@ -4518,6 +4526,10 @@ export type Database = {
           confirm_token_hash?: string | null
           confirmation_sent_at?: string | null
           confirmed_at?: string | null
+          contact_sync_attempts?: number
+          contact_sync_due_at?: string | null
+          contact_sync_error?: string | null
+          contact_synced_at?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -10136,6 +10148,18 @@ export type Database = {
           order_number: string
         }[]
       }
+      pending_newsletter_contacts: {
+        Args: { p_limit?: number }
+        Returns: {
+          due_at: string
+          email: string
+          first_name: string
+          id: string
+          locale: string
+          subscribed: boolean
+          tags: string[]
+        }[]
+      }
       pending_refund_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -10327,6 +10351,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_newsletter_contact_sync: {
+        Args: { p_due_at: string; p_error?: string; p_id: string }
+        Returns: boolean
       }
       record_stripe_webhook_event: {
         Args: {
