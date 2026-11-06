@@ -11,7 +11,7 @@ import { FILTER_PARAMS, type FilterKey } from "../../lib/storefrontFilters";
  * summaries and the active-filter chips so all three always agree.
  */
 export function useFilterLabels() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const L = useLocalized();
   const { colors } = useCatalog();
   const { categoryName, familyName } = useTaxonomy();
@@ -28,7 +28,7 @@ export function useFilterLabels() {
           return value === "all" ? t("shop.materials.all") : value.includes(".") ? value : t(`shop.materials.${value}`, { defaultValue: value });
         case "shape":
           // A slug outside the taxonomy can still arrive from a hand-edited URL.
-          return value === "all" ? t("shop.shapes.all") : shapeName(value);
+          return value === "all" ? t("shop.shapes.all") : shapeName(value, i18n.language);
         case "color": {
           if (value === "all") return t("shop.colors.all");
           const def = colors.find((c) => c.slug === value);
@@ -40,6 +40,6 @@ export function useFilterLabels() {
           return t(`shop.stockBands.${value}`, { defaultValue: value });
       }
     },
-    [t, L, colors, categoryName, familyName],
+    [t, i18n.language, L, colors, categoryName, familyName],
   );
 }

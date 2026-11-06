@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ColorSwatch } from "../ui/ColorSwatch";
 import { ShapeGlyph } from "../ui/ShapeGlyph";
 import { useAdminCatalog } from "../../lib/adminCatalog";
@@ -18,6 +19,7 @@ import { shapeName, type GemColor, type GemShape } from "../../data/products";
  */
 export function useGemTraits() {
   const L = useLocalized();
+  const { i18n } = useTranslation();
   const { gemColors } = useAdminCatalog();
 
   const bySlug = useMemo(() => new Map(gemColors.map((color) => [color.slug, color])), [gemColors]);
@@ -27,7 +29,7 @@ export function useGemTraits() {
     [gemColors],
   );
 
-  const shapeLabel = useCallback((shape: GemShape) => shapeName(shape), []);
+  const shapeLabel = useCallback((shape: GemShape, language?: string) => shapeName(shape, language ?? i18n.language), [i18n.language]);
   const colorDef = useCallback((slug: GemColor): AdminGemColor | undefined => bySlug.get(slug), [bySlug]);
   const colorLabel = useCallback(
     (slug: GemColor) => {

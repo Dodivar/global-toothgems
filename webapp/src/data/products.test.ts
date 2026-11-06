@@ -13,6 +13,12 @@ describe("shapeName", () => {
     expect(shapeName("rivoli-star")).toBe("Rivoli Star");
   });
 
+  it("names the Swarovski 2058 round per language", () => {
+    expect(shapeName("xilion-rose")).toBe("Round 2058");
+    expect(shapeName("xilion-rose", "en")).toBe("Round 2058");
+    expect(shapeName("xilion-rose", "fr")).toBe("2058 Rond");
+  });
+
   it("shows an unknown slug as-is", () => {
     expect(shapeName("hand-typed")).toBe("hand-typed");
   });

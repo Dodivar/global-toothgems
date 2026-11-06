@@ -64,11 +64,27 @@ const SHAPE_NAMES: Record<GemShape, string> = {
   diamond: "Diamond Shape",
   "rivoli-star": "Rivoli Star",
   "star-flower": "Star Flower",
-  "xilion-rose": "Xilion Rose",
+  "xilion-rose": "Round 2058",
 };
 
-/** Name of a cut; a slug outside the taxonomy (hand-edited URL) shows as-is. */
-export function shapeName(shape: string): string {
+/**
+ * French wording of the few cuts that are not the crystal makers' English name
+ * (owner's request, 2026-11-06: the Swarovski 2058 round is "2058 Rond" in
+ * French, "Round 2058" in English).
+ */
+const FRENCH_SHAPE_NAMES: Partial<Record<GemShape, string>> = {
+  "xilion-rose": "2058 Rond",
+};
+
+/**
+ * Name of a cut; a slug outside the taxonomy (hand-edited URL) shows as-is.
+ * `language` ("fr", "fr-FR"…) only matters for the cuts in {@link FRENCH_SHAPE_NAMES}.
+ */
+export function shapeName(shape: string, language?: string): string {
+  if (language?.toLowerCase().startsWith("fr")) {
+    const french = (FRENCH_SHAPE_NAMES as Record<string, string>)[shape];
+    if (french) return french;
+  }
   return (SHAPE_NAMES as Record<string, string>)[shape] ?? shape;
 }
 
@@ -575,11 +591,11 @@ export function shapesInCatalog(list: Product[] = PRODUCTS): ShapeGroup[] {
 export function sortByShapeLabel<T>(
   items: T[],
   shapeOf: (item: T) => GemShape,
-  label: (shape: GemShape) => string,
+  label: (shape: GemShape, language?: string) => string,
   locale: string,
 ): T[] {
   const collator = new Intl.Collator(locale, { sensitivity: "base" });
-  return [...items].sort((a, b) => collator.compare(label(shapeOf(a)), label(shapeOf(b))));
+  return [...items].sort((a, b) => collator.compare(label(shapeOf(a), locale), label(shapeOf(b), locale)));
 }
 
 interface ColorGroup {
