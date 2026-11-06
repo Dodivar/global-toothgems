@@ -9,3 +9,13 @@
 export function canShareFiles(file: File): boolean {
   return typeof navigator !== "undefined" && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
 }
+
+/**
+ * Whether the share sheet would take a file of this type, asked before the
+ * file exists (with an empty probe), so a menu can show its entry at once
+ * instead of inserting it once the file is rendered.
+ */
+export function canShareFileType(type: string, name = "probe.png"): boolean {
+  if (typeof File === "undefined") return false;
+  return canShareFiles(new File([], name, { type }));
+}

@@ -25,7 +25,7 @@ import { useStudioGems } from "../../../lib/studio3d/useStudioGems";
 import { downloadURL, getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { buildQuoteSheetDataURL } from "../../../lib/studio3d/quoteSheet";
-import { canShareFiles } from "../../../lib/studio3d/socialShare";
+import { canShareFileType } from "../../../lib/studio3d/socialShare";
 import { CLIENT_NAME_MAX, studioStore, useStudio } from "../../../lib/studio3d/store";
 import { useStudioFeature, useStudioStaff } from "../../../lib/studioAccess";
 import { lowestPlanWith, type LockedFeature } from "../../../lib/studioEntitlements";
@@ -69,8 +69,13 @@ export function ShareExportMenu() {
   const [client, setClient] = useState(studioStore.clientName);
   // Rendered as the menu opens: the share sheet must be called right in the click, with no wait before it.
   const [image, setImage] = useState<File | null>(null);
-  // `undefined` while looking, `null` when the creation has no active link yet.
-  const [link, setLink] = useState<ShareLink | null | undefined>(undefined);
+  // Whether the device's share sheet takes a PNG: known before the image exists, so its row is
+  // there from the first frame (no row inserted at the top of an open menu).
+  const [sheet] = useState(() => canShareFileType("image/png"));
+  // The linked creation's link: `undefined` while looking, `null` when it has none yet. Looked up
+  // as soon as the stage is linked to a creation, and kept between openings, so the menu opens on
+  // its final layout instead of swapping a "looking up" line for the actions.
+  const [lookup, setLookup] = useState<{ creationId: string; link: ShareLink | null } | null>(null);
   const linked = ws.creations.find((c) => c.id === snap.active?.creationId) ?? null;
   const { existingShareLink } = ws;
   // Try-on works from the saved creation: offered once the design is saved with nothing pending.
@@ -81,7 +86,7 @@ export function ShareExportMenu() {
   const staff = useStudioStaff();
 
   useEffect(() => {
-    if (!open || !studioStore.jewels.length) return;
+    if (!open || !sheet || !studioStore.jewels.length) return;
     let live = true;
     getEngine()
       ?.shareableImage()
@@ -91,17 +96,21 @@ export function ShareExportMenu() {
       live = false;
       setImage(null);
     };
-  }, [open]);
+  }, [open, sheet]);
 
+  // Refreshed on each opening too (the share dialog may have created or disabled the link),
+  // keeping the last answer on screen meanwhile.
   useEffect(() => {
-    if (!open || !linked) return;
+    if (!linked) return;
     let live = true;
-    existingShareLink(linked).then((l) => live && setLink(l));
+    existingShareLink(linked)
+      .then((l) => live && setLookup({ creationId: linked.id, link: l }))
+      .catch(() => live && setLookup({ creationId: linked.id, link: null }));
     return () => {
       live = false;
-      setLink(undefined);
     };
-  }, [open, linked, existingShareLink]);
+  }, [linked, open, existingShareLink]);
+  const link = linked && lookup?.creationId === linked.id ? lookup.link : undefined;
 
   const close = () => {
     setOpen(false);
@@ -225,13 +234,13 @@ export function ShareExportMenu() {
         </button>
       )}
     >
-      {image && canShareFiles(image) && (
+      {sheet && snap.jewels.length > 0 && (
         <>
           <PopoverItem
-            icon={<Share size={14} />}
+            icon={image ? <Share size={14} /> : <LoaderCircle size={14} className="motion-safe:animate-spin" />}
             label={t("studio.editor.share.native")}
             sub={t("studio.editor.share.nativeSub")}
-            onClick={() => shareImage(image)}
+            onClick={() => image && shareImage(image)}
           />
           <PopoverSeparator />
         </>
@@ -248,9 +257,13 @@ export function ShareExportMenu() {
           }}
         />
       ) : link === undefined ? (
-        <p role="status" className="m-0 flex items-center gap-2 px-2.5 py-2 text-[12.5px] text-[var(--text-muted)]">
-          <LoaderCircle size={14} aria-hidden="true" className="motion-safe:animate-spin" />
-          {t("studio.editor.share.lookingUp")}
+        // Shaped like the row it becomes (icon, label, second line), so the menu does not jump.
+        <p role="status" className="m-0 flex items-start gap-2.5 px-2.5 py-2 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-subtle)]">
+          <LoaderCircle size={14} aria-hidden="true" className="mt-0.5 flex-none motion-safe:animate-spin" />
+          <span className="grid min-w-0 flex-1">
+            <span className="truncate">{t("studio.editor.share.copyLink")}</span>
+            <span className="text-[11.5px] font-medium leading-snug">{t("studio.editor.share.lookingUp")}</span>
+          </span>
         </p>
       ) : link === null ? (
         <PopoverItem
