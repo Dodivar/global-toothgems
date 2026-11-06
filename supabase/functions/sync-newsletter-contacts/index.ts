@@ -30,6 +30,10 @@ function supabaseSyncStore(): SyncStore {
       const { error: dbError } = await db.rpc("record_newsletter_contact_sync", { p_id: id, p_due_at: dueAt, p_error: error });
       if (dbError) log("record failed", { id, message: dbError.message });
     },
+    async optOut(email) {
+      const { error } = await db.rpc("newsletter_resend_opt_out", { p_email: email, p_reason: "unsubscribed" });
+      if (error) throw new Error(`newsletter_resend_opt_out failed: ${error.message}`);
+    },
   };
 }
 

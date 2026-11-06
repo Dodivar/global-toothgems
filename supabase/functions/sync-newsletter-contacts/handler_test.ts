@@ -66,11 +66,13 @@ function fakeResend(seed: { segments?: Segment[]; contacts?: Record<string, { fi
 
 function fakeStore(rows: PendingContact[]) {
   const records: [string, string, string | null][] = [];
+  const optOuts: string[] = [];
   const store: SyncStore = {
     pending: (limit) => Promise.resolve(rows.slice(0, limit)),
     record: (id, due, error) => (records.push([id, due, error]), Promise.resolve()),
+    optOut: (email) => (optOuts.push(email), Promise.resolve()),
   };
-  return { store, records };
+  return { store, records, optOuts };
 }
 
 const row = (over: Partial<PendingContact> = {}): PendingContact => ({
@@ -139,16 +141,18 @@ Deno.test("segments this code no longer uses are deleted, which frees the plan's
   assertEquals(r.segmentNames("ana@example.com"), ["Clients — VIP", "Newsletter — français", "Salon Paris (fait main)"]);
 });
 
-Deno.test("a contact who unsubscribed in Resend is never set back to subscribed", async () => {
+Deno.test("a contact who unsubscribed in Resend is never set back to subscribed; the choice comes back to the list", async () => {
   const r = fakeResend({
     segments: [{ id: "s_fr", name: "Newsletter — français" }],
     contacts: { "ana@example.com": { firstName: "Ana", unsubscribed: true, segments: ["s_fr"] } },
   });
-  const { store } = fakeStore([row()]);
+  const { store, optOuts, records } = fakeStore([row({ tags: ["vip"] })]);
   const report = await syncNewsletterContacts(r.api, store, 25, noLog);
-  assertEquals(report.unsubscribedInResend, 1);
+  assertEquals([report.unsubscribedInResend, report.synced, report.failed], [1, 0, 0]);
+  assertEquals(optOuts, ["ana@example.com"]);
   assertEquals(r.contacts.get("ana@example.com")?.unsubscribed, true);
-  assertEquals(r.calls.filter((c) => c.startsWith("create")), []);
+  assertEquals(r.calls.filter((c) => c.startsWith("create") || c.startsWith("add") || c.startsWith("firstName")), []);
+  assertEquals(records[0][2], null);
 });
 
 Deno.test("anyone no longer subscribed leaves Resend; already gone is fine", async () => {

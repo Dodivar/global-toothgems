@@ -33,6 +33,13 @@ Deno.serve((req) => {
       // 23514: the card is no longer active (cancelled, expired): nothing to record, and a retry would not change that.
       if (error && error.code !== "23514") throw new Error(`record_gift_card_delivery failed: ${error.message}`);
     },
+    async optOut(email, reason) {
+      const { data, error } = await db.rpc("newsletter_resend_opt_out", { p_email: email, p_reason: reason });
+      // 22023: not an address the database accepts; nothing to mirror, and a retry would not change that.
+      if (error?.code === "22023") return "unknown";
+      if (error) throw new Error(`newsletter_resend_opt_out failed: ${error.message}`);
+      return String(data);
+    },
     log,
   });
 });

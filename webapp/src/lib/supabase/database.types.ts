@@ -10114,6 +10114,10 @@ export type Database = {
       my_permissions: { Args: never; Returns: string[] }
       newsletter_confirm: { Args: { p_token: string }; Returns: boolean }
       newsletter_ip_allowed: { Args: { p_ip_hash: string }; Returns: boolean }
+      newsletter_resend_opt_out: {
+        Args: { p_email: string; p_reason: string }
+        Returns: string
+      }
       newsletter_subscribe: {
         Args: {
           p_email: string

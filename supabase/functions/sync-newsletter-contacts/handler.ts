@@ -15,8 +15,9 @@ import { type ContactsApi, ResendApiError, type Segment } from "./resendContacts
  *   otherwise  → the contact is deleted in Resend
  * then record_newsletter_contact_sync() closes the row, or keeps it queued with a backoff.
  *
- * Consent stays ours: a contact who unsubscribed in Resend is never set back to subscribed here
- * (counted as `unsubscribedInResend`; mirroring that choice back is the next step).
+ * Consent stays ours: a contact who unsubscribed in Resend is never set back to subscribed here.
+ * Its choice is mirrored onto the list (newsletter_resend_opt_out, the safety net of the
+ * `contact.updated` webhook), which queues the row again: the next run deletes the contact.
  *
  * Body (optional): { "limit": 1..100 }, default 25. Answer: { ok, report } with counts only.
  */
@@ -63,6 +64,8 @@ export interface SyncStore {
   pending(limit: number): Promise<PendingContact[]>;
   /** Closes the row (error null) or keeps it queued with a backoff. */
   record(id: string, dueAt: string, error: string | null): Promise<void>;
+  /** newsletter_resend_opt_out(email, 'unsubscribed'): the choice made in Resend comes back. */
+  optOut(email: string): Promise<void>;
 }
 
 export interface SyncReport {
@@ -131,19 +134,24 @@ class SegmentDirectory {
   }
 }
 
-async function syncOne(api: ContactsApi, segments: SegmentDirectory, row: PendingContact, report: SyncReport): Promise<void> {
+async function syncOne(api: ContactsApi, store: SyncStore, segments: SegmentDirectory, row: PendingContact, report: SyncReport): Promise<void> {
   if (!row.subscribed) {
     if (await api.deleteContact(row.email)) report.deleted++;
     return;
   }
-  const wanted = await segments.ids(wantedSegments(row));
   const existing = await api.getContact(row.email);
+  if (existing?.unsubscribed) {
+    // Unsubscribed in Resend: that choice wins, and nothing else is synced for this address.
+    await store.optOut(row.email);
+    report.unsubscribedInResend++;
+    return;
+  }
+  const wanted = await segments.ids(wantedSegments(row));
   if (!existing) {
     await api.createContact({ email: row.email, firstName: row.firstName, segmentIds: wanted });
     report.created++;
     return;
   }
-  if (existing.unsubscribed) report.unsubscribedInResend++;
   if (row.firstName && row.firstName !== existing.firstName) await api.setFirstName(row.email, row.firstName);
   const managed = await segments.managedIds();
   const current = new Set((await api.contactSegments(row.email)).map((s: Segment) => s.id));
@@ -163,7 +171,7 @@ export async function syncNewsletterContacts(
   const segments = new SegmentDirectory(api);
   for (const row of await store.pending(limit)) {
     try {
-      await syncOne(api, segments, row, report);
+      await syncOne(api, store, segments, row, report);
       await store.record(row.id, row.dueAt, null);
     } catch (error) {
       const status = error instanceof ResendApiError ? error.status : 0;
