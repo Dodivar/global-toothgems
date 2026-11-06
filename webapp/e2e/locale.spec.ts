@@ -142,7 +142,9 @@ test("the language switch moves to the same page in the other language and is re
   await expect(page.locator("header a[href='/fr/boutique']").first()).toBeAttached();
 
   await page.evaluate(() => ((window as unknown as { gtMarker: number }).gtMarker = 1));
-  await page.getByRole("button", { name: "Afficher le site en anglais" }).first().click();
+  // The header's language menu: open it, then choose English.
+  await page.getByRole("button", { name: "Choisir la langue du site" }).first().click();
+  await page.getByRole("button", { name: "English", exact: true }).first().click();
   await expect(page).toHaveURL((url) => url.pathname === "/en/shop", { timeout: 30_000 });
   // A client-side navigation (phase 5): the page is not loaded again.
   expect(await page.evaluate(() => (window as unknown as { gtMarker?: number }).gtMarker)).toBe(1);

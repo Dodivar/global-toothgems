@@ -216,7 +216,9 @@ test("product links and the language switch use each language's slug", async ({ 
   await page.goto("/fr/boutique/coeur-chrome");
   await page.waitForLoadState("networkidle");
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Cœur Chrome/);
-  await page.getByRole("button", { name: "Afficher le site en anglais" }).first().click();
+  // The header's language menu: open it, then choose English.
+  await page.getByRole("button", { name: "Choisir la langue du site" }).first().click();
+  await page.getByRole("button", { name: "English", exact: true }).first().click();
   await expect(page).toHaveURL((url) => url.pathname === "/en/shop/chrome-heart-tooth-gem");
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Chrome Heart/);
   await expect(page).toHaveTitle("Chrome Heart · Global Toothgems");
@@ -314,7 +316,9 @@ test("course links and the language switch use each language's slug", async ({ p
   await page.goto("/fr/academy/formation/pose-essentielle");
   await page.waitForLoadState("networkidle");
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Pose essentielle/);
-  await page.getByRole("button", { name: "Afficher le site en anglais" }).first().click();
+  // The header's language menu: open it, then choose English.
+  await page.getByRole("button", { name: "Choisir la langue du site" }).first().click();
+  await page.getByRole("button", { name: "English", exact: true }).first().click();
   await expect(page).toHaveURL((url) => url.pathname === "/en/academy/course/essential-placement");
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Essential placement/);
   await expect(page).toHaveTitle("Essential placement · Global Toothgems");
