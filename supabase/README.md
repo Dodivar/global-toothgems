@@ -876,8 +876,8 @@ public  newsletter_unsubscribe(token)   one-click link in every marketing e-mail
   are not in `email_log` but carry a `broadcast_id`, a permanent `email.bounced` or an `email.complained`; each calls
   `newsletter_resend_opt_out()`, whose status change queues the row so the sync then deletes the contact in Resend.
   A contact set back to subscribed in Resend changes nothing here (subscribing again goes through our double opt-in);
-  transient bounces are ignored. The sync is the safety net for a lost webhook. **The `contact.updated` event must be
-  enabled on the Resend webhook endpoint** (owner, Resend dashboard › Webhooks). `RESEND_API_KEY` must be a
+  transient bounces are ignored. The sync is the safety net for a lost webhook. The `contact.updated` event was
+  enabled on the Resend webhook endpoint by the owner on 2026-11-06 (Resend dashboard › Webhooks). `RESEND_API_KEY` must be a
   full-access key (contacts); a sending-only key answers 401/403, the run stops and the rows keep the error
   (`contact_sync_error`). Requests paced under 2 per second, a 429 retried once. API paths checked against the
   official `resend` SDK 6.37.0 (resend.com is not reachable from agent sessions).
