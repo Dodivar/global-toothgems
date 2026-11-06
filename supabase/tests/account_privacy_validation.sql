@@ -151,7 +151,9 @@ begin
   perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
   r := public.erase_account(m1);
   if r ->> 'status' <> 'blocked' or not (r -> 'blockers' ? 'studio_subscription') then raise exception 'FAIL P6: %', r; end if;
+  perform set_config('role', 'postgres', true);
   if not exists (select 1 from auth.users where id = m1) then raise exception 'FAIL P6: the account went anyway'; end if;
+  perform set_config('role', 'service_role', true);
   r := public.erase_account(staff);
   if r ->> 'status' <> 'blocked' then raise exception 'FAIL P6: staff erased %', r; end if;
   passed := passed || 'P6'::text;
