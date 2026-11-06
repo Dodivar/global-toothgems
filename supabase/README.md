@@ -853,6 +853,9 @@ public  newsletter_unsubscribe(token)   one-click link in every marketing e-mail
   never clicked. The token link is built on the form's origin when it is in `ALLOWED_RETURN_ORIGINS`, else `SITE_URL`.
   No unsubscribe page yet: campaigns are to be sent with Resend Broadcasts, whose own unsubscribe will be mirrored
   back (next steps: contacts sync to Resend, unsubscribe events through `resend-webhook`).
+  **Deployed 2026-11-06** from the pinned commit `5a79c88` (entry point on raw GitHub, see Deploy above); checked right
+  after with calls that send nothing (refused consent 400, GET 405, honeypot 200). A real sign-up (e-mail sent, link
+  confirmed) is still to be tried by the owner on the live site.
 
 **E-mail templates and content pages** (Translations workspace, types `email` and `content`)
 - `email_templates` (key used by the sending code, subject, preheader, body, allowed `{{variables}}`, translation
