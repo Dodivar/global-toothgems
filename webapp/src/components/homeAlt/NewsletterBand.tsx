@@ -5,16 +5,17 @@ import { ArrowRight, CheckCircle2, Lock, Sparkles } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Checkbox } from "../ui/Checkbox";
 import { LEGAL_PATHS } from "../../data/legal/routes";
-import { useToast } from "../../lib/toast";
 import { useReveal } from "../../lib/useReveal";
-
-/** Same check as the current home page's newsletter form. */
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+import { NEWSLETTER_EMAIL_RE, subscribeToNewsletter, type NewsletterError } from "../../lib/newsletter/api";
 
 type FieldError = "email" | "consent" | null;
 
 /**
- * The closing newsletter band. Visual only: nothing is sent or stored.
+ * The closing newsletter band: a visitor's sign-up, double opt-in. The Edge
+ * Function `newsletter-subscribe` records a pending subscription and e-mails the
+ * confirmation link (`/newsletter/confirmer`); the band then asks the visitor to
+ * check their inbox. It answers the same whether the address was new or already
+ * on the list.
  *
  * Consent stays explicit, as on the current home page — an unticked box that
  * the visitor ticks. Unlike there, the button stays enabled and says what is
@@ -22,19 +23,22 @@ type FieldError = "email" | "consent" | null;
  * disabled control with no explanation.
  */
 export function NewsletterBand() {
-  const { t } = useTranslation();
-  const { showToast } = useToast();
+  const { t, i18n } = useTranslation();
   const ref = useReveal<HTMLElement>();
   const emailId = useId();
   const errorId = useId();
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<FieldError>(null);
+  const [sendError, setSendError] = useState<NewsletterError | null>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
+  // Honeypot: hidden from people and from assistive technology; a bot fills it.
+  const [website, setWebsite] = useState("");
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!EMAIL_RE.test(email.trim())) {
+    if (status === "sending") return;
+    if (!NEWSLETTER_EMAIL_RE.test(email.trim())) {
       setError("email");
       document.getElementById(emailId)?.focus();
       return;
@@ -44,12 +48,21 @@ export function NewsletterBand() {
       return;
     }
     setError(null);
+    setSendError(null);
     setStatus("sending");
-    // A short beat so the loading state reads; there is no request behind it.
-    window.setTimeout(() => {
+    const result = await subscribeToNewsletter({
+      email,
+      locale: i18n.language?.startsWith("en") ? "en" : "fr",
+      source: "home",
+      consent,
+      website,
+    });
+    if (result.ok) {
       setStatus("done");
-      showToast(t("homeAlt.newsletter.toastTitle"), t("homeAlt.newsletter.toastBody"));
-    }, 700);
+    } else {
+      setSendError(result.error);
+      setStatus("idle");
+    }
   };
 
   return (
@@ -73,9 +86,16 @@ export function NewsletterBand() {
                 {t("homeAlt.newsletter.successTitle")}
               </span>
               <span className="text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("homeAlt.newsletter.successBody", { email: email.trim() })}</span>
+              <span className="text-[12px] text-[var(--text-muted)]">{t("homeAlt.newsletter.successHint")}</span>
             </div>
           ) : (
-            <form noValidate onSubmit={submit} className="grid w-full max-w-[560px] gap-3 text-left">
+            <form noValidate onSubmit={(e) => void submit(e)} className="relative grid w-full max-w-[560px] gap-3 text-left">
+              <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+                <label>
+                  Website
+                  <input type="text" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                </label>
+              </div>
               <label htmlFor={emailId} className="sr-only">
                 {t("homeAlt.newsletter.emailLabel")}
               </label>
@@ -94,7 +114,7 @@ export function NewsletterBand() {
                     if (error === "email") setError(null);
                   }}
                   aria-invalid={error === "email" ? true : undefined}
-                  aria-describedby={error ? errorId : undefined}
+                  aria-describedby={error || sendError ? errorId : undefined}
                   className="h-[52px] w-full min-w-0 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] px-5 text-[16px] text-[var(--text-primary)] shadow-[var(--shadow-sm)] outline-none placeholder:text-[var(--text-subtle)] focus:border-[var(--focus-ring)] focus:ring-2 focus:ring-[var(--focus-ring)] aria-[invalid=true]:border-[var(--status-error-fg)] sm:h-12 sm:flex-1 sm:border-0 sm:bg-transparent sm:shadow-none sm:focus:ring-0"
                 />
                 <Button type="submit" variant="primary" size="md" iconRight={ArrowRight} loading={status === "sending"} className="gt-alt-cta h-[52px] w-full sm:h-12 sm:w-auto">
@@ -112,9 +132,13 @@ export function NewsletterBand() {
                   }}
                 />
               </div>
-              {error && (
+              {(error || sendError) && (
                 <p id={errorId} role="alert" className="m-0 px-2 text-[13px] font-medium text-[var(--status-error-fg)]">
-                  {error === "email" ? t("homeAlt.newsletter.invalidEmail") : t("homeAlt.newsletter.consentRequired")}
+                  {error === "email"
+                    ? t("homeAlt.newsletter.invalidEmail")
+                    : error === "consent"
+                      ? t("homeAlt.newsletter.consentRequired")
+                      : t(`newsletter.errors.${sendError}`)}
                 </p>
               )}
             </form>

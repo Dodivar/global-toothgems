@@ -115,7 +115,7 @@ describe("route table", () => {
         expect(existsSync(new URL(file, import.meta.url)), `${route.id} ${locale}`).toBe(true);
       }
     }
-    for (const path of ["/connexion", "/inscription", "/mot-de-passe-oublie", "/forgot-password", "/reinitialiser-mot-de-passe", "/reset-password", "/verifier-email", "/verify-email", "/confirmation-compte", "/erreur", "/maintenance"]) {
+    for (const path of ["/connexion", "/inscription", "/mot-de-passe-oublie", "/forgot-password", "/reinitialiser-mot-de-passe", "/reset-password", "/verifier-email", "/verify-email", "/confirmation-compte", "/erreur", "/maintenance", "/newsletter/confirmer"]) {
       expect(existsSync(new URL(`../../app/(public)${path}/page.tsx`, import.meta.url)), path).toBe(true);
     }
   });

@@ -49,7 +49,10 @@
     "langSwitchCode": "FR",
     "langSwitchAria": "View the site in French",
     "langMenuAria": "Choose the site language",
-    "langName": { "fr": "Français", "en": "English" },
+    "langName": {
+      "fr": "Français",
+      "en": "English"
+    },
     "cancel": "Cancel"
   },
   "home": {
@@ -5027,6 +5030,33 @@
       "fileName": "credit-note",
       "studioWithdrawal": "Withdrawal — unused share of the 3D Studio subscription, {{plan}} plan",
       "studioUsedDays": "{{used}} of {{total}} days used"
+    }
+  },
+  "newsletter": {
+    "errors": {
+      "rate_limited": "Too many attempts. Please try again in a moment.",
+      "invalid_request": "Check the e-mail address and the consent box, then try again.",
+      "network": "No connection. Check your network, then try again.",
+      "unavailable": "Newsletter sign-up is not available at the moment.",
+      "server_error": "We could not sign you up. Please try again in a moment."
+    },
+    "confirm": {
+      "eyebrow": "Newsletter",
+      "readyTitle": "Confirm your subscription",
+      "readyBody": "One click to receive the Global Toothgems newsletter: launches, Academy news and inspiration.",
+      "confirm": "Confirm my subscription",
+      "confirming": "Confirming…",
+      "doneTitle": "Subscription confirmed",
+      "doneBody": "Thank you! You will receive our next news. Every e-mail has an unsubscribe link.",
+      "invalidTitle": "This link no longer works",
+      "invalidBody": "It may have been used already, or it expired (48 hours). Sign up again from the home page to get a new link.",
+      "errorTitle": "We could not confirm your subscription",
+      "errorBody": "A technical problem got in the way. Please try again in a moment.",
+      "unavailableTitle": "Confirmation unavailable",
+      "unavailableBody": "The newsletter is not available at the moment.",
+      "retry": "Try again",
+      "shop": "Visit the shop",
+      "home": "Back to the home page"
     }
   }
 }

@@ -21,6 +21,9 @@ project_id = "global-toothgems"
 # - submit-contact-request: the contact form is open to visitors, who call it with the
 #   publishable key (not a JWT); a member's token is verified inside the function
 #   (auth.getUser). Honeypot, per-address and per-account/e-mail throttles stand in for a captcha.
+# - newsletter-subscribe: the storefront newsletter form is open to visitors, who call it with the
+#   publishable key (not a JWT). Honeypot, a per-address throttle and the per-e-mail throttle of
+#   newsletter_subscribe() stand in for a captcha.
 # - resend-webhook: Resend sends no Supabase token; the Svix signature
 #   (RESEND_WEBHOOK_SECRET, five-minute tolerance) is the authentication.
 [functions.create-checkout-session]
@@ -53,6 +56,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.submit-contact-request]
+verify_jwt = false
+
+[functions.newsletter-subscribe]
 verify_jwt = false
 
 # 3D Studio subscriptions (decision 94): the member's token / the internal secret is checked in the function.

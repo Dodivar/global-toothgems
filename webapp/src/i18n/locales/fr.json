@@ -49,7 +49,10 @@
     "langSwitchCode": "EN",
     "langSwitchAria": "Afficher le site en anglais",
     "langMenuAria": "Choisir la langue du site",
-    "langName": { "fr": "Français", "en": "English" },
+    "langName": {
+      "fr": "Français",
+      "en": "English"
+    },
     "cancel": "Annuler"
   },
   "home": {
@@ -5027,6 +5030,33 @@
       "fileName": "avoir",
       "studioWithdrawal": "Rétractation — part non utilisée de l’abonnement Studio 3D, formule {{plan}}",
       "studioUsedDays": "{{used}} jours utilisés sur {{total}}"
+    }
+  },
+  "newsletter": {
+    "errors": {
+      "rate_limited": "Trop de tentatives. Réessayez dans un moment.",
+      "invalid_request": "Vérifiez l’adresse e-mail et la case de consentement, puis réessayez.",
+      "network": "Connexion impossible. Vérifiez votre réseau, puis réessayez.",
+      "unavailable": "L’inscription à la newsletter n’est pas disponible pour le moment.",
+      "server_error": "L’inscription n’a pas pu aboutir. Réessayez dans un moment."
+    },
+    "confirm": {
+      "eyebrow": "Newsletter",
+      "readyTitle": "Confirmez votre inscription",
+      "readyBody": "Un clic pour recevoir la newsletter Global Toothgems : lancements, nouveautés de l’Academy et inspiration.",
+      "confirm": "Confirmer mon inscription",
+      "confirming": "Confirmation…",
+      "doneTitle": "Inscription confirmée",
+      "doneBody": "Merci ! Vous recevrez nos prochaines nouveautés. Un lien de désinscription figure dans chaque e-mail.",
+      "invalidTitle": "Ce lien ne fonctionne plus",
+      "invalidBody": "Il a peut-être déjà servi, ou il a expiré (48 heures). Inscrivez-vous à nouveau depuis la page d’accueil pour recevoir un nouveau lien.",
+      "errorTitle": "La confirmation n’a pas pu aboutir",
+      "errorBody": "Un problème technique nous en a empêchés. Réessayez dans un moment.",
+      "unavailableTitle": "Confirmation indisponible",
+      "unavailableBody": "La newsletter n’est pas disponible pour le moment.",
+      "retry": "Réessayer",
+      "shop": "Découvrir la boutique",
+      "home": "Retour à l’accueil"
     }
   }
 }

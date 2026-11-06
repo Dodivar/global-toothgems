@@ -175,9 +175,8 @@
     "consentRequired": "Tick the box to confirm you want to receive the newsletter.",
     "privacy": "We never share your email.",
     "privacyLink": "Privacy policy",
-    "successTitle": "You're in the loop",
-    "successBody": "Thank you — the next edition will land in {{email}}.",
-    "toastTitle": "Subscription recorded",
-    "toastBody": "Prototype: no email is sent at this stage."
+    "successTitle": "One more step",
+    "successBody": "We sent a confirmation link to {{email}}. Click it to start receiving the newsletter.",
+    "successHint": "Nothing within a few minutes? Check your spam folder. The link is valid for 48 hours."
   }
 }
