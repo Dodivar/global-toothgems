@@ -276,7 +276,7 @@ function CompletionMoment({
         </div>
       </section>
 
-      {sharing && card && holder.complete && <ShareAchievementDialog content={content} awardedOn={awardedOn} onClose={() => setSharing(false)} />}
+      {sharing && card && holder.complete && <ShareAchievementDialog content={content} onClose={() => setSharing(false)} />}
     </div>
   );
 }

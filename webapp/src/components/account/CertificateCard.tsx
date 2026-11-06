@@ -207,8 +207,8 @@ export function HeldCertificateShare({
   lang: string;
   onClose: () => void;
 }) {
-  const { content, awardedOn } = useHeldCertificate(course, progress, holder, lang);
-  return <ShareAchievementDialog content={content} awardedOn={awardedOn} onClose={onClose} />;
+  const { content } = useHeldCertificate(course, progress, holder, lang);
+  return <ShareAchievementDialog content={content} onClose={onClose} />;
 }
 
 /**

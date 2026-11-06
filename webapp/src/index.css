@@ -2429,9 +2429,6 @@
   .gt-cert-cta:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
   .gt-cert-cta:active { transform: scale(.98); }
 
-  .gt-cert-network { transition: transform var(--duration-normal) var(--ease-out-soft), box-shadow var(--duration-normal) var(--ease-out-soft), border-color var(--duration-fast); }
-  .gt-cert-network:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--border-default); }
-  .gt-cert-network:active { transform: scale(.97); }
 
   /* The viewer's zoom: the page grows inside a scrolling stage. */
   .gt-cert-zoom { transition: width var(--duration-normal) var(--ease-out-soft); }
@@ -2480,7 +2477,6 @@
   .gt-cert-sheen,
   .gt-confetti { display: none; }
   .gt-cert-cta:hover,
-  .gt-cert-network:hover { transform: none; }
   .gt-cert-zoom { transition: none; }
 }
 
