@@ -53,6 +53,13 @@ Deno.test("contacts are addressed by e-mail, created with their segments", async
   assertEquals(seen[3].method, "DELETE");
 });
 
+Deno.test("a segment is deleted by id", async () => {
+  const { doFetch, seen } = fakeFetch([() => jsonResponse({ object: "segment", id: "s1", deleted: true })]);
+  const api = resendContactsApi({ apiKey: "re_x", fetch: doFetch, sleep: noSleep });
+  await api.deleteSegment("s1");
+  assertEquals([seen[0].method, seen[0].url], ["DELETE", "https://api.resend.com/segments/s1"]);
+});
+
 Deno.test("a 429 is retried once after Retry-After; other errors carry their status", async () => {
   const waits: number[] = [];
   const sleep = (ms: number) => (waits.push(ms), Promise.resolve());

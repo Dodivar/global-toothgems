@@ -10,7 +10,7 @@ import { type ContactsApi, ResendApiError, type Segment } from "./resendContacts
  *
  * For each row the database queued (pending_newsletter_contacts):
  *   subscribed → the contact exists, with the member's first name, in exactly the segments
- *                this code manages that apply (all subscribers, the language, the CRM tags);
+ *                this code manages that apply (the language, and VIP for members tagged so);
  *                segments the team made by hand in Resend are never touched
  *   otherwise  → the contact is deleted in Resend
  * then record_newsletter_contact_sync() closes the row, or keeps it queued with a backoff.
@@ -21,22 +21,33 @@ import { type ContactsApi, ResendApiError, type Segment } from "./resendContacts
  * Body (optional): { "limit": 1..100 }, default 25. Answer: { ok, report } with counts only.
  */
 
-/** The segments this code owns, by exact name (the team reads French). */
-export const ALL_SEGMENT = "Newsletter — tous les abonnés";
+/**
+ * The segments this code owns, by exact name (the team reads French). Three, the free Resend
+ * plan's limit (owner's choice, 2026-11-06): a campaign goes out once per language anyway (its
+ * text differs), so no "all subscribers" segment; VIP is the only CRM tag sent. Another tag is
+ * one line in TAG_SEGMENTS once the plan allows more segments.
+ */
 export const LOCALE_SEGMENTS: Record<string, string> = {
   fr: "Newsletter — français",
   en: "Newsletter — English",
 };
-/** Marketing CRM tags (customer_tags) → segment. `follow_up` is a support to-do, never sent. */
+/** Marketing CRM tags (customer_tags) → segment. Other tags never leave the database. */
 export const TAG_SEGMENTS: Record<string, string> = {
   vip: "Clients — VIP",
-  repeat: "Clients — fidèles",
-  high_value: "Clients — gros paniers",
-  new_customer: "Clients — nouveaux",
-  training_student: "Academy — élèves",
-  training_completed: "Academy — certifiés",
 };
-export const MANAGED_SEGMENTS: readonly string[] = [ALL_SEGMENT, ...Object.values(LOCALE_SEGMENTS), ...Object.values(TAG_SEGMENTS)];
+export const MANAGED_SEGMENTS: readonly string[] = [...Object.values(LOCALE_SEGMENTS), ...Object.values(TAG_SEGMENTS)];
+/**
+ * Segments this code created before and no longer uses: deleted in Resend on sight to free the
+ * plan's slots (deleting a segment keeps its contacts). Only these exact names, never the team's.
+ */
+export const RETIRED_SEGMENTS: readonly string[] = [
+  "Newsletter — tous les abonnés",
+  "Clients — fidèles",
+  "Clients — gros paniers",
+  "Clients — nouveaux",
+  "Academy — élèves",
+  "Academy — certifiés",
+];
 
 export interface PendingContact {
   id: string;
@@ -61,13 +72,15 @@ export interface SyncReport {
   failed: number;
   unsubscribedInResend: number;
   segmentsCreated: number;
+  /** Segments this code no longer uses, deleted in Resend. */
+  segmentsRetired: number;
   /** Set when the run stopped early (a key without the contacts permission, say). */
   stopped?: string;
 }
 
 /** The managed segment names a subscriber belongs in. */
 export function wantedSegments(contact: Pick<PendingContact, "locale" | "tags">): string[] {
-  const names = [ALL_SEGMENT, LOCALE_SEGMENTS[contact.locale] ?? LOCALE_SEGMENTS.fr];
+  const names = [LOCALE_SEGMENTS[contact.locale] ?? LOCALE_SEGMENTS.fr];
   for (const tag of contact.tags) {
     const name = TAG_SEGMENTS[tag];
     if (name && !names.includes(name)) names.push(name);
@@ -79,12 +92,18 @@ export function wantedSegments(contact: Pick<PendingContact, "locale" | "tags">)
 class SegmentDirectory {
   private byName: Map<string, string> | null = null;
   created = 0;
+  retired = 0;
   constructor(private readonly api: ContactsApi) {}
 
   private async load(): Promise<Map<string, string>> {
     if (!this.byName) {
       this.byName = new Map();
       for (const segment of await this.api.listSegments()) {
+        if (RETIRED_SEGMENTS.includes(segment.name)) {
+          await this.api.deleteSegment(segment.id);
+          this.retired++;
+          continue;
+        }
         // Two segments with one name: the first listed wins, always the same one.
         if (MANAGED_SEGMENTS.includes(segment.name) && !this.byName.has(segment.name)) this.byName.set(segment.name, segment.id);
       }
@@ -140,7 +159,7 @@ export async function syncNewsletterContacts(
   limit: number,
   log: (message: string, detail?: unknown) => void,
 ): Promise<SyncReport> {
-  const report: SyncReport = { synced: 0, created: 0, deleted: 0, failed: 0, unsubscribedInResend: 0, segmentsCreated: 0 };
+  const report: SyncReport = { synced: 0, created: 0, deleted: 0, failed: 0, unsubscribedInResend: 0, segmentsCreated: 0, segmentsRetired: 0 };
   const segments = new SegmentDirectory(api);
   for (const row of await store.pending(limit)) {
     try {
@@ -160,6 +179,7 @@ export async function syncNewsletterContacts(
     }
   }
   report.segmentsCreated = segments.created;
+  report.segmentsRetired = segments.retired;
   return report;
 }
 

@@ -1,6 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import {
-  ALL_SEGMENT,
   handleSyncNewsletterContacts,
   type PendingContact,
   syncNewsletterContacts,
@@ -22,6 +21,12 @@ function fakeResend(seed: { segments?: Segment[]; contacts?: Record<string, { fi
       const s = { id: `seg_${next++}`, name };
       segments.push(s);
       return Promise.resolve(s);
+    },
+    deleteSegment: (id) => {
+      calls.push(`deleteSegment ${id}`);
+      segments.splice(segments.findIndex((s) => s.id === id), 1);
+      for (const c of contacts.values()) c.segments = c.segments.filter((s) => s !== id);
+      return Promise.resolve();
     },
     getContact: (email) => {
       const c = contacts.get(email);
@@ -80,22 +85,20 @@ const row = (over: Partial<PendingContact> = {}): PendingContact => ({
 });
 const noLog = () => {};
 
-Deno.test("segments wanted: everyone, the language, the marketing tags only", () => {
-  assertEquals(wantedSegments({ locale: "en", tags: ["vip", "follow_up", "training_completed"] }), [
-    ALL_SEGMENT,
+Deno.test("segments wanted: the language, and VIP only among the tags (3 segments in all)", () => {
+  assertEquals(wantedSegments({ locale: "en", tags: ["vip", "follow_up", "training_completed", "high_value"] }), [
     "Newsletter — English",
     "Clients — VIP",
-    "Academy — certifiés",
   ]);
-  assertEquals(wantedSegments({ locale: "de", tags: [] }), [ALL_SEGMENT, "Newsletter — français"]);
+  assertEquals(wantedSegments({ locale: "de", tags: [] }), ["Newsletter — français"]);
 });
 
 Deno.test("a new subscriber is created in its segments, which are created once", async () => {
   const r = fakeResend({ segments: [{ id: "seg_team", name: "Salon Paris (fait main)" }] });
   const { store, records } = fakeStore([row({ tags: ["vip"] }), row({ id: "row-2", email: "bo@example.com", firstName: null })]);
   const report = await syncNewsletterContacts(r.api, store, 25, noLog);
-  assertEquals(report, { synced: 0, created: 2, deleted: 0, failed: 0, unsubscribedInResend: 0, segmentsCreated: 3 });
-  assertEquals(r.segmentNames("ana@example.com"), ["Clients — VIP", "Newsletter — français", ALL_SEGMENT].sort());
+  assertEquals(report, { synced: 0, created: 2, deleted: 0, failed: 0, unsubscribedInResend: 0, segmentsCreated: 2, segmentsRetired: 0 });
+  assertEquals(r.segmentNames("ana@example.com"), ["Clients — VIP", "Newsletter — français"]);
   assertEquals(r.contacts.get("ana@example.com")?.firstName, "Ana");
   assertEquals(r.contacts.get("bo@example.com")?.firstName, null);
   assertEquals(r.calls.filter((c) => c === "listSegments").length, 1);
@@ -105,25 +108,41 @@ Deno.test("a new subscriber is created in its segments, which are created once",
 Deno.test("an existing contact gets its managed segments right, the team's own are left alone", async () => {
   const r = fakeResend({
     segments: [
-      { id: "s_all", name: ALL_SEGMENT },
       { id: "s_fr", name: "Newsletter — français" },
       { id: "s_en", name: "Newsletter — English" },
       { id: "s_vip", name: "Clients — VIP" },
       { id: "s_team", name: "Salon Paris (fait main)" },
     ],
-    contacts: { "ana@example.com": { firstName: "Old", unsubscribed: false, segments: ["s_all", "s_fr", "s_vip", "s_team"] } },
+    contacts: { "ana@example.com": { firstName: "Old", unsubscribed: false, segments: ["s_fr", "s_vip", "s_team"] } },
   });
   const { store } = fakeStore([row({ locale: "en", tags: [] })]);
   const report = await syncNewsletterContacts(r.api, store, 25, noLog);
   assertEquals([report.synced, report.created, report.segmentsCreated], [1, 0, 0]);
-  assertEquals(r.segmentNames("ana@example.com"), [ALL_SEGMENT, "Newsletter — English", "Salon Paris (fait main)"].sort());
+  assertEquals(r.segmentNames("ana@example.com"), ["Newsletter — English", "Salon Paris (fait main)"]);
   assertEquals(r.contacts.get("ana@example.com")?.firstName, "Ana");
+});
+
+Deno.test("segments this code no longer uses are deleted, which frees the plan's slots; the team's stay", async () => {
+  const r = fakeResend({
+    segments: [
+      { id: "s_all", name: "Newsletter — tous les abonnés" },
+      { id: "s_fr", name: "Newsletter — français" },
+      { id: "s_big", name: "Clients — gros paniers" },
+      { id: "s_team", name: "Salon Paris (fait main)" },
+    ],
+    contacts: { "ana@example.com": { firstName: "Ana", unsubscribed: false, segments: ["s_all", "s_fr", "s_big", "s_team"] } },
+  });
+  const { store } = fakeStore([row({ tags: ["vip", "high_value"] })]);
+  const report = await syncNewsletterContacts(r.api, store, 25, noLog);
+  assertEquals([report.synced, report.segmentsRetired, report.segmentsCreated, report.failed], [1, 2, 1, 0]);
+  assertEquals(r.segments.map((s) => s.name).sort(), ["Clients — VIP", "Newsletter — français", "Salon Paris (fait main)"]);
+  assertEquals(r.segmentNames("ana@example.com"), ["Clients — VIP", "Newsletter — français", "Salon Paris (fait main)"]);
 });
 
 Deno.test("a contact who unsubscribed in Resend is never set back to subscribed", async () => {
   const r = fakeResend({
-    segments: [{ id: "s_all", name: ALL_SEGMENT }, { id: "s_fr", name: "Newsletter — français" }],
-    contacts: { "ana@example.com": { firstName: "Ana", unsubscribed: true, segments: ["s_all", "s_fr"] } },
+    segments: [{ id: "s_fr", name: "Newsletter — français" }],
+    contacts: { "ana@example.com": { firstName: "Ana", unsubscribed: true, segments: ["s_fr"] } },
   });
   const { store } = fakeStore([row()]);
   const report = await syncNewsletterContacts(r.api, store, 25, noLog);
@@ -163,7 +182,7 @@ Deno.test("one failing contact is recorded and the run goes on; a refused key st
 Deno.test("the endpoint needs the internal secret and validates the limit", async () => {
   const deps = {
     secret: "s3cret",
-    run: (limit: number) => Promise.resolve({ synced: limit, created: 0, deleted: 0, failed: 0, unsubscribedInResend: 0, segmentsCreated: 0 }),
+    run: (limit: number) => Promise.resolve({ synced: limit, created: 0, deleted: 0, failed: 0, unsubscribedInResend: 0, segmentsCreated: 0, segmentsRetired: 0 }),
     log: noLog,
   };
   const post = (body: string, secret = "s3cret") =>

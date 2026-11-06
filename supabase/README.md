@@ -859,10 +859,14 @@ public  newsletter_unsubscribe(token)   one-click link in every marketing e-mail
   sent with Resend Broadcasts, so the Edge Function `sync-newsletter-contacts` (pg_cron every 5 minutes, internal
   secret) applies the queue the database keeps on `newsletter_subscriptions`: a subscribed address becomes a Resend
   contact (e-mail, a member's first name; nothing else) in the segments the code manages, by exact name —
-  `Newsletter — tous les abonnés`, `Newsletter — français` / `Newsletter — English`, and one per marketing CRM tag of
-  a member (`Clients — VIP`, `Clients — fidèles`, `Clients — gros paniers`, `Clients — nouveaux`,
-  `Academy — élèves`, `Academy — certifiés`; `follow_up` is never sent). Segments are created in Resend on first
-  need; segments the team makes by hand are never touched (renaming a managed one makes the sweep create it again).
+  `Newsletter — français` / `Newsletter — English`, and `Clients — VIP` for members tagged `vip`. Three segments,
+  the free Resend plan's limit (owner's choice, 2026-11-06: a campaign goes out once per language anyway, so no
+  "all subscribers" segment; the other CRM tags never leave the database — adding one is a line in `TAG_SEGMENTS`
+  once the plan allows more). The segments first created on 2026-11-06 for everyone and the other tags are in
+  `RETIRED_SEGMENTS`: the sweep deletes them in Resend on sight (their contacts stay). Segments are created in
+  Resend on first need; segments the team makes by hand are never touched (renaming a managed one makes the sweep
+  create it again). First run on the project the same day, once the owner replaced `RESEND_API_KEY` by a
+  full-access key (the sending-only key was refused, as designed).
   Any other status deletes the contact in Resend. A contact who unsubscribed in Resend is never set back to
   subscribed (counted as `unsubscribedInResend`); mirroring that back is the next step. `RESEND_API_KEY` must be a
   full-access key (contacts); a sending-only key answers 401/403, the run stops and the rows keep the error

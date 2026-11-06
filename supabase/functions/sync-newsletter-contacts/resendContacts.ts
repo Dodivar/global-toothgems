@@ -6,6 +6,7 @@
  * official `resend` SDK 6.37.0):
  *   GET    /segments?limit=&after=                     list (object "list", data, has_more)
  *   POST   /segments                     {name}        → {id}
+ *   DELETE /segments/{id}                              (its contacts stay)
  *   GET    /contacts/{email}                           → {id, email, first_name, unsubscribed…} | 404
  *   POST   /contacts   {email, first_name, unsubscribed, segments: [{id}]}
  *   PATCH  /contacts/{email}             {first_name}
@@ -42,6 +43,7 @@ export interface RemoteContact {
 export interface ContactsApi {
   listSegments(): Promise<Segment[]>;
   createSegment(name: string): Promise<Segment>;
+  deleteSegment(id: string): Promise<void>;
   getContact(email: string): Promise<RemoteContact | null>;
   createContact(contact: { email: string; firstName: string | null; segmentIds: string[] }): Promise<void>;
   setFirstName(email: string, firstName: string): Promise<void>;
@@ -141,6 +143,10 @@ export function resendContactsApi(config: ContactsApiConfig): ContactsApi {
       const id = (data as { id?: unknown } | null)?.id;
       if (typeof id !== "string") throw new ResendApiError("segments: no id in the answer", status);
       return { id, name };
+    },
+
+    async deleteSegment(id) {
+      await call("DELETE", `/segments/${encodeURIComponent(id)}`);
     },
 
     async getContact(email) {
