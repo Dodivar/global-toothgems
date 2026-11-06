@@ -856,9 +856,10 @@ public  newsletter_unsubscribe(token)   one-click link in every marketing e-mail
   `newsletter_subscribe()` as the service role (`policy_version` = the site's `LEGAL_POLICY_VERSION`) and the
   `newsletter_confirmation` e-mail with a "Confirm" button. The visitor is told to check their inbox whatever the
   address's state (no enumeration); a failed e-mail answers an error so they can retry. The link lands on
-  `/newsletter/confirmer?token=…` (unprefixed system page, `screens/NewsletterConfirm.tsx`), which confirms only on
-  a button press — mail scanners open links, so a confirmation on page load would subscribe addresses whose owners
-  never clicked. The token link is built on the form's origin when it is in `ALLOWED_RETURN_ORIGINS`, else `SITE_URL`.
+  `/newsletter/confirmer?token=…` (unprefixed system page, `screens/NewsletterConfirm.tsx`). Clicking the link is
+  the confirmation (owner's choice, 2026-11-06, replacing a second "Confirm" button on the page): the page calls
+  `newsletter_confirm()` from the browser once loaded, never the server on the request, so a scanner that only
+  fetches links does not confirm; one that runs scripts could (accepted trade-off). The token link is built on the form's origin when it is in `ALLOWED_RETURN_ORIGINS`, else `SITE_URL`.
   No unsubscribe page yet: campaigns are to be sent with Resend Broadcasts, whose own unsubscribe will be mirrored
   back (next steps: contacts sync to Resend, unsubscribe events through `resend-webhook`).
 - **Mirrored into Resend contacts (2026-11-06, migration `newsletter_contact_sync`):** campaigns are written and

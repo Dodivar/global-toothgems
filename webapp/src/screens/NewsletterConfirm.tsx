@@ -3,37 +3,47 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "../lib/navigation";
-import { ArrowRight, Home, Link2Off, MailCheck, RotateCw, TriangleAlert } from "lucide-react";
+import { ArrowRight, Home, Link2Off, RotateCw, TriangleAlert } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { AuthShell, StateHeading } from "../components/security/AuthShell";
 import { SuccessMark } from "../components/security/SuccessMark";
 import { CONFIRM_TOKEN_RE, confirmNewsletter, type ConfirmResult } from "../lib/newsletter/api";
 
-type Phase = "ready" | "confirming" | ConfirmResult;
+type Phase = "confirming" | ConfirmResult;
 
 /**
  * Where the newsletter's double opt-in e-mail lands: `/newsletter/confirmer?token=…`.
  *
- * The subscription is confirmed only when the visitor presses the button, never on
- * page load: mail providers' link scanners open every link of a message, and would
- * otherwise confirm addresses whose owners never clicked.
+ * Clicking the e-mail's link is the confirmation (owner's choice, 2026-11-06: no second
+ * button). It is sent from the browser once the page has loaded, never by the server on
+ * the request: a mail scanner that only fetches the link does not run it. Scanners that
+ * run scripts could still confirm an address; the double opt-in still proves the
+ * mailbox, and every campaign carries an unsubscribe link.
  */
 export function NewsletterConfirm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
-  const [phase, setPhase] = useState<Phase>(() => (CONFIRM_TOKEN_RE.test(token) ? "ready" : "invalid"));
+  const [phase, setPhase] = useState<Phase>(() => (CONFIRM_TOKEN_RE.test(token) ? "confirming" : "invalid"));
   const headingRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    if (phase !== "ready" && phase !== "confirming") headingRef.current?.focus({ preventScroll: true });
-  }, [phase]);
+  // The token is single use: one request per page, even when the effect runs twice.
+  const started = useRef(false);
 
   const confirm = async () => {
     setPhase("confirming");
     setPhase(await confirmNewsletter(token));
   };
+
+  useEffect(() => {
+    if (started.current || !CONFIRM_TOKEN_RE.test(token)) return;
+    started.current = true;
+    void confirmNewsletter(token).then(setPhase);
+  }, [token]);
+
+  useEffect(() => {
+    if (phase !== "confirming") headingRef.current?.focus({ preventScroll: true });
+  }, [phase]);
 
   const homeButton = (
     <Button variant="ghost" fullWidth iconLeft={Home} onClick={() => navigate("/")}>
@@ -41,17 +51,12 @@ export function NewsletterConfirm() {
     </Button>
   );
 
-  if (phase === "ready" || phase === "confirming") {
+  if (phase === "confirming") {
     return (
-      <AuthShell>
-        <StateHeading icon={MailCheck} tone="brand" eyebrow={t("newsletter.confirm.eyebrow")} title={t("newsletter.confirm.readyTitle")} headingRef={headingRef}>
-          <p>{t("newsletter.confirm.readyBody")}</p>
-        </StateHeading>
-        <div className="grid gap-2">
-          <Button variant="primary" size="lg" fullWidth iconRight={ArrowRight} loading={phase === "confirming"} onClick={() => void confirm()}>
-            {phase === "confirming" ? t("newsletter.confirm.confirming") : t("newsletter.confirm.confirm")}
-          </Button>
-          {homeButton}
+      <AuthShell monogram={false}>
+        <div role="status" className="grid justify-items-center gap-2 py-2 text-center">
+          <span className="gt-eyebrow">{t("newsletter.confirm.eyebrow")}</span>
+          <h1 className="text-[clamp(26px,4vw,34px)] leading-[1.15] tracking-[var(--tracking-display)]">{t("newsletter.confirm.confirming")}</h1>
         </div>
       </AuthShell>
     );
@@ -59,7 +64,7 @@ export function NewsletterConfirm() {
 
   if (phase === "confirmed") {
     return (
-      <AuthShell>
+      <AuthShell monogram={false}>
         <div role="status" className="grid justify-items-center gap-5 pt-2 text-center">
           <SuccessMark />
           <div className="grid gap-2">
@@ -81,7 +86,7 @@ export function NewsletterConfirm() {
 
   if (phase === "error") {
     return (
-      <AuthShell>
+      <AuthShell monogram={false}>
         <StateHeading icon={TriangleAlert} tone="warning" title={t("newsletter.confirm.errorTitle")} headingRef={headingRef}>
           <p>{t("newsletter.confirm.errorBody")}</p>
         </StateHeading>
@@ -97,7 +102,7 @@ export function NewsletterConfirm() {
 
   const unavailable = phase === "unavailable";
   return (
-    <AuthShell>
+    <AuthShell monogram={false}>
       <StateHeading
         icon={Link2Off}
         tone={unavailable ? "neutral" : "error"}

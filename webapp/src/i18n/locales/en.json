@@ -5050,10 +5050,7 @@
     },
     "confirm": {
       "eyebrow": "Newsletter",
-      "readyTitle": "Confirm your subscription",
-      "readyBody": "One click to receive the Global Toothgems newsletter: launches, Academy news and inspiration.",
-      "confirm": "Confirm my subscription",
-      "confirming": "Confirming…",
+      "confirming": "Confirming your subscription…",
       "doneTitle": "Subscription confirmed",
       "doneBody": "Thank you! You will receive our next news. Every e-mail has an unsubscribe link.",
       "invalidTitle": "This link no longer works",

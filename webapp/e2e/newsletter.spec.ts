@@ -25,13 +25,15 @@ test("the home band refuses to pretend without the backend", async ({ page, prob
   expect(problems).toEqual([]);
 });
 
-test("the confirmation page asks for a click and reads a broken link as such", async ({ page, problems }) => {
+test("the confirmation page confirms on its own and reads a broken link as such", async ({ page, problems }) => {
   await open(page, "/newsletter/confirmer?token=nope");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Ce lien ne fonctionne plus");
 
+  // The link is the confirmation: no button to press (here, without a backend, it says so).
   await open(page, `/newsletter/confirmer?token=${"ab".repeat(24)}`);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Confirmez votre inscription");
-  await page.getByRole("button", { name: "Confirmer mon inscription" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Confirmation indisponible");
+  await expect(page.getByRole("button", { name: /Confirmer/ })).toHaveCount(0);
+  // No brand monogram on this page.
+  await expect(page.locator("main#main section").getByRole("img", { name: "Global Toothgems" })).toHaveCount(0);
   expect(problems).toEqual([]);
 });
