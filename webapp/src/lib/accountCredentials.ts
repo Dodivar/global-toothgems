@@ -24,9 +24,9 @@ function emailChangeRedirect(): string {
   return authConfirmUrl(`${VERIFY_PATH}?type=changement`, window.location.origin);
 }
 
-type Verified = { ok: true } | { ok: false; result: "wrongPassword" | "rateLimited" | "failed" };
+export type Verified = { ok: true } | { ok: false; result: "wrongPassword" | "rateLimited" | "failed" };
 
-async function verifyCurrentPassword(currentPassword: string): Promise<Verified> {
+export async function verifyCurrentPassword(currentPassword: string): Promise<Verified> {
   if (!supabase) return { ok: false, result: "failed" };
   const { data } = await supabase.auth.getUser();
   const email = data.user?.email;

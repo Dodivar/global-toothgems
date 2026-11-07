@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import clsx from "clsx";
 import {
   Braces,
   ChevronDown,
@@ -18,7 +17,6 @@ import { Button } from "../../ui/Button";
 import { EditorPopover, PopoverItem, PopoverLabel, PopoverSeparator } from "./EditorPopover";
 import { useEditorLabels } from "./editorLabels";
 import { PlacementSheetMenuItem } from "./PlacementSheetMenuItem";
-import { ShareNetworkIcon } from "../ShareNetworks";
 import { useWorkspaceActions } from "../workspace/useWorkspaceActions";
 import { FREE_TOOTH } from "../../../data/studioEditor";
 import { estimateComposition } from "../../../lib/studio3d/gemCatalog";
@@ -27,7 +25,7 @@ import { useStudioGems } from "../../../lib/studio3d/useStudioGems";
 import { downloadURL, getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { buildQuoteSheetDataURL } from "../../../lib/studio3d/quoteSheet";
-import { canShareFiles, openShareLink, SHARE_NETWORKS, type ShareContent, type ShareNetwork } from "../../../lib/studio3d/socialShare";
+import { canShareFileType } from "../../../lib/studio3d/socialShare";
 import { CLIENT_NAME_MAX, studioStore, useStudio } from "../../../lib/studio3d/store";
 import { useStudioFeature, useStudioStaff } from "../../../lib/studioAccess";
 import { lowestPlanWith, type LockedFeature } from "../../../lib/studioEntitlements";
@@ -44,9 +42,9 @@ const inputClass =
  * were two menus that overlapped). In order:
  *
  * - Share: the render through the system share sheet where the browser offers
- *   one (the only way into Instagram or TikTok from the web), then the social
- *   networks with the creation's READ-ONLY LINK — whoever opens it sees the
- *   design in 3D and cannot change it.
+ *   one (the member picks the app), then the creation's READ-ONLY LINK to copy
+ *   — whoever opens it sees the design in 3D and cannot change it. No list of
+ *   networks (owner's choice 2026-11-06): the member posts from their own app.
  * - Images: the PNG on the Studio backdrop with the Global Toothgems logo,
  *   and without a background from the Artist plan up.
  * - Prepare the appointment: the estimate sheet, the placement sheet and the
@@ -71,8 +69,13 @@ export function ShareExportMenu() {
   const [client, setClient] = useState(studioStore.clientName);
   // Rendered as the menu opens: the share sheet must be called right in the click, with no wait before it.
   const [image, setImage] = useState<File | null>(null);
-  // `undefined` while looking, `null` when the creation has no active link yet.
-  const [link, setLink] = useState<ShareLink | null | undefined>(undefined);
+  // Whether the device's share sheet takes a PNG: known before the image exists, so its row is
+  // there from the first frame (no row inserted at the top of an open menu).
+  const [sheet] = useState(() => canShareFileType("image/png"));
+  // The linked creation's link: `undefined` while looking, `null` when it has none yet. Looked up
+  // as soon as the stage is linked to a creation, and kept between openings, so the menu opens on
+  // its final layout instead of swapping a "looking up" line for the actions.
+  const [lookup, setLookup] = useState<{ creationId: string; link: ShareLink | null } | null>(null);
   const linked = ws.creations.find((c) => c.id === snap.active?.creationId) ?? null;
   const { existingShareLink } = ws;
   // Try-on works from the saved creation: offered once the design is saved with nothing pending.
@@ -83,7 +86,7 @@ export function ShareExportMenu() {
   const staff = useStudioStaff();
 
   useEffect(() => {
-    if (!open || !studioStore.jewels.length) return;
+    if (!open || !sheet || !studioStore.jewels.length) return;
     let live = true;
     getEngine()
       ?.shareableImage()
@@ -93,17 +96,21 @@ export function ShareExportMenu() {
       live = false;
       setImage(null);
     };
-  }, [open]);
+  }, [open, sheet]);
 
+  // Refreshed on each opening too (the share dialog may have created or disabled the link),
+  // keeping the last answer on screen meanwhile.
   useEffect(() => {
-    if (!open || !linked) return;
+    if (!linked) return;
     let live = true;
-    existingShareLink(linked).then((l) => live && setLink(l));
+    existingShareLink(linked)
+      .then((l) => live && setLookup({ creationId: linked.id, link: l }))
+      .catch(() => live && setLookup({ creationId: linked.id, link: null }));
     return () => {
       live = false;
-      setLink(undefined);
     };
-  }, [open, linked, existingShareLink]);
+  }, [linked, open, existingShareLink]);
+  const link = linked && lookup?.creationId === linked.id ? lookup.link : undefined;
 
   const close = () => {
     setOpen(false);
@@ -116,14 +123,8 @@ export function ShareExportMenu() {
     openWorkspaceDialog({ kind: "planLocked", feature });
   };
 
-  const content = (url: string): ShareContent => ({
-    url,
-    text: t("studio.workspace.share.nativeText", { name: linked?.name ?? "" }),
-    title: linked?.name ?? t("studio.editor.share.title"),
-  });
-
   const shareImage = (file: File) => {
-    const text = linked && link ? `${content(link.url).text} ${link.url}` : t("studio.editor.share.message");
+    const text = linked && link ? `${t("studio.workspace.share.nativeText", { name: linked.name })} ${link.url}` : t("studio.editor.share.message");
     close();
     navigator.share({ files: [file], title: linked?.name ?? t("studio.editor.share.title"), text }).catch((err: unknown) => {
       if (err instanceof DOMException && err.name === "AbortError") return; // closed by the customer
@@ -139,13 +140,6 @@ export function ShareExportMenu() {
     } catch {
       notify("linkCopyFailed", undefined, "error");
     }
-  };
-
-  const shareTo = async (network: ShareNetwork, url: string) => {
-    close();
-    const copied = await openShareLink(network, content(url));
-    if (copied === true) notify("linkCopiedPaste", { network: t(`studio.editor.share.${network}`) });
-    else if (copied === false) notify("linkCopyFailed", undefined, "error");
   };
 
   const openShareDialog = () => {
@@ -240,18 +234,18 @@ export function ShareExportMenu() {
         </button>
       )}
     >
-      {image && canShareFiles(image) && (
+      {sheet && snap.jewels.length > 0 && (
         <>
           <PopoverItem
-            icon={<Share size={14} />}
+            icon={image ? <Share size={14} /> : <LoaderCircle size={14} className="motion-safe:animate-spin" />}
             label={t("studio.editor.share.native")}
             sub={t("studio.editor.share.nativeSub")}
-            onClick={() => shareImage(image)}
+            onClick={() => image && shareImage(image)}
           />
           <PopoverSeparator />
         </>
       )}
-      <PopoverLabel>{t("studio.editor.share.networks")}</PopoverLabel>
+      <PopoverLabel>{t("studio.editor.share.linkSection")}</PopoverLabel>
       {!linked ? (
         <PopoverItem
           icon={<Save size={14} />}
@@ -263,9 +257,13 @@ export function ShareExportMenu() {
           }}
         />
       ) : link === undefined ? (
-        <p role="status" className="m-0 flex items-center gap-2 px-2.5 py-2 text-[12.5px] text-[var(--text-muted)]">
-          <LoaderCircle size={14} aria-hidden="true" className="motion-safe:animate-spin" />
-          {t("studio.editor.share.lookingUp")}
+        // Shaped like the row it becomes (icon, label, second line), so the menu does not jump.
+        <p role="status" className="m-0 flex items-start gap-2.5 px-2.5 py-2 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-subtle)]">
+          <LoaderCircle size={14} aria-hidden="true" className="mt-0.5 flex-none motion-safe:animate-spin" />
+          <span className="grid min-w-0 flex-1">
+            <span className="truncate">{t("studio.editor.share.copyLink")}</span>
+            <span className="text-[11.5px] font-medium leading-snug">{t("studio.editor.share.lookingUp")}</span>
+          </span>
         </p>
       ) : link === null ? (
         <PopoverItem
@@ -276,27 +274,7 @@ export function ShareExportMenu() {
         />
       ) : (
         <>
-          <ul className="m-0 grid list-none grid-cols-2 gap-0.5 p-0">
-            {SHARE_NETWORKS.map((network) => (
-              <li key={network} className="min-w-0">
-                <button
-                  type="button"
-                  onClick={() => void shareTo(network, link.url)}
-                  className={clsx(
-                    "flex w-full min-w-0 items-center gap-2 rounded-[var(--radius-sm)] px-2.5 py-2 text-left text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-brand-wash)]",
-                    "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-                  )}
-                >
-                  <span aria-hidden="true" className="flex-none text-[var(--gt-blue-600)]">
-                    <ShareNetworkIcon network={network} />
-                  </span>
-                  <span className="truncate">{t(`studio.editor.share.${network}`)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          <p className="m-0 px-2.5 pb-1 pt-0.5 text-[11.5px] leading-snug text-[var(--text-muted)]">{t("studio.editor.share.networksHint")}</p>
-          <PopoverItem icon={<Link2 size={14} />} label={t("studio.editor.share.copyLink")} onClick={() => void copyLink(link.url)} />
+          <PopoverItem icon={<Link2 size={14} />} label={t("studio.editor.share.copyLink")} sub={t("studio.editor.share.copyLinkSub")} onClick={() => void copyLink(link.url)} />
           <PopoverItem icon={<Settings2 size={14} />} label={t("studio.editor.share.manageLink")} onClick={openShareDialog} />
         </>
       )}
@@ -363,6 +341,14 @@ export function ShareExportMenu() {
       <PlacementSheetMenuItem onDone={close} />
       {tryOnAllowed === false ? (
         <PopoverItem locked icon={<ScanFace size={14} />} label={t("studio.tryOn.action")} sub={withPlan("tryOn")} onClick={() => showLocked("tryOn")} />
+      ) : tryOnAllowed && !saved ? (
+        // Try-on renders the saved creation (read by the function from the database): shown greyed until then.
+        <PopoverItem
+          icon={<ScanFace size={14} />}
+          label={t("studio.tryOn.action")}
+          notice={t(snap.jewels.length === 0 ? "studio.tryOn.editorNoticeEmpty" : "studio.tryOn.editorNoticeSave")}
+          onClick={() => {}}
+        />
       ) : (
         tryOnAllowed &&
         saved && (

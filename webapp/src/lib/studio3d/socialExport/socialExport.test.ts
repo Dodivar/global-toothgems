@@ -10,7 +10,7 @@ import {
 } from "./branding";
 import { FORMAT_SIZES, SHARE_FORMATS, isShareFormat, safeInsets, scaledSize } from "./formats";
 import { LAYOUT_TEMPLATES, LAYOUT_TEMPLATE_IDS, insidePicture, layoutFor, placeMark } from "./layouts";
-import { exportFileName, loopAngles, pickVideoType, progressShare, turntableAngle, TURNTABLE_GIF } from "./motion";
+import { exportFileName, pickVideoType, progressShare, turntableAngle } from "./motion";
 
 describe("social export formats", () => {
   it("are the three network sizes", () => {
@@ -23,7 +23,7 @@ describe("social export formats", () => {
   });
 
   it("scale down keeping the ratio, with even sides, never up", () => {
-    expect(scaledSize("story", TURNTABLE_GIF.width)).toEqual({ width: 540, height: 960 });
+    expect(scaledSize("story", 540)).toEqual({ width: 540, height: 960 });
     expect(scaledSize("portrait", 540)).toEqual({ width: 540, height: 676 });
     expect(scaledSize("square", 4000)).toEqual({ width: 1080, height: 1080 });
     const odd = scaledSize("portrait", 333);
@@ -172,11 +172,6 @@ describe("turntable motion", () => {
     expect(turntableAngle(6000, 6000)).toBe(0);
     expect(turntableAngle(-5, 6000)).toBe(0);
     expect(turntableAngle(100, 0)).toBe(0);
-    const angles = loopAngles(4);
-    expect(angles).toHaveLength(4);
-    expect(angles[1]).toBeCloseTo(Math.PI / 2);
-    expect(angles[3]).toBeLessThan(Math.PI * 2);
-    expect(loopAngles(0)).toEqual([0]);
   });
 
   it("reports progress within [0, 1]", () => {
@@ -188,6 +183,5 @@ describe("turntable motion", () => {
   it("names files in plain ASCII", () => {
     expect(exportFileName("Étoile d'été ✨", "story", "image", "png")).toBe("global-toothgems-etoile-d-ete-story.png");
     expect(exportFileName("", "square", "video", "mp4")).toBe("global-toothgems-creation-square-360.mp4");
-    expect(exportFileName("Nova", "portrait", "gif", "gif")).toBe("global-toothgems-nova-portrait-360.gif");
   });
 });

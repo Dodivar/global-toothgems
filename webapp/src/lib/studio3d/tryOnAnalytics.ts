@@ -1,4 +1,5 @@
 import type { GemCheck } from "./tryOnGemBlend";
+import type { MidlineArbitration } from "./tryOnMidline";
 import type { Registration } from "./tryOnRegistration";
 
 /**
@@ -40,6 +41,24 @@ export function placementProps(registration: Registration, drawn: { marks: numbe
   };
 }
 
+/**
+ * `studio_try_on_placement`, the pixel midline (`tryOnMidline.ts`, 2026-11-05):
+ * whether it ran (the photo's pixels read), what it found and corrected.
+ */
+export function midlineProps(arbitration: MidlineArbitration | null): Props {
+  return {
+    arbiter: arbitration === null ? "unreadable" : "applied",
+    arbiter_triggered: arbitration?.triggered ?? false,
+    arbiter_gap_found: arbitration?.midline != null,
+    arbiter_teeth_offset: arbitration?.teethOffset ?? null,
+    arbiter_centrals_offset: arbitration?.centralsOffset ?? null,
+    arbiter_corrections: [...(arbitration?.corrections ?? [])],
+    arbiter_snapped: arbitration?.snapped ?? 0,
+    arbiter_segmented_upper: arbitration?.segmented.upper ?? 0,
+    arbiter_segmented_lower: arbitration?.segmented.lower ?? 0,
+  };
+}
+
 /** A gem drawn this far from its mark (half-sizes), or this much larger or smaller, counts as moved or resized. */
 const DRIFTED = 0.5;
 const RESIZED = 0.3;
@@ -57,6 +76,7 @@ export function resultProps(checks: readonly GemCheck[] | null, masked: boolean)
     gems_missing: checks ? checks.length - found.length : 0,
     gems_drifted: drifts.filter((d) => d > DRIFTED).length,
     gems_resized: sizes.filter((s) => Math.abs(s - 1) > RESIZED).length,
+    gems_reseated: found.filter((c) => c.reseated).length,
     drift_mean: mean(drifts),
     drift_max: drifts.length ? round(Math.max(...drifts)) : null,
     size_mean: mean(sizes),

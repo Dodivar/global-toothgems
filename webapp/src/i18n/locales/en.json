@@ -48,6 +48,11 @@
     "skipToContent": "Skip to main content",
     "langSwitchCode": "FR",
     "langSwitchAria": "View the site in French",
+    "langMenuAria": "Choose the site language",
+    "langName": {
+      "fr": "Français",
+      "en": "English"
+    },
     "cancel": "Cancel"
   },
   "home": {
@@ -1019,21 +1024,12 @@
         "loyalty_other": "{{count}} rewards are waiting"
       }
     },
-    "statsLabel": "Your account in numbers",
-    "statCourses": "courses in progress",
-    "statLessons": "lessons completed",
-    "statCertificates": "certificates",
-    "statOrders": "orders",
     "resumeEyebrow": "Resume",
     "resumeLesson": "Lesson {{number}} · {{title}}",
     "resumeRemaining": "{{minutes}} min left",
     "resumeCta": "Resume the lesson",
-    "resumeDoneTitle": "You are all caught up",
-    "resumeDoneBody": "Every course on your account is finished.",
-    "resumeDoneCta": "Pick a new course",
     "coursesEyebrow": "Progress",
     "coursesTitle": "My courses",
-    "coursesEmpty": "No course on your account yet.",
     "courseContinue": "Resume",
     "courseReview": "Review",
     "courseCompletedOn": "Completed on {{date}}",
@@ -1075,7 +1071,6 @@
     "availableEyebrow": "Catalogue",
     "availableTitle": "Courses available",
     "availableCta": "View the whole Academy",
-    "availableAllDone": "You are already taking every course in the catalogue.",
     "ordersEyebrow": "Purchases",
     "ordersTitle": "My orders",
     "orderReference": "Order {{reference}}",
@@ -1221,7 +1216,40 @@
     "certificateDocRefLabel": "Certificate no.",
     "certificateDocSeal": "Completed",
     "certificateDocIssuer": "Issued by",
-    "navStudio": "Studio subscription"
+    "navStudio": "Studio subscription",
+    "dashboard": {
+      "accountEyebrow": "At a glance",
+      "accountTitle": "Your account",
+      "shipmentEyebrow": "Delivery",
+      "shipmentPreparing": "Your order is being prepared",
+      "shipmentShipped": "Your parcel is on its way",
+      "shipmentTrack": "Track the parcel",
+      "shipmentOthers_one": "+ {{count}} more order on its way",
+      "shipmentOthers_other": "+ {{count}} more orders on their way",
+      "newTab": "(carrier’s site, new tab)",
+      "loyaltyCta": "See my card",
+      "studioPlan": "{{plan}} plan",
+      "studioTrial": "Free trial in progress",
+      "studioRenews": "Renews on {{date}}.",
+      "studioEnds": "Cancelled: access until {{date}}.",
+      "studioTrialUntil": "Access until {{date}}.",
+      "studioFull": "Creation limit reached.",
+      "studioFixPayment": "Update my card",
+      "studioManage": "Manage my subscription",
+      "certificatesCta": "See my certificates",
+      "certificatesOthers_one": "and {{count}} more",
+      "certificatesOthers_other": "and {{count}} more",
+      "favoritesEyebrow": "Favourites",
+      "favoritesTitle_one": "{{count}} product saved",
+      "favoritesTitle_other": "{{count}} products saved",
+      "favoritesOnSale_one": "{{count}} on sale",
+      "favoritesOnSale_other": "{{count}} on sale",
+      "favoritesLowStock_one": "{{count}} almost gone",
+      "favoritesLowStock_other": "{{count}} almost gone",
+      "favoritesCta": "See my favourites",
+      "discoverEyebrow": "Academy",
+      "discoverTitle": "Train with Global Toothgems"
+    }
   },
   "footer": {
     "blurb": "Professional gems, tools and training. Shipped internationally.",
@@ -4370,20 +4398,15 @@
       "body": "Keep your sign-in details up to date and stay in control of your personal data.",
       "signInGroup": "Sign-in",
       "privacyGroup": "Your data",
-      "demoBody": "Every action on this page is simulated. Pick how the server answers, and use the shortcuts to move a data request along.",
+      "demoBody": "Demo mode: the actions on this page are simulated. Pick the server's answer.",
       "demoPassword": "Current password",
-      "demoPasswordBody": "the demo account’s password. Anything else is treated as incorrect.",
-      "demoExport": "Data request",
-      "demoFinishExport": "Finish processing now",
-      "demoExpireExport": "Expire the download",
-      "demoBodyReal": "Email and password changes act on your real account. Only the data export and account deletion are still simulated: pick their response and use the shortcuts below."
+      "demoPasswordBody": "the demo account’s password. Anything else is treated as incorrect."
     },
     "overview": {
       "okTitle": "Your account is well protected",
       "okBody": "Your email is verified and your password is set. Nothing needs your attention.",
       "attentionTitle": "One thing to finish",
       "attentionEmail": "Confirm your new email address to complete the change.",
-      "attentionExport": "Your personal data is ready to download.",
       "goTo": "Go to this section",
       "email": "Email",
       "emailVerified": "Verified",
@@ -4395,14 +4418,10 @@
       "passwordChanged": "Last changed on {{date}}.",
       "passwordSinceSignUp": "Unchanged since you created your account.",
       "data": "Personal data",
-      "exportNone": "No request",
-      "exportNoneDetail": "You can request a copy at any time.",
-      "exportProcessing": "Being prepared",
-      "exportProcessingDetail": "We’ll email you when it’s ready.",
-      "exportReady": "Ready",
-      "exportReadyDetail": "Download available until {{date}}.",
-      "exportExpired": "Link expired",
-      "exportExpiredDetail": "Request a new copy whenever you like."
+      "exportNone": "Available",
+      "exportNoneDetail": "Download a copy at any time.",
+      "exportDone": "Downloaded",
+      "exportDoneDetail": "Copy downloaded on {{date}}."
     },
     "email": {
       "title": "Email address",
@@ -4453,73 +4472,70 @@
     },
     "export": {
       "title": "Download your personal data",
-      "body": "You can ask for a copy of the personal information linked to your account, at any time and free of charge.",
-      "includedTitle": "What your copy includes",
+      "body": "Get a copy of all the personal information linked to your account, at any time and free of charge.",
+      "includedTitle": "What your copy contains",
       "items": {
         "account": {
-          "title": "Account information",
-          "body": "Sign-in email and account settings."
+          "title": "Account",
+          "body": "Sign-in e-mail, sign-in methods, creation and last sign-in dates."
         },
         "profile": {
-          "title": "Profile information",
-          "body": "Name, phone, delivery address and preferences."
+          "title": "Profile and preferences",
+          "body": "Name, phone, addresses, consents and newsletter."
         },
         "orders": {
-          "title": "Order history",
-          "body": "Every order, with its items, prices and status."
+          "title": "Shop",
+          "body": "Orders, parcels, refunds, invoices, gift cards, loyalty, favourites and reviews."
         },
         "courses": {
-          "title": "Courses and enrolments",
-          "body": "Your trainings, lesson progress and certificates."
+          "title": "Academy",
+          "body": "Courses, progress, quiz answers and certificates."
         },
-        "activity": {
-          "title": "Account activity",
-          "body": "Where applicable: sign-ins and security events."
+        "studio": {
+          "title": "3D Studio",
+          "body": "Creations, Gem Groups, collections, Glowbook, subscription and payments."
+        },
+        "community": {
+          "title": "Members' lounges",
+          "body": "Your profile, messages and reactions."
+        },
+        "service": {
+          "title": "Customer service and file",
+          "body": "Your requests, and the tags and notes the team recorded about you."
         }
       },
-      "format": "Delivered as a machine-readable JSON file, so you can keep it or take it to another service.",
-      "request": "Request my data",
-      "requestAgain": "Request a new copy",
-      "confirmTitle": "Request a copy of your data?",
-      "confirmBody": "Here’s what happens next:",
-      "step1": "We gather your personal data into one file. This can take a little while.",
-      "step2": "We email {{email}} as soon as it’s ready.",
-      "step3": "You download it from this page, signed in. The download stays available for {{days}} days.",
-      "confirm": "Submit request",
-      "submitting": "Submitting…",
-      "failedBody": "Your request couldn’t be submitted. Please try again in a moment.",
-      "sentTitle": "Request submitted",
-      "sentBody": "We’re preparing your data. You can leave this page — we’ll email {{email}} when your download is ready.",
-      "sentClose": "Got it",
-      "processingTitle": "Preparing your data",
-      "processingBody": "Requested on {{date}} at {{time}}. We’ll email you when it’s ready.",
-      "readyTitle": "Your data is ready",
-      "readyBody": "Your download is available until {{date}}.",
+      "format": "A machine-readable JSON file, to keep or to move to another service. Your files (photos, renders, logo…) are listed with a download link valid for {{days}} days.",
       "download": "Download my data",
-      "expiredTitle": "The download link has expired",
-      "expiredBody": "Downloads stay available for {{days}} days to keep your data safe. You can request a new copy at any time.",
+      "preparing": "Preparing…",
+      "doneTitle": "Download started",
+      "doneBody": "The file holds your personal data: keep it somewhere safe and only share it knowingly.",
+      "tooSoonTitle": "A copy was just prepared",
+      "tooSoonBody": "To protect your account, a new copy is possible from {{date}} at {{time}}.",
+      "failedBody": "Your copy could not be prepared. Try again in a moment; if it keeps failing, contact us.",
       "toastDownloadTitle": "Download started",
-      "toastDownloadBody": "Keep this file somewhere safe: it contains your personal data.",
-      "fileNote": "Prototype export generated in your browser from this demo session."
+      "toastDownloadBody": "Keep this file somewhere safe: it holds your personal data.",
+      "mockNote": "Demo file built in your browser from the test session."
     },
     "delete": {
       "title": "Delete account",
       "body": "Permanently close your Global Toothgems account.",
-      "point1": "You lose access to your courses, certificates, community and loyalty rewards.",
-      "point2": "Your profile and preferences are erased. This can’t be undone.",
-      "point3": "Order records we must keep by law are retained for the legal period, then deleted.",
+      "point1": "You lose access to your courses and certificates, the 3D Studio (creations, Glowbook), the lounges and your loyalty benefits.",
+      "point2": "Your profile, preferences, reviews and messages are erased. This cannot be undone.",
+      "point3": "Your orders and invoices, which the law requires us to keep, are kept with no link to an account for the statutory period.",
       "exportHint": "Tip: download your personal data first if you’d like to keep a copy.",
       "open": "Delete my account",
       "dialogTitle": "Delete your account?",
       "dialogBody": "This permanently closes your account. Please read carefully before continuing.",
       "consequencesTitle": "What happens",
       "consequences": {
-        "access": "You’re signed out and can’t sign in with this account again.",
-        "courses": "Your courses, progress and certificates are no longer accessible.",
-        "community": "Your community profile is removed.",
-        "loyalty": "Your loyalty stamps and unused rewards are lost."
+        "access": "You are signed out and can no longer sign in with this account.",
+        "courses": "Your courses, progress and certificates are no longer available.",
+        "studio": "Your creations, Gem Groups, share links and Glowbook are deleted.",
+        "community": "Your profile, lounge messages and reviews are deleted.",
+        "loyalty": "Your loyalty stamps and unused rewards are lost.",
+        "newsletter": "You are unsubscribed from the newsletter."
       },
-      "retention": "Invoices and order records we are legally required to keep are retained, securely, for the statutory period only.",
+      "retention": "We keep, with no link to an account, your orders, invoices and credit notes (3D Studio ones included) for the statutory retention period of accounting records (10 years), and your exchanges with customer service for as long as needed to handle a possible claim.",
       "phrase": "DELETE",
       "phraseLabel": "Type {{phrase}} to confirm",
       "phraseHint": "The delete button unlocks once the word matches.",
@@ -4527,10 +4543,39 @@
       "keep": "Keep my account",
       "confirm": "Delete permanently",
       "deleting": "Deleting…",
-      "failedBody": "We couldn’t delete your account. Nothing has been removed — please try again, or contact us if it keeps happening.",
+      "failedBody": "We could not delete your account. Nothing was erased from your account — try again, or contact us if it keeps failing.",
       "doneTitle": "Your account has been deleted",
-      "doneBody": "Thank you for having been part of Global Toothgems. Your account is closed and you’ve been signed out. You’re always welcome back.",
-      "doneCta": "Return to the homepage"
+      "doneBody": "Your account is closed and you have been signed out. A confirmation e-mail is on its way to your address. Thank you for being part of Global Toothgems.",
+      "doneCta": "Return to the homepage",
+      "checking": "Checking your account…",
+      "blockedTitle": "Your account cannot be deleted yet",
+      "blockedBody": "Something under way still needs your account. As soon as it is over, you can delete it here.",
+      "blockers": {
+        "studio_subscription": {
+          "title": "3D Studio subscription running",
+          "body": "Cancel it (or withdraw within 14 days): the account can be deleted once the subscription ends. To stop it right away, contact us.",
+          "link": "Manage my subscription"
+        },
+        "studio_withdrawal": {
+          "title": "Withdrawal under way",
+          "body": "Your refund is being processed. Come back once it is confirmed.",
+          "link": "View my subscription"
+        },
+        "order_payment_pending": {
+          "title": "Payment under way",
+          "body": "An order is waiting for its payment to finish. Try again in a few minutes."
+        },
+        "staff": {
+          "title": "Team account",
+          "body": "This account opens the back office: an administrator must first remove it from the team."
+        }
+      },
+      "passwordLabel": "Your password",
+      "googleHint": "To confirm it is really you, sign in again with Google if your last sign-in was more than 10 minutes ago.",
+      "googleAgain": "Sign in again with Google",
+      "reauthTitle": "Sign in again to confirm",
+      "reauthPasswordBody": "Your sign-in is too old to delete the account. Type your password again and retry.",
+      "reauthGoogleBody": "Your last sign-in was more than 10 minutes ago. Sign in again with Google, then confirm again."
     }
   },
   "legal": {
@@ -4873,7 +4918,6 @@
     "shareTitle": "Celebrate this moment",
     "shareBody": "Show that you completed “{{title}}”. Nothing is posted without you.",
     "shareCaption": "I just completed the “{{title}}” course with Global Toothgems ✦ #toothgems #GlobalToothgems",
-    "shareSubject": "I completed the “{{title}}” course",
     "shareCaptionLabel": "Your message",
     "shareCopy": "Copy the message",
     "shareCopiedShort": "Message copied",
@@ -4882,15 +4926,7 @@
     "shareNative": "Share the image",
     "shareSent": "Thanks for sharing your achievement!",
     "shareFailed": "Sharing didn’t go through. Download the image to post it.",
-    "shareOn": "Post on",
-    "shareOnHint": "Downloads the image, copies the message and opens the network",
-    "shareOnNote": "Each button downloads your certificate’s image, copies your message and opens the network: just paste and post.",
-    "shareReady": "Image downloaded and message copied: paste it into your {{network}} post.",
-    "shareReadyNoCopy": "Image downloaded: add it to your {{network}} post with your message.",
-    "linkedinAdd": "Add to my LinkedIn profile",
-    "linkedinAddBody": "Under “Licenses & certifications”, pre-filled.",
     "sharePrivacy": "Your certificate stays private: only the image you choose to post is shared.",
-    "newTab": "(new tab)",
     "statusEarned": "Earned",
     "statusPending": "In progress · {{pct}}%",
     "pendingCta": "Continue the course",
@@ -5002,6 +5038,30 @@
       "fileName": "credit-note",
       "studioWithdrawal": "Withdrawal — unused share of the 3D Studio subscription, {{plan}} plan",
       "studioUsedDays": "{{used}} of {{total}} days used"
+    }
+  },
+  "newsletter": {
+    "errors": {
+      "rate_limited": "Too many attempts. Please try again in a moment.",
+      "invalid_request": "Check the e-mail address and the consent box, then try again.",
+      "network": "No connection. Check your network, then try again.",
+      "unavailable": "Newsletter sign-up is not available at the moment.",
+      "server_error": "We could not sign you up. Please try again in a moment."
+    },
+    "confirm": {
+      "eyebrow": "Newsletter",
+      "confirming": "Confirming your subscription…",
+      "doneTitle": "Subscription confirmed",
+      "doneBody": "Thank you! You will receive our next news. Every e-mail has an unsubscribe link.",
+      "invalidTitle": "This link no longer works",
+      "invalidBody": "It may have been used already, or it expired (48 hours). Sign up again from the home page to get a new link.",
+      "errorTitle": "We could not confirm your subscription",
+      "errorBody": "A technical problem got in the way. Please try again in a moment.",
+      "unavailableTitle": "Confirmation unavailable",
+      "unavailableBody": "The newsletter is not available at the moment.",
+      "retry": "Try again",
+      "shop": "Visit the shop",
+      "home": "Back to the home page"
     }
   }
 }

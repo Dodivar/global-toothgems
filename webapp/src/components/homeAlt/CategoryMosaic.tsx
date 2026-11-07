@@ -19,9 +19,10 @@ import type { Product } from "../../data/products";
  * `feature`: a product picture from the catalogue, framed close up on white
  * (the kits), or shown whole (`whole`: the lip gloss bottle), with a
  * photograph to show until the catalogue holds it. `burst`: loose stones thrown apart like a bouquet going off, the
- * same visual as the hero's shop slide on a phone: gem pictures cut out of
- * their white background (`gem-*.webp`, transparent, so the stones keep their
- * own colours on the tint). `productBurst`: the same
+ * same visual as the hero's shop slide on a phone: the shop's own gems (cuts,
+ * colours, gold jewels), their product pictures cut out of the white
+ * background by `scripts/gem-cutouts.py` (`gem-*.webp`, transparent, so the
+ * stones keep their own colours on the tint). `productBurst`: the same
  * explosion with the category's own product pictures from the catalogue,
  * mounted as small white prints since their backgrounds vary. On hover the
  * pieces of a burst fly a little further apart.
@@ -60,18 +61,22 @@ interface Slot {
 }
 
 const GEM_SLOTS: Slot[] = [
-  { x: 50, y: 30, w: 16, max: 100, rot: -12 },
-  { x: 30, y: 24, w: 12, max: 80, rot: 20 },
-  { x: 70, y: 22, w: 13, max: 84, rot: -25 },
-  { x: 12, y: 36, w: 10, max: 66, rot: 40 },
-  { x: 88, y: 38, w: 10, max: 66, rot: 10 },
-  { x: 40, y: 43, w: 8, max: 54, rot: -30 },
-  { x: 62, y: 43, w: 9, max: 58, rot: 15 },
-  { x: 93, y: 18, w: 7, max: 46, rot: -10 },
-  { x: 7, y: 18, w: 8, max: 50, rot: 25 },
-  { x: 20, y: 14, w: 6, max: 38, rot: 60 },
-  { x: 82, y: 14, w: 7, max: 42, rot: -40 },
-  { x: 50, y: 14, w: 7, max: 42, rot: 30 },
+  { x: 50, y: 28, w: 20, max: 128, rot: -10 },
+  { x: 30, y: 21, w: 15, max: 96, rot: 18 },
+  { x: 71, y: 22, w: 16, max: 100, rot: -20 },
+  { x: 12, y: 30, w: 13, max: 84, rot: 35 },
+  { x: 89, y: 33, w: 13, max: 84, rot: 8 },
+  { x: 40, y: 42, w: 10, max: 66, rot: -25 },
+  { x: 61, y: 44, w: 12, max: 76, rot: 14 },
+  { x: 95, y: 12, w: 9, max: 58, rot: -10 },
+  { x: 6, y: 12, w: 10, max: 64, rot: 22 },
+  { x: 19, y: 9, w: 8, max: 52, rot: 55 },
+  { x: 82, y: 9, w: 9, max: 56, rot: -35 },
+  { x: 50, y: 8, w: 10, max: 62, rot: 25 },
+  { x: 24, y: 37, w: 9, max: 58, rot: -12 },
+  { x: 77, y: 43, w: 10, max: 64, rot: 30 },
+  { x: 94, y: 48, w: 8, max: 52, rot: 12 },
+  { x: 37, y: 9, w: 9, max: 54, rot: -40 },
 ];
 
 const PRINT_SLOTS: Slot[] = [
@@ -100,18 +105,22 @@ const TILES: Tile[] = [
       kind: "burst",
       tone: "blue",
       pieces: [
-        "gem-img-04.webp",
-        "gem-img-07.webp",
-        "gem-img-13.webp",
-        "gem-img-09.webp",
-        "gem-img-05.webp",
-        "gem-img-14.webp",
-        "gem-img-18.webp",
-        "gem-img-02.webp",
-        "gem-img-19.webp",
-        "gem-img-06.webp",
-        "gem-img-15.webp",
-        "gem-img-20.webp",
+        "gem-heart-siam.webp",
+        "gem-starflower-amethyste.webp",
+        "gem-round-saphir.webp",
+        "gem-navette-emeraude.webp",
+        "gem-diamond-sunflower.webp",
+        "gem-gold-heart.webp",
+        "gem-rivoli-bermuda-blue.webp",
+        "gem-raindrop-light-siam.webp",
+        "gem-square-aquamarine.webp",
+        "gem-baguette-fuchsia.webp",
+        "gem-gold-lightning.webp",
+        "gem-round-crystal-ab.webp",
+        "gem-heart-aquamarine.webp",
+        "gem-starflower-light-topaz.webp",
+        "gem-raindrop-heliotrope.webp",
+        "gem-diamond-violet.webp",
       ],
     },
     area: "md:col-span-2 lg:col-span-6 lg:col-start-7",
@@ -223,7 +232,7 @@ function CategoryTile({ tile, index, families }: { tile: Tile; index: number; fa
           <span aria-hidden="true" className={clsx("gt-alt-tile-art absolute inset-0", TONE_BG[tile.art.tone])}>
             {tile.art.pieces.slice(0, GEM_SLOTS.length).map((name, i) => (
               <BurstPiece key={name} slot={GEM_SLOTS[i]} index={i}>
-                {(piece) => <img src={photo(name)} alt="" loading="lazy" decoding="async" className={clsx("gt-alt-gem", piece.className)} style={piece.style} />}
+                {(piece) => <img src={photo(name)} alt="" loading="lazy" decoding="async" className={clsx("gt-alt-gem aspect-square object-contain", piece.className)} style={piece.style} />}
               </BurstPiece>
             ))}
           </span>

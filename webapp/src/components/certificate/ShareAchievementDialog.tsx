@@ -1,24 +1,14 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BadgeCheck, Check, Copy, Share2, Sparkles, X } from "lucide-react";
+import { Check, Copy, Share2, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/Button";
 import { IconButton } from "../ui/IconButton";
 import { CertificateSheet } from "../account/CertificateDocument";
 import { DownloadCertificateButton } from "./DownloadCertificateButton";
-import { NetworkIcon } from "./NetworkIcon";
 import { useNativeDialog } from "./useNativeDialog";
 import type { CertificateContent } from "../../lib/certificate/layout";
-import { linkedInCertificationUrl, SHARE_NETWORKS, shareDestination, type ShareNetwork } from "../../lib/certificate/share";
 import { canShareFiles, useCertificateExport } from "../../lib/certificate/useCertificateExport";
 import { useHydrated } from "../../lib/useHydrated";
-
-const NETWORK_NAMES: Record<ShareNetwork, string> = {
-  linkedin: "LinkedIn",
-  instagram: "Instagram",
-  facebook: "Facebook",
-  x: "X",
-  email: "E-mail",
-};
 
 async function copyText(text: string): Promise<boolean> {
   try {
@@ -35,21 +25,18 @@ async function copyText(text: string): Promise<boolean> {
  * What travels is the certificate's image and a caption the member can edit —
  * there is no public certificate page (decided by the owner, 2026-10-07). On a
  * phone, "Share" hands the image to the device's share sheet (Instagram,
- * WhatsApp, Messages…). Each network button saves the image, copies the
- * caption and opens the network, so the post is one paste away; LinkedIn's
- * "add a certification" form is pre-filled.
+ * WhatsApp, Messages…); everywhere, "Download" saves it and the caption can be
+ * copied. No list of networks (owner's choice 2026-11-06, as in the Studio):
+ * the member posts from their own app.
  *
  * Mounted only while open. Native `<dialog>`: it can open above the
  * certificate viewer, itself a modal (see `useNativeDialog`).
  */
 export function ShareAchievementDialog({
   content,
-  awardedOn,
   onClose,
 }: {
   content: CertificateContent;
-  /** ISO date of completion (LinkedIn wants the year and month). */
-  awardedOn: string;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -84,20 +71,6 @@ export function ShareAchievementDialog({
     const result = await shareImage(caption);
     if (result === "shared") setFeedback({ tone: "done", text: t("certificate.shareSent") });
     if (result === "failed") setFeedback({ tone: "error", text: t("certificate.shareFailed") });
-  };
-
-  const onNetwork = async (network: ShareNetwork) => {
-    const destination = shareDestination(network, caption, t("certificate.shareSubject", { title: content.courseTitle }));
-    // Copy and open while the tap still counts: both need the user's gesture.
-    const copiedNow = copyText(caption);
-    if (network === "email") window.location.assign(destination);
-    else window.open(destination, "_blank", "noopener,noreferrer");
-    const [ok, saved] = await Promise.all([copiedNow, download("png")]);
-    setFeedback(
-      saved
-        ? { tone: "done", text: ok ? t("certificate.shareReady", { network: NETWORK_NAMES[network] }) : t("certificate.shareReadyNoCopy", { network: NETWORK_NAMES[network] }) }
-        : { tone: "error", text: t("certificate.downloadError") },
-    );
   };
 
   return (
@@ -162,44 +135,6 @@ export function ShareAchievementDialog({
             fullWidth
           />
         </div>
-
-        <fieldset className="m-0 grid gap-2.5 border-0 p-0">
-          <legend className="gt-eyebrow mb-2.5">{t("certificate.shareOn")}</legend>
-          <ul className="m-0 grid list-none grid-cols-3 gap-2 min-[420px]:grid-cols-5 p-0">
-            {SHARE_NETWORKS.map((network) => (
-              <li key={network}>
-                <button
-                  type="button"
-                  onClick={() => void onNetwork(network)}
-                  className="gt-cert-network group grid w-full justify-items-center gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] px-1 py-3 text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                >
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--gt-blue-50)] transition-colors duration-[var(--duration-fast)] group-hover:bg-[var(--gt-blue-100)]">
-                    <NetworkIcon network={network} />
-                  </span>
-                  <span className="text-[11px] font-semibold leading-tight">{NETWORK_NAMES[network]}</span>
-                  <span className="sr-only">{t("certificate.shareOnHint")}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("certificate.shareOnNote")}</p>
-        </fieldset>
-
-        <a
-          href={linkedInCertificationUrl({ courseTitle: content.courseTitle, awardedOn, reference: content.reference })}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--gt-blue-50)] p-3.5 text-[var(--text-primary)] no-underline transition-colors duration-[var(--duration-fast)] hover:border-[var(--gt-blue-300)] hover:bg-[var(--gt-blue-100)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-        >
-          <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-[var(--surface-card)] text-[var(--gt-blue-700)]">
-            <BadgeCheck size={18} aria-hidden="true" />
-          </span>
-          <span className="grid gap-0.5">
-            <strong className="text-[length:var(--text-body-sm)]">{t("certificate.linkedinAdd")}</strong>
-            <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("certificate.linkedinAddBody")}</span>
-          </span>
-          <span className="sr-only">{t("certificate.newTab")}</span>
-        </a>
 
         <p
           role="status"

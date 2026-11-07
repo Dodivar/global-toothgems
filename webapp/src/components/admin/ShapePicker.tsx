@@ -24,7 +24,7 @@ export function ShapePicker({ label, value, onChange }: ShapePickerProps) {
     () =>
       sortByShapeLabel(GEM_SHAPES, (shape) => shape, shapeName, i18n.language).map((shape) => ({
         value: shape,
-        label: shapeName(shape),
+        label: shapeName(shape, i18n.language),
         visual: <ShapeGlyph shape={shape} size={26} className="text-[var(--gt-blue-700)]" />,
       })),
     [t, i18n.language],

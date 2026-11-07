@@ -8,6 +8,7 @@ const TS = Math.floor(NOW.getTime() / 1000);
 function makeDeps(applied: Partial<AppliedEvent> | Error = {}, overrides: Partial<WebhookDeps> = {}) {
   const applyCalls: Array<[string, string]> = [];
   const cardCalls: Array<[string, string]> = [];
+  const optOuts: Array<[string, string]> = [];
   const logs: unknown[] = [];
   const deps: WebhookDeps = {
     secret: TEST_SECRET,
@@ -21,10 +22,14 @@ function makeDeps(applied: Partial<AppliedEvent> | Error = {}, overrides: Partia
       cardCalls.push([card, status]);
       return Promise.resolve();
     },
+    optOut: (email, reason) => {
+      optOuts.push([email, reason]);
+      return Promise.resolve(reason);
+    },
     log: (message, detail) => logs.push([message, detail]),
     ...overrides,
   };
-  return { deps, applyCalls, cardCalls, logs };
+  return { deps, applyCalls, cardCalls, optOuts, logs };
 }
 
 async function request(payload: unknown, opts: { signed?: boolean; id?: string; method?: string } = {}) {
@@ -141,4 +146,70 @@ Deno.test("only bounces and complaints are logged, and only the template", async
   const opened = makeDeps();
   await handleResendWebhook(await request(event("email.opened")), opened.deps);
   assertEquals(opened.logs.length, 0);
+});
+
+// ---------------------------------------------------------------- Newsletter campaigns (Resend Broadcasts)
+
+const contactUpdated = (data: Record<string, unknown>) => ({
+  type: "contact.updated",
+  created_at: "2026-11-06T12:00:00Z",
+  data: { id: "c_1", segment_ids: [], email: "ana@example.com", unsubscribed: true, ...data },
+});
+
+Deno.test("a contact who unsubscribed in Resend is unsubscribed on the list", async () => {
+  const { deps, optOuts, applyCalls, logs } = makeDeps();
+  const res = await handleResendWebhook(await request(contactUpdated({})), deps);
+  assertEquals([res.status, await res.json()], [200, { ok: true, newsletter: "unsubscribed" }]);
+  assertEquals(optOuts, [["ana@example.com", "unsubscribed"]]);
+  assertEquals(applyCalls.length, 0);
+  assertEquals(JSON.stringify(logs).includes("ana@example.com"), false);
+});
+
+Deno.test("a contact updated without unsubscribing (or set back to subscribed) changes nothing", async () => {
+  const { deps, optOuts } = makeDeps();
+  const res = await handleResendWebhook(await request(contactUpdated({ unsubscribed: false })), deps);
+  assertEquals([res.status, await res.json()], [200, { ok: true, ignored: true }]);
+  assertEquals(optOuts.length, 0);
+  const bad = await handleResendWebhook(await request(contactUpdated({ email: 42 })), deps);
+  assertEquals(bad.status, 400);
+});
+
+const broadcastEvent = (type: string, extra: Record<string, unknown> = {}) => ({
+  type,
+  created_at: "2026-11-06T12:00:00Z",
+  data: { email_id: "re_b1", broadcast_id: "bc_1", to: ["ana@example.com"], subject: "News", ...extra },
+});
+
+Deno.test("a campaign's permanent bounce or complaint marks the subscriber; a transient bounce does not", async () => {
+  const notInLog = { matched: false, applied: false, template: null, status: null };
+  const complained = makeDeps(notInLog);
+  const res = await handleResendWebhook(await request(broadcastEvent("email.complained")), complained.deps);
+  assertEquals(await res.json(), { ok: true, newsletter: "complained" });
+  assertEquals(complained.optOuts, [["ana@example.com", "complained"]]);
+
+  const permanent = makeDeps(notInLog);
+  await handleResendWebhook(await request(broadcastEvent("email.bounced", { bounce: { type: "Permanent", subType: "General", message: "x" } })), permanent.deps);
+  assertEquals(permanent.optOuts, [["ana@example.com", "bounced"]]);
+
+  const transient = makeDeps(notInLog);
+  const t = await handleResendWebhook(await request(broadcastEvent("email.bounced", { bounce: { type: "Transient", subType: "MailboxFull", message: "x" } })), transient.deps);
+  assertEquals(await t.json(), { ok: true, matched: false });
+  assertEquals(transient.optOuts.length, 0);
+
+  const delivered = makeDeps(notInLog);
+  await handleResendWebhook(await request(broadcastEvent("email.delivered")), delivered.deps);
+  assertEquals(delivered.optOuts.length, 0);
+});
+
+Deno.test("an unknown e-mail that is not a campaign is still ignored", async () => {
+  const { deps, optOuts } = makeDeps({ matched: false, applied: false, template: null, status: null });
+  const res = await handleResendWebhook(await request(event("email.complained")), deps);
+  assertEquals(await res.json(), { ok: true, matched: false });
+  assertEquals(optOuts.length, 0);
+});
+
+Deno.test("a database failure on an opt-out answers 500 so Resend retries", async () => {
+  const { deps } = makeDeps({}, { optOut: () => Promise.reject(new Error("db down")) });
+  const res = await handleResendWebhook(await request(contactUpdated({})), deps);
+  assertEquals(res.status, 500);
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { placementProps, resultProps } from "./tryOnAnalytics";
+import { midlineProps, placementProps, resultProps } from "./tryOnAnalytics";
+import type { MidlineArbitration } from "./tryOnMidline";
 import type { Registration } from "./tryOnRegistration";
 
 const registration: Registration = {
@@ -53,7 +54,7 @@ describe("try-on analytics", () => {
     const props = resultProps(
       [
         { id: "a", found: true, drift: 0.1, size: 1.1 },
-        { id: "b", found: true, drift: 0.9, size: 1.5 },
+        { id: "b", found: true, drift: 0.9, size: 1.5, reseated: true },
         { id: "c", found: false, drift: null, size: null },
       ],
       true,
@@ -65,11 +66,42 @@ describe("try-on analytics", () => {
       gems_missing: 1,
       gems_drifted: 1,
       gems_resized: 1,
+      gems_reseated: 1,
       drift_mean: 0.5,
       drift_max: 0.9,
       size_mean: 1.3,
       size_max: 1.5,
     });
     expect(resultProps(null, false)).toMatchObject({ masked: false, gems_checked: 0, gems_missing: 0, drift_max: null });
+  });
+
+  it("describes the pixel midline with offsets and codes only", () => {
+    const arbitration: MidlineArbitration = {
+      triggered: true,
+      midline: 412,
+      teethOffset: 0.99,
+      centralsOffset: 0.09,
+      corrections: ["shifted"],
+      snapped: 9,
+      segmented: { upper: 6, lower: 5 },
+      lowerMidline: 420,
+      found: [],
+      centrals: null,
+    };
+    const props = midlineProps(arbitration);
+    expect(props).toEqual({
+      arbiter: "applied",
+      arbiter_triggered: true,
+      arbiter_gap_found: true,
+      arbiter_teeth_offset: 0.99,
+      arbiter_centrals_offset: 0.09,
+      arbiter_corrections: ["shifted"],
+      arbiter_snapped: 9,
+      arbiter_segmented_upper: 6,
+      arbiter_segmented_lower: 5,
+    });
+    expect(Object.values(props)).not.toContain(412); // never a position on the photo
+    expect(Object.values(props)).not.toContain(420);
+    expect(midlineProps(null)).toMatchObject({ arbiter: "unreadable", arbiter_triggered: false });
   });
 });

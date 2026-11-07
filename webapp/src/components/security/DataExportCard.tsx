@@ -1,23 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Activity,
-  CircleCheck,
-  Clock,
-  Download,
-  FileArchive,
-  GraduationCap,
-  LoaderCircle,
-  Package,
-  RotateCw,
-  Send,
-  UserRound,
-  IdCard,
-} from "lucide-react";
+import { CircleCheck, Clock, Download, FileArchive, GraduationCap, IdCard, LifeBuoy, MessagesSquare, Package, Sparkles, UserRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "../ui/Button";
-import { Badge } from "../ui/Badge";
-import { Dialog } from "../ui/Dialog";
 import { SecurityCard } from "./SecurityCard";
 import { Notice } from "./Notice";
 import { useAuth } from "../../lib/auth";
@@ -25,110 +10,85 @@ import { useOrders } from "../../lib/orders";
 import { useProgress } from "../../lib/progress";
 import { useToast } from "../../lib/toast";
 import { useFormat } from "../../lib/format";
-import { EXPORT_AVAILABLE_DAYS, submitExportRequest, type ServiceOutcome } from "../../lib/accountSecurity";
+import { FILE_LINK_DAYS, fetchPersonalData } from "../../lib/accountPrivacy";
+import { archiveFileName } from "../../lib/accountPrivacyMapping";
 import { useAccountSecurity } from "../../lib/securityState";
-
-const SENT_CLOSE_ID = "security-export-sent-close";
 
 const INCLUDED: { key: string; icon: LucideIcon }[] = [
   { key: "account", icon: IdCard },
   { key: "profile", icon: UserRound },
   { key: "orders", icon: Package },
   { key: "courses", icon: GraduationCap },
-  { key: "activity", icon: Activity },
+  { key: "studio", icon: Sparkles },
+  { key: "community", icon: MessagesSquare },
+  { key: "service", icon: LifeBuoy },
 ];
+
+type State = { kind: "idle" } | { kind: "preparing" } | { kind: "done" } | { kind: "tooSoon"; retryAt: string } | { kind: "failed" };
 
 function formatTime(iso: string, lang: string) {
   return new Intl.DateTimeFormat(lang, { hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
 
+function saveJson(archive: unknown, fileName: string) {
+  const blob = new Blob([JSON.stringify(archive, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /**
  * "Download your personal data" — the GDPR right of access and portability.
  *
- * Written to be read as a service, not a legal notice: what is included, in
- * plain words; one button; a confirmation that says what happens next; then a
- * status that moves from processing to ready to (eventually) expired, with the
- * dates that matter. The request lives in `SecurityProvider`, so it keeps
- * processing while the member browses elsewhere.
+ * One button: the database gathers everything linked to the account
+ * (`my_personal_data()`), the browser adds download links to the member's own
+ * files and saves one JSON file. Nothing is kept on our side, so there is no
+ * "processing" or expiry to follow. At most one archive every 5 minutes.
  *
- * The "archive" is built in the browser from the prototype's own session
- * data, as a JSON file: enough to review the download state honestly. The real
- * export is assembled server-side and delivered through an expiring,
- * authenticated link.
+ * Without Supabase (mock mode, smoke tests) the file is built from the demo
+ * session and says so.
  */
-export function DataExportCard({ outcome }: { outcome: ServiceOutcome }) {
+export function DataExportCard() {
   const { formatDate } = useFormat();
   const { t, i18n } = useTranslation();
-  const { dataExport, startExport } = useAccountSecurity();
-  const { profile } = useAuth();
+  const { realAuth, profile } = useAuth();
   const { orders } = useOrders();
   const { enrollments } = useProgress();
   const { showToast } = useToast();
+  const { markExported } = useAccountSecurity();
+  const [state, setState] = useState<State>({ kind: "idle" });
 
-  const [dialog, setDialog] = useState<null | "confirm" | "sent">(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [failed, setFailed] = useState(false);
-
-  const openDialog = () => {
-    setFailed(false);
-    setDialog("confirm");
-  };
-
-  const submit = async () => {
-    setSubmitting(true);
-    setFailed(false);
-    try {
-      await submitExportRequest(outcome);
-      startExport();
-      setDialog("sent");
-      // The confirm button just vanished; keep focus inside the dialog.
-      requestAnimationFrame(() => document.getElementById(SENT_CLOSE_ID)?.focus());
-    } catch {
-      setFailed(true);
+  const download = async () => {
+    setState({ kind: "preparing" });
+    let archive: Record<string, unknown>;
+    if (realAuth) {
+      const answer = await fetchPersonalData();
+      if (answer.kind === "tooSoon") return setState({ kind: "tooSoon", retryAt: answer.retryAt });
+      if (answer.kind === "error") return setState({ kind: "failed" });
+      archive = answer.archive;
+    } else {
+      archive = {
+        format: "global-toothgems-personal-data/2",
+        generated_at: new Date().toISOString(),
+        account: { email: profile?.email },
+        profile,
+        shop: { orders },
+        academy: { courses: enrollments },
+        note: t("security.export.mockNote"),
+      };
     }
-    setSubmitting(false);
-  };
-
-  const download = () => {
-    const archive = {
-      format: "global-toothgems-personal-data/1",
-      generatedAt: dataExport.readyAt,
-      account: { email: profile?.email, newsletter: profile?.newsletter },
-      profile,
-      orders,
-      courses: enrollments,
-      note: t("security.export.fileNote"),
-    };
-    const blob = new Blob([JSON.stringify(archive, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `global-toothgems-mes-donnees-${(dataExport.readyAt ?? new Date().toISOString()).slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    saveJson(archive, archiveFileName(String(archive.generated_at ?? new Date().toISOString())));
+    markExported();
+    setState({ kind: "done" });
     showToast(t("security.export.toastDownloadTitle"), t("security.export.toastDownloadBody"));
   };
 
-  const status = {
-    none: null,
-    processing: (
-      <Badge tone="brand" icon={LoaderCircle} size="sm">
-        {t("security.overview.exportProcessing")}
-      </Badge>
-    ),
-    ready: (
-      <Badge tone="success" icon={CircleCheck} size="sm">
-        {t("security.overview.exportReady")}
-      </Badge>
-    ),
-    expired: (
-      <Badge tone="warning" icon={Clock} size="sm">
-        {t("security.overview.exportExpired")}
-      </Badge>
-    ),
-  }[dataExport.status];
+  const preparing = state.kind === "preparing";
 
   return (
     <SecurityCard
@@ -136,7 +96,6 @@ export function DataExportCard({ outcome }: { outcome: ServiceOutcome }) {
       icon={FileArchive}
       title={t("security.export.title")}
       description={<p>{t("security.export.body")}</p>}
-      status={status ?? undefined}
     >
       <div className="grid gap-3">
         <h3 className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{t("security.export.includedTitle")}</h3>
@@ -151,108 +110,32 @@ export function DataExportCard({ outcome }: { outcome: ServiceOutcome }) {
             </li>
           ))}
         </ul>
-        <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("security.export.format")}</p>
+        <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("security.export.format", { days: FILE_LINK_DAYS })}</p>
       </div>
 
       <div role="status" aria-live="polite" className="grid gap-3">
-        {dataExport.status === "processing" && dataExport.requestedAt && (
-          <div className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--status-info-bg)] p-4">
-            <p className="m-0 flex items-start gap-2.5 text-[length:var(--text-body-sm)]">
-              <LoaderCircle size={17} aria-hidden="true" className="mt-[1px] flex-none animate-spin text-[var(--status-info-fg)] motion-reduce:animate-none" />
-              <span className="grid gap-0.5">
-                <strong className="text-[var(--text-primary)]">{t("security.export.processingTitle")}</strong>
-                <span className="text-[var(--text-body)]">
-                  {t("security.export.processingBody", { date: formatDate(dataExport.requestedAt), time: formatTime(dataExport.requestedAt, i18n.language) })}
-                </span>
-              </span>
-            </p>
-            <span aria-hidden="true" className="gt-skeleton ml-[26px] block h-1.5 rounded-full" />
-          </div>
-        )}
-
-        {dataExport.status === "ready" && dataExport.expiresAt && (
-          <Notice
-            tone="success"
-            icon={CircleCheck}
-            title={t("security.export.readyTitle")}
-            actions={
-              <Button variant="primary" size="sm" iconLeft={Download} onClick={download}>
-                {t("security.export.download")}
-              </Button>
-            }
-          >
-            <p>{t("security.export.readyBody", { date: formatDate(dataExport.expiresAt) })}</p>
+        {state.kind === "done" && (
+          <Notice tone="success" icon={CircleCheck} title={t("security.export.doneTitle")}>
+            <p>{t("security.export.doneBody")}</p>
           </Notice>
         )}
-
-        {dataExport.status === "expired" && (
-          <Notice tone="warning" icon={Clock} title={t("security.export.expiredTitle")}>
-            <p>{t("security.export.expiredBody", { days: EXPORT_AVAILABLE_DAYS })}</p>
+        {state.kind === "tooSoon" && (
+          <Notice tone="warning" icon={Clock} title={t("security.export.tooSoonTitle")}>
+            <p>{t("security.export.tooSoonBody", { date: formatDate(state.retryAt), time: formatTime(state.retryAt, i18n.language) })}</p>
           </Notice>
         )}
       </div>
-
-      {(dataExport.status === "none" || dataExport.status === "expired") && (
-        <div>
-          <Button variant="dark" iconLeft={dataExport.status === "expired" ? RotateCw : Send} onClick={openDialog}>
-            {t(dataExport.status === "expired" ? "security.export.requestAgain" : "security.export.request")}
-          </Button>
-        </div>
+      {state.kind === "failed" && (
+        <Notice tone="error" live="alert" title={t("security.errors.serverTitle")}>
+          {t("security.export.failedBody")}
+        </Notice>
       )}
 
-      <Dialog
-        open={dialog !== null}
-        onClose={() => {
-          if (!submitting) setDialog(null);
-        }}
-        title={t(dialog === "sent" ? "security.export.sentTitle" : "security.export.confirmTitle")}
-        description={dialog === "sent" ? undefined : t("security.export.confirmBody")}
-        icon={dialog === "sent" ? <CircleCheck size={16} /> : <FileArchive size={16} />}
-        closeLabel={t("common.close")}
-        footer={
-          dialog === "sent" ? (
-            <Button id={SENT_CLOSE_ID} variant="primary" className="ml-auto" onClick={() => setDialog(null)}>
-              {t("security.export.sentClose")}
-            </Button>
-          ) : (
-            <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button variant="ghost" onClick={() => setDialog(null)} disabled={submitting}>
-                {t("common.cancel")}
-              </Button>
-              <Button variant="primary" iconLeft={Send} loading={submitting} onClick={() => void submit()}>
-                {submitting ? t("security.export.submitting") : t("security.export.confirm")}
-              </Button>
-            </div>
-          )
-        }
-      >
-        {dialog === "sent" ? (
-          <div role="status" className="grid gap-3 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
-            <p className="m-0">{t("security.export.sentBody", { email: profile?.email })}</p>
-          </div>
-        ) : (
-          <>
-            <ol className="m-0 grid list-none gap-3 p-0">
-              {(["step1", "step2", "step3"] as const).map((step, i) => (
-                <li key={step} className="flex items-start gap-3 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
-                  <span
-                    aria-hidden="true"
-                    className="grid h-6 w-6 flex-none place-items-center rounded-full bg-[var(--surface-brand-wash)] text-[length:var(--text-caption)] font-bold text-[var(--gt-blue-700)]"
-                  >
-                    {i + 1}
-                  </span>
-                  <span>{t(`security.export.${step}`, { email: profile?.email, days: EXPORT_AVAILABLE_DAYS })}</span>
-                </li>
-              ))}
-            </ol>
-            {failed && (
-              <Notice tone="error" live="alert" title={t("security.errors.serverTitle")}>
-                {t("security.export.failedBody")}
-              </Notice>
-            )}
-          </>
-        )}
-      </Dialog>
+      <div>
+        <Button variant="dark" iconLeft={Download} loading={preparing} onClick={() => void download()}>
+          {preparing ? t("security.export.preparing") : t("security.export.download")}
+        </Button>
+      </div>
     </SecurityCard>
   );
 }

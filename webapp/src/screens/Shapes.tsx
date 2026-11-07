@@ -17,7 +17,7 @@ import { isShapeFirstFamily, shapeHref } from "../lib/shopUrl";
  *  each leading to the shop already filtered on family and cut. A cut is shown
  *  by its plain Crystal gem's photo when there is one, else by its line drawing. */
 export function Shapes() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { products } = useCatalog();
   const { familyName } = useTaxonomy();
   const [params] = useSearchParams();
@@ -45,7 +45,7 @@ export function Shapes() {
         <SelectorTile
           key={group.shape}
           to={shapeHref(group.shape, family ?? undefined)}
-          ariaLabel={t("home.shapeTileAria", { shape: shapeName(group.shape), count: group.count })}
+          ariaLabel={t("home.shapeTileAria", { shape: shapeName(group.shape, i18n.language), count: group.count })}
           media={
             group.image ? (
               <img src={group.image} alt="" loading="lazy" decoding="async" className="h-[88px] w-[88px] object-contain mix-blend-multiply" />
@@ -53,7 +53,7 @@ export function Shapes() {
               <ShapeGlyph shape={group.shape} size={58} />
             )
           }
-          label={shapeName(group.shape)}
+          label={shapeName(group.shape, i18n.language)}
           count={t("home.shapeCount", { count: group.count })}
         />
       ))}

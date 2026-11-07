@@ -255,30 +255,18 @@
       "menu": "Share",
       "native": "Share the image…",
       "nativeSub": "Instagram, WhatsApp, Messages… from your device",
-      "networks": "Social networks",
-      "whatsapp": "WhatsApp",
-      "facebook": "Facebook",
-      "x": "X (Twitter)",
-      "linkedin": "LinkedIn",
-      "email": "Email",
       "copyLink": "Copy the read-only link",
       "manageLink": "Manage the share link…",
       "saveFirst": "Save to share",
       "saveFirstSub": "The shared link opens the saved design, read-only",
       "lookingUp": "Looking up the share link…",
       "createLink": "Create a read-only link…",
-      "createLinkSub": "To post on social networks: the design opens in 3D and can't be changed",
+      "createLinkSub": "Whoever has the link sees the creation in 3D and cannot change it",
       "unsavedHint": "Unsaved changes don't appear through the link.",
       "title": "My tooth gem design — Global Toothgems 3D Studio",
       "message": "Take a look at the tooth gem design I created in the Global Toothgems 3D Studio!",
-      "instagram": "Instagram",
-      "tiktok": "TikTok",
-      "pinterest": "Pinterest",
-      "snapchat": "Snapchat",
-      "threads": "Threads",
-      "telegram": "Telegram",
-      "pasteHint": "Link copied and {{network}} opened: paste it into a story “Link” sticker or your bio.",
-      "networksHint": "Each network gets the read-only link; its preview shows the render of the saved creation."
+      "linkSection": "Read-only link",
+      "copyLinkSub": "Paste it anywhere: the creation opens in 3D and cannot be changed"
     },
     "quote": {
       "title": "Design estimate",
@@ -588,8 +576,7 @@
         "empty": "This file contains no 3D model"
       },
       "addedToCart_one": "{{count}} item added to your cart",
-      "addedToCart_other": "{{count}} items added to your cart",
-      "linkCopiedPaste": "Link copied — paste it into a story “Link” sticker or your {{network}} bio"
+      "addedToCart_other": "{{count}} items added to your cart"
     },
     "pieceUnavailable": "Gem no longer in the shop",
     "shopPrice": "Shop price: {{price}}",
@@ -743,7 +730,7 @@
         "studio": "3D editor and the whole gem library",
         "tools": "Front view, placement sheet, sharing by link",
         "templates": "Global Toothgems templates",
-        "posts": "Posts for social networks: HD image, 360° video, GIF",
+        "posts": "Posts for social networks: HD image, 360° video",
         "signature": "Signature on posts",
         "layouts": "Post layout templates",
         "glowbook": "Your Glowbook, the public showcase of your creations",
@@ -828,6 +815,8 @@
   "tryOn": {
     "action": "Try on a smile",
     "editorSub": "The saved creation, rendered by AI on a smile photo",
+    "editorNoticeSave": "Save the creation first: the try-on uses its saved version.",
+    "editorNoticeEmpty": "Add at least one gem and save the creation to try it on.",
     "title": "Try on a smile",
     "subtitle": {
       "artist": "“{{name}}” on a photo of your client’s smile.",
@@ -855,7 +844,7 @@
       "previewAlt": "Chosen smile photo",
       "formats": "JPEG, PNG, WebP or HEIC · {{maxMb}} MB max · at least {{minWidth}} × {{minHeight}} pixels",
       "reading": "Reading the photo…",
-      "privacy": "For the render, the photo is sent encrypted to Global Toothgems and then to Google (Gemini) while the image is created: Global Toothgems does not keep it. Its metadata (GPS location, device, date) is removed before sending.",
+      "privacy": "For the render, the photo is sent encrypted to Global Toothgems and then to Google (Gemini) while the image is created: Global Toothgems does not keep it. Its metadata (GPS location, device, date) is removed before sending. The photo and the render then stay on this device only, 24 hours at most, so you can find them again if you close the page.",
       "consent": {
         "artist": "The person in the photo has agreed to its use",
         "visitor": "This is a photo of me and I agree to its use for this try-on"
@@ -897,7 +886,6 @@
       },
       "rendering": {
         "title": "Creating the render…",
-        "body": "The gems are placed on the teeth at their real size, then the AI makes them look real. It usually takes less than a minute.",
         "lines": [
           "Placing each gem on its tooth…",
           "Preparing the 3D creation…",
@@ -906,7 +894,8 @@
           "Finishing…"
         ]
       },
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "background": "You can close this window and carry on in the Studio: a message tells you when the render is ready. Keep this page open until then."
     },
     "errors": {
       "not_available": {
@@ -959,7 +948,7 @@
       "beforeTag": "Before",
       "disclaimer": "AI-generated image: a preview to picture it, not an exact promise of the finished result.",
       "regenerate": "Generate again",
-      "notStored": "Global Toothgems does not keep the image: download it to keep it.",
+      "notStored": "Global Toothgems does not keep the image. It stays on this device for 24 hours at most, then is erased: download it to keep it.",
       "before": "Before / after",
       "download": "Download image",
       "downloaded": "Image downloaded.",
@@ -967,7 +956,8 @@
       "shareText": "“{{name}}”, tried on with the Global Toothgems 3D Studio",
       "shareFailed": "Sharing did not work. Try again or download the image.",
       "leftOut_one": "{{count}} gem of the creation was not placed: the spot of the tooth it goes on does not show on this photo (hidden by a lip or other teeth).",
-      "leftOut_other": "{{count}} gems of the creation were not placed: the spots of the teeth they go on do not show on this photo (hidden by a lip or other teeth)."
+      "leftOut_other": "{{count}} gems of the creation were not placed: the spots of the teeth they go on do not show on this photo (hidden by a lip or other teeth).",
+      "forget": "Erase from this device"
     },
     "visitor": {
       "title": "Try it on my smile",
@@ -999,6 +989,25 @@
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
       "hint": "Pinch or double-tap to zoom."
+    },
+    "job": {
+      "running": "Trying on “{{name}}”…",
+      "result": "Your try-on of “{{name}}” is ready",
+      "error": "The try-on of “{{name}}” did not work",
+      "interrupted": "The try-on of “{{name}}” was interrupted",
+      "open": "View",
+      "resume": "Resume",
+      "dismiss": "Hide",
+      "tabTitle": "✨ Your try-on is ready",
+      "otherRunning": "A try-on of “{{name}}” is under way: starting a new one here will stop it.",
+      "interruptedTitle": "The render was interrupted",
+      "interruptedBody": "The page was closed or reloaded during the render. Resume it with the same photo, without sending it again."
+    },
+    "saved": {
+      "title": "Your try-ons on this device",
+      "body": "Kept on this device only, 24 hours at most, and erased when you sign out.",
+      "show": "View the try-on from {{time}} again",
+      "remove": "Erase the try-on from {{time}} from this device"
     }
   },
   "frontView": {

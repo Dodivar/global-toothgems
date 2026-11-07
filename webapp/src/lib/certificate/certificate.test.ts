@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { A4_LANDSCAPE_PT, jpegToPdf } from "./pdf";
 import { fitSize, layoutCertificate, PAGE, textWidth, WORDMARK_RATIO, wrapLines, type CertificateContent } from "./layout";
 import { certificateHolder } from "./holder";
-import { certificateFileName, linkedInCertificationUrl, SHARE_NETWORKS, shareDestination } from "./share";
+import { certificateFileName } from "./share";
 import { sampleCertificateRef } from "../../components/account/CertificateCard";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4, 0xff, 0xd9]);
@@ -117,25 +117,6 @@ describe("text estimates", () => {
 });
 
 describe("sharing", () => {
-  it("opens each network with the caption where it accepts one", () => {
-    const caption = "I just completed “Basics” with Global Toothgems ✦ #toothgems";
-    expect(shareDestination("x", caption, "s")).toBe(`https://x.com/intent/tweet?text=${encodeURIComponent(caption)}`);
-    expect(shareDestination("linkedin", caption, "s")).toContain(`text=${encodeURIComponent(caption)}`);
-    expect(shareDestination("email", caption, "Subject & more")).toBe(`mailto:?subject=${encodeURIComponent("Subject & more")}&body=${encodeURIComponent(caption)}`);
-    for (const network of SHARE_NETWORKS) expect(shareDestination(network, caption, "s")).toMatch(/^(https:\/\/|mailto:)/);
-  });
-
-  it("pre-fills LinkedIn's certification form", () => {
-    const url = new URL(linkedInCertificationUrl({ courseTitle: "Pose & hygiène", awardedOn: "2026-03-09", reference: "GTC-1A2B-3C4D-5E6F" }));
-    expect(url.origin + url.pathname).toBe("https://www.linkedin.com/profile/add");
-    expect(url.searchParams.get("startTask")).toBe("CERTIFICATION_NAME");
-    expect(url.searchParams.get("name")).toBe("Pose & hygiène");
-    expect(url.searchParams.get("organizationName")).toBe("Global Toothgems");
-    expect(url.searchParams.get("issueYear")).toBe("2026");
-    expect(url.searchParams.get("issueMonth")).toBe("3");
-    expect(url.searchParams.get("certId")).toBe("GTC-1A2B-3C4D-5E6F");
-  });
-
   it("names files in ASCII with the reference", () => {
     expect(certificateFileName("Pose experte : l’art du strass", "GTC-1A2B-3C4D-5E6F", "pdf")).toBe(
       "global-toothgems-pose-experte-l-art-du-strass-gtc-1a2b-3c4d-5e6f.pdf",

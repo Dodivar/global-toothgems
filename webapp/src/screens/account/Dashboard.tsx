@@ -2,16 +2,19 @@
 
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../../lib/navigation";
-import { ArrowRight, Award, BookOpen, GraduationCap, ListVideo, Package, PlayCircle } from "lucide-react";
-import { Button } from "../../components/ui/Button";
+import { ArrowRight, GraduationCap, LayoutGrid, ListVideo } from "lucide-react";
 import { CourseCard } from "../../components/ui/CourseCard";
 import { courseCardData } from "../../components/academy/courseCard";
 import { EnrolledCourseRow } from "../../components/account/EnrolledCourseRow";
-import { EmptyPanel, SectionHeader } from "../../components/account/SectionHeader";
-import { StatTile } from "../../components/account/StatTile";
+import { SectionHeader } from "../../components/account/SectionHeader";
 import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
 import { LoungeActivityCard } from "../../components/communityChat/LoungeActivityCard";
-import { pick } from "../../data/types";
+import { ResumeCourseCard } from "../../components/account/dashboard/ResumeCourseCard";
+import { ShipmentCard } from "../../components/account/dashboard/ShipmentCard";
+import { LoyaltyTile } from "../../components/account/dashboard/LoyaltyTile";
+import { StudioTile } from "../../components/account/dashboard/StudioTile";
+import { CertificatesTile } from "../../components/account/dashboard/CertificatesTile";
+import { FavoritesTile } from "../../components/account/dashboard/FavoritesTile";
 import { useAuth } from "../../lib/auth";
 import { useOrders } from "../../lib/orders";
 import { useCourseMediaUrl, useProgress } from "../../lib/progress";
@@ -19,24 +22,40 @@ import { useReviewRequests } from "../../lib/reviews";
 import { useAcademy } from "../../lib/academy/AcademyProvider";
 import { courseSlug } from "../../lib/academy/publicCourse";
 import { courseHref, learnHref, lessonHref } from "../../lib/academyUrl";
+import { earnedCertificates, ordersOnTheirWay } from "../../lib/memberDashboard";
+import { StudioAccessProvider } from "../../lib/studioAccess";
 
 /**
- * Home of the member area: what the account is worth in figures, the lesson to
- * resume, the courses being followed and the ones still available.
+ * Home of the member area, phone first: what needs the member now, then what
+ * is true about the account, then the courses.
  *
- * It owns no state. Progress comes from `lib/progress.tsx` (the courses the
- * member holds, from the server), orders from `lib/orders.tsx`, and the
- * courses still available from the published Academy (`lib/academy`), so
- * validating a lesson in the player moves these numbers immediately. A
- * withdrawn course stays listed, greyed out ("back soon"), and is never offered
- * to resume.
+ * 1. Things to do, most urgent first, each only when it exists: the parcel on
+ *    its way, the lesson to resume, the review to leave.
+ * 2. "Your account": cards that each say something concrete — the loyalty
+ *    card and what is missing for the reward, the Studio plan in use, the
+ *    certificates earned, the favourites on sale. A card with nothing true to
+ *    say is not drawn; bare counts (orders, lessons) are deliberately gone.
+ * 3. The Members' Lounge (course holders and staff only), the courses held,
+ *    then the ones still available — each section only when it has content.
+ *
+ * It owns no state: every card reads its own store (`lib/orders`,
+ * `lib/progress`, `lib/loyalty`, `lib/studioAccess`, `lib/favorites`), all
+ * limited to the member's own rows by RLS; the choices are `lib/memberDashboard.ts`.
  */
 export function Dashboard() {
+  return (
+    <StudioAccessProvider>
+      <DashboardContent />
+    </StudioAccessProvider>
+  );
+}
+
+function DashboardContent() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const lang = i18n.language;
   const { displayName } = useAuth();
-  const { openCourse, progressFor, enrolledCourses, trainingFor } = useProgress();
+  const { openCourse, progressFor, enrolledCourses, trainingFor, activeCourseId } = useProgress();
   const { courses: catalogue } = useAcademy();
   const mediaUrl = useCourseMediaUrl();
   const locale = lang.startsWith("en") ? "en" : "fr";
@@ -50,11 +69,16 @@ export function Dashboard() {
   const progressByCourse = enrolled.map((course) => ({ course, progress: progressFor(course.id) }));
 
   const inProgress = progressByCourse.filter(({ course, progress }) => course.status !== "unpublished" && !progress.completed);
-  // The same count as the certificates page: completed courses that issue one.
-  const certificates = progressByCourse.filter(({ course, progress }) => course.issuesCertificate && progress.completed).length;
-  const lessonsDone = progressByCourse.reduce((sum, { progress }) => sum + progress.doneCount, 0);
-  /** The course the "resume" card offers: the least advanced one still open. */
-  const resume = inProgress.slice().sort((a, b) => a.progress.pct - b.progress.pct)[0] ?? null;
+  /**
+   * The course the "resume" card offers: the one last opened, where the member
+   * stopped; else the most advanced one still open — the closest to its certificate.
+   */
+  const resume =
+    inProgress.find(({ course }) => course.id === activeCourseId) ??
+    inProgress.slice().sort((a, b) => b.progress.pct - a.progress.pct)[0] ??
+    null;
+  const certificates = earnedCertificates(progressByCourse);
+  const onTheirWay = ordersStatus === "ready" ? ordersOnTheirWay(orders) : [];
 
   /** A course row opens its overview; the resume card goes straight to the lesson. */
   const open = (courseId: string) => {
@@ -71,102 +95,57 @@ export function Dashboard() {
       <section className="grid gap-5">
         <SectionHeader eyebrow={t("account.eyebrow")} title={t("account.greeting", { name: displayName })} />
 
-        {/* The single most useful control on the dashboard, so it keeps the dark
-            treatment while the rest of the member area stays light, and comes
-            before the figures: on a phone it is the first thing under the greeting. */}
-        {resume ? (
-          <div className="grid grid-cols-1 gap-5 rounded-[var(--radius-card)] bg-[var(--surface-inverse)] p-[var(--space-5)] text-[var(--text-inverse)] sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
-            <div className="relative aspect-video overflow-hidden rounded-[var(--radius-md)]">
-              <img
-                src={mediaUrl(resume.course.cover) || undefined}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full object-cover"
-              />
-              <span className="absolute inset-0 grid place-items-center text-white/90">
-                <PlayCircle size={40} strokeWidth={1.5} aria-hidden="true" />
-              </span>
-            </div>
-            <div className="grid content-center gap-3">
-              <span className="text-[length:var(--text-eyebrow)] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-300)]">
-                {t("account.resumeEyebrow")}
-              </span>
-              <strong className="text-[length:var(--text-h4)] text-[var(--gt-off-white)]">
-                {t("account.resumeLesson", {
-                  number: resume.progress.activeIdx + 1,
-                  title: resume.progress.current ? pick(resume.progress.current.title, lang) : "",
-                })}
-              </strong>
-              <span className="text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)]">
-                {pick(resume.course.title, lang)} ·{" "}
-                {resume.progress.current &&
-                  `${pick(trainingFor(resume.course.id)?.modules[resume.progress.current.moduleIndex]?.title ?? { fr: "", en: "" }, lang)} · `}
-                {t("account.resumeRemaining", { minutes: resume.progress.remainingMinutes })}
-              </span>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button variant="primary" iconRight={ArrowRight} onClick={() => resumeLesson(resume.course.id, resume.progress.current?.key)}>
-                  {t("account.resumeCta")}
-                </Button>
-                <span className="text-[length:var(--text-caption)] tabular-nums text-[var(--gt-ink-300)]">
-                  {t("lesson.progressLabel", { done: resume.progress.doneCount, total: resume.progress.total })} ·{" "}
-                  {resume.progress.pct}%
-                </span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-card)] bg-[var(--surface-inverse)] p-[var(--space-5)] text-[var(--text-inverse)]">
-            <div className="grid gap-1">
-              <strong className="text-[length:var(--text-h4)] text-[var(--gt-off-white)]">
-                {t("account.resumeDoneTitle")}
-              </strong>
-              <span className="text-[length:var(--text-body-sm)] text-[var(--gt-ink-300)]">
-                {t("account.resumeDoneBody")}
-              </span>
-            </div>
-            <Button variant="primary" iconRight={ArrowRight} onClick={() => navigate("/academy")}>
-              {t("account.resumeDoneCta")}
-            </Button>
-          </div>
-        )}
+        {/* What needs the member now. On a phone these come straight under the greeting. */}
+        <ShipmentCard orders={onTheirWay} />
 
-        <dl aria-label={t("account.statsLabel")} className="m-0 grid grid-cols-2 gap-3 xl:grid-cols-4">
-          <StatTile value={String(inProgress.length)} label={t("account.statCourses")} icon={BookOpen} />
-          <StatTile value={String(lessonsDone)} label={t("account.statLessons")} icon={PlayCircle} />
-          <StatTile value={String(certificates)} label={t("account.statCertificates")} icon={Award} />
-          {/* No count until the history has answered: "0" would be a wrong answer, not a pending one. */}
-          <StatTile
-            value={ordersStatus === "ready" ? String(orders.length) : "—"}
-            label={t("account.statOrders")}
-            icon={Package}
+        {resume && (
+          <ResumeCourseCard
+            title={resume.course.title}
+            cover={mediaUrl(resume.course.cover)}
+            moduleTitle={
+              resume.progress.current
+                ? (trainingFor(resume.course.id)?.modules[resume.progress.current.moduleIndex]?.title ?? null)
+                : null
+            }
+            progress={resume.progress}
+            onResume={() => resumeLesson(resume.course.id, resume.progress.current?.key)}
           />
-        </dl>
+        )}
       </section>
 
       {reviewRequest && <ReviewRequestCard request={reviewRequest} />}
 
-      <LoungeActivityCard />
-
-      <section className="grid gap-5">
+      {/* Each card draws itself only when it has something true to say; an empty
+          grid collapses (`:has`), so the heading never stands over nothing. */}
+      <section aria-labelledby="gt-dashboard-account" className="grid gap-5 [&:not(:has(li))]:hidden">
         <div className="grid gap-2">
           <span className="gt-eyebrow flex items-center gap-2">
-            <GraduationCap size={13} aria-hidden="true" />
-            {t("account.coursesEyebrow")}
+            <LayoutGrid size={13} aria-hidden="true" />
+            {t("account.dashboard.accountEyebrow")}
           </span>
-          <h2 className="text-[length:var(--text-h3)]">{t("account.coursesTitle")}</h2>
+          <h2 id="gt-dashboard-account" className="text-[length:var(--text-h3)]">
+            {t("account.dashboard.accountTitle")}
+          </h2>
         </div>
-        {enrolled.length === 0 ? (
-          <EmptyPanel
-            action={
-              <Button variant="outline" size="sm" iconRight={ArrowRight} onClick={() => navigate("/academy")}>
-                {t("account.resumeDoneCta")}
-              </Button>
-            }
-          >
-            {t("account.coursesEmpty")}
-          </EmptyPanel>
-        ) : (
+        <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 xl:grid-cols-3">
+          <LoyaltyTile />
+          <StudioTile />
+          <CertificatesTile earned={certificates} lang={lang} />
+          <FavoritesTile />
+        </ul>
+      </section>
+
+      <LoungeActivityCard />
+
+      {enrolled.length > 0 && (
+        <section className="grid gap-5">
+          <div className="grid gap-2">
+            <span className="gt-eyebrow flex items-center gap-2">
+              <GraduationCap size={13} aria-hidden="true" />
+              {t("account.coursesEyebrow")}
+            </span>
+            <h2 className="text-[length:var(--text-h3)]">{t("account.coursesTitle")}</h2>
+          </div>
           <ul className="m-0 grid list-none gap-4 p-0">
             {progressByCourse.map(({ course, progress }) => (
               <EnrolledCourseRow
@@ -178,28 +157,29 @@ export function Dashboard() {
               />
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
 
-      <section className="grid gap-5">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="grid gap-2">
-            <span className="gt-eyebrow flex items-center gap-2">
-              <ListVideo size={13} aria-hidden="true" />
-              {t("account.availableEyebrow")}
-            </span>
-            <h2 className="text-[length:var(--text-h3)]">{t("account.availableTitle")}</h2>
+      {available.length > 0 && (
+        <section className="grid gap-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="grid gap-2">
+              <span className="gt-eyebrow flex items-center gap-2">
+                <ListVideo size={13} aria-hidden="true" />
+                {t(enrolled.length > 0 ? "account.availableEyebrow" : "account.dashboard.discoverEyebrow")}
+              </span>
+              <h2 className="text-[length:var(--text-h3)]">
+                {t(enrolled.length > 0 ? "account.availableTitle" : "account.dashboard.discoverTitle")}
+              </h2>
+            </div>
+            <Link
+              to="/academy"
+              className="inline-flex items-center gap-1 text-[length:var(--text-caption)] text-[var(--text-muted)] underline decoration-1 underline-offset-4 hover:text-[var(--text-primary)]"
+            >
+              {t("account.availableCta")}
+              <ArrowRight size={12} aria-hidden="true" />
+            </Link>
           </div>
-          <Link
-            to="/academy"
-            className="text-[length:var(--text-caption)] text-[var(--text-muted)] underline decoration-1 underline-offset-4 hover:text-[var(--text-primary)]"
-          >
-            {t("account.availableCta")}
-          </Link>
-        </div>
-        {available.length === 0 ? (
-          <EmptyPanel>{t("account.availableAllDone")}</EmptyPanel>
-        ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {available.map((course) => (
               <CourseCard
@@ -209,8 +189,8 @@ export function Dashboard() {
               />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </>
   );
 }

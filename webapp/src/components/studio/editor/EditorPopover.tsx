@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, type ReactNode } from "react";
 import clsx from "clsx";
-import { Lock } from "lucide-react";
+import { Lock, TriangleAlert } from "lucide-react";
 
 /**
  * A panel anchored under a toolbar button, for the editor's Presets and Export
@@ -112,7 +112,10 @@ export function PopoverSeparator() {
 /**
  * One action row: icon, label and an optional second line. A `locked` row is
  * a feature below the member's plan: muted, with a lock, its second line
- * naming the plan; it still opens (the plan panel).
+ * naming the plan; it still opens (the plan panel). A `notice` row is an
+ * action not available yet (e.g. the design must be saved first): greyed,
+ * inert (`aria-disabled`, still focusable so the notice is read), with the
+ * notice as a warning line in place of `sub`.
  */
 export function PopoverItem({
   icon,
@@ -121,6 +124,7 @@ export function PopoverItem({
   onClick,
   destructive,
   locked,
+  notice,
 }: {
   icon: ReactNode;
   label: string;
@@ -128,27 +132,39 @@ export function PopoverItem({
   onClick: () => void;
   destructive?: boolean;
   locked?: boolean;
+  notice?: string;
 }) {
+  const inert = Boolean(notice);
   return (
     <button
       type="button"
-      onClick={onClick}
+      aria-disabled={inert || undefined}
+      onClick={inert ? undefined : onClick}
       className={clsx(
         "flex w-full min-w-0 items-start gap-2.5 rounded-[var(--radius-sm)] px-2.5 py-2 text-left text-[length:var(--text-body-sm)] font-semibold transition-colors",
         "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-        destructive
+        inert
+          ? "cursor-not-allowed text-[var(--text-subtle)]"
+          : destructive
           ? "text-[var(--status-error-fg)] hover:bg-[var(--status-error-bg)]"
           : locked
             ? "text-[var(--text-muted)] hover:bg-[var(--surface-brand-wash)]"
             : "text-[var(--text-primary)] hover:bg-[var(--surface-brand-wash)]",
       )}
     >
-      <span aria-hidden="true" className={clsx("mt-0.5 flex-none", destructive ? "" : locked ? "text-[var(--text-subtle)]" : "text-[var(--gt-blue-600)]")}>
+      <span aria-hidden="true" className={clsx("mt-0.5 flex-none", destructive ? "" : locked || inert ? "text-[var(--text-subtle)]" : "text-[var(--gt-blue-600)]")}>
         {icon}
       </span>
       <span className="grid min-w-0 flex-1">
         <span className="truncate">{label}</span>
-        {sub && <span className="text-[11.5px] font-medium leading-snug text-[var(--text-muted)]">{sub}</span>}
+        {notice ? (
+          <span className="mt-1 flex items-start gap-1.5 rounded-[var(--radius-sm)] bg-[var(--status-warning-bg)] px-2 py-1 text-[11.5px] font-medium leading-snug text-[var(--status-warning-fg)]">
+            <TriangleAlert size={12} aria-hidden="true" className="mt-0.5 flex-none" />
+            {notice}
+          </span>
+        ) : (
+          sub && <span className="text-[11.5px] font-medium leading-snug text-[var(--text-muted)]">{sub}</span>
+        )}
       </span>
       {locked && <Lock size={13} aria-hidden="true" className="mt-1 flex-none text-[var(--text-subtle)]" />}
     </button>

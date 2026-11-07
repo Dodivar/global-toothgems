@@ -1,4 +1,5 @@
-import { Link, useLanguageSwitch } from "../../lib/navigation";
+import { LanguageMenu } from "./LanguageMenu";
+import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { useFooterColumns } from "./useFooterColumns";
 import { useVatFranchise } from "../../lib/vatRegime";
@@ -6,7 +7,6 @@ import logoBlue from "../../assets/logo-wordmark-blue.svg";
 
 export function Footer() {
   const { t } = useTranslation();
-  const switchLanguage = useLanguageSwitch();
   const columns = useFooterColumns();
   // Read after hydration: the server renders the copyright alone.
   const franchise = useVatFranchise();
@@ -49,14 +49,7 @@ export function Footer() {
             {t("footer.copyright")}
             {franchise !== null && ` · ${t(franchise ? "footer.vatFranchise" : "footer.pricesInclVat")}`}
           </span>
-          <button
-            type="button"
-            onClick={switchLanguage}
-            aria-label={t("common.langSwitchAria")}
-            className="underline decoration-1 underline-offset-4 transition-colors hover:text-[var(--text-primary)]"
-          >
-            FR · EN
-          </button>
+          <LanguageMenu placement="above" />
         </div>
       </div>
     </footer>

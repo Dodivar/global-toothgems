@@ -81,3 +81,67 @@ export function readTeeth(value: unknown, size: { width: number; height: number 
   }
   return teeth;
 }
+
+/**
+ * How many times the close-up may be read for its teeth, at once, and merged
+ * (`mergeTeeth`), 2026-11-05: on the trial of that day the same photo gave
+ * boxes half a tooth to a whole tooth apart from one analysis to the next.
+ * Merging three analyses of the trial (simulated: different runs, different
+ * crops) helped two photos and slightly hurt two, about even on average once
+ * the midline check runs — not enough to pay two more calls per analysis by
+ * default. `TRY_ON_TEETH_READINGS` (1 by default) sets it, to measure on a trial.
+ */
+export const MAX_TEETH_READINGS = 5;
+
+/** `TRY_ON_TEETH_READINGS` read: 1 to `MAX_TEETH_READINGS`, 1 when missing or malformed. */
+export function teethReadings(value: string | undefined): number {
+  const n = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(n) && n >= 1 ? Math.min(MAX_TEETH_READINGS, n) : 1;
+}
+/** A reading whose midline is farther than this from the readings' median (central incisor widths) is left out of the merge. */
+const MIDLINE_SPREAD = 0.35;
+
+const median = (xs: number[]) => {
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
+
+/** Where a reading puts the midline (between 11 and 21) and how wide it finds a central incisor; null without both. */
+function midlineOf(teeth: readonly FoundTooth[]): { x: number; width: number } | null {
+  const a = teeth.find((t) => t.fdi === "11");
+  const b = teeth.find((t) => t.fdi === "21");
+  return a && b ? { x: (a.x + a.width + b.x) / 2, width: (a.width + b.width) / 2 } : null;
+}
+
+/**
+ * One set of teeth from several readings of the same close-up, and how many
+ * readings it was taken from: the readings
+ * whose midline agrees with the others' (a reading numbering the teeth a
+ * tooth off is outvoted), then for each FDI number the median box of the
+ * readings that found it — a tooth found by one reading only is dropped when
+ * two or more agree. One reading is returned as is.
+ */
+export function mergeTeeth(readings: readonly FoundTooth[][]): { teeth: FoundTooth[]; kept: number } {
+  const usable = readings.filter((r) => r.length > 0);
+  if (usable.length <= 1) return { teeth: usable[0] ? [...usable[0]] : [], kept: usable.length };
+  const mids = usable.map(midlineOf);
+  const known = mids.filter((m): m is { x: number; width: number } => m !== null);
+  let kept = usable;
+  if (known.length >= 2) {
+    const x = median(known.map((m) => m.x));
+    const width = median(known.map((m) => m.width));
+    kept = usable.filter((_, i) => mids[i] !== null && Math.abs(mids[i]!.x - x) <= MIDLINE_SPREAD * width);
+    if (kept.length === 0) kept = usable;
+  }
+  if (kept.length === 1) return { teeth: [...kept[0]], kept: 1 };
+  const order = [...new Set(kept.flatMap((r) => r.map((t) => t.fdi)))];
+  const teeth = order.flatMap((fdi) => {
+    const boxes = kept.flatMap((r) => r.filter((t) => t.fdi === fdi));
+    if (boxes.length < 2) return [];
+    const x = Math.round(median(boxes.map((t) => t.x)));
+    const y = Math.round(median(boxes.map((t) => t.y)));
+    return [{ fdi, x, y, width: Math.max(1, Math.round(median(boxes.map((t) => t.width)))), height: Math.max(1, Math.round(median(boxes.map((t) => t.height)))) }];
+  });
+  return { teeth, kept: kept.length };
+}

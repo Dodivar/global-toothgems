@@ -175,9 +175,8 @@
     "consentRequired": "Cochez la case pour confirmer que vous souhaitez recevoir la newsletter.",
     "privacy": "Nous ne partageons jamais votre adresse.",
     "privacyLink": "Politique de confidentialité",
-    "successTitle": "Vous êtes dans la boucle",
-    "successBody": "Merci — la prochaine édition arrivera sur {{email}}.",
-    "toastTitle": "Inscription enregistrée",
-    "toastBody": "Prototype : aucun e-mail n’est envoyé à ce stade."
+    "successTitle": "Plus qu’une étape",
+    "successBody": "Nous avons envoyé un lien de confirmation à {{email}}. Cliquez dessus pour recevoir la newsletter.",
+    "successHint": "Rien reçu d’ici quelques minutes ? Regardez dans les spams. Le lien est valable 48 heures."
   }
 }

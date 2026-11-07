@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
-import { CircleAlert, Clapperboard, Download, ImageUp, LoaderCircle, Lock, Trash2 } from "lucide-react";
+import { CircleAlert, Clapperboard, Download, ImageUp, LoaderCircle, Lock, Share, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import watermark from "../../../assets/logo-wordmark-blue.png";
 import { Button } from "../../ui/Button";
@@ -14,10 +14,10 @@ import type { MarkImage } from "../../../lib/studio3d/socialExport/compose";
 import { ExportError, ExportStage, loadBrandMark, type ExportErrorCode, type ExportLook } from "../../../lib/studio3d/socialExport/exporter";
 import { FORMAT_RATIOS, SHARE_FORMATS, scaledSize, type ShareFormat } from "../../../lib/studio3d/socialExport/formats";
 import { LAYOUT_TEMPLATE_IDS, layoutFor, type LayoutTemplateId } from "../../../lib/studio3d/socialExport/layouts";
-import { exportFileName, pickVideoType, TURNTABLE_GIF, TURNTABLE_VIDEO, type ImageType, type ShareOutput } from "../../../lib/studio3d/socialExport/motion";
-import { NETWORK_NAMES, SOCIAL_NETWORKS, recommendedFormat, type SocialNetwork } from "../../../lib/studio3d/socialExport/networks";
+import { exportFileName, pickVideoType, TURNTABLE_VIDEO, type ImageType, type ShareOutput } from "../../../lib/studio3d/socialExport/motion";
+import { canShareFiles } from "../../../lib/studio3d/socialShare";
+import { trackStudio } from "../../../lib/studioAnalytics";
 import type { Creation } from "../../../lib/studioWorkspace/types";
-import { NetworkButtons } from "./NetworkButtons";
 import { useShareBranding } from "./useShareBranding";
 
 type StageState = { kind: "loading" } | { kind: "ready"; stage: ExportStage } | { kind: "failed"; code: ExportErrorCode };
@@ -97,11 +97,11 @@ function fileSize(bytes: number, locale: string): string {
 }
 
 /**
- * "Create a post": a saved creation as a social network post — an HD still,
- * a 360° video or a GIF, in Story, square or portrait — with the signature
- * the member's plan allows (decision 101). Rendered on a hidden stage of its
- * own; the file is downloaded or handed to the system share sheet, never
- * uploaded.
+ * "Create a post": a saved creation as a social network post — an HD still
+ * or a 360° video, in Story, square or portrait — with the signature the
+ * member's plan allows (decision 101). Rendered on a hidden stage of its own;
+ * the file is handed to the system share sheet where the browser has one,
+ * else downloaded, and the member posts it from their own app. Never uploaded.
  */
 export default function SocialExportDialog({ creation, onClose }: { creation: Creation; onClose: () => void }) {
   const { t, i18n } = useTranslation();
@@ -122,7 +122,7 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
   const [title, setTitle] = useState(creation.name.slice(0, TITLE_MAX));
   const [handle, setHandle] = useState("");
   const [rawJob, setJob] = useState<Job>({ kind: "idle" });
-  const [destination, setDestination] = useState<SocialNetwork | "any">("any");
+  const [shareFailed, setShareFailed] = useState(false);
   const previewRef = useRef<HTMLCanvasElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -182,6 +182,8 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
   const job: Job = (rawJob.kind === "done" || rawJob.kind === "failed") && rawJob.settings !== settings ? { kind: "idle" } : rawJob;
 
   const running = job.kind === "running";
+  // Whether this browser can hand the file to the share sheet (phones, some computers).
+  const sheet = job.kind === "done" && canShareFiles(job.file);
 
   const create = async () => {
     if (stage.kind !== "ready" || running) return;
@@ -197,12 +199,11 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
       if (out === "image") {
         blob = await stage.stage.image(format, imageType, look);
         ext = imageType === "png" ? "png" : "jpg";
-      } else if (out === "video" && videoType) {
+      } else if (videoType) {
         blob = await stage.stage.video(format, videoType, look, { signal: controller.signal, onProgress });
         ext = videoType.extension;
       } else {
-        blob = await stage.stage.gif(format, look, { signal: controller.signal, onProgress });
-        ext = "gif";
+        throw new ExportError("video");
       }
       const file = new File([blob], exportFileName(creation.name, format, out, ext), { type: blob.type });
       setJob({ kind: "done", output: out, file, url: URL.createObjectURL(file), settings: startedWith });
@@ -214,10 +215,16 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
     }
   };
 
-  // Choosing where to post preselects the format that network shows best.
-  const chooseDestination = (value: SocialNetwork | "any") => {
-    setDestination(value);
-    if (value !== "any") setFormat(recommendedFormat(value, effectiveOutput));
+  // The system share sheet, right in the click: the member picks the app.
+  const shareFile = async (file: File, out: ShareOutput) => {
+    setShareFailed(false);
+    trackStudio("studio_social_share_clicked", { output: out, format, method: "share_sheet" });
+    try {
+      await navigator.share({ files: [file], title: creation.name, text: t("studio.workspace.share.nativeText", { name: creation.name }) });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return; // closed by the member
+      setShareFailed(true);
+    }
   };
 
   const onLogoPicked = (file: File | undefined) => {
@@ -265,8 +272,6 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
               <video src={job.url} aria-label={k("result.videoLabel")} className="h-full w-full object-cover" autoPlay muted loop playsInline controls />
             ) : job.kind === "done" && job.output === "video" ? (
               <video src={job.url} aria-label={k("result.videoLabel")} className="h-full w-full object-cover" muted loop playsInline controls />
-            ) : job.kind === "done" && job.output === "gif" && !reducedMotion ? (
-              <img src={job.url} alt={k("result.gifLabel")} className="h-full w-full object-cover" />
             ) : (
               <canvas
                 ref={previewRef}
@@ -291,22 +296,9 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
               </p>
             )}
           </div>
-          {job.kind === "done" && job.output === "gif" && reducedMotion && <p className="m-0 text-center text-[11.5px] text-[var(--text-muted)]">{k("result.reducedMotion")}</p>}
         </div>
 
         <div className="grid min-w-0 gap-4">
-          <label className="grid gap-1.5 text-[12.5px] font-bold text-[var(--text-primary)]">
-            {k("destination.label")}
-            <select className={fieldClass} value={destination} disabled={running} onChange={(e) => chooseDestination(e.target.value as SocialNetwork | "any")}>
-              <option value="any">{k("destination.any")}</option>
-              {SOCIAL_NETWORKS.map((n) => (
-                <option key={n} value={n}>
-                  {NETWORK_NAMES[n]}
-                </option>
-              ))}
-            </select>
-            <span className="text-[11.5px] font-normal text-[var(--text-muted)]">{k("destination.hint")}</span>
-          </label>
           <ChoiceGroup
             label={k("format.label")}
             name={`${uid}-format`}
@@ -322,14 +314,10 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
               name={`${uid}-output`}
               value={effectiveOutput}
               disabled={running}
-              onChange={(value) => {
-                setOutput(value);
-                if (destination !== "any") setFormat(recommendedFormat(destination, value));
-              }}
+              onChange={setOutput}
               options={[
                 { value: "image", label: k("output.image") },
                 { value: "video", label: k("output.video"), disabled: !videoType },
-                { value: "gif", label: k("output.gif") },
               ]}
             />
             {!videoType && <p className="m-0 text-[11.5px] text-[var(--text-muted)]">{k("output.videoUnsupported")}</p>}
@@ -338,7 +326,6 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
                 {k("output.videoHint", { seconds: TURNTABLE_VIDEO.durationMs / 1000, type: videoType.extension.toUpperCase() })}
               </p>
             )}
-            {effectiveOutput === "gif" && <p className="m-0 text-[11.5px] text-[var(--text-muted)]">{k("output.gifHint", { width: TURNTABLE_GIF.width })}</p>}
           </div>
 
           {effectiveOutput === "image" && (
@@ -485,11 +472,30 @@ export default function SocialExportDialog({ creation, onClose }: { creation: Cr
                 {k("result.ready", { file: job.file.name, size: fileSize(job.file.size, i18n.language) })}
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button variant="primary" size="sm" iconLeft={Download} onClick={() => downloadFile(job.file)}>
+                {sheet && (
+                  <Button variant="primary" size="sm" iconLeft={Share} onClick={() => void shareFile(job.file, job.output)}>
+                    {k("result.share")}
+                  </Button>
+                )}
+                <Button
+                  variant={sheet ? "outline" : "primary"}
+                  size="sm"
+                  iconLeft={Download}
+                  onClick={() => {
+                    trackStudio("studio_social_share_clicked", { output: job.output, format, method: "download" });
+                    downloadFile(job.file);
+                  }}
+                >
                   {k("result.download")}
                 </Button>
               </div>
-              <NetworkButtons creation={creation} file={job.file} format={format} output={job.output} highlight={destination === "any" ? null : destination} />
+              <p className="m-0 text-[11.5px] leading-snug text-[var(--text-muted)]">{k(sheet ? "result.shareHint" : "result.downloadHint")}</p>
+              {job.file.type.startsWith("video/webm") && <p className="m-0 text-[11.5px] leading-snug text-[var(--text-muted)]">{k("result.webmNote")}</p>}
+              {shareFailed && (
+                <p role="alert" className="m-0 text-[12px] text-[var(--status-error-fg)]">
+                  {k("result.shareFailed")}
+                </p>
+              )}
             </div>
           )}
         </div>

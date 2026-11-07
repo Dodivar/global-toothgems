@@ -3,7 +3,7 @@ import { readSiteOrigins } from "../_shared/http.ts";
 import { configProblem, generateImage, generateJson, imageModelConfig, type InlineImage } from "./gemini.ts";
 import { handleStudioTryOn, NOT_RENDERED_CODES, toBase64, type TryOnCreationRow } from "./handler.ts";
 import { DEFAULT_CHECK_MODEL, PHOTO_CHECK_PROMPT, PHOTO_CHECK_SCHEMA } from "./photoCheck.ts";
-import { TEETH_PROMPT, TEETH_SCHEMA } from "./teeth.ts";
+import { TEETH_PROMPT, TEETH_SCHEMA, teethReadings } from "./teeth.ts";
 import { designGems, gemListText } from "./gems.ts";
 import { TRY_ON_SYSTEM_PROMPT } from "./systemPrompt.ts";
 
@@ -19,7 +19,9 @@ import { TRY_ON_SYSTEM_PROMPT } from "./systemPrompt.ts";
  * analyses and refused photos included; TRY_ON_CHECK_MODEL (optional, default
  * gemini-3.1-flash-lite) is the text model of the photo check (`photoCheck.ts`),
  * on the same door as the image model; TRY_ON_TEETH_MODEL (optional, the check
- * model by default) finds each tooth on the close-up (`teeth.ts`, decision 111 (k)).
+ * model by default) finds each tooth on the close-up (`teeth.ts`, decision 111 (k));
+ * TRY_ON_TEETH_READINGS (optional, default 1, at most 5) reads it that many
+ * times at once and merges the readings (`mergeTeeth`, to measure on a trial).
  * Reference pictures: the private bucket `studio-try-on-references`
  * (root folder, JPEG / PNG / WebP, the first REFERENCE_MAX by name, at most
  * REFERENCE_MAX_BYTES in all — a picture that would pass it is skipped).
@@ -140,8 +142,13 @@ Deno.serve((req) =>
     checkPhoto: checkConfig
       ? (photo, reading) => generateJson(checkConfig, PHOTO_CHECK_PROMPT, [photo], PHOTO_CHECK_SCHEMA, null, fetch, undefined, reading === 0 ? 0 : 0.6)
       : undefined,
-    findTeeth: (image) =>
-      teethConfig ? generateJson(teethConfig, TEETH_PROMPT, [image], TEETH_SCHEMA) : Promise.resolve({ ok: false as const, detail: "teeth model not configured" }),
+    // TRY_ON_TEETH_READINGS (1 by default): readings of the teeth merged. Like the photo check, the first reading is the
+    // most likely answer, the others sampled so they are not copies of it.
+    teethReadings: teethReadings(Deno.env.get("TRY_ON_TEETH_READINGS")),
+    findTeeth: (image, reading) =>
+      teethConfig
+        ? generateJson(teethConfig, TEETH_PROMPT, [image], TEETH_SCHEMA, null, fetch, undefined, reading === 0 ? 0 : 0.6)
+        : Promise.resolve({ ok: false as const, detail: "teeth model not configured" }),
     generate: (images, text, aspectRatio) =>
       config ? generateImage(config, TRY_ON_SYSTEM_PROMPT, images, text, fetch, undefined, aspectRatio) : Promise.resolve({ ok: false, code: "failed" }),
     log,

@@ -255,30 +255,18 @@
       "menu": "Partager",
       "native": "Partager l’image…",
       "nativeSub": "Instagram, WhatsApp, Messages… depuis votre appareil",
-      "networks": "Réseaux sociaux",
-      "whatsapp": "WhatsApp",
-      "facebook": "Facebook",
-      "x": "X (Twitter)",
-      "linkedin": "LinkedIn",
-      "email": "E-mail",
       "copyLink": "Copier le lien en lecture seule",
       "manageLink": "Gérer le lien de partage…",
       "saveFirst": "Enregistrer pour partager",
       "saveFirstSub": "Le lien partagé ouvre la création enregistrée, en lecture seule",
       "lookingUp": "Recherche du lien de partage…",
       "createLink": "Créer un lien en lecture seule…",
-      "createLinkSub": "À publier sur les réseaux : la création s’ouvre en 3D, sans pouvoir être modifiée",
+      "createLinkSub": "La création s’ouvre en 3D pour qui a le lien, sans pouvoir être modifiée",
       "unsavedHint": "Les modifications non enregistrées n’apparaissent pas dans le lien.",
       "title": "Ma création tooth gems — Studio 3D Global Toothgems",
       "message": "Découvrez la création de tooth gems que j’ai imaginée dans le Studio 3D de Global Toothgems !",
-      "instagram": "Instagram",
-      "tiktok": "TikTok",
-      "pinterest": "Pinterest",
-      "snapchat": "Snapchat",
-      "threads": "Threads",
-      "telegram": "Telegram",
-      "pasteHint": "Lien copié et {{network}} ouvert : collez-le dans un sticker « Lien » de votre story ou dans votre bio.",
-      "networksHint": "Chaque réseau reçoit le lien en lecture seule ; son aperçu montre le rendu de la création enregistrée."
+      "linkSection": "Lien en lecture seule",
+      "copyLinkSub": "À coller où vous voulez : la création s’ouvre en 3D, sans pouvoir être modifiée"
     },
     "quote": {
       "title": "Estimation de la création",
@@ -588,8 +576,7 @@
         "empty": "Ce fichier ne contient aucun modèle 3D"
       },
       "addedToCart_one": "{{count}} article ajouté au panier",
-      "addedToCart_other": "{{count}} articles ajoutés au panier",
-      "linkCopiedPaste": "Lien copié — collez-le dans un sticker « Lien » de votre story ou dans votre bio {{network}}"
+      "addedToCart_other": "{{count}} articles ajoutés au panier"
     },
     "pieceUnavailable": "Gemme retirée de la boutique",
     "shopPrice": "Prix boutique : {{price}}",
@@ -743,7 +730,7 @@
         "studio": "Éditeur 3D et toute la bibliothèque de gemmes",
         "tools": "Vue de face, fiche de placement, partage par lien",
         "templates": "Modèles Global Toothgems",
-        "posts": "Publications pour les réseaux : image HD, vidéo 360°, GIF",
+        "posts": "Publications pour les réseaux : image HD, vidéo 360°",
         "signature": "Signature des publications",
         "layouts": "Modèles de mise en page des publications",
         "glowbook": "Votre Glowbook, la vitrine publique de vos créations",
@@ -828,6 +815,8 @@
   "tryOn": {
     "action": "Essayer sur un sourire",
     "editorSub": "La création enregistrée, rendue par IA sur une photo de sourire",
+    "editorNoticeSave": "Enregistrez d’abord la création : l’essai utilise sa version enregistrée.",
+    "editorNoticeEmpty": "Ajoutez au moins une pierre et enregistrez la création pour l’essayer.",
     "title": "Essayer sur un sourire",
     "subtitle": {
       "artist": "« {{name}} » sur la photo du sourire de votre client·e.",
@@ -855,7 +844,7 @@
       "previewAlt": "Photo du sourire choisie",
       "formats": "JPEG, PNG, WebP ou HEIC · {{maxMb}} Mo max · au moins {{minWidth}} × {{minHeight}} pixels",
       "reading": "Lecture de la photo…",
-      "privacy": "Pour le rendu, la photo est envoyée de façon chiffrée à Global Toothgems puis à Google (Gemini) le temps de créer l’image : elle n’est pas conservée par Global Toothgems. Ses métadonnées (position GPS, appareil, date) sont retirées avant l’envoi.",
+      "privacy": "Pour le rendu, la photo est envoyée de façon chiffrée à Global Toothgems puis à Google (Gemini) le temps de créer l’image : elle n’est pas conservée par Global Toothgems. Ses métadonnées (position GPS, appareil, date) sont retirées avant l’envoi. La photo et le rendu restent ensuite sur cet appareil uniquement, 24 h au plus, pour les retrouver si vous fermez la page.",
       "consent": {
         "artist": "La personne photographiée m’a donné son accord pour utiliser cette photo",
         "visitor": "C’est une photo de moi et j’accepte qu’elle serve à cet essai"
@@ -897,7 +886,6 @@
       },
       "rendering": {
         "title": "Création du rendu…",
-        "body": "Les pierres sont placées sur vos dents à leur taille réelle, puis l’IA les rend réalistes. En général moins d’une minute.",
         "lines": [
           "Placement de chaque pierre sur sa dent…",
           "Préparation de la création 3D…",
@@ -906,7 +894,8 @@
           "Finitions…"
         ]
       },
-      "cancel": "Annuler"
+      "cancel": "Annuler",
+      "background": "Vous pouvez fermer cette fenêtre et continuer dans le Studio : un message vous prévient quand le rendu est prêt. Gardez cette page ouverte jusque-là."
     },
     "errors": {
       "not_available": {
@@ -959,7 +948,7 @@
       "beforeTag": "Avant",
       "disclaimer": "Image générée par IA : un aperçu pour se projeter, pas une promesse exacte du résultat posé.",
       "regenerate": "Générer à nouveau",
-      "notStored": "L’image n’est pas conservée par Global Toothgems : téléchargez-la pour la garder.",
+      "notStored": "Global Toothgems ne conserve pas l’image. Elle reste sur cet appareil 24 h au plus, puis s’efface : téléchargez-la pour la garder.",
       "before": "Avant / après",
       "download": "Télécharger l’image",
       "downloaded": "Image téléchargée.",
@@ -967,7 +956,8 @@
       "shareText": "« {{name}} », essayé avec le Studio 3D Global Toothgems",
       "shareFailed": "Le partage n’a pas abouti. Réessayez ou téléchargez l’image.",
       "leftOut_one": "{{count}} gemme de la création n’a pas été posée : l’endroit de la dent où elle va n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents).",
-      "leftOut_other": "{{count}} gemmes de la création n’ont pas été posées : l’endroit des dents où elles vont n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents)."
+      "leftOut_other": "{{count}} gemmes de la création n’ont pas été posées : l’endroit des dents où elles vont n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents).",
+      "forget": "Effacer de cet appareil"
     },
     "visitor": {
       "title": "Essayer sur mon sourire",
@@ -999,6 +989,25 @@
       "zoomIn": "Zoomer",
       "zoomOut": "Dézoomer",
       "hint": "Pincez ou touchez deux fois pour zoomer."
+    },
+    "job": {
+      "running": "Essayage de « {{name}} » en cours…",
+      "result": "Votre essayage de « {{name}} » est prêt",
+      "error": "L’essayage de « {{name}} » n’a pas abouti",
+      "interrupted": "L’essayage de « {{name}} » a été interrompu",
+      "open": "Voir",
+      "resume": "Reprendre",
+      "dismiss": "Masquer",
+      "tabTitle": "✨ Votre essayage est prêt",
+      "otherRunning": "Un essayage de « {{name}} » est en cours : en lancer un nouveau ici l’arrêtera.",
+      "interruptedTitle": "Le rendu a été interrompu",
+      "interruptedBody": "La page a été fermée ou rechargée pendant le rendu. Reprenez-le avec la même photo, sans la renvoyer."
+    },
+    "saved": {
+      "title": "Vos essayages sur cet appareil",
+      "body": "Gardés uniquement sur cet appareil, 24 h au plus, et effacés à la déconnexion.",
+      "show": "Revoir l’essayage de {{time}}",
+      "remove": "Effacer l’essayage de {{time}} de cet appareil"
     }
   },
   "frontView": {

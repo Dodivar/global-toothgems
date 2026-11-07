@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blendGems, MAX_BACKGROUND, type Rgba } from "./tryOnGemBlend";
+import { blendGems, MAX_BACKGROUND, RESEAT_TARGET, type Rgba } from "./tryOnGemBlend";
 
 const W = 220;
 const H = 130;
@@ -77,9 +77,11 @@ describe("blendGems", () => {
     expect(pixel(blend.data!, 90, 105)).toEqual(pixel(original.data, 90, 105));
   });
 
-  it("keeps each drawn gem whole, even beside its mark, its surroundings matched to the photo", () => {
+  it("keeps each drawn gem whole, one drawn beside its mark moved back onto it, its surroundings matched to the photo", () => {
     expect(pixel(blend.data!, 50, 60)).toEqual([230 - 6, 20 - 6, 40 - 6]);
-    expect(pixel(blend.data!, 132, 60)[0]).toBeGreaterThan(200);
+    expect(blend.checks[1].reseated).toBe(true);
+    expect(pixel(blend.data!, 120, 60)[0]).toBeGreaterThan(200); // on its mark now
+    expect(pixel(blend.data!, 132, 60)).toEqual(pixel(original.data, 132, 60)); // not where it was drawn
     // Just outside the gem, inside the kept disc: the photo's colour, the answer's brightening taken out.
     const near = pixel(blend.data!, 50 + 10, 60);
     pixel(original.data, 60, 60).forEach((v, c) => expect(Math.abs(near[c] - v)).toBeLessThanOrEqual(1));
@@ -96,3 +98,72 @@ describe("blendGems", () => {
     expect(other.checks.every((c) => !c.found)).toBe(true);
   });
 });
+
+describe("blendGems on gems set close together", () => {
+  // A tight row of red gems (centres 2.2 half-sizes apart, as in a heart of small crystals): each gem's ring
+  // around it falls on its neighbours.
+  const row = Array.from({ length: 7 }, (_, k) => ({ id: `g${k}`, x: 50 + k * 17.6, y: 60, r: 8 }));
+  const original = photo();
+  const edited = answer(original, row);
+  const blend = blendGems(original, edited, row);
+
+  it("keeps the tooth between and around them the photo's colour", () => {
+    const off = (x: number, y: number) => {
+      const o = pixel(original.data, x, y);
+      const b = pixel(blend.data!, x, y);
+      return Math.max(...o.map((v, c) => Math.abs(b[c] - v)));
+    };
+    // Between two gems, above and below the row, inside their discs but off the gems.
+    for (const [x, y] of [[59, 69], [94, 70], [129, 50], [77, 72], [112, 49]]) expect(off(x, y)).toBeLessThanOrEqual(3);
+  });
+
+  it("still draws the gems", () => {
+    for (const m of row) expect(pixel(blend.data!, Math.round(m.x), m.y)[0]).toBeGreaterThan(200);
+  });
+});
+
+describe("blendGems moving gems back onto their marks", () => {
+  const red = (data: ArrayLike<number>, x: number, y: number) => {
+    const [r, g] = pixel(data, x, y);
+    return r > 200 && g < 60;
+  };
+  const marks = [
+    { id: "big", x: 60, y: 60, r: 8 },
+    { id: "beside", x: 150, y: 60, r: 8 },
+    { id: "fine", x: 105, y: 105, r: 8 },
+  ];
+  const original = photo();
+  // "big" drawn 1.7 times too large, "beside" 12 px to the right of its mark, "fine" as asked.
+  const edited = answer(original, [
+    { x: 60, y: 60, r: 13.6 },
+    { x: 162, y: 60, r: 8 },
+    { x: 105, y: 105, r: 8 },
+  ]);
+  const after = blendGems(original, edited, marks);
+
+  it("measures the gems as drawn and says which were moved back", () => {
+    expect(after.checks.map((c) => c.found)).toEqual([true, true, true]);
+    expect(after.checks[0].size!).toBeGreaterThan(1.3); // drawn 1.7 times too large
+    expect(after.checks.map((c) => Boolean(c.reseated))).toEqual([true, true, false]);
+  });
+
+  it("draws a gem drawn too large at the design's size", () => {
+    expect(red(edited.data, 60 + 12, 60)).toBe(true); // as drawn: red 12 px from the centre
+    expect(red(after.data!, 60, 60)).toBe(true);
+    expect(red(after.data!, 60 + 12, 60)).toBe(false); // now about RESEAT_TARGET times the mark
+    expect(red(after.data!, 60 + Math.floor(8 * RESEAT_TARGET) - 2, 60)).toBe(true);
+  });
+
+  it("moves a gem drawn beside its mark back onto it, the photo left where it was drawn", () => {
+    expect(red(edited.data, 168, 60)).toBe(true);
+    expect(red(after.data!, 150, 60)).toBe(true);
+    expect(red(after.data!, 168, 60)).toBe(false);
+  });
+
+  it("leaves a gem drawn as asked as it was", () => {
+    // As it comes out when it is the only gem: kept where and as it was drawn.
+    const alone = blendGems(original, edited, [marks[2]]);
+    for (const [x, y] of [[105, 105], [111, 105], [105, 99]]) expect(pixel(after.data!, x, y)).toEqual(pixel(alone.data!, x, y));
+  });
+});
+

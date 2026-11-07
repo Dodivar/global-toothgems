@@ -9,11 +9,10 @@ import { RESET_PASSWORD_PATH, VERIFY_EMAIL_PATH } from "./authRoutes";
  * Front-end prototype only, in the same spirit as `lib/registration.ts`. No
  * email is sent, no password is checked or stored, no archive is generated on a
  * server and no account is deleted: each operation is a timed promise whose
- * outcome a reviewer picks from the page's demo panel. The session-level
- * state (pending email, export status…) lives in `securityState.tsx`. Real recovery goes
- * through Supabase Auth (reset and verification links, rate limiting, session
- * revocation) and the export and deletion requests through server-side jobs —
- * none of which may be modelled on this file. Client-side checks here are for
+ * outcome a reviewer picks from the page's demo panel (mock mode only). The
+ * session-level state lives in `securityState.tsx`. With Supabase, recovery and
+ * credential changes go through Supabase Auth (`accountCredentials.ts`), and the
+ * data export and account deletion through `accountPrivacy.ts`. Client-side checks here are for
  * guidance only; the server re-checks everything.
  */
 
@@ -26,9 +25,6 @@ export const RESET_LINK_MINUTES = 60;
 
 /** How long an email-verification link stays valid, in hours. */
 export const VERIFY_LINK_HOURS = 24;
-
-/** How long a generated data archive stays downloadable, in days. */
-export const EXPORT_AVAILABLE_DAYS = 7;
 
 /** Seconds the resend buttons stay locked after a send. */
 const SECURITY_RESEND_COOLDOWN = 30;
@@ -148,10 +144,7 @@ export async function changePassword(currentPassword: string, _next: string, out
   if (currentPassword !== DEMO_CURRENT_PASSWORD) throw new SecurityServiceError("wrongPassword");
 }
 
-export async function submitExportRequest(outcome: ServiceOutcome) {
-  await call(1100, outcome);
-}
-
+/** Mock mode only: the deletion of a demo session (live: `lib/accountPrivacy.ts`). */
 export async function deleteAccount(outcome: ServiceOutcome) {
   await call(1800, outcome);
 }

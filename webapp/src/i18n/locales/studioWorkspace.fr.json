@@ -562,12 +562,12 @@
         ]
       },
       "exports": {
-        "title": "Le menu Partager : réseaux, images, préparer la pose",
+        "title": "Le menu Partager : partage, images, préparer la pose",
         "body": [
           "Le menu Partager de l’éditeur regroupe tout ce qui sort du Studio :"
         ],
         "points": [
-          "Réseaux sociaux : le lien en lecture seule de la création enregistrée, à envoyer sur chaque réseau ou à copier (voir le sujet dédié).",
+          "Partager : l’image par le menu de partage de votre appareil (vous choisissez l’application), et le lien en lecture seule de la création enregistrée, à copier et coller où vous voulez (voir le sujet dédié).",
           "Capture PNG : la vue actuelle de la scène, sur le fond du Studio, avec le logo Global Toothgems.",
           "PNG sans fond (abonnements Artiste et Atelier) : la même vue sans fond, à poser sur vos propres visuels.",
           "Préparer la pose : la fiche d’estimation (PNG, le rendu, le détail chiffré et le total, avec le nom que vous saisissez), la fiche de pose (PDF, voir le sujet dédié) et l’essayage par IA (abonnement Atelier).",
@@ -588,11 +588,11 @@
           "Depuis le détail d’une création, « Créer un post » prépare un visuel prêt à publier, dessiné entièrement sur votre appareil (rien n’est publié sans vous) :"
         ],
         "points": [
-          "Type : image HD (PNG le plus net, ou JPEG plus léger), vidéo 360° (un tour complet en boucle) ou GIF 360° (plus léger, pour les messages).",
-          "Format : Story, carré ou portrait ; choisissez le réseau visé et le format le mieux affiché est proposé.",
+          "Type : image HD (PNG le plus net, ou JPEG plus léger), ou vidéo 360° (un tour complet en boucle, en MP4 sur téléphone et Safari).",
+          "Format : Story (9:16), carré ou portrait (4:5).",
           "Signature : avec la formule Essentielle et l’essai, le filigrane Global Toothgems figure sur chaque export. Les formules Artiste et Atelier signent avec votre propre logo (PNG, JPEG ou WebP, 2 Mo max.) ou sans rien. La formule Atelier ajoute des mises en page (fond, cadre, titre et votre compte).",
-          "Publier : sur téléphone, chaque bouton de réseau ouvre le menu de partage avec le fichier. Sur ordinateur, Facebook, Pinterest, X, Threads et WhatsApp partagent la page publique de la création (Glowbook ou lien de partage) ; pour les autres, le fichier est téléchargé et la page du réseau s’ouvre.",
-          "Gardez l’onglet ouvert pendant l’enregistrement d’une vidéo. Instagram, TikTok et Snapchat n’acceptent pas les GIF ; certains navigateurs d’ordinateur enregistrent en WebM, que certains réseaux refusent : un téléphone ou Safari enregistre en MP4."
+          "Publier : « Partager » ouvre le menu de partage de votre appareil avec le fichier (Instagram, TikTok, WhatsApp, Photos…) ; « Télécharger » enregistre le fichier, à publier ensuite depuis l’application ou le site de votre choix.",
+          "Gardez l’onglet ouvert pendant l’enregistrement d’une vidéo. Certains navigateurs d’ordinateur enregistrent en WebM, que certaines applications refusent : un téléphone ou Safari enregistre en MP4."
         ]
       },
       "tryOn": {
@@ -672,6 +672,13 @@
         ]
       }
     }
+  },
+  "phoneNotice": {
+    "title": "Le Studio 3D est pensé pour un grand écran",
+    "body": "Sur téléphone, l’expérience est dégradée : l’écran est trop petit pour placer précisément les gemmes et manipuler la scène 3D avec confort. Nous vous conseillons vivement d’utiliser une tablette ou un ordinateur.",
+    "hint": "Vous pouvez tout de même continuer ici : vos créations sont enregistrées dans votre compte et vous les retrouverez sur un autre appareil.",
+    "close": "Fermer l’avertissement",
+    "continue": "Continuer sur téléphone"
   },
   "onboarding": {
     "progress": "Étape {{step}} sur {{total}}",
@@ -828,7 +835,6 @@
     "noteUnsaved": "Cette création a des modifications non enregistrées sur la scène : elles ne sont pas dans ce lien.",
     "noteLive": "Le lien montre toujours la dernière version enregistrée de cette création. Vous pouvez le désactiver à tout moment.",
     "noteUnsavedLive": "Cette création a des modifications non enregistrées sur la scène : enregistrez-les pour qu’elles apparaissent dans le lien.",
-    "networks": "Partager sur les réseaux",
     "revoke": "Désactiver le lien",
     "revokeConfirm": "Confirmer la désactivation",
     "revokeHint": "Toute personne qui a ce lien ne pourra plus voir la création. Vous pourrez en créer un nouveau.",

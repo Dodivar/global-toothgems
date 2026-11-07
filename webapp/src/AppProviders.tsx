@@ -26,6 +26,7 @@ import { FavoritesProvider } from "./lib/favorites";
 import { LoyaltyProvider } from "./lib/loyalty";
 import { parsePath, type Locale } from "./lib/localeRoutes";
 import { NavigationTracker } from "./lib/navigation";
+import { TryOnJobProvider } from "./components/studio/tryOn/TryOnJobProvider";
 
 /**
  * The stores of the whole site, in the order their comments justify, under
@@ -104,7 +105,13 @@ export function AppProviders({
                 {/* The Loyalty Club: public rules and the member's card, read
                     only (stamps are awarded by the database on a paid order). */}
                 <LoyaltyProvider>
+                {/* The Studio's smile try-on runs here, not in its dialog: the render
+                    goes on across pages and a pill says when it is ready. Reads
+                    the account (runs kept on the device per account) and the
+                    cookie choice (analytics); its code loads on first use. */}
+                <TryOnJobProvider>
                   {children}
+                </TryOnJobProvider>
                 </LoyaltyProvider>
                 </FavoritesProvider>
                 </ReviewsProvider>

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowDown, BadgeCheck, Clock, Download, FileArchive, KeyRound, LoaderCircle, Mail, ShieldCheck, TriangleAlert } from "lucide-react";
+import { ArrowDown, BadgeCheck, Download, FileArchive, KeyRound, Mail, ShieldCheck, TriangleAlert } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge, type BadgeTone } from "../ui/Badge";
 import { useAccountSecurity } from "../../lib/securityState";
@@ -68,20 +68,17 @@ function Tile({
 export function SecurityOverview() {
   const { formatDate } = useFormat();
   const { t } = useTranslation();
-  const { pendingEmail, passwordChangedAt, dataExport } = useAccountSecurity();
-  const needsAttention = pendingEmail !== null || dataExport.status === "ready";
+  const { pendingEmail, passwordChangedAt, lastExportAt } = useAccountSecurity();
+  const needsAttention = pendingEmail !== null;
 
-  const exportTile = {
-    none: { badge: t("security.overview.exportNone"), tone: "neutral" as BadgeTone, icon: FileArchive, detail: t("security.overview.exportNoneDetail") },
-    processing: { badge: t("security.overview.exportProcessing"), tone: "brand" as BadgeTone, icon: LoaderCircle, detail: t("security.overview.exportProcessingDetail") },
-    ready: {
-      badge: t("security.overview.exportReady"),
-      tone: "success" as BadgeTone,
-      icon: Download,
-      detail: dataExport.expiresAt ? t("security.overview.exportReadyDetail", { date: formatDate(dataExport.expiresAt) }) : "",
-    },
-    expired: { badge: t("security.overview.exportExpired"), tone: "warning" as BadgeTone, icon: Clock, detail: t("security.overview.exportExpiredDetail") },
-  }[dataExport.status];
+  const exportTile = lastExportAt
+    ? {
+        badge: t("security.overview.exportDone"),
+        tone: "success" as BadgeTone,
+        icon: Download,
+        detail: t("security.overview.exportDoneDetail", { date: formatDate(lastExportAt) }),
+      }
+    : { badge: t("security.overview.exportNone"), tone: "neutral" as BadgeTone, icon: FileArchive, detail: t("security.overview.exportNoneDetail") };
 
   return (
     <section
@@ -100,7 +97,7 @@ export function SecurityOverview() {
             {t(needsAttention ? "security.overview.attentionTitle" : "security.overview.okTitle")}
           </h2>
           <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
-            {t(pendingEmail ? "security.overview.attentionEmail" : dataExport.status === "ready" ? "security.overview.attentionExport" : "security.overview.okBody")}
+            {t(pendingEmail ? "security.overview.attentionEmail" : "security.overview.okBody")}
           </p>
         </div>
       </div>

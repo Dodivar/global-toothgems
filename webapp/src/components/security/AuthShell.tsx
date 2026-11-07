@@ -10,20 +10,38 @@ import monogram from "../../assets/monogram-blue.png";
  * atmosphere a member met when creating the account, with nothing else on the
  * screen competing with the one thing to do. The brand monogram sits on top of
  * the card, so a visitor arriving cold from an email knows at once where they
- * landed. The demo panel, when given, sits above the card and outside it.
+ * landed (`monogram={false}` leaves it out, for a page that already shows its
+ * own mark). The demo panel, when given, sits above the card and outside it.
  */
-export function AuthShell({ demo, children, footer }: { demo?: ReactNode; children: ReactNode; footer?: ReactNode }) {
+export function AuthShell({
+  demo,
+  children,
+  footer,
+  monogram: showMonogram = true,
+}: {
+  demo?: ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
+  monogram?: boolean;
+}) {
   return (
     <div className="gt-register relative isolate overflow-x-clip">
       <div aria-hidden="true" className="gt-register-wash absolute inset-0 -z-10" />
       <div className="mx-auto grid w-full max-w-[560px] gap-5 px-4 pb-[clamp(48px,7vw,96px)] pt-4 sm:px-6 sm:pt-8">
         {demo}
-        <section className="relative grid min-w-0 gap-6 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-white/95 p-5 pt-12 shadow-[var(--shadow-lg)] backdrop-blur-[6px] sm:p-9 sm:pt-14">
-          <img
-            src={monogram.src}
-            alt="Global Toothgems"
-            className="absolute left-1/2 top-0 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--border-subtle)] bg-[var(--gt-ink-900)] object-contain p-2.5 shadow-[var(--shadow-md)]"
-          />
+        <section
+          className={clsx(
+            "relative grid min-w-0 gap-6 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-white/95 p-5 shadow-[var(--shadow-lg)] backdrop-blur-[6px] sm:p-9",
+            showMonogram && "pt-12 sm:pt-14",
+          )}
+        >
+          {showMonogram && (
+            <img
+              src={monogram.src}
+              alt="Global Toothgems"
+              className="absolute left-1/2 top-0 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--border-subtle)] bg-[var(--gt-ink-900)] object-contain p-2.5 shadow-[var(--shadow-md)]"
+            />
+          )}
           {children}
         </section>
         {footer}

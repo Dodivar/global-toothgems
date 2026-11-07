@@ -3,7 +3,7 @@ import { pastePlacement, type TryOnCrop } from "../../../lib/studio3d/tryOnCompo
 import { blendGems, type GemCheck } from "../../../lib/studio3d/tryOnGemBlend";
 import type { GuideMark } from "../../../lib/studio3d/tryOnGuide";
 
-async function bitmapOf(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
+export async function bitmapOf(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
   if (typeof createImageBitmap === "function") return createImageBitmap(blob);
   const img = new Image();
   img.src = URL.createObjectURL(blob);
@@ -115,7 +115,12 @@ export interface PastedResult {
  * JPEG of the photo's size. Null when the browser cannot draw it — the dialog
  * then shows the close-up alone.
  */
-export async function pasteBack(photo: Blob, closeUp: Blob, crop: TryOnCrop, marks: readonly GuideMark[] = []): Promise<PastedResult | null> {
+export async function pasteBack(
+  photo: Blob,
+  closeUp: Blob,
+  crop: TryOnCrop,
+  marks: readonly GuideMark[] = [],
+): Promise<PastedResult | null> {
   try {
     const [base, edit] = await Promise.all([bitmapOf(photo), bitmapOf(closeUp)]);
     const width = base.width;

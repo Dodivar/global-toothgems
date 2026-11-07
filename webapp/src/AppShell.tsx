@@ -1,10 +1,12 @@
 import { useLocation } from "./lib/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ReviewOverlays } from "./components/reviews/ReviewOverlays";
 import { FavoriteAccountDialogHost } from "./lib/favorites";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
+import { FocusBar, FocusFooter } from "./components/layout/FocusChrome";
+import { isCampaignVisit, isFocusPath, rememberFocusVisit, syncFocusAttribute } from "./lib/adFocus";
 import { isMemberSpacePath } from "./lib/memberSpace";
 import { isLessonPlayerPath } from "./lib/academyUrl";
 import { STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH } from "./lib/studioUrl";
@@ -65,7 +67,13 @@ const WORKSPACE_ROUTES = [STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH];
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  // A visit from a social network or an ad to the Studio's offer pages gets a slim chrome and no storefront navigation (lib/adFocus.ts). Both chromes are in the markup on those pages; the attribute on <html> — set before the first paint by the head script, kept in step here — decides which one shows, so nothing flashes.
+  const focusPage = isFocusPath(pathname);
+  useLayoutEffect(() => {
+    if (focusPage && isCampaignVisit(search)) rememberFocusVisit();
+    syncFocusAttribute(pathname, search);
+  }, [focusPage, pathname, search]);
   const adminArea = pathname === ADMIN_ROUTE_PREFIX || pathname.startsWith(`${ADMIN_ROUTE_PREFIX}/`);
   const bareChrome = adminArea || pathname === MAINTENANCE_ROUTE;
   // The editor and its sections (`/studio-3d/atelier/mes-creations`…), and
@@ -84,11 +92,33 @@ export function AppShell({ children }: { children: ReactNode }) {
           meet it before the page, though it sits at the bottom of
           the screen. Not on the back office or maintenance chrome. */}
       {!bareChrome && <CookieBanner />}
-      {!bareChrome && !workspace && <Header />}
+      {!bareChrome && !workspace && (
+        <>
+          <div className="gt-storefront-chrome contents">
+            <Header />
+          </div>
+          {focusPage && (
+            <div className="gt-focus-chrome">
+              <FocusBar />
+            </div>
+          )}
+        </>
+      )}
       <main id="main" tabIndex={-1}>
         {children}
       </main>
-      {!bareChrome && !workspace && <Footer />}
+      {!bareChrome && !workspace && (
+        <>
+          <div className="gt-storefront-chrome contents">
+            <Footer />
+          </div>
+          {focusPage && (
+            <div className="gt-focus-chrome">
+              <FocusFooter />
+            </div>
+          )}
+        </>
+      )}
       <CookieSettingsDialog />
       <ReviewOverlays />
       <FavoriteAccountDialogHost />

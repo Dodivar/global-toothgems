@@ -562,12 +562,12 @@
         ]
       },
       "exports": {
-        "title": "The Share menu: networks, images, preparing the appointment",
+        "title": "The Share menu: sharing, images, preparing the appointment",
         "body": [
           "The editor’s Share menu gathers everything that leaves the Studio:"
         ],
         "points": [
-          "Social networks: the saved creation’s read-only link, to send to each network or copy (see its own topic).",
+          "Share: the image through your device’s share menu (you pick the app), and the saved creation’s read-only link, to copy and paste wherever you like (see its own topic).",
           "PNG capture: the current view of the stage, on the Studio background, with the Global Toothgems logo.",
           "PNG without background (Artist and Atelier plans): the same view without background, to lay on your own visuals.",
           "Prepare the appointment: the estimate sheet (PNG, the render, the priced detail and the total, with the name you type), the placement sheet (PDF, see its own topic) and the AI try-on (Atelier plan).",
@@ -588,11 +588,11 @@
           "From a creation’s detail, “Create a post” prepares a visual ready to publish, drawn entirely on your device (nothing is published without you):"
         ],
         "points": [
-          "Type: HD image (PNG, sharpest, or lighter JPEG), 360° video (one full turn, looping) or 360° GIF (lighter, for messages).",
-          "Format: Story, square or portrait; choose the network you aim at and its best format is offered.",
+          "Type: HD image (PNG, sharpest, or lighter JPEG), or 360° video (one full turn, looping, MP4 on phones and Safari).",
+          "Format: Story (9:16), square or portrait (4:5).",
           "Signature: with the Essential plan and the trial, every export carries the Global Toothgems watermark. The Artist and Atelier plans sign with your own logo (PNG, JPEG or WebP, 2 MB max.) or nothing. The Atelier plan adds layouts (background, frame, title and your handle).",
-          "Publishing: on a phone, each network button opens the share menu with the file. On a computer, Facebook, Pinterest, X, Threads and WhatsApp share the creation’s public page (Glowbook or share link); for the others, the file is downloaded and the network’s page opens.",
-          "Keep the tab open while a video records. Instagram, TikTok and Snapchat do not accept GIFs; some desktop browsers record WebM, which some networks refuse: a phone or Safari records MP4."
+          "Publishing: “Share” opens your device’s share menu with the file (Instagram, TikTok, WhatsApp, Photos…); “Download” saves the file, to post from the app or site of your choice.",
+          "Keep the tab open while a video records. Some desktop browsers record WebM, which some apps refuse: a phone or Safari records MP4."
         ]
       },
       "tryOn": {
@@ -672,6 +672,13 @@
         ]
       }
     }
+  },
+  "phoneNotice": {
+    "title": "The 3D Studio is made for a bigger screen",
+    "body": "On a phone the experience is degraded: the screen is too small to place gems precisely and to handle the 3D scene comfortably. We strongly recommend using a tablet or a computer.",
+    "hint": "You can still carry on here: your creations are saved in your account and you will find them on another device.",
+    "close": "Close the notice",
+    "continue": "Continue on my phone"
   },
   "onboarding": {
     "progress": "Step {{step}} of {{total}}",
@@ -828,7 +835,6 @@
     "noteUnsaved": "This creation has unsaved changes on the stage: they are not in this link.",
     "noteLive": "The link always shows the latest saved version of this creation. You can disable it at any time.",
     "noteUnsavedLive": "This creation has unsaved changes on the stage: save them for them to appear through the link.",
-    "networks": "Share on social networks",
     "revoke": "Disable link",
     "revokeConfirm": "Confirm disabling",
     "revokeHint": "Anyone who has this link will no longer be able to see the design. You can create a new one.",

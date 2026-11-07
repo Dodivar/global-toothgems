@@ -9,6 +9,6 @@
  */
 export { Link, Navigate, NavLink } from "./components";
 export { useLocation, useNavigate, useParams, useSearchParams } from "./hooks";
-export { useLanguageSwitch } from "./language";
+export { useLanguageSwitch, useSetLanguage } from "./language";
 export { NavigationTracker, useCanGoBack } from "./history";
 export type { AppLocation, LinkProps, NavigateFunction, NavLinkProps, To } from "./types";

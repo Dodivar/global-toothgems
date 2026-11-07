@@ -24,25 +24,29 @@ const SWIPE_PX = 48;
 const PHONE_QUERY = "(max-width: 639px)";
 
 /**
- * The shop slide's phone visual: loose gems and products thrown together like
- * a bouquet going off. A fixed layout (never random at render time, which
+ * The shop slide's phone visual: shop gems (shapes, colours, gold jewels)
+ * thrown together like a bouquet going off. Each piece is a product of the
+ * `gems` category, cut out of its white background by
+ * `scripts/gem-cutouts.py`. A fixed layout (never random at render time, which
  * would break hydration). `x`/`y` are the piece's centre in % of the box.
  */
 const BOUQUET: { photo: string; x: number; y: number; size: number; rot: number }[] = [
-  { photo: "gem-img-04.webp", x: 50, y: 46, size: 70, rot: -12 },
-  { photo: "gem-img-02.webp", x: 29, y: 36, size: 54, rot: 20 },
-  { photo: "gem-img-09.webp", x: 69, y: 34, size: 58, rot: -25 },
-  { photo: "gem-img-14.webp", x: 13, y: 62, size: 46, rot: 40 },
-  { photo: "gem-img-13.webp", x: 85, y: 64, size: 50, rot: 10 },
-  { photo: "gem-img-05.webp", x: 38, y: 80, size: 42, rot: -30 },
-  { photo: "gem-img-20.webp", x: 62, y: 82, size: 48, rot: 15 },
-  { photo: "gem-img-19.webp", x: 92, y: 24, size: 38, rot: -10 },
-  { photo: "gem-img-15.webp", x: 8, y: 22, size: 40, rot: 25 },
-  { photo: "gem-img-11.webp", x: 22, y: 86, size: 36, rot: 60 },
-  { photo: "gem-img-18.webp", x: 77, y: 10, size: 36, rot: -40 },
-  { photo: "gem-img-06.webp", x: 45, y: 12, size: 38, rot: 30 },
-  { photo: "gem-img-07.webp", x: 93, y: 88, size: 32, rot: 5 },
-  { photo: "img-08.jpg", x: 21, y: 14, size: 40, rot: -18 },
+  { photo: "gem-rivoli-bermuda-blue.webp", x: 50, y: 48, size: 50, rot: -12 },
+  { photo: "gem-heart-fuchsia.webp", x: 29, y: 36, size: 54, rot: 20 },
+  { photo: "gem-diamond-violet.webp", x: 69, y: 34, size: 58, rot: -25 },
+  { photo: "gem-starflower-light-topaz.webp", x: 13, y: 62, size: 46, rot: 40 },
+  { photo: "gem-navette-bermuda-blue.webp", x: 85, y: 64, size: 50, rot: 10 },
+  { photo: "gem-gold-star.webp", x: 38, y: 80, size: 42, rot: -30 },
+  { photo: "gem-heart-aquamarine.webp", x: 62, y: 82, size: 48, rot: 15 },
+  { photo: "gem-raindrop-heliotrope.webp", x: 92, y: 24, size: 38, rot: -10 },
+  { photo: "gem-baguette-peridot.webp", x: 8, y: 22, size: 40, rot: 25 },
+  { photo: "gem-rivoli-crystal-ab.webp", x: 22, y: 86, size: 36, rot: 60 },
+  { photo: "gem-square-aquamarine.webp", x: 77, y: 10, size: 36, rot: -40 },
+  { photo: "gem-round-saphir.webp", x: 45, y: 12, size: 38, rot: 30 },
+  { photo: "gem-gold-heart.webp", x: 93, y: 88, size: 32, rot: 5 },
+  { photo: "gem-heart-siam.webp", x: 21, y: 14, size: 40, rot: -18 },
+  { photo: "gem-round-emeraude.webp", x: 64, y: 58, size: 32, rot: 0 },
+  { photo: "gem-gold-lightning.webp", x: 37, y: 58, size: 30, rot: 18 },
 ];
 
 type SlideId = "shop" | "academy" | "studio";
@@ -269,19 +273,14 @@ function ShopSlide() {
                 <span
                   key={g.photo}
                   className="absolute block"
-                  style={{ left: `${g.x}%`, top: `${g.y}%`, width: g.size, marginLeft: -g.size / 2, marginTop: -g.size / 2 }}
+                  style={{ left: `${g.x}%`, top: `${g.y}%`, width: g.size, height: g.size, marginLeft: -g.size / 2, marginTop: -g.size / 2 }}
                 >
-                  {/* `rotate` (not `transform`) so no stacking context isolates the packshot's multiply blend. */}
+                  {/* Fitted in a square box: tall cuts (raindrops, navettes) keep the size of the round ones. */}
                   <img
                     src={photo(g.photo)}
                     alt=""
                     decoding="async"
-                    className={clsx(
-                      // Gems are transparent cut-outs; the one packshot left is multiplied into the blue.
-                      g.photo.startsWith("gem-") ? "gt-alt-gem" : "gt-alt-cutout",
-                      "gt-alt-float block w-full",
-                      i % 2 === 1 && "gt-alt-float--late",
-                    )}
+                    className={clsx("gt-alt-gem gt-alt-float block h-full w-full object-contain", i % 2 === 1 && "gt-alt-float--late")}
                     style={{ rotate: `${g.rot}deg` }}
                   />
                 </span>
@@ -298,10 +297,10 @@ function ShopSlide() {
                 style={{ objectPosition: "50% 55%" }}
               />
             </div>
-            {/* Loose stones on the blue, beside the photo: gem pictures cut out
+            {/* Loose stones on the blue, beside the photo: shop gems cut out
                 of their white background, so they keep their own colours. */}
-            <img src={photo("gem-img-04.webp")} alt="" aria-hidden="true" className="gt-alt-gem gt-alt-float absolute -left-[15%] top-[6%] hidden w-[16%] max-w-[112px] lg:block" />
-            <img src={photo("gem-img-14.webp")} alt="" aria-hidden="true" className="gt-alt-gem gt-alt-float gt-alt-float--late absolute -left-[13%] bottom-[22%] hidden w-[15%] max-w-[104px] lg:block" />
+            <img src={photo("gem-heart-siam.webp")} alt="" aria-hidden="true" className="gt-alt-gem gt-alt-float absolute -left-[15%] top-[6%] hidden w-[16%] max-w-[112px] lg:block" />
+            <img src={photo("gem-starflower-amethyste.webp")} alt="" aria-hidden="true" className="gt-alt-gem gt-alt-float gt-alt-float--late absolute -left-[13%] bottom-[22%] hidden w-[15%] max-w-[104px] lg:block" />
             <div className="gt-glass-panel gt-glass-panel-compact absolute -bottom-4 right-4 flex items-center gap-3 rounded-[var(--radius-lg)] py-2.5 pl-2.5 pr-5 sm:right-8 lg:-bottom-5 lg:right-auto lg:left-[8%]">
               <span className="grid h-12 w-12 flex-none place-items-center overflow-hidden rounded-[var(--radius-md)] bg-white">
                 <img src={photo("img-04.jpg")} alt="" className="h-10 w-10 object-contain" />

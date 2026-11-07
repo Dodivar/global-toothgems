@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CircleAlert, ImageUp, LogIn, RefreshCw, ScanFace } from "lucide-react";
+import { CircleAlert, ImageUp, LogIn, RefreshCw, RotateCcw, ScanFace } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../lib/auth";
 import { useCookieConsent } from "../../../lib/cookieConsent";
@@ -10,49 +10,45 @@ import { ProgressBar } from "../../ui/ProgressBar";
 import {
   TRY_ON_ERROR_MESSAGES,
   errorAllowsRetry,
-  type PhotoIssue,
   type SmileTryOnService,
   type TryOnAudience,
   type TryOnCreation,
-  type TryOnErrorCode,
   type TryOnSource,
   type TryOnStage,
 } from "../../../lib/studio3d/tryOn";
-import { projectFrontView } from "../../../lib/studio3d/frontView";
-import { placementProps, resultProps } from "../../../lib/studio3d/tryOnAnalytics";
-import { guideMarks } from "../../../lib/studio3d/tryOnGuide";
-import { registerDesign } from "../../../lib/studio3d/tryOnRegistration";
+import { sourceKey } from "../../../lib/studio3d/tryOnLocal";
 import { smileTryOnService } from "../../../lib/studio3d/tryOnService";
-import { setStudioAnalyticsConsent, trackStudio } from "../../../lib/studioAnalytics";
-import { renderDesignImage } from "./designImage";
-import { pasteBack } from "./pasteBack";
+import { setStudioAnalyticsConsent } from "../../../lib/studioAnalytics";
 import { PhotoStep, type AiState } from "./PhotoStep";
-import { renderPlacementGuide } from "./placementGuide";
 import type { PreparedPhoto } from "./preparePhoto";
 import { ProcessingStep } from "./ProcessingStep";
 import { ResultActions, ResultStep } from "./ResultStep";
-
-type Step =
-  | { kind: "photo" }
-  | { kind: "processing"; stage: TryOnStage }
-  | { kind: "error"; code: TryOnErrorCode; reasons?: PhotoIssue[]; stage: TryOnStage }
-  | { kind: "result"; image: Blob; url: string; leftOut: number };
+import { SavedTryOns } from "./SavedTryOns";
+import { useTryOnJobs, type TryOnJobStatus } from "./TryOnJobProvider";
 
 /** The stepper: photo, the analysis, the render, the result. An error stays on the stage it happened at. */
 const STAGE_INDEX: Record<TryOnStage, number> = { checking: 1, rendering: 2 };
-const stepIndex = (step: Step) => (step.kind === "photo" ? 0 : step.kind === "result" ? 3 : STAGE_INDEX[step.stage]);
+function stepIndex(status: TryOnJobStatus | null): number {
+  if (!status) return 0;
+  if (status.kind === "result") return 3;
+  if (status.kind === "interrupted") return 2;
+  return STAGE_INDEX[status.stage];
+}
 
 /**
  * "Try it on a smile": a creation on a photo of a smile (decision 111, the
  * computed placement since 2026-11-01: decision 111 (k)). Photo + consent →
- * the analysis (the function checks the photo, cuts the mouth close-up and
- * finds each tooth) → the placement, here (`tryOnRegistration.ts`: each gem on
- * its tooth, at its real size; `tryOnGuide.ts`: the gems drawn as marks on the
- * close-up) → the render (Nano Banana only turns the marks into real gems) →
- * the result, pasted back into the photo, downloaded or shared. A placement
- * the teeth do not support well enough asks for another photo rather than
- * guessing. The photo and the image stay in this tab; closing the dialog
- * forgets them. While the AI is not connected, the dialog says so and sends nothing.
+ * the analysis, the placement, the render and the paste back (`runTryOn.ts`)
+ * → the result, downloaded or shared. A placement the teeth do not support
+ * well enough asks for another photo rather than guessing. While the AI is
+ * not connected, the dialog says so and sends nothing.
+ *
+ * Since 2026-11-05 the run belongs to the job store (`TryOnJobProvider`), not
+ * to this dialog: closing it does not stop the render, a pill says when it is
+ * ready, and the dialog opened again on the same creation shows the run where
+ * it is. The photo and the result are kept on this device only, 24 h at most
+ * (`tryOnLocal.ts`); this creation's earlier results are listed under the
+ * photo step.
  *
  * Opened by the artist on their own creation (`audience="artist"`, a
  * client's photo) and by visitors on a Glowbook creation or a share link
@@ -78,14 +74,23 @@ export function TryOnDialog({
   const { signedIn } = useAuth();
   const navigate = useNavigate();
   const { pathname, hash } = useLocation();
-  const [step, setStep] = useState<Step>({ kind: "photo" });
+  const jobs = useTryOnJobs();
+  const key = source ? sourceKey(source) : null;
+  const job = jobs.job && jobs.job.key === key ? jobs.job : null;
+  // Opened on a creation whose run exists: show the run, else the photo step.
+  const [onPhoto, setOnPhoto] = useState(job === null);
   const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
   const [consent, setConsent] = useState(false);
   const [ai, setAi] = useState<AiState>(source ? "checking" : "unavailable");
-  const request = useRef<AbortController | null>(null);
   const photoUrl = useRef<string | null>(null);
-  const resultUrl = useRef<string | null>(null);
   const { record } = useCookieConsent();
+  const status = !onPhoto && job ? job.status : null;
+  /** Another creation's run still under way: starting this one stops it. */
+  const elsewhere = jobs.job && jobs.job.key !== key && jobs.job.status.kind === "running" ? jobs.job : null;
+
+  // While this dialog is open, the store's pill is hidden.
+  const { registerDialog } = jobs;
+  useEffect(() => registerDialog(), [registerDialog]);
 
   // The try-on's events (facts only, `tryOnAnalytics.ts`) follow the visitor's analytics choice, on Glowbook pages too.
   useEffect(() => setStudioAnalyticsConsent(record?.analytics === true), [record]);
@@ -98,19 +103,27 @@ export function TryOnDialog({
     let live = true;
     service
       .status()
-      .then((status) => live && setAi(status.available ? "available" : "unavailable"))
+      .then((next) => live && setAi(next.available ? "available" : "unavailable"))
       .catch(() => live && setAi("unavailable"));
     return () => {
       live = false;
     };
   }, [service, hasSource]);
 
-  // Forget the photo when the dialog closes, and stop a render still running.
+  // The function says the AI is not connected: back to the photo step, which says so.
+  const notAvailable = job?.status.kind === "error" && job.status.code === "not_available";
+  const { dismiss } = jobs;
+  useEffect(() => {
+    if (!notAvailable) return;
+    setAi("unavailable");
+    setOnPhoto(true);
+    dismiss();
+  }, [notAvailable, dismiss]);
+
+  // Forget this dialog's own copy of the photo when it closes (the run keeps its own).
   useEffect(
     () => () => {
-      request.current?.abort();
       if (photoUrl.current) URL.revokeObjectURL(photoUrl.current);
-      if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
     },
     [],
   );
@@ -121,78 +134,42 @@ export function TryOnDialog({
     setPhoto(next);
   };
 
+  /** Back to the photo step, with the run's photo when the dialog has none yet. */
+  const toPhoto = () => {
+    if (!photo && job) takePhoto({ ...job.photo, url: URL.createObjectURL(job.photo.blob) });
+    if (job && job.status.kind !== "running" && job.status.kind !== "result") dismiss();
+    setOnPhoto(true);
+  };
+
   const signIn = () => {
     onClose();
     navigate("/connexion", { state: { from: `${pathname}${hash}` } });
   };
 
-  const render = async () => {
+  const render = () => {
     if (!photo || !source) return;
-    request.current?.abort();
-    const controller = new AbortController();
-    request.current = controller;
-    const aborted = () => controller.signal.aborted;
-    const fail = (code: TryOnErrorCode, stage: TryOnStage, reasons?: PhotoIssue[]) => {
-      request.current = null;
-      if (code === "not_available") {
-        setAi("unavailable");
-        return setStep({ kind: "photo" });
-      }
-      setStep({ kind: "error", code, reasons, stage });
-    };
+    jobs.start({ creation, source, audience, photo, service });
+    setOnPhoto(false);
+  };
 
-    // 1. The analysis: the photo check, the close-up and its teeth.
-    setStep({ kind: "processing", stage: "checking" });
-    const analysed = await service.analyse({ photo: photo.blob, source }, { signal: controller.signal });
-    if (aborted()) return;
-    const context = { audience, source: source.kind };
-    if (!analysed.ok) {
-      if (analysed.code === "photo_unsuitable") trackStudio("studio_try_on_photo_refused", { ...context, reasons: [...(analysed.reasons ?? [])] });
-      return fail(analysed.code, "checking", analysed.reasons);
-    }
-
-    // 2. The placement: each gem on its tooth, drawn as a mark on the close-up.
-    const { crop, teeth, centrals } = analysed.analysis;
-    const registration = registerDesign(projectFrontView(creation.scene.pieces, creation.scene.model), teeth, { centrals });
-    const { marks, leftOut } = guideMarks(registration, creation.scene.pieces);
-    const usable = registration.reliable && marks.length > 0;
-    trackStudio("studio_try_on_placement", {
-      ...context,
-      ...placementProps(registration, { marks: marks.length, leftOut }, centrals !== null),
-      outcome: usable ? "render" : "uncertain",
-    });
-    if (!usable) return fail("photo_unsuitable", "checking", ["placement_uncertain"]);
-    setStep({ kind: "processing", stage: "rendering" });
-    const [design, guide] = await Promise.all([renderDesignImage(creation), renderPlacementGuide(photo.blob, crop, marks)]);
-    if (aborted()) return;
-    if (!design || !guide) return fail("failed", "rendering");
-
-    // 3. The render: the marks made real, pasted back into the photo.
-    const outcome = await service.render({ photo: photo.blob, source, design, guide, crop, marks: marks.length }, { signal: controller.signal });
-    if (aborted()) return; // cancelled or closed: nothing to show
-    if (!outcome.ok) {
-      trackStudio("studio_try_on_result", { ...context, outcome: outcome.code });
-      return fail(outcome.code, "rendering", outcome.reasons);
-    }
-    request.current = null;
-    // Only the gems are taken from the AI's answer (`tryOnGemBlend.ts`), else the whole close-up;
-    // if the browser cannot draw it back into the photo, the close-up is shown alone.
-    const pasted = await pasteBack(photo.blob, outcome.image, outcome.crop ?? crop, marks);
-    if (aborted()) return;
-    trackStudio("studio_try_on_result", { ...context, outcome: pasted ? "ok" : "close_up_only", ...resultProps(pasted?.checks ?? null, pasted?.masked ?? false) });
-    const image = pasted?.image ?? outcome.image;
-    if (resultUrl.current) URL.revokeObjectURL(resultUrl.current);
-    resultUrl.current = URL.createObjectURL(image);
-    setStep({ kind: "result", image, url: resultUrl.current, leftOut });
+  const again = () => {
+    jobs.again();
+    setOnPhoto(false);
   };
 
   const cancel = () => {
-    request.current?.abort();
-    request.current = null;
-    setStep({ kind: "photo" });
+    jobs.cancel();
+    setOnPhoto(true);
+  };
+
+  const showSaved = (id: string) => {
+    jobs.show(id);
+    setOnPhoto(false);
   };
 
   const empty = creation.scene.pieces.length === 0;
+  const result = status?.kind === "result" ? status : null;
+  const kept = jobs.saved.filter((r) => sourceKey(r.source) === key && r.id !== job?.id);
 
   return (
     <Dialog
@@ -203,49 +180,77 @@ export function TryOnDialog({
       description={t(`studio.tryOn.subtitle.${audience}`, { name: creation.name })}
       icon={<ScanFace size={17} />}
       closeLabel={t("studio.workspace.close")}
-      footer={!empty && step.kind === "result" && photo ? <ResultActions image={step.image} creation={creation} /> : undefined}
+      footer={!empty && result ? <ResultActions image={result.image} creation={creation} /> : undefined}
     >
       {empty ? (
         <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("studio.tryOn.empty")}</p>
       ) : (
         <>
           {/* The result is on screen: the stepper would only push download / share below the fold. */}
-          {step.kind !== "result" && (
+          {!result && (
             <ProgressBar
               variant="steps"
               tone="ink"
               doneTone="success"
               steps={[t("studio.tryOn.steps.photo"), t("studio.tryOn.steps.check"), t("studio.tryOn.steps.render"), t("studio.tryOn.steps.result")]}
-              current={stepIndex(step)}
+              current={stepIndex(status)}
             />
           )}
 
-          {step.kind === "photo" && (
-            <PhotoStep
-              photo={photo}
-              onPhoto={takePhoto}
-              consent={consent}
-              onConsent={setConsent}
-              audience={audience}
-              ai={ai}
-              signedIn={signedIn}
-              onAi={() => void render()}
-              onSignIn={signIn}
-            />
+          {!status && (
+            <>
+              {elsewhere && (
+                <p role="status" className="m-0 rounded-[var(--radius-md)] bg-[var(--surface-sunken)] px-3 py-2 text-[12.5px] leading-snug text-[var(--text-primary)]">
+                  {t("studio.tryOn.job.otherRunning", { name: elsewhere.creation.name })}
+                </p>
+              )}
+              <PhotoStep
+                photo={photo}
+                onPhoto={takePhoto}
+                consent={consent}
+                onConsent={setConsent}
+                audience={audience}
+                ai={ai}
+                signedIn={signedIn}
+                onAi={render}
+                onSignIn={signIn}
+              />
+              {kept.length > 0 && jobs.job?.status.kind !== "running" && <SavedTryOns runs={kept} onShow={showSaved} onRemove={jobs.remove} />}
+            </>
           )}
 
-          {step.kind === "processing" && <ProcessingStep key={step.stage} stage={step.stage} onCancel={cancel} />}
+          {status?.kind === "running" && <ProcessingStep key={status.stage} stage={status.stage} onCancel={cancel} />}
 
-          {step.kind === "error" && (
+          {status?.kind === "interrupted" && (
+            <div role="status" className="grid gap-3">
+              <p className="m-0 flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--surface-sunken)] p-3 text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
+                <RotateCcw size={16} aria-hidden="true" className="mt-0.5 flex-none text-[var(--gt-blue-700)]" />
+                <span className="grid gap-0.5">
+                  <strong className="font-semibold">{t("studio.tryOn.job.interruptedTitle")}</strong>
+                  <span className="text-[var(--text-muted)]">{t("studio.tryOn.job.interruptedBody")}</span>
+                </span>
+              </p>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="outline" size="sm" iconLeft={ImageUp} onClick={toPhoto}>
+                  {t("studio.tryOn.errorActions.newPhoto")}
+                </Button>
+                <Button variant="dark" size="sm" iconLeft={RefreshCw} disabled={ai !== "available"} onClick={again}>
+                  {t("studio.tryOn.job.resume")}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {status?.kind === "error" && (
             <div role="alert" className="grid gap-3">
               <div className="flex items-start gap-2 rounded-[var(--radius-md)] bg-[var(--status-error-bg)] p-3 text-[length:var(--text-body-sm)]">
                 <CircleAlert size={16} aria-hidden="true" className="mt-0.5 flex-none text-[var(--status-error-fg)]" />
                 <span className="grid gap-0.5">
-                  <strong className="font-semibold text-[var(--status-error-fg)]">{t(TRY_ON_ERROR_MESSAGES[step.code].title)}</strong>
-                  <span className="text-[var(--text-primary)]">{t(TRY_ON_ERROR_MESSAGES[step.code].body)}</span>
-                  {!!step.reasons?.length && (
+                  <strong className="font-semibold text-[var(--status-error-fg)]">{t(TRY_ON_ERROR_MESSAGES[status.code].title)}</strong>
+                  <span className="text-[var(--text-primary)]">{t(TRY_ON_ERROR_MESSAGES[status.code].body)}</span>
+                  {!!status.reasons?.length && (
                     <ul className="m-0 mt-1 grid list-disc gap-0.5 pl-5 text-[var(--text-primary)]">
-                      {step.reasons.map((reason) => (
+                      {status.reasons.map((reason) => (
                         <li key={reason}>{t(`studio.tryOn.photoIssues.${reason}`)}</li>
                       ))}
                     </ul>
@@ -253,35 +258,34 @@ export function TryOnDialog({
                 </span>
               </div>
               <div className="flex flex-wrap justify-end gap-2">
-                {step.code === "sign_in_required" ? (
+                {status.code === "sign_in_required" ? (
                   <Button variant="dark" size="sm" iconLeft={LogIn} onClick={signIn}>
                     {t("studio.tryOn.errorActions.signIn")}
                   </Button>
-                ) : errorAllowsRetry(step.code) ? (
-                  <Button variant="dark" size="sm" iconLeft={RefreshCw} onClick={() => void render()}>
+                ) : errorAllowsRetry(status.code) ? (
+                  <Button variant="dark" size="sm" iconLeft={RefreshCw} onClick={again}>
                     {t("studio.tryOn.errorActions.retry")}
                   </Button>
                 ) : null}
-                <Button
-                  variant={step.code === "photo_unsuitable" ? "dark" : "outline"}
-                  size="sm"
-                  iconLeft={ImageUp}
-                  onClick={() => setStep({ kind: "photo" })}
-                >
+                <Button variant={status.code === "photo_unsuitable" ? "dark" : "outline"} size="sm" iconLeft={ImageUp} onClick={toPhoto}>
                   {t("studio.tryOn.errorActions.newPhoto")}
                 </Button>
               </div>
             </div>
           )}
 
-          {step.kind === "result" && photo && (
+          {result && job && (
             <ResultStep
-              photo={photo}
-              imageUrl={step.url}
-              leftOut={step.leftOut}
+              photo={job.photo}
+              imageUrl={result.url}
+              leftOut={result.leftOut}
               creation={creation}
-              onRegenerate={() => void render()}
-              onNewPhoto={() => setStep({ kind: "photo" })}
+              onRegenerate={again}
+              onNewPhoto={toPhoto}
+              onForget={() => {
+                jobs.remove(job.id);
+                setOnPhoto(true);
+              }}
             />
           )}
         </>

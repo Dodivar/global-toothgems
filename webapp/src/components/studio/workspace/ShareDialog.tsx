@@ -8,12 +8,11 @@ import { useStudio } from "../../../lib/studio3d/store";
 import type { ShareLink } from "../../../lib/studioWorkspace/share";
 import type { Creation } from "../../../lib/studioWorkspace/types";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
-import { ShareNetworkButtons } from "../ShareNetworks";
 import { fieldClass, useWorkspaceFormat } from "./workspaceStyles";
 
 /**
- * A read-only link to a saved creation, for anyone to look at in 3D — and to
- * post on social networks. Opening the dialog is the explicit act that creates
+ * A read-only link to a saved creation, for anyone to look at in 3D: copied,
+ * or handed to the system share sheet. Opening the dialog is the explicit act that creates
  * the link. A stored link (Supabase) always shows the latest saved version and
  * can be disabled here; a snapshot link (local demo library) carries the
  * design as saved. The dialog says plainly which, and who can see it.
@@ -148,11 +147,6 @@ export function ShareDialog({ creation, onClose }: { creation: Creation; onClose
                 {t("studio.workspace.share.failed")}
               </p>
             )}
-          </div>
-
-          <div className="grid gap-2">
-            <p className="m-0 text-[12px] font-bold text-[var(--text-primary)]">{t("studio.workspace.share.networks")}</p>
-            <ShareNetworkButtons content={url ? { url, text: message, title: creation.name } : null} />
           </div>
 
           <ul

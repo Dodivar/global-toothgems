@@ -14,6 +14,11 @@ import { verifySvixSignature } from "../_shared/svix.ts";
  *     (delivered / opened / bounced; a complaint has no card status);
  *   - a newsletter e-mail's bounce or complaint marks the subscriber, inside
  *     the same database function.
+ * Newsletter campaigns (Resend Broadcasts) are not in email_log; what Resend learns about
+ * them comes back to the list through newsletter_resend_opt_out():
+ *   - contact.updated with unsubscribed = true → unsubscribed (a member's consent withdrawn);
+ *     a contact set back to subscribed in Resend changes nothing (our double opt-in decides);
+ *   - a broadcast e-mail's permanent bounce or complaint → bounced / complained.
  * Idempotent: a replay (same svix-id) finds the status already there and
  * changes nothing; the card is set from the log's current status, so a retry
  * after a failed card update heals it. Other event types, and e-mails that are
@@ -43,12 +48,16 @@ export interface AppliedEvent {
   status: string | null;
 }
 
+export type OptOutReason = "unsubscribed" | "bounced" | "complained";
+
 export interface WebhookDeps {
   /** RESEND_WEBHOOK_SECRET */
   secret: string | undefined;
   now(): Date;
   applyEvent(providerId: string, status: DeliveryStatus): Promise<AppliedEvent>;
   recordGiftCard(giftCardId: string, status: CardStatus): Promise<void>;
+  /** newsletter_resend_opt_out(): 'unsubscribed' | 'bounced' | 'complained' | 'unchanged' | 'unknown'. */
+  optOut(email: string, reason: OptOutReason): Promise<string>;
   log(message: string, detail?: unknown): void;
 }
 
@@ -68,13 +77,24 @@ export async function handleResendWebhook(req: Request, deps: WebhookDeps): Prom
     return json({ error: "invalid_signature" }, 401);
   }
 
-  let event: { type?: unknown; data?: { email_id?: unknown } } | null;
+  let event: {
+    type?: unknown;
+    data?: { email_id?: unknown; broadcast_id?: unknown; to?: unknown; email?: unknown; unsubscribed?: unknown; bounce?: { type?: unknown } };
+  } | null;
   try {
     event = JSON.parse(raw);
   } catch {
     return json({ error: "invalid_request" }, 400);
   }
   const type = event?.type;
+
+  if (type === "contact.updated") {
+    if (event?.data?.unsubscribed !== true) return json({ ok: true, ignored: true }, 200);
+    const email = event.data.email;
+    if (typeof email !== "string" || email.length === 0 || email.length > 254) return json({ error: "invalid_request" }, 400);
+    return await newsletterOptOut(deps, email, "unsubscribed");
+  }
+
   const status = typeof type === "string" && Object.hasOwn(EVENT_STATUS, type) ? EVENT_STATUS[type] : null;
   if (!status) return json({ ok: true, ignored: true }, 200);
 
@@ -85,7 +105,16 @@ export async function handleResendWebhook(req: Request, deps: WebhookDeps): Prom
 
   try {
     const result = await deps.applyEvent(providerId, status);
-    if (!result.matched) return json({ ok: true, matched: false }, 200);
+    if (!result.matched) {
+      // A newsletter campaign e-mail: not in our log, its recipient is on the list.
+      const broadcast = typeof event?.data?.broadcast_id === "string" && event.data.broadcast_id.length > 0;
+      const permanent = status !== "bounced" || String(event?.data?.bounce?.type ?? "").toLowerCase() === "permanent";
+      const to = Array.isArray(event?.data?.to) ? event.data.to[0] : null;
+      if (broadcast && permanent && (status === "bounced" || status === "complained") && typeof to === "string" && to.length <= 254) {
+        return await newsletterOptOut(deps, to, status);
+      }
+      return json({ ok: true, matched: false }, 200);
+    }
     if (result.giftCardId && result.status && CARD_STATUSES.has(result.status)) {
       await deps.recordGiftCard(result.giftCardId, result.status as CardStatus);
     }
@@ -96,6 +125,18 @@ export async function handleResendWebhook(req: Request, deps: WebhookDeps): Prom
   } catch (error) {
     // 500 makes Svix retry; the database work is idempotent.
     deps.log("resend webhook failed", error instanceof Error ? error.message : error);
+    return json({ error: "server_error" }, 500);
+  }
+}
+
+/** Mirrors a Resend opt-out onto the list; a database error answers 500 so Svix retries. */
+async function newsletterOptOut(deps: WebhookDeps, email: string, reason: OptOutReason): Promise<Response> {
+  try {
+    const outcome = await deps.optOut(email, reason);
+    if (outcome !== "unchanged" && outcome !== "unknown") deps.log(`newsletter ${outcome} from Resend`);
+    return json({ ok: true, newsletter: outcome }, 200);
+  } catch (error) {
+    deps.log("newsletter opt-out failed", error instanceof Error ? error.message : error);
     return json({ error: "server_error" }, 500);
   }
 }
