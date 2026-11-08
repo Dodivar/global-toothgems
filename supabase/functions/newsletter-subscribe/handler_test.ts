@@ -1,5 +1,5 @@
 import { assertEquals, assertMatch } from "jsr:@std/assert@1";
-import { confirmationContent, handleSubscribe, type SubscribeDeps, type Subscription } from "./handler.ts";
+import { confirmationContent, type DirectMethod, handleSubscribe, type SubscribeDeps, type Subscription } from "./handler.ts";
 import type { SendRequest } from "../_shared/email/send.ts";
 
 const SITE = "https://globaltoothgems.com";
@@ -11,8 +11,21 @@ function makeDeps(overrides: Partial<SubscribeDeps> = {}) {
   const subscribed: Subscription[] = [];
   const ips: string[] = [];
   const logs: unknown[] = [];
+  const direct: [string, DirectMethod][] = [];
+  const captchas: string[] = [];
   const deps: SubscribeDeps = {
     origins: { site: SITE, allowed: new Set([SITE, PREVIEW]) },
+    userFromToken: (token) =>
+      Promise.resolve(
+        token === "member-token"
+          ? { id: "u1", email: "Ana@Example.com", emailConfirmed: true }
+          : token === "unconfirmed-token"
+          ? { id: "u2", email: "ana@example.com", emailConfirmed: false }
+          : null,
+      ),
+    captchaConfigured: false,
+    verifyCaptcha: (token) => (captchas.push(token), Promise.resolve(token === "good-token")),
+    subscribeDirect: (s, method) => (direct.push([s.email, method]), Promise.resolve({ status: "subscribed" })),
     ipAllowed: (hash) => {
       ips.push(hash);
       return Promise.resolve(true);
@@ -28,7 +41,7 @@ function makeDeps(overrides: Partial<SubscribeDeps> = {}) {
     log: (m, d) => logs.push([m, d]),
     ...overrides,
   };
-  return { deps, sent, subscribed, ips, logs };
+  return { deps, sent, subscribed, ips, logs, direct, captchas };
 }
 
 const VALID = { email: " Ana@Example.com ", locale: "en", source: "home", policy_version: "2026-10-04", consent: true };
@@ -142,4 +155,61 @@ Deno.test("only POST, CORS for allowed origins only", async () => {
 Deno.test("the button label follows the template's language", () => {
   assertEquals(confirmationContent("https://x/c")("en").primaryAction?.label, "Confirm my subscription");
   assertEquals(confirmationContent("https://x/c")("de").primaryAction?.label, "Confirm my subscription");
+});
+
+// ---------------------------------------------------------------- Direct sign-up (2026-11-08)
+
+Deno.test("a signed-in member subscribing their own address is subscribed at once, no e-mail, no captcha", async () => {
+  const { deps, direct, sent, subscribed, captchas } = makeDeps({ captchaConfigured: true });
+  const res = await handleSubscribe(post(VALID, { Authorization: "Bearer member-token" }), deps);
+  assertEquals([res.status, await res.json()], [200, { status: "subscribed" }]);
+  assertEquals(direct, [["ana@example.com", "member_session"]]);
+  assertEquals([sent.length, subscribed.length, captchas.length], [0, 0, 0]);
+});
+
+Deno.test("a member typing another address, or an unconfirmed account, is treated as a visitor", async () => {
+  const other = makeDeps();
+  await handleSubscribe(post({ ...VALID, email: "someone@example.com" }, { Authorization: "Bearer member-token" }), other.deps);
+  assertEquals([other.direct.length, other.sent.length], [0, 1]);
+  const unconfirmed = makeDeps();
+  await handleSubscribe(post(VALID, { Authorization: "Bearer unconfirmed-token" }), unconfirmed.deps);
+  assertEquals([unconfirmed.direct.length, unconfirmed.sent.length], [0, 1]);
+});
+
+Deno.test("with the captcha configured, a visitor needs a passing token and is then subscribed at once", async () => {
+  const missing = makeDeps({ captchaConfigured: true });
+  const r1 = await handleSubscribe(post(VALID), missing.deps);
+  assertEquals([r1.status, await r1.json()], [400, { error: "captcha_required" }]);
+  assertEquals([missing.direct.length, missing.sent.length, missing.subscribed.length], [0, 0, 0]);
+
+  const bad = makeDeps({ captchaConfigured: true });
+  const r2 = await handleSubscribe(post({ ...VALID, captcha: "bad-token" }), bad.deps);
+  assertEquals([r2.status, await r2.json()], [400, { error: "captcha_failed" }]);
+  assertEquals(bad.direct.length, 0);
+
+  const good = makeDeps({ captchaConfigured: true });
+  const r3 = await handleSubscribe(post({ ...VALID, captcha: "good-token" }), good.deps);
+  assertEquals([r3.status, await r3.json()], [200, { status: "subscribed" }]);
+  assertEquals(good.direct, [["ana@example.com", "captcha"]]);
+  assertEquals([good.sent.length, good.subscribed.length], [0, 0]);
+});
+
+Deno.test("the direct answer is the same whatever the address's state", async () => {
+  for (const status of ["subscribed", "bounced", "complained"]) {
+    const { deps } = makeDeps({ captchaConfigured: true, subscribeDirect: () => Promise.resolve({ status }) });
+    const res = await handleSubscribe(post({ ...VALID, captcha: "good-token" }), deps);
+    assertEquals(await res.json(), { status: "subscribed" });
+  }
+});
+
+Deno.test("a captcha service outage or a database error is a generic error; the throttle still applies", async () => {
+  const down = makeDeps({ captchaConfigured: true, verifyCaptcha: () => Promise.reject(new Error("timeout")) });
+  const r1 = await handleSubscribe(post({ ...VALID, captcha: "good-token" }), down.deps);
+  assertEquals([r1.status, await r1.json()], [502, { error: "server_error" }]);
+  const db = makeDeps({ captchaConfigured: true, subscribeDirect: () => Promise.resolve({ error: { code: "PT429" } }) });
+  const r2 = await handleSubscribe(post({ ...VALID, captcha: "good-token" }), db.deps);
+  assertEquals([r2.status, await r2.json()], [429, { error: "rate_limited" }]);
+  const tooLong = makeDeps({ captchaConfigured: true });
+  const r3 = await handleSubscribe(post({ ...VALID, captcha: "x".repeat(2049) }), tooLong.deps);
+  assertEquals(r3.status, 400);
 });

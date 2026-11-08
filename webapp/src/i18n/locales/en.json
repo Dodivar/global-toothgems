@@ -5044,6 +5044,8 @@
     "errors": {
       "rate_limited": "Too many attempts. Please try again in a moment.",
       "invalid_request": "Check the e-mail address and the consent box, then try again.",
+      "captcha_required": "Checking you’re not a robot… Please try again in a moment.",
+      "captcha_failed": "The robot check did not go through. Reload the page, then try again.",
       "network": "No connection. Check your network, then try again.",
       "unavailable": "Newsletter sign-up is not available at the moment.",
       "server_error": "We could not sign you up. Please try again in a moment."

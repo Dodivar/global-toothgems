@@ -6,16 +6,23 @@ import { Button } from "../ui/Button";
 import { Checkbox } from "../ui/Checkbox";
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import { useReveal } from "../../lib/useReveal";
-import { NEWSLETTER_EMAIL_RE, subscribeToNewsletter, type NewsletterError } from "../../lib/newsletter/api";
+import { NEWSLETTER_EMAIL_RE, subscribeToNewsletter, type NewsletterError, type NewsletterOutcome } from "../../lib/newsletter/api";
+import { useAuth } from "../../lib/auth";
+import { useHydrated } from "../../lib/useHydrated";
+import { isCaptchaConfigured, useTurnstile } from "../../lib/captcha/turnstile";
 
 type FieldError = "email" | "consent" | null;
 
 /**
- * The closing newsletter band: a visitor's sign-up, double opt-in. The Edge
- * Function `newsletter-subscribe` records a pending subscription and e-mails the
- * confirmation link (`/newsletter/confirmer`); the band then asks the visitor to
- * check their inbox. It answers the same whether the address was new or already
- * on the list.
+ * The closing newsletter band, through the Edge Function `newsletter-subscribe`
+ * (owner's choice, 2026-11-08: no confirmation e-mail when another proof exists):
+ *   - a signed-in member sees their account's address filled in and is
+ *     subscribed at once with it;
+ *   - a visitor passes the Cloudflare Turnstile captcha (loaded once they start
+ *     filling the form, usually invisible) and is subscribed at once;
+ *   - without a configured captcha, a visitor gets the double opt-in e-mail and
+ *     the band asks them to check their inbox.
+ * It answers the same whether the address was new or already on the list.
  *
  * Consent stays explicit, as on the current home page — an unticked box that
  * the visitor ticks. Unlike there, the button stays enabled and says what is
@@ -27,7 +34,17 @@ export function NewsletterBand() {
   const ref = useReveal<HTMLElement>();
   const emailId = useId();
   const errorId = useId();
-  const [email, setEmail] = useState("");
+  const { signedIn, email: accountEmail } = useAuth();
+  const hydrated = useHydrated();
+  // null until typed: a signed-in member's own address stands in (read once hydrated).
+  const [typed, setTyped] = useState<string | null>(null);
+  const email = typed ?? (hydrated && signedIn ? (accountEmail ?? "") : "");
+  const ownAddress = signedIn && !!accountEmail && email.trim().toLowerCase() === accountEmail.toLowerCase();
+  const captchaNeeded = isCaptchaConfigured && !ownAddress;
+  // The captcha script loads once the visitor starts filling the form, not with the page.
+  const [engaged, setEngaged] = useState(false);
+  const { attach: attachCaptcha, token: captchaToken, reset: resetCaptcha, failed: captchaFailed } = useTurnstile(engaged && captchaNeeded, i18n.language?.startsWith("en") ? "en" : "fr");
+  const [outcome, setOutcome] = useState<NewsletterOutcome>("sent");
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<FieldError>(null);
   const [sendError, setSendError] = useState<NewsletterError | null>(null);
@@ -50,14 +67,28 @@ export function NewsletterBand() {
     setError(null);
     setSendError(null);
     setStatus("sending");
+    let token: string | null = null;
+    if (captchaNeeded) {
+      setEngaged(true);
+      token = await captchaToken();
+      if (!token) {
+        setSendError(captchaFailed ? "captcha_failed" : "captcha_required");
+        setStatus("idle");
+        return;
+      }
+    }
     const result = await subscribeToNewsletter({
       email,
       locale: i18n.language?.startsWith("en") ? "en" : "fr",
       source: "home",
       consent,
       website,
+      captcha: token,
     });
+    // A token is single use, whatever the answer.
+    if (token) resetCaptcha();
     if (result.ok) {
+      setOutcome(result.outcome);
       setStatus("done");
     } else {
       setSendError(result.error);
@@ -83,13 +114,22 @@ export function NewsletterBand() {
             <div role="status" className="gt-celebrate grid justify-items-center gap-2 rounded-[var(--radius-lg)] bg-[var(--surface-card)] px-6 py-5 shadow-[var(--shadow-card)]">
               <span className="inline-flex items-center gap-2 text-[16px] font-bold text-[var(--status-success-fg)]">
                 <CheckCircle2 size={18} aria-hidden="true" />
-                {t("homeAlt.newsletter.successTitle")}
+                {outcome === "subscribed" ? t("homeAlt.newsletter.subscribedTitle") : t("homeAlt.newsletter.successTitle")}
               </span>
-              <span className="text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("homeAlt.newsletter.successBody", { email: email.trim() })}</span>
-              <span className="text-[12px] text-[var(--text-muted)]">{t("homeAlt.newsletter.successHint")}</span>
+              <span className="text-[length:var(--text-body-sm)] text-[var(--text-body)]">
+                {outcome === "subscribed"
+                  ? t("homeAlt.newsletter.subscribedBody", { email: email.trim() })
+                  : t("homeAlt.newsletter.successBody", { email: email.trim() })}
+              </span>
+              {outcome === "sent" && <span className="text-[12px] text-[var(--text-muted)]">{t("homeAlt.newsletter.successHint")}</span>}
             </div>
           ) : (
-            <form noValidate onSubmit={(e) => void submit(e)} className="relative grid w-full max-w-[560px] gap-3 text-left">
+            <form
+              noValidate
+              onSubmit={(e) => void submit(e)}
+              onFocusCapture={() => setEngaged(true)}
+              className="relative grid w-full max-w-[560px] gap-3 text-left"
+            >
               <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
                 <label>
                   Website
@@ -110,7 +150,7 @@ export function NewsletterBand() {
                   placeholder={t("homeAlt.newsletter.emailPlaceholder")}
                   value={email}
                   onChange={(e) => {
-                    setEmail(e.target.value);
+                    setTyped(e.target.value);
                     if (error === "email") setError(null);
                   }}
                   aria-invalid={error === "email" ? true : undefined}
@@ -132,6 +172,8 @@ export function NewsletterBand() {
                   }}
                 />
               </div>
+              {/* Turnstile draws here only when it needs the visitor (interaction-only). */}
+              {captchaNeeded && <div ref={attachCaptcha} className="px-2 empty:hidden" />}
               {(error || sendError) && (
                 <p id={errorId} role="alert" className="m-0 px-2 text-[13px] font-medium text-[var(--status-error-fg)]">
                   {error === "email"
