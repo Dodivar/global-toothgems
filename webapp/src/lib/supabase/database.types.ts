@@ -10166,6 +10166,8 @@ export type Database = {
       pending_course_enrolment_emails: {
         Args: { p_limit?: number; p_order_id?: string }
         Returns: {
+          consent_version: string
+          consented_at: string
           course_name: string
           email: string
           entitlement_id: string
@@ -10224,6 +10226,14 @@ export type Database = {
           stock_status: string
           threshold: number
           variant_name: string
+        }[]
+      }
+      pending_storage_purges: {
+        Args: { p_limit?: number }
+        Returns: {
+          bucket_id: string
+          id: number
+          name: string
         }[]
       }
       pending_studio_credit_note_emails: {
@@ -10382,6 +10392,10 @@ export type Database = {
       record_newsletter_contact_sync: {
         Args: { p_due_at: string; p_error?: string; p_id: string }
         Returns: boolean
+      }
+      record_storage_purges: {
+        Args: { p_done: number[]; p_error?: string; p_failed?: number[] }
+        Returns: undefined
       }
       record_stripe_webhook_event: {
         Args: {

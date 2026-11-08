@@ -363,9 +363,25 @@ export const PRIVACY: LegalDocument = {
               data: l("Commandes, factures et avoirs", "Orders, invoices and credit notes"),
               period: l("10 ans à compter de la clôture de l’exercice (obligation comptable), détachés de votre compte s’il est supprimé", "10 years from the end of the financial year (accounting obligation), detached from your account if it is deleted"),
             },
-            { data: l("Demandes au service client", "Customer service requests"), period: l("3 ans après le dernier échange", "3 years after the last exchange") },
-            { data: l("Newsletter", "Newsletter"), period: l("Jusqu’à votre désinscription ; l’adresse est ensuite gardée sur une liste d’opposition, pour ne plus vous écrire", "Until you unsubscribe; the address is then kept on an opt-out list, so we no longer write to you") },
-            { data: l("Preuves de consentement", "Proof of consent"), period: l("5 ans", "5 years") },
+            { data: l("Demandes au service client et pièces jointes", "Customer service requests and attachments"), period: l("3 ans après le dernier échange, puis effacées automatiquement", "3 years after the last exchange, then erased automatically") },
+            {
+              data: l("Newsletter", "Newsletter"),
+              period: l(
+                "Jusqu’à votre désinscription ; l’adresse est ensuite gardée sur une liste d’opposition, pour ne plus vous écrire. Une inscription jamais confirmée est effacée 30 jours après l’expiration du lien de confirmation",
+                "Until you unsubscribe; the address is then kept on an opt-out list, so we no longer write to you. A sign-up never confirmed is erased 30 days after its confirmation link expired",
+              ),
+            },
+            {
+              data: l("Alertes de retour en stock", "Back-in-stock alerts"),
+              period: l("1 an après l’envoi de l’alerte ; 3 ans après la demande si le produit n’est jamais revenu", "1 year after the alert is sent; 3 years after the request if the product never came back"),
+            },
+            {
+              data: l("Preuves de consentement", "Proof of consent"),
+              period: l(
+                "Tant que le consentement est en vigueur, puis 5 ans après son retrait ou son remplacement ; 5 ans pour une preuve liée à un achat",
+                "While the consent is in force, then 5 years after it is withdrawn or replaced; 5 years for a proof tied to a purchase",
+              ),
+            },
             { data: l("Photo envoyée pour un essai sur un sourire", "Photo sent for a smile try-on"), period: l("Non conservée par nous (24 heures au plus sur votre appareil)", "Not kept by us (24 hours at most on your device)") },
             { data: l("Cookies", "Cookies"), period: l("Voir la <<politique cookies|/cookies>>", "See the <<cookie policy|/cookies>>") },
           ],

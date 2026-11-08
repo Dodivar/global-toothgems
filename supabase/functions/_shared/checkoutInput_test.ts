@@ -75,6 +75,7 @@ Deno.test("rejects bad contact details, rate, locale and codes", () => {
     { gift_card_codes: ["GT-1234"] },
     { use_loyalty_reward: "yes" },
     { use_loyalty_reward: 1 },
+    { course_immediate_access: "yes" },
     { customer_note: "x".repeat(1001) },
     { previous_client_secret: "cs_test_a1B2c3D4e5F6" },
     { previous_client_secret: "pi_123_secret_abcdefghij" },
@@ -215,4 +216,13 @@ Deno.test("the loyalty reward is a request that defaults to off", () => {
   const on = parseCheckoutInput({ ...valid(), use_loyalty_reward: true });
   assert(on.ok);
   assertEquals(on.value.use_loyalty_reward, true);
+});
+
+Deno.test("the course waiver is a ticked box that defaults to off", () => {
+  const off = parseCheckoutInput(valid());
+  assert(off.ok);
+  assertEquals(off.value.course_immediate_access, false);
+  const on = parseCheckoutInput({ ...valid(), course_immediate_access: true });
+  assert(on.ok);
+  assertEquals(on.value.course_immediate_access, true);
 });

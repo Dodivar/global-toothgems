@@ -177,10 +177,17 @@ describe("course lines in the checkout request", () => {
     expect(request?.items).toEqual([{ course_id: course.courseId, quantity: 1 }]);
     expect(request?.shipping_rate_id).toBeNull();
     expect(JSON.stringify(request)).not.toContain("34900");
+    expect(request).not.toHaveProperty("course_immediate_access");
+  });
+
+  it("sends the ticked course waiver, and only for a basket holding a course", () => {
+    expect(buildCheckoutRequest([course], form, null, "fr", [], false, [], true)?.course_immediate_access).toBe(true);
+    expect(buildCheckoutRequest([line], form, "rate", "fr", [], false, [], true)).not.toHaveProperty("course_immediate_access");
   });
 
   it("knows the course refusals", () => {
     expect(readCheckoutAnswer({ error: "account_required" })).toEqual({ kind: "error", error: "account_required" });
     expect(readCheckoutAnswer({ error: "course_owned" })).toEqual({ kind: "error", error: "course_owned" });
+    expect(readCheckoutAnswer({ error: "course_consent_required" })).toEqual({ kind: "error", error: "course_consent_required" });
   });
 });

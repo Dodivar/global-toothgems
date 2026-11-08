@@ -99,9 +99,9 @@ export const RETURNS: LegalDocument = {
           tone: "policy",
           text: lp(
             (p) =>
-              `Chez Global Toothgems, ne peuvent être retournés : ${p.excludedGoods}, ainsi que les produits personnalisés à votre demande. Une formation en ligne peut être annulée dans les 14 jours suivant l’achat, même commencée ; un abonnement au Studio 3D, dans les 14 jours suivant la souscription, depuis <<Mon abonnement Studio|/compte/studio>>.`,
+              `Chez Global Toothgems, ne peuvent être retournés : ${p.excludedGoods}, ainsi que les produits personnalisés à votre demande. Une formation en ligne peut être annulée dans les 14 jours suivant l’achat tant qu’aucune leçon n’a été ouverte (vous renoncez à ce droit au paiement pour y accéder immédiatement) ; un abonnement au Studio 3D, dans les 14 jours suivant la souscription, depuis <<Mon abonnement Studio|/compte/studio>>.`,
             (p) =>
-              `At Global Toothgems, the following cannot be returned: ${p.excludedGoods}, and products personalised at your request. An online course can be cancelled within 14 days of purchase, even once started; a 3D Studio subscription, within 14 days of subscribing, from <<My Studio subscription|/compte/studio>>.`,
+              `At Global Toothgems, the following cannot be returned: ${p.excludedGoods}, and products personalised at your request. An online course can be cancelled within 14 days of purchase as long as no lesson has been opened (you waive this right when paying, to access it at once); a 3D Studio subscription, within 14 days of subscribing, from <<My Studio subscription|/compte/studio>>.`,
           ),
         },
       ],

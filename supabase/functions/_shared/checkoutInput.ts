@@ -70,6 +70,12 @@ export interface CheckoutInput {
    * computes the discount.
    */
   use_loyalty_reward: boolean;
+  /**
+   * The buyer ticked the request for immediate access to the courses with the
+   * waiver of the right of withdrawal (`_shared/courseConsent.ts`). Required by
+   * `create-checkout-session` whenever `course_ids` is not empty.
+   */
+  course_immediate_access: boolean;
   customer_note: string | null;
   /**
    * The client secret of this customer's previous, still unpaid payment step
@@ -291,6 +297,7 @@ const INPUT_KEYS = [
   "promotion_codes",
   "gift_card_codes",
   "use_loyalty_reward",
+  "course_immediate_access",
   "customer_note",
   "previous_client_secret",
 ] as const;
@@ -334,6 +341,9 @@ export function parseCheckoutInput(body: unknown): ValidationResult {
   const useLoyaltyReward = body.use_loyalty_reward ?? false;
   if (typeof useLoyaltyReward !== "boolean") return fail("use_loyalty_reward");
 
+  const courseImmediateAccess = body.course_immediate_access ?? false;
+  if (typeof courseImmediateAccess !== "boolean") return fail("course_immediate_access");
+
   const note = text(body.customer_note, 1000, { optional: true });
   if (note === null) return fail("customer_note");
 
@@ -352,6 +362,7 @@ export function parseCheckoutInput(body: unknown): ValidationResult {
       promotion_codes: promotionCodes,
       gift_card_codes: giftCardCodes,
       use_loyalty_reward: useLoyaltyReward,
+      course_immediate_access: courseImmediateAccess,
       customer_note: note ?? null,
       previous_client_secret: previous as string | null,
     },
