@@ -6,6 +6,8 @@ import { Link, useLocation, useNavigate } from "../lib/navigation";
 import { ArrowRight, BadgeCheck, CircleAlert, Eye, EyeOff, Info, LogOut, MailCheck, RotateCw } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
+import { GoogleIdentityButton } from "../components/auth/GoogleIdentityButton";
+import { isGoogleIdentityConfigured } from "../lib/googleIdentity";
 import { AuthCard, AuthField, AuthLayout, GoogleButton } from "../components/auth/AuthScene";
 import { useAuth, type ResendResult, type SignInResult } from "../lib/auth";
 import { confirmationRedirect } from "../lib/authRedirect";
@@ -36,7 +38,7 @@ export function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signedIn, restoring, realAuth, email: sessionEmail, signInWithPassword, signInWithGoogle, resendConfirmation, signOut } = useAuth();
+  const { signedIn, restoring, realAuth, email: sessionEmail, signInWithPassword, signInWithGoogle, signInWithGoogleToken, resendConfirmation, signOut } = useAuth();
   const { openCourse } = useProgress();
   const { showToast } = useToast();
 
@@ -113,6 +115,21 @@ export function Login() {
       setBusy(false);
       showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
     }
+  };
+
+  // Google's own button (pop-up naming this site); the redirect button below is
+  // the fallback when it is not configured or Google's script cannot load.
+  const [nativeGoogleFailed, setNativeGoogleFailed] = useState(false);
+  const nativeGoogle = isGoogleIdentityConfigured && !nativeGoogleFailed;
+  const continueWithGoogleToken = async (token: string, nonce: string) => {
+    setBusy(true);
+    const result = await signInWithGoogleToken(token, nonce);
+    if (result === "unavailable") {
+      setBusy(false);
+      showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
+      return;
+    }
+    navigate(target, { replace: true });
   };
 
   const sendConfirmation = async () => {
@@ -276,11 +293,18 @@ export function Login() {
                   <span className="h-px flex-1 bg-[var(--border-subtle)]" />
                 </div>
 
-                <GoogleButton
-                  label={t("authAlt.google")}
-                  disabled={busy}
-                  onClick={() => void continueWithGoogle()}
-                />
+                {nativeGoogle ? (
+                  <GoogleIdentityButton
+                    onUnavailable={() => setNativeGoogleFailed(true)}
+                    onCredential={(token, nonce) => void continueWithGoogleToken(token, nonce)}
+                  />
+                ) : (
+                  <GoogleButton
+                    label={t("authAlt.google")}
+                    disabled={busy}
+                    onClick={() => void continueWithGoogle()}
+                  />
+                )}
               </>
             )}
           </form>

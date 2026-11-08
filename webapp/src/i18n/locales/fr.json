@@ -5044,6 +5044,8 @@
     "errors": {
       "rate_limited": "Trop de tentatives. Réessayez dans un moment.",
       "invalid_request": "Vérifiez l’adresse e-mail et la case de consentement, puis réessayez.",
+      "captcha_required": "Vérification anti-robot en cours… Réessayez dans un instant.",
+      "captcha_failed": "La vérification anti-robot n’a pas abouti. Rechargez la page, puis réessayez.",
       "network": "Connexion impossible. Vérifiez votre réseau, puis réessayez.",
       "unavailable": "L’inscription à la newsletter n’est pas disponible pour le moment.",
       "server_error": "L’inscription n’a pas pu aboutir. Réessayez dans un moment."
