@@ -1806,6 +1806,16 @@ then set `status = 'processed'` (or `failed` + `error`). Events in `failed` need
   With Supabase's default `{{ .ConfirmationURL }}` links still work, but only in the browser that asked for them.
   An e-mail sent from the dashboard rather than by the app carries the Site URL as `.RedirectTo`: send
   confirmations and resets from the app.
+- Google's own button (since 2026-11-08, optional, owner's request: the redirect's consent page names
+  `<project ref>.supabase.co`, which does not inspire trust): with `NEXT_PUBLIC_GOOGLE_CLIENT_ID` set (the same OAuth
+  client id as the provider above; public by nature, the secret stays here), `/connexion` and the `/inscription`
+  dialog show Google's official button (Google Identity Services, `webapp/src/lib/googleIdentity.ts`,
+  `components/auth/GoogleIdentityButton.tsx`). Its pop-up names this site; the ID token comes back with a hashed
+  nonce and `supabase.auth.signInWithIdToken({ provider: "google", token, nonce })` opens the cookie session
+  (`signInWithGoogleToken` in `lib/auth.tsx`, same sign-in-or-sign-up semantics, terms note kept). Unset or Google's
+  script unreachable: the redirect below is the fallback. To switch on: in Google Cloud › Credentials › the OAuth
+  client, add the site's origins (`https://<production domain>`, the Vercel preview/`http://localhost:3000` if wanted)
+  to *Authorised JavaScript origins*; leave Supabase's *Skip nonce check* **off**; set the variable on Vercel.
 - Authentication → Sign In / Providers → Google (**Continue with Google**, since 2026-10-04): the webapp calls
   `supabase.auth.signInWithOAuth({ provider: "google", redirectTo: …/auth/confirm?next=… })`; Google returns to
   `https://<project ref>.supabase.co/auth/v1/callback` (to be listed as an *Authorised redirect URI* of the Google
