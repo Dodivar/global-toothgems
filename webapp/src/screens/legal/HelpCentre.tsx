@@ -4,7 +4,6 @@ import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Cookie, FileText, HelpCircle, Landmark, Mail, RotateCcw, ScrollText, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
 import { LegalLayout } from "../../components/legal/LegalLayout";
-import { ComplianceChecklist } from "../../components/legal/ComplianceChecklist";
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import { useCookieConsent } from "../../lib/cookieConsent";
 
@@ -86,7 +85,6 @@ export function HelpCentre() {
         </div>
         {tiles(LEGAL)}
       </section>
-      <ComplianceChecklist />
     </LegalLayout>
   );
 }

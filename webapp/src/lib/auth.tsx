@@ -77,6 +77,9 @@ type SignUpResult =
 /** Outcome of starting the Google sign-in. */
 type GoogleSignInResult = "redirecting" | "unavailable";
 
+/** Outcome of signing in with a Google ID token (Google's own button, no redirect). */
+export type GoogleTokenResult = "signedIn" | "unavailable";
+
 /** Outcome of asking for a new confirmation email. */
 export type ResendResult = "sent" | "rateLimited" | "failed";
 
@@ -112,6 +115,13 @@ interface AuthContextValue {
    * when the redirect could not start.
    */
   signInWithGoogle: (next?: string, options?: { termsAccepted?: boolean }) => Promise<GoogleSignInResult>;
+  /**
+   * Opens the session from an ID token Google's own button returned (the
+   * nonce is the raw value whose hash Google put in the token). No redirect:
+   * "signedIn" means the session is open; "unavailable" in mock mode or when
+   * Supabase refused the token. Same sign-in-or-sign-up semantics as above.
+   */
+  signInWithGoogleToken: (token: string, nonce: string, options?: { termsAccepted?: boolean }) => Promise<GoogleTokenResult>;
   /**
    * Whether the account has accepted the terms and the privacy policy:
    * null while signed out or unknown. False for an account created through
@@ -433,6 +443,16 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     return error ? "unavailable" : "redirecting";
   }, []);
 
+  const signInWithGoogleToken = useCallback(
+    async (token: string, nonce: string, options?: { termsAccepted?: boolean }): Promise<GoogleTokenResult> => {
+      if (!supabase) return "unavailable";
+      if (options?.termsAccepted) rememberGoogleTerms();
+      const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token, nonce });
+      return error ? "unavailable" : "signedIn";
+    },
+    [],
+  );
+
   const signOut = useCallback(() => {
     setProfile(null);
     setUserId(null);
@@ -544,13 +564,14 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         signUp,
         resendConfirmation,
         signInWithGoogle,
+        signInWithGoogleToken,
         termsAccepted,
         acceptTerms,
         signIn,
         signOut,
         updateProfile,
       }),
-    [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, termsAccepted, acceptTerms, signIn, signOut, updateProfile],
+    [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, signInWithGoogleToken, termsAccepted, acceptTerms, signIn, signOut, updateProfile],
   );
 
   return (
@@ -638,6 +659,7 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (): Promise<SignUpResult> => "confirmationSent", []);
   const resendConfirmation = useCallback(async (): Promise<ResendResult> => "sent", []);
   const signInWithGoogle = useCallback(async (): Promise<GoogleSignInResult> => "unavailable", []);
+  const signInWithGoogleToken = useCallback(async (): Promise<GoogleTokenResult> => "unavailable", []);
 
   const signOut = useCallback(() => setProfile(null), [setProfile]);
 
@@ -661,6 +683,7 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
         signUp,
         resendConfirmation,
         signInWithGoogle,
+        signInWithGoogleToken,
         // The mock has no consent records.
         termsAccepted: profile ? true : null,
         acceptTerms: async () => true,
@@ -668,7 +691,7 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
         signOut,
         updateProfile,
       }),
-    [profile, hydrated, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, signIn, signOut, updateProfile],
+    [profile, hydrated, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, signInWithGoogleToken, signIn, signOut, updateProfile],
   );
 
   return (

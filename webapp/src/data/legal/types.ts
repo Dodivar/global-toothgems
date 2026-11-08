@@ -69,8 +69,6 @@ export type Block =
   | { kind: "table"; caption: Localized; columns: TableColumn[]; rows: Record<string, Localized>[] }
   | { kind: "cards"; items: { icon: IconKey; title: Localized; text: Localized }[] }
   | { kind: "steps"; label: Localized; items: { icon: IconKey; title: Localized; text: Localized }[] }
-  /** A reviewer-only note: hidden when review annotations are switched off. */
-  | { kind: "internal"; text: Localized }
   /** Interactive panel rendered by the page (e.g. the current cookie choices). */
   | { kind: "widget"; widget: "cookieChoices" };
 
@@ -116,4 +114,4 @@ export interface LegalDocument {
 export const l = (fr: string, en: string): Localized => ({ fr, en });
 
 /** Draft date shown as "last updated" on every document until publication. */
-export const DRAFT_DATE = "2026-09-23";
+export const DRAFT_DATE = "2026-11-08";

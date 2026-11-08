@@ -178,7 +178,6 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
   return (
     <LegalLayout
       eyebrow={t("legal.contact.eyebrow")}
-      hideReviewBar
       title={t("legal.contact.title")}
       intro={t("legal.contact.intro")}
       crumbs={[{ label: t("legal.hub.title"), to: LEGAL_PATHS.help }]}
