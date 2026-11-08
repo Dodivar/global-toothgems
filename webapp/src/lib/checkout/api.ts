@@ -34,6 +34,8 @@ export interface CheckoutRequest {
   promotion_codes?: string[];
   /** A request to spend the completed loyalty card; the database computes the discount. */
   use_loyalty_reward?: boolean;
+  /** The ticked request for immediate access to the courses, with the waiver of the right of withdrawal (required for a course). */
+  course_immediate_access?: boolean;
   /** The client secret of the payment step this basket opened before, closed by the function first. */
   previous_client_secret?: string;
 }
@@ -51,6 +53,7 @@ export const CHECKOUT_ERRORS = [
   "account_required",
   "terms_required",
   "course_owned",
+  "course_consent_required",
   "payment_unavailable",
   "free_order",
   "maintenance",

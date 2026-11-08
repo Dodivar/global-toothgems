@@ -35,6 +35,7 @@ import {
   type StudioInvoiceSource,
 } from "./invoicePdf.ts";
 import { refundContent, shippingContent } from "./orderContent.ts";
+import { courseEnrolmentContent, type CourseWaiver } from "./courseContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
 import {
   backInStockContent,
@@ -73,6 +74,8 @@ export interface PendingShipping extends MailTarget {
 export interface PendingEnrolment extends MailTarget {
   entitlementId: string;
   courseName: string;
+  /** The waiver of the right of withdrawal ticked before paying, repeated in the e-mail; null before it was asked. */
+  waiver?: CourseWaiver | null;
 }
 export interface PendingRefund extends MailTarget {
   refundId: string;
@@ -263,6 +266,7 @@ export function sendCourseEnrolmentEmails(
         variables: { first_name: enrolment.firstName, course_name: enrolment.courseName },
         eventKey: `course_enrolment:${enrolment.entitlementId}`,
         orderId: enrolment.orderId,
+        content: (locale) => courseEnrolmentContent(enrolment.waiver ?? null, locale) ?? {},
       }), log)
   );
 }
@@ -548,11 +552,16 @@ export function supabasePendingSource(db: SupabaseClient): PendingSource {
       return rows.map((row) => ({ ...target(row), shipmentId: row.shipment_id, userId: row.user_id, trackingUrl: row.tracking_url }));
     },
     async courseEnrolments({ orderId, limit }) {
-      const rows = await rpc<TargetRow & { entitlement_id: string; course_name: string }>(
+      const rows = await rpc<TargetRow & { entitlement_id: string; course_name: string; consent_version: string | null; consented_at: string | null }>(
         "pending_course_enrolment_emails",
         { p_order_id: orderId ?? null, p_limit: limit },
       );
-      return rows.map((row) => ({ ...target(row), entitlementId: row.entitlement_id, courseName: row.course_name }));
+      return rows.map((row) => ({
+        ...target(row),
+        entitlementId: row.entitlement_id,
+        courseName: row.course_name,
+        waiver: row.consent_version && row.consented_at ? { version: row.consent_version, acceptedAt: row.consented_at } : null,
+      }));
     },
     async refunds(limit) {
       const rows = await rpc<TargetRow & { refund_id: string; amount: number | string; currency: string }>(

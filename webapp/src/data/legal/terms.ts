@@ -41,7 +41,7 @@ export const TERMS: LegalDocument = {
   showKey: true,
   contactCategory: "order",
   lead: [
-    // Editor's note, never published: Completed on 8 November 2026 with workable rules, to be validated by the business (decision 126). Still to supply: the consumer mediator. To have a lawyer review before launch: withdrawal from courses and the products’ regulatory status.
+    // Editor's note, never published: Completed on 8 November 2026 with workable rules, to be validated by the business (decision 126). Still to supply: the consumer mediator. Courses are sold with the express waiver of the right of withdrawal ticked at the checkout (decision 128). To have a lawyer review before launch: the products’ regulatory status.
   ],
   sections: [
     {
@@ -436,9 +436,9 @@ export const TERMS: LegalDocument = {
           tone: "policy",
           text: lp(
             (p) =>
-              `Produits concernés chez Global Toothgems, pour des raisons d’hygiène : ${p.excludedGoods}. Les produits personnalisés à votre demande sont également exclus. Une formation en ligne reste rétractable pendant 14 jours à compter de l’achat, même si vous avez commencé à la suivre.`,
+              `Produits concernés chez Global Toothgems, pour des raisons d’hygiène : ${p.excludedGoods}. Les produits personnalisés à votre demande sont également exclus. Une formation en ligne est un contenu numérique : au paiement, vous demandez l’accès immédiat et renoncez expressément à votre droit de rétractation, que vous perdez dès que vous ouvrez une première leçon. Tant qu’aucune leçon n’est ouverte, vous pouvez vous rétracter pendant 14 jours à compter de l’achat.`,
             (p) =>
-              `Products concerned at Global Toothgems, for hygiene reasons: ${p.excludedGoods}. Products personalised at your request are also excluded. An online course can still be withdrawn from for 14 days from purchase, even if you have started it.`,
+              `Products concerned at Global Toothgems, for hygiene reasons: ${p.excludedGoods}. Products personalised at your request are also excluded. An online course is digital content: when paying, you ask for immediate access and expressly waive your right of withdrawal, which you lose as soon as you open a first lesson. As long as no lesson has been opened, you can withdraw for 14 days from purchase.`,
           ),
         },
       ],

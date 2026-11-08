@@ -8,7 +8,9 @@ import { checkoutErrorCode, checkoutErrorStatus, type DbError } from "../_shared
  *
  *   browser ──(cart ids + quantities, contact, rate id)──▶ this function
  *     1. validates the input strictly (no amount is accepted from the browser),
- *        refuses while the shop is in maintenance
+ *        refuses while the shop is in maintenance; a basket holding a course
+ *        needs an account and the ticked waiver of the right of withdrawal,
+ *        recorded in consent_records before the order exists
  *     2. closes the customer's previous unpaid payment step, if they name it
  *        (they went back to change something): nothing stays reserved twice
  *     3. create_order() with the service role → order 'pending', stock reserved,
@@ -111,6 +113,11 @@ export interface CheckoutDeps {
   userFromToken(token: string): Promise<string | null>;
   /** Whether the account holds a granted `terms` consent record. */
   termsAccepted(userId: string): Promise<boolean>;
+  /**
+   * Records the buyer's request for immediate access to the courses with the waiver of
+   * the right of withdrawal (`consent_records`, `_shared/courseConsent.ts`). Throws on failure.
+   */
+  recordCourseConsent(userId: string): Promise<void>;
   createOrder(input: CheckoutInput, userId: string | null, reservationMinutes: number): Promise<
     { order: OrderRow; error?: undefined } | { order?: undefined; error: DbError }
   >;
@@ -213,6 +220,12 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
     }
   }
 
+  // A course is sold to an account, and only with the waiver of the right of withdrawal
+  // the buyer ticked (L221-28 13°): nothing is reserved without it.
+  const sellsCourses = input.course_ids.length > 0;
+  if (sellsCourses && !userId) return fail("account_required");
+  if (sellsCourses && !input.course_immediate_access) return fail("course_consent_required");
+
   // The previous payment step of this basket is closed first, so its stock and
   // gift cards are free for the new order. Never blocks the checkout.
   const previous = parseClientSecret(input.previous_client_secret);
@@ -232,6 +245,17 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
   if (!deps.publishableKey) {
     deps.log("STRIPE_PUBLISHABLE_KEY missing or not matching the secret key's mode");
     return fail("payment_unavailable");
+  }
+
+  // Recorded before the order: an order paid in full by gift cards grants its courses
+  // inside create_order().
+  if (sellsCourses && userId) {
+    try {
+      await deps.recordCourseConsent(userId);
+    } catch (error) {
+      deps.log("course waiver not recorded", error instanceof Error ? error.message : error);
+      return fail("server_error");
+    }
   }
 
   const created = await deps.createOrder(input, userId, RESERVATION_MINUTES);

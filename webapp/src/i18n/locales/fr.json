@@ -341,6 +341,7 @@
       "gift_card_details_invalid": "Les informations d’une carte cadeau du panier ne sont plus acceptées (montant, destinataire ou date). Retirez-la puis composez-la à nouveau.",
       "account_required": "Un compte est nécessaire pour acheter une formation : l’accès s’ouvre sur votre compte. Connectez-vous puis réessayez.",
       "terms_required": "Dernier point avant de payer : votre compte n’a pas encore accepté nos conditions.",
+      "course_consent_required": "Pour acheter une formation, cochez la demande d’accès immédiat à la formation.",
       "course_owned": "Vous avez déjà accès à une formation de votre panier. Retirez-la puis réessayez.",
       "basket_changed": "Votre panier a changé pendant le paiement : vérifiez-le, puis reprenez le paiement."
     },
@@ -385,7 +386,10 @@
       "signIn": "Se connecter",
       "createAccount": "Créer un compte",
       "openCourses": "Accéder à mes formations",
-      "paidBody": "Vos formations sont disponibles dans votre espace membre."
+      "paidBody": "Vos formations sont disponibles dans votre espace membre.",
+      "consentTitle": "Accès immédiat à la formation",
+      "consentLabel": "Je demande l’accès immédiat à la formation et je renonce expressément à mon droit de rétractation : je reconnais le perdre dès que je commence à suivre la formation.",
+      "consentHint": "Tant qu’aucune leçon n’est ouverte, vous gardez 14 jours pour vous rétracter."
     },
     "noShipping": "Rien à expédier : les cartes cadeaux sont envoyées par e-mail et les formations s’ouvrent dans votre espace membre.",
     "recap": {
