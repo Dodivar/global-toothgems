@@ -550,7 +550,7 @@ refund status → 'succeeded'  (mark_refund_succeeded, record_external_refund, r
   page, PDF via `webapp/src/lib/documents/invoiceDocument.ts`); active staff read all.
 - **E-mailed (owner, 2026-10-09; changed 2026-11-08).** The order confirmation carries **no invoice** any more (owner's
   request: downloadable on request; e-mailing it is mandatory only for B2B buyers, not built; a guest has no member
-  page and asks support), and the refund e-mail carries the refund's credit note. Drawn in
+  page and asks support), and the refund e-mail carries the refund's credit note. **Deployed 2026-11-08** from the pinned commit `66c8915`: `stripe-webhook`, `create-checkout-session`, `email-showcase`. Drawn in
   the Edge Functions (`_shared/email/invoicePdf.ts`) by the same template as the member's download:
   `_shared/documents/` is a generated copy of `webapp/src/lib/documents/` (portable modules + the `documents`
   strings), refreshed by `npm run sync:documents` in `webapp/`; a Vitest test fails while the copy is stale. A PDF
