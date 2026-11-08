@@ -872,7 +872,8 @@ public  newsletter_unsubscribe(token)   one-click link in every marketing e-mail
   keep the double opt-in above (`{status: "sent"}`). The home band fills in a signed-in member's address, loads the
   Turnstile script only once the visitor starts filling the form (`webapp/src/lib/captcha/turnstile.ts`,
   `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, "interaction-only": usually invisible) and says "You're subscribed" or "check your
-  inbox". How each subscription was obtained is kept in `opt_in_method` (proof of consent). Decision to confirm with
+  inbox". How each subscription was obtained is kept in `opt_in_method` (proof of consent). Both Turnstile keys were set
+  by the owner on 2026-11-08; checked right after: no token → `captcha_required`, a fake token → `captcha_failed`. Decision to confirm with
   the lawyer: single opt-in with a captcha for visitors (legal in France as far as known; Germany expects a double
   opt-in).
 - **Mirrored into Resend contacts (2026-11-06, migration `newsletter_contact_sync`):** campaigns are written and
