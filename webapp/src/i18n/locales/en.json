@@ -4654,7 +4654,7 @@
     },
     "cookies": {
       "bannerTitle": "Your cookies, your choice",
-      "bannerBody": "Some cookies are essential for the site to work and cannot be switched off. Others are optional — remembering your preferences, measuring audience, personalising advertising — and are only used if you allow them. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
+      "bannerBody": "Some cookies are essential for the site to work (sign-in, cart, payment) and cannot be switched off. Only with your agreement, we measure the site’s audience with PostHog, hosted in the European Union, to improve it. No advertising cookies. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
       "policyLink": "Read our cookie policy",
       "rejectNonEssential": "Reject non-essential",
       "acceptAll": "Accept all",
@@ -4662,28 +4662,21 @@
       "customize": "Customize",
       "save": "Save my choices",
       "settingsTitle": "Cookie settings",
-      "settingsBody": "Choose which optional cookies you accept. They stay off until you switch them on.",
-      "settingsFoot": "You can change these choices at any time.",
+      "settingsBody": "Choose whether you accept audience measurement. It stays off until you switch it on. We use no advertising or social-network cookies.",
+      "settingsFoot": "Your choice is kept for 6 months; you can change it at any time.",
       "settingsLink": "Cookie settings",
       "alwaysActive": "Always active",
       "providers": "Services concerned:",
-      "providersPlaceholder": "List of services per the implementation",
       "category": {
         "essential": {
           "title": "Essential",
-          "body": "Needed for the site to work: cart, sign-in, security, remembering this choice."
-        },
-        "preferences": {
-          "title": "Preferences",
-          "body": "Remember your choices, such as display language."
+          "body": "Needed for the site to work: sign-in, cart, secure payment, chosen language, remembering this choice.",
+          "providers": "Global Toothgems, Supabase (sign-in), Stripe (payment)"
         },
         "analytics": {
           "title": "Analytics",
-          "body": "Help us understand how the site is used so we can improve it."
-        },
-        "marketing": {
-          "title": "Marketing",
-          "body": "Measure our campaigns and personalise advertising on other sites."
+          "body": "Help us understand how the site is used and fix its errors.",
+          "providers": "PostHog (servers in the European Union)"
         }
       },
       "currentTitle": "Your current choices",
