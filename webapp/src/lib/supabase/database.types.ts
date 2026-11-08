@@ -10226,6 +10226,14 @@ export type Database = {
           variant_name: string
         }[]
       }
+      pending_storage_purges: {
+        Args: { p_limit?: number }
+        Returns: {
+          bucket_id: string
+          id: number
+          name: string
+        }[]
+      }
       pending_studio_credit_note_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -10382,6 +10390,10 @@ export type Database = {
       record_newsletter_contact_sync: {
         Args: { p_due_at: string; p_error?: string; p_id: string }
         Returns: boolean
+      }
+      record_storage_purges: {
+        Args: { p_done: number[]; p_error?: string; p_failed?: number[] }
+        Returns: undefined
       }
       record_stripe_webhook_event: {
         Args: {
