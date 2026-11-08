@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Academy course withdrawal waiver validation suite
--- (migration 20261108150000_course_withdrawal_waiver, decision 128)
+-- (migration 20261108210525_course_withdrawal_waiver, decision 128)
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
@@ -55,15 +55,16 @@ begin
   passed := passed || 'CW1'::text;
 
   -- CW2: two paid course orders. m1 waived before ordering; m2 waived only after.
+  -- (A member's consent is stamped with clock_timestamp() whatever it sends: m1's order comes after it.)
   perform set_config('role', 'service_role', true);
   perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
   insert into public.courses (slug, title, status, published_at) values ('cw-test-course', 'Cours CW', 'draft', null)
     returning id into v_course;
   insert into public.orders (user_id, customer_email, billing_address, currency, subtotal_amount, total_amount, payment_status, status, locale, created_at)
-    values (m1, 'waiver-1.test@example.invalid', '{"first_name": "Léa"}', 'EUR', 90, 90, 'paid', 'processing', 'fr', now() - interval '1 minute')
+    values (m1, 'waiver-1.test@example.invalid', '{"first_name":"Léa","last_name":"T","address_line1":"1 rue X","city":"Paris","country_code":"FR"}', 'EUR', 90, 90, 'paid', 'processing', 'fr', clock_timestamp() + interval '1 minute')
     returning id into v_order1;
   insert into public.orders (user_id, customer_email, billing_address, currency, subtotal_amount, total_amount, payment_status, status, locale, created_at)
-    values (m2, 'waiver-2.test@example.invalid', '{"first_name": "Sam"}', 'EUR', 90, 90, 'paid', 'processing', 'en', now() - interval '1 minute')
+    values (m2, 'waiver-2.test@example.invalid', '{"first_name":"Sam","last_name":"T","address_line1":"1 rue X","city":"Paris","country_code":"FR"}', 'EUR', 90, 90, 'paid', 'processing', 'en', now() - interval '1 minute')
     returning id into v_order2;
   insert into public.consent_records (user_id, purpose, granted, policy_version, source)
   values (m2, 'course_immediate_access', true, 'course-withdrawal-2026-11', 'checkout');
@@ -82,7 +83,7 @@ begin
 
   -- CW3: erasing m2's account keeps their waiver without the account; other consents go.
   insert into public.consent_records (user_id, purpose, granted, policy_version, source)
-  values (m2, 'terms', true, 'terms-v1', 'signup');
+  values (m2, 'terms', true, 'terms-v1', 'checkout');
   delete from public.course_entitlements where user_id = m2;
   r := null;
   select public.erase_account(m2) ->> 'status' as status into r;

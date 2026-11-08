@@ -10166,6 +10166,8 @@ export type Database = {
       pending_course_enrolment_emails: {
         Args: { p_limit?: number; p_order_id?: string }
         Returns: {
+          consent_version: string
+          consented_at: string
           course_name: string
           email: string
           entitlement_id: string

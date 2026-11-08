@@ -28,6 +28,9 @@ alter table public.consent_records add constraint consent_records_purpose_check
                      'cookies_preferences', 'cookies_analytics', 'cookies_marketing',
                      'studio_immediate_access', 'course_immediate_access'));
 
+comment on column public.consent_records.user_id is
+  'Null once the account is erased: only the immediate-access requests of the Studio (L221-25) and of courses (L221-28 13°) are kept then.';
+
 -- The return type changes: dropped and created again, same grants.
 drop function public.pending_course_enrolment_emails(uuid, integer);
 
