@@ -404,7 +404,7 @@ export function Header() {
             id="gt-mobile-menu"
             className="grid max-h-[calc(100vh-60px)] gap-3.5 overflow-y-auto border-t border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--surface-chrome)_0%,var(--surface-brand-wash)_55%,var(--surface-brand-wash-strong)_100%)] px-3 pb-5 pt-3.5"
           >
-            <div role="tablist" aria-label={t("nav.primary")} className="flex gap-4 border-b border-[var(--border-subtle)] px-1">
+            <div role="tablist" aria-label={t("nav.primary")} className="flex justify-center gap-6 border-b border-[var(--border-subtle)] px-1">
               {mobileTabs.map((tab) => (
                 <button
                   key={tab.key}
@@ -422,6 +422,14 @@ export function Header() {
                 </button>
               ))}
             </div>
+            <Link
+              to={mobileRoot.to}
+              onClick={closeAll}
+              className="flex min-h-11 items-center justify-between gap-3 rounded-[var(--radius-md,12px)] px-1 text-sm font-semibold text-[var(--text-primary)]"
+            >
+              {mobileRoot.label}
+              <ArrowRight size={16} strokeWidth={1.75} aria-hidden="true" />
+            </Link>
             {menuTab === "shop" ? (
               <ShopMenu layout="stack" onNavigate={closeAll} />
             ) : menuTab === "studio" ? (
@@ -457,14 +465,7 @@ export function Header() {
                 ))}
               </ul>
             )}
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <Link
-                to={mobileRoot.to}
-                onClick={closeAll}
-                className="text-xs text-[var(--text-muted)] underline decoration-1 underline-offset-4"
-              >
-                {mobileRoot.label}
-              </Link>
+            <div className="flex items-center justify-end gap-3 pt-1">
               <LanguageMenu placement="above" />
             </div>
           </div>
