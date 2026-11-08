@@ -1,5 +1,6 @@
 -- =============================================================================
--- Retention purge validation suite (migration 20261108205151_retention_purge_jobs)
+-- Retention purge validation suite (migrations 20261108205151_retention_purge_jobs,
+-- 20261108211113_retention_purge_course_waiver)
 -- =============================================================================
 -- Proves, decision 127:
 --
@@ -12,7 +13,7 @@
 --       or a fresh upload is not;
 --   R4  consent proofs: one replaced more than 5 years ago goes, the one in force
 --       stays however old, one replaced less than 5 years ago stays, a
---       per-purchase proof goes after 5 years (and an unlinked one, where the
+--       per-purchase proof (Studio or course waiver) goes after 5 years (and an unlinked one, where the
 --       column allows it);
 --   R5  a newsletter sign-up never confirmed goes 30 days after its link
 --       expired; the opt-out list and subscribers stay;
@@ -40,6 +41,7 @@ declare
   c_sia_old   uuid;
   c_sia_new   uuid;
   c_unlinked  uuid;
+  c_course    uuid;
   n_expired uuid;
   n_fresh   uuid;
   n_opt_out uuid;
@@ -144,6 +146,8 @@ begin
   values (m1, 'studio_immediate_access', true, 'v1', 'checkout', now() - interval '6 years') returning id into c_sia_old;
   insert into public.consent_records (user_id, purpose, granted, policy_version, source, created_at)
   values (m1, 'studio_immediate_access', true, 'v1', 'checkout', now() - interval '1 year') returning id into c_sia_new;
+  insert into public.consent_records (user_id, purpose, granted, policy_version, source, created_at)
+  values (m1, 'course_immediate_access', true, 'v1', 'checkout', now() - interval '6 years') returning id into c_course;
   if (select created_at from public.consent_records where id = c_old_terms) > now() - interval '6 years' then
     raise exception 'FAIL fixture: a consent record cannot be backdated';
   end if;
@@ -221,7 +225,7 @@ begin
   passed := passed || 'R3'::text;
 
   -- R4 consents
-  if exists (select 1 from public.consent_records where id in (c_old_terms, c_sia_old)) then
+  if exists (select 1 from public.consent_records where id in (c_old_terms, c_sia_old, c_course)) then
     raise exception 'FAIL R4: a proof replaced, or a purchase proof, over 5 years ago was kept';
   end if;
   if (select count(*) from public.consent_records where id in (c_new_terms, c_old_priv, c_cookie, c_sia_new)) <> 4 then
