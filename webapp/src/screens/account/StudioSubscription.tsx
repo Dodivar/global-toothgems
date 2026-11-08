@@ -137,6 +137,7 @@ function SubscriptionPanel({ info }: { info: StudioAccessInfo }) {
           {note}
         </p>
       )}
+      {grantBeside && <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{grantBeside}</p>}
 
       <div className="flex flex-wrap items-center gap-3">
         {live || info.state === "trial_active" || info.state === "staff" ? (

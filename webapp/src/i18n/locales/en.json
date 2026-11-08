@@ -4255,6 +4255,25 @@
       "capacityUntracked": "No product in the kit has tracked stock: the kit stays available while none is marked out of stock.",
       "stockNotice": "This kit’s stock is calculated from its products (see “Kit contents”): restock the products and the kit follows automatically.",
       "thresholdHint": "Below this number of kits available, the kit shows as low stock."
+    },
+    "inclusions": {
+      "title": "Included access",
+      "body": "What one unit of this product opens besides its articles: an Academy course and months of the 3D Studio. The product becomes a pack: sold to an account, one per order, with the waiver of the right of withdrawal when it opens a course.",
+      "courseToggle": "Opens a course",
+      "courseHint": "Access is given once the payment is confirmed. A customer who already follows the course keeps their access and pays the same price.",
+      "courseLabel": "Course opened",
+      "courseDraft": "{{title}} (not published: the pack cannot be sold)",
+      "courseUnknown": "Course not found",
+      "studioToggle": "Opens the 3D Studio",
+      "studioHint": "Starts once the payment is confirmed, with no subscription. With a running subscription the better plan applies; a second pack adds its months after the first.",
+      "planLabel": "Plan",
+      "monthsLabel": "Length in months (1 to {{max}})",
+      "rules": "Access is given when the order is paid and taken back by a full refund; a partial refund leaves it. An order already placed keeps what it contained.",
+      "unavailable": "Included access is set on the real database.",
+      "loadError": "The courses cannot be read right now.",
+      "errorCourse": "Choose the course opened.",
+      "errorTwice": "A course or a Studio access can be listed only once.",
+      "errorMonths": "The Studio length is 1 to {{max}} months."
     }
   },
   "community": {
