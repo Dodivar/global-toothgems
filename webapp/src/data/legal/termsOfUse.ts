@@ -8,10 +8,8 @@ import { DRAFT_DATE, l, type LegalDocument } from "./types";
  * Studio 3D, as opposed to the terms of sale (`terms.ts`), which govern
  * purchases. Same conventions as the other legal pages: `legal` callouts
  * summarise what the law provides, `policy` callouts are the shop's own
- * choices, `[[...]]` marks every value nobody has confirmed yet.
- *
- * Structure and wording for review, not a contract: first draft to be read
- * and validated by the business (and a lawyer) before publication.
+ * choices — completed on 2026-11-08 with the owner's go-ahead, to validate
+ * (decision 126) —, `[[!...]]` is filled from the store's details.
  */
 
 const PART = {
@@ -40,8 +38,8 @@ export const TERMS_OF_USE: LegalDocument = {
     {
       kind: "internal",
       text: l(
-        "Première version de travail, à relire et à valider avant publication : ce n’est pas un texte juridique validé. Les encadrés « Information légale » résument des principes du droit européen et doivent être confirmés par un juriste ; toutes les règles propres à l’entreprise (modération, durée de conservation, suspension de compte…) sont à fixer par elle.",
-        "First working draft, to be read and validated before publication: this is not validated legal text. “Legal information” boxes summarise EU-law principles and must be confirmed by a lawyer; every business-specific rule (moderation, retention, account suspension…) is for the business to set.",
+        "Complétées le 8 novembre 2026 avec des règles réalistes, à valider par l’entreprise (décision 126). À faire relire par un juriste avant le lancement : la clause sur la pose des bijoux dentaires et la formation.",
+        "Completed on 8 November 2026 with workable rules, to be validated by the business (decision 126). To have a lawyer review before launch: the clause on applying tooth gems and on training.",
       ),
     },
     {
@@ -75,11 +73,10 @@ export const TERMS_OF_USE: LegalDocument = {
           ),
         },
         {
-          kind: "callout",
-          tone: "verify",
+          kind: "p",
           text: l(
-            "Confirmer l’articulation avec les CGV et le mode d’acceptation (case à cocher à l’inscription, simple navigation) : [[Mode d’acceptation des CGU]].",
-            "Confirm how these terms relate to the terms of sale and how they are accepted (checkbox at sign-up, mere browsing): [[How the terms of use are accepted]].",
+            "Lors de la création d’un compte, vous acceptez expressément ces conditions et la politique de confidentialité en cochant la case prévue ; la date de cette acceptation est enregistrée sur votre compte.",
+            "When you create an account, you expressly accept these terms and the privacy policy by ticking the box provided; the date of that acceptance is recorded on your account.",
           ),
         },
       ],
@@ -140,10 +137,10 @@ export const TERMS_OF_USE: LegalDocument = {
         },
         {
           kind: "callout",
-          tone: "verify",
+          tone: "policy",
           text: l(
-            "Préciser l’âge minimal pour créer un compte et le traitement des mineurs : [[Âge minimal pour s’inscrire]]. Voir aussi la <<politique de confidentialité|/confidentialite#children>>.",
-            "State the minimum age to create an account and how minors are handled: [[Minimum age to register]]. See also the <<privacy policy|/confidentialite#children>>.",
+            "Il faut avoir au moins 15 ans pour créer un compte. Un mineur ne peut passer commande qu’avec l’accord de son représentant légal. Voir aussi la <<politique de confidentialité|/confidentialite#children>>.",
+            "You must be at least 15 to create an account. A minor may only order with the consent of their legal guardian. See also the <<privacy policy|/confidentialite#children>>.",
           ),
         },
       ],
@@ -178,16 +175,16 @@ export const TERMS_OF_USE: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Vous pouvez demander la fermeture de votre compte à tout moment. Nous pouvons suspendre ou fermer un compte en cas de manquement à ces conditions, de fraude ou d’usage abusif, [[Procédure de préavis et de réponse avant suspension]].",
-            "You can ask for your account to be closed at any time. We may suspend or close an account in case of breach of these terms, fraud or abuse, [[Notice and right-of-reply procedure before suspension]].",
+            "Vous pouvez supprimer votre compte à tout moment depuis <<Sécurité et confidentialité|/compte/securite>>. Nous pouvons suspendre ou fermer un compte en cas de manquement à ces conditions, de fraude ou d’usage abusif, après vous avoir informé par e-mail du motif et laissé 8 jours pour y répondre — sauf urgence (fraude, atteinte à la sécurité du site ou contenu manifestement illicite), où la suspension peut être immédiate et vous est notifiée.",
+            "You can delete your account at any time from <<Security & privacy|/compte/securite>>. We may suspend or close an account in case of breach of these terms, fraud or abuse, after telling you the reason by email and giving you 8 days to reply — except in an emergency (fraud, a threat to the site’s security or manifestly unlawful content), where suspension can be immediate and is notified to you.",
           ),
         },
         {
           kind: "callout",
           tone: "policy",
           text: l(
-            "Sort des formations achetées, des créations du Studio 3D et des points de fidélité en cas de fermeture : [[Conséquences de la fermeture du compte]].",
-            "What happens to purchased courses, 3D Studio creations and loyalty stamps when an account is closed: [[Consequences of closing the account]].",
+            "La suppression du compte est immédiate et définitive : les accès aux formations, les attestations, les créations du Studio 3D, la page Glowbook, les favoris et les tampons de fidélité sont effacés. Elle n’est pas possible tant qu’un abonnement au Studio 3D ou un paiement est en cours. Les factures sont conservées pendant la durée légale.",
+            "Deleting the account is immediate and final: access to courses, certificates, 3D Studio creations, the Glowbook page, favourites and loyalty stamps are erased. It is not possible while a 3D Studio subscription or a payment is under way. Invoices are kept for the legal period.",
           ),
         },
         {
@@ -238,10 +235,10 @@ export const TERMS_OF_USE: LegalDocument = {
         },
         {
           kind: "callout",
-          tone: "verify",
+          tone: "policy",
           text: l(
-            "Valider les règles de cession, de durée de validité et de cumul des avantages : [[Règles d’usage des points de fidélité et cartes cadeaux]].",
-            "Validate the rules on transfer, validity period and combining benefits: [[Rules for using loyalty stamps and gift cards]].",
+            "Une carte cadeau est valable 12 mois à compter de son émission et peut être offerte. Les tampons de fidélité sont attachés à votre compte, ne sont ni transférables ni échangeables contre de l’argent, et la récompense s’utilise dans le panier selon les règles affichées sur la page fidélité.",
+            "A gift card is valid for 12 months from issue and can be given to someone else. Loyalty stamps are tied to your account, cannot be transferred or exchanged for money, and the reward is used in the cart under the rules shown on the loyalty page.",
           ),
         },
       ],
@@ -267,10 +264,10 @@ export const TERMS_OF_USE: LegalDocument = {
         },
         {
           kind: "callout",
-          tone: "verify",
+          tone: "policy",
           text: l(
-            "Confirmer la durée d’accès et la valeur de l’attestation délivrée (elle ne vaut pas diplôme) : [[Durée d’accès et portée de l’attestation]].",
-            "Confirm the access duration and the status of the certificate issued (it is not a diploma): [[Access duration and scope of the certificate]].",
+            "Sauf mention contraire sur la page de la formation, l’accès dure 24 mois à compter de l’achat. L’attestation délivrée à la fin d’une formation atteste que vous l’avez suivie et validée ; ce n’est ni un diplôme ni une certification professionnelle reconnue par l’État, et elle ne vaut pas autorisation d’exercer.",
+            "Unless the course page says otherwise, access lasts 24 months from purchase. The certificate issued at the end of a course attests that you followed and passed it; it is neither a diploma nor a state-recognised professional certification, and it is not a licence to practise.",
           ),
         },
       ],
@@ -298,8 +295,8 @@ export const TERMS_OF_USE: LegalDocument = {
           kind: "callout",
           tone: "policy",
           text: l(
-            "Conditions d’accès au Studio (gratuit, abonnement, essai) : [[Offre du Studio 3D et conditions d’abonnement]].",
-            "Conditions for access to the Studio (free, subscription, trial): [[3D Studio offer and subscription conditions]].",
+            "L’éditeur du Studio est accessible avec un compte : un essai gratuit de 48 heures, une fois par compte, puis un abonnement (Essential, Artist ou Atelier). Ce que chaque formule permet est présenté sur la page du Studio 3D ; les conditions de paiement, de résiliation et de rétractation figurent dans les <<conditions générales de vente|/conditions-generales#studio>>. Les créations publiées sur une page Glowbook sont relues par notre équipe avant d’être visibles publiquement.",
+            "The Studio editor is available with an account: a free 48-hour trial, once per account, then a subscription (Essential, Artist or Atelier). What each plan allows is set out on the 3D Studio page; payment, cancellation and withdrawal terms are in the <<terms of sale|/conditions-generales#studio>>. Creations published on a Glowbook page are reviewed by our team before they become publicly visible.",
           ),
         },
       ],
@@ -312,8 +309,8 @@ export const TERMS_OF_USE: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Vous pouvez publier des avis, des photos et d’autres contenus. Vous restez propriétaire de vos contenus et responsable de leur publication. Vous nous accordez une licence non exclusive, gratuite et limitée à l’exploitation du site pour les afficher [[Étendue et durée de la licence sur les contenus des membres]].",
-            "You can post reviews, photos and other content. You remain the owner of your content and are responsible for posting it. You grant us a non-exclusive, free licence, limited to operating the site, to display it [[Scope and duration of the licence on members’ content]].",
+            "Vous pouvez publier des avis, des photos et d’autres contenus. Vous restez propriétaire de vos contenus et responsable de leur publication. Vous nous accordez une licence non exclusive et gratuite pour les reproduire et les afficher sur le site (fiches produit, pages Glowbook, salons des membres), dans le monde entier, pour la durée de leur publication. Cette licence prend fin lorsque vous supprimez le contenu ou votre compte.",
+            "You can post reviews, photos and other content. You remain the owner of your content and are responsible for posting it. You grant us a non-exclusive, free licence to reproduce and display it on the site (product pages, Glowbook pages, members’ lounges), worldwide, for as long as it is published. This licence ends when you delete the content or your account.",
           ),
         },
         {
@@ -341,32 +338,24 @@ export const TERMS_OF_USE: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les contenus sont publiés sous réserve de modération. Nous pouvons refuser, masquer ou supprimer un contenu illicite, injurieux, trompeur, publicitaire, sans rapport avec le sujet ou contraire à ces conditions, [[Délais et modalités de modération]].",
-            "Content is published subject to moderation. We may refuse, hide or remove content that is unlawful, abusive, misleading, promotional, off-topic or contrary to these terms, [[Moderation timing and procedure]].",
+            "Les avis et les pages Glowbook sont relus par notre équipe avant leur publication, en général sous 3 jours ouvrés. Nous pouvons refuser, masquer ou supprimer un contenu illicite, injurieux, trompeur, publicitaire, sans rapport avec le sujet ou contraire à ces conditions ; l’auteur d’un contenu refusé ou retiré peut nous en demander le motif et nous demander de revoir la décision.",
+            "Reviews and Glowbook pages are checked by our team before they are published, usually within 3 working days. We may refuse, hide or remove content that is unlawful, abusive, misleading, promotional, off-topic or contrary to these terms; the author of content refused or removed can ask us for the reason and for the decision to be reviewed.",
           ),
         },
         {
           kind: "callout",
           tone: "instruction",
           text: l(
-            "Pour signaler un contenu, utilisez le bouton de signalement présent sur les avis ou <<contactez-nous|/contact?sujet=other>> en indiquant le contenu concerné et le motif.",
-            "To report content, use the report button on reviews or <<contact us|/contact?sujet=other>> naming the content concerned and the reason.",
+            "Pour signaler un contenu, <<contactez-nous|/contact?sujet=other>> en indiquant votre nom et votre e-mail, l’adresse de la page, le contenu concerné et les raisons pour lesquelles il vous paraît illicite ou contraire à ces conditions.",
+            "To report content, <<contact us|/contact?sujet=other>> giving your name and email, the page address, the content concerned and why you think it is unlawful or contrary to these terms.",
           ),
         },
         {
           kind: "callout",
           tone: "legal",
           text: l(
-            "En tant qu’hébergeur de contenus publiés par des tiers, nous retirons promptement tout contenu manifestement illicite dont nous avons connaissance.",
-            "As a host of content posted by third parties, we promptly remove any manifestly unlawful content that we become aware of.",
-          ),
-        },
-        {
-          kind: "callout",
-          tone: "verify",
-          text: l(
-            "Faire valider ce régime de responsabilité d’hébergeur et la procédure de notification par un juriste : [[Procédure de notification des contenus illicites]].",
-            "Have this host-liability regime and the notice procedure validated by a lawyer: [[Notice procedure for unlawful content]].",
+            "En tant qu’hébergeur des contenus publiés par les membres (article 6 de la loi pour la confiance dans l’économie numérique et règlement européen sur les services numériques), nous ne les contrôlons pas tous a priori, mais retirons promptement tout contenu manifestement illicite qui nous est signalé, et traitons chaque signalement de manière diligente et objective.",
+            "As a host of the content posted by members (article 6 of the French law on confidence in the digital economy and the EU Digital Services Act), we do not check all of it in advance, but promptly remove any manifestly unlawful content reported to us, and handle every report diligently and objectively.",
           ),
         },
       ],
@@ -405,11 +394,10 @@ export const TERMS_OF_USE: LegalDocument = {
           ),
         },
         {
-          kind: "callout",
-          tone: "verify",
+          kind: "p",
           text: l(
-            "Faire relire cette clause au regard de la réglementation applicable aux produits et à l’activité de formation : [[Réglementation applicable à la pose et à la formation]].",
-            "Have this clause reviewed against the regulations applying to the products and to the training activity: [[Regulations applying to application and training]].",
+            "Il appartient à chaque artiste de vérifier et de respecter la réglementation qui s’applique à son activité de pose dans son pays (qualification, hygiène, assurance, information du client). Les formations et le Studio 3D ne remplacent pas l’avis d’un dentiste.",
+            "Each artist is responsible for checking and following the regulations that apply to their application activity in their country (qualification, hygiene, insurance, client information). The courses and the 3D Studio do not replace a dentist’s advice.",
           ),
         },
       ],
@@ -422,8 +410,8 @@ export const TERMS_OF_USE: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Nous mettons en œuvre des moyens raisonnables pour que les informations du site soient exactes et à jour, sans pouvoir garantir l’absence d’erreur ou d’interruption. Nous ne sommes pas responsables des dommages résultant d’une utilisation du site non conforme à ces conditions, d’un événement hors de notre contrôle ou du fait d’un tiers, [[Limites de responsabilité souhaitées]].",
-            "We use reasonable means to keep the site’s information accurate and up to date, without being able to guarantee the absence of errors or interruptions. We are not liable for damage arising from use of the site that breaches these terms, from events beyond our control or from a third party’s act, [[Desired limits of liability]].",
+            "Nous mettons en œuvre des moyens raisonnables pour que les informations du site soient exactes et à jour, sans pouvoir garantir l’absence d’erreur ou d’interruption. Nous ne sommes pas responsables des dommages résultant d’une utilisation du site non conforme à ces conditions, d’un événement hors de notre contrôle ou du fait d’un tiers, ni des dommages indirects. Les services gratuits (consultation du site, essai du Studio) sont fournis en l’état. Il vous appartient de conserver une copie des contenus auxquels vous tenez.",
+            "We use reasonable means to keep the site’s information accurate and up to date, without being able to guarantee the absence of errors or interruptions. We are not liable for damage arising from use of the site that breaches these terms, from events beyond our control or from a third party’s act, or for indirect damage. Free services (browsing the site, the Studio trial) are provided as they are. It is up to you to keep a copy of the content that matters to you.",
           ),
         },
         {
@@ -472,8 +460,8 @@ export const TERMS_OF_USE: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Nous pouvons modifier ces conditions, par exemple pour tenir compte d’une évolution de la loi ou de nos services. La version applicable est celle en ligne au moment de votre utilisation ; la date de dernière mise à jour figure en haut de cette page. En cas de modification importante, nous vous en informons [[Mode d’information des membres lors d’une modification]].",
-            "We may change these terms, for example to reflect a change in the law or in our services. The version that applies is the one online when you use the site; the last-updated date is shown at the top of this page. For a significant change, we will let you know [[How members are told of a change]].",
+            "Nous pouvons modifier ces conditions, par exemple pour tenir compte d’une évolution de la loi ou de nos services. La version applicable est celle en ligne au moment de votre utilisation ; la date de dernière mise à jour figure en haut de cette page. En cas de modification importante, nous vous en informons par e-mail au moins 15 jours avant son entrée en vigueur ; si vous ne l’acceptez pas, vous pouvez supprimer votre compte.",
+            "We may change these terms, for example to reflect a change in the law or in our services. The version that applies is the one online when you use the site; the last-updated date is shown at the top of this page. For a significant change, we will let you know by email at least 15 days before it takes effect; if you do not accept it, you can delete your account.",
           ),
         },
       ],
@@ -486,8 +474,8 @@ export const TERMS_OF_USE: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les présentes conditions sont soumises à [[Droit applicable]]. À défaut de solution amiable, le litige sera porté devant [[Juridiction compétente]]. Les modalités de réclamation et de médiation applicables aux consommateurs sont détaillées dans les <<conditions générales de vente|/conditions-generales#mediation>>.",
-            "These terms are governed by [[Applicable law]]. If no amicable solution is found, the dispute will be brought before [[Competent courts]]. How consumer complaints and mediation work is detailed in the <<terms of sale|/conditions-generales#mediation>>.",
+            "Les présentes conditions sont soumises au droit français. À défaut de solution amiable, le litige sera porté devant les juridictions françaises compétentes ; entre professionnels, devant les tribunaux du ressort de Strasbourg. Les modalités de réclamation et de médiation applicables aux consommateurs sont détaillées dans les <<conditions générales de vente|/conditions-generales#mediation>>.",
+            "These terms are governed by French law. If no amicable solution is found, the dispute will be brought before the competent French courts; between professionals, before the courts of Strasbourg. How consumer complaints and mediation work is detailed in the <<terms of sale|/conditions-generales#mediation>>.",
           ),
         },
         {
@@ -509,8 +497,8 @@ export const TERMS_OF_USE: LegalDocument = {
           kind: "fields",
           fields: [
             { label: l("Contact", "Contact"), value: l("<<Formulaire de contact|/contact>>", "<<Contact form|/contact>>") },
-            { label: l("E-mail", "Email"), placeholder: l("E-mail du service client", "Customer service email") },
-            { label: l("Adresse postale", "Postal address"), placeholder: l("Adresse postale", "Postal address") },
+            { label: l("E-mail", "Email"), value: l("[[!E-mail du service client]]", "[[!Customer service email]]") },
+            { label: l("Adresse postale", "Postal address"), value: l("[[!Adresse du siège]]", "[[!Registered office address]]") },
           ],
         },
       ],

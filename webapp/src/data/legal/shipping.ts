@@ -1,12 +1,14 @@
+import { lp } from "./policies";
 import { LEGAL_PATHS } from "./routes";
 import { DRAFT_DATE, l, type LegalDocument } from "./types";
 
 /**
  * Shipping & delivery.
  *
- * No price, zone, carrier or delay is stated: the cart prototype uses sample
- * values to demonstrate its free-delivery bar, and those values are not a
- * shipping policy. The internal note says so, so the two get aligned.
+ * The destinations, the rate table and the free-delivery rules are replaced
+ * on the server by the zones and rates saved in Settings › Shipping
+ * (`shippingGrid.ts`); the wording here is what stays when they cannot be
+ * read. The other rules come from `policies.ts` (decision 126).
  */
 export const SHIPPING: LegalDocument = {
   id: "shipping",
@@ -25,18 +27,11 @@ export const SHIPPING: LegalDocument = {
       label: l("Les étapes d’une livraison", "The stages of a delivery"),
       items: [
         { icon: "cart", title: l("Commande passée", "Order placed"), text: l("Vous recevez un e-mail de confirmation.", "You receive a confirmation email.") },
-        { icon: "package", title: l("Préparation", "Processing"), text: l("Nous préparons votre colis sous [[Délai de préparation]].", "We prepare your parcel within [[Preparation time]].") },
+        { icon: "package", title: l("Préparation", "Processing"), text: lp((p) => `Nous préparons votre colis sous ${p.preparationTime}.`, (p) => `We prepare your parcel within ${p.preparationTime}.`) },
         { icon: "truck", title: l("Expédiée", "Shipped"), text: l("Votre colis est remis au transporteur.", "Your parcel is handed to the carrier.") },
         { icon: "search", title: l("Suivi", "Tracking"), text: l("Un lien de suivi vous est envoyé par e-mail.", "A tracking link is sent to you by email.") },
         { icon: "home", title: l("Livrée", "Delivered"), text: l("Votre commande arrive à l’adresse indiquée.", "Your order arrives at the address given.") },
       ],
-    },
-    {
-      kind: "internal",
-      text: l(
-        "Le panier du prototype affiche des valeurs d’exemple (livraison offerte au-delà d’un seuil, forfait sinon). Ce ne sont pas des tarifs validés : aligner le panier et cette page sur la grille réelle avant lancement.",
-        "The prototype cart shows sample values (free delivery above a threshold, a flat fee otherwise). These are not validated rates: align the cart and this page with the real rate card before launch.",
-      ),
     },
   ],
   sections: [
@@ -47,8 +42,8 @@ export const SHIPPING: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Nous livrons dans les pays et zones suivants : [[Liste des pays et zones de livraison]]. Si votre pays n’apparaît pas lors du paiement, contactez-nous avant de commander.",
-            "We deliver to the following countries and zones: [[List of delivery countries and zones]]. If your country does not appear at checkout, contact us before ordering.",
+            "Nous livrons en France et à Monaco, dans l’Union européenne, en Suisse et au Liechtenstein, au Royaume-Uni, aux États-Unis et au Canada. Les pays ouverts à la livraison sont proposés lors du paiement ; si le vôtre n’y figure pas, contactez-nous avant de commander.",
+            "We deliver to France and Monaco, the European Union, Switzerland and Liechtenstein, the United Kingdom, the United States and Canada. The countries open for delivery are offered at checkout; if yours is not listed, contact us before ordering.",
           ),
         },
       ],
@@ -68,22 +63,10 @@ export const SHIPPING: LegalDocument = {
           ],
           rows: [
             {
-              zone: l("[[Zone 1 — ex. pays d’expédition]]", "[[Zone 1 — e.g. country of dispatch]]"),
-              method: l("[[Mode standard]]", "[[Standard method]]"),
-              time: l("[[Délai]]", "[[Time]]"),
-              cost: l("[[Tarif]]", "[[Cost]]"),
-            },
-            {
-              zone: l("[[Zone 2 — ex. Union européenne]]", "[[Zone 2 — e.g. European Union]]"),
-              method: l("[[Mode standard / express]]", "[[Standard / express method]]"),
-              time: l("[[Délai]]", "[[Time]]"),
-              cost: l("[[Tarif]]", "[[Cost]]"),
-            },
-            {
-              zone: l("[[Zone 3 — ex. reste du monde]]", "[[Zone 3 — e.g. rest of world]]"),
-              method: l("[[Mode]]", "[[Method]]"),
-              time: l("[[Délai]]", "[[Time]]"),
-              cost: l("[[Tarif]]", "[[Cost]]"),
+              zone: l("Toutes zones", "All zones"),
+              method: l("Standard ou express", "Standard or express"),
+              time: l("Affiché au paiement", "Shown at checkout"),
+              cost: l("Affiché dans le panier", "Shown in the cart"),
             },
           ],
         },
@@ -104,8 +87,8 @@ export const SHIPPING: LegalDocument = {
           kind: "callout",
           tone: "policy",
           text: l(
-            "[[Seuil de livraison offerte et zones concernées, si applicable]]",
-            "[[Free-delivery threshold and zones concerned, if applicable]]",
+            "La livraison standard est offerte au-delà d’un montant d’achat qui dépend de la zone ; le panier indique ce qu’il reste à ajouter pour en profiter.",
+            "Standard delivery is free above an order amount that depends on the zone; the cart shows how much is left to add to get it.",
           ),
         },
       ],
@@ -116,9 +99,11 @@ export const SHIPPING: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
-            "Les commandes sont préparées sous [[Délai de préparation]] après confirmation du paiement, hors week-ends et jours fériés. Les formations en ligne ne sont pas expédiées : elles sont disponibles immédiatement dans votre espace <<Mon compte|/compte>>.",
-            "Orders are prepared within [[Preparation time]] after payment is confirmed, excluding weekends and public holidays. Online training is not shipped: it is available straight away in <<My account|/compte>>.",
+          text: lp(
+            (p) =>
+              `Les commandes sont préparées sous ${p.preparationTime} après confirmation du paiement, hors week-ends et jours fériés, puis confiées à ${p.carriers}. Les formations en ligne ne sont pas expédiées : elles sont disponibles immédiatement dans votre espace <<Mon compte|/compte>>.`,
+            (p) =>
+              `Orders are prepared within ${p.preparationTime} after payment is confirmed, excluding weekends and public holidays, then handed to ${p.carriers}. Online courses are not shipped: they are available straight away in <<My account|/compte>>.`,
           ),
         },
       ],
@@ -157,8 +142,8 @@ export const SHIPPING: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "En votre absence, le transporteur laisse généralement un avis de passage et dépose le colis en point relais ou le présente à nouveau. Un colis non retiré dans le délai du transporteur nous est retourné : [[Règle appliquée — réexpédition à vos frais ou remboursement hors frais de port]].",
-            "If you are out, the carrier usually leaves a notice and takes the parcel to a pickup point or tries again. A parcel not collected within the carrier’s deadline is returned to us: [[Rule applied — re-shipping at your cost or refund excluding shipping]].",
+            "En votre absence, le transporteur laisse généralement un avis de passage et dépose le colis en point relais ou le présente à nouveau. Un colis non retiré dans le délai du transporteur nous est retourné : nous vous le réexpédions à vos frais, ou nous vous remboursons les produits, sans les frais de livraison.",
+            "If you are out, the carrier usually leaves a notice and takes the parcel to a pickup point or tries again. A parcel not collected within the carrier’s deadline is returned to us: we send it again at your cost, or refund the products, without the delivery cost.",
           ),
         },
       ],
@@ -179,8 +164,8 @@ export const SHIPPING: LegalDocument = {
           kind: "callout",
           tone: "policy",
           text: l(
-            "Colis expédié à une adresse erronée fournie par le client : [[Prise en charge des frais de réexpédition]].",
-            "Parcel sent to a wrong address supplied by the customer: [[Who covers re-shipping costs]].",
+            "Colis expédié à une adresse erronée fournie par le client : s’il nous revient, sa réexpédition est à votre charge.",
+            "Parcel sent to a wrong address supplied by the customer: if it comes back to us, sending it again is at your cost.",
           ),
         },
       ],
@@ -192,9 +177,11 @@ export const SHIPPING: LegalDocument = {
         {
           kind: "callout",
           tone: "instruction",
-          text: l(
-            "Colis abîmé à la réception ? Si possible, notez des réserves auprès du transporteur, photographiez le colis et son contenu, et contactez-nous sous [[Délai de signalement]]. Colis indiqué livré mais introuvable ? Contactez-nous : nous ouvrons une enquête auprès du transporteur.",
-            "Parcel damaged on arrival? If possible, note it with the carrier, photograph the parcel and its contents, and contact us within [[Reporting deadline]]. Parcel marked delivered but not received? Contact us: we will open an investigation with the carrier.",
+          text: lp(
+            (p) =>
+              `Colis abîmé à la réception ? Si possible, notez des réserves auprès du transporteur, photographiez le colis et son contenu, et contactez-nous de préférence dans les ${p.damageReport}, pour que nous puissions agir auprès du transporteur. Colis indiqué livré mais introuvable ? Contactez-nous : nous ouvrons une enquête auprès du transporteur.`,
+            (p) =>
+              `Parcel damaged on arrival? If possible, note it with the carrier, photograph the parcel and its contents, and contact us preferably within ${p.damageReport}, so we can act with the carrier. Parcel marked delivered but not received? Contact us: we will open an investigation with the carrier.`,
           ),
         },
         {
@@ -223,8 +210,8 @@ export const SHIPPING: LegalDocument = {
           tone: "policy",
           title: l("Qui paie les frais de douane ?", "Who pays customs charges?"),
           text: l(
-            "[[Règle retenue — à la charge du destinataire, ou droits et taxes inclus au paiement]]. Un colis refusé pour ce motif : [[Traitement d’un colis refusé pour frais de douane]].",
-            "[[Rule chosen — paid by the recipient, or duties and taxes included at checkout]]. A parcel refused for this reason: [[Handling of a parcel refused over customs charges]].",
+            "Le destinataire, à la livraison : ils ne sont pas inclus dans le prix payé sur le site. Un colis refusé pour ce motif nous revient : nous remboursons alors les produits, sans les frais de livraison ni les frais de retour facturés par le transporteur.",
+            "The recipient, on delivery: they are not included in the price paid on the site. A parcel refused for this reason comes back to us: we then refund the products, without the delivery cost or the return charges billed by the carrier.",
           ),
         },
       ],

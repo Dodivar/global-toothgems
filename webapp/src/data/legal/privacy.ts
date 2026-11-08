@@ -4,10 +4,12 @@ import { DRAFT_DATE, l, type LegalDocument } from "./types";
 /**
  * Privacy policy, written for a GDPR-conscious European shop.
  *
- * The only processor named is Stripe, because the project has chosen it for
- * payments. Every other provider (hosting, email, analytics…) is a placeholder:
- * the architecture documents list candidates, but none is confirmed, and a
- * privacy policy that names the wrong processor is wrong in a way that matters.
+ * Completed on 2026-11-08 with the owner's go-ahead (decision 126): the
+ * providers named are the ones the code actually calls, the retention periods
+ * are decision 125 (a)'s, and the data controller is the seller — the business
+ * customers contract with — filled in from the store's details by
+ * `storeFill.ts` (`[[!Responsable du traitement]]`). Who the controller is
+ * remains the owner's (or a lawyer's) call, decision 121.
  */
 
 const PART = {
@@ -19,14 +21,17 @@ const PART = {
   more: l("Informations complémentaires", "Further information"),
 };
 
+const EU = l("Union européenne", "European Union");
+const US_DPF = l("États-Unis (Data Privacy Framework ou clauses contractuelles types)", "United States (Data Privacy Framework or standard contractual clauses)");
+
 export const PRIVACY: LegalDocument = {
   id: "privacy",
   path: LEGAL_PATHS.privacy,
   eyebrow: l("Informations légales", "Legal information"),
   title: l("Politique de confidentialité", "Privacy policy"),
   intro: l(
-    "Quelles données nous collectons quand vous achetez, vous formez ou nous écrivez, pourquoi, combien de temps nous les gardons, et comment exercer vos droits.",
-    "What data we collect when you shop, train or write to us, why, how long we keep it, and how to exercise your rights.",
+    "Quelles données nous collectons quand vous achetez, vous formez, utilisez le Studio 3D ou nous écrivez, pourquoi, combien de temps nous les gardons, et comment exercer vos droits.",
+    "What data we collect when you shop, train, use the 3D Studio or write to us, why, how long we keep it, and how to exercise your rights.",
   ),
   updated: DRAFT_DATE,
   showKey: true,
@@ -37,15 +42,15 @@ export const PRIVACY: LegalDocument = {
       tone: "policy",
       title: l("En bref", "In short"),
       text: l(
-        "Nous collectons ce qui est nécessaire pour vous livrer, vous former et vous répondre. Nous ne vendons pas vos données. Les cookies et e-mails marketing optionnels ne sont utilisés qu’avec votre accord, que vous pouvez retirer à tout moment.",
-        "We collect what we need to deliver your orders, train you and answer you. We do not sell your data. Optional cookies and marketing emails are only used with your consent, which you can withdraw at any time.",
+        "Nous collectons ce qui est nécessaire pour vous livrer, vous former et vous répondre. Nous ne vendons pas vos données. La mesure d’audience et les e-mails marketing ne sont utilisés qu’avec votre accord, que vous pouvez retirer à tout moment.",
+        "We collect what we need to deliver your orders, train you and answer you. We do not sell your data. Audience measurement and marketing emails are only used with your consent, which you can withdraw at any time.",
       ),
     },
     {
       kind: "internal",
       text: l(
-        "Aucun prestataire n’est nommé ici hormis Stripe (choix de paiement du projet). Les documents d’architecture citent des candidats (hébergement applicatif, base de données, e-mail transactionnel, analytics) : les confirmer, vérifier leurs contrats de sous-traitance et leurs transferts hors UE avant de les ajouter.",
-        "No provider is named here other than Stripe (the project’s payment choice). The architecture documents list candidates (application hosting, database, transactional email, analytics): confirm them and check their processing agreements and non-EU transfers before adding them.",
+        "Complétée le 8 novembre 2026 (décision 126). À confirmer par l’entreprise : le responsable du traitement retenu (le vendeur, l’éditeur agissant pour son compte), et la mise en place des purges qui appliquent les durées de conservation annoncées.",
+        "Completed on 8 November 2026 (decision 126). For the business to confirm: the data controller chosen (the seller, the publisher acting on its behalf), and the purge jobs that apply the retention periods stated.",
       ),
     },
   ],
@@ -58,20 +63,20 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Le responsable du traitement de vos données est l’éditeur du site, identifié dans les <<mentions légales|/mentions-legales>>.",
-            "The controller of your data is the website publisher, identified in the <<legal notice|/mentions-legales>>.",
+            "Le responsable du traitement de vos données est le vendeur des produits, formations et abonnements proposés sur le site, identifié dans les <<mentions légales|/mentions-legales#seller>>. L’éditeur du site, qui en assure la réalisation et la maintenance technique, agit pour son compte et selon ses instructions.",
+            "The controller of your data is the seller of the products, courses and subscriptions offered on the site, identified in the <<legal notice|/mentions-legales#seller>>. The website publisher, which builds and maintains the site, acts on the seller’s behalf and on its instructions.",
           ),
         },
         {
           kind: "fields",
           fields: [
-            { label: l("Responsable du traitement", "Data controller"), placeholder: l("Dénomination sociale", "Legal business name") },
-            { label: l("Adresse", "Address"), placeholder: l("Adresse du siège", "Registered office address") },
-            { label: l("Contact confidentialité", "Privacy contact"), placeholder: l("E-mail dédié aux demandes de confidentialité", "Email for privacy requests") },
+            { label: l("Responsable du traitement", "Data controller"), value: l("[[!Responsable du traitement]]", "[[!Data controller]]") },
+            { label: l("Adresse", "Address"), value: l("[[!Adresse du siège]]", "[[!Registered office address]]") },
+            { label: l("Contact confidentialité", "Privacy contact"), value: l("[[!E-mail confidentialité]]", "[[!Privacy email]]") },
             {
               label: l("Délégué à la protection des données", "Data protection officer"),
-              placeholder: l("Coordonnées du DPO, si désigné", "DPO contact details, if appointed"),
-              hint: l("Une désignation n’est obligatoire que dans certains cas.", "Appointment is only mandatory in certain cases."),
+              value: l("Non désigné", "Not appointed"),
+              hint: l("Sa désignation n’est pas obligatoire pour notre activité ; écrivez au contact ci-dessus.", "Appointing one is not mandatory for our activity; write to the contact above."),
             },
           ],
         },
@@ -93,12 +98,12 @@ export const PRIVACY: LegalDocument = {
           rows: [
             {
               context: l("Compte", "Account"),
-              data: l("Nom, e-mail, mot de passe (chiffré), profil choisi, préférences", "Name, email, password (hashed), chosen profile, preferences"),
-              source: l("Vous", "You"),
+              data: l("Nom, e-mail, mot de passe (chiffré), profil choisi, préférences, photo de profil", "Name, email, password (hashed), chosen profile, preferences, profile picture"),
+              source: l("Vous, Google si vous vous connectez avec Google", "You, Google if you sign in with Google"),
             },
             {
               context: l("Commandes et facturation", "Orders and billing"),
-              data: l("Produits achetés, montants, adresse de facturation, historique", "Products bought, amounts, billing address, history"),
+              data: l("Produits achetés, montants, adresse de facturation, factures, historique", "Products bought, amounts, billing address, invoices, history"),
               source: l("Vous", "You"),
             },
             {
@@ -108,7 +113,7 @@ export const PRIVACY: LegalDocument = {
             },
             {
               context: l("Paiement", "Payment"),
-              data: l("Statut du paiement, [[Informations de carte reçues de Stripe, le cas échéant]]", "Payment status, [[Card details received from Stripe, if any]]"),
+              data: l("Statut du paiement et du remboursement, références de transaction (aucune donnée de carte)", "Payment and refund status, transaction references (no card data)"),
               source: l("Stripe", "Stripe"),
             },
             {
@@ -122,18 +127,31 @@ export const PRIVACY: LegalDocument = {
               source: l("Vous, la plateforme", "You, the platform"),
             },
             {
-              context: l("Avis et communauté", "Reviews and community"),
-              data: l("Avis, notes, photos, messages publiés, pseudonyme", "Reviews, ratings, photos, posts, display name"),
+              context: l("Studio 3D et Glowbook", "3D Studio and Glowbook"),
+              data: l(
+                "Créations, collections, liens de partage, logo, page Glowbook (nom d’artiste, ville, lieu d’exercice, liens), abonnement",
+                "Creations, collections, share links, logo, Glowbook page (artist name, city, place of work, links), subscription",
+              ),
               source: l("Vous", "You"),
             },
             {
-              context: l("Marketing", "Marketing"),
-              data: l("Consentement aux e-mails, date du consentement, désinscription", "Email consent, date of consent, unsubscribe"),
+              context: l("Essai sur un sourire", "Smile try-on"),
+              data: l("Photo de votre sourire et image générée, le temps du calcul (non conservées par nous)", "Photo of your smile and the generated image, for the time of the render (not kept by us)"),
+              source: l("Vous", "You"),
+            },
+            {
+              context: l("Avis et communauté", "Reviews and community"),
+              data: l("Avis, notes, photos, messages dans les salons des membres, nom d’affichage", "Reviews, ratings, photos, messages in the members’ lounges, display name"),
+              source: l("Vous", "You"),
+            },
+            {
+              context: l("Newsletter et marketing", "Newsletter and marketing"),
+              data: l("E-mail, langue, consentement et sa date, désinscription", "Email, language, consent and its date, unsubscribe"),
               source: l("Vous", "You"),
             },
             {
               context: l("Navigation", "Browsing"),
-              data: l("Données techniques et cookies selon vos choix", "Technical data and cookies according to your choices"),
+              data: l("Données techniques (adresse IP, navigateur), pages vues et cookies selon vos choix", "Technical data (IP address, browser), pages viewed and cookies according to your choices"),
               source: l("Votre navigateur", "Your browser"),
             },
           ],
@@ -148,15 +166,15 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les informations de compte servent à vous identifier, à sécuriser l’accès et à vous donner accès à vos commandes, formations et attestations. Les données de commande et de livraison servent à préparer, expédier et facturer vos achats, et à gérer retours et réclamations.",
-            "Account information is used to identify you, secure access and give you access to your orders, courses and certificates. Order and shipping data is used to prepare, ship and invoice your purchases, and to handle returns and complaints.",
+            "Les informations de compte servent à vous identifier, à sécuriser l’accès et à vous donner accès à vos commandes, formations, créations et attestations. Les données de commande et de livraison servent à préparer, expédier et facturer vos achats, et à gérer retours et réclamations.",
+            "Account information is used to identify you, secure access and give you access to your orders, courses, creations and certificates. Order and shipping data is used to prepare, ship and invoice your purchases, and to handle returns and complaints.",
           ),
         },
         {
           kind: "p",
           text: l(
-            "Si vous vous connectez avec un compte tiers, nous recevons uniquement les informations nécessaires à la connexion : [[Fournisseurs de connexion tiers proposés]].",
-            "If you sign in with a third-party account, we only receive the information needed to sign you in: [[Third-party sign-in providers offered]].",
+            "Si vous vous connectez avec votre compte Google, nous recevons uniquement votre nom, votre adresse e-mail et, le cas échéant, votre photo de profil.",
+            "If you sign in with your Google account, we only receive your name, email address and, where available, your profile picture.",
           ),
         },
       ],
@@ -190,6 +208,27 @@ export const PRIVACY: LegalDocument = {
       ],
     },
     {
+      id: "studio-data",
+      part: PART.what,
+      title: l("Studio 3D, Glowbook et essai sur un sourire", "3D Studio, Glowbook and smile try-on"),
+      blocks: [
+        {
+          kind: "p",
+          text: l(
+            "Vos créations sont enregistrées sur votre compte. Une page Glowbook et les créations que vous y ajoutez sont publiques une fois approuvées par notre équipe ; si vous indiquez un lieu d’exercice, seule une zone approximative (environ 1 km) ou l’adresse publique de votre salon est affichée, jamais une adresse personnelle.",
+            "Your creations are saved to your account. A Glowbook page and the creations you add to it are public once approved by our team; if you give a place of work, only an approximate area (about 1 km) or your salon’s public address is shown, never a home address.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Pour l’essai d’une création sur un sourire, la photo que vous choisissez est envoyée à Google (service Gemini) pour vérifier qu’elle convient et générer l’image. Nous ne conservons ni la photo ni l’image : elles restent sur votre appareil pendant 24 heures au plus, pour que vous puissiez retrouver le résultat. N’envoyez que la photo d’une personne qui a donné son accord.",
+            "For trying a creation on a smile, the photo you choose is sent to Google (Gemini service) to check it is suitable and generate the image. We keep neither the photo nor the image: they stay on your device for 24 hours at most, so you can find the result again. Only send a photo of someone who has agreed to it.",
+          ),
+        },
+      ],
+    },
+    {
       id: "ugc",
       part: PART.what,
       title: l("Avis et contenus publiés", "Reviews and user-generated content"),
@@ -197,8 +236,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les avis, photos et messages que vous publiez sont visibles par les autres visiteurs ou membres, avec le nom d’affichage que vous avez choisi. Vous pouvez demander leur suppression à tout moment.",
-            "Reviews, photos and posts you publish are visible to other visitors or members, with the display name you chose. You can ask for them to be removed at any time.",
+            "Les avis, photos et messages que vous publiez sont visibles par les autres visiteurs ou membres, avec le nom d’affichage que vous avez choisi. Vous pouvez demander leur suppression à tout moment ; ils sont supprimés avec votre compte.",
+            "Reviews, photos and posts you publish are visible to other visitors or members, with the display name you chose. You can ask for them to be removed at any time; they are deleted with your account.",
           ),
         },
       ],
@@ -211,8 +250,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Nous ne vous envoyons d’e-mails promotionnels que si vous l’avez accepté, ou [[Envoi aux clients existants pour des produits similaires, si retenu et autorisé]]. Chaque e-mail contient un lien de désinscription.",
-            "We only send you promotional emails if you have agreed, or [[Emails to existing customers about similar products, if chosen and permitted]]. Every email contains an unsubscribe link.",
+            "Nous ne vous envoyons notre newsletter et nos e-mails promotionnels que si vous l’avez demandé et confirmé en cliquant sur le lien reçu par e-mail. Chaque e-mail contient un lien de désinscription ; vous pouvez aussi changer d’avis depuis votre <<profil|/compte/profil>>. Les e-mails liés à vos commandes, formations et abonnements vous sont envoyés dans tous les cas.",
+            "We only send you our newsletter and promotional emails if you asked for them and confirmed by clicking the link emailed to you. Every email contains an unsubscribe link; you can also change your mind from your <<profile|/compte/profil>>. Emails about your orders, courses and subscriptions are sent to you in any case.",
           ),
         },
       ],
@@ -239,16 +278,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les paiements sont traités par Stripe. Vos données de carte sont saisies chez Stripe et ne nous sont pas transmises ; nous recevons le statut du paiement et, le cas échéant, des informations limitées : [[Données de paiement effectivement reçues]]. Stripe traite également certaines données pour la prévention de la fraude et ses obligations légales, selon sa propre politique de confidentialité.",
-            "Payments are processed by Stripe. Your card details are entered with Stripe and are not passed to us; we receive the payment status and, where applicable, limited information: [[Payment data actually received]]. Stripe also processes some data for fraud prevention and its own legal obligations, under its own privacy policy.",
-          ),
-        },
-        {
-          kind: "callout",
-          tone: "verify",
-          text: l(
-            "[[Entité Stripe contractante et rôle (sous-traitant / responsable) à confirmer]]",
-            "[[Contracting Stripe entity and role (processor / controller) to confirm]]",
+            "Les paiements sont traités par Stripe Payments Europe, Ltd. (Dublin, Irlande). Vos données de carte sont saisies dans le formulaire sécurisé de Stripe et ne nous sont pas transmises ; nous recevons uniquement le statut du paiement et ses références. Stripe agit comme sous-traitant pour le traitement du paiement, et comme responsable de traitement indépendant pour ses propres obligations (prévention de la fraude, lutte contre le blanchiment), selon sa politique de confidentialité.",
+            "Payments are processed by Stripe Payments Europe, Ltd. (Dublin, Ireland). Your card details are entered in Stripe’s secure form and are not passed to us; we only receive the payment status and its references. Stripe acts as a processor for handling the payment, and as an independent controller for its own obligations (fraud prevention, anti-money-laundering), under its own privacy policy.",
           ),
         },
       ],
@@ -267,23 +298,27 @@ export const PRIVACY: LegalDocument = {
             { key: "location", label: l("Localisation des données", "Data location") },
           ],
           rows: [
-            { role: l("Hébergement du site", "Website hosting"), provider: l("[[Hébergeur]]", "[[Hosting provider]]"), location: l("[[Pays]]", "[[Country]]") },
-            { role: l("Base de données et comptes", "Database and accounts"), provider: l("[[Prestataire base de données]]", "[[Database provider]]"), location: l("[[Pays]]", "[[Country]]") },
-            { role: l("E-mails et communication", "Email and communication"), provider: l("[[Prestataire e-mail]]", "[[Email provider]]"), location: l("[[Pays]]", "[[Country]]") },
-            { role: l("Mesure d’audience", "Analytics"), provider: l("[[Outil d’analytics, si utilisé]]", "[[Analytics provider, if used]]"), location: l("[[Pays]]", "[[Country]]") },
-            { role: l("Livraison", "Delivery"), provider: l("[[Transporteurs]]", "[[Carriers]]"), location: l("[[Pays]]", "[[Country]]") },
-            { role: l("Vidéo des formations", "Training video"), provider: l("[[Hébergeur vidéo]]", "[[Video host]]"), location: l("[[Pays]]", "[[Country]]") },
+            { role: l("Hébergement du site", "Website hosting"), provider: l("Vercel Inc.", "Vercel Inc."), location: US_DPF },
+            {
+              role: l("Base de données, comptes, fichiers et vidéos des formations", "Database, accounts, files and course videos"),
+              provider: l("Supabase Inc.", "Supabase Inc."),
+              location: l("Union européenne (Paris)", "European Union (Paris)"),
+            },
+            { role: l("E-mails de service et newsletter", "Service emails and newsletter"), provider: l("Resend (Plus Five Five, Inc.)", "Resend (Plus Five Five, Inc.)"), location: US_DPF },
+            { role: l("Mesure d’audience, avec votre accord", "Audience measurement, with your consent"), provider: l("PostHog Inc.", "PostHog Inc."), location: l("Union européenne (Francfort)", "European Union (Frankfurt)") },
+            { role: l("Livraison", "Delivery"), provider: l("La Poste (Colissimo), Chronopost, GLS", "La Poste (Colissimo), Chronopost, GLS"), location: l("France et pays de destination", "France and the destination country") },
+            { role: l("Connexion avec Google", "Sign-in with Google"), provider: l("Google Ireland Ltd / Google LLC", "Google Ireland Ltd / Google LLC"), location: US_DPF },
+            { role: l("Essai d’une création sur un sourire (IA)", "Trying a creation on a smile (AI)"), provider: l("Google (API Gemini)", "Google (Gemini API)"), location: US_DPF },
             {
               role: l("Cartes des pages Glowbook (chargées quand vous les faites défiler)", "Glowbook page maps (loaded as you scroll to them)"),
               provider: l("OpenFreeMap — données © OpenStreetMap", "OpenFreeMap — data © OpenStreetMap"),
-              location: l("[[Pays]]", "[[Country]]"),
+              location: EU,
             },
             {
               role: l("Recherche d’adresse dans le Studio (artistes)", "Address search in the Studio (artists)"),
               provider: l("Nominatim — Fondation OpenStreetMap", "Nominatim — OpenStreetMap Foundation"),
-              location: l("[[Pays]]", "[[Country]]"),
+              location: l("Royaume-Uni et Union européenne (décision d’adéquation)", "United Kingdom and European Union (adequacy decision)"),
             },
-            { role: l("Autres", "Other"), provider: l("[[Autres prestataires]]", "[[Other providers]]"), location: l("[[Pays]]", "[[Country]]") },
           ],
         },
       ],
@@ -301,21 +336,18 @@ export const PRIVACY: LegalDocument = {
             { key: "basis", label: l("Base légale", "Legal basis") },
           ],
           rows: [
-            { purpose: l("Gérer votre compte", "Manage your account"), basis: l("Exécution du contrat", "Performance of a contract") },
+            { purpose: l("Gérer votre compte", "Manage your account"), basis: l("Exécution du contrat (CGU)", "Performance of a contract (terms of use)") },
             { purpose: l("Traiter, livrer et facturer vos commandes", "Process, deliver and invoice orders"), basis: l("Exécution du contrat", "Performance of a contract") },
             { purpose: l("Donner accès aux formations, suivre la progression, délivrer les attestations", "Provide training, track progress, issue certificates"), basis: l("Exécution du contrat", "Performance of a contract") },
+            { purpose: l("Fournir le Studio 3D, les liens de partage et la page Glowbook", "Provide the 3D Studio, share links and the Glowbook page"), basis: l("Exécution du contrat", "Performance of a contract") },
+            { purpose: l("Essai d’une création sur un sourire", "Trying a creation on a smile"), basis: l("Consentement (donné à chaque envoi de photo)", "Consent (given each time a photo is sent)") },
             { purpose: l("Conserver les factures et pièces comptables", "Keep invoices and accounting records"), basis: l("Obligation légale", "Legal obligation") },
             { purpose: l("Répondre à vos demandes", "Answer your requests"), basis: l("Intérêt légitime ou mesures précontractuelles", "Legitimate interest or pre-contractual steps") },
             { purpose: l("Prévenir la fraude et sécuriser le site", "Prevent fraud and secure the site"), basis: l("Intérêt légitime", "Legitimate interest") },
-            { purpose: l("Publier vos avis et messages", "Publish your reviews and posts"), basis: l("[[Consentement ou exécution du contrat]]", "[[Consent or performance of a contract]]") },
-            { purpose: l("Envoyer des e-mails marketing", "Send marketing emails"), basis: l("Consentement", "Consent") },
-            { purpose: l("Cookies non essentiels", "Non-essential cookies"), basis: l("Consentement", "Consent") },
+            { purpose: l("Publier vos avis et messages", "Publish your reviews and posts"), basis: l("Exécution du contrat (CGU), à votre initiative", "Performance of a contract (terms of use), at your initiative") },
+            { purpose: l("Envoyer la newsletter et des e-mails marketing", "Send the newsletter and marketing emails"), basis: l("Consentement", "Consent") },
+            { purpose: l("Mesure d’audience et cookies non essentiels", "Audience measurement and non-essential cookies"), basis: l("Consentement", "Consent") },
           ],
-        },
-        {
-          kind: "callout",
-          tone: "verify",
-          text: l("[[Bases légales à valider pour chaque traitement]]", "[[Legal bases to validate for each processing activity]]"),
         },
       ],
     },
@@ -332,11 +364,15 @@ export const PRIVACY: LegalDocument = {
             { key: "period", label: l("Durée", "Period") },
           ],
           rows: [
-            { data: l("Compte", "Account"), period: l("[[Durée de conservation — ex. jusqu’à suppression + délai d’inactivité]]", "[[Retention period — e.g. until deletion + inactivity period]]") },
-            { data: l("Commandes et factures", "Orders and invoices"), period: l("[[Durée légale de conservation comptable]]", "[[Statutory accounting retention period]]") },
-            { data: l("Demandes au service client", "Customer service requests"), period: l("[[Durée de conservation]]", "[[Retention period]]") },
-            { data: l("Progression et attestations", "Progress and certificates"), period: l("[[Durée de conservation]]", "[[Retention period]]") },
-            { data: l("Consentement marketing", "Marketing consent"), period: l("[[Durée de conservation]]", "[[Retention period]]") },
+            { data: l("Compte, créations, progression et attestations", "Account, creations, progress and certificates"), period: l("Jusqu’à la suppression de votre compte", "Until you delete your account") },
+            {
+              data: l("Commandes, factures et avoirs", "Orders, invoices and credit notes"),
+              period: l("10 ans à compter de la clôture de l’exercice (obligation comptable), détachés de votre compte s’il est supprimé", "10 years from the end of the financial year (accounting obligation), detached from your account if it is deleted"),
+            },
+            { data: l("Demandes au service client", "Customer service requests"), period: l("3 ans après le dernier échange", "3 years after the last exchange") },
+            { data: l("Newsletter", "Newsletter"), period: l("Jusqu’à votre désinscription ; l’adresse est ensuite gardée sur une liste d’opposition, pour ne plus vous écrire", "Until you unsubscribe; the address is then kept on an opt-out list, so we no longer write to you") },
+            { data: l("Preuves de consentement", "Proof of consent"), period: l("5 ans", "5 years") },
+            { data: l("Photo envoyée pour un essai sur un sourire", "Photo sent for a smile try-on"), period: l("Non conservée par nous (24 heures au plus sur votre appareil)", "Not kept by us (24 hours at most on your device)") },
             { data: l("Cookies", "Cookies"), period: l("Voir la <<politique cookies|/cookies>>", "See the <<cookie policy|/cookies>>") },
           ],
         },
@@ -364,8 +400,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Certains prestataires peuvent traiter des données hors de l’Espace économique européen. Dans ce cas, le transfert est encadré par une garantie reconnue par le RGPD (décision d’adéquation ou clauses contractuelles types, par exemple) : [[Transferts effectifs et garanties utilisées]].",
-            "Some providers may process data outside the European Economic Area. In that case, the transfer is covered by a safeguard recognised by the GDPR (such as an adequacy decision or standard contractual clauses): [[Actual transfers and safeguards used]].",
+            "Notre base de données est hébergée dans l’Union européenne. Certains prestataires (Vercel, Resend, Google) sont établis aux États-Unis et peuvent y traiter des données : ces transferts reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework) lorsque le prestataire y adhère, et à défaut sur les clauses contractuelles types de la Commission européenne. Les transferts vers le Royaume-Uni reposent sur une décision d’adéquation.",
+            "Our database is hosted in the European Union. Some providers (Vercel, Resend, Google) are established in the United States and may process data there: these transfers rely on the EU–US Data Privacy Framework where the provider has joined it, and otherwise on the European Commission’s standard contractual clauses. Transfers to the United Kingdom rely on an adequacy decision.",
           ),
         },
       ],
@@ -387,13 +423,27 @@ export const PRIVACY: LegalDocument = {
           items: [
             { icon: "eye", title: l("Accès", "Access"), text: l("Savoir quelles données nous détenons sur vous et en obtenir une copie.", "Find out what data we hold about you and get a copy.") },
             { icon: "pencil", title: l("Rectification", "Rectification"), text: l("Corriger des données inexactes ou incomplètes — la plupart directement depuis votre <<profil|/compte/profil>>.", "Correct inaccurate or incomplete data — most of it directly from your <<profile|/compte/profil>>.") },
-            { icon: "trash", title: l("Effacement", "Erasure"), text: l("Demander la suppression de vos données, sauf celles que nous devons conserver par la loi.", "Ask us to delete your data, except what the law requires us to keep.") },
+            { icon: "trash", title: l("Effacement", "Erasure"), text: l("Supprimer votre compte depuis <<Sécurité et confidentialité|/compte/securite>>, ou nous demander d’effacer vos données, sauf celles que la loi nous oblige à conserver.", "Delete your account from <<Security & privacy|/compte/securite>>, or ask us to erase your data, except what the law requires us to keep.") },
             { icon: "pause", title: l("Limitation", "Restriction"), text: l("Geler l’utilisation de vos données, par exemple pendant la vérification d’une contestation.", "Freeze the use of your data, for example while a dispute is being checked.") },
             { icon: "hand", title: l("Opposition", "Objection"), text: l("Vous opposer à un traitement fondé sur notre intérêt légitime, et à tout moment au marketing.", "Object to processing based on our legitimate interest, and to marketing at any time.") },
-            { icon: "download", title: l("Portabilité", "Portability"), text: l("Recevoir vos données dans un format structuré — voir l’export dans <<Sécurité et confidentialité|/compte/securite>>.", "Receive your data in a structured format — see the export in <<Security & privacy|/compte/securite>>.") },
+            { icon: "download", title: l("Portabilité", "Portability"), text: l("Télécharger vos données dans un fichier structuré depuis <<Sécurité et confidentialité|/compte/securite>>.", "Download your data as a structured file from <<Security & privacy|/compte/securite>>.") },
             { icon: "undo", title: l("Retrait du consentement", "Withdraw consent"), text: l("Retirer à tout moment un consentement donné (e-mails, <<cookies|/cookies>>), sans effet sur le passé.", "Withdraw any consent at any time (emails, <<cookies|/cookies>>), without affecting past processing.") },
-            { icon: "scale", title: l("Réclamation", "Complaint"), text: l("Saisir l’autorité de protection des données de votre pays : [[Autorité de contrôle compétente]].", "Lodge a complaint with the data protection authority of your country: [[Competent supervisory authority]].") },
+            {
+              icon: "scale",
+              title: l("Réclamation", "Complaint"),
+              text: l(
+                "Saisir la CNIL (Commission nationale de l’informatique et des libertés, 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, cnil.fr) ou l’autorité de protection des données de votre pays.",
+                "Lodge a complaint with the CNIL (Commission nationale de l’informatique et des libertés, 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, France, cnil.fr) or the data protection authority of your country.",
+              ),
+            },
           ],
+        },
+        {
+          kind: "p",
+          text: l(
+            "Vous pouvez aussi définir des directives sur le sort de vos données après votre décès (article 85 de la loi Informatique et Libertés).",
+            "You can also set instructions on what happens to your data after your death (article 85 of the French Data Protection Act).",
+          ),
         },
         {
           kind: "callout",
@@ -414,8 +464,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Nous mettons en œuvre des mesures techniques et organisationnelles adaptées : connexions chiffrées, mots de passe stockés sous forme chiffrée, accès aux données limité aux personnes habilitées, contenus de formation protégés. Aucun système n’étant infaillible, nous vous informerons si une violation de données présentant un risque élevé vous concerne. [[Mesures de sécurité à confirmer avec l’implémentation finale]]",
-            "We use appropriate technical and organisational measures: encrypted connections, hashed passwords, access to data limited to authorised people, protected training content. As no system is infallible, we will inform you if a data breach presenting a high risk affects you. [[Security measures to confirm against the final implementation]]",
+            "Nous mettons en œuvre des mesures techniques et organisationnelles adaptées : connexions chiffrées (HTTPS), mots de passe stockés sous forme hachée, contrôle d’accès appliqué par la base de données à chaque lecture et écriture, fichiers personnels et contenus de formation dans des espaces privés servis par des liens temporaires, accès de l’équipe limité selon son rôle et actions sensibles journalisées. Aucun système n’étant infaillible, nous vous informerons si une violation de données présentant un risque élevé vous concerne.",
+            "We use appropriate technical and organisational measures: encrypted connections (HTTPS), passwords stored hashed, access control enforced by the database on every read and write, personal files and course content in private storage served through temporary links, team access limited by role and sensitive actions logged. As no system is infallible, we will inform you if a data breach presenting a high risk affects you.",
           ),
         },
       ],
@@ -428,8 +478,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Nous ne prenons aucune décision produisant des effets juridiques à votre égard sur la seule base d’un traitement automatisé. [[Confirmer l’absence de profilage, ou décrire celui mis en place (ex. anti-fraude)]]",
-            "We do not make decisions with legal effects on you based solely on automated processing. [[Confirm there is no profiling, or describe any in place (e.g. anti-fraud)]]",
+            "Nous ne prenons aucune décision produisant des effets juridiques à votre égard sur la seule base d’un traitement automatisé, et ne faisons pas de profilage publicitaire. Notre prestataire de paiement analyse automatiquement chaque transaction pour détecter la fraude et peut refuser un paiement à risque : dans ce cas, contactez-nous pour qu’une personne examine la situation.",
+            "We make no decision with legal effects on you based solely on automated processing, and do no advertising profiling. Our payment provider automatically analyses each transaction to detect fraud and may decline a risky payment: if that happens, contact us so that a person can look into it.",
           ),
         },
       ],
@@ -442,8 +492,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Le site ne s’adresse pas aux enfants. Âge minimum pour créer un compte ou commander : [[Âge minimum]]. Si vous pensez qu’un mineur nous a transmis des données, contactez-nous.",
-            "The site is not intended for children. Minimum age to create an account or order: [[Minimum age]]. If you think a minor has given us their data, please contact us.",
+            "Le site ne s’adresse pas aux enfants. Il faut avoir au moins 15 ans pour créer un compte, et l’accord d’un représentant légal pour commander avant 18 ans. Si vous pensez qu’un mineur de moins de 15 ans nous a transmis des données, contactez-nous : nous les supprimerons.",
+            "The site is not intended for children. You must be at least 15 to create an account, and have a legal guardian’s consent to order under 18. If you think a child under 15 has given us their data, please contact us: we will delete it.",
           ),
         },
       ],

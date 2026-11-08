@@ -83,8 +83,8 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
       {
         kind: "internal",
         text: l(
-          "Les informations de l’entreprise viennent des paramètres de la boutique (back office › Paramètres › Boutique) et doivent être vérifiées avant publication. Chaque champ encore vide est à fournir par l’entreprise, et la liste des mentions obligatoires est à confirmer selon la forme juridique et le pays d’établissement réels.",
-          "Business information comes from the store settings (back office › Settings › Store) and must be verified before publication. Every field still empty must be supplied by the business, and the list of mandatory disclosures must be confirmed against the actual legal form and country of establishment.",
+          "Les informations de l’entreprise viennent des paramètres de la boutique (back office › Paramètres › Boutique). Un champ encore vide est à fournir : le téléphone de l’éditeur et celui du vendeur sont obligatoires (LCEN, art. 6 III et 19).",
+          "Business information comes from the store settings (back office › Settings › Store). A field still empty must be supplied: the publisher’s and the seller’s telephone numbers are mandatory (LCEN, art. 6 III and 19).",
         ),
       },
     ],
@@ -162,7 +162,7 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
                 label: l("Téléphone", "Telephone"),
                 value: store?.showPhone ? same(store.phone) : undefined,
                 placeholder: l("Numéro de téléphone", "Telephone number"),
-                hint: l("Si un numéro est mis à disposition des clients.", "If a number is made available to customers."),
+                hint: l("Obligatoire pour un vendeur en ligne (LCEN, art. 19).", "Mandatory for an online seller (LCEN, art. 19)."),
               },
             ],
           },
@@ -188,8 +188,8 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
           {
             kind: "p",
             text: l(
-              "Le site est hébergé par le prestataire suivant. Si plusieurs prestataires hébergent le site et ses données (application, base de données, fichiers), chacun devra être identifié.",
-              "The website is hosted by the following provider. If several providers host the site and its data (application, database, files), each should be identified.",
+              "Le site et ses données (application, base de données, fichiers) sont hébergés par les prestataires suivants.",
+              "The website and its data (application, database, files) are hosted by the following providers.",
             ),
           },
           {
@@ -253,8 +253,8 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
           {
             kind: "p",
             text: l(
-              "Les photos publiées par les membres (avis, communauté) restent la propriété de leurs auteurs, dans les conditions prévues par nos <<conditions générales|/conditions-generales>>.",
-              "Photos posted by members (reviews, community) remain the property of their authors, under the terms set out in our <<terms of sale|/conditions-generales>>.",
+              "Les photos et créations publiées par les membres (avis, pages Glowbook, salons) restent la propriété de leurs auteurs, dans les conditions prévues par nos <<conditions générales d’utilisation|/conditions-generales-utilisation#user-content>>.",
+              "Photos and creations posted by members (reviews, Glowbook pages, lounges) remain the property of their authors, under the terms set out in our <<terms of use|/conditions-generales-utilisation#user-content>>.",
             ),
           },
         ],
@@ -266,8 +266,8 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
           {
             kind: "p",
             text: l(
-              "« Global Toothgems » et le logo associé sont utilisés par l’éditeur du site. Statut d’enregistrement : [[Marque déposée ou non — office, numéro et classes]].",
-              "“Global Toothgems” and its logo are used by the website publisher. Registration status: [[Registered or not — office, number and classes]].",
+              "Les noms « Global Toothgems » et « PIMP TON SMILE » et les logos associés sont des signes distinctifs protégés : toute reproduction ou utilisation sans autorisation écrite préalable est interdite.",
+              "The names “Global Toothgems” and “PIMP TON SMILE” and their logos are protected distinctive signs: any reproduction or use without prior written permission is prohibited.",
             ),
           },
           {
@@ -320,8 +320,8 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
           {
             kind: "p",
             text: l(
-              "Les présentes mentions légales sont régies par [[Droit applicable]]. Les règles applicables aux ventes figurent dans nos <<conditions générales de vente|/conditions-generales>>.",
-              "This legal notice is governed by [[Applicable law]]. The rules that apply to sales are set out in our <<terms of sale|/conditions-generales>>.",
+              "Les présentes mentions légales sont régies par le droit français. Les règles applicables aux ventes figurent dans nos <<conditions générales de vente|/conditions-generales>>, celles de l’utilisation du site dans nos <<conditions générales d’utilisation|/conditions-generales-utilisation>>.",
+              "This legal notice is governed by French law. The rules that apply to sales are set out in our <<terms of sale|/conditions-generales>>, those for using the site in our <<terms of use|/conditions-generales-utilisation>>.",
             ),
           },
         ],

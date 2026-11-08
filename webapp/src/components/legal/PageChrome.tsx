@@ -72,7 +72,7 @@ export function ReviewBar() {
   );
 }
 
-const KEY_TONES: CalloutTone[] = ["legal", "policy", "instruction", "verify"];
+const KEY_TONES: CalloutTone[] = ["legal", "policy", "instruction"];
 
 /** Explains the four labels used through the page, once, up front. */
 export function ContentKey() {

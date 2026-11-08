@@ -116,4 +116,4 @@ export interface LegalDocument {
 export const l = (fr: string, en: string): Localized => ({ fr, en });
 
 /** Draft date shown as "last updated" on every document until publication. */
-export const DRAFT_DATE = "2026-09-23";
+export const DRAFT_DATE = "2026-11-08";
