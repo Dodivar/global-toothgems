@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { CalendarClock } from "lucide-react";
-import { Badge } from "../ui/Badge";
 import type { ContactCategory } from "../../data/legal/types";
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import {
@@ -11,7 +10,6 @@ import {
   ContentKey,
   DesktopToc,
   MobileToc,
-  ReviewBar,
   type Crumb,
   type TocEntry,
 } from "./PageChrome";
@@ -21,7 +19,7 @@ const LEGAL_TITLE_ID = "legal-page-title";
 
 /**
  * The frame every help-centre and legal page shares: breadcrumb, a modest
- * title block (no hero — nobody came here for one), the review strip, then the
+ * title block (no hero — nobody came here for one), then the
  * document beside a sticky table of contents on large screens and under a
  * collapsible one on small screens. It ends on a contact prompt and offers a
  * way back up once the reader is deep in.
@@ -37,7 +35,6 @@ export function LegalLayout({
   showKey,
   contactCategory,
   aside,
-  hideReviewBar,
   children,
 }: {
   eyebrow: string;
@@ -53,8 +50,6 @@ export function LegalLayout({
   contactCategory?: ContactCategory;
   /** Right-hand column content on pages without a table of contents. */
   aside?: ReactNode;
-  /** A page that is production content (contact) drops the prototype review strip. */
-  hideReviewBar?: boolean;
   children: ReactNode;
 }) {
   const { t, i18n } = useTranslation();
@@ -79,7 +74,6 @@ export function LegalLayout({
       <div className="border-b border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--gt-blue-50),var(--surface-page))]">
         <header className="mx-auto grid max-w-[var(--max-width-content)] gap-5 px-[clamp(16px,4vw,48px)] pb-8 pt-5 sm:pb-10 sm:pt-6">
           <Breadcrumbs items={trail} />
-          {!hideReviewBar && <ReviewBar />}
           <div className="grid max-w-[820px] gap-3">
             <span className="gt-eyebrow text-[var(--gt-blue-700)]">{eyebrow}</span>
             <h1 id={LEGAL_TITLE_ID} tabIndex={-1} className="text-[clamp(28px,4.2vw,var(--text-h1))] leading-[1.12] outline-none">
@@ -94,9 +88,6 @@ export function LegalLayout({
                   <CalendarClock size={14} aria-hidden="true" />
                   {t("legal.updated")} <time dateTime={updated}>{updatedLabel}</time>
                 </span>
-                <Badge tone="warning" size="sm">
-                  {t("legal.draft")}
-                </Badge>
               </div>
             )}
           </div>

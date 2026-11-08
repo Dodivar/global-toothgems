@@ -62,13 +62,7 @@ export function About() {
                   "[[!Company story, founding and team]]",
                 ),
               },
-              {
-                kind: "internal",
-                text: l(
-                  "Aucune date de création, aucun chiffre ni aucun nom n’a été inventé ici. Les statistiques affichées ailleurs dans le prototype (artistes formés, pays, avis) sont des exemples de maquette à vérifier avant publication.",
-                  "No founding date, figure or name has been invented here. Statistics shown elsewhere in the prototype (artists trained, countries, reviews) are mockup examples to verify before publication.",
-                ),
-              },
+              // Editor's note, never published: No founding date, figure or name has been invented here. Statistics shown elsewhere in the prototype (artists trained, countries, reviews) are mockup examples to verify before publication.
             ]}
           />
         </div>

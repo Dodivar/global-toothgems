@@ -42,8 +42,6 @@ test("a returning visitor's saved choices hydrate without a mismatch", async ({ 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(() => {
     localStorage.setItem("gt-cookie-consent", JSON.stringify({ preferences: false, analytics: false, marketing: false, decidedAt: "2026-09-01T00:00:00Z" }));
-    localStorage.setItem("gt-review-notes", "off");
-    localStorage.setItem("gt-launch-checklist", JSON.stringify({ "stripe-account": true }));
   });
   for (const path of ["/fr/academy", "/fr/cookies", "/en/legal-notice", "/fr/boutique/aurora-heart"]) {
     await open(page, path);

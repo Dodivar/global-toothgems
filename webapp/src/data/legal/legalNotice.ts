@@ -80,13 +80,7 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
     showKey: true,
     contactCategory: "other",
     lead: [
-      {
-        kind: "internal",
-        text: l(
-          "Les informations de l’entreprise viennent des paramètres de la boutique (back office › Paramètres › Boutique). Un champ encore vide est à fournir : le téléphone de l’éditeur et celui du vendeur sont obligatoires (LCEN, art. 6 III et 19).",
-          "Business information comes from the store settings (back office › Settings › Store). A field still empty must be supplied: the publisher’s and the seller’s telephone numbers are mandatory (LCEN, art. 6 III and 19).",
-        ),
-      },
+      // Editor's note, never published: Business information comes from the store settings (back office › Settings › Store). A field still empty must be supplied: the publisher’s and the seller’s telephone numbers are mandatory (LCEN, art. 6 III and 19).
     ],
     sections: [
       {

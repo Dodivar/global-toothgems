@@ -41,13 +41,7 @@ export const TERMS: LegalDocument = {
   showKey: true,
   contactCategory: "order",
   lead: [
-    {
-      kind: "internal",
-      text: l(
-        "Complétées le 8 novembre 2026 avec des règles réalistes, à valider par l’entreprise (décision 126). Reste à fournir : le médiateur de la consommation. À faire relire par un juriste avant le lancement : la rétractation des formations et le statut réglementaire des produits.",
-        "Completed on 8 November 2026 with workable rules, to be validated by the business (decision 126). Still to supply: the consumer mediator. To have a lawyer review before launch: withdrawal from courses and the products’ regulatory status.",
-      ),
-    },
+    // Editor's note, never published: Completed on 8 November 2026 with workable rules, to be validated by the business (decision 126). Still to supply: the consumer mediator. To have a lawyer review before launch: withdrawal from courses and the products’ regulatory status.
   ],
   sections: [
     {
@@ -798,13 +792,7 @@ export const TERMS: LegalDocument = {
             "Competent mediator: [[!Consumer mediator name, address and website]].",
           ),
         },
-        {
-          kind: "internal",
-          text: l(
-            "Ne pas ajouter de lien vers la plateforme européenne de règlement en ligne des litiges (RLL/ODR) : elle a été supprimée par le législateur européen.",
-            "Do not add a link to the EU online dispute resolution (ODR) platform: it has been discontinued by the EU legislator.",
-          ),
-        },
+        // Editor's note, never published: Do not add a link to the EU online dispute resolution (ODR) platform: it has been discontinued by the EU legislator.
       ],
     },
     {

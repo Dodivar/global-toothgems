@@ -46,13 +46,7 @@ export const PRIVACY: LegalDocument = {
         "We collect what we need to deliver your orders, train you and answer you. We do not sell your data. Audience measurement and marketing emails are only used with your consent, which you can withdraw at any time.",
       ),
     },
-    {
-      kind: "internal",
-      text: l(
-        "Complétée le 8 novembre 2026 (décision 126). À confirmer par l’entreprise : le responsable du traitement retenu (le vendeur, l’éditeur agissant pour son compte), et la mise en place des purges qui appliquent les durées de conservation annoncées.",
-        "Completed on 8 November 2026 (decision 126). For the business to confirm: the data controller chosen (the seller, the publisher acting on its behalf), and the purge jobs that apply the retention periods stated.",
-      ),
-    },
+    // Editor's note, never published: Completed on 8 November 2026 (decision 126). For the business to confirm: the data controller chosen (the seller, the publisher acting on its behalf), and the purge jobs that apply the retention periods stated.
   ],
   sections: [
     {

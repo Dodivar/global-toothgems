@@ -4582,7 +4582,6 @@
     "home": "Home",
     "breadcrumb": "Breadcrumb",
     "updated": "Last updated:",
-    "draft": "Draft",
     "backToTop": "Back to top",
     "placeholder": {
       "verify": "To verify",
@@ -4604,13 +4603,6 @@
     "fields": {
       "heading": "Company information",
       "editable": "Fields to be completed by the business"
-    },
-    "review": {
-      "noteLabel": "Internal note · prototype",
-      "barLabel": "Prototype under review.",
-      "barText": "Business information must be verified before publication.",
-      "hide": "Hide internal notes",
-      "show": "Show internal notes"
     },
     "toc": {
       "title": "On this page",
@@ -4793,16 +4785,6 @@
       },
       "quickTitle": "Quick answers",
       "trackOrder": "Track an order"
-    },
-    "checklist": {
-      "eyebrow": "Internal · not customer-facing",
-      "title": "Pre-launch checklist — Stripe & compliance",
-      "body": "What must be verified before payments go live. Everything starts as “to verify”: ticking an item is only saved in your browser.",
-      "progress": "{{done}} / {{total}} verified",
-      "pending": "To verify",
-      "verified": "Verified",
-      "open": "Open: {{item}}",
-      "disclaimer": "A review aid for the prototype, not legal advice nor Stripe’s official list of requirements. Validate with counsel and current Stripe documentation."
     },
     "about": {
       "eyebrow": "Company",

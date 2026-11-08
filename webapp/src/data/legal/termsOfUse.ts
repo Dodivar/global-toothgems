@@ -35,13 +35,7 @@ export const TERMS_OF_USE: LegalDocument = {
   showKey: true,
   contactCategory: "other",
   lead: [
-    {
-      kind: "internal",
-      text: l(
-        "Complétées le 8 novembre 2026 avec des règles réalistes, à valider par l’entreprise (décision 126). À faire relire par un juriste avant le lancement : la clause sur la pose des bijoux dentaires et la formation.",
-        "Completed on 8 November 2026 with workable rules, to be validated by the business (decision 126). To have a lawyer review before launch: the clause on applying tooth gems and on training.",
-      ),
-    },
+    // Editor's note, never published: Completed on 8 November 2026 with workable rules, to be validated by the business (decision 126). To have a lawyer review before launch: the clause on applying tooth gems and on training.
     {
       kind: "callout",
       tone: "policy",
