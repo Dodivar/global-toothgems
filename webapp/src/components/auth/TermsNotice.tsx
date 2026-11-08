@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, CircleAlert } from "lucide-react";
 import { Button } from "../ui/Button";
@@ -28,11 +28,14 @@ export function TermsNotice({
   busy = false,
   failed = false,
   onAccept,
+  action,
 }: {
   cta: string;
   busy?: boolean;
   failed?: boolean;
   onAccept: () => void;
+  /** Replaces the acceptance button when another control is the gesture (Google's own button). */
+  action?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [doc, setDoc] = useState<LegalDoc | null>(null);
@@ -64,9 +67,11 @@ export function TermsNotice({
           {t("termsAccept.failed")}
         </p>
       )}
-      <Button variant="primary" size="lg" fullWidth iconRight={ArrowRight} loading={busy} onClick={onAccept} className={WRAP}>
-        {cta}
-      </Button>
+      {action ?? (
+        <Button variant="primary" size="lg" fullWidth iconRight={ArrowRight} loading={busy} onClick={onAccept} className={WRAP}>
+          {cta}
+        </Button>
+      )}
       <LegalDialog doc={doc} onClose={() => setDoc(null)} />
     </div>
   );

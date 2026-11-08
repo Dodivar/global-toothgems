@@ -876,7 +876,6 @@
     "processing": {
       "checking": {
         "title": "Vérification de la photo…",
-        "body": "Une IA vérifie que les dents sont bien visibles, de face, nettes et éclairées, puis repère chaque dent. Quelques secondes.",
         "lines": [
           "Lecture de la photo…",
           "Repérage du sourire…",
@@ -894,8 +893,7 @@
           "Finitions…"
         ]
       },
-      "cancel": "Annuler",
-      "background": "Vous pouvez fermer cette fenêtre et continuer dans le Studio : un message vous prévient quand le rendu est prêt. Gardez cette page ouverte jusque-là."
+      "cancel": "Annuler"
     },
     "errors": {
       "not_available": {

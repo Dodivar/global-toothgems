@@ -4582,7 +4582,6 @@
     "home": "Accueil",
     "breadcrumb": "Fil d’Ariane",
     "updated": "Dernière mise à jour :",
-    "draft": "Projet",
     "backToTop": "Haut de page",
     "placeholder": {
       "verify": "À vérifier",
@@ -4604,13 +4603,6 @@
     "fields": {
       "heading": "Informations de l’entreprise",
       "editable": "Champs à compléter par l’entreprise"
-    },
-    "review": {
-      "noteLabel": "Note interne · maquette",
-      "barLabel": "Maquette en revue.",
-      "barText": "Les informations de l’entreprise doivent être vérifiées avant publication.",
-      "hide": "Masquer les notes internes",
-      "show": "Afficher les notes internes"
     },
     "toc": {
       "title": "Sur cette page",
@@ -4793,16 +4785,6 @@
       },
       "quickTitle": "Réponses rapides",
       "trackOrder": "Suivre une commande"
-    },
-    "checklist": {
-      "eyebrow": "Interne · non visible des clients",
-      "title": "Checklist avant lancement — Stripe et conformité",
-      "body": "Ce qui doit être vérifié avant d’activer les paiements. Tout est « à vérifier » par défaut : cocher un élément n’est enregistré que dans votre navigateur.",
-      "progress": "{{done}} / {{total}} vérifiés",
-      "pending": "À vérifier",
-      "verified": "Vérifié",
-      "open": "Ouvrir : {{item}}",
-      "disclaimer": "Aide à la revue de la maquette, pas un avis juridique ni la liste officielle des exigences de Stripe. À valider avec un conseil et la documentation Stripe à jour."
     },
     "about": {
       "eyebrow": "L’entreprise",
@@ -5044,6 +5026,8 @@
     "errors": {
       "rate_limited": "Trop de tentatives. Réessayez dans un moment.",
       "invalid_request": "Vérifiez l’adresse e-mail et la case de consentement, puis réessayez.",
+      "captcha_required": "Vérification anti-robot en cours… Réessayez dans un instant.",
+      "captcha_failed": "La vérification anti-robot n’a pas abouti. Rechargez la page, puis réessayez.",
       "network": "Connexion impossible. Vérifiez votre réseau, puis réessayez.",
       "unavailable": "L’inscription à la newsletter n’est pas disponible pour le moment.",
       "server_error": "L’inscription n’a pas pu aboutir. Réessayez dans un moment."

@@ -876,7 +876,6 @@
     "processing": {
       "checking": {
         "title": "Checking the photo…",
-        "body": "An AI checks that the teeth are clearly visible, face-on, sharp and well lit, then finds each tooth. A few seconds.",
         "lines": [
           "Reading the photo…",
           "Finding the smile…",
@@ -894,8 +893,7 @@
           "Finishing…"
         ]
       },
-      "cancel": "Cancel",
-      "background": "You can close this window and carry on in the Studio: a message tells you when the render is ready. Keep this page open until then."
+      "cancel": "Cancel"
     },
     "errors": {
       "not_available": {

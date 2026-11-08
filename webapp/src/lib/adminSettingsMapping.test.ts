@@ -426,4 +426,26 @@ describe("trading name (decision 120)", () => {
     expect(publisher?.kind === "p" && publisher.text.fr).toContain("Le site est édité par Studio Test.");
     expect(withStoreDetails(TERMS, null)).toBe(TERMS);
   });
+
+  it("fills the privacy controller, the support e-mail and the return address (decision 126)", async () => {
+    const { withStoreDetails } = await import("../data/legal/storeFill");
+    const { PRIVACY } = await import("../data/legal/privacy");
+    const { RETURNS } = await import("../data/legal/returns");
+    const { TERMS } = await import("../data/legal/terms");
+    const fieldsOf = (doc: typeof PRIVACY, id: string) =>
+      (doc.sections.find((s) => s.id === id)?.blocks ?? []).flatMap((b) => (b.kind === "fields" ? b.fields : []));
+    const privacy = withStoreDetails(PRIVACY, ei);
+    expect(fieldsOf(privacy, "controller").map((f) => f.value?.fr)).toEqual([
+      "PIMP TON SMILE — Ada Test, Entrepreneur individuel (EI)",
+      "1 rue Fictive, 75004 Paris, France",
+      "support@example.com",
+      "Non désigné",
+    ]);
+    expect(fieldsOf(withStoreDetails(RETURNS, ei), "address")[0]?.value?.en).toBe("1 rue Fictive, 75004 Paris, France");
+    const complaints = withStoreDetails(TERMS, ei).sections.find((s) => s.id === "complaints")?.blocks[0];
+    expect(complaints?.kind === "p" && complaints.text.fr).toContain("ou à support@example.com.");
+    // Only the consumer mediator is left to supply once the store's details are in.
+    const left = JSON.stringify([withStoreDetails(TERMS, ei), privacy, withStoreDetails(RETURNS, ei)]).match(/\[\[[^\]]*\]\]/g);
+    expect([...new Set(left)]).toEqual(["[[!Nom, adresse et site du médiateur de la consommation]]", "[[!Consumer mediator name, address and website]]"]);
+  });
 });

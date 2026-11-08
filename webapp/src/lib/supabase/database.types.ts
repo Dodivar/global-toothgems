@@ -4492,6 +4492,7 @@ export type Database = {
           email: string
           id: string
           locale: string
+          opt_in_method: string | null
           policy_version: string | null
           source: string
           status: string
@@ -4513,6 +4514,7 @@ export type Database = {
           email: string
           id?: string
           locale?: string
+          opt_in_method?: string | null
           policy_version?: string | null
           source?: string
           status?: string
@@ -4534,6 +4536,7 @@ export type Database = {
           email?: string
           id?: string
           locale?: string
+          opt_in_method?: string | null
           policy_version?: string | null
           source?: string
           status?: string
@@ -10134,6 +10137,16 @@ export type Database = {
           p_locale?: string
           p_policy_version?: string
           p_source?: string
+        }
+        Returns: Json
+      }
+      newsletter_subscribe_direct: {
+        Args: {
+          p_email: string
+          p_locale: string
+          p_method: string
+          p_policy_version: string
+          p_source: string
         }
         Returns: Json
       }

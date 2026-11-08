@@ -1,4 +1,5 @@
 import type { Localized } from "../types";
+import { lp } from "./policies";
 import { l, type ContactCategory, type IconKey } from "./types";
 
 /**
@@ -47,8 +48,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Puis-je modifier ma commande ?", "Can I modify my order?"),
         answer: [
           l(
-            "Tant qu’elle n’est pas expédiée, écrivez-nous rapidement via le <<formulaire de contact|/contact?sujet=order>> avec votre numéro de commande. Nous ferons notre possible : [[Modifications possibles et délai]].",
-            "As long as it has not shipped, write to us quickly through the <<contact form|/contact?sujet=order>> with your order number. We will do our best: [[Changes possible and deadline]].",
+            "Tant qu’elle n’est pas expédiée, écrivez-nous rapidement via le <<formulaire de contact|/contact?sujet=order>> avec votre numéro de commande. Nous pouvons corriger l’adresse de livraison ou retirer un article (remboursé) ; pour en ajouter un, passez une nouvelle commande.",
+            "As long as it has not shipped, write to us quickly through the <<contact form|/contact?sujet=order>> with your order number. We can correct the delivery address or remove an item (refunded); to add one, place a new order.",
           ),
         ],
       },
@@ -56,9 +57,9 @@ export const FAQ: FaqCategory[] = [
         id: "cancel-order",
         question: l("Puis-je annuler ma commande ?", "Can I cancel my order?"),
         answer: [
-          l(
-            "Oui, avant expédition : [[Délai ou étape jusqu’à laquelle l’annulation est possible]]. Après réception, vous pouvez exercer votre droit de rétractation — voir <<Retours et remboursements|/retours-remboursements>>.",
-            "Yes, before shipping: [[Period or stage up to which cancellation is possible]]. After delivery, you can exercise your right of withdrawal — see <<Returns & refunds|/retours-remboursements>>.",
+          lp(
+            (p) => `Oui, ${p.cancellationStage}, avec un remboursement intégral. Après réception, vous pouvez exercer votre droit de rétractation — voir <<Retours et remboursements|/retours-remboursements>>.`,
+            (p) => `Yes, ${p.cancellationStage}, with a full refund. After delivery, you can exercise your right of withdrawal — see <<Returns & refunds|/retours-remboursements>>.`,
           ),
         ],
       },
@@ -95,8 +96,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Les produits conviennent-ils à tout le monde ?", "Are products suitable for everyone?"),
         answer: [
           l(
-            "Pas nécessairement. La pose d’un bijou dentaire suppose des dents et une hygiène buccale en bonne santé. En cas de doute, demandez l’avis d’un dentiste avant la pose. [[Contre-indications et public visé à valider]]",
-            "Not necessarily. Applying a tooth gem assumes healthy teeth and good oral hygiene. If in doubt, ask a dentist before application. [[Contraindications and target audience to validate]]",
+            "Pas nécessairement. La pose d’un bijou dentaire suppose des dents et une hygiène buccale en bonne santé. En cas de doute, demandez l’avis d’un dentiste avant la pose. La pose est déconseillée sur une dent abîmée, cariée, fragile ou couronnée, en cas de traitement dentaire en cours ou d’allergie à l’un des composants, et chez l’enfant.",
+            "Not necessarily. Applying a tooth gem assumes healthy teeth and good oral hygiene. If in doubt, ask a dentist before application. Application is not advised on a damaged, decayed, weak or crowned tooth, during ongoing dental treatment or with an allergy to one of the components, nor for children.",
           ),
         ],
       },
@@ -105,8 +106,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Comment utiliser les produits ?", "How should products be used?"),
         answer: [
           l(
-            "Suivez les instructions de la fiche produit et les techniques enseignées dans l’<<Academy|/academy>>. Certains produits sont destinés à un usage professionnel : [[Produits réservés aux professionnels]].",
-            "Follow the product page instructions and the techniques taught in the <<Academy|/academy>>. Some products are intended for professional use: [[Products reserved for professionals]].",
+            "Suivez les instructions de la fiche produit et les techniques enseignées dans l’<<Academy|/academy>>. Les adhésifs, composites et outils de pose sont destinés à des personnes formées à la pose : leur fiche le précise.",
+            "Follow the product page instructions and the techniques taught in the <<Academy|/academy>>. Adhesives, composites and application tools are intended for people trained in application: their page says so.",
           ),
         ],
       },
@@ -115,8 +116,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Comment entretenir les produits ?", "How should products be maintained?"),
         answer: [
           l(
-            "Conservez les gems et adhésifs dans leur emballage, à l’abri de la chaleur et de l’humidité. Les conseils d’entretien après la pose sont donnés dans la catégorie <<Matériel|/boutique?categorie=materiel>> de la boutique. [[Conditions de conservation par produit]]",
-            "Keep gems and adhesives in their packaging, away from heat and moisture. Aftercare advice is given in the shop’s <<Equipment|/boutique?categorie=materiel>> category. [[Storage conditions per product]]",
+            "Conservez les gems et adhésifs dans leur emballage, à l’abri de la chaleur et de l’humidité. Les conseils d’entretien après la pose sont donnés dans la catégorie <<Matériel|/boutique?categorie=materiel>> de la boutique. Les conditions propres à un produit (date limite, température) figurent sur sa fiche et son emballage.",
+            "Keep gems and adhesives in their packaging, away from heat and moisture. Aftercare advice is given in the shop’s <<Equipment|/boutique?categorie=materiel>> category. Conditions specific to a product (use-by date, temperature) are on its page and its packaging.",
           ),
         ],
       },
@@ -131,15 +132,20 @@ export const FAQ: FaqCategory[] = [
       {
         id: "where",
         question: l("Où livrez-vous ?", "Where do you ship?"),
-        answer: [l("[[Liste des pays et zones de livraison]] — voir la page <<Livraison|/livraison#destinations>>.", "[[List of delivery countries and zones]] — see <<Shipping & delivery|/livraison#destinations>>.")],
+        answer: [
+          l(
+            "En France et à Monaco, dans l’Union européenne, en Suisse et au Liechtenstein, au Royaume-Uni, aux États-Unis et au Canada — voir la page <<Livraison|/livraison#destinations>>.",
+            "France and Monaco, the European Union, Switzerland and Liechtenstein, the United Kingdom, the United States and Canada — see <<Shipping & delivery|/livraison#destinations>>.",
+          ),
+        ],
       },
       {
         id: "times",
         question: l("Quels sont les délais de livraison ?", "What are the delivery times?"),
         answer: [
-          l(
-            "Préparation sous [[Délai de préparation]], puis acheminement selon la zone. Le délai estimé de votre commande est affiché avant le paiement.",
-            "Preparation within [[Preparation time]], then transit depending on the zone. The estimated time for your order is shown before payment.",
+          lp(
+            (p) => `Préparation sous ${p.preparationTime}, puis acheminement selon la zone. Le délai estimé de votre commande est affiché avant le paiement.`,
+            (p) => `Preparation within ${p.preparationTime}, then transit depending on the zone. The estimated time for your order is shown before payment.`,
           ),
         ],
       },
@@ -195,9 +201,9 @@ export const FAQ: FaqCategory[] = [
         id: "period",
         question: l("De combien de temps est-ce que je dispose ?", "What is the return period?"),
         answer: [
-          l(
-            "[[Délai de retour offert]]. Pour les consommateurs de l’UE, la loi prévoit en règle générale au moins 14 jours à compter de la réception.",
-            "[[Return period offered]]. For EU consumers, the law generally provides at least 14 days from receipt.",
+          lp(
+            (p) => `${p.returnPeriod.charAt(0).toUpperCase()}${p.returnPeriod.slice(1)} pour nous informer de votre rétractation, puis ${p.returnShipDeadline} pour renvoyer le produit.`,
+            (p) => `${p.returnPeriod.charAt(0).toUpperCase()}${p.returnPeriod.slice(1)} to tell us you are withdrawing, then ${p.returnShipDeadline} to send the product back.`,
           ),
         ],
       },
@@ -216,8 +222,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Qui paie les frais de retour ?", "Who pays return shipping?"),
         answer: [
           l(
-            "Pour un changement d’avis : [[Règle retenue]]. Pour un produit défectueux, endommagé ou erroné : nous.",
-            "For a change of mind: [[Rule chosen]]. For a defective, damaged or wrong product: we do.",
+            "Pour un changement d’avis : vous. Pour un produit défectueux, endommagé ou erroné : nous.",
+            "For a change of mind: you do. For a defective, damaged or wrong product: we do.",
           ),
         ],
       },
@@ -225,9 +231,9 @@ export const FAQ: FaqCategory[] = [
         id: "non-returnable",
         question: l("Certains produits ne peuvent-ils pas être retournés ?", "Are there products that cannot be returned?"),
         answer: [
-          l(
-            "Oui, dans les cas prévus par la loi — notamment les produits scellés pour des raisons d’hygiène une fois descellés. La liste figure sur la page <<Retours|/retours-remboursements#non-returnable>> : [[Produits exclus à confirmer]].",
-            "Yes, where the law allows — in particular products sealed for hygiene reasons once unsealed. The list is on the <<Returns|/retours-remboursements#non-returnable>> page: [[Excluded products to confirm]].",
+          lp(
+            (p) => `Oui, dans les cas prévus par la loi : ${p.excludedGoods}, et les produits personnalisés. Le détail figure sur la page <<Retours|/retours-remboursements#non-returnable>>.`,
+            (p) => `Yes, where the law allows: ${p.excludedGoods}, and personalised products. Details are on the <<Returns|/retours-remboursements#non-returnable>> page.`,
           ),
         ],
       },
@@ -242,7 +248,12 @@ export const FAQ: FaqCategory[] = [
       {
         id: "methods",
         question: l("Quels moyens de paiement acceptez-vous ?", "What payment methods are available?"),
-        answer: [l("[[Moyens de paiement activés]] — ils sont affichés sur la page de paiement.", "[[Payment methods enabled]] — they are shown on the payment page.")],
+        answer: [
+          lp(
+            (p) => `${p.paymentMethods.charAt(0).toUpperCase()}${p.paymentMethods.slice(1)}, ainsi que les cartes cadeaux Global Toothgems.`,
+            (p) => `${p.paymentMethods.charAt(0).toUpperCase()}${p.paymentMethods.slice(1)}, as well as Global Toothgems gift cards.`,
+          ),
+        ],
       },
       {
         id: "secure",
@@ -259,8 +270,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Pourquoi Stripe apparaît-il lors du paiement ?", "Why is Stripe involved?"),
         answer: [
           l(
-            "Stripe est notre prestataire de paiement : il traite la transaction pour notre compte. Vous saisissez vos informations de carte sur sa page sécurisée, puis revenez sur Global Toothgems. Son nom ou [[Libellé sur le relevé bancaire]] peut apparaître sur votre relevé.",
-            "Stripe is our payment provider: it processes the transaction on our behalf. You enter your card details on its secure page, then return to Global Toothgems. Its name or [[Bank-statement descriptor]] may appear on your statement.",
+            "Stripe est notre prestataire de paiement : il traite la transaction pour notre compte. Vous saisissez vos informations de carte dans son formulaire sécurisé, intégré à notre page de paiement ; elles ne nous sont jamais transmises. Le nom de la boutique ou celui de Stripe peut apparaître sur votre relevé.",
+            "Stripe is our payment provider: it processes the transaction on our behalf. You enter your card details in its secure form, embedded in our payment page; they are never passed to us. The shop’s name or Stripe’s may appear on your statement.",
           ),
         ],
       },
@@ -309,9 +320,11 @@ export const FAQ: FaqCategory[] = [
         id: "courses",
         question: l("Comment fonctionnent les formations en ligne ?", "How do the online courses work?"),
         answer: [
-          l(
-            "Après l’achat, la formation apparaît dans votre espace <<Mon compte|/compte>>. Vous suivez les leçons vidéo à votre rythme, dans l’ordre du programme présenté sur l’<<Academy|/academy>>. Durée d’accès : [[Durée d’accès aux formations]].",
-            "After purchase, the course appears in <<My account|/compte>>. You follow the video lessons at your own pace, in the programme order shown on the <<Academy|/academy>>. Access duration: [[Training access duration]].",
+          lp(
+            (p) =>
+              `Après l’achat, la formation apparaît dans votre espace <<Mon compte|/compte>>. Vous suivez les leçons vidéo à votre rythme, dans l’ordre du programme présenté sur l’<<Academy|/academy>>. Durée d’accès : ${p.courseAccess}.`,
+            (p) =>
+              `After purchase, the course appears in <<My account|/compte>>. You follow the video lessons at your own pace, in the programme order shown on the <<Academy|/academy>>. Access duration: ${p.courseAccess}.`,
           ),
         ],
       },
@@ -340,8 +353,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Comment la formation est-elle validée ?", "How is course completion validated?"),
         answer: [
           l(
-            "La formation est validée dès que vous atteignez le score requis aux questions de validation : [[Score requis par formation]]. Une attestation est alors délivrée.",
-            "The course is validated as soon as you reach the required score on the validation questions: [[Required score per course]]. A certificate is then issued.",
+            "La formation est validée dès que vous atteignez le score requis aux questions de validation, fixé pour chaque formation. Une attestation est alors délivrée.",
+            "The course is validated as soon as you reach the required score on the validation questions, set for each course. A certificate is then issued.",
           ),
         ],
       },
@@ -350,8 +363,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Où trouver mes attestations ?", "Where can I find my certificates?"),
         answer: [
           l(
-            "Dans <<Mes attestations|/compte/attestations>>, où vous pouvez les consulter et les télécharger. [[Valeur et reconnaissance de l’attestation à préciser]]",
-            "In <<My certificates|/compte/attestations>>, where you can view and download them. [[Status and recognition of the certificate to specify]]",
+            "Dans <<Mes attestations|/compte/attestations>>, où vous pouvez les consulter et les télécharger. Une attestation Global Toothgems atteste que vous avez suivi et validé la formation ; ce n’est ni un diplôme ni une certification professionnelle reconnue par l’État.",
+            "In <<My certificates|/compte/attestations>>, where you can view and download them. A Global Toothgems certificate attests that you followed and passed the course; it is neither a diploma nor a state-recognised professional certification.",
           ),
         ],
       },

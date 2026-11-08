@@ -1,15 +1,17 @@
+import { lp } from "./policies";
 import { LEGAL_PATHS } from "./routes";
 import { DRAFT_DATE, l, type LegalDocument } from "./types";
 
 /**
  * Terms of sale ("conditions générales de vente").
  *
- * Structure and wording for review, not a contract. Three kinds of statement
- * are kept apart on purpose:
- * - `legal` callouts summarise EU consumer-law minimums that apply whatever
- *   the shop decides (and still need checking against the countries served);
- * - `policy` callouts are the shop's own choices, left as placeholders;
- * - `[[...]]` marks every value nobody has confirmed yet.
+ * Three kinds of statement are kept apart on purpose:
+ * - `legal` callouts summarise the French and EU consumer-law rules that apply
+ *   whatever the shop decides;
+ * - `policy` callouts are the shop's own choices (`policies.ts`), set on
+ *   2026-11-08 with the owner's go-ahead, to validate (decision 126);
+ * - `[[!...]]` marks business information to supply: the store's details are
+ *   filled in by `storeFill.ts`; what stays is the consumer mediator.
  */
 
 const PART = {
@@ -17,6 +19,7 @@ const PART = {
   products: l("Produits et prix", "Products and prices"),
   ordering: l("Commande", "Ordering"),
   payment: l("Paiement", "Payment"),
+  offers: l("Cartes cadeaux et abonnements", "Gift cards and subscriptions"),
   withdrawal: l("Annulation, rétractation et retours", "Cancellation, withdrawal and returns"),
   delivery: l("Livraison", "Delivery"),
   guarantees: l("Garanties et responsabilité", "Guarantees and liability"),
@@ -30,21 +33,15 @@ export const TERMS: LegalDocument = {
   eyebrow: l("Informations légales", "Legal information"),
   title: l("Conditions générales de vente", "Terms of sale"),
   intro: l(
-    "Les règles qui s’appliquent lorsque vous achetez des produits ou des formations sur Global Toothgems : commande, paiement, livraison, rétractation, retours et garanties.",
-    "The rules that apply when you buy products or training on Global Toothgems: ordering, payment, delivery, withdrawal, returns and guarantees.",
+    "Les règles qui s’appliquent lorsque vous achetez des produits, des formations, des cartes cadeaux ou un abonnement au Studio 3D sur Global Toothgems : commande, paiement, livraison, rétractation, retours et garanties.",
+    "The rules that apply when you buy products, courses, gift cards or a 3D Studio subscription on Global Toothgems: ordering, payment, delivery, withdrawal, returns and guarantees.",
   ),
   updated: DRAFT_DATE,
   numbered: true,
   showKey: true,
   contactCategory: "order",
   lead: [
-    {
-      kind: "internal",
-      text: l(
-        "Projet de structure, pas un texte juridique validé. Les encadrés « Information légale » résument des minimums du droit européen de la consommation et doivent être confirmés pour chaque pays de vente ; toutes les règles commerciales (délais, frais, zones) sont à fixer par l’entreprise.",
-        "Draft structure, not validated legal text. “Legal information” boxes summarise EU consumer-law minimums and must be confirmed for each country of sale; every commercial rule (periods, fees, zones) is for the business to set.",
-      ),
-    },
+    // Editor's note, never published: Completed on 8 November 2026 with workable rules, to be validated by the business (decision 126). Still to supply: the consumer mediator. To have a lawyer review before launch: withdrawal from courses and the products’ regulatory status.
   ],
   sections: [
     {
@@ -55,16 +52,15 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les présentes conditions s’appliquent à toute commande passée sur le site Global Toothgems : produits physiques (gems, outils, kits, produits de suivi) et formations en ligne de l’Academy. Elles sont acceptées au moment de la validation de la commande.",
-            "These terms apply to every order placed on the Global Toothgems website: physical products (gems, tools, kits, aftercare products) and Academy online training. They are accepted when the order is confirmed.",
+            "Les présentes conditions s’appliquent à toute commande passée sur le site Global Toothgems : produits physiques (gems, outils, kits, produits de suivi), formations en ligne de l’Academy, cartes cadeaux et abonnements au Studio 3D. Elles sont acceptées au moment de la validation de la commande.",
+            "These terms apply to every order placed on the Global Toothgems website: physical products (gems, tools, kits, aftercare products), Academy online courses, gift cards and 3D Studio subscriptions. They are accepted when the order is confirmed.",
           ),
         },
         {
-          kind: "callout",
-          tone: "verify",
+          kind: "p",
           text: l(
-            "Préciser si le site vend aux consommateurs, aux professionnels, ou aux deux — certaines règles (rétractation, garanties) diffèrent selon le cas : [[Clientèle visée : particuliers, professionnels ou les deux]].",
-            "State whether the site sells to consumers, professionals or both — some rules (withdrawal, guarantees) differ: [[Customers served: consumers, professionals or both]].",
+            "Le site vend aux particuliers comme aux professionnels (artistes, salons). Les règles propres aux consommateurs — droit de rétractation, garanties légales du Code de la consommation, médiation — bénéficient aux personnes qui achètent à des fins non professionnelles. Un professionnel qui achète pour son activité ne bénéficie pas du droit de rétractation ; les garanties du Code civil s’appliquent à ses achats.",
+            "The site sells to consumers and to professionals (artists, salons) alike. The rules specific to consumers — right of withdrawal, the Consumer Code’s legal guarantees, mediation — benefit people buying for non-professional purposes. A professional buying for their business has no right of withdrawal; the Civil Code’s guarantees apply to their purchases.",
           ),
         },
       ],
@@ -98,16 +94,15 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les pages de formation décrivent le programme, le format, la durée d’accès et les conditions de validation de chaque formation.",
-            "Training pages describe each course’s programme, format, access duration and completion requirements.",
+            "Certains produits (adhésifs, composites, outils de pose) sont destinés à des personnes formées à la pose ; leur fiche le précise. Il vous appartient de respecter les précautions d’emploi indiquées sur chaque fiche.",
+            "Some products (adhesives, composites, application tools) are intended for people trained in application; their page says so. It is up to you to follow the precautions for use given on each product page.",
           ),
         },
         {
-          kind: "callout",
-          tone: "verify",
+          kind: "p",
           text: l(
-            "Confirmer les mentions réglementaires éventuelles pour les produits destinés à un usage dentaire ou cosmétique : [[Réglementation applicable aux produits vendus]].",
-            "Confirm any regulatory statements needed for products intended for dental or cosmetic use: [[Regulations applicable to the products sold]].",
+            "Les pages de formation décrivent le programme, le format, la durée d’accès et les conditions de validation de chaque formation. La page du Studio 3D présente le contenu et le prix de chaque formule d’abonnement.",
+            "Course pages describe each course’s programme, format, access duration and completion requirements. The 3D Studio page sets out what each subscription plan includes and its price.",
           ),
         },
       ],
@@ -120,8 +115,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les produits sont proposés dans la limite des stocks disponibles, affichés sur chaque fiche. Si un produit commandé s’avère indisponible après votre commande, nous vous en informons sans délai et vous proposons [[Solution proposée : remboursement, remplacement ou attente]]. Tout montant payé pour un produit indisponible est remboursé.",
-            "Products are offered while stocks last, as shown on each product page. If an ordered product turns out to be unavailable after you order, we will tell you promptly and offer [[Remedy offered: refund, replacement or waiting]]. Any amount paid for an unavailable product is refunded.",
+            "Les produits sont proposés dans la limite des stocks disponibles, affichés sur chaque fiche ; ils sont réservés pendant le paiement. Si un produit commandé s’avère malgré tout indisponible, nous vous en informons sans délai et vous proposons, à votre choix, d’attendre son réassort ou d’être remboursé. Tout montant payé pour un produit indisponible est remboursé au plus tard 14 jours après le paiement.",
+            "Products are offered while stocks last, as shown on each product page; they are reserved during payment. If an ordered product nevertheless turns out to be unavailable, we will tell you promptly and offer, as you prefer, to wait for it to be restocked or to be refunded. Any amount paid for an unavailable product is refunded no later than 14 days after payment.",
           ),
         },
       ],
@@ -133,17 +128,18 @@ export const TERMS: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
-            "Les prix sont indiqués en [[Devise(s) de vente]]. TVA non applicable, art. 293 B du CGI : le vendeur relève de la franchise en base de TVA, aucune TVA n’est facturée et les prix affichés sont les prix à payer. Les frais de livraison sont affichés séparément avant la validation de la commande. Le prix applicable est celui affiché au moment de la commande.",
-            "Prices are shown in [[Sales currency(ies)]]. VAT not applicable, article 293 B of the French General Tax Code (“TVA non applicable, art. 293 B du CGI”): the seller is under the VAT franchise scheme, no VAT is charged and the prices shown are the prices to pay. Delivery costs are shown separately before the order is confirmed. The price that applies is the one displayed when you order.",
+          text: lp(
+            (p) =>
+              `Les prix sont indiqués en ${p.currency}. TVA non applicable, art. 293 B du CGI : le vendeur relève de la franchise en base de TVA, aucune TVA n’est facturée et les prix affichés sont les prix à payer. Les frais de livraison sont affichés séparément avant la validation de la commande. Le prix applicable est celui affiché au moment de la commande.`,
+            (p) =>
+              `Prices are shown in ${p.currency}. VAT not applicable, article 293 B of the French General Tax Code (“TVA non applicable, art. 293 B du CGI”): the seller is under the VAT franchise scheme, no VAT is charged and the prices shown are the prices to pay. Delivery costs are shown separately before the order is confirmed. The price that applies is the one displayed when you order.`,
           ),
         },
         {
-          kind: "callout",
-          tone: "verify",
+          kind: "p",
           text: l(
-            "Franchise en base de TVA à confirmer avec l’expert-comptable (seuils, ventes à distance dans l’UE). Règles pour les ventes hors UE à définir : [[Traitement des taxes par pays hors UE]].",
-            "VAT franchise to be confirmed with the accountant (thresholds, distance sales within the EU). Rules for sales outside the EU to be defined: [[Per-country tax handling outside the EU]].",
+            "Pour une livraison hors de l’Union européenne, les droits de douane et taxes à l’importation éventuels ne sont pas compris dans le prix (voir « Droits de douane et taxes à l’importation »).",
+            "For deliveries outside the European Union, any customs duties and import taxes are not included in the price (see “Customs duties and import taxes”).",
           ),
         },
       ],
@@ -158,7 +154,7 @@ export const TERMS: LegalDocument = {
           kind: "list",
           ordered: true,
           items: [
-            l("ajout des produits ou formations au panier ;", "add products or training to your cart;"),
+            l("ajout des produits ou formations au panier ;", "add products or courses to your cart;"),
             l("vérification du panier, des quantités et du total ;", "review your cart, quantities and total;"),
             l("saisie ou confirmation des informations de livraison et de facturation ;", "enter or confirm delivery and billing details;"),
             l("choix du mode de livraison et affichage des frais ;", "choose a delivery method and see its cost;"),
@@ -183,8 +179,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Un compte est nécessaire pour accéder aux formations achetées, suivre vos commandes et retrouver vos attestations. [[Commande possible sans compte pour les produits physiques ?]] Vous êtes responsable de la confidentialité de vos identifiants.",
-            "An account is needed to access purchased training, follow your orders and find your certificates. [[Guest checkout possible for physical products?]] You are responsible for keeping your login details confidential.",
+            "Les produits physiques et les cartes cadeaux peuvent être commandés sans compte, avec votre seule adresse e-mail. Un compte est nécessaire pour acheter une formation ou un abonnement au Studio 3D, et pour retrouver vos commandes, vos formations et vos attestations. Vous êtes responsable de la confidentialité de vos identifiants.",
+            "Physical products and gift cards can be ordered without an account, with just your email address. An account is needed to buy a course or a 3D Studio subscription, and to find your orders, courses and certificates. You are responsible for keeping your login details confidential.",
           ),
         },
         {
@@ -205,8 +201,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Après le paiement, un récapitulatif s’affiche et un e-mail de confirmation vous est envoyé, reprenant le détail de la commande, les prix et ces conditions. La commande est considérée comme confirmée à réception de la confirmation de paiement par notre prestataire.",
-            "After payment, a summary is shown and a confirmation email is sent to you, listing the order details, prices and these terms. The order is considered confirmed once our payment provider confirms the payment.",
+            "Après le paiement, un récapitulatif s’affiche et un e-mail de confirmation vous est envoyé, avec le détail de la commande, les prix et la facture. La commande est considérée comme confirmée à réception de la confirmation de paiement par notre prestataire.",
+            "After payment, a summary is shown and a confirmation email is sent to you, with the order details, prices and the invoice. The order is considered confirmed once our payment provider confirms the payment.",
           ),
         },
         {
@@ -226,9 +222,11 @@ export const TERMS: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
-            "Les moyens de paiement acceptés sont affichés sur la page de paiement : [[Moyens de paiement activés (cartes, portefeuilles, autres)]]. Le paiement est exigible immédiatement à la commande.",
-            "Accepted payment methods are shown on the payment page: [[Payment methods enabled (cards, wallets, others)]]. Payment is due immediately on ordering.",
+          text: lp(
+            (p) =>
+              `Les moyens de paiement acceptés sont affichés sur la page de paiement : ${p.paymentMethods}. Une carte cadeau Global Toothgems peut régler tout ou partie d’une commande. Le paiement est exigible immédiatement à la commande.`,
+            (p) =>
+              `Accepted payment methods are shown on the payment page: ${p.paymentMethods}. A Global Toothgems gift card can pay for all or part of an order. Payment is due immediately on ordering.`,
           ),
         },
       ],
@@ -255,16 +253,65 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Le paiement est opéré par Stripe. Vos données de carte sont saisies sur une page de paiement de Stripe et ne sont pas conservées par Global Toothgems.",
-            "Payment is handled by Stripe. Your card details are entered on a Stripe payment page and are not stored by Global Toothgems.",
+            "Le paiement est opéré par Stripe Payments Europe, Ltd. (Dublin, Irlande), établissement de paiement agréé. Vos données de carte sont saisies dans un formulaire sécurisé fourni par Stripe et intégré à notre page de paiement : elles sont transmises directement à Stripe et ne sont ni reçues ni conservées par Global Toothgems. Les abonnements au Studio 3D sont prélevés par Stripe à chaque échéance sur le moyen de paiement enregistré.",
+            "Payment is handled by Stripe Payments Europe, Ltd. (Dublin, Ireland), a licensed payment institution. Your card details are entered in a secure form provided by Stripe and embedded in our payment page: they go straight to Stripe and are neither received nor stored by Global Toothgems. 3D Studio subscriptions are charged by Stripe on each renewal date to the saved payment method.",
+          ),
+        },
+      ],
+    },
+    {
+      id: "gift-cards",
+      part: PART.offers,
+      title: l("Cartes cadeaux", "Gift cards"),
+      blocks: [
+        {
+          kind: "p",
+          text: l(
+            "La carte cadeau est envoyée par e-mail à la personne choisie, à la date choisie. Elle est valable 12 mois à compter de son émission, s’utilise en une ou plusieurs fois sur la boutique et l’Academy, et son solde restant est indiqué dans le panier. Elle ne peut être échangée contre de l’argent ni remboursée une fois utilisée ; un solde non utilisé à la date d’expiration est perdu.",
+            "The gift card is emailed to the person chosen, on the date chosen. It is valid for 12 months from issue, can be used in one or several goes on the shop and the Academy, and its remaining balance is shown in the cart. It cannot be exchanged for cash or refunded once used; any balance left unused on the expiry date is lost.",
+          ),
+        },
+      ],
+    },
+    {
+      id: "studio",
+      part: PART.offers,
+      title: l("Abonnements au Studio 3D", "3D Studio subscriptions"),
+      blocks: [
+        {
+          kind: "p",
+          text: l(
+            "Chaque compte peut ouvrir une fois un essai gratuit de 48 heures du Studio 3D, sans moyen de paiement. Les formules d’abonnement (Essential, Artist, Atelier), leur contenu et leur prix mensuel ou annuel sont présentés sur la page du Studio 3D.",
+            "Each account can start a free 48-hour trial of the 3D Studio once, without a payment method. The subscription plans (Essential, Artist, Atelier), what they include and their monthly or yearly price are set out on the 3D Studio page.",
           ),
         },
         {
+          kind: "list",
+          items: [
+            l(
+              "L’abonnement est payé d’avance et se renouvelle automatiquement à la fin de chaque période (mois ou année), au prix en vigueur, jusqu’à sa résiliation.",
+              "The subscription is paid in advance and renews automatically at the end of each period (month or year), at the current price, until it is cancelled.",
+            ),
+            l(
+              "Vous pouvez le résilier à tout moment depuis <<Mon abonnement Studio|/compte/studio>> : la résiliation prend effet à la fin de la période déjà payée, sans remboursement de celle-ci, et vous gardez l’accès jusque-là.",
+              "You can cancel it at any time from <<My Studio subscription|/compte/studio>>: cancellation takes effect at the end of the period already paid, which is not refunded, and you keep access until then.",
+            ),
+            l(
+              "Un changement de formule prend effet immédiatement ; la différence de prix est calculée au prorata du temps restant et reportée sur la prochaine échéance.",
+              "A change of plan takes effect immediately; the price difference is prorated over the time left and carried to the next payment.",
+            ),
+            l(
+              "Si un paiement échoue, l’accès aux fonctions payantes peut être suspendu jusqu’à sa régularisation. Vos créations restent consultables.",
+              "If a payment fails, access to paid features may be suspended until it is settled. Your creations remain viewable.",
+            ),
+          ],
+        },
+        {
           kind: "callout",
-          tone: "verify",
+          tone: "legal",
           text: l(
-            "À confirmer avec l’intégration finale : [[Entité Stripe contractante, type d’intégration (Checkout) et libellé sur le relevé bancaire]].",
-            "To confirm against the final integration: [[Contracting Stripe entity, integration type (Checkout) and bank-statement descriptor]].",
+            "Vous demandez expressément, au moment du paiement, que l’accès au Studio commence immédiatement. Si vous vous rétractez dans les 14 jours suivant la souscription, vous êtes remboursé du montant payé, diminué de la part correspondant aux jours d’accès déjà utilisés (article L221-25 du Code de la consommation).",
+            "When paying, you expressly ask for access to the Studio to start immediately. If you withdraw within 14 days of subscribing, you are refunded the amount paid, less the share corresponding to the days of access already used (article L221-25 of the French Consumer Code).",
           ),
         },
       ],
@@ -277,9 +324,11 @@ export const TERMS: LegalDocument = {
         {
           kind: "callout",
           tone: "policy",
-          text: l(
-            "Vous pouvez demander l’annulation d’une commande tant qu’elle n’a pas été expédiée : [[Délai ou étape jusqu’à laquelle l’annulation est possible]]. Une commande annulée est remboursée intégralement.",
-            "You can ask to cancel an order as long as it has not shipped: [[Period or stage up to which cancellation is possible]]. A cancelled order is refunded in full.",
+          text: lp(
+            (p) =>
+              `Vous pouvez demander l’annulation d’une commande de produits tant qu’elle n’a pas été expédiée, c’est-à-dire ${p.cancellationStage}. Une commande annulée est remboursée intégralement, frais de livraison compris.`,
+            (p) =>
+              `You can ask to cancel an order of products as long as it has not shipped, that is ${p.cancellationStage}. A cancelled order is refunded in full, delivery costs included.`,
           ),
         },
         {
@@ -301,26 +350,64 @@ export const TERMS: LegalDocument = {
           kind: "callout",
           tone: "legal",
           text: l(
-            "Pour un achat à distance, un consommateur résidant dans l’Union européenne dispose en règle générale d’un délai de rétractation d’au moins 14 jours, sans avoir à se justifier. Pour un produit, ce délai court à partir de la réception (du dernier article, en cas de livraison en plusieurs colis) ; pour une formation en ligne, à partir de la conclusion du contrat.",
-            "For a distance purchase, a consumer resident in the European Union generally has a withdrawal period of at least 14 days, without giving any reason. For goods, it runs from receipt (of the last item, when delivered in several parcels); for online training, from the conclusion of the contract.",
+            "Pour un achat à distance, le consommateur dispose d’un délai de 14 jours pour se rétracter, sans avoir à se justifier ni à payer de pénalité (articles L221-18 et suivants du Code de la consommation). Pour un produit, ce délai court à partir de la réception (du dernier article, en cas de livraison en plusieurs colis) ; pour une formation, une carte cadeau ou un abonnement, à partir de la conclusion du contrat.",
+            "For a distance purchase, the consumer has 14 days to withdraw, without giving a reason or paying a penalty (articles L221-18 et seq. of the French Consumer Code). For goods, the period runs from receipt (of the last item, when delivered in several parcels); for a course, a gift card or a subscription, from the conclusion of the contract.",
           ),
         },
         {
           kind: "callout",
           tone: "policy",
-          text: l(
-            "Délai commercial offert par Global Toothgems : [[Délai de retour proposé, égal ou supérieur au minimum légal]].",
-            "Commercial period offered by Global Toothgems: [[Return period offered, equal to or longer than the legal minimum]].",
+          text: lp(
+            (p) =>
+              `Délai appliqué par Global Toothgems pour les produits : ${p.returnPeriod}. Pour une formation, une carte cadeau non utilisée ou un abonnement au Studio 3D : 14 jours à compter de l’achat.`,
+            (p) => `Period applied by Global Toothgems for products: ${p.returnPeriod}. For a course, an unused gift card or a 3D Studio subscription: 14 days from purchase.`,
           ),
         },
         {
           kind: "callout",
           tone: "instruction",
           text: l(
-            "Pour exercer ce droit, informez-nous de votre décision par une déclaration claire — via le <<formulaire de contact|/contact?sujet=returns>> ou le formulaire type de rétractation [[Formulaire type de rétractation à joindre]] — avant la fin du délai.",
-            "To exercise this right, tell us of your decision with a clear statement — through the <<contact form|/contact?sujet=returns>> or the model withdrawal form [[Model withdrawal form to attach]] — before the period ends.",
+            "Pour exercer ce droit, informez-nous de votre décision par une déclaration claire avant la fin du délai : via le <<formulaire de contact|/contact?sujet=returns>>, par e-mail à [[!E-mail du service client]], ou en nous envoyant le modèle de formulaire de rétractation ci-dessous. Pour un abonnement au Studio 3D, vous pouvez aussi vous rétracter directement depuis <<Mon abonnement Studio|/compte/studio>>.",
+            "To exercise this right, tell us of your decision with a clear statement before the period ends: through the <<contact form|/contact?sujet=returns>>, by email to [[!Customer service email]], or by sending us the model withdrawal form below. For a 3D Studio subscription, you can also withdraw directly from <<My Studio subscription|/compte/studio>>.",
           ),
         },
+      ],
+    },
+    {
+      id: "withdrawal-form",
+      part: PART.withdrawal,
+      title: l("Modèle de formulaire de rétractation", "Model withdrawal form"),
+      blocks: [
+        {
+          kind: "p",
+          text: l(
+            "Veuillez compléter et renvoyer le présent formulaire uniquement si vous souhaitez vous rétracter du contrat (annexe à l’article R221-1 du Code de la consommation).",
+            "Please complete and return this form only if you wish to withdraw from the contract (annex to article R221-1 of the French Consumer Code).",
+          ),
+        },
+        {
+          kind: "list",
+          items: [
+            l(
+              "À l’attention de [[!Dénomination et forme juridique]], [[!Adresse du siège]], [[!E-mail du service client]] :",
+              "To [[!Legal name and entity type]], [[!Registered office address]], [[!Customer service email]]:",
+            ),
+            l(
+              "Je/nous (*) vous notifie/notifions (*) par la présente ma/notre (*) rétractation du contrat portant sur la vente du bien (*)/pour la prestation de services (*) ci-dessous :",
+              "I/We (*) hereby give notice that I/We (*) withdraw from my/our (*) contract of sale of the following goods (*)/for the provision of the following service (*):",
+            ),
+            l("Commandé le (*)/reçu le (*) :", "Ordered on (*)/received on (*):"),
+            l("Numéro de commande :", "Order number:"),
+            l("Nom du (des) consommateur(s) :", "Name of consumer(s):"),
+            l("Adresse du (des) consommateur(s) :", "Address of consumer(s):"),
+            l(
+              "Signature du (des) consommateur(s) (uniquement en cas de notification du présent formulaire sur papier) :",
+              "Signature of consumer(s) (only if this form is notified on paper):",
+            ),
+            l("Date :", "Date:"),
+          ],
+        },
+        { kind: "p", text: l("(*) Rayez la mention inutile.", "(*) Delete as appropriate.") },
       ],
     },
     {
@@ -331,10 +418,7 @@ export const TERMS: LegalDocument = {
         {
           kind: "callout",
           tone: "legal",
-          text: l(
-            "La loi prévoit des exceptions, notamment :",
-            "The law provides for exceptions, including:",
-          ),
+          text: l("La loi prévoit des exceptions (article L221-28 du Code de la consommation), notamment :", "The law provides for exceptions (article L221-28 of the French Consumer Code), including:"),
           items: [
             l(
               "les biens scellés qui ne peuvent être renvoyés pour des raisons d’hygiène ou de protection de la santé, s’ils ont été descellés après la livraison ;",
@@ -349,10 +433,12 @@ export const TERMS: LegalDocument = {
         },
         {
           kind: "callout",
-          tone: "verify",
-          text: l(
-            "Lister précisément les produits concernés et le traitement des formations : [[Produits exclus (ex. gems ou adhésifs descellés) et qualification juridique des formations en ligne]].",
-            "List exactly which products are concerned and how training is treated: [[Excluded products (e.g. unsealed gems or adhesives) and legal classification of online training]].",
+          tone: "policy",
+          text: lp(
+            (p) =>
+              `Produits concernés chez Global Toothgems, pour des raisons d’hygiène : ${p.excludedGoods}. Les produits personnalisés à votre demande sont également exclus. Une formation en ligne reste rétractable pendant 14 jours à compter de l’achat, même si vous avez commencé à la suivre.`,
+            (p) =>
+              `Products concerned at Global Toothgems, for hygiene reasons: ${p.excludedGoods}. Products personalised at your request are also excluded. An online course can still be withdrawn from for 14 days from purchase, even if you have started it.`,
           ),
         },
       ],
@@ -364,17 +450,19 @@ export const TERMS: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
-            "Les produits doivent être renvoyés complets, dans leur emballage d’origine et dans un état permettant leur remise en vente, au plus tard [[Délai de renvoi après la demande]] après nous avoir informés de votre décision. La procédure détaillée figure sur la page <<Retours et remboursements|/retours-remboursements>>.",
-            "Products must be returned complete, in their original packaging and in a resaleable condition, no later than [[Deadline to send the return after the request]] after telling us of your decision. The step-by-step procedure is on the <<Returns & refunds|/retours-remboursements>> page.",
+          text: lp(
+            (p) =>
+              `Les produits doivent être renvoyés complets, dans leur emballage d’origine et dans un état permettant leur remise en vente, au plus tard ${p.returnShipDeadline} après nous avoir informés de votre décision. La procédure détaillée figure sur la page <<Retours et remboursements|/retours-remboursements>>.`,
+            (p) =>
+              `Products must be returned complete, in their original packaging and in a resaleable condition, no later than ${p.returnShipDeadline} after telling us of your decision. The step-by-step procedure is on the <<Returns & refunds|/retours-remboursements>> page.`,
           ),
         },
         {
           kind: "callout",
           tone: "legal",
           text: l(
-            "Votre responsabilité peut être engagée en cas de dépréciation du produit résultant de manipulations autres que celles nécessaires pour en établir la nature, les caractéristiques et le bon fonctionnement.",
-            "You may be liable for any loss in value resulting from handling the product beyond what is needed to establish its nature, characteristics and functioning.",
+            "Votre responsabilité peut être engagée en cas de dépréciation du produit résultant de manipulations autres que celles nécessaires pour en établir la nature, les caractéristiques et le bon fonctionnement : le remboursement est alors diminué de cette dépréciation.",
+            "You may be liable for any loss in value resulting from handling the product beyond what is needed to establish its nature, characteristics and functioning: the refund is then reduced by that loss in value.",
           ),
         },
       ],
@@ -395,9 +483,11 @@ export const TERMS: LegalDocument = {
         {
           kind: "callout",
           tone: "policy",
-          text: l(
-            "Délai de traitement habituel constaté : [[Délai de traitement interne des remboursements]].",
-            "Usual processing time: [[Internal refund processing time]].",
+          text: lp(
+            (p) =>
+              `Délai de traitement habituel : ${p.refundProcessing}, dans la limite légale de 14 jours. Seuls les articles renvoyés sont remboursés ; les frais de livraison initiaux le sont lorsque toute la commande est retournée, à hauteur du tarif de livraison standard (le supplément d’une livraison express n’est pas remboursé).`,
+            (p) =>
+              `Usual processing time: ${p.refundProcessing}, within the legal limit of 14 days. Only the items sent back are refunded; the initial delivery cost is refunded when the whole order is returned, up to the standard delivery rate (the extra cost of express delivery is not refunded).`,
           ),
         },
       ],
@@ -418,9 +508,9 @@ export const TERMS: LegalDocument = {
         {
           kind: "callout",
           tone: "policy",
-          text: l(
-            "Choix de Global Toothgems : [[Frais de retour à la charge du client, offerts, ou étiquette prépayée]]. Pour un produit défectueux ou non conforme, les frais de retour sont à notre charge.",
-            "Global Toothgems’ choice: [[Return costs paid by customer, free, or prepaid label]]. For a defective or non-conforming product, return costs are on us.",
+          text: lp(
+            (p) => `Choix de Global Toothgems : en cas de rétractation, ${p.returnCosts}. Pour un produit défectueux, endommagé ou non conforme, les frais de retour sont à notre charge.`,
+            (p) => `Global Toothgems’ choice: if you withdraw, ${p.returnCosts}. For a defective, damaged or non-conforming product, return costs are on us.`,
           ),
         },
       ],
@@ -432,16 +522,18 @@ export const TERMS: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
-            "Les modes de livraison disponibles, leurs tarifs et délais sont présentés avant le paiement et sur la page <<Livraison|/livraison>> : [[Transporteurs et modes de livraison proposés]].",
-            "Available delivery methods, their prices and times are shown before payment and on the <<Shipping & delivery|/livraison>> page: [[Carriers and delivery methods offered]].",
+          text: lp(
+            (p) =>
+              `Les modes de livraison disponibles (standard, express, livraison offerte selon le montant), leurs tarifs et délais sont présentés avant le paiement et sur la page <<Livraison|/livraison>>. Les colis sont confiés à ${p.carriers}, avec un numéro de suivi.`,
+            (p) =>
+              `The delivery methods available (standard, express, free delivery depending on the amount), their prices and times are shown before payment and on the <<Shipping & delivery|/livraison>> page. Parcels are handed to ${p.carriers}, with a tracking number.`,
           ),
         },
         {
           kind: "p",
           text: l(
-            "Les formations en ligne ne sont pas expédiées : elles sont accessibles depuis votre espace membre dès confirmation du paiement.",
-            "Online training is not shipped: it is available from your member area as soon as payment is confirmed.",
+            "Les formations en ligne et les abonnements au Studio 3D ne sont pas expédiés : ils sont accessibles depuis votre espace membre dès confirmation du paiement. Les cartes cadeaux sont envoyées par e-mail.",
+            "Online courses and 3D Studio subscriptions are not shipped: they are available from your member area as soon as payment is confirmed. Gift cards are sent by email.",
           ),
         },
       ],
@@ -453,9 +545,11 @@ export const TERMS: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
-            "Le délai de livraison indiqué lors de la commande comprend le délai de préparation ([[Délai de préparation]]) et le délai d’acheminement du transporteur ([[Délais d’acheminement par zone]]).",
-            "The delivery time shown when you order includes preparation time ([[Preparation time]]) and the carrier’s transit time ([[Transit times by zone]]).",
+          text: lp(
+            (p) =>
+              `Le délai de livraison indiqué lors de la commande comprend le délai de préparation (${p.preparationTime}) et le délai d’acheminement du transporteur, qui dépend de la zone et du mode choisi (voir la page <<Livraison|/livraison#methods>>).`,
+            (p) =>
+              `The delivery time shown when you order includes preparation time (${p.preparationTime}) and the carrier’s transit time, which depends on the zone and the method chosen (see the <<Shipping & delivery|/livraison#methods>> page).`,
           ),
         },
         {
@@ -499,8 +593,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Nous livrons dans les pays suivants : [[Liste des pays et zones de livraison]]. Certains produits peuvent être soumis à des restrictions d’importation selon le pays de destination.",
-            "We deliver to the following countries: [[List of delivery countries and zones]]. Some products may be subject to import restrictions depending on the destination country.",
+            "Nous livrons en France et à Monaco, dans l’Union européenne, en Suisse et au Liechtenstein, au Royaume-Uni, aux États-Unis et au Canada. La liste à jour figure sur la page <<Livraison|/livraison#destinations>>. Certains produits peuvent être soumis à des restrictions d’importation selon le pays de destination.",
+            "We deliver to France and Monaco, the European Union, Switzerland and Liechtenstein, the United Kingdom, the United States and Canada. The up-to-date list is on the <<Shipping & delivery|/livraison#destinations>> page. Some products may be subject to import restrictions depending on the destination country.",
           ),
         },
       ],
@@ -522,8 +616,8 @@ export const TERMS: LegalDocument = {
           kind: "callout",
           tone: "policy",
           text: l(
-            "Qui les paie : [[Droits et taxes réglés par le destinataire à la livraison, ou inclus au paiement]].",
-            "Who pays them: [[Duties and taxes paid by the recipient on delivery, or included at checkout]].",
+            "Qui les paie : le destinataire, à la livraison ; ils ne sont pas inclus dans le prix payé sur le site. Un colis refusé pour ce motif nous revient : nous remboursons alors les produits, sans les frais de livraison ni les frais de retour facturés par le transporteur.",
+            "Who pays them: the recipient, on delivery; they are not included in the price paid on the site. A parcel refused for this reason comes back to us: we then refund the products, without the delivery cost or the return charges billed by the carrier.",
           ),
         },
       ],
@@ -551,17 +645,26 @@ export const TERMS: LegalDocument = {
         {
           kind: "callout",
           tone: "legal",
+          title: l("Garantie légale de conformité", "Legal guarantee of conformity"),
           text: l(
-            "Les produits bénéficient de la garantie légale de conformité : dans l’Union européenne, le vendeur répond des défauts de conformité existant lors de la livraison et apparaissant dans un délai minimum de deux ans. Vous pouvez demander la réparation ou le remplacement du produit, puis, à défaut, une réduction du prix ou la résolution du contrat.",
-            "Products are covered by the legal guarantee of conformity: in the European Union, the seller is liable for any lack of conformity existing at delivery and becoming apparent within a minimum of two years. You can ask for the product to be repaired or replaced and, failing that, a price reduction or termination of the contract.",
+            "Le consommateur dispose d’un délai de deux ans à compter de la délivrance du bien pour obtenir la mise en œuvre de la garantie légale de conformité en cas d’apparition d’un défaut de conformité (articles L217-3 et suivants du Code de la consommation). Durant ce délai, il n’est tenu d’établir que l’existence du défaut, non la date de son apparition. Il a droit à la réparation ou au remplacement du bien dans un délai de trente jours suivant sa demande, sans frais et sans inconvénient majeur ; à défaut, à une réduction du prix ou à la résolution du contrat. Le bien réparé dans le cadre de cette garantie bénéficie d’une extension de garantie de six mois.",
+            "The consumer has two years from delivery of the goods to obtain the legal guarantee of conformity when a lack of conformity appears (articles L217-3 et seq. of the French Consumer Code). During that period, they need only show that the defect exists, not when it appeared. They are entitled to repair or replacement within thirty days of their request, free of charge and without major inconvenience; failing that, to a price reduction or termination of the contract. Goods repaired under this guarantee get a six-month extension of it.",
           ),
         },
         {
           kind: "callout",
-          tone: "verify",
+          tone: "legal",
+          title: l("Garantie des vices cachés", "Guarantee against hidden defects"),
           text: l(
-            "Rédaction exacte selon le droit national applicable, et existence éventuelle d’une garantie commerciale : [[Garanties légales nationales et garantie commerciale éventuelle]].",
-            "Exact wording under the applicable national law, and whether a commercial warranty is offered: [[National legal guarantees and any commercial warranty]].",
+            "Le consommateur bénéficie également de la garantie des vices cachés (articles 1641 à 1649 du Code civil), pendant deux ans à compter de la découverte du vice : il peut alors choisir entre la résolution de la vente et une réduction du prix.",
+            "The consumer also benefits from the guarantee against hidden defects (articles 1641 to 1649 of the French Civil Code), for two years from discovery of the defect: they can then choose between cancelling the sale and a price reduction.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Global Toothgems ne propose pas de garantie commerciale en plus de ces garanties légales. Pour les mettre en œuvre, <<contactez-nous|/contact?sujet=returns>> avec votre numéro de commande et une photo du défaut.",
+            "Global Toothgems offers no commercial warranty on top of these legal guarantees. To use them, <<contact us|/contact?sujet=returns>> with your order number and a photo of the defect.",
           ),
         },
       ],
@@ -574,16 +677,16 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les produits doivent être utilisés conformément à leur fiche et aux consignes de pose et de sécurité enseignées. Global Toothgems ne saurait être tenu responsable d’un dommage résultant d’un usage non conforme, sans préjudice des droits dont vous disposez en tant que consommateur.",
-            "Products must be used according to their product page and the application and safety guidance taught. Global Toothgems cannot be held liable for damage resulting from improper use, without prejudice to your rights as a consumer.",
+            "Les produits doivent être utilisés conformément à leur fiche et aux consignes de pose et de sécurité enseignées. Global Toothgems ne saurait être tenu responsable d’un dommage résultant d’un usage non conforme, ni des dommages indirects, sans préjudice des droits dont vous disposez en tant que consommateur. À l’égard d’un client professionnel, notre responsabilité est limitée au montant de la commande concernée.",
+            "Products must be used according to their product page and the application and safety guidance taught. Global Toothgems cannot be held liable for damage resulting from improper use, or for indirect damage, without prejudice to your rights as a consumer. Towards a professional customer, our liability is limited to the amount of the order concerned.",
           ),
         },
         {
           kind: "callout",
-          tone: "verify",
+          tone: "legal",
           text: l(
-            "Clause à valider par un juriste : [[Limites de responsabilité admises selon le pays et le type de client]].",
-            "Clause to be validated by a lawyer: [[Permitted liability limits by country and customer type]].",
+            "Ces limites ne s’appliquent pas en cas de faute lourde ou intentionnelle, ni aux dommages corporels, et ne privent pas un consommateur des droits que la loi lui reconnaît.",
+            "These limits do not apply to gross or intentional fault or to personal injury, and do not deprive a consumer of the rights the law gives them.",
           ),
         },
       ],
@@ -596,8 +699,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Aucune des parties n’est responsable d’un manquement causé par un événement échappant à son contrôle, imprévisible et irrésistible au sens du droit applicable. Nous vous informerons dans les meilleurs délais et vous proposerons une solution, y compris un remboursement si la commande ne peut être exécutée.",
-            "Neither party is liable for a failure caused by an event beyond its control, unforeseeable and unavoidable within the meaning of the applicable law. We will inform you as soon as possible and offer a solution, including a refund if the order cannot be fulfilled.",
+            "Aucune des parties n’est responsable d’un manquement causé par un événement échappant à son contrôle, imprévisible et irrésistible au sens de l’article 1218 du Code civil. Nous vous informerons dans les meilleurs délais et vous proposerons une solution, y compris un remboursement si la commande ne peut être exécutée.",
+            "Neither party is liable for a failure caused by an event beyond its control, unforeseeable and unavoidable within the meaning of article 1218 of the French Civil Code. We will inform you as soon as possible and offer a solution, including a refund if the order cannot be fulfilled.",
           ),
         },
       ],
@@ -609,16 +712,18 @@ export const TERMS: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
-            "L’achat d’une formation vous donne un droit d’accès personnel, non transférable et limité à [[Durée d’accès aux formations]]. Les vidéos, supports et questionnaires ne peuvent être copiés, partagés ou revendus.",
-            "Buying a course gives you a personal, non-transferable right of access limited to [[Training access duration]]. Videos, materials and quizzes may not be copied, shared or resold.",
+          text: lp(
+            (p) =>
+              `L’achat d’une formation vous donne un droit d’accès personnel et non transférable, pendant ${p.courseAccess}. Les vidéos, supports et questionnaires ne peuvent être copiés, partagés ou revendus. L’attestation délivrée à la fin d’une formation atteste que vous l’avez suivie et validée ; ce n’est ni un diplôme ni une certification professionnelle reconnue par l’État.`,
+            (p) =>
+              `Buying a course gives you a personal, non-transferable right of access, for ${p.courseAccess}. Videos, materials and quizzes may not be copied, shared or resold. The certificate issued at the end of a course attests that you followed and passed it; it is neither a diploma nor a state-recognised professional certification.`,
           ),
         },
         {
           kind: "p",
           text: l(
-            "Plus de détails dans les <<mentions légales|/mentions-legales>>.",
-            "More details in the <<legal notice|/mentions-legales>>.",
+            "Plus de détails dans les <<mentions légales|/mentions-legales>> et les <<conditions générales d’utilisation|/conditions-generales-utilisation>>.",
+            "More details in the <<legal notice|/mentions-legales>> and the <<terms of use|/conditions-generales-utilisation>>.",
           ),
         },
       ],
@@ -658,9 +763,11 @@ export const TERMS: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
-            "Pour toute question ou réclamation, contactez le service client via le <<formulaire de contact|/contact>> ou à [[!E-mail du service client]]. Nous nous efforçons de répondre sous [[Délai de réponse du service client]].",
-            "For any question or complaint, contact customer service through the <<contact form|/contact>> or at [[!Customer service email]]. We aim to reply within [[Customer service response time]].",
+          text: lp(
+            (p) =>
+              `Pour toute question ou réclamation, contactez le service client via le <<formulaire de contact|/contact>> ou à [[!E-mail du service client]]. Nous nous efforçons de répondre sous ${p.responseTime}.`,
+            (p) =>
+              `For any question or complaint, contact customer service through the <<contact form|/contact>> or at [[!Customer service email]]. We aim to reply within ${p.responseTime}.`,
           ),
         },
       ],
@@ -674,8 +781,8 @@ export const TERMS: LegalDocument = {
           kind: "callout",
           tone: "legal",
           text: l(
-            "Selon le pays d’établissement du vendeur, un consommateur peut avoir le droit de recourir gratuitement à un médiateur de la consommation, après une réclamation écrite restée sans solution.",
-            "Depending on the seller’s country of establishment, a consumer may be entitled to use a consumer mediation service free of charge, after a written complaint that has not been resolved.",
+            "Conformément aux articles L612-1 et suivants du Code de la consommation, le consommateur peut recourir gratuitement à un médiateur de la consommation en vue de la résolution amiable d’un litige, après avoir adressé au service client une réclamation écrite restée sans réponse satisfaisante, et au plus tard un an après cette réclamation.",
+            "In accordance with articles L612-1 et seq. of the French Consumer Code, the consumer can use a consumer mediator free of charge to resolve a dispute amicably, after sending customer service a written complaint that did not get a satisfactory answer, and no later than one year after that complaint.",
           ),
         },
         {
@@ -685,13 +792,7 @@ export const TERMS: LegalDocument = {
             "Competent mediator: [[!Consumer mediator name, address and website]].",
           ),
         },
-        {
-          kind: "internal",
-          text: l(
-            "Ne pas ajouter de lien vers la plateforme européenne de règlement en ligne des litiges (RLL/ODR) sans vérifier son statut actuel : elle a été supprimée par le législateur européen.",
-            "Do not add a link to the EU online dispute resolution (ODR) platform without checking its current status: it has been discontinued by the EU legislator.",
-          ),
-        },
+        // Editor's note, never published: Do not add a link to the EU online dispute resolution (ODR) platform: it has been discontinued by the EU legislator.
       ],
     },
     {
@@ -701,7 +802,7 @@ export const TERMS: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l("Les présentes conditions sont soumises à [[Droit applicable]].", "These terms are governed by [[Applicable law]]."),
+          text: l("Les présentes conditions sont soumises au droit français.", "These terms are governed by French law."),
         },
         {
           kind: "callout",
@@ -721,8 +822,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "À défaut de solution amiable, le litige sera porté devant [[Juridiction compétente]].",
-            "If no amicable solution is found, the dispute will be brought before [[Competent courts]].",
+            "À défaut de solution amiable, le litige sera porté devant les juridictions françaises compétentes ; entre professionnels, devant les tribunaux du ressort de Strasbourg.",
+            "If no amicable solution is found, the dispute will be brought before the competent French courts; between professionals, before the courts of Strasbourg.",
           ),
         },
         {
@@ -744,9 +845,9 @@ export const TERMS: LegalDocument = {
           kind: "fields",
           fields: [
             { label: l("Service client", "Customer service"), value: l("<<Formulaire de contact|/contact>>", "<<Contact form|/contact>>") },
-            { label: l("E-mail", "Email"), placeholder: l("E-mail du service client", "Customer service email") },
-            { label: l("Adresse postale", "Postal address"), placeholder: l("Adresse postale", "Postal address") },
-            { label: l("Téléphone", "Telephone"), placeholder: l("Téléphone, si proposé", "Telephone, if offered") },
+            { label: l("E-mail", "Email"), value: l("[[!E-mail du service client]]", "[[!Customer service email]]") },
+            { label: l("Adresse postale", "Postal address"), value: l("[[!Adresse du siège]]", "[[!Registered office address]]") },
+            { label: l("Téléphone", "Telephone"), value: l("Voir les <<mentions légales|/mentions-legales#seller>>", "See the <<legal notice|/mentions-legales#seller>>") },
           ],
         },
       ],
@@ -759,16 +860,15 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Nous pouvons modifier ces conditions, par exemple pour tenir compte d’une évolution de la loi ou de nos services. Les conditions applicables à une commande sont celles en vigueur à la date de cette commande. La date de dernière mise à jour figure en haut de cette page.",
-            "We may change these terms, for example to reflect a change in the law or in our services. The terms that apply to an order are those in force on the date of that order. The last-updated date is shown at the top of this page.",
+            "Nous pouvons modifier ces conditions, par exemple pour tenir compte d’une évolution de la loi ou de nos services. Les conditions applicables à une commande sont celles en vigueur à la date de cette commande ; pour un abonnement, une modification vous est annoncée par e-mail au moins 30 jours avant de s’appliquer à votre prochaine échéance, et vous pouvez résilier d’ici là. La date de dernière mise à jour figure en haut de cette page.",
+            "We may change these terms, for example to reflect a change in the law or in our services. The terms that apply to an order are those in force on the date of that order; for a subscription, a change is announced to you by email at least 30 days before it applies to your next renewal, and you can cancel before then. The last-updated date is shown at the top of this page.",
           ),
         },
         {
-          kind: "callout",
-          tone: "verify",
+          kind: "p",
           text: l(
-            "Prévoir l’archivage des versions successives et leur lien avec chaque commande : [[Méthode d’archivage des versions des CGV]].",
-            "Plan how successive versions are archived and linked to each order: [[Method for archiving terms versions]].",
+            "Nous conservons chaque version de ces conditions avec sa date d’entrée en vigueur ; la version applicable à votre commande vous est communiquée sur simple demande.",
+            "We keep every version of these terms with the date it took effect; the version that applies to your order is sent to you on request.",
           ),
         },
       ],
