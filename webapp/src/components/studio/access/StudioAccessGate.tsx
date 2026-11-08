@@ -370,7 +370,13 @@ function LockedScreen({ state }: { state: StudioAccessKind }) {
     };
   }, []);
 
-  const title = pending ? "pendingTitle" : state === "subscription_ended" ? "endedTitle" : "trialTitle";
+  const title = pending
+    ? "pendingTitle"
+    : state === "subscription_ended"
+      ? "endedTitle"
+      : state === "grant_ended"
+        ? "grantEndedTitle"
+        : "trialTitle";
   return (
     <AccessShell wide>
       <section className="mx-auto grid max-w-[760px] justify-items-center gap-4 pt-2 text-center">

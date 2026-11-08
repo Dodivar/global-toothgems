@@ -36,7 +36,9 @@ const productSelect = (options: boolean) => `
     }
   product_media ( id, storage_path, media_type, alt_text, position, is_primary, variant_id,${options ? " option_value_id," : ""}
     product_media_translations ( locale, alt_text, status ) ),
-  inventory_items ( stock_status )
+  inventory_items ( stock_status ),
+  product_inclusions ( kind, studio_plan, studio_months, position,
+    course:courses ( id, slug, title, course_translations ( locale, title, slug, status ) ) )
 `;
 
 /** Without the families and the variant options: the fallback below. */

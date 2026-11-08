@@ -151,6 +151,30 @@ Deno.test("a waiver that cannot be recorded stops the checkout", async () => {
   assertEquals(calls.createOrder, []);
 });
 
+Deno.test("a pack that opens a course is sold like a course: account, then waiver, then recorded", async () => {
+  const asked: string[][] = [];
+  const grants = (ids: string[]) => (asked.push(ids), Promise.resolve(true));
+  const guest = fakeDeps({ productsGrantCourse: grants });
+  let res = await handleCheckout(post(BODY), guest.deps);
+  assertEquals(await res.json(), { error: "account_required" });
+  assertEquals(guest.calls.createOrder, []);
+  const member = fakeDeps({ productsGrantCourse: grants });
+  res = await handleCheckout(post(BODY, { authorization: "Bearer a.valid.jwt" }), member.deps);
+  assertEquals(await res.json(), { error: "course_consent_required" });
+  assertEquals(member.calls.createOrder, []);
+  res = await handleCheckout(post({ ...BODY, course_immediate_access: true }, { authorization: "Bearer a.valid.jwt" }), member.deps);
+  assertEquals(res.status, 200);
+  assertEquals(member.calls.courseConsents, ["user-1"]);
+  assertEquals(asked[0], [BODY.items[0].product_id]);
+});
+
+Deno.test("product inclusions that cannot be read stop the checkout", async () => {
+  const { deps, calls } = fakeDeps({ productsGrantCourse: () => Promise.reject(new Error("db down")) });
+  const res = await handleCheckout(post(BODY, { authorization: "Bearer a.valid.jwt" }), deps);
+  assertEquals(res.status, 500);
+  assertEquals(calls.createOrder, []);
+});
+
 Deno.test("a basket without a course records no waiver", async () => {
   const { deps, calls } = fakeDeps();
   await handleCheckout(post({ ...BODY, course_immediate_access: true }, { authorization: "Bearer a.valid.jwt" }), deps);

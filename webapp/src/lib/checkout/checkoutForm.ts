@@ -1,5 +1,5 @@
 import type { CartLine } from "./cartLines";
-import { checkoutItems } from "./cartLines";
+import { checkoutItems, opensCourse } from "./cartLines";
 import type { CheckoutRequest } from "./api";
 
 /**
@@ -60,7 +60,7 @@ export function buildCheckoutRequest(
   giftCardCodes: string[] = [],
   useLoyaltyReward = false,
   promotionCodes: string[] = [],
-  /** The buyer ticked the request for immediate access to the courses (sent only for a basket holding one). */
+  /** The buyer ticked the request for immediate access to the courses (sent only for a basket opening one: a course or a pack). */
   courseImmediateAccess = false,
 ): CheckoutRequest | null {
   const items = checkoutItems(lines);
@@ -82,6 +82,6 @@ export function buildCheckoutRequest(
     ...(giftCardCodes.length > 0 ? { gift_card_codes: giftCardCodes } : {}),
     ...(promotionCodes.length > 0 ? { promotion_codes: promotionCodes } : {}),
     ...(useLoyaltyReward ? { use_loyalty_reward: true } : {}),
-    ...(courseImmediateAccess && items.some((item) => "course_id" in item) ? { course_immediate_access: true } : {}),
+    ...(courseImmediateAccess && opensCourse(lines) ? { course_immediate_access: true } : {}),
   };
 }

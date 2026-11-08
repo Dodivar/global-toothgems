@@ -256,6 +256,22 @@
         "too_many_requests": "Trop de demandes en peu de temps. Réessayez dans un moment.",
         "network": "La demande n'a pas pu être envoyée. Vérifiez votre connexion et réessayez."
       }
+    },
+    "pack": {
+      "title": "Inclus dans le pack",
+      "articles": "Les articles du kit, livrés chez vous.",
+      "course": "Formation {{title}}",
+      "courseHint": "Ouverte sur votre compte dès que le paiement est confirmé.",
+      "courseLink": "Voir le programme de la formation",
+      "studio_one": "Studio 3D {{plan}} pendant {{count}} mois",
+      "studio_other": "Studio 3D {{plan}} pendant {{count}} mois",
+      "studioHint": "Ouvert dès que le paiement est confirmé, sans abonnement : rien ne se renouvelle tout seul.",
+      "account": "Un compte est nécessaire : la formation et le Studio s’ouvrent sur le compte qui passe la commande. Un pack par commande, non proposé en cadeau.",
+      "plan": {
+        "essential": "Essential",
+        "artist": "Artist",
+        "atelier": "Atelier"
+      }
     }
   },
   "cart": {
@@ -390,6 +406,9 @@
       "consentTitle": "Accès immédiat à la formation",
       "consentLabel": "Je demande l’accès immédiat à la formation et je renonce expressément à mon droit de rétractation : je reconnais le perdre dès que je commence à suivre la formation.",
       "consentHint": "Tant qu’aucune leçon n’est ouverte, vous gardez 14 jours pour vous rétracter."
+    },
+    "pack": {
+      "line": "1 pack par commande · formation et Studio ouverts sur votre compte"
     },
     "noShipping": "Rien à expédier : les cartes cadeaux sont envoyées par e-mail et les formations s’ouvrent dans votre espace membre.",
     "recap": {
@@ -1252,7 +1271,8 @@
       "favoritesLowStock_other": "{{count}} bientôt épuisés",
       "favoritesCta": "Voir mes favoris",
       "discoverEyebrow": "Academy",
-      "discoverTitle": "Se former avec Global Toothgems"
+      "discoverTitle": "Se former avec Global Toothgems",
+      "studioGrantUntil": "Offert par votre pack jusqu’au {{date}}."
     }
   },
   "footer": {

@@ -256,6 +256,22 @@
         "too_many_requests": "Too many requests in a short time. Please try again later.",
         "network": "The request could not be sent. Check your connection and try again."
       }
+    },
+    "pack": {
+      "title": "Included in the pack",
+      "articles": "The kit's articles, delivered to you.",
+      "course": "{{title}} course",
+      "courseHint": "Opens on your account as soon as the payment is confirmed.",
+      "courseLink": "See the course programme",
+      "studio_one": "3D Studio {{plan}} for {{count}} month",
+      "studio_other": "3D Studio {{plan}} for {{count}} months",
+      "studioHint": "Opens as soon as the payment is confirmed, with no subscription: nothing renews on its own.",
+      "account": "An account is required: the course and the Studio open on the account that places the order. One pack per order, not offered as a gift.",
+      "plan": {
+        "essential": "Essential",
+        "artist": "Artist",
+        "atelier": "Atelier"
+      }
     }
   },
   "cart": {
@@ -390,6 +406,9 @@
       "consentTitle": "Immediate access to the course",
       "consentLabel": "I ask for immediate access to the course and I expressly waive my right of withdrawal: I acknowledge that I lose it as soon as I start following the course.",
       "consentHint": "As long as no lesson has been opened, you keep 14 days to withdraw."
+    },
+    "pack": {
+      "line": "1 pack per order · course and Studio open on your account"
     },
     "noShipping": "Nothing to ship: gift cards are sent by email and courses open in your member space.",
     "recap": {
@@ -1252,7 +1271,8 @@
       "favoritesLowStock_other": "{{count}} almost gone",
       "favoritesCta": "See my favourites",
       "discoverEyebrow": "Academy",
-      "discoverTitle": "Train with Global Toothgems"
+      "discoverTitle": "Train with Global Toothgems",
+      "studioGrantUntil": "Included with your pack until {{date}}."
     }
   },
   "footer": {

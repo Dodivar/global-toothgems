@@ -1,6 +1,6 @@
 -- =============================================================================
 -- GLOBAL™ PRO MASTER PACK: the professional kit + the Masterclass + 3 months of
--- the 3D Studio Artist plan (decision 127, owner's request 2026-11-08)
+-- the 3D Studio Artist plan (decision 129, owner's request 2026-11-08)
 -- =============================================================================
 -- Price: (kit + course current price) − 10 % = 837.00 EUR on 2026-11-08,
 -- computed from the current prices. No compare-at price (a struck-through
@@ -166,7 +166,7 @@ select private.refresh_bundle_stock(p.id)
   from public.products p
  where p.slug = 'global-pro-master-pack';
 
--- 5. What it grants (decision 127) -------------------------------------------
+-- 5. What it grants (decision 129) -------------------------------------------
 insert into public.product_inclusions (product_id, kind, course_id, position)
 select p.id, 'course', c.id, 0
   from public.products p

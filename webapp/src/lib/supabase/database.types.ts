@@ -4742,6 +4742,54 @@ export type Database = {
           },
         ]
       }
+      order_item_inclusions: {
+        Row: {
+          course_id: string | null
+          course_title: string | null
+          created_at: string
+          id: number
+          kind: string
+          order_item_id: string
+          studio_months: number | null
+          studio_plan: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          course_title?: string | null
+          created_at?: string
+          id?: never
+          kind: string
+          order_item_id: string
+          studio_months?: number | null
+          studio_plan?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          course_title?: string | null
+          created_at?: string
+          id?: never
+          kind?: string
+          order_item_id?: string
+          studio_months?: number | null
+          studio_plan?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_item_inclusions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_item_inclusions_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           course_id: string | null
@@ -5287,6 +5335,77 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_inclusions: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          position: number
+          product_id: string
+          studio_months: number | null
+          studio_plan: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          position?: number
+          product_id: string
+          studio_months?: number | null
+          studio_plan?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          position?: number
+          product_id?: string
+          studio_months?: number | null
+          studio_plan?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_inclusions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -7957,6 +8076,80 @@ export type Database = {
           },
         ]
       }
+      studio_access_grants: {
+        Row: {
+          created_at: string
+          ends_at: string
+          id: string
+          order_id: string
+          order_item_id: string
+          plan: string
+          revoked_at: string | null
+          revoked_by: string | null
+          source: string
+          starts_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          id?: string
+          order_id: string
+          order_item_id: string
+          plan: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source?: string
+          starts_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          id?: string
+          order_id?: string
+          order_item_id?: string
+          plan?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source?: string
+          starts_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_access_grants_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       studio_collection_creations: {
         Row: {
           collection_id: string
@@ -9641,6 +9834,28 @@ export type Database = {
       admin_save_product_bundle: {
         Args: { p_components: Json; p_product_id: string }
         Returns: Json
+      }
+      admin_save_product_inclusions: {
+        Args: { p_inclusions: Json; p_product_id: string }
+        Returns: {
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          position: number
+          product_id: string
+          studio_months: number | null
+          studio_plan: string | null
+          updated_at: string
+          updated_by: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "product_inclusions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       admin_save_product_recommendations: {
         Args: {

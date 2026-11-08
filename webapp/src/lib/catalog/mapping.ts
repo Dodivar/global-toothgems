@@ -3,6 +3,7 @@ import {
   SPEC_KEYS,
   type ProductSpecs,
   type GemColorDef,
+  type ProductInclusion,
   type ProductOption,
   type GemShape,
   type Product,
@@ -118,6 +119,48 @@ export interface ProductRow extends SpecColumns {
   product_options?: OptionRow[];
   product_media: MediaRow[];
   inventory_items: InventoryRow[];
+  /** What one unit also opens (decision 129); absent on older queries. */
+  product_inclusions?: InclusionRow[];
+}
+
+export interface InclusionRow {
+  kind: string;
+  studio_plan: string | null;
+  studio_months: number | null;
+  position: number;
+  /** Null when the course is not public (unpublished): the inclusion is then not shown. */
+  course: {
+    id: string;
+    slug: string;
+    title: string;
+    course_translations: (TranslationRow & { title: string; slug: string | null })[];
+  } | null;
+}
+
+const STUDIO_PLANS = ["essential", "artist", "atelier"] as const;
+
+/** The access a pack opens, in back-office order; rows the visitor cannot read are left out. */
+export function mapInclusions(rows: InclusionRow[]): ProductInclusion[] {
+  const out: ProductInclusion[] = [];
+  for (const row of [...rows].sort((a, b) => a.position - b.position)) {
+    if (row.kind === "course" && row.course) {
+      const en = row.course.course_translations.find((t) => t.locale === "en" && t.status === "published")?.slug;
+      out.push({
+        kind: "course",
+        courseId: row.course.id,
+        title: localize(row.course.title, row.course.course_translations, (t) => t.title),
+        slugs: { fr: row.course.slug, ...(en ? { en } : {}) },
+      });
+    } else if (
+      row.kind === "studio" &&
+      STUDIO_PLANS.includes(row.studio_plan as (typeof STUDIO_PLANS)[number]) &&
+      row.studio_months != null &&
+      row.studio_months > 0
+    ) {
+      out.push({ kind: "studio", plan: row.studio_plan as (typeof STUDIO_PLANS)[number], months: row.studio_months });
+    }
+  }
+  return out;
 }
 
 export interface ReviewStatsRow {
@@ -317,6 +360,7 @@ export function mapProduct(
       : name,
   }));
   const options = mapOptions(row.product_options ?? []);
+  const inclusions = mapInclusions(row.product_inclusions ?? []);
   // A variant's photo is the first gallery image that shows it, else the
   // first one showing one of its option values (the silver lamp, any plug).
   const variantImage = (variantId: string, valueIds: string[] = []) => {
@@ -385,6 +429,7 @@ export function mapProduct(
     variants: variants.length > 0 ? variants : undefined,
     ...(offerOptions ? { options } : {}),
     isFeatured: row.is_featured,
+    ...(inclusions.length > 0 ? { inclusions } : {}),
   };
 }
 

@@ -85,7 +85,8 @@
       "kept_other": "Vos {{count}} designs enregistrés sont conservés dans votre compte. Ils vous attendront dans le Studio dès qu’une formule sera active.",
       "keptNone": "Tout ce que vous avez enregistré reste dans votre compte et vous attendra dès qu’une formule sera active.",
       "plansTitle": "Choisissez votre formule",
-      "pricesNote": "Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée."
+      "pricesNote": "Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée.",
+      "grantEndedTitle": "Votre accès au Studio offert par le pack est terminé"
     },
     "error": {
       "title": "Impossible de vérifier votre accès au Studio",
@@ -640,7 +641,9 @@
       "subscription_ended": "Abonnement terminé",
       "subscription_pending": "En cours d’activation",
       "not_started": "Aucun abonnement",
-      "staff": "Accès équipe"
+      "staff": "Accès équipe",
+      "granted": "Accès offert par votre pack",
+      "grant_ended": "Accès offert terminé"
     },
     "renews": "Prochain renouvellement le {{date}}.",
     "endsOn": "Résilié : vous gardez l’accès jusqu’au {{date}}, puis l’abonnement prend fin.",
@@ -810,7 +813,10 @@
       "withPlan": "avec la formule {{plan}}",
       "templates": "Modèles Global Toothgems",
       "collections": "Dossiers pour ranger vos créations"
-    }
+    },
+    "grantUntil": "Votre pack vous donne le Studio {{plan}} jusqu’au {{date}}, sans abonnement : rien ne se renouvelle tout seul. Vos créations restent ensuite dans votre compte.",
+    "grantEnded": "Le Studio offert par votre pack a pris fin le {{date}}. Vos créations restent dans votre compte : choisissez une formule pour continuer.",
+    "grantBeside": "Votre pack vous donne aussi le Studio {{plan}} jusqu’au {{date}} : la formule la plus avantageuse s’applique."
   },
   "tryOn": {
     "action": "Essayer sur un sourire",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addCourseToLines, addedQty, addGiftCardToLines, addToLines, courseLineId, hasCourse, lineKey, cartCount, cartSubtotal, checkoutItems, MAX_LINE_QTY, needsShipping, setLineQty, shippableSubtotal, undoAddition, type CartLine } from "./cartLines";
+import { addCourseToLines, addedQty, addGiftCardToLines, addToLines, courseLineId, hasCourse, lineKey, needsAccount, opensCourse, cartCount, cartSubtotal, checkoutItems, MAX_LINE_QTY, needsShipping, setLineQty, shippableSubtotal, undoAddition, type CartLine } from "./cartLines";
 
 const gel: Omit<CartLine, "id"> = {
   productId: "gel-de-suivi",
@@ -158,5 +158,29 @@ describe("course lines", () => {
       { product_id: gel.dbProductId, variant_id: null, quantity: 1 },
       { course_id: course.courseId, quantity: 1 },
     ]);
+  });
+});
+
+describe("pack lines (decision 129)", () => {
+  const pack = { productId: "pack", dbProductId: "p-1", name: "Pack", image: "/p.jpg", unitPrice: 83700, currency: "EUR", qty: 3, pack: { course: true } };
+  const kit = { productId: "kit", dbProductId: "k-1", name: "Kit", image: "/k.jpg", unitPrice: 34000, currency: "EUR", qty: 1 };
+
+  it("holds one pack per line, whatever is added or typed", () => {
+    let lines = addToLines([], pack);
+    expect(lines[0].qty).toBe(1);
+    lines = addToLines(lines, { ...pack, qty: 1 });
+    expect(lines[0].qty).toBe(1);
+    expect(setLineQty(lines, lines[0].id, 5)[0].qty).toBe(1);
+  });
+
+  it("needs an account, and the course waiver when the pack opens a course", () => {
+    expect(needsAccount(addToLines([], kit))).toBe(false);
+    expect(needsAccount(addToLines([], pack))).toBe(true);
+    expect(opensCourse(addToLines([], pack))).toBe(true);
+    expect(opensCourse(addToLines([], { ...pack, pack: { course: false } }))).toBe(false);
+    expect(needsAccount(addToLines([], { ...pack, pack: { course: false } }))).toBe(true);
+    // Shipped like any product, and sent as a product line.
+    expect(needsShipping(addToLines([], pack))).toBe(true);
+    expect(checkoutItems(addToLines([], pack))).toEqual([{ product_id: "p-1", variant_id: null, quantity: 1 }]);
   });
 });

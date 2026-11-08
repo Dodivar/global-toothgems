@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, Plus } from "lucide-react";
 import { pick } from "../../data/types";
-import type { Product } from "../../data/products";
+import { packLine, type Product } from "../../data/products";
 import { useCart } from "../../lib/cart";
 import { toMinorUnits } from "../../lib/catalog/money";
 
@@ -47,6 +47,7 @@ export function QuickAdd({ product, name, className }: { product: Product; name:
           unitPrice: toMinorUnits(variant?.price ?? product.price),
           currency: product.currency ?? "EUR",
           qty: 1,
+          ...(packLine(product) ? { pack: packLine(product) } : {}),
         });
         setAdded(true);
       }}

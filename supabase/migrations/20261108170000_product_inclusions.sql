@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Product inclusions: a product that also opens an Academy course and a period
--- of 3D Studio access (decision 127)
+-- of 3D Studio access (decision 129)
 -- =============================================================================
 -- Owner's request (2026-11-08): "the professional kit, the course on sale and
 -- three months of the 3D Studio in one promotional pack. Stock is the kit's: no
@@ -60,7 +60,7 @@ create table public.product_inclusions (
 );
 
 comment on table public.product_inclusions is
-  'Access granted with ONE unit of a product (decision 127): an Academy course or N months of a 3D Studio plan. Written only by admin_save_product_inclusions(); granted when the order is paid.';
+  'Access granted with ONE unit of a product (decision 129): an Academy course or N months of a 3D Studio plan. Written only by admin_save_product_inclusions(); granted when the order is paid.';
 
 create unique index product_inclusions_one_course_idx on public.product_inclusions (product_id, course_id)
   where kind = 'course';
@@ -108,7 +108,7 @@ create table public.order_item_inclusions (
 );
 
 comment on table public.order_item_inclusions is
-  'Access an order line was sold with (decision 127), copied from product_inclusions when the line is created. Granted on payment, revoked by a full refund.';
+  'Access an order line was sold with (decision 129), copied from product_inclusions when the line is created. Granted on payment, revoked by a full refund.';
 
 create index order_item_inclusions_item_idx on public.order_item_inclusions (order_item_id);
 create index order_item_inclusions_course_idx on public.order_item_inclusions (course_id) where course_id is not null;
@@ -150,7 +150,7 @@ create table public.studio_access_grants (
 );
 
 comment on table public.studio_access_grants is
-  '3D Studio access bought with a product (decision 127): plan from starts_at to ends_at, unless revoked (full refund). Written only by the order payment trigger.';
+  '3D Studio access bought with a product (decision 129): plan from starts_at to ends_at, unless revoked (full refund). Written only by the order payment trigger.';
 
 create index studio_access_grants_user_idx on public.studio_access_grants (user_id, ends_at desc);
 create index studio_access_grants_order_idx on public.studio_access_grants (order_id);
@@ -400,7 +400,7 @@ end;
 $$;
 
 comment on function public.admin_save_product_inclusions(uuid, jsonb) is
-  'Back office (manage_products, decision 127): replaces what one unit of a product grants (courses, Studio plan for N months).';
+  'Back office (manage_products, decision 129): replaces what one unit of a product grants (courses, Studio plan for N months).';
 
 revoke all on function public.admin_save_product_inclusions(uuid, jsonb) from public, anon;
 grant execute on function public.admin_save_product_inclusions(uuid, jsonb) to authenticated;
