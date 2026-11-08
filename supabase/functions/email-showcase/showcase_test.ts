@@ -33,7 +33,7 @@ Deno.test("one sample per database template and per Auth template, all to the ow
 
 Deno.test("the documents are real PDFs with sample numbers", () => {
   const withPdf = buildShowcase(ctx).flatMap((s) => (s.kind === "template" ? s.request.attachments ?? [] : []));
-  assertEquals(withPdf.length, 5);
+  assertEquals(withPdf.length, 4);
   for (const a of withPdf) {
     assert(a.filename.includes("EXEMPLE"), a.filename);
     assert(atob(a.content).startsWith("%PDF"));
@@ -49,8 +49,8 @@ Deno.test("the Auth samples have no Go template action left", () => {
   }
 });
 
-Deno.test("only_documents keeps the five samples with an invoice or a credit note", () => {
+Deno.test("only_documents keeps the four samples with an invoice or a credit note", () => {
   const kept = withDocuments(buildShowcase(ctx));
-  assertEquals(kept.length, 5);
+  assertEquals(kept.length, 4);
   assert(kept.every((s) => s.kind === "template" && (s.request.attachments?.length ?? 0) === 1));
 });

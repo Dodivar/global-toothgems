@@ -187,7 +187,6 @@ function textOf(html: string): string {
 export function buildShowcase(ctx: ShowcaseContext): Sample[] {
   const key = (name: string) => `showcase:${ctx.runId}:${name}`;
   const base = { to: ctx.to, locale: LOCALE };
-  const orderInvoice = attachDocument(mapInvoice(orderInvoiceRow(ctx)), LOCALE);
   const creditNote = attachDocument(mapInvoice(orderCreditNoteRow(ctx)), LOCALE, mapInvoice(orderInvoiceRow(ctx)));
   const studioFirst = attachDocument(mapInvoice(studioInvoiceRow(ctx, "FA-EXEMPLE-000002")), LOCALE);
   const studioRenewal = attachDocument(mapInvoice(studioInvoiceRow(ctx, "FA-EXEMPLE-000003")), LOCALE);
@@ -198,12 +197,11 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
   const samples: Sample[] = [
     {
       kind: "template",
-      label: "Confirmation de commande (+ facture PDF)",
+      label: "Confirmation de commande",
       request: {
         ...base, templateKey: "order_confirmation", eventKey: key("order_confirmation"),
         variables: { first_name: "Camille", order_number: ORDER.orderNumber },
-        attachments: [orderInvoice.attachment],
-        content: (locale) => orderConfirmationContent(ORDER, locale, ctx.siteUrl, orderInvoice.number),
+        content: (locale) => orderConfirmationContent(ORDER, locale, ctx.siteUrl),
       },
     },
     {

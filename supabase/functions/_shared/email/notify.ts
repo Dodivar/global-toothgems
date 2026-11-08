@@ -40,10 +40,7 @@ export async function notifyOrderPaid(orderId: string, log: Logger): Promise<voi
 
   // Independent steps: a failing confirmation must not hold back the gift cards, nor the reverse.
   try {
-    const result = await sendOrderConfirmation(deps, supabaseOrderSource(db), orderId, {
-      invoices: supabaseInvoiceSource(db),
-      log,
-    });
+    const result = await sendOrderConfirmation(deps, supabaseOrderSource(db), orderId);
     if (result.status === "failed" || result.status === "invalid" || result.status === "template_missing") {
       log(`order confirmation not sent (${result.status})`, { orderId, ...result });
     }
