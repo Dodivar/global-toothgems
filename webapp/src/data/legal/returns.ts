@@ -1,14 +1,14 @@
+import { lp } from "./policies";
 import { LEGAL_PATHS } from "./routes";
 import { DRAFT_DATE, l, type LegalDocument } from "./types";
 
 /**
  * Returns & refunds.
  *
- * The page gives the procedure and the legal floor, and leaves every
- * commercial rule — the return window offered, who pays postage, the return
- * address — as a placeholder. Tooth gems and adhesives raise real hygiene
- * questions, so the exception is described generically and flagged for a
- * product-by-product decision.
+ * The procedure, the legal floor and the shop's own rules, which come from
+ * `policies.ts` (decision 126) so they match the terms of sale. The return
+ * address is the seller's, filled in from the store's details by
+ * `storeFill.ts`.
  */
 export const RETURNS: LegalDocument = {
   id: "returns",
@@ -52,9 +52,9 @@ export const RETURNS: LegalDocument = {
           kind: "callout",
           tone: "policy",
           title: l("Délai de retour", "Return period"),
-          text: l(
-            "Délai offert par Global Toothgems : [[Délai de retour, égal ou supérieur au minimum légal]], à compter de [[Point de départ — réception du colis]].",
-            "Period offered by Global Toothgems: [[Return period, equal to or longer than the legal minimum]], starting from [[Starting point — receipt of the parcel]].",
+          text: lp(
+            (p) => `Délai appliqué par Global Toothgems : ${p.returnPeriod}. Vous disposez ensuite de ${p.returnShipDeadline} pour nous renvoyer le produit.`,
+            (p) => `Period applied by Global Toothgems: ${p.returnPeriod}. You then have ${p.returnShipDeadline} to send the product back to us.`,
           ),
         },
       ],
@@ -73,10 +73,10 @@ export const RETURNS: LegalDocument = {
         },
         {
           kind: "callout",
-          tone: "verify",
+          tone: "policy",
           text: l(
-            "[[Règle en cas de retour incomplet ou abîmé — ex. remboursement partiel]]",
-            "[[Rule for incomplete or damaged returns — e.g. partial refund]]",
+            "Un produit renvoyé incomplet, abîmé ou utilisé au-delà de ce qui est nécessaire pour l’examiner est remboursé diminué de sa perte de valeur ; nous vous indiquons le montant retenu avant le remboursement.",
+            "A product returned incomplete, damaged or used beyond what is needed to examine it is refunded less its loss in value; we tell you the amount withheld before the refund.",
           ),
         },
       ],
@@ -96,10 +96,12 @@ export const RETURNS: LegalDocument = {
         },
         {
           kind: "callout",
-          tone: "verify",
-          text: l(
-            "Liste des produits concernés et mention sur chaque fiche produit : [[Produits exclus — ex. gems, adhésifs ou kits descellés]]. Traitement des formations en ligne : [[Règle de rétractation pour les formations]].",
-            "Products concerned and a notice on each product page: [[Excluded products — e.g. unsealed gems, adhesives or kits]]. Online training: [[Withdrawal rule for training]].",
+          tone: "policy",
+          text: lp(
+            (p) =>
+              `Chez Global Toothgems, ne peuvent être retournés : ${p.excludedGoods}, ainsi que les produits personnalisés à votre demande. Une formation en ligne peut être annulée dans les 14 jours suivant l’achat tant qu’aucune leçon n’a été ouverte (vous renoncez à ce droit au paiement pour y accéder immédiatement) ; un abonnement au Studio 3D, dans les 14 jours suivant la souscription, depuis <<Mon abonnement Studio|/compte/studio>>.`,
+            (p) =>
+              `At Global Toothgems, the following cannot be returned: ${p.excludedGoods}, and products personalised at your request. An online course can be cancelled within 14 days of purchase as long as no lesson has been opened (you waive this right when paying, to access it at once); a 3D Studio subscription, within 14 days of subscribing, from <<My Studio subscription|/compte/studio>>.`,
           ),
         },
       ],
@@ -131,7 +133,7 @@ export const RETURNS: LegalDocument = {
         {
           kind: "fields",
           fields: [
-            { label: l("Adresse de retour", "Return address"), placeholder: l("Adresse de retour", "Return address") },
+            { label: l("Adresse de retour", "Return address"), value: l("[[!Adresse du siège]]", "[[!Registered office address]]"), hint: l("Sauf autre adresse indiquée dans nos instructions de retour.", "Unless our return instructions give another address.") },
             { label: l("Référence à indiquer", "Reference to include"), value: l("Votre numéro de commande", "Your order number") },
           ],
         },
@@ -151,9 +153,9 @@ export const RETURNS: LegalDocument = {
         {
           kind: "callout",
           tone: "policy",
-          text: l(
-            "Rétractation : [[Frais de retour à la charge du client, offerts, ou étiquette prépayée]]. Produit défectueux, endommagé ou erroné : les frais de retour sont à notre charge.",
-            "Change of mind: [[Return costs paid by customer, free, or prepaid label]]. Defective, damaged or wrong product: return costs are on us.",
+          text: lp(
+            (p) => `Rétractation : ${p.returnCosts}. Produit défectueux, endommagé ou erroné : les frais de retour sont à notre charge.`,
+            (p) => `Change of mind: ${p.returnCosts}. Defective, damaged or wrong product: return costs are on us.`,
           ),
         },
         {
@@ -188,9 +190,11 @@ export const RETURNS: LegalDocument = {
           kind: "callout",
           tone: "policy",
           title: l("Remboursement partiel", "Partial refunds"),
-          text: l(
-            "[[Cas de remboursement partiel — ex. retour d’une partie de la commande, dépréciation du produit, frais de livraison express]]",
-            "[[Partial refund cases — e.g. returning part of an order, loss of value, express delivery surcharge]]",
+          text: lp(
+            (p) =>
+              `Si vous ne renvoyez qu’une partie de la commande, seuls les articles renvoyés sont remboursés ; les frais de livraison initiaux le sont lorsque toute la commande est retournée, à hauteur du tarif standard (le supplément d’une livraison express n’est pas remboursé). Un produit qui a perdu de sa valeur est remboursé diminué de cette perte. Délai de traitement habituel : ${p.refundProcessing}.`,
+            (p) =>
+              `If you send back only part of the order, only the items returned are refunded; the initial delivery cost is refunded when the whole order is returned, up to the standard rate (the extra cost of express delivery is not refunded). A product that has lost value is refunded less that loss. Usual processing time: ${p.refundProcessing}.`,
           ),
         },
       ],
@@ -228,9 +232,9 @@ export const RETURNS: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
-            "Une question sur un retour en cours ? <<Contactez-nous|/contact?sujet=returns>> en rappelant votre numéro de commande. Délai de réponse habituel : [[Délai de réponse du service client]].",
-            "A question about a return in progress? <<Contact us|/contact?sujet=returns>> quoting your order number. Usual response time: [[Customer service response time]].",
+          text: lp(
+            (p) => `Une question sur un retour en cours ? <<Contactez-nous|/contact?sujet=returns>> en rappelant votre numéro de commande. Délai de réponse habituel : ${p.responseTime}.`,
+            (p) => `A question about a return in progress? <<Contact us|/contact?sujet=returns>> quoting your order number. Usual response time: ${p.responseTime}.`,
           ),
         },
       ],

@@ -1,4 +1,5 @@
 import { courseOrderItems, orderItems } from "../_shared/checkoutInput.ts";
+import { COURSE_CONSENT_PURPOSE, COURSE_WITHDRAWAL_CONSENT } from "../_shared/courseConsent.ts";
 import { serviceClient, stripeClient, requireEnv } from "../_shared/clients.ts";
 import { notifyOrderPaid } from "../_shared/email/notify.ts";
 import { toDecimalString } from "../_shared/money.ts";
@@ -67,6 +68,17 @@ const deps: CheckoutDeps = {
       .limit(1);
     if (error) throw new Error(error.message);
     return data.length > 0;
+  },
+
+  async recordCourseConsent(userId) {
+    const { error } = await supabase.from("consent_records").insert({
+      user_id: userId,
+      purpose: COURSE_CONSENT_PURPOSE,
+      granted: true,
+      policy_version: COURSE_WITHDRAWAL_CONSENT.version,
+      source: "checkout",
+    });
+    if (error) throw new Error(error.message);
   },
 
   async createOrder(input, userId, reservationMinutes) {

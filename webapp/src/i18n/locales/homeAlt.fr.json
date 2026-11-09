@@ -177,6 +177,8 @@
     "privacyLink": "Politique de confidentialité",
     "successTitle": "Plus qu’une étape",
     "successBody": "Nous avons envoyé un lien de confirmation à {{email}}. Cliquez dessus pour recevoir la newsletter.",
-    "successHint": "Rien reçu d’ici quelques minutes ? Regardez dans les spams. Le lien est valable 48 heures."
+    "successHint": "Rien reçu d’ici quelques minutes ? Regardez dans les spams. Le lien est valable 48 heures.",
+    "subscribedTitle": "Vous êtes inscrit·e",
+    "subscribedBody": "Merci ! La prochaine newsletter arrivera sur {{email}}. Un lien de désinscription figure dans chaque e-mail."
   }
 }

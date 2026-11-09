@@ -6,7 +6,7 @@ import type { LegalDocument } from "./types";
 
 /**
  * Fills the "business information to supply" markers of a static legal page
- * (terms of sale, terms of use) with the details saved in Settings › Store,
+ * (terms of sale, terms of use, privacy policy) with the details saved in Settings › Store,
  * as the legal notice does. A detail that has not been supplied keeps its
  * marker, so the page still shows what is missing instead of inventing it.
  *
@@ -15,7 +15,8 @@ import type { LegalDocument } from "./types";
  * seller, named by its trading name ("PIMP TON SMILE"), whose legal identity
  * (for an individual entrepreneur, their own name) appears only where the law
  * asks for the seller's identification — the seller clause of the terms of
- * sale —, never put forward (decision 120). Pure.
+ * sale, the data controller of the privacy policy —, never put forward
+ * (decision 120). Pure.
  */
 
 type Replacements = { fr: Record<string, string>; en: Record<string, string> };
@@ -39,18 +40,25 @@ function replacements(store: StoreDetails): Replacements {
   const lines = store.address1.trim() ? addressLines(store) : [];
   const office = (lang: "fr" | "en") => (lines.length ? [...lines, countryName(store.country, lang)].join(", ") : "");
   const registration = store.registrationNumber.trim();
+  const support = store.supportEmail.trim();
   return {
     fr: {
       "[[!Dénomination sociale]]": publisher,
       "[[!Dénomination et forme juridique]]": seller,
+      "[[!Responsable du traitement]]": seller,
       "[[!Adresse du siège]]": office("fr"),
       "[[!Numéro d’immatriculation]]": registration,
+      "[[!E-mail du service client]]": support,
+      "[[!E-mail confidentialité]]": support,
     },
     en: {
       "[[!Legal business name]]": publisher,
       "[[!Legal name and entity type]]": seller,
+      "[[!Data controller]]": seller,
       "[[!Registered office address]]": office("en"),
       "[[!Registration number]]": registration,
+      "[[!Customer service email]]": support,
+      "[[!Privacy email]]": support,
     },
   };
 }

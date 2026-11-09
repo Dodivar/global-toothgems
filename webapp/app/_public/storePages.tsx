@@ -1,8 +1,13 @@
 import { LegalDocumentPage } from "../../src/components/legal/LegalDocumentPage";
 import { legalNotice } from "../../src/data/legal/legalNotice";
+import { PRIVACY } from "../../src/data/legal/privacy";
+import { RETURNS } from "../../src/data/legal/returns";
+import { SHIPPING } from "../../src/data/legal/shipping";
+import { withShippingGrid } from "../../src/data/legal/shippingGrid";
 import { withStoreDetails } from "../../src/data/legal/storeFill";
 import { TERMS } from "../../src/data/legal/terms";
 import { TERMS_OF_USE } from "../../src/data/legal/termsOfUse";
+import { loadShippingGrid } from "../../src/lib/shippingGridServer";
 import { loadStoreDetails } from "../../src/lib/storeDetailsServer";
 import { Contact } from "../../src/screens/legal/Contact";
 
@@ -28,4 +33,16 @@ export async function TermsPage() {
 
 export async function TermsOfUsePage() {
   return <LegalDocumentPage doc={withStoreDetails(TERMS_OF_USE, await loadStoreDetails())} />;
+}
+
+export async function PrivacyPage() {
+  return <LegalDocumentPage doc={withStoreDetails(PRIVACY, await loadStoreDetails())} />;
+}
+
+export async function ShippingPage() {
+  return <LegalDocumentPage doc={withShippingGrid(SHIPPING, await loadShippingGrid())} />;
+}
+
+export async function ReturnsPage() {
+  return <LegalDocumentPage doc={withStoreDetails(RETURNS, await loadStoreDetails())} />;
 }

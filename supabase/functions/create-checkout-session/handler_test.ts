@@ -34,6 +34,7 @@ function fakeDeps(overrides: Partial<CheckoutDeps> = {}) {
     cancelled: [] as string[],
     recorded: [] as string[],
     released: [] as { sessionId: string; secret: string }[],
+    courseConsents: [] as string[],
   };
   const deps: CheckoutDeps = {
     publishableKey: "pk_test_123",
@@ -41,6 +42,10 @@ function fakeDeps(overrides: Partial<CheckoutDeps> = {}) {
     origins: readSiteOrigins("https://globaltoothgems.com", "http://localhost:5173, https://preview.example.app"),
     userFromToken: (token) => Promise.resolve(token === "a.valid.jwt" ? "user-1" : null),
     termsAccepted: () => Promise.resolve(true),
+    recordCourseConsent: (userId) => {
+      calls.courseConsents.push(userId);
+      return Promise.resolve();
+    },
     createOrder: (_input, userId, minutes) => {
       calls.createOrder.push({ userId, minutes });
       return Promise.resolve({ order: ORDER });
@@ -104,6 +109,53 @@ Deno.test("guest checkout: order from the database, session for its amount due",
   assertEquals(params.returnUrl, "https://globaltoothgems.com/en/cart/confirmation?session_id={CHECKOUT_SESSION_ID}");
   assertEquals(res.headers.get("access-control-allow-origin"), null);
   assertEquals(calls.recorded, ["cs_test_123"]);
+});
+
+const COURSE = "7c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
+const COURSE_BODY = { ...BODY, items: [{ course_id: COURSE, quantity: 1 }], shipping_rate_id: null };
+
+Deno.test("a course needs the ticked waiver: refused without it, nothing reserved or recorded", async () => {
+  const { deps, calls } = fakeDeps();
+  const res = await handleCheckout(post(COURSE_BODY, { authorization: "Bearer a.valid.jwt" }), deps);
+  assertEquals(res.status, 409);
+  assertEquals(await res.json(), { error: "course_consent_required" });
+  assertEquals(calls.createOrder, []);
+  assertEquals(calls.courseConsents, []);
+});
+
+Deno.test("a course without an account is refused before anything else", async () => {
+  const { deps, calls } = fakeDeps();
+  const res = await handleCheckout(post({ ...COURSE_BODY, course_immediate_access: true }), deps);
+  assertEquals(await res.json(), { error: "account_required" });
+  assertEquals(calls.createOrder, []);
+  assertEquals(calls.courseConsents, []);
+});
+
+Deno.test("the ticked waiver is recorded for the account before the order is created", async () => {
+  const order: string[] = [];
+  const { deps, calls } = fakeDeps();
+  const record = deps.recordCourseConsent;
+  deps.recordCourseConsent = (userId) => (order.push("consent"), record(userId));
+  const create = deps.createOrder;
+  deps.createOrder = (...args) => (order.push("order"), create(...args));
+  const res = await handleCheckout(post({ ...COURSE_BODY, course_immediate_access: true }, { authorization: "Bearer a.valid.jwt" }), deps);
+  assertEquals(res.status, 200);
+  assertEquals(calls.courseConsents, ["user-1"]);
+  assertEquals(order, ["consent", "order"]);
+});
+
+Deno.test("a waiver that cannot be recorded stops the checkout", async () => {
+  const { deps, calls } = fakeDeps({ recordCourseConsent: () => Promise.reject(new Error("db down")) });
+  const res = await handleCheckout(post({ ...COURSE_BODY, course_immediate_access: true }, { authorization: "Bearer a.valid.jwt" }), deps);
+  assertEquals(res.status, 500);
+  assertEquals(calls.createOrder, []);
+});
+
+Deno.test("a basket without a course records no waiver", async () => {
+  const { deps, calls } = fakeDeps();
+  await handleCheckout(post({ ...BODY, course_immediate_access: true }, { authorization: "Bearer a.valid.jwt" }), deps);
+  assertEquals(calls.courseConsents, []);
+  assertEquals(calls.createOrder.length, 1);
 });
 
 Deno.test("an allowed origin gets its own return addresses and CORS", async () => {

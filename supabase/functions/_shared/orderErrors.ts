@@ -15,6 +15,8 @@ export type CheckoutErrorCode =
   | "account_required"
   | "terms_required"
   | "course_owned"
+  /** A course in the basket without the ticked request for immediate access (`_shared/courseConsent.ts`). */
+  | "course_consent_required"
   | "payment_unavailable"
   /** A promotion left nothing to pay and no gift card covered it: free orders are not offered (yet). */
   | "free_order"

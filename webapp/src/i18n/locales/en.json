@@ -341,6 +341,7 @@
       "gift_card_details_invalid": "The details of a gift card in your cart are no longer accepted (amount, recipient or date). Remove it and build it again.",
       "account_required": "An account is needed to buy a course: access opens on your account. Sign in and try again.",
       "terms_required": "One last thing before paying: your account has not accepted our terms yet.",
+      "course_consent_required": "To buy a course, tick the request for immediate access to the course.",
       "course_owned": "You already have access to a course in your basket. Remove it and try again.",
       "basket_changed": "Your basket changed during payment: check it, then continue to payment again."
     },
@@ -385,7 +386,10 @@
       "signIn": "Sign in",
       "createAccount": "Create an account",
       "openCourses": "Go to my courses",
-      "paidBody": "Your courses are available in your member space."
+      "paidBody": "Your courses are available in your member space.",
+      "consentTitle": "Immediate access to the course",
+      "consentLabel": "I ask for immediate access to the course and I expressly waive my right of withdrawal: I acknowledge that I lose it as soon as I start following the course.",
+      "consentHint": "As long as no lesson has been opened, you keep 14 days to withdraw."
     },
     "noShipping": "Nothing to ship: gift cards are sent by email and courses open in your member space.",
     "recap": {
@@ -4582,7 +4586,6 @@
     "home": "Home",
     "breadcrumb": "Breadcrumb",
     "updated": "Last updated:",
-    "draft": "Draft",
     "backToTop": "Back to top",
     "placeholder": {
       "verify": "To verify",
@@ -4604,13 +4607,6 @@
     "fields": {
       "heading": "Company information",
       "editable": "Fields to be completed by the business"
-    },
-    "review": {
-      "noteLabel": "Internal note · prototype",
-      "barLabel": "Prototype under review.",
-      "barText": "Business information must be verified before publication.",
-      "hide": "Hide internal notes",
-      "show": "Show internal notes"
     },
     "toc": {
       "title": "On this page",
@@ -4793,16 +4789,6 @@
       },
       "quickTitle": "Quick answers",
       "trackOrder": "Track an order"
-    },
-    "checklist": {
-      "eyebrow": "Internal · not customer-facing",
-      "title": "Pre-launch checklist — Stripe & compliance",
-      "body": "What must be verified before payments go live. Everything starts as “to verify”: ticking an item is only saved in your browser.",
-      "progress": "{{done}} / {{total}} verified",
-      "pending": "To verify",
-      "verified": "Verified",
-      "open": "Open: {{item}}",
-      "disclaimer": "A review aid for the prototype, not legal advice nor Stripe’s official list of requirements. Validate with counsel and current Stripe documentation."
     },
     "about": {
       "eyebrow": "Company",
@@ -5044,6 +5030,8 @@
     "errors": {
       "rate_limited": "Too many attempts. Please try again in a moment.",
       "invalid_request": "Check the e-mail address and the consent box, then try again.",
+      "captcha_required": "Checking you’re not a robot… Please try again in a moment.",
+      "captcha_failed": "The robot check did not go through. Reload the page, then try again.",
       "network": "No connection. Check your network, then try again.",
       "unavailable": "Newsletter sign-up is not available at the moment.",
       "server_error": "We could not sign you up. Please try again in a moment."
