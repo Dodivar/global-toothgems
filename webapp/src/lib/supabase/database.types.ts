@@ -824,6 +824,7 @@ export type Database = {
           policy_version: string
           purpose: string
           source: string
+          terms_version: string | null
           user_id: string | null
         }
         Insert: {
@@ -833,6 +834,7 @@ export type Database = {
           policy_version: string
           purpose: string
           source: string
+          terms_version?: string | null
           user_id?: string | null
         }
         Update: {
@@ -842,6 +844,7 @@ export type Database = {
           policy_version?: string
           purpose?: string
           source?: string
+          terms_version?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -4742,6 +4745,61 @@ export type Database = {
           },
         ]
       }
+      order_item_inclusions: {
+        Row: {
+          course_id: string | null
+          course_title: string | null
+          created_at: string
+          id: number
+          kind: string
+          order_item_id: string
+          studio_months: number | null
+          studio_plan: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          course_title?: string | null
+          created_at?: string
+          id?: never
+          kind: string
+          order_item_id: string
+          studio_months?: number | null
+          studio_plan?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          course_title?: string | null
+          created_at?: string
+          id?: never
+          kind?: string
+          order_item_id?: string
+          studio_months?: number | null
+          studio_plan?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_item_inclusions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "order_item_inclusions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_item_inclusions_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           course_id: string | null
@@ -4937,6 +4995,7 @@ export type Database = {
           subtotal_amount: number
           tax_amount: number
           tax_country_code: string | null
+          terms_version: string | null
           total_amount: number
           updated_at: string
           updated_by: string | null
@@ -4974,6 +5033,7 @@ export type Database = {
           subtotal_amount: number
           tax_amount?: number
           tax_country_code?: string | null
+          terms_version?: string | null
           total_amount: number
           updated_at?: string
           updated_by?: string | null
@@ -5011,6 +5071,7 @@ export type Database = {
           subtotal_amount?: number
           tax_amount?: number
           tax_country_code?: string | null
+          terms_version?: string | null
           total_amount?: number
           updated_at?: string
           updated_by?: string | null
@@ -5420,6 +5481,98 @@ export type Database = {
           },
         ]
       }
+      product_inclusions: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          position: number
+          product_id: string
+          studio_months: number | null
+          studio_plan: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          position?: number
+          product_id: string
+          studio_months?: number | null
+          studio_plan?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          position?: number
+          product_id?: string
+          studio_months?: number | null
+          studio_plan?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_inclusions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_media: {
         Row: {
           alt_text: string | null
@@ -5427,6 +5580,7 @@ export type Database = {
           id: string
           is_primary: boolean
           media_type: string
+          option_value_id: string | null
           position: number
           product_id: string
           storage_path: string
@@ -5439,6 +5593,7 @@ export type Database = {
           id?: string
           is_primary?: boolean
           media_type?: string
+          option_value_id?: string | null
           position?: number
           product_id: string
           storage_path: string
@@ -5451,6 +5606,7 @@ export type Database = {
           id?: string
           is_primary?: boolean
           media_type?: string
+          option_value_id?: string | null
           position?: number
           product_id?: string
           storage_path?: string
@@ -5458,6 +5614,13 @@ export type Database = {
           variant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "product_media_option_value_id_fkey"
+            columns: ["option_value_id"]
+            isOneToOne: false
+            referencedRelation: "product_option_values"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_media_product_id_fkey"
             columns: ["product_id"]
@@ -5526,6 +5689,265 @@ export type Database = {
           },
           {
             foreignKeyName: "product_media_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_option_translations: {
+        Row: {
+          created_at: string
+          locale: string
+          name: string
+          option_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          locale: string
+          name: string
+          option_id: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          locale?: string
+          name?: string
+          option_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_option_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "product_option_translations_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "product_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_option_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_option_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_option_value_translations: {
+        Row: {
+          created_at: string
+          locale: string
+          name: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          value_id: string
+        }
+        Insert: {
+          created_at?: string
+          locale: string
+          name: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          value_id: string
+        }
+        Update: {
+          created_at?: string
+          locale?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          value_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_option_value_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "product_option_value_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_option_value_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_option_value_translations_value_id_fkey"
+            columns: ["value_id"]
+            isOneToOne: false
+            referencedRelation: "product_option_values"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_option_values: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          option_id: string
+          position: number
+          swatch: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          option_id: string
+          position?: number
+          swatch?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          option_id?: string
+          position?: number
+          swatch?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_option_values_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_option_values_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_option_values_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "product_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_option_values_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_option_values_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_options: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          position: number
+          product_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          position?: number
+          product_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          position?: number
+          product_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_options_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_options_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_options_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_options_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_options_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -5697,6 +6119,46 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variant_option_values: {
+        Row: {
+          option_id: string
+          value_id: string
+          variant_id: string
+        }
+        Insert: {
+          option_id: string
+          value_id: string
+          variant_id: string
+        }
+        Update: {
+          option_id?: string
+          value_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variant_option_values_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "product_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variant_option_values_value_fkey"
+            columns: ["value_id", "option_id"]
+            isOneToOne: false
+            referencedRelation: "product_option_values"
+            referencedColumns: ["id", "option_id"]
+          },
+          {
+            foreignKeyName: "product_variant_option_values_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -7788,6 +8250,8 @@ export type Database = {
           opening_hours: Json
           phone: string | null
           postal_code: string | null
+          publication_director: string | null
+          publication_director_role: string | null
           publisher_address: string | null
           publisher_email: string | null
           publisher_legal_form: string | null
@@ -7795,8 +8259,6 @@ export type Database = {
           publisher_name: string | null
           publisher_phone: string | null
           publisher_registration_number: string | null
-          publication_director: string | null
-          publication_director_role: string | null
           region: string | null
           registration_number: string | null
           share_capital: string | null
@@ -7833,6 +8295,8 @@ export type Database = {
           opening_hours?: Json
           phone?: string | null
           postal_code?: string | null
+          publication_director?: string | null
+          publication_director_role?: string | null
           publisher_address?: string | null
           publisher_email?: string | null
           publisher_legal_form?: string | null
@@ -7840,8 +8304,6 @@ export type Database = {
           publisher_name?: string | null
           publisher_phone?: string | null
           publisher_registration_number?: string | null
-          publication_director?: string | null
-          publication_director_role?: string | null
           region?: string | null
           registration_number?: string | null
           share_capital?: string | null
@@ -7878,6 +8340,8 @@ export type Database = {
           opening_hours?: Json
           phone?: string | null
           postal_code?: string | null
+          publication_director?: string | null
+          publication_director_role?: string | null
           publisher_address?: string | null
           publisher_email?: string | null
           publisher_legal_form?: string | null
@@ -7885,8 +8349,6 @@ export type Database = {
           publisher_name?: string | null
           publisher_phone?: string | null
           publisher_registration_number?: string | null
-          publication_director?: string | null
-          publication_director_role?: string | null
           region?: string | null
           registration_number?: string | null
           share_capital?: string | null
@@ -8083,6 +8545,101 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "review_requests"
             referencedColumns: ["order_id"]
+          },
+        ]
+      }
+      studio_access_grants: {
+        Row: {
+          created_at: string
+          ends_at: string
+          id: string
+          order_id: string
+          order_item_id: string
+          plan: string
+          revoked_at: string | null
+          revoked_by: string | null
+          source: string
+          starts_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          id?: string
+          order_id: string
+          order_item_id: string
+          plan: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source?: string
+          starts_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          id?: string
+          order_id?: string
+          order_item_id?: string
+          plan?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source?: string
+          starts_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_access_grants_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: true
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -9784,6 +10341,28 @@ export type Database = {
         Args: { p_components: Json; p_product_id: string }
         Returns: Json
       }
+      admin_save_product_inclusions: {
+        Args: { p_inclusions: Json; p_product_id: string }
+        Returns: {
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          position: number
+          product_id: string
+          studio_months: number | null
+          studio_plan: string | null
+          updated_at: string
+          updated_by: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "product_inclusions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_save_product_recommendations: {
         Args: {
           p_complementary: string[]
@@ -9868,6 +10447,7 @@ export type Database = {
           subtotal_amount: number
           tax_amount: number
           tax_country_code: string | null
+          terms_version: string | null
           total_amount: number
           updated_at: string
           updated_by: string | null
@@ -9964,6 +10544,7 @@ export type Database = {
           subtotal_amount: number
           tax_amount: number
           tax_country_code: string | null
+          terms_version: string | null
           total_amount: number
           updated_at: string
           updated_by: string | null
@@ -10201,6 +10782,7 @@ export type Database = {
           subtotal_amount: number
           tax_amount: number
           tax_country_code: string | null
+          terms_version: string | null
           total_amount: number
           updated_at: string
           updated_by: string | null
@@ -10589,7 +11171,7 @@ export type Database = {
           updated_at: string
           used_amount: number
           used_days: number
-          user_id: string
+          user_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -10710,7 +11292,7 @@ export type Database = {
           updated_at: string
           used_amount: number
           used_days: number
-          user_id: string
+          user_id: string | null
         }
         SetofOptions: {
           from: "*"

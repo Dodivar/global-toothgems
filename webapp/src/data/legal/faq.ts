@@ -68,8 +68,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Comment savoir si ma commande est confirmée ?", "How do I know my order was confirmed?"),
         answer: [
           l(
-            "Un récapitulatif s’affiche après le paiement et un e-mail de confirmation vous est envoyé. Vous retrouvez aussi chaque commande et son statut dans <<Mes commandes|/compte/commandes>>.",
-            "A summary is shown after payment and a confirmation email is sent to you. You can also find every order and its status in <<My orders|/compte/commandes>>.",
+            "Un récapitulatif s’affiche après le paiement et un e-mail de confirmation vous est envoyé, avec nos conditions générales de vente en PDF dans la version qui s’applique à votre commande. Vous retrouvez aussi chaque commande et son statut dans <<Mes commandes|/compte/commandes>>.",
+            "A summary is shown after payment and a confirmation email is sent to you, with our terms of sale as a PDF in the version that applies to your order. You can also find every order and its status in <<My orders|/compte/commandes>>.",
           ),
         ],
       },

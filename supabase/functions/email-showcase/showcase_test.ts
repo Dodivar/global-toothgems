@@ -1,4 +1,6 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
+import { LEGAL_STORE } from "../_shared/email/termsPdf_fixtures.ts";
+import { TERMS_OF_SALE_VERSION } from "../_shared/email/termsPdf.ts";
 import { buildShowcase, withDocuments } from "./showcase.ts";
 
 const ctx = {
@@ -15,8 +17,11 @@ const ctx = {
     vat_franchise: true,
     country_code: "FR",
   },
+  legalStore: LEGAL_STORE,
   product: { name: "Kit", slug: "kit", imagePath: null },
 };
+
+const TERMS_FILE = `conditions-generales-de-vente-${TERMS_OF_SALE_VERSION}.pdf`;
 
 Deno.test("one sample per database template and per Auth template, all to the owner", () => {
   const samples = buildShowcase(ctx);
@@ -33,11 +38,21 @@ Deno.test("one sample per database template and per Auth template, all to the ow
 
 Deno.test("the documents are real PDFs with sample numbers", () => {
   const withPdf = buildShowcase(ctx).flatMap((s) => (s.kind === "template" ? s.request.attachments ?? [] : []));
-  assertEquals(withPdf.length, 4);
-  for (const a of withPdf) {
-    assert(a.filename.includes("EXEMPLE"), a.filename);
-    assert(atob(a.content).startsWith("%PDF"));
+  const invoices = withPdf.filter((a) => a.filename !== TERMS_FILE);
+  assertEquals(invoices.length, 4);
+  for (const a of invoices) assert(a.filename.includes("EXEMPLE"), a.filename);
+  for (const a of withPdf) assert(atob(a.content).startsWith("%PDF"));
+});
+
+Deno.test("every contract confirmation shows the terms of sale PDF and names its version (decision 130)", () => {
+  const byKey = new Map(buildShowcase(ctx).flatMap((s) => (s.kind === "template" ? [[s.request.templateKey, s.request] as const] : [])));
+  for (const key of ["order_confirmation", "course_enrolment", "studio_subscription_confirmation"]) {
+    const request = byKey.get(key)!;
+    assert(request.attachments?.some((a) => a.filename === TERMS_FILE), key);
+    const content = typeof request.content === "function" ? request.content("fr") : request.content;
+    assertEquals(content?.footerNote, "Conditions générales de vente jointes à cet e-mail (PDF) : version du 9 novembre 2026.", key);
   }
+  assert(!byKey.get("order_refunded")!.attachments?.some((a) => a.filename === TERMS_FILE));
 });
 
 Deno.test("the Auth samples have no Go template action left", () => {
@@ -49,8 +64,8 @@ Deno.test("the Auth samples have no Go template action left", () => {
   }
 });
 
-Deno.test("only_documents keeps the four samples with an invoice or a credit note", () => {
+Deno.test("only_documents keeps the samples with a PDF: invoices, credit notes, terms of sale", () => {
   const kept = withDocuments(buildShowcase(ctx));
-  assertEquals(kept.length, 4);
-  assert(kept.every((s) => s.kind === "template" && (s.request.attachments?.length ?? 0) === 1));
+  assertEquals(kept.length, 6);
+  assert(kept.every((s) => s.kind === "template" && (s.request.attachments?.length ?? 0) >= 1));
 });

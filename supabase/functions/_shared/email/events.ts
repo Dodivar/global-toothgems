@@ -22,6 +22,9 @@
  * (`studio_invoice`); the withdrawal's AV- credit note follows the
  * acknowledgement on its own (`studio_credit_note`) once the refund is
  * confirmed — never attached to the acknowledgement, which may race it.
+ * The contract confirmations — course enrolment and Studio subscription —
+ * carry the terms of sale (L221-13, decision 130, `termsPdf.ts`): without a
+ * terms provider they are not sent (the next run, given one, sends them).
  * One row never stops the others, and nothing here throws for a failed e-mail.
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -37,6 +40,7 @@ import {
 import { refundContent, shippingContent } from "./orderContent.ts";
 import { courseEnrolmentContent, type CourseWaiver } from "./courseContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
+import { orderReference, studioReference, type TermsProvider, withTerms } from "./termsPdf.ts";
 import {
   backInStockContent,
   type RestockedProduct,
@@ -251,23 +255,33 @@ export function sendShippingEmails(
   );
 }
 
+/** The enrolment confirms the course contract: it repeats the waiver and carries the terms of sale. */
 export function sendCourseEnrolmentEmails(
   deps: EmailDeps,
   source: PendingSource,
-  options: { orderId?: string; limit?: number; log?: Log } = {},
+  options: { orderId?: string; limit?: number; log?: Log; terms?: TermsProvider } = {},
 ): Promise<EventReport> {
   const log = options.log ?? (() => {});
+  const terms = options.terms;
   return source.courseEnrolments({ orderId: options.orderId, limit: options.limit ?? 25 }).then((rows) =>
-    sendEach(rows, "course enrolment", (r) => r.entitlementId, (enrolment) =>
-      sendTemplatedEmail(deps, {
+    sendEach(rows, "course enrolment", (r) => r.entitlementId, async (enrolment) => {
+      if (!terms) return null;
+      const copy = await terms(enrolment.locale, orderReference(enrolment.orderNumber, enrolment.locale));
+      const extra = withTerms(copy, enrolment.locale);
+      return sendTemplatedEmail(deps, {
         templateKey: "course_enrolment",
         to: enrolment.email,
         locale: enrolment.locale,
         variables: { first_name: enrolment.firstName, course_name: enrolment.courseName },
         eventKey: `course_enrolment:${enrolment.entitlementId}`,
         orderId: enrolment.orderId,
-        content: (locale) => courseEnrolmentContent(enrolment.waiver ?? null, locale) ?? {},
-      }), log)
+        attachments: extra.attachments.length ? extra.attachments : undefined,
+        content: (locale) => {
+          const waiver = courseEnrolmentContent(enrolment.waiver ?? null, locale) ?? {};
+          return { ...waiver, blocks: [...(waiver.blocks ?? []), ...extra.blocks], footerNote: withTerms(copy, locale).footerNote };
+        },
+      });
+    }, log)
   );
 }
 
@@ -354,7 +368,7 @@ async function studioDocument(
   }
 }
 
-type StudioOptions = { limit?: number; log?: Log; studioDocuments?: StudioInvoiceSource };
+type StudioOptions = { limit?: number; log?: Log; studioDocuments?: StudioInvoiceSource; terms?: TermsProvider };
 
 export function sendStudioSubscriptionEmails(
   deps: EmailDeps,
@@ -363,20 +377,29 @@ export function sendStudioSubscriptionEmails(
 ): Promise<EventReport> {
   const log = options.log ?? (() => {});
   const docs = options.studioDocuments;
+  const terms = options.terms;
   return source.studioSubscriptions(options.limit ?? 25).then((rows) =>
     sendEach(rows, "studio subscription", (r) => r.subscriptionId, async (sub) => {
+      // The confirmation of the subscription contract carries the terms of sale (their Studio clause included).
+      if (!terms) return null;
+      const copy = await terms(sub.locale, studioReference(studioPlanName(sub.plan, sub.locale), sub.locale));
+      const extra = withTerms(copy, sub.locale);
       const invoiceId = sub.stripeInvoiceId;
       const invoice = docs && invoiceId
         ? await studioDocument("studio invoice", invoiceId, () => studioInvoice(docs, invoiceId, sub.locale), log)
         : null;
+      const attachments = [...(invoice ? [invoice.attachment] : []), ...extra.attachments];
       return sendTemplatedEmail(deps, {
         templateKey: "studio_subscription_confirmation",
         to: sub.email,
         locale: sub.locale,
         variables: { plan_name: studioPlanName(sub.plan, sub.locale) },
         eventKey: `studio_subscription:${sub.subscriptionId}`,
-        attachments: invoice ? [invoice.attachment] : undefined,
-        content: (locale) => studioSubscriptionContent(sub, locale, deps.layout.siteUrl, invoice?.number),
+        attachments: attachments.length ? attachments : undefined,
+        content: (locale) => {
+          const content = studioSubscriptionContent(sub, locale, deps.layout.siteUrl, invoice?.number);
+          return { ...content, blocks: [...(content.blocks ?? []), ...extra.blocks], footerNote: withTerms(copy, locale).footerNote };
+        },
       });
     }, log)
   );
@@ -497,7 +520,14 @@ export async function sendStockDigestEmail(
 export async function sendPendingEmails(
   deps: EmailDeps,
   source: PendingSource,
-  options: { limit?: number; log?: Log; invoices?: InvoiceSource; studioDocuments?: StudioInvoiceSource; mediaBaseUrl?: string } = {},
+  options: {
+    limit?: number;
+    log?: Log;
+    invoices?: InvoiceSource;
+    studioDocuments?: StudioInvoiceSource;
+    mediaBaseUrl?: string;
+    terms?: TermsProvider;
+  } = {},
 ): Promise<SweepReport> {
   const log = options.log ?? (() => {});
   const guard = async (what: string, run: () => Promise<EventReport>): Promise<EventReport> => {

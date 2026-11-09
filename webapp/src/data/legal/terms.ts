@@ -1,6 +1,17 @@
 import { lp } from "./policies";
 import { LEGAL_PATHS } from "./routes";
-import { DRAFT_DATE, l, type LegalDocument } from "./types";
+import { l, type LegalDocument } from "./types";
+
+/**
+ * The version of these terms: the date they took effect (ISO). Every order
+ * keeps the version in force when it was placed (`orders.terms_version`), a
+ * Studio subscription the one in force when the member paid
+ * (`consent_records.terms_version`), and each contract confirmation e-mail
+ * carries this text as a PDF in this version (decision 130). **Change it with
+ * any change to the text below**: `termsDocument.test.ts` fails while the
+ * text's fingerprint and this version disagree.
+ */
+export const TERMS_OF_SALE_VERSION = "2026-11-09";
 
 /**
  * Terms of sale ("conditions générales de vente").
@@ -36,7 +47,7 @@ export const TERMS: LegalDocument = {
     "Les règles qui s’appliquent lorsque vous achetez des produits, des formations, des cartes cadeaux ou un abonnement au Studio 3D sur Global Toothgems : commande, paiement, livraison, rétractation, retours et garanties.",
     "The rules that apply when you buy products, courses, gift cards or a 3D Studio subscription on Global Toothgems: ordering, payment, delivery, withdrawal, returns and guarantees.",
   ),
-  updated: DRAFT_DATE,
+  updated: TERMS_OF_SALE_VERSION,
   numbered: true,
   showKey: true,
   contactCategory: "order",
@@ -201,8 +212,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Après le paiement, un récapitulatif s’affiche et un e-mail de confirmation vous est envoyé, avec le détail de la commande, les prix et la facture. La commande est considérée comme confirmée à réception de la confirmation de paiement par notre prestataire.",
-            "After payment, a summary is shown and a confirmation email is sent to you, with the order details, prices and the invoice. The order is considered confirmed once our payment provider confirms the payment.",
+            "Après le paiement, un récapitulatif s’affiche et un e-mail de confirmation vous est envoyé, avec le détail de la commande et les prix. Les présentes conditions générales de vente y sont jointes au format PDF, dans la version en vigueur à la date de votre commande, pour que vous puissiez les conserver et les reproduire. La facture est disponible dans <<Mes commandes|/compte/commandes>> ou sur simple demande. La commande est considérée comme confirmée à réception de la confirmation de paiement par notre prestataire.",
+            "After payment, a summary is shown and a confirmation email is sent to you, with the order details and prices. These terms of sale are attached to it as a PDF, in the version in force on the date of your order, so that you can keep and reproduce them. The invoice is available in <<My orders|/compte/commandes>> or on request. The order is considered confirmed once our payment provider confirms the payment.",
           ),
         },
         {
@@ -281,8 +292,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Chaque compte peut ouvrir une fois un essai gratuit de 48 heures du Studio 3D, sans moyen de paiement. Les formules d’abonnement (Essential, Artist, Atelier), leur contenu et leur prix mensuel ou annuel sont présentés sur la page du Studio 3D.",
-            "Each account can start a free 48-hour trial of the 3D Studio once, without a payment method. The subscription plans (Essential, Artist, Atelier), what they include and their monthly or yearly price are set out on the 3D Studio page.",
+            "Chaque compte peut ouvrir une fois un essai gratuit de 48 heures du Studio 3D, sans moyen de paiement. Les formules d’abonnement (Essential, Artist, Atelier), leur contenu et leur prix mensuel ou annuel sont présentés sur la page du Studio 3D. L’e-mail qui confirme votre abonnement reprend votre demande d’accès immédiat et joint les présentes conditions au format PDF, dans la version en vigueur au moment du paiement.",
+            "Each account can start a free 48-hour trial of the 3D Studio once, without a payment method. The subscription plans (Essential, Artist, Atelier), what they include and their monthly or yearly price are set out on the 3D Studio page. The email confirming your subscription repeats your request for immediate access and attaches these terms as a PDF, in the version in force when you paid.",
           ),
         },
         {
@@ -867,8 +878,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Nous conservons chaque version de ces conditions avec sa date d’entrée en vigueur ; la version applicable à votre commande vous est communiquée sur simple demande.",
-            "We keep every version of these terms with the date it took effect; the version that applies to your order is sent to you on request.",
+            "Chaque version de ces conditions est identifiée par sa date d’entrée en vigueur, que nous conservons avec chaque commande et chaque abonnement. La version applicable vous est remise avec l’e-mail de confirmation de votre commande ou de votre abonnement, et de nouveau sur simple demande.",
+            "Each version of these terms is identified by the date it took effect, which we keep with every order and every subscription. The version that applies is given to you with the confirmation email of your order or subscription, and again on request.",
           ),
         },
       ],

@@ -24,6 +24,11 @@ import {
 import type { Claim, EmailDeps, EmailStore } from "./send.ts";
 import { CREDIT_ROW, INVOICE_ROW } from "./invoicePdf_fixtures.ts";
 import type { StudioInvoiceRow, StudioInvoiceSource } from "./invoicePdf.ts";
+import { failingRender, testTermsProvider } from "./termsPdf_fixtures.ts";
+import { TERMS_OF_SALE_VERSION } from "./termsPdf.ts";
+
+/** Every contract confirmation is given the terms of sale (decision 130). */
+const terms = testTermsProvider().terms;
 
 const SITE = "https://globaltoothgems.com";
 
@@ -146,7 +151,7 @@ Deno.test("course enrolment: keyed by the entitlement, optionally for one order"
         return Promise.resolve([enrolment()]);
       },
     }),
-    { orderId: "o-1" },
+    { orderId: "o-1", terms },
   );
   assertEquals(asked, [{ orderId: "o-1", limit: 25 }]);
   assertEquals(report.sent, 1);
@@ -159,13 +164,45 @@ Deno.test("course enrolment: the waiver ticked before paying is repeated word fo
   await sendCourseEnrolmentEmails(
     withWaiver.deps,
     source({ courseEnrolments: () => Promise.resolve([enrolment({ waiver: { version: COURSE_WITHDRAWAL_CONSENT.version, acceptedAt: "2026-11-08T10:00:00Z" } })]) }),
+    { terms },
   );
   const html = String(withWaiver.seen.requests[0].html).replaceAll("&#39;", "’");
   assert(html.includes("Your request for immediate access"));
   assert(html.includes("I expressly waive my right of withdrawal"), "the accepted sentence");
   const without = setup();
-  await sendCourseEnrolmentEmails(without.deps, source({ courseEnrolments: () => Promise.resolve([enrolment()]) }));
+  await sendCourseEnrolmentEmails(without.deps, source({ courseEnrolments: () => Promise.resolve([enrolment()]) }), { terms });
   assert(!String(without.seen.requests[0].html).includes("immediate access"));
+});
+
+Deno.test("course enrolment: carries the terms of sale in the order's language, for its order", async () => {
+  const { deps, seen } = setup();
+  const provider = testTermsProvider();
+  await sendCourseEnrolmentEmails(deps, source({ courseEnrolments: () => Promise.resolve([enrolment({ locale: "fr" })]) }), { terms: provider.terms });
+  const [mail] = seen.requests as { attachments?: { filename: string; content: string }[]; text: string }[];
+  assertEquals(mail.attachments?.map((a) => a.filename), [`conditions-generales-de-vente-${TERMS_OF_SALE_VERSION}.pdf`]);
+  assert(atob(mail.attachments![0].content).startsWith("%PDF-"));
+  assertEquals(provider.asked.map((a) => a.locale), ["fr"]);
+  assert(provider.asked[0].reference.startsWith("Commande "));
+  assert(mail.text.includes("Conditions générales de vente jointes à cet e-mail (PDF) : version du 9 novembre 2026."));
+});
+
+Deno.test("contract confirmations are never sent without the terms of sale: no provider, no e-mail (retried next run)", async () => {
+  const { deps, seen } = setup();
+  const course = await sendCourseEnrolmentEmails(deps, source({ courseEnrolments: () => Promise.resolve([enrolment()]) }));
+  const studio = await sendStudioSubscriptionEmails(deps, source({ studioSubscriptions: () => Promise.resolve([studioSub()]) }));
+  assertEquals([course.skipped, studio.skipped], [1, 1]);
+  assertEquals(seen.claims.length, 0);
+});
+
+Deno.test("course enrolment: a PDF that cannot be drawn writes the terms into the e-mail", async () => {
+  const { deps, seen } = setup();
+  await sendCourseEnrolmentEmails(deps, source({ courseEnrolments: () => Promise.resolve([enrolment({ locale: "en" })]) }), {
+    terms: testTermsProvider({ render: failingRender }).terms,
+  });
+  const [mail] = seen.requests as { attachments?: unknown; text: string }[];
+  assertEquals(mail.attachments, undefined);
+  assert(mail.text.includes("TERMS OF SALE — VERSION OF 9 NOVEMBER 2026"));
+  assert(mail.text.includes("Terms of sale reproduced in this email: version of 9 November 2026."));
 });
 
 Deno.test("refund: keyed by the refund, with the amount formatted for the order's language and currency", async () => {
@@ -245,7 +282,7 @@ Deno.test("the sweep runs the three kinds; one sweep failing does not stop the o
       courseEnrolments: () => Promise.resolve([enrolment()]),
       refunds: () => Promise.resolve([refund()]),
     }),
-    { log: (m, d) => logs.push([m, d]) },
+    { log: (m, d) => logs.push([m, d]), terms },
   );
   assertEquals(report.shipping.failed, 1);
   assertEquals(report.courseEnrolment.sent, 1);
@@ -363,12 +400,24 @@ Deno.test("studio subscription: the confirmation carries the first invoice (our 
   await sendStudioSubscriptionEmails(
     deps,
     source({ studioSubscriptions: () => Promise.resolve([studioSub({ stripeInvoiceId: "in_first" }), studioSub({ subscriptionId: "sub-2", stripeInvoiceId: "in_old" })]) }),
-    { studioDocuments: studioDocs([STUDIO_INVOICE]) },
+    { studioDocuments: studioDocs([STUDIO_INVOICE]), terms },
   );
   const [withInvoice, bare] = seen.requests as { attachments?: { filename: string }[]; text: string }[];
-  assertEquals(withInvoice.attachments?.map((a) => a.filename), ["facture-FA-2026-000050.pdf"]);
+  const termsFile = `conditions-generales-de-vente-${TERMS_OF_SALE_VERSION}.pdf`;
+  assertEquals(withInvoice.attachments?.map((a) => a.filename), ["facture-FA-2026-000050.pdf", termsFile]);
   assertEquals(withInvoice.text.includes("FA-2026-000050"), true);
-  assertEquals(bare.attachments, undefined);
+  // Without an invoice issued, the terms of sale still go.
+  assertEquals(bare.attachments?.map((a) => a.filename), [termsFile]);
+});
+
+Deno.test("studio subscription: the terms of sale name the plan and their version in the footer", async () => {
+  const { deps, seen } = setup();
+  const provider = testTermsProvider();
+  await sendStudioSubscriptionEmails(deps, source({ studioSubscriptions: () => Promise.resolve([studioSub({ locale: "en" })]) }), { terms: provider.terms });
+  assertEquals(provider.asked, [{ locale: "en", reference: "3D Studio subscription — Artist" }]);
+  const [mail] = seen.requests as { attachments?: { filename: string }[]; text: string }[];
+  assertEquals(mail.attachments?.map((a) => a.filename), [`terms-of-sale-${TERMS_OF_SALE_VERSION}.pdf`]);
+  assert(mail.text.includes("Terms of sale attached to this email (PDF): version of 9 November 2026."));
 });
 
 Deno.test("studio invoice: a renewal is mailed once with its invoice; no document yet means no e-mail", async () => {
@@ -404,6 +453,7 @@ Deno.test("studio subscription: one confirmation per subscription, restating the
   const report = await sendStudioSubscriptionEmails(
     deps,
     source({ studioSubscriptions: () => Promise.resolve([studioSub(), studioSub({ subscriptionId: "sub-2", locale: "en", interval: "month", amount: 19.9 })]) }),
+    { terms },
   );
   assertEquals(report, { examined: 2, sent: 2, inFlight: 0, gaveUp: 0, failed: 0, skipped: 0 });
   assertEquals(seen.claims.map((c) => [c.eventKey, c.templateKey]), [
@@ -420,7 +470,7 @@ Deno.test("studio subscription: one confirmation per subscription, restating the
 
 Deno.test("studio subscription: an unknown wording version is never quoted as accepted", async () => {
   const { deps, seen } = setup();
-  await sendStudioSubscriptionEmails(deps, source({ studioSubscriptions: () => Promise.resolve([studioSub({ consentVersion: "other" })]) }));
+  await sendStudioSubscriptionEmails(deps, source({ studioSubscriptions: () => Promise.resolve([studioSub({ consentVersion: "other" })]) }), { terms });
   const [mail] = seen.requests as { text: string }[];
   assertEquals(mail.text.includes("période déjà utilisée"), false);
 });

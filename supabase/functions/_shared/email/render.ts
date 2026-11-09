@@ -56,6 +56,8 @@ export interface EmailContent {
   blocks?: Block[];
   /** Marketing e-mails only. */
   unsubscribeUrl?: string;
+  /** A line printed in the footer, e.g. which version of the terms of sale is attached. */
+  footerNote?: string;
 }
 
 const PLACEHOLDER = /\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/g;
@@ -160,7 +162,7 @@ export function renderEmail(
     ...(content.blocks ?? []),
   ];
   const { html, text } = emailDocument(
-    { locale: template.locale, subject, preheader, blocks, unsubscribeUrl: content.unsubscribeUrl },
+    { locale: template.locale, subject, preheader, blocks, unsubscribeUrl: content.unsubscribeUrl, footerNote: content.footerNote },
     layout,
   );
   return { subject, preheader, html, text };

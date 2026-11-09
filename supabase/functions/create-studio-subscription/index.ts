@@ -7,6 +7,7 @@ import {
   STUDIO_METADATA_KIND,
   STUDIO_WITHDRAWAL_CONSENT,
 } from "../_shared/studioBilling.ts";
+import { TERMS_OF_SALE_VERSION } from "../_shared/legal/terms.ts";
 import { handleStudioCheckout, type StudioCheckoutDeps } from "./handler.ts";
 
 /*
@@ -77,6 +78,8 @@ const deps: StudioCheckoutDeps = {
         granted: true,
         policy_version: STUDIO_WITHDRAWAL_CONSENT.version,
         source: "checkout",
+        // The terms of sale in force when the member pays: the subscription's accepted version (decision 130).
+        terms_version: TERMS_OF_SALE_VERSION,
       })
       .select("id")
       .single();

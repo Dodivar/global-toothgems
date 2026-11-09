@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { WEEKDAYS, type OpeningSlot, type StoreDetails, type Weekday } from "../data/adminSettings";
 import type { Database, Json } from "./supabase/database.types";
+import { addressLines } from "../data/legal/storeFill";
 
 /**
  * The store's identity, legal mentions and contact details — one row of
@@ -216,11 +217,8 @@ export function hasOpeningHours(hours: Record<Weekday, OpeningSlot>): boolean {
 }
 
 /** The postal address on one or two lines, without the country. */
-export function addressLines(d: StoreDetails): string[] {
-  const street = [d.address1, d.address2].map((s) => s.trim()).filter(Boolean).join(", ");
-  const town = [d.postalCode, d.city].map((s) => s.trim()).filter(Boolean).join(" ");
-  return [street, [town, d.region.trim()].filter(Boolean).join(", ")].filter(Boolean);
-}
+/** The store's address lines (one definition, shared with the legal pages and the terms PDF). */
+export { addressLines };
 
 /** The support message in a language (French unless English is asked for). */
 export function supportMessageIn(d: StoreDetails, lang: string): string {

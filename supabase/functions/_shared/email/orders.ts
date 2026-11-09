@@ -8,6 +8,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { type OrderSnapshot, orderConfirmationContent } from "./orderContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
+import { orderReference, TERMS_OF_SALE_VERSION, type TermsProvider, withTerms } from "./termsPdf.ts";
 
 export interface OrderMailRow extends OrderSnapshot {
   id: string;
@@ -17,6 +18,8 @@ export interface OrderMailRow extends OrderSnapshot {
   /** From the billing address snapshot; may be empty for an unusual snapshot. */
   firstName: string;
   paymentStatus: string;
+  /** The terms of sale version recorded when the order was placed (`orders.terms_version`); null before it was recorded. */
+  termsVersion?: string | null;
 }
 
 export interface OrderMailSource {
@@ -28,15 +31,33 @@ export type OrderConfirmationResult = SendResult | { status: "skipped"; reason: 
 /**
  * The confirmation carries no invoice: it is downloadable on request (member
  * area, back office), and only B2B buyers must be sent one (not built yet).
+ * It carries the terms of sale (L221-13, decision 130): the PDF in the order's
+ * language, or their text in the e-mail when the PDF cannot be drawn
+ * (`termsPdf.ts`); the footer names the version. That covers every contract
+ * an order holds: goods, courses and gift cards bought.
  */
 export async function sendOrderConfirmation(
   deps: EmailDeps,
   source: OrderMailSource,
   orderId: string,
+  terms: TermsProvider,
+  log: (message: string, detail?: unknown) => void = () => {},
 ): Promise<OrderConfirmationResult> {
   const order = await source.loadOrder(orderId);
   if (!order) return { status: "skipped", reason: "order_not_found" };
   if (order.paymentStatus !== "paid") return { status: "skipped", reason: "not_paid" };
+
+  const copy = await terms(order.locale, orderReference(order.orderNumber, order.locale));
+  if (order.termsVersion && order.termsVersion !== TERMS_OF_SALE_VERSION) {
+    // The terms changed between the checkout and this e-mail (a deploy in between): the copy is the
+    // version in force now; the accepted one stays on the order and is sent on request.
+    log("order accepted another terms of sale version than the one attached", {
+      orderId: order.id,
+      accepted: order.termsVersion,
+      attached: TERMS_OF_SALE_VERSION,
+    });
+  }
+  const extra = withTerms(copy, order.locale);
 
   return await sendTemplatedEmail(deps, {
     templateKey: "order_confirmation",
@@ -45,15 +66,19 @@ export async function sendOrderConfirmation(
     variables: { first_name: order.firstName, order_number: order.orderNumber },
     eventKey: `order_confirmation:${order.id}`,
     orderId: order.id,
+    attachments: extra.attachments.length ? extra.attachments : undefined,
     // Labels follow the language of the template actually found, like the body.
-    content: (locale) => orderConfirmationContent(order, locale, deps.layout.siteUrl),
+    content: (locale) => {
+      const content = orderConfirmationContent(order, locale, deps.layout.siteUrl);
+      return { ...content, blocks: [...(content.blocks ?? []), ...extra.blocks], footerNote: withTerms(copy, locale).footerNote };
+    },
   });
 }
 
 const ORDER_COLUMNS = [
   "id, order_number, user_id, customer_email, locale, payment_status, paid_at, currency",
   "subtotal_amount, discount_amount, shipping_amount, tax_amount, total_amount, gift_card_amount, amount_due",
-  "prices_include_tax, shipping_method_name, billing_address, shipping_address",
+  "prices_include_tax, shipping_method_name, billing_address, shipping_address, terms_version",
   "order_items(product_name, variant_name, quantity, subtotal_amount, created_at)",
 ].join(", ");
 
@@ -78,6 +103,7 @@ export function supabaseOrderSource(db: SupabaseClient): OrderMailSource {
         locale: row.locale,
         firstName: typeof billing.first_name === "string" ? billing.first_name : "",
         paymentStatus: row.payment_status,
+        termsVersion: typeof row.terms_version === "string" ? row.terms_version : null,
         userId: row.user_id,
         currency: row.currency,
         paidAt: row.paid_at,
