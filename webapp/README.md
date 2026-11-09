@@ -730,10 +730,17 @@ provider named is Stripe. The EU consumer-law and GDPR summaries, labelled
 served. All of it must be reviewed by the business and by counsel before
 publication.
 
-- **Cookie consent** (`lib/cookieConsent.tsx`, `components/legal/Cookie*`) only
-  records the visitor's choice in localStorage. No script is loaded or blocked.
-  Optional categories start off, and "Reject" is as prominent as "Accept". The
-  preferences dialog can be reopened from "Cookie settings" in the footer.
+- **Cookie consent** (`lib/cookieConsent.tsx`, `components/legal/Cookie*`)
+  records the visitor's choice in localStorage (`gt-cookie-consent`) and gates
+  PostHog: it captures and stores nothing (`opt_out_persistence_by_default` in
+  `instrumentation-client.ts`) until the analytics category is accepted, and
+  withdrawing erases its identifier. Analytics is the only optional category
+  (the site has no preference, advertising or social-network tracker; add a
+  category only with the tracker it gates). It starts off, "Reject" is as
+  prominent as "Accept", a choice stands 6 months (CNIL recommendation) and the
+  dialog can be reopened from "Cookie settings" in the footer. The inventory in
+  `data/legal/cookies.ts` lists every cookie and browser storage the site writes:
+  update it with any new key.
 - **Review annotations** (`lib/reviewMode.tsx`): the hatched internal notes and
   the Stripe/compliance checklist on `/aide` can be hidden with the toggle at
   the top of each page, to preview the customer-facing version. Placeholders are

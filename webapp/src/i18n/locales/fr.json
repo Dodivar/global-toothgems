@@ -4650,7 +4650,7 @@
     },
     "cookies": {
       "bannerTitle": "Vos cookies, votre choix",
-      "bannerBody": "Certains cookies sont indispensables au fonctionnement du site et ne peuvent pas être désactivés. D’autres sont optionnels — mémoriser vos préférences, mesurer l’audience, personnaliser la publicité — et ne sont utilisés qu’avec votre accord. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
+      "bannerBody": "Certains cookies sont indispensables au fonctionnement du site (connexion, panier, paiement) et ne peuvent pas être désactivés. Avec votre accord seulement, nous mesurons l’audience du site avec PostHog, hébergé dans l’Union européenne, pour l’améliorer. Aucun cookie publicitaire. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
       "policyLink": "Lire la politique cookies",
       "rejectNonEssential": "Refuser les non essentiels",
       "acceptAll": "Tout accepter",
@@ -4658,28 +4658,21 @@
       "customize": "Personnaliser",
       "save": "Enregistrer mes choix",
       "settingsTitle": "Paramètres cookies",
-      "settingsBody": "Choisissez les cookies optionnels que vous acceptez. Ils sont désactivés tant que vous ne les activez pas.",
-      "settingsFoot": "Vous pouvez modifier ces choix à tout moment.",
+      "settingsBody": "Choisissez si vous acceptez la mesure d’audience. Elle reste désactivée tant que vous ne l’activez pas. Nous n’utilisons aucun cookie publicitaire ni de réseau social.",
+      "settingsFoot": "Votre choix est conservé 6 mois ; vous pouvez le modifier à tout moment.",
       "settingsLink": "Paramètres cookies",
       "alwaysActive": "Toujours actifs",
       "providers": "Services concernés :",
-      "providersPlaceholder": "Liste des services selon l’implémentation",
       "category": {
         "essential": {
           "title": "Essentiels",
-          "body": "Nécessaires au fonctionnement du site : panier, connexion, sécurité, mémorisation de ce choix."
-        },
-        "preferences": {
-          "title": "Préférences",
-          "body": "Mémorisent vos choix, comme la langue d’affichage."
+          "body": "Nécessaires au fonctionnement du site : connexion, panier, paiement sécurisé, langue choisie, mémorisation de ce choix.",
+          "providers": "Global Toothgems, Supabase (connexion), Stripe (paiement)"
         },
         "analytics": {
           "title": "Mesure d’audience",
-          "body": "Nous aident à comprendre l’utilisation du site pour l’améliorer."
-        },
-        "marketing": {
-          "title": "Marketing",
-          "body": "Mesurent nos campagnes et personnalisent la publicité sur d’autres sites."
+          "body": "Nous aident à comprendre l’utilisation du site et à corriger ses erreurs.",
+          "providers": "PostHog (serveurs dans l’Union européenne)"
         }
       },
       "currentTitle": "Vos choix actuels",

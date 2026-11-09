@@ -640,7 +640,7 @@ community it unlocks are deliberately left for the training iteration.
 | Profile: newsletter checkbox | `consent_records` purpose `marketing_email` → cache `profiles.marketing_opt_in` |
 | Registration: country, persona, interest, UI language | `profiles.country_code`, `persona`, `interest`, `preferred_locale` (copied from sign-up metadata, validated) |
 | Registration: terms (required), marketing (opt-in) | `consent_records` (`terms`, `privacy`, `marketing_email`) with `policy_version`, source `registration` |
-| Cookie banner choices (signed in) | `consent_records` `cookies_preferences` / `cookies_analytics` / `cookies_marketing` |
+| Cookie banner choices | browser only (`gt-cookie-consent` in localStorage, analytics category only, valid 6 months); the `consent_records` purposes `cookies_preferences` / `cookies_analytics` / `cookies_marketing` exist but nothing writes them |
 | Security: email verified, pending email change, password, Google sign-in | Supabase Auth (`auth.users`, `auth.identities`) — never duplicated |
 | Security: "password last changed" | `profiles.password_changed_at` (set by the backend after an Auth password change) |
 | Security: personal-data export | `my_personal_data()` (the archive, returned at once; one every 5 minutes, logged as `delivered` in `data_export_requests`) — decision 125 |
