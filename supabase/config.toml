@@ -26,6 +26,8 @@ project_id = "global-toothgems"
 #   newsletter_subscribe() stand in for a captcha.
 # - sync-newsletter-contacts: called by pg_cron (mirrors the newsletter list into Resend contacts
 #   and segments), not a browser; same shared secret EMAIL_INTERNAL_SECRET.
+# - purge-storage-objects: called by pg_cron (removes the files the retention purge queued,
+#   decision 127), not a browser; same shared secret EMAIL_INTERNAL_SECRET.
 # - resend-webhook: Resend sends no Supabase token; the Svix signature
 #   (RESEND_WEBHOOK_SECRET, five-minute tolerance) is the authentication.
 [functions.create-checkout-session]
@@ -64,6 +66,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.sync-newsletter-contacts]
+verify_jwt = false
+
+[functions.purge-storage-objects]
 verify_jwt = false
 
 # 3D Studio subscriptions (decision 94): the member's token / the internal secret is checked in the function.

@@ -28,8 +28,6 @@ export function ProcessingStep({ stage, onCancel }: { stage: TryOnStage; onCance
   const lines = t(`studio.tryOn.processing.${stage}.lines`, { returnObjects: true }) as string[];
   const line = Array.isArray(lines) ? lines[Math.min(tryOnLine(stage, elapsed), lines.length - 1)] : "";
   const progress = tryOnProgress(stage, elapsed);
-  // Not every stage has an explanatory paragraph (the render stage has none).
-  const body = t(`studio.tryOn.processing.${stage}.body`, { defaultValue: "" });
 
   return (
     <div className="grid justify-items-center gap-3 py-6 text-center">
@@ -46,8 +44,6 @@ export function ProcessingStep({ stage, onCancel }: { stage: TryOnStage; onCance
       <p key={line} aria-hidden="true" className="m-0 min-h-[1.5em] max-w-sm text-[12.5px] font-semibold text-[var(--gt-blue-700)] motion-safe:animate-[gt-quiet-in_300ms_ease-out]">
         {line}
       </p>
-      {body ? <p className="m-0 max-w-sm text-[12.5px] text-[var(--text-muted)]">{body}</p> : null}
-      <p className="m-0 max-w-sm text-[12px] leading-snug text-[var(--text-muted)]">{t("studio.tryOn.processing.background")}</p>
       <Button variant="outline" size="sm" onClick={onCancel}>
         {t("studio.tryOn.processing.cancel")}
       </Button>

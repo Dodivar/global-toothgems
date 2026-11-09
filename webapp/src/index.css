@@ -1115,18 +1115,6 @@
 
   .gt-legal-anchor { scroll-margin-top: var(--legal-anchor-offset); }
 
-  /* Internal review notes: dashed, sunken, clearly outside the document. */
-  .gt-review-note {
-    border: 1px dashed var(--gt-ink-400);
-    background: repeating-linear-gradient(
-      -45deg,
-      var(--gt-off-white),
-      var(--gt-off-white) 10px,
-      var(--gt-sand) 10px,
-      var(--gt-sand) 20px
-    );
-  }
-
   /* Cookie banner: the one glass surface of this area — it floats over the
      page, so translucency tells it apart from content without a dark slab. */
   .gt-cookie-banner {
@@ -1197,7 +1185,6 @@
 }
 
 @media print {
-  .gt-review-note,
   .gt-cookie-banner { display: none !important; }
   /* A page with a print area (the order summary) prints only that area,
      without the member shell around it. */

@@ -1,4 +1,5 @@
-import { assertEquals } from "jsr:@std/assert@1";
+import { assert, assertEquals } from "jsr:@std/assert@1";
+import { COURSE_WITHDRAWAL_CONSENT } from "../courseConsent.ts";
 import {
   type PendingBackInStock,
   type PendingEnrolment,
@@ -151,6 +152,20 @@ Deno.test("course enrolment: keyed by the entitlement, optionally for one order"
   assertEquals(report.sent, 1);
   assertEquals(seen.claims[0].eventKey, "course_enrolment:e-1");
   assertEquals(seen.claims[0].templateKey, "course_enrolment");
+});
+
+Deno.test("course enrolment: the waiver ticked before paying is repeated word for word, none is invented", async () => {
+  const withWaiver = setup();
+  await sendCourseEnrolmentEmails(
+    withWaiver.deps,
+    source({ courseEnrolments: () => Promise.resolve([enrolment({ waiver: { version: COURSE_WITHDRAWAL_CONSENT.version, acceptedAt: "2026-11-08T10:00:00Z" } })]) }),
+  );
+  const html = String(withWaiver.seen.requests[0].html).replaceAll("&#39;", "’");
+  assert(html.includes("Your request for immediate access"));
+  assert(html.includes("I expressly waive my right of withdrawal"), "the accepted sentence");
+  const without = setup();
+  await sendCourseEnrolmentEmails(without.deps, source({ courseEnrolments: () => Promise.resolve([enrolment()]) }));
+  assert(!String(without.seen.requests[0].html).includes("immediate access"));
 });
 
 Deno.test("refund: keyed by the refund, with the amount formatted for the order's language and currency", async () => {

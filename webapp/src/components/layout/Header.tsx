@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Box, ChevronDown, Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { ArrowRight, Box, ChevronDown, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
 import { useAuth } from "../../lib/auth";
-import { useFavorites } from "../../lib/favorites";
-import { FAVORITES_HREF } from "../../lib/favoritesState";
 import { useCart } from "../../lib/cart";
 import { useAcademyMenu } from "./useAcademyMenu";
 import { ShopMenu } from "./ShopMenu";
@@ -55,7 +53,6 @@ export function Header() {
   const location = useLocation();
   const { count } = useCart();
   const { signedIn, initials } = useAuth();
-  const { favoriteProducts } = useFavorites();
 
   const [panel, setPanel] = useState<PanelKey>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -173,14 +170,8 @@ export function Header() {
         : { label: t("nav.viewAllShop"), to: "/boutique" };
 
   const cartLabel = count > 0 ? t("nav.cartWithCount", { count }) : t("nav.cart");
-  const favoriteCount = signedIn ? favoriteProducts.length : 0;
-  const wishlistLabel = favoriteCount > 0 ? t("nav.wishlistWithCount", { count: favoriteCount }) : t("nav.wishlist");
-  /** The shop narrowed to the member's favourites; signed out, it explains that they need an account. */
-  const openFavorites = () => {
-    closeAll();
-    navigate(FAVORITES_HREF);
-  };
-
+  /* Favourites are reached from the shop page only (its "Favourites" filter),
+     not from the main menu (owner's call, 2026-11-08). */
 
   return (
     <div ref={rootRef} className="sticky top-0 z-[60] border-b border-[var(--border-subtle)] bg-[var(--surface-chrome)]">
@@ -260,7 +251,6 @@ export function Header() {
               data-search-toggle=""
               onClick={toggleSearch}
             />
-            <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
             {signedIn ? (
               /* Signed in, the account is a named place — "My space", with the
                  member's initials — rather than an anonymous person icon: it is
@@ -395,7 +385,6 @@ export function Header() {
           >
             <img src={logoWordmark.src} alt="Global Toothgems" className="h-4 w-auto" />
           </Link>
-          <IconButton icon={Heart} label={wishlistLabel} badge={favoriteCount} onClick={openFavorites} />
           <IconButton icon={User} label={signedIn ? t("nav.mySpace") : t("nav.signIn")} onClick={openAccount} />
           <IconButton icon={ShoppingBag} label={cartLabel} badge={count} onClick={() => navigate("/panier")} />
         </div>
@@ -404,7 +393,7 @@ export function Header() {
             id="gt-mobile-menu"
             className="grid max-h-[calc(100vh-60px)] gap-3.5 overflow-y-auto border-t border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--surface-chrome)_0%,var(--surface-brand-wash)_55%,var(--surface-brand-wash-strong)_100%)] px-3 pb-5 pt-3.5"
           >
-            <div role="tablist" aria-label={t("nav.primary")} className="flex gap-4 border-b border-[var(--border-subtle)] px-1">
+            <div role="tablist" aria-label={t("nav.primary")} className="flex justify-center gap-6 border-b border-[var(--border-subtle)] px-1">
               {mobileTabs.map((tab) => (
                 <button
                   key={tab.key}
@@ -422,6 +411,14 @@ export function Header() {
                 </button>
               ))}
             </div>
+            <Link
+              to={mobileRoot.to}
+              onClick={closeAll}
+              className="flex min-h-11 items-center justify-between gap-3 rounded-[var(--radius-md,12px)] px-1 text-sm font-semibold text-[var(--text-primary)]"
+            >
+              {mobileRoot.label}
+              <ArrowRight size={16} strokeWidth={1.75} aria-hidden="true" />
+            </Link>
             {menuTab === "shop" ? (
               <ShopMenu layout="stack" onNavigate={closeAll} />
             ) : menuTab === "studio" ? (
@@ -457,14 +454,7 @@ export function Header() {
                 ))}
               </ul>
             )}
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <Link
-                to={mobileRoot.to}
-                onClick={closeAll}
-                className="text-xs text-[var(--text-muted)] underline decoration-1 underline-offset-4"
-              >
-                {mobileRoot.label}
-              </Link>
+            <div className="flex items-center justify-end gap-3 pt-1">
               <LanguageMenu placement="above" />
             </div>
           </div>

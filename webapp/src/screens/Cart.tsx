@@ -157,6 +157,10 @@ export function Cart() {
   // A course opens on an account: the basket waits while the visitor signs in.
   const courseInBasket = hasCourse(lines);
   const accountMissing = live && courseInBasket && !signedIn;
+  // The waiver of the right of withdrawal a course is sold with (L221-28 13°); the function refuses a course without it.
+  const [courseWaiver, setCourseWaiver] = useState(false);
+  const courseWaiverRef = useRef<HTMLInputElement>(null);
+  const courseWaiverMissing = courseInBasket && !courseWaiver;
 
   // The saved profile fills the form once it is loaded, never over what the customer typed.
   const [prefilled, setPrefilled] = useState(false);
@@ -333,6 +337,11 @@ export function Cart() {
       setShowErrors(true);
       return;
     }
+    if (courseWaiverMissing) {
+      setCheckoutError("course_consent_required");
+      courseWaiverRef.current?.focus();
+      return;
+    }
     if (!live) {
       // Mock mode: records the cart as a demo order, as the prototype did.
       posthog.capture("checkout_started", {
@@ -349,7 +358,7 @@ export function Cart() {
       return;
     }
     if (freeOrder) return;
-    const built = buildCheckoutRequest(lines, form, shipped ? rateId : null, locale, giftCodes, rewardOn, promoCodes);
+    const built = buildCheckoutRequest(lines, form, shipped ? rateId : null, locale, giftCodes, rewardOn, promoCodes, courseWaiver);
     if (!built) {
       setCheckoutError("unavailable");
       return;
@@ -813,6 +822,25 @@ export function Cart() {
           </section>
           )}
 
+          {courseInBasket && (
+            <section className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
+              <h2 className="flex items-center gap-2 text-[length:var(--text-h3)]">
+                <GraduationCap size={18} aria-hidden="true" className="flex-none" />
+                {t("checkout.course.consentTitle")}
+              </h2>
+              <Checkbox
+                label={t("checkout.course.consentLabel")}
+                description={t("checkout.course.consentHint")}
+                checked={courseWaiver}
+                onChange={(checked) => {
+                  setCourseWaiver(checked);
+                  if (checked && checkoutError === "course_consent_required") setCheckoutError(null);
+                }}
+                inputRef={courseWaiverRef}
+                invalid={checkoutError === "course_consent_required"}
+              />
+            </section>
+          )}
 
           <section className="grid gap-3 rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] bg-[var(--surface-card)] p-[var(--space-6)]">
             <div className="flex flex-wrap items-center justify-between gap-3">

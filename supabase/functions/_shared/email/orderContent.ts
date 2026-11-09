@@ -88,7 +88,6 @@ const LABELS = {
     forgotProduct: "Vous avez oublié un produit ? On a ce qu’il vous faut.",
     refundTitle: (amount: string) => `Remboursement de ${amount} effectué`,
     refundBody: "Le délai d’apparition sur votre relevé dépend de votre banque.",
-    invoiceAttached: (n: string) => `Votre facture ${n} est jointe à cet e-mail (PDF).`,
     creditNoteAttached: (n: string) => `L’avoir ${n} correspondant est joint à cet e-mail (PDF).`,
     creditNoteExplained:
       "Cet avoir est la pièce comptable de votre remboursement : le montant est recrédité sur votre moyen de paiement, aucun crédit n’est ajouté à votre compte.",
@@ -125,7 +124,6 @@ const LABELS = {
     forgotProduct: "Forgot something? We have just what you need.",
     refundTitle: (amount: string) => `Refund of ${amount} issued`,
     refundBody: "How soon it shows on your statement depends on your bank.",
-    invoiceAttached: (n: string) => `Your invoice ${n} is attached to this e-mail (PDF).`,
     creditNoteAttached: (n: string) => `The matching credit note ${n} is attached to this e-mail (PDF).`,
     creditNoteExplained:
       "This credit note is the accounting document for your refund: the amount goes back to your payment method, and no credit is added to your account.",
@@ -174,8 +172,7 @@ function shopUrl(siteUrl: string, lang: "fr" | "en"): string {
   return `${siteUrl}/${lang}/${lang === "fr" ? "boutique" : "shop"}`;
 }
 
-/** `invoiceNumber`: the invoice attached to the e-mail, said in its text. */
-export function orderConfirmationContent(order: OrderSnapshot, locale: string, siteUrl: string, invoiceNumber?: string): EmailContent {
+export function orderConfirmationContent(order: OrderSnapshot, locale: string, siteUrl: string): EmailContent {
   const lang = chromeLocale(locale);
   const l = LABELS[lang];
   const money = (amount: number) => formatAmount(amount, order.currency, lang);
@@ -221,8 +218,6 @@ export function orderConfirmationContent(order: OrderSnapshot, locale: string, s
       quantityLabel: l.quantity,
     }),
   ];
-
-  if (invoiceNumber) blocks.push(paragraph(l.invoiceAttached(invoiceNumber)));
 
   const address = addressLines(order.shippingAddress, lang);
   if (address) {

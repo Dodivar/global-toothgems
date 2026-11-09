@@ -341,6 +341,7 @@
       "gift_card_details_invalid": "Les informations d’une carte cadeau du panier ne sont plus acceptées (montant, destinataire ou date). Retirez-la puis composez-la à nouveau.",
       "account_required": "Un compte est nécessaire pour acheter une formation : l’accès s’ouvre sur votre compte. Connectez-vous puis réessayez.",
       "terms_required": "Dernier point avant de payer : votre compte n’a pas encore accepté nos conditions.",
+      "course_consent_required": "Pour acheter une formation, cochez la demande d’accès immédiat à la formation.",
       "course_owned": "Vous avez déjà accès à une formation de votre panier. Retirez-la puis réessayez.",
       "basket_changed": "Votre panier a changé pendant le paiement : vérifiez-le, puis reprenez le paiement."
     },
@@ -385,7 +386,10 @@
       "signIn": "Se connecter",
       "createAccount": "Créer un compte",
       "openCourses": "Accéder à mes formations",
-      "paidBody": "Vos formations sont disponibles dans votre espace membre."
+      "paidBody": "Vos formations sont disponibles dans votre espace membre.",
+      "consentTitle": "Accès immédiat à la formation",
+      "consentLabel": "Je demande l’accès immédiat à la formation et je renonce expressément à mon droit de rétractation : je reconnais le perdre dès que je commence à suivre la formation.",
+      "consentHint": "Tant qu’aucune leçon n’est ouverte, vous gardez 14 jours pour vous rétracter."
     },
     "noShipping": "Rien à expédier : les cartes cadeaux sont envoyées par e-mail et les formations s’ouvrent dans votre espace membre.",
     "recap": {
@@ -4582,7 +4586,6 @@
     "home": "Accueil",
     "breadcrumb": "Fil d’Ariane",
     "updated": "Dernière mise à jour :",
-    "draft": "Projet",
     "backToTop": "Haut de page",
     "placeholder": {
       "verify": "À vérifier",
@@ -4604,13 +4607,6 @@
     "fields": {
       "heading": "Informations de l’entreprise",
       "editable": "Champs à compléter par l’entreprise"
-    },
-    "review": {
-      "noteLabel": "Note interne · maquette",
-      "barLabel": "Maquette en revue.",
-      "barText": "Les informations de l’entreprise doivent être vérifiées avant publication.",
-      "hide": "Masquer les notes internes",
-      "show": "Afficher les notes internes"
     },
     "toc": {
       "title": "Sur cette page",
@@ -4786,16 +4782,6 @@
       },
       "quickTitle": "Réponses rapides",
       "trackOrder": "Suivre une commande"
-    },
-    "checklist": {
-      "eyebrow": "Interne · non visible des clients",
-      "title": "Checklist avant lancement — Stripe et conformité",
-      "body": "Ce qui doit être vérifié avant d’activer les paiements. Tout est « à vérifier » par défaut : cocher un élément n’est enregistré que dans votre navigateur.",
-      "progress": "{{done}} / {{total}} vérifiés",
-      "pending": "À vérifier",
-      "verified": "Vérifié",
-      "open": "Ouvrir : {{item}}",
-      "disclaimer": "Aide à la revue de la maquette, pas un avis juridique ni la liste officielle des exigences de Stripe. À valider avec un conseil et la documentation Stripe à jour."
     },
     "about": {
       "eyebrow": "L’entreprise",
@@ -5037,6 +5023,8 @@
     "errors": {
       "rate_limited": "Trop de tentatives. Réessayez dans un moment.",
       "invalid_request": "Vérifiez l’adresse e-mail et la case de consentement, puis réessayez.",
+      "captcha_required": "Vérification anti-robot en cours… Réessayez dans un instant.",
+      "captcha_failed": "La vérification anti-robot n’a pas abouti. Rechargez la page, puis réessayez.",
       "network": "Connexion impossible. Vérifiez votre réseau, puis réessayez.",
       "unavailable": "L’inscription à la newsletter n’est pas disponible pour le moment.",
       "server_error": "L’inscription n’a pas pu aboutir. Réessayez dans un moment."

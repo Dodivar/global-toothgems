@@ -57,7 +57,7 @@ export function Register() {
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
-  const { signedIn, restoring, signUp, signInWithGoogle, signOut, email: sessionEmail } = useAuth();
+  const { signedIn, restoring, signUp, signInWithGoogle, signInWithGoogleToken, signOut, email: sessionEmail } = useAuth();
   const { showToast } = useToast();
 
   const routeState = location.state as { from?: string; course?: string } | null;
@@ -493,6 +493,16 @@ export function Register() {
               showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
               return false;
             }
+            return true;
+          }}
+          onToken={async (token, nonce) => {
+            const result = await signInWithGoogleToken(token, nonce, { termsAccepted: true });
+            if (result === "unavailable") {
+              setGoogleTermsOpen(false);
+              showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
+              return false;
+            }
+            navigate(afterConfirmation, { replace: true });
             return true;
           }}
         />

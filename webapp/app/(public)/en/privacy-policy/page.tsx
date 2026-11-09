@@ -1,7 +1,6 @@
 import { publicScreen } from "../../../_public/publicPage";
-import { LegalDocumentPage } from "../../../../src/components/legal/LegalDocumentPage";
-import { PRIVACY } from "../../../../src/data/legal/privacy";
+import { PrivacyPage } from "../../../_public/storePages";
 
-const page = publicScreen("privacy", "en", <LegalDocumentPage doc={PRIVACY} />);
+const page = publicScreen("privacy", "en", <PrivacyPage />);
 export const generateMetadata = page.generateMetadata;
 export default page.Page;

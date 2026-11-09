@@ -5,7 +5,6 @@ import { pick } from "../../data/types";
 import type { Block, CalloutTone } from "../../data/legal/types";
 import { ICONS, TONES } from "./tones";
 import { Placeholder, RichText } from "./RichText";
-import { ReviewNote } from "./ReviewNote";
 import { ResponsiveTable } from "./ResponsiveTable";
 import { StepFlow } from "./StepFlow";
 import { CookieChoicesPanel } from "./CookieChoicesPanel";
@@ -131,13 +130,6 @@ function BlockView({ block, lang }: { block: Block; lang: string }) {
 
     case "steps":
       return <StepFlow label={L(block.label)} steps={block.items.map((s) => ({ icon: ICONS[s.icon], title: L(s.title), text: L(s.text) }))} />;
-
-    case "internal":
-      return (
-        <ReviewNote>
-          <RichText text={L(block.text)} />
-        </ReviewNote>
-      );
 
     case "widget":
       return <CookieChoicesPanel />;

@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, ArrowUp, ChevronRight, MessageCircle, NotebookPen } from "lucide-react";
+import { ArrowRight, ArrowUp, ChevronRight, MessageCircle } from "lucide-react";
 import clsx from "clsx";
-import { useReviewMode } from "../../lib/reviewMode";
 import { useCookieConsent } from "../../lib/cookieConsent";
 import { contactHref, LEGAL_PATHS } from "../../data/legal/routes";
 import type { CalloutTone, ContactCategory } from "../../data/legal/types";
@@ -38,41 +37,7 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
   );
 }
 
-/**
- * The prototype's review strip. It carries the one sentence every legal page
- * must show a reviewer — business information is unverified — and the switch
- * that hides the internal notes to preview the customer-facing page.
- */
-export function ReviewBar() {
-  const { t } = useTranslation();
-  const { showNotes, setShowNotes } = useReviewMode();
-  return (
-    <div
-      className={clsx(
-        "flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[var(--radius-md)] px-4 py-2.5 text-[length:var(--text-caption)]",
-        showNotes ? "gt-review-note" : "border border-dashed border-[var(--border-default)]",
-      )}
-    >
-      <span className="inline-flex items-center gap-2 text-[var(--text-body)]">
-        <NotebookPen size={14} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
-        <span>
-          <strong className="font-semibold text-[var(--text-primary)]">{t("legal.review.barLabel")}</strong>{" "}
-          {t("legal.review.barText")}
-        </span>
-      </span>
-      <button
-        type="button"
-        aria-pressed={showNotes}
-        onClick={() => setShowNotes(!showNotes)}
-        className="rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] px-3 py-1.5 font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--border-strong)]"
-      >
-        {showNotes ? t("legal.review.hide") : t("legal.review.show")}
-      </button>
-    </div>
-  );
-}
-
-const KEY_TONES: CalloutTone[] = ["legal", "policy", "instruction", "verify"];
+const KEY_TONES: CalloutTone[] = ["legal", "policy", "instruction"];
 
 /** Explains the four labels used through the page, once, up front. */
 export function ContentKey() {

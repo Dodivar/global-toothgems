@@ -60,6 +60,8 @@ export function buildCheckoutRequest(
   giftCardCodes: string[] = [],
   useLoyaltyReward = false,
   promotionCodes: string[] = [],
+  /** The buyer ticked the request for immediate access to the courses (sent only for a basket holding one). */
+  courseImmediateAccess = false,
 ): CheckoutRequest | null {
   const items = checkoutItems(lines);
   if (!items || items.length === 0) return null;
@@ -80,5 +82,6 @@ export function buildCheckoutRequest(
     ...(giftCardCodes.length > 0 ? { gift_card_codes: giftCardCodes } : {}),
     ...(promotionCodes.length > 0 ? { promotion_codes: promotionCodes } : {}),
     ...(useLoyaltyReward ? { use_loyalty_reward: true } : {}),
+    ...(courseImmediateAccess && items.some((item) => "course_id" in item) ? { course_immediate_access: true } : {}),
   };
 }
