@@ -1118,5 +1118,10 @@
       "network": "Le serveur n’a pas répondu. Vérifiez votre connexion et réessayez.",
       "unknown": "L’action n’a pas abouti. Réessayez dans un instant."
     }
+  },
+  "reference": {
+    "struckLabel": "Prix de référence :",
+    "hint": "Prix barré : le prix le plus bas pratiqué au cours des 30 jours précédant la réduction.",
+    "note": "Prix le plus bas des 30 jours précédant la réduction : {{price}}"
   }
 }

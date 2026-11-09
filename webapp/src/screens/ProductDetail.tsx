@@ -21,6 +21,7 @@ import { useFavorites } from "../lib/favorites";
 import { useReveal } from "../lib/useReveal";
 import { OfferNotice } from "../components/shop/OfferNotice";
 import { offerPrice } from "../lib/storefrontOffers";
+import { StruckPrice } from "../components/shop/StruckPrice";
 import { useProductOffer, useStorefrontOffers } from "../lib/useStorefrontOffers";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { toMinorUnits } from "../lib/catalog/money";
@@ -106,11 +107,11 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
   // Colour variants read as colours: the legend says so once every one has a dot.
   const colorVariants = variants.length > 0 && variants.every((v) => v.swatch);
   const unitPrice = variant?.price ?? product.price;
-  const compareAtPrice = variant ? variant.compareAtPrice : product.compareAtPrice;
-  // The running campaign and promotion of this product, and the price they leave (the cart is quoted by the database).
+  // The running campaign and promotion of this product, and the database's price now and reference price for the
+  // option shown (decision 129, Omnibus; the cart is quoted by the database).
   const { offerFor } = useStorefrontOffers();
-  const offer = useProductOffer({ dbId: product.dbId, cat: product.cat, currency: product.currency, compareAtPrice });
-  const shown = offerPrice(unitPrice, compareAtPrice, offer);
+  const offer = useProductOffer({ dbId: product.dbId, cat: product.cat, currency: product.currency }, variant ? variant.id : null);
+  const shown = offerPrice(unitPrice, offer);
   const stock = variant ? variant.stock : product.stock;
   // Out of stock: "Tell me when it's back" replaces the purchase, for a database product
   // (the mock fixtures have no row to subscribe to and keep a disabled button).
@@ -190,7 +191,7 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
   // Next to the rating: the material, and a gem's centre stone.
   const headline = [specText("material"), product.cat === "gems" ? specText("center") : ""].filter(Boolean).join(", ");
 
-  const installment = formatPrice(unitPrice / 4);
+  const installment = formatPrice(shown.price / 4);
 
   // The rating line reads the same published reviews as the section below it,
   // so the two can never disagree — and a review approved in the back office
@@ -341,12 +342,15 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
               {headline && <span aria-hidden="true">· {headline}</span>}
             </span>
             <div className="flex items-baseline gap-3">
-              <strong className={`text-[28px] font-bold ${offer?.promotion?.priceOffPercent ? "text-[var(--accent-highlight-ink)]" : "text-[var(--text-primary)]"}`}>{formatPrice(shown.price)}</strong>
-              {shown.was !== undefined && (
-                <span className="text-sm text-[var(--text-subtle)] line-through">{formatPrice(shown.was)}</span>
-              )}
+              <strong className={`text-[28px] font-bold ${shown.was !== undefined ? "text-[var(--accent-highlight-ink)]" : "text-[var(--text-primary)]"}`}>{formatPrice(shown.price)}</strong>
+              {shown.was !== undefined && <StruckPrice value={shown.was} className="text-sm text-[var(--text-subtle)]" />}
               <span className="text-sm text-[var(--text-muted)]">{t("product.installment", { amount: installment })}</span>
             </div>
+            {shown.was !== undefined && (
+              <p className="m-0 -mt-2 text-[length:var(--text-caption)] text-[var(--text-muted)]" data-testid="reference-price-note">
+                {t("promo.reference.note", { price: formatPrice(shown.was) })}
+              </p>
+            )}
             <OfferNotice offer={offer} />
             {/* Shade is a swatch radio group rather than a dropdown: colour is the
                 decision here, and a <select> hides the options behind a click. */}
@@ -564,7 +568,7 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
                   hoverImage: p.gallery?.[1]?.src,
                   variants: cardVariants(p),
                   stock: p.stock,
-                  offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR", compareAtPrice: p.compareAtPrice }),
+                  offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR" }),
                 }}
               />
             ))}

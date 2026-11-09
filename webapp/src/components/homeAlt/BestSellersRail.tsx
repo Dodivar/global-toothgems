@@ -97,14 +97,13 @@ export function BestSellersRail() {
                     name,
                     subtitle: pick(p.subtitle, lang),
                     price: p.price,
-                    compareAtPrice: p.compareAtPrice,
                     image: p.image,
                     hoverImage: p.gallery?.[1]?.src,
                     badge: i < 2 ? t("homeAlt.bestSellers.badge") : p.badge ? pick(p.badge, lang) : undefined,
                     badgeTone: i < 2 ? "ink" : p.badgeTone,
                     variants: cardVariants(p),
                     stock: p.stock ?? "in",
-                    offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR", compareAtPrice: p.compareAtPrice }),
+                    offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR" }),
                   }}
                 />
               </li>

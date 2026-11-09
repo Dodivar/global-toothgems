@@ -29,7 +29,7 @@ begin
   payload := jsonb_build_object(
     'id', p_new, 'category_id', c_gems, 'sku', 'GEM-TEST-100', 'slug', 'etoile-cristal',
     'name', 'Étoile test', 'short_description', 'Courte', 'description', 'Longue',
-    'price', '12.50', 'compare_at_price', '15.00', 'status', 'draft',
+    'price', '12.50', 'status', 'draft',
     'metadata', jsonb_build_object('type', 'single', 'material', jsonb_build_object('fr', 'Cristal', 'en', 'Crystal'), 'tags', jsonb_build_array('test')),
     'translations', jsonb_build_object('en', jsonb_build_object('name', 'Test star', 'slug', 'test-star', 'short_description', 'Short', 'description', 'Long')),
     'inventory', jsonb_build_object('track_inventory', true, 'quantity_on_hand', 40, 'low_stock_threshold', 8, 'availability', 'in_stock'),
@@ -127,7 +127,7 @@ begin
     perform public.admin_save_product(payload || jsonb_build_object('compare_at_price', '10.00'));
   exception when others then v_state := sqlstate;
   end;
-  if v_state is distinct from '23514' then raise exception 'FAIL P4: compare-at below price gave %', v_state; end if;
+  if v_state is distinct from '23514' then raise exception 'FAIL P4: a compare-at price (retired, decision 129) gave %', v_state; end if;
   v_state := null;
   begin
     perform public.admin_save_product(payload || jsonb_build_object('media', jsonb_build_array(

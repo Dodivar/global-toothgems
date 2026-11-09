@@ -1,10 +1,12 @@
 import { requireSupabase } from "./supabase/client";
-import type { OfferCampaignRow, OfferPromotionRow, OfferSources } from "./storefrontOffers";
+import type { OfferCampaignRow, OfferPromotionRow, OfferSources, PriceReferenceRow } from "./storefrontOffers";
 
 /**
  * Reads what is running for visitors (no sign-in): live automatic promotions and live campaigns within their
  * dates, with their published English text, scope and products. Row-level security shows nothing else, and
- * codes never leave the database. One read per page load, cached for a few minutes.
+ * codes never leave the database. With them, the database's price now and reference price of every item with a
+ * price cut running (`storefront_price_references()`, decision 129): the only source of a struck-out price.
+ * One read per page load, cached for a few minutes.
  */
 
 const PROMOTIONS = `
@@ -24,14 +26,16 @@ const CAMPAIGNS = `
 
 export async function fetchOfferSources(): Promise<OfferSources> {
   const client = requireSupabase();
-  const [promotions, campaigns, categories, collections] = await Promise.all([
+  const [promotions, campaigns, categories, collections, references] = await Promise.all([
     client.from("promotions").select(PROMOTIONS).limit(200),
     client.from("campaigns").select(CAMPAIGNS).limit(100),
     client.from("categories").select("id, slug"),
     client.from("collections").select("id, collection_products ( product_id )"),
+    client.rpc("storefront_price_references"),
   ]);
-  for (const result of [promotions, campaigns, categories, collections]) if (result.error) throw new Error(result.error.message);
+  for (const result of [promotions, campaigns, categories, collections, references]) if (result.error) throw new Error(result.error.message);
   return {
+    references: (references.data ?? []) as PriceReferenceRow[],
     promotions: (promotions.data ?? []) as unknown as OfferPromotionRow[],
     campaigns: (campaigns.data ?? []) as unknown as OfferCampaignRow[],
     categoryIds: Object.fromEntries((categories.data ?? []).map((c) => [c.slug, c.id])),

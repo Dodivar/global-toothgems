@@ -1110,5 +1110,10 @@
       "network": "The server did not respond. Check your connection and try again.",
       "unknown": "The action did not go through. Try again in a moment."
     }
+  },
+  "reference": {
+    "struckLabel": "Reference price:",
+    "hint": "Struck-out price: the lowest price charged in the 30 days before the reduction.",
+    "note": "Lowest price in the 30 days before the reduction: {{price}}"
   }
 }

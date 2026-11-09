@@ -5,6 +5,7 @@ import { DashboardTile } from "./DashboardTile";
 import { pick } from "../../../data/types";
 import { useFavorites } from "../../../lib/favorites";
 import { summarizeFavorites } from "../../../lib/memberDashboard";
+import { useStorefrontOffers } from "../../../lib/useStorefrontOffers";
 
 /**
  * The favourites, as a reason to go back to them: their pictures, and what
@@ -15,8 +16,12 @@ export function FavoritesTile() {
   const { t, i18n } = useTranslation();
   const titleId = useId();
   const { status, favoriteProducts } = useFavorites();
+  const { offerFor } = useStorefrontOffers();
   if (status !== "ready" || favoriteProducts.length === 0) return null;
-  const summary = summarizeFavorites(favoriteProducts);
+  const summary = summarizeFavorites(
+    favoriteProducts,
+    (p) => offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR" })?.reference?.struckCents != null,
+  );
   const shown = favoriteProducts.slice(0, 4);
   const more = favoriteProducts.length - shown.length;
 

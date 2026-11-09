@@ -1,5 +1,4 @@
 import {
-  effectivePrice,
   matchesStockState,
   type AdminProduct,
   type CategoryId,
@@ -203,9 +202,9 @@ export function filterProducts(
       case "oldest":
         return a.updatedAt.localeCompare(b.updatedAt);
       case "price-desc":
-        return effectivePrice(b) - effectivePrice(a);
+        return b.price - a.price;
       case "price-asc":
-        return effectivePrice(a) - effectivePrice(b);
+        return a.price - b.price;
       case "name-asc":
         return collator.compare(pick(a.name, lang), pick(b.name, lang));
       case "name-desc":

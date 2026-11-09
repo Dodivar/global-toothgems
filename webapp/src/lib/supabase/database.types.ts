@@ -5169,6 +5169,135 @@ export type Database = {
         }
         Relationships: []
       }
+      price_cut_history: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          id: string
+          product_id: string | null
+          source: string
+          source_id: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          id?: string
+          product_id?: string | null
+          source: string
+          source_id: string
+          valid_from: string
+          valid_to?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          product_id?: string | null
+          source?: string
+          source_id?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_cut_history_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "price_cut_history_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_cut_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_history: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          price: number
+          product_id: string | null
+          valid_from: string
+          valid_to: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          currency: string
+          id?: string
+          price: number
+          product_id?: string | null
+          valid_from: string
+          valid_to?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          price?: number
+          product_id?: string | null
+          valid_from?: string
+          valid_to?: string | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_history_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "price_history_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_history_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_bundle_items: {
         Row: {
           bundle_product_id: string
@@ -9624,6 +9753,19 @@ export type Database = {
         }
         Returns: string
       }
+      admin_price_references: {
+        Args: { p_product_id: string }
+        Returns: {
+          currency: string
+          discount_percent: number
+          list_price: number
+          price: number
+          reduction_started_at: string
+          reference_price: number
+          state: string
+          variant_id: string
+        }[]
+      }
       admin_reorder_gem_colors: {
         Args: { p_ids: string[] }
         Returns: undefined
@@ -10601,6 +10743,21 @@ export type Database = {
         }[]
       }
       start_studio_trial: { Args: never; Returns: Json }
+      storefront_price_references: {
+        Args: never
+        Returns: {
+          course_id: string
+          currency: string
+          discount_percent: number
+          list_price: number
+          price: number
+          product_id: string
+          reduction_started_at: string
+          reference_price: number
+          state: string
+          variant_id: string
+        }[]
+      }
       studio_access_state: { Args: never; Returns: Json }
       studio_moderate_showcase: {
         Args: { p_note?: string; p_status: string; p_user_id: string }
