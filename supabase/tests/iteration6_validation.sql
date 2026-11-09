@@ -44,7 +44,7 @@ begin
   select id into p_gel   from public.products where slug = 'gel-de-suivi';            -- 19.00, hygiene
   select id into p_kit   from public.products where slug = 'kit-decouverte';          -- 129.00, kits (draft in the seed)
   update public.products set status = 'active' where id = p_kit;
-  select id into p_prem  from public.products where slug = 'kit-application-premium'; -- 249.00, on sale (279)
+  select id into p_prem  from public.products where slug = 'kit-application-premium'; -- 249.00 (no compare-at price since decision 129)
   select id into p_pince from public.products where slug = 'pince-de-depose';         -- 78.00, outils
   select id into p_gc    from public.products where slug = 'carte-cadeau';
   select id into c_kits  from public.categories where slug = 'kits';
@@ -225,7 +225,8 @@ begin
   passed := array_append(passed, 'R7 cancel_order / gift card staff functions: permission checked');
 
   -- ===========================================================================
-  -- P1 automatic percentage on a category; on-sale product excluded; VAT on net
+  -- P1 automatic percentage on a category; VAT on net. Since decision 129 no product has a
+  -- compare-at price, so exclude_discounted_products excludes nothing: the premium kit is discounted too.
   -- ===========================================================================
   perform set_config('request.jwt.claims', '', true);
   insert into public.promotions (name, title, type, percent_off, applies_to, lifecycle, starts_at)
@@ -238,21 +239,21 @@ begin
          jsonb_build_array(jsonb_build_object('product_id', p_kit, 'quantity', 1),
                            jsonb_build_object('product_id', p_gel, 'quantity', 1),
                            jsonb_build_object('product_id', p_prem, 'quantity', 1)), fr, fr, r_std);
-  if o.discount_amount <> 12.90 or o.subtotal_amount <> 397 or o.total_amount <> 397 - 12.90 + 4.90 then
+  if o.discount_amount <> 37.80 or o.subtotal_amount <> 397 or o.total_amount <> 397 - 37.80 + 4.90 then
     raise exception 'FAIL P1: order %', row_to_json(o);
   end if;
   for it in select * from public.order_items where order_id = o.id loop
-    v_num := case when it.product_id = p_kit then 12.90 else 0 end;
+    v_num := case when it.product_id = p_kit then 12.90 when it.product_id = p_prem then 24.90 else 0 end;
     if it.discount_amount <> v_num
        or it.tax_amount <> public.vat_included(it.unit_price * it.quantity - it.discount_amount, it.tax_rate_bp) then
       raise exception 'FAIL P1: line %', row_to_json(it);
     end if;
   end loop;
   select * into d from public.order_discounts where order_id = o.id;
-  if d.promotion_id <> pr_kits or d.goods_amount <> 12.90 or d.label <> 'Kits -10 %' or d.user_id <> alice then
+  if d.promotion_id <> pr_kits or d.goods_amount <> 37.80 or d.label <> 'Kits -10 %' or d.user_id <> alice then
     raise exception 'FAIL P1: discount record %', row_to_json(d);
   end if;
-  passed := array_append(passed, 'P1 automatic -10 % on kits: on-sale kit excluded, per-line discount, VAT on discounted line, ledger row');
+  passed := array_append(passed, 'P1 automatic -10 % on kits: every kit discounted (no compare-at price), per-line discount, VAT on discounted line, ledger row');
 
   -- ===========================================================================
   -- P2 codes: best offer wins, case-insensitive, invalid codes rejected
