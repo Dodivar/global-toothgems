@@ -35,7 +35,7 @@ update public.categories set report_group = case slug
 insert into public.products
   (category_id, name, slug, short_description, description, sku, price, compare_at_price,
    status, is_featured, metadata)
-select c.id, v.name, v.slug, v.short_description, v.description, v.sku, v.price, v.compare_at_price,
+select c.id, v.name, v.slug, v.short_description, v.description, v.sku, v.price, v.compare_at_price::numeric,
        v.status, v.is_featured, v.metadata::jsonb
 from (values
   ('gems', 'Étoile Cristal', 'etoile-cristal',
