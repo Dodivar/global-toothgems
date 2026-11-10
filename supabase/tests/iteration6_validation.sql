@@ -64,19 +64,20 @@ begin
   end if;
   perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.my_permissions();
-  -- 11 since migration 20260924210824 (manage_content granted to manager and admin).
-  if v_cnt <> 11 or not private.has_permission('manage_promotions') or private.has_permission('manage_settings') then
+  -- 11 since migration 20260924210824 (manage_content granted to manager and admin),
+  -- 12 since 20261110124815 (moderate_community, decision 132).
+  if v_cnt <> 12 or not private.has_permission('manage_promotions') or private.has_permission('manage_settings') then
     raise exception 'FAIL R1: manager permissions (%)', v_cnt;
   end if;
   perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.my_permissions();
-  if v_cnt <> 12 then raise exception 'FAIL R1: admin permissions (%)', v_cnt; end if;
+  if v_cnt <> 13 then raise exception 'FAIL R1: admin permissions (%)', v_cnt; end if;
   perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.my_permissions();
   if v_cnt <> 0 or private.is_staff() then raise exception 'FAIL R1: customer has permissions'; end if;
   select count(*) into v_cnt from public.role_permissions;
   if v_cnt <> 0 then raise exception 'FAIL R1: customer reads the permission matrix'; end if;
-  passed := array_append(passed, 'R1 viewer 3 / manager 11 / admin 12 permissions, customers none');
+  passed := array_append(passed, 'R1 viewer 3 / manager 12 / admin 13 permissions, customers none');
 
   -- ===========================================================================
   -- R2 read-only staff read the back office and change nothing

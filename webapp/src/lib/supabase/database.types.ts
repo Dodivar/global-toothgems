@@ -3861,6 +3861,128 @@ export type Database = {
           },
         ]
       }
+      lounge_appeals: {
+        Row: {
+          answered_at: string | null
+          answered_by: string | null
+          appellant_id: string | null
+          appellant_role: string
+          body: string | null
+          created_at: string
+          decision_id: string
+          id: string
+          response: string | null
+          status: string
+        }
+        Insert: {
+          answered_at?: string | null
+          answered_by?: string | null
+          appellant_id?: string | null
+          appellant_role: string
+          body?: string | null
+          created_at?: string
+          decision_id: string
+          id?: string
+          response?: string | null
+          status?: string
+        }
+        Update: {
+          answered_at?: string | null
+          answered_by?: string | null
+          appellant_id?: string | null
+          appellant_role?: string
+          body?: string | null
+          created_at?: string
+          decision_id?: string
+          id?: string
+          response?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_appeals_answered_by_fkey"
+            columns: ["answered_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_appeals_answered_by_fkey"
+            columns: ["answered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_appeals_appellant_id_fkey"
+            columns: ["appellant_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_appeals_appellant_id_fkey"
+            columns: ["appellant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_appeals_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_moderation_decisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lounge_channels: {
         Row: {
           created_at: string
@@ -3943,31 +4065,37 @@ export type Database = {
       }
       lounge_members: {
         Row: {
+          banned_at: string | null
           handle: string
           is_mentor: boolean
           joined_at: string
           languages: string[]
           last_seen_at: string | null
+          muted_until: string | null
           presence: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          banned_at?: string | null
           handle: string
           is_mentor?: boolean
           joined_at?: string
           languages?: string[]
           last_seen_at?: string | null
+          muted_until?: string | null
           presence?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          banned_at?: string | null
           handle?: string
           is_mentor?: boolean
           joined_at?: string
           languages?: string[]
           last_seen_at?: string | null
+          muted_until?: string | null
           presence?: string
           updated_at?: string
           user_id?: string
@@ -4031,8 +4159,11 @@ export type Database = {
           channel_id: string | null
           conversation_id: string | null
           created_at: string
+          hidden_at: string | null
+          hidden_decision_id: string | null
           id: string
           mention_ids: string[]
+          moderation_status: string
           parts: Json
           reactions: Json
           reply_to_id: string | null
@@ -4043,8 +4174,11 @@ export type Database = {
           channel_id?: string | null
           conversation_id?: string | null
           created_at?: string
+          hidden_at?: string | null
+          hidden_decision_id?: string | null
           id?: string
           mention_ids?: string[]
+          moderation_status?: string
           parts?: Json
           reactions?: Json
           reply_to_id?: string | null
@@ -4055,8 +4189,11 @@ export type Database = {
           channel_id?: string | null
           conversation_id?: string | null
           created_at?: string
+          hidden_at?: string | null
+          hidden_decision_id?: string | null
           id?: string
           mention_ids?: string[]
+          moderation_status?: string
           parts?: Json
           reactions?: Json
           reply_to_id?: string | null
@@ -4091,10 +4228,173 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lounge_messages_hidden_decision_fk"
+            columns: ["hidden_decision_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_moderation_decisions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lounge_messages_reply_to_id_fkey"
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "lounge_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_moderation_decisions: {
+        Row: {
+          action: string
+          appeal_id: string | null
+          automated: boolean
+          created_at: string
+          decided_by: string | null
+          ends_at: string | null
+          ground: string | null
+          id: string
+          illegal_category: string | null
+          message_id: string | null
+          reason: string | null
+          report_count: number
+          statement: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          appeal_id?: string | null
+          automated?: boolean
+          created_at?: string
+          decided_by?: string | null
+          ends_at?: string | null
+          ground?: string | null
+          id?: string
+          illegal_category?: string | null
+          message_id?: string | null
+          reason?: string | null
+          report_count?: number
+          statement: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          appeal_id?: string | null
+          automated?: boolean
+          created_at?: string
+          decided_by?: string | null
+          ends_at?: string | null
+          ground?: string | null
+          id?: string
+          illegal_category?: string | null
+          message_id?: string | null
+          reason?: string | null
+          report_count?: number
+          statement?: string
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_decisions_appeal_fk"
+            columns: ["appeal_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_appeals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_moderation_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_moderation_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_moderation_decisions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_moderation_decisions_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_moderation_decisions_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_moderation_events: {
+        Row: {
+          channel_id: string | null
+          conversation_id: string | null
+          created_at: string
+          id: number
+          kind: string
+          message_id: string
+        }
+        Insert: {
+          channel_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: never
+          kind: string
+          message_id: string
+        }
+        Update: {
+          channel_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: never
+          kind?: string
+          message_id?: string
+        }
+        Relationships: []
+      }
+      lounge_moderation_snapshots: {
+        Row: {
+          attachment_count: number
+          body_text: string
+          channel_id: string | null
+          created_at: string
+          decision_id: string
+          message_created_at: string | null
+        }
+        Insert: {
+          attachment_count?: number
+          body_text?: string
+          channel_id?: string | null
+          created_at?: string
+          decision_id: string
+          message_created_at?: string | null
+        }
+        Update: {
+          attachment_count?: number
+          body_text?: string
+          channel_id?: string | null
+          created_at?: string
+          decision_id?: string
+          message_created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_moderation_snapshots_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: true
+            referencedRelation: "lounge_moderation_decisions"
             referencedColumns: ["id"]
           },
         ]
@@ -4205,6 +4505,101 @@ export type Database = {
           {
             foreignKeyName: "lounge_reactions_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_reports: {
+        Row: {
+          attachment_id: string | null
+          created_at: string
+          decision_id: string | null
+          details: string | null
+          id: string
+          illegal_category: string | null
+          message_author_id: string | null
+          message_id: string | null
+          reason: string
+          reporter_id: string | null
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          attachment_id?: string | null
+          created_at?: string
+          decision_id?: string | null
+          details?: string | null
+          id?: string
+          illegal_category?: string | null
+          message_author_id?: string | null
+          message_id?: string | null
+          reason: string
+          reporter_id?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          attachment_id?: string | null
+          created_at?: string
+          decision_id?: string | null
+          details?: string | null
+          id?: string
+          illegal_category?: string | null
+          message_author_id?: string | null
+          message_id?: string | null
+          reason?: string
+          reporter_id?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_reports_attachment_id_fkey"
+            columns: ["attachment_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_message_attachments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_moderation_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_message_author_id_fkey"
+            columns: ["message_author_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_message_author_id_fkey"
+            columns: ["message_author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -10952,6 +11347,11 @@ export type Database = {
       }
       learner_courses: { Args: never; Returns: Json }
       lounge_access: { Args: never; Returns: boolean }
+      lounge_answer_appeal: {
+        Args: { p_appeal_id: string; p_outcome: string; p_response: string }
+        Returns: string
+      }
+      lounge_appeals_queue: { Args: { p_status?: string }; Returns: Json }
       lounge_directory: {
         Args: never
         Returns: {
@@ -10974,6 +11374,38 @@ export type Database = {
         Args: { p_channel_ids?: string[]; p_conversation_ids?: string[] }
         Returns: undefined
       }
+      lounge_moderate_member: {
+        Args: {
+          p_action: string
+          p_ground: string
+          p_illegal_category: string
+          p_message_id?: string
+          p_reason: string
+          p_statement: string
+          p_until?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      lounge_moderate_message: {
+        Args: {
+          p_action: string
+          p_ground: string
+          p_illegal_category: string
+          p_message_id: string
+          p_reason: string
+          p_statement: string
+        }
+        Returns: string
+      }
+      lounge_moderation_context: {
+        Args: { p_message_id: string; p_radius?: number }
+        Returns: Json
+      }
+      lounge_moderation_history: { Args: { p_limit?: number }; Returns: Json }
+      lounge_moderation_queue: { Args: { p_status?: string }; Returns: Json }
+      lounge_moderation_stats: { Args: { p_from: string; p_to: string }; Returns: Json }
+      lounge_my_moderation: { Args: never; Returns: Json }
       lounge_overview: { Args: never; Returns: Json }
       lounge_post_message: {
         Args: {
@@ -10989,6 +11421,17 @@ export type Database = {
         Args: { p_ids?: string[] }
         Returns: undefined
       }
+      lounge_report_message: {
+        Args: {
+          p_attachment_id?: string
+          p_details: string
+          p_illegal_category: string
+          p_message_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      lounge_set_blocked: { Args: { p_blocked: boolean; p_member_id: string }; Returns: undefined }
       lounge_set_muted: {
         Args: {
           p_channel_id: string
@@ -10997,6 +11440,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      lounge_submit_appeal: { Args: { p_body: string; p_decision_id: string }; Returns: Json }
       lounge_toggle_reaction: {
         Args: { p_message_id: string; p_reaction: string }
         Returns: boolean
@@ -11174,6 +11618,16 @@ export type Database = {
           locale: string
           order_id: string
           order_number: string
+        }[]
+      }
+      pending_lounge_moderation_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          event_key: string
+          kind: string
+          locale: string
+          payload: Json
         }[]
       }
       pending_newsletter_contacts: {
