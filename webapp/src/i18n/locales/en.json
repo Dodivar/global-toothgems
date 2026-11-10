@@ -5062,5 +5062,145 @@
       "shop": "Visit the shop",
       "home": "Back to the home page"
     }
+  },
+  "withdrawal": {
+    "title": "Right of withdrawal",
+    "cta": "Withdraw from the contract here",
+    "openUntil": "You can withdraw from this order until {{date}} inclusive, without giving any reason.",
+    "openNotStarted": "You can withdraw right now: the 14-day period only starts when you receive your last parcel.",
+    "declaredOn": "Declared on {{date}}",
+    "nextStep": "Send the items back within 14 days: how to do it is in the acknowledgement e-mail.",
+    "loadError": "The right of withdrawal of this order could not be loaded. Reload the page or contact us.",
+    "closed": {
+      "not_paid": "This order is not paid: there is nothing to withdraw from.",
+      "professional": "This order was placed by a business: the right of withdrawal does not apply. Contact us about any return.",
+      "deadline_passed": "The 14-day withdrawal period is over for this order. For a faulty product, the legal guarantees still apply: contact us.",
+      "nothing_left": "There is no item left to withdraw from in this order."
+    },
+    "excluded": {
+      "course": "course: its own rules (see the terms of sale)",
+      "gift_card": "gift card: not concerned",
+      "digital": "digital content: not concerned",
+      "taken": "already returned or refunded"
+    },
+    "form": {
+      "itemsLegend": "Items you withdraw from",
+      "quantity": "Quantity",
+      "keep": "I keep it",
+      "ofTotal": "{{count}} of {{total}}",
+      "sealQuestion": "This item is sealed for hygiene reasons. Is its sealed packaging:",
+      "sealIntact": "Intact, never opened",
+      "sealOpened": "Opened",
+      "sealOpenedHelp": "A product for the mouth whose sealed packaging was opened after delivery can no longer be withdrawn from (article L221-28 of the French Consumer Code). Keep it, or choose “I keep it”.",
+      "name": "Your full name",
+      "consumer": "I placed this order as a consumer",
+      "consumerHelp": "The right of withdrawal covers purchases made for personal use, not for a business.",
+      "continue": "Continue",
+      "cancel": "Cancel"
+    },
+    "problem": {
+      "name": "Enter your name.",
+      "nothing_selected": "Choose at least one item.",
+      "seal_answer_required": "Tell us whether the sealed packaging of each product for the mouth is intact.",
+      "unsealed_hygiene": "An unsealed product for the mouth cannot be withdrawn from: remove it from your declaration.",
+      "quantity": "The quantity chosen is more than can still be withdrawn.",
+      "consumer": "Confirm that you bought as a consumer."
+    },
+    "confirm": {
+      "title": "Check your withdrawal declaration",
+      "order": "Order",
+      "items": "Items",
+      "notice": "By confirming, you withdraw from the contract for these items. You immediately receive an acknowledgement by e-mail, with the date and time of your declaration and how to return the items.",
+      "action": "Confirm withdrawal",
+      "edit": "Edit"
+    },
+    "done": {
+      "title": "Your withdrawal is recorded",
+      "body": "Declared on {{date}} (Paris time). The acknowledgement has just been e-mailed: it explains how to send the items back within 14 days."
+    },
+    "status": {
+      "declared": "Withdrawal declared",
+      "return_received": "Return received",
+      "refunded": "Refunded",
+      "refused": "Refused",
+      "refundPending": "Refund under way"
+    },
+    "refusal": {
+      "deadline_passed": "14-day period exceeded",
+      "unsealed_hygiene": "Unsealed product for the mouth",
+      "professional_buyer": "Purchase made as a business",
+      "goods_not_returned": "Items not sent back",
+      "goods_damaged": "Items diminished in value by excessive handling",
+      "other": "Other reason"
+    },
+    "error": {
+      "not_paid": "This order is not paid.",
+      "professional": "The right of withdrawal does not apply to business purchases.",
+      "professional_buyer": "The right of withdrawal does not apply to business purchases.",
+      "deadline_passed": "The withdrawal period is over.",
+      "excluded_line": "One of the items is not covered by the right of withdrawal.",
+      "unsealed_hygiene": "An unsealed product for the mouth cannot be withdrawn from.",
+      "quantity": "These items were already declared or refunded. Reload the page.",
+      "seal_answer_required": "Tell us whether the sealed packaging is intact.",
+      "not_allowed": "This order cannot be reached with this account or link.",
+      "link_invalid": "This link is no longer valid: ask for a new one.",
+      "sign_in_required": "Sign in again, then try again.",
+      "session_expired": "Your session expired: sign in again, then try again.",
+      "invalid_request": "Check the details you entered.",
+      "rate_limited": "Too many requests from this connection. Try again in an hour.",
+      "captcha_required": "The anti-robot check did not complete. Try again.",
+      "captcha_failed": "The anti-robot check failed. Turn off any blocker, then try again.",
+      "unavailable": "The service is temporarily unavailable. Try again or contact us: your right is preserved if you write to us before the period ends."
+    },
+    "guest": {
+      "eyebrow": "Returns",
+      "title": "Withdraw from an order",
+      "intro": "Ordered without an account? Enter your order number and the e-mail address you used: we send you a personal link to declare your withdrawal online.",
+      "formTitle": "Get my withdrawal link",
+      "orderNumber": "Order number",
+      "email": "Order e-mail address",
+      "send": "Get the link",
+      "missing": "Enter the order number and the e-mail address.",
+      "privacy": "The link is sent to the order's address and stays valid for 48 hours. For your security, we do not confirm here whether an order exists.",
+      "sentTitle": "Check your inbox",
+      "sentBody": "If an order matches these details, a link valid for 48 hours has just been sent to its e-mail address. Remember to check your spam folder.",
+      "loading": "Loading your order…",
+      "linkInvalid": "This link is no longer valid (it expires after 48 hours). Ask for a new one.",
+      "askAgain": "Ask for a new link",
+      "member": "Have an account?",
+      "memberLink": "The withdrawal function is on your order's page."
+    },
+    "admin": {
+      "title": "Withdrawals",
+      "empty": "No withdrawal declared for this order.",
+      "via": {
+        "account": "from the account",
+        "email_link": "through an e-mailed link (no account)"
+      },
+      "deadline": "Period judged: until {{date}}",
+      "noDeadline": "Period not started at declaration (parcel not delivered)",
+      "suggested": "Suggested refund: {{amount}} (items{{shipping}})",
+      "suggestedShipping": " + delivery",
+      "returnReceived": "Return received",
+      "refund": "Refund",
+      "refuse": "Refuse",
+      "refundTitle": "Refund the withdrawal",
+      "refundAmount": "Amount refunded",
+      "refundHelp": "The declaration's items are refunded to the card (Stripe); Stripe confirms the refund. For an express delivery, only refund the cheapest standard rate.",
+      "restock": "Put the items back in stock",
+      "refundSubmit": "Send the refund",
+      "refuseTitle": "Refuse the withdrawal",
+      "refuseReason": "Reason",
+      "refuseNote": "Message to the customer (shown on their order)",
+      "refuseSubmit": "Refuse",
+      "cancel": "Cancel",
+      "sealIntact": "seal declared intact",
+      "errors": {
+        "forbidden": "Only people who manage orders can do this.",
+        "settled": "This withdrawal was already handled or a refund is under way.",
+        "invalid": "Check the reason and the message.",
+        "unavailable": "Not possible right now."
+      }
+    }
   }
 }

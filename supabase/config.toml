@@ -28,6 +28,10 @@ project_id = "global-toothgems"
 #   and segments), not a browser; same shared secret EMAIL_INTERNAL_SECRET.
 # - purge-storage-objects: called by pg_cron (removes the files the retention purge queued,
 #   decision 127), not a browser; same shared secret EMAIL_INTERNAL_SECRET.
+# - order-withdrawal: the shop's withdrawal function (decision 131) is open to guests, who call it
+#   with the publishable key (not a JWT); a member's token is verified inside the function
+#   (auth.getUser). Honeypot, a per-address throttle, the per-order throttle of
+#   request_order_withdrawal_link() and Turnstile (when TURNSTILE_SECRET_KEY is set) guard the link.
 # - resend-webhook: Resend sends no Supabase token; the Svix signature
 #   (RESEND_WEBHOOK_SECRET, five-minute tolerance) is the authentication.
 [functions.create-checkout-session]
@@ -89,4 +93,7 @@ verify_jwt = false
 
 # 3D Studio smile try-on (decision 111): the status call is open, the member's token is checked in the function.
 [functions.studio-try-on]
+verify_jwt = false
+
+[functions.order-withdrawal]
 verify_jwt = false

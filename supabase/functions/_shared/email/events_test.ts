@@ -183,7 +183,7 @@ Deno.test("course enrolment: carries the terms of sale in the order's language, 
   assert(atob(mail.attachments![0].content).startsWith("%PDF-"));
   assertEquals(provider.asked.map((a) => a.locale), ["fr"]);
   assert(provider.asked[0].reference.startsWith("Commande "));
-  assert(mail.text.includes("Conditions générales de vente jointes à cet e-mail (PDF) : version du 9 novembre 2026."));
+  assert(mail.text.includes("Conditions générales de vente jointes à cet e-mail (PDF) : version du 10 novembre 2026."));
 });
 
 Deno.test("contract confirmations are never sent without the terms of sale: no provider, no e-mail (retried next run)", async () => {
@@ -201,8 +201,8 @@ Deno.test("course enrolment: a PDF that cannot be drawn writes the terms into th
   });
   const [mail] = seen.requests as { attachments?: unknown; text: string }[];
   assertEquals(mail.attachments, undefined);
-  assert(mail.text.includes("TERMS OF SALE — VERSION OF 9 NOVEMBER 2026"));
-  assert(mail.text.includes("Terms of sale reproduced in this email: version of 9 November 2026."));
+  assert(mail.text.includes("TERMS OF SALE — VERSION OF 10 NOVEMBER 2026"));
+  assert(mail.text.includes("Terms of sale reproduced in this email: version of 10 November 2026."));
 });
 
 Deno.test("refund: keyed by the refund, with the amount formatted for the order's language and currency", async () => {
@@ -417,7 +417,7 @@ Deno.test("studio subscription: the terms of sale name the plan and their versio
   assertEquals(provider.asked, [{ locale: "en", reference: "3D Studio subscription — Artist" }]);
   const [mail] = seen.requests as { attachments?: { filename: string }[]; text: string }[];
   assertEquals(mail.attachments?.map((a) => a.filename), [`terms-of-sale-${TERMS_OF_SALE_VERSION}.pdf`]);
-  assert(mail.text.includes("Terms of sale attached to this email (PDF): version of 9 November 2026."));
+  assert(mail.text.includes("Terms of sale attached to this email (PDF): version of 10 November 2026."));
 });
 
 Deno.test("studio invoice: a renewal is mailed once with its invoice; no document yet means no e-mail", async () => {

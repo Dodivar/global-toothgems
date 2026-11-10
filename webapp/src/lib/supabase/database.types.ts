@@ -4963,6 +4963,159 @@ export type Database = {
           },
         ]
       }
+      order_withdrawal_items: {
+        Row: {
+          order_item_id: string
+          quantity: number
+          seal_opened: boolean | null
+          withdrawal_id: string
+        }
+        Insert: {
+          order_item_id: string
+          quantity: number
+          seal_opened?: boolean | null
+          withdrawal_id: string
+        }
+        Update: {
+          order_item_id?: string
+          quantity?: number
+          seal_opened?: boolean | null
+          withdrawal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_withdrawal_items_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_withdrawal_items_withdrawal_id_fkey"
+            columns: ["withdrawal_id"]
+            isOneToOne: false
+            referencedRelation: "order_withdrawals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_withdrawal_links: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          order_id: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          order_id: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          order_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_withdrawal_links_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_withdrawals: {
+        Row: {
+          channel: string
+          created_at: string
+          customer_name: string
+          deadline_at: string | null
+          declared_at: string
+          email: string
+          handled_by: string | null
+          id: string
+          locale: string
+          order_id: string
+          refunded_at: string | null
+          refusal_note: string | null
+          refusal_reason: string | null
+          refused_at: string | null
+          return_received_at: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          customer_name: string
+          deadline_at?: string | null
+          declared_at?: string
+          email: string
+          handled_by?: string | null
+          id?: string
+          locale?: string
+          order_id: string
+          refunded_at?: string | null
+          refusal_note?: string | null
+          refusal_reason?: string | null
+          refused_at?: string | null
+          return_received_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          customer_name?: string
+          deadline_at?: string | null
+          declared_at?: string
+          email?: string
+          handled_by?: string | null
+          id?: string
+          locale?: string
+          order_id?: string
+          refunded_at?: string | null
+          refusal_note?: string | null
+          refusal_reason?: string | null
+          refused_at?: string | null
+          return_received_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_withdrawals_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_withdrawals_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           admin_note: string | null
@@ -6339,6 +6492,7 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           weight_grams: number | null
+          withdrawal_hygiene_seal: boolean
         }
         Insert: {
           category_id?: string | null
@@ -6369,6 +6523,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           weight_grams?: number | null
+          withdrawal_hygiene_seal?: boolean
         }
         Update: {
           category_id?: string | null
@@ -6399,6 +6554,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           weight_grams?: number | null
+          withdrawal_hygiene_seal?: boolean
         }
         Relationships: [
           {
@@ -7384,6 +7540,7 @@ export type Database = {
           restock: boolean
           status: string
           updated_at: string
+          withdrawal_id: string | null
         }
         Insert: {
           amount: number
@@ -7400,6 +7557,7 @@ export type Database = {
           restock?: boolean
           status?: string
           updated_at?: string
+          withdrawal_id?: string | null
         }
         Update: {
           amount?: number
@@ -7416,6 +7574,7 @@ export type Database = {
           restock?: boolean
           status?: string
           updated_at?: string
+          withdrawal_id?: string | null
         }
         Relationships: [
           {
@@ -7451,6 +7610,13 @@ export type Database = {
             columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_withdrawal_id_fkey"
+            columns: ["withdrawal_id"]
+            isOneToOne: false
+            referencedRelation: "order_withdrawals"
             referencedColumns: ["id"]
           },
         ]
@@ -10323,6 +10489,35 @@ export type Database = {
           variant_id: string
         }[]
       }
+      admin_refuse_withdrawal: {
+        Args: { p_note?: string; p_reason: string; p_withdrawal_id: string }
+        Returns: {
+          channel: string
+          created_at: string
+          customer_name: string
+          deadline_at: string | null
+          declared_at: string
+          email: string
+          handled_by: string | null
+          id: string
+          locale: string
+          order_id: string
+          refunded_at: string | null
+          refusal_note: string | null
+          refusal_reason: string | null
+          refused_at: string | null
+          return_received_at: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "order_withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_reorder_gem_colors: {
         Args: { p_ids: string[] }
         Returns: undefined
@@ -10378,6 +10573,35 @@ export type Database = {
         Returns: undefined
       }
       admin_save_tax_rates: { Args: { p_rates: Json }; Returns: undefined }
+      admin_withdrawal_return_received: {
+        Args: { p_withdrawal_id: string }
+        Returns: {
+          channel: string
+          created_at: string
+          customer_name: string
+          deadline_at: string | null
+          declared_at: string
+          email: string
+          handled_by: string | null
+          id: string
+          locale: string
+          order_id: string
+          refunded_at: string | null
+          refusal_note: string | null
+          refusal_reason: string | null
+          refused_at: string | null
+          return_received_at: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "order_withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       analytics_snapshot: {
         Args: {
           p_currency?: string
@@ -10588,6 +10812,43 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "shipments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      declare_order_withdrawal: {
+        Args: {
+          p_as_consumer: boolean
+          p_customer_name: string
+          p_items: Json
+          p_link_token?: string
+          p_locale?: string
+          p_order_id: string
+          p_user_id?: string
+        }
+        Returns: {
+          channel: string
+          created_at: string
+          customer_name: string
+          deadline_at: string | null
+          declared_at: string
+          email: string
+          handled_by: string | null
+          id: string
+          locale: string
+          order_id: string
+          refunded_at: string | null
+          refusal_note: string | null
+          refusal_reason: string | null
+          refused_at: string | null
+          return_received_at: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "order_withdrawals"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -10813,6 +11074,7 @@ export type Database = {
           restock: boolean
           status: string
           updated_at: string
+          withdrawal_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -10838,6 +11100,7 @@ export type Database = {
           restock: boolean
           status: string
           updated_at: string
+          withdrawal_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -10875,6 +11138,18 @@ export type Database = {
         Returns: Json
       }
       newsletter_unsubscribe: { Args: { p_token: string }; Returns: boolean }
+      order_withdrawal_ip_allowed: {
+        Args: { p_ip_hash: string }
+        Returns: boolean
+      }
+      order_withdrawal_options: {
+        Args: { p_order_id: string }
+        Returns: Json
+      }
+      order_withdrawal_options_by_token: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       pending_back_in_stock_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -10911,6 +11186,21 @@ export type Database = {
           locale: string
           subscribed: boolean
           tags: string[]
+        }[]
+      }
+      pending_order_withdrawal_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          customer_name: string
+          declared_at: string
+          email: string
+          is_member: boolean
+          items: Json
+          locale: string
+          order_id: string
+          order_number: string
+          return_address: string
+          withdrawal_id: string
         }[]
       }
       pending_refund_emails: {
@@ -11069,6 +11359,7 @@ export type Database = {
           restock: boolean
           status: string
           updated_at: string
+          withdrawal_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -11193,6 +11484,10 @@ export type Database = {
         }
         Returns: Json
       }
+      request_order_withdrawal_link: {
+        Args: { p_email: string; p_order_number: string }
+        Returns: Json
+      }
       request_refund: {
         Args: {
           p_amount: number
@@ -11216,6 +11511,7 @@ export type Database = {
           restock: boolean
           status: string
           updated_at: string
+          withdrawal_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -11231,6 +11527,37 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      request_withdrawal_refund: {
+        Args: {
+          p_amount: number
+          p_order_id: string
+          p_restock?: boolean
+          p_withdrawal_id: string
+        }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          order_id: string
+          payment_id: string
+          processed_at: string | null
+          provider_refund_id: string | null
+          reason: string
+          requested_by: string | null
+          restock: boolean
+          status: string
+          updated_at: string
+          withdrawal_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "refunds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       set_shipment_status: {
         Args: {

@@ -192,8 +192,8 @@ export const FAQ: FaqCategory[] = [
         question: l("Comment retourner un article ?", "How do I return an item?"),
         answer: [
           l(
-            "Contactez-nous d’abord via la catégorie « Retour / remboursement » : nous vous envoyons les instructions. Tout le processus est détaillé sur la page <<Retours et remboursements|/retours-remboursements>>.",
-            "Contact us first through the “Return / refund” category: we will send you instructions. The whole process is on the <<Returns & refunds|/retours-remboursements>> page.",
+            "Pour vous rétracter d’un achat, déclarez-le en ligne : « Se rétracter du contrat ici » sur la page de la commande dans <<Mes commandes|/compte/commandes>>, ou, si vous avez commandé sans compte, sur la page <<Se rétracter d’une commande|/retours-remboursements/retractation>>. L’accusé de réception envoyé aussitôt par e-mail donne l’adresse et la marche à suivre. Pour un produit défectueux ou endommagé, contactez-nous via la catégorie « Retour / remboursement ». Tout le processus est détaillé sur la page <<Retours et remboursements|/retours-remboursements>>.",
+            "To withdraw from a purchase, declare it online: “Withdraw from the contract here” on the order’s page in <<My orders|/compte/commandes>>, or, if you ordered without an account, on the <<Withdraw from an order|/retours-remboursements/retractation>> page. The acknowledgement e-mailed at once gives the address and what to do. For a defective or damaged product, contact us through the “Return / refund” category. The whole process is on the <<Returns & refunds|/retours-remboursements>> page.",
           ),
         ],
       },

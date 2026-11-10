@@ -50,7 +50,7 @@ Deno.test("every contract confirmation shows the terms of sale PDF and names its
     const request = byKey.get(key)!;
     assert(request.attachments?.some((a) => a.filename === TERMS_FILE), key);
     const content = typeof request.content === "function" ? request.content("fr") : request.content;
-    assertEquals(content?.footerNote, "Conditions générales de vente jointes à cet e-mail (PDF) : version du 9 novembre 2026.", key);
+    assertEquals(content?.footerNote, "Conditions générales de vente jointes à cet e-mail (PDF) : version du 10 novembre 2026.", key);
   }
   assert(!byKey.get("order_refunded")!.attachments?.some((a) => a.filename === TERMS_FILE));
 });

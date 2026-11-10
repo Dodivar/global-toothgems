@@ -11,7 +11,7 @@ import { l, type LegalDocument } from "./types";
  * any change to the text below**: `termsDocument.test.ts` fails while the
  * text's fingerprint and this version disagree.
  */
-export const TERMS_OF_SALE_VERSION = "2026-11-09";
+export const TERMS_OF_SALE_VERSION = "2026-11-10";
 
 /**
  * Terms of sale ("conditions générales de vente").
@@ -380,6 +380,15 @@ export const TERMS: LegalDocument = {
           text: l(
             "Pour exercer ce droit, informez-nous de votre décision par une déclaration claire avant la fin du délai : via le <<formulaire de contact|/contact?sujet=returns>>, par e-mail à [[!E-mail du service client]], ou en nous envoyant le modèle de formulaire de rétractation ci-dessous. Pour un abonnement au Studio 3D, vous pouvez aussi vous rétracter directement depuis <<Mon abonnement Studio|/compte/studio>>.",
             "To exercise this right, tell us of your decision with a clear statement before the period ends: through the <<contact form|/contact?sujet=returns>>, by email to [[!Customer service email]], or by sending us the model withdrawal form below. For a 3D Studio subscription, you can also withdraw directly from <<My Studio subscription|/compte/studio>>.",
+          ),
+        },
+        {
+          kind: "callout",
+          tone: "instruction",
+          title: l("Fonction de rétractation en ligne", "Online withdrawal function"),
+          text: l(
+            "Pour les produits, une fonction de rétractation en ligne gratuite est disponible pendant tout le délai (article L221-21 du Code de la consommation) : sur la page de la commande dans <<Mes commandes|/compte/commandes>> (« Se rétracter du contrat ici ») ou, pour une commande passée sans compte, sur la page <<Se rétracter d’une commande|/retours-remboursements/retractation>>, après réception d’un lien envoyé à l’adresse e-mail de la commande. Vous indiquez votre nom, la commande et les articles concernés (rétractation totale ou partielle), puis confirmez par « Confirmer la rétractation ». Nous accusons réception sans délai, par e-mail, du contenu de votre déclaration ainsi que de sa date et de son heure.",
+            "For products, a free online withdrawal function is available throughout the period (article L221-21 of the French Consumer Code): on the order’s page in <<My orders|/compte/commandes>> (“Withdraw from the contract here”) or, for an order placed without an account, on the <<Withdraw from an order|/retours-remboursements/retractation>> page, after receiving a link sent to the order’s e-mail address. You give your name, the order and the items concerned (full or partial withdrawal), then confirm with “Confirm withdrawal”. We acknowledge receipt without delay, by e-mail, with the content of your declaration and its date and time.",
           ),
         },
       ],
