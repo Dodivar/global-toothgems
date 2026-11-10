@@ -22,9 +22,10 @@
  * (`studio_invoice`); the withdrawal's AV- credit note follows the
  * acknowledgement on its own (`studio_credit_note`) once the refund is
  * confirmed — never attached to the acknowledgement, which may race it.
- * The contract confirmations — course enrolment and Studio subscription —
- * carry the terms of sale (L221-13, decision 130, `termsPdf.ts`): without a
- * terms provider they are not sent (the next run, given one, sends them).
+ * The Studio subscription confirmation carries the terms of sale (L221-13,
+ * decision 130, `termsPdf.ts`): without a terms provider it is not sent (the
+ * next run, given one, sends it). The course enrolment carries none: the
+ * order confirmation already did.
  * One row never stops the others, and nothing here throws for a failed e-mail.
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
@@ -40,7 +41,7 @@ import {
 import { refundContent, shippingContent } from "./orderContent.ts";
 import { courseEnrolmentContent, type CourseWaiver } from "./courseContent.ts";
 import { type EmailDeps, type SendResult, sendTemplatedEmail } from "./send.ts";
-import { orderReference, studioReference, type TermsProvider, withTerms } from "./termsPdf.ts";
+import { studioReference, type TermsProvider, withTerms } from "./termsPdf.ts";
 import {
   backInStockContent,
   type RestockedProduct,
@@ -255,33 +256,28 @@ export function sendShippingEmails(
   );
 }
 
-/** The enrolment confirms the course contract: it repeats the waiver and carries the terms of sale. */
+/**
+ * The enrolment says the course is ready and repeats the waiver ticked before paying. It carries no
+ * terms of sale: a course is always bought through an order, whose confirmation already carries them
+ * (decision 130 (e)).
+ */
 export function sendCourseEnrolmentEmails(
   deps: EmailDeps,
   source: PendingSource,
-  options: { orderId?: string; limit?: number; log?: Log; terms?: TermsProvider } = {},
+  options: { orderId?: string; limit?: number; log?: Log } = {},
 ): Promise<EventReport> {
   const log = options.log ?? (() => {});
-  const terms = options.terms;
   return source.courseEnrolments({ orderId: options.orderId, limit: options.limit ?? 25 }).then((rows) =>
-    sendEach(rows, "course enrolment", (r) => r.entitlementId, async (enrolment) => {
-      if (!terms) return null;
-      const copy = await terms(enrolment.locale, orderReference(enrolment.orderNumber, enrolment.locale));
-      const extra = withTerms(copy, enrolment.locale);
-      return sendTemplatedEmail(deps, {
+    sendEach(rows, "course enrolment", (r) => r.entitlementId, (enrolment) =>
+      sendTemplatedEmail(deps, {
         templateKey: "course_enrolment",
         to: enrolment.email,
         locale: enrolment.locale,
         variables: { first_name: enrolment.firstName, course_name: enrolment.courseName },
         eventKey: `course_enrolment:${enrolment.entitlementId}`,
         orderId: enrolment.orderId,
-        attachments: extra.attachments.length ? extra.attachments : undefined,
-        content: (locale) => {
-          const waiver = courseEnrolmentContent(enrolment.waiver ?? null, locale) ?? {};
-          return { ...waiver, blocks: [...(waiver.blocks ?? []), ...extra.blocks], footerNote: withTerms(copy, locale).footerNote };
-        },
-      });
-    }, log)
+        content: (locale) => courseEnrolmentContent(enrolment.waiver ?? null, locale) ?? {},
+      }), log)
   );
 }
 

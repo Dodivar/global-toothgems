@@ -46,13 +46,13 @@ Deno.test("the documents are real PDFs with sample numbers", () => {
 
 Deno.test("every contract confirmation shows the terms of sale PDF and names its version (decision 130)", () => {
   const byKey = new Map(buildShowcase(ctx).flatMap((s) => (s.kind === "template" ? [[s.request.templateKey, s.request] as const] : [])));
-  for (const key of ["order_confirmation", "course_enrolment", "studio_subscription_confirmation"]) {
+  for (const key of ["order_confirmation", "studio_subscription_confirmation"]) {
     const request = byKey.get(key)!;
     assert(request.attachments?.some((a) => a.filename === TERMS_FILE), key);
     const content = typeof request.content === "function" ? request.content("fr") : request.content;
     assertEquals(content?.footerNote, "Conditions générales de vente jointes à cet e-mail (PDF) : version du 10 novembre 2026.", key);
   }
-  assert(!byKey.get("order_refunded")!.attachments?.some((a) => a.filename === TERMS_FILE));
+  for (const key of ["order_refunded", "course_enrolment"]) assert(!byKey.get(key)!.attachments?.some((a) => a.filename === TERMS_FILE), key);
 });
 
 Deno.test("the Auth samples have no Go template action left", () => {

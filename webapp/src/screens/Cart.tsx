@@ -21,7 +21,6 @@ import { useCart } from "../lib/cart";
 import { useOrders } from "../lib/orders";
 import { useAuth } from "../lib/auth";
 import { useProgress } from "../lib/progress";
-import { LEARN_BASE } from "../lib/academyUrl";
 import { bestSellers } from "../data/products";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { toMajorUnits } from "../lib/catalog/money";
@@ -472,7 +471,7 @@ export function Cart() {
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             {boughtCourse ? (
-              <Button variant="primary" onClick={() => navigate(LEARN_BASE)}>{t("checkout.course.openCourses")}</Button>
+              <Button variant="primary" onClick={() => navigate("/compte")}>{t("checkout.course.openCourses")}</Button>
             ) : (
               <Button variant="primary" onClick={() => navigate("/compte")}>{t("cart.confirmedOpenAccount")}</Button>
             )}

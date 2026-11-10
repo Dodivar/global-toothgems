@@ -241,12 +241,10 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
     },
     {
       kind: "template",
-      label: "Inscription à une formation (+ CGV PDF)",
+      label: "Inscription à une formation",
       request: {
         ...base, templateKey: "course_enrolment", eventKey: key("course_enrolment"),
         variables: { first_name: "Camille", course_name: "Initiation Tooth Gems" },
-        attachments: termsFiles(orderTerms),
-        content: (locale) => withTermsContent({}, orderTerms, locale),
       },
     },
     {

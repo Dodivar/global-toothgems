@@ -3,7 +3,7 @@
  * one (stripe-webhook, and create-checkout-session for an order fully covered
  * by gift cards): the confirmation e-mail, the delivery of the gift cards
  * bought in the order, and the enrolment e-mail of each course it bought. The
- * confirmation and the enrolments carry the terms of sale (decision 130).
+ * confirmation carries the terms of sale (decision 130).
  *
  * It never throws: the payment is already recorded and an e-mail problem must
  * not turn a paid order into a failed webhook or a failed checkout. A failure
@@ -60,7 +60,7 @@ export async function notifyOrderPaid(orderId: string, log: Logger): Promise<voi
 
   try {
     // The access was granted by the payment itself (trigger); the sweep catches what fails here.
-    await sendCourseEnrolmentEmails(deps, supabasePendingSource(db), { orderId, log, terms });
+    await sendCourseEnrolmentEmails(deps, supabasePendingSource(db), { orderId, log });
   } catch (error) {
     log("course enrolment e-mails crashed", error instanceof Error ? error.message : error);
   }
