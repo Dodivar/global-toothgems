@@ -22,7 +22,7 @@ export type DirectoryRow = Database["public"]["Functions"]["lounge_directory"]["
 
 /** The columns of `lounge_messages` the lounge reads, with their attachments. */
 export const LOUNGE_MESSAGE_SELECT =
-  "id, channel_id, conversation_id, author_id, parts, reply_to_id, reactions, created_at, lounge_message_attachments(storage_path, alt_text, position)";
+  "id, channel_id, conversation_id, author_id, parts, reply_to_id, reactions, created_at, moderation_status, hidden_decision_id, lounge_message_attachments(id, storage_path, alt_text, position)";
 
 export interface MessageRow {
   id: string;
@@ -33,7 +33,10 @@ export interface MessageRow {
   reply_to_id: string | null;
   reactions: Json;
   created_at: string;
-  lounge_message_attachments?: Array<{ storage_path: string; alt_text: string; position: number }> | null;
+  /** `hidden` by the moderators: only its author reads it then (decision 132). */
+  moderation_status?: string | null;
+  hidden_decision_id?: string | null;
+  lounge_message_attachments?: Array<{ id?: string; storage_path: string; alt_text: string; position: number }> | null;
 }
 
 const TONES: AvatarTone[] = ["blue", "emerald", "fuchsia", "ink"];
@@ -84,7 +87,9 @@ export function mapMessage(row: MessageRow, mine: readonly ChatReaction[], signe
     .sort((a, b) => a.position - b.position)
     .map((attachment) => {
       const src = signed(attachment.storage_path);
-      return src ? { kind: "image" as const, src, name: attachment.storage_path.split("/").pop() ?? "", alt: attachment.alt_text } : null;
+      return src
+        ? { kind: "image" as const, src, name: attachment.storage_path.split("/").pop() ?? "", alt: attachment.alt_text, ...(attachment.id ? { id: attachment.id } : {}) }
+        : null;
     })
     .filter((attachment) => attachment !== null);
   return {
@@ -97,6 +102,7 @@ export function mapMessage(row: MessageRow, mine: readonly ChatReaction[], signe
     reactions: mapReactions(row.reactions),
     mine: mine.length ? [...mine] : undefined,
     attachments: attachments.length ? attachments : undefined,
+    ...(row.moderation_status === "hidden" ? { hiddenBy: { decisionId: row.hidden_decision_id ?? undefined } } : {}),
   };
 }
 
@@ -208,12 +214,14 @@ export function attachmentPath(userId: string, file: { name: string; type: strin
   return `${userId}/${id}.${fromType ?? fromName ?? "jpg"}`;
 }
 
-export type LoungeFailure = "rateLimited" | "forbidden" | "failed";
+export type LoungeFailure = "rateLimited" | "forbidden" | "muted" | "duplicate" | "invalid" | "failed";
 
 /** What a failed lounge call means for the member. */
 export function loungeFailure(error: { code?: string | null; message?: string | null } | null | undefined): LoungeFailure {
   if (!error) return "failed";
   if (error.code === "PT429") return "rateLimited";
-  if (error.code === "42501") return "forbidden";
+  if (error.code === "42501") return /\bmuted\b/.test(error.message ?? "") ? "muted" : "forbidden";
+  if (error.code === "23505") return "duplicate";
+  if (error.code === "22023") return "invalid";
   return "failed";
 }

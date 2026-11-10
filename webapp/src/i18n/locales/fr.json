@@ -1483,7 +1483,8 @@
       "training": "Formations",
       "analytics": "Statistiques",
       "settings": "Réglages",
-      "users": "Utilisateurs"
+      "users": "Utilisateurs",
+      "lounge": "Salons des membres"
     },
     "role": {
       "owner": "Propriétaire",
@@ -2983,7 +2984,8 @@
         "manageCustomers": "Gérer les clients",
         "managePromotions": "Gérer les promotions",
         "moderateReviews": "Modérer les avis",
-        "manageContent": "Gérer les contenus"
+        "manageContent": "Gérer les contenus",
+        "moderateCommunity": "Modérer les salons des membres"
       },
       "allowed": "Autorisé",
       "notAllowed": "Non autorisé",
@@ -4720,7 +4722,8 @@
         "technical": "Problème technique",
         "privacy": "Demande de confidentialité",
         "professional": "Demande professionnelle",
-        "other": "Autre"
+        "other": "Autre",
+        "illegal_content": "Signaler un contenu illicite"
       },
       "fields": {
         "category": "Sujet de votre demande",
@@ -4789,7 +4792,8 @@
         "response": "Délai de réponse"
       },
       "quickTitle": "Réponses rapides",
-      "trackOrder": "Suivre une commande"
+      "trackOrder": "Suivre une commande",
+      "illegalContentHint": "Indiquez où se trouve le contenu (page, salon, date et auteur du message), en quoi il vous paraît illicite et, si possible, la loi concernée. Votre nom et votre e-mail nous permettent de vous informer de la suite donnée. Un signalement abusif peut être sanctionné."
     },
     "about": {
       "eyebrow": "L’entreprise",

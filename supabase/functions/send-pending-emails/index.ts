@@ -4,6 +4,7 @@ import { sendPendingEmails, supabasePendingSource } from "../_shared/email/event
 import { supabaseInvoiceSource } from "../_shared/email/invoicePdf.ts";
 import { supabaseTermsProvider } from "../_shared/email/termsPdf.ts";
 import { sendOrderWithdrawalEmails, supabaseWithdrawalSource } from "../_shared/email/withdrawalEmails.ts";
+import { sendLoungeModerationEmails, supabaseModerationMailSource } from "../_shared/email/loungeModerationEmails.ts";
 import { handleSendPendingEmails } from "./handler.ts";
 
 /*
@@ -38,7 +39,15 @@ Deno.serve((req) =>
         log("order withdrawal sweep failed", error instanceof Error ? error.message : error);
         orderWithdrawal = { examined: 0, sent: 0, skipped: 0, failed: 1 };
       }
-      return { ...report, orderWithdrawal };
+      // Members' Lounge moderation (decision 132): statements of reasons, report outcomes, complaint answers.
+      let loungeModeration;
+      try {
+        loungeModeration = await sendLoungeModerationEmails(deps, supabaseModerationMailSource(db), { limit, log });
+      } catch (error) {
+        log("lounge moderation sweep failed", error instanceof Error ? error.message : error);
+        loungeModeration = { examined: 0, sent: 0, skipped: 0, failed: 1 };
+      }
+      return { ...report, orderWithdrawal, loungeModeration };
     },
     log,
   })

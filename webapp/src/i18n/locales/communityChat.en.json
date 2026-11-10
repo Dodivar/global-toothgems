@@ -87,7 +87,11 @@
     "openProfile": "Open {{name}}'s profile",
     "sending": "Sending…",
     "loading": "Loading messages…",
-    "loadFailed": "This room's messages could not be loaded."
+    "loadFailed": "This room's messages could not be loaded.",
+    "report": "Report this message",
+    "hideAuthor": "Hide {{name}}’s messages",
+    "hiddenByTeam": "Hidden by the team: other members no longer see it.",
+    "hiddenWhy": "See why or contest"
   },
   "reactions": {
     "heart": "Love",
@@ -131,7 +135,10 @@
     "tooMany": "Up to 4 images per message.",
     "rateLimited": "You are sending a lot of messages: wait a minute before the next one.",
     "forbidden": "Your access to the Lounge has changed: reload the page.",
-    "failed": "The message could not be sent. Try again."
+    "failed": "The message could not be sent. Try again.",
+    "silenced": "The team has suspended your ability to write until {{date}}. You can still read the lounges.",
+    "silencedWhy": "See the decision and contest it",
+    "mutedNow": "Your ability to write is suspended: the message was not sent."
   },
   "members": {
     "heading": "Members",
@@ -165,7 +172,12 @@
     "selfNote": "Your profile follows your account name.",
     "statMessages": "Messages",
     "statHelpful": "Helpful replies",
-    "statSince": "Member since"
+    "statSince": "Member since",
+    "block": "Hide their messages",
+    "unblock": "Show their messages",
+    "blockFailed": "The change could not be saved. Try again.",
+    "blockedNote": "You no longer see their messages. This member is not told.",
+    "blockHint": "Hiding their messages only affects you; this member is not told."
   },
   "newMessage": {
     "title": "New message",
@@ -255,5 +267,68 @@
   "memberUnnamed": "Member",
   "loading": "Opening the Lounge…",
   "loadFailed": "The Lounge could not be loaded. Check your connection and try again.",
-  "retry": "Try again"
+  "retry": "Try again",
+  "excluded": {
+    "eyebrow": "Access suspended",
+    "title": "You no longer have access to the lounges",
+    "body": "Our moderation team has excluded you from the members’ lounges. This decision does not affect your account or your courses. You can read why and contest it for 6 months.",
+    "cta": "See the decision"
+  },
+  "report": {
+    "title": "Report this message",
+    "intro": "Our team reviews every report. The author of the message does not know who reported it.",
+    "imageOnly": "(image only)",
+    "reasonLabel": "Why are you reporting it?",
+    "reasonHints": {
+      "illegal": "Content that breaks the law: hatred, threats, scams, counterfeiting, invasion of privacy…",
+      "harassment": "Insults, intimidation or targeting a person.",
+      "spam": "Advertising, repeated links or messages unrelated to the lounge.",
+      "personal_data": "Someone’s address, phone, photo or details posted without their consent.",
+      "other": "Another breach of the terms of use."
+    },
+    "categoryLabel": "Category of unlawful content",
+    "categoryPlaceholder": "Choose a category",
+    "imageLabel": "What you are reporting",
+    "wholeMessage": "The whole message",
+    "imageN": "Image {{n}} {{alt}}",
+    "detailsLabel": "Tell us why",
+    "detailsPlaceholder": "What the problem is and, for unlawful content, why you think it breaks the law.",
+    "detailsHint": "Between {{min}} and {{max}} characters.",
+    "privacy": "Your report and your name are kept by the team to handle the request and are never shown to the author of the message. Reporting in bad faith may lead to measures.",
+    "sending": "Sending…",
+    "submit": "Send the report",
+    "receivedTitle": "Report received",
+    "receivedBody": "We received your report on {{date}}. Our team is reviewing it and will tell you its decision by e-mail.",
+    "followUp": "Follow my reports",
+    "errors": {
+      "reason": "Choose a reason.",
+      "category": "Choose the category of unlawful content.",
+      "details": "Explain in at least {{min}} characters.",
+      "duplicate": "You have already reported this message: it is being reviewed.",
+      "rateLimited": "You have sent many reports recently. Try again in a while.",
+      "unavailable": "Reporting is not available in this preview.",
+      "failed": "The report could not be sent. Try again."
+    }
+  },
+  "moderation": {
+    "reasons": {
+      "illegal": "Unlawful content",
+      "harassment": "Harassment or abuse",
+      "spam": "Spam or advertising",
+      "personal_data": "Someone else’s personal data",
+      "other": "Other"
+    },
+    "categories": {
+      "hate_speech": "Incitement to hatred or discrimination",
+      "violence_threats": "Violence or threats",
+      "terrorism": "Terrorist content",
+      "child_safety": "Harm to the protection of minors",
+      "scam_fraud": "Scam or fraud",
+      "counterfeit_ip": "Counterfeiting or intellectual property infringement",
+      "privacy_image": "Invasion of privacy or image rights",
+      "defamation": "Defamation or insult",
+      "illegal_products": "Unlawful products or practices",
+      "other_illegal": "Other unlawful content"
+    }
+  }
 }

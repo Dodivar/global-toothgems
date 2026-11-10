@@ -89,6 +89,7 @@ export type ContactCategory =
   | "technical"
   | "privacy"
   | "professional"
+  | "illegal_content"
   | "other";
 
 export interface LegalDocument {

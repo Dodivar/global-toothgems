@@ -1483,7 +1483,8 @@
       "training": "Training",
       "analytics": "Analytics",
       "settings": "Settings",
-      "users": "Users"
+      "users": "Users",
+      "lounge": "Members’ lounges"
     },
     "role": {
       "owner": "Owner",
@@ -2983,7 +2984,8 @@
         "manageCustomers": "Manage customers",
         "managePromotions": "Manage promotions",
         "moderateReviews": "Moderate reviews",
-        "manageContent": "Manage content"
+        "manageContent": "Manage content",
+        "moderateCommunity": "Moderate the members’ lounges"
       },
       "allowed": "Allowed",
       "notAllowed": "Not allowed",
@@ -4720,7 +4722,8 @@
         "technical": "Technical issue",
         "privacy": "Privacy request",
         "professional": "Professional inquiry",
-        "other": "Other"
+        "other": "Other",
+        "illegal_content": "Report unlawful content"
       },
       "fields": {
         "category": "What is it about?",
@@ -4789,7 +4792,8 @@
         "response": "Response time"
       },
       "quickTitle": "Quick answers",
-      "trackOrder": "Track an order"
+      "trackOrder": "Track an order",
+      "illegalContentHint": "Tell us where the content is (page, lounge, date and author of the message), why you think it is unlawful and, if possible, the law concerned. Your name and e-mail let us tell you what we decided. An abusive report may be penalised."
     },
     "about": {
       "eyebrow": "Company",

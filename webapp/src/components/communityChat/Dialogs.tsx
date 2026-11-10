@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { AtSign, CheckCheck, Inbox, UserRound, GraduationCap, Heart, Lock, MessageCircle, Reply, Search, SearchX } from "lucide-react";
+import { AtSign, CheckCheck, Eye, EyeOff, Inbox, UserRound, GraduationCap, Heart, Lock, MessageCircle, Reply, Search, SearchX } from "lucide-react";
 import clsx from "clsx";
 import { Link } from "../../lib/navigation";
 import { LOUNGE_DIRECT_MESSAGES_ENABLED, memberOfConversation, type ChatMember } from "../../lib/communityChat/model";
@@ -27,7 +27,9 @@ const sectionTitle = "m-0 text-[10.5px] font-bold uppercase tracking-[var(--trac
  */
 export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose: () => void }) {
   const { t, i18n } = useTranslation();
-  const { memberOf, openConversationWith, mention, room, servers, viewer } = useChat();
+  const { memberOf, openConversationWith, mention, room, servers, viewer, blockedIds, setBlocked } = useChat();
+  const [blockBusy, setBlockBusy] = useState(false);
+  const [blockFailed, setBlockFailed] = useState(false);
   const { closeNav } = useLoungeUi();
   const { locale } = useChatTime();
   const titleId = useId();
@@ -142,6 +144,27 @@ export function ProfileDialog({ memberId, onClose }: { memberId: string; onClose
                 {t("lounge.profile.mention")}
               </button>
             )}
+            <button
+              type="button"
+              disabled={blockBusy}
+              aria-pressed={blockedIds.has(member.id)}
+              onClick={async () => {
+                setBlockBusy(true);
+                const ok = await setBlocked(member.id, !blockedIds.has(member.id));
+                setBlockBusy(false);
+                setBlockFailed(!ok);
+              }}
+              className={clsx(
+                "inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-white px-4 text-[14px] font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--gt-ink-100)] disabled:opacity-60",
+                focusRing,
+              )}
+            >
+              {blockedIds.has(member.id) ? <Eye size={15} aria-hidden="true" /> : <EyeOff size={15} aria-hidden="true" />}
+              {t(blockedIds.has(member.id) ? "lounge.profile.unblock" : "lounge.profile.block")}
+            </button>
+            <p className="m-0 w-full text-[12px] text-[var(--text-muted)]" aria-live="polite">
+              {blockFailed ? t("lounge.profile.blockFailed") : blockedIds.has(member.id) ? t("lounge.profile.blockedNote") : t("lounge.profile.blockHint")}
+            </p>
           </div>
         )}
       </div>

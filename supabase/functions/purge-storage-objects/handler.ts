@@ -35,6 +35,8 @@ export interface PurgeReport {
 /** Buckets the sweep may empty: those the SQL queue accepts. */
 export const PURGEABLE_BUCKETS: ReadonlySet<string> = new Set([
   "contact-attachments",
+  // Images of lounge messages deleted by the moderators (decision 132).
+  "lounge-media",
 ]);
 
 const BATCH = 100;

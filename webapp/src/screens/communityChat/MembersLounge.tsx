@@ -16,6 +16,7 @@ import { Composer } from "../../components/communityChat/Composer";
 import { MembersPanel } from "../../components/communityChat/MembersPanel";
 import { InboxDialog, NewMessageDialog, ProfileDialog, SearchDialog } from "../../components/communityChat/Dialogs";
 import { LockedLounge } from "../../components/communityChat/LockedLounge";
+import { ReportDialog } from "../../components/communityChat/ReportDialog";
 
 /**
  * The Members' Lounge (`/compte/salons/…`): the community's private chat,
@@ -151,6 +152,7 @@ type DialogState =
   | { kind: "search" }
   | { kind: "inbox" }
   | { kind: "newMessage" }
+  | { kind: "report"; messageId: string }
   | null;
 
 /** A panel sliding in from one edge, modal while open (phones and tablets). */
@@ -220,6 +222,7 @@ function LoungeLayout() {
       openSearch: () => setDialog({ kind: "search" }),
       openInbox: () => setDialog({ kind: "inbox" }),
       openNewMessage: () => setDialog({ kind: "newMessage" }),
+      openReport: (messageId) => setDialog({ kind: "report", messageId }),
       openNav: (tab = "channels") => setNav(tab),
       closeNav: () => setNav(null),
       membersOpen: wide ? membersPinned : membersDrawer,
@@ -270,6 +273,7 @@ function LoungeLayout() {
       {dialog?.kind === "search" && <SearchDialog onClose={closeDialog} />}
       {dialog?.kind === "inbox" && <InboxDialog onClose={closeDialog} />}
       {dialog?.kind === "newMessage" && <NewMessageDialog onClose={closeDialog} />}
+      {dialog?.kind === "report" && <ReportDialog messageId={dialog.messageId} onClose={closeDialog} />}
     </LoungeUiContext.Provider>
   );
 }
