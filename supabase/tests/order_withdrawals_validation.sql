@@ -282,6 +282,8 @@ begin
   if exists (select 1 from public.order_withdrawal_links where token_hash = v_tok) then
     raise exception 'FAIL W11: the token is stored in clear';
   end if;
+  -- Third request for this pair (the first one above used another address); the fourth is throttled.
+  perform public.request_order_withdrawal_link('GT-RETRACT-3', 'retract-guest.test@example.invalid');
   perform public.request_order_withdrawal_link('GT-RETRACT-3', 'retract-guest.test@example.invalid');
   v_json := public.request_order_withdrawal_link('GT-RETRACT-3', 'retract-guest.test@example.invalid');
   if v_json ->> 'status' <> 'throttled' then raise exception 'FAIL W11: the 4th request was not throttled: %', v_json; end if;
