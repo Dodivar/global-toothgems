@@ -392,7 +392,9 @@ begin
   if w3.status <> 'refused' or w3.refusal_reason <> 'professional_buyer' or w3.refused_at is null then
     raise exception 'FAIL W14: unexpected refusal %', to_jsonb(w3);
   end if;
+  perform set_config('role', 'postgres', true);
   if private.order_item_withdrawable(d3) <> 1 then raise exception 'FAIL W14: the refused units stay taken'; end if;
+  perform set_config('role', 'authenticated', true);
   begin
     perform public.admin_withdrawal_return_received(w3.id);
     raise exception 'FAIL W14: a refused withdrawal moved again';
