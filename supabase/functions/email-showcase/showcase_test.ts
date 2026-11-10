@@ -66,6 +66,6 @@ Deno.test("the Auth samples have no Go template action left", () => {
 
 Deno.test("only_documents keeps the samples with a PDF: invoices, credit notes, terms of sale", () => {
   const kept = withDocuments(buildShowcase(ctx));
-  assertEquals(kept.length, 6);
+  assertEquals(kept.length, 5);
   assert(kept.every((s) => s.kind === "template" && (s.request.attachments?.length ?? 0) >= 1));
 });
