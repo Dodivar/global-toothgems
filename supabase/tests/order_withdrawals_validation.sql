@@ -68,24 +68,24 @@ begin
   insert into public.orders (user_id, customer_email, billing_address, shipping_address, currency,
                              subtotal_amount, discount_amount, shipping_amount, tax_amount, total_amount, order_number)
   values (m1, 'retract-a.test@example.invalid', addr, addr, 'EUR', 60.00, 0, 5.00, 0, 65.00, 'GT-RETRACT-1') returning id into o1;
-  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity, subtotal_amount)
-  values (o1, p_seal, 'A', 5.00, 2, 10.00) returning id into a1;
-  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity, subtotal_amount)
-  values (o1, p_plain, 'B', 10.00, 3, 30.00) returning id into b1;
-  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity, subtotal_amount)
-  values (o1, p_gift, 'G', 20.00, 1, 20.00) returning id into g1;
+  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity)
+  values (o1, p_seal, 'A', 5.00, 2) returning id into a1;
+  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity)
+  values (o1, p_plain, 'B', 10.00, 3) returning id into b1;
+  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity)
+  values (o1, p_gift, 'G', 20.00, 1) returning id into g1;
   -- o2 (m1): delivered 20 days ago.
   insert into public.orders (user_id, customer_email, billing_address, shipping_address, currency,
                              subtotal_amount, discount_amount, shipping_amount, tax_amount, total_amount, order_number)
   values (m1, 'retract-a.test@example.invalid', addr, addr, 'EUR', 10.00, 0, 0, 0, 10.00, 'GT-RETRACT-2') returning id into o2;
-  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity, subtotal_amount)
-  values (o2, p_plain, 'C', 10.00, 1, 10.00) returning id into c2;
+  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity)
+  values (o2, p_plain, 'C', 10.00, 1) returning id into c2;
   -- o3: a guest's order, not shipped yet.
   insert into public.orders (user_id, customer_email, billing_address, shipping_address, currency,
                              subtotal_amount, discount_amount, shipping_amount, tax_amount, total_amount, order_number)
   values (null, 'retract-guest.test@example.invalid', addr, addr, 'EUR', 10.00, 0, 0, 0, 10.00, 'GT-RETRACT-3') returning id into o3;
-  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity, subtotal_amount)
-  values (o3, p_plain, 'D', 10.00, 1, 10.00) returning id into d3;
+  insert into public.order_items (order_id, product_id, product_name, unit_price, quantity)
+  values (o3, p_plain, 'D', 10.00, 1) returning id into d3;
 
   insert into public.payments (order_id, status, amount, currency, provider_payment_id)
   values (o1, 'succeeded', 65.00, 'EUR', 'pi_retract_o1') returning id into pay1;
