@@ -135,9 +135,9 @@
       "gemGroups_other": "{{count}} Gem Groups, vos assemblages réutilisables",
       "unlimited": "Créations et Gem Groups illimités",
       "library": "Toute la bibliothèque de gemmes de la boutique, à leurs vraies tailles",
-      "tools": "Vue de face, fiche de placement à imprimer et partage par lien",
+      "clientTools": "Vue de face, fiche de placement à imprimer et partage par lien",
       "templates": "Les modèles Global Toothgems, à copier dans vos créations",
-      "watermark": "Publications pour les réseaux, avec le filigrane Global Toothgems",
+      "posts": "Publications pour les réseaux : image HD et vidéo 360°",
       "ownLogo": "Publications signées de votre logo, ou sans filigrane",
       "transparentExport": "Captures PNG sans fond, prêtes à détourer",
       "glowbook": "Votre Glowbook : la vitrine publique de vos créations, personnalisée, avec QR code et carte",
@@ -170,7 +170,7 @@
       },
       {
         "question": "Quelle formule choisir ?",
-        "answer": "Essentiel pour imaginer vos premiers looks : 15 créations et 3 Gem Groups, toute la bibliothèque et des publications avec le filigrane Global Toothgems. Artiste pour travailler avec vos clientes : 150 créations, 30 Gem Groups, les modèles Global Toothgems, des dossiers pour ranger vos créations et des publications signées de votre logo. Atelier pour aller plus loin : créations et Gem Groups illimités, votre Glowbook public, l’essayage par IA, qui permet à vos clientes de voir vos créations sur leur propre sourire, et des mises en page pour vos publications."
+        "answer": "Essentiel pour imaginer vos premiers looks : 15 créations et 3 Gem Groups, toute la bibliothèque et les modèles Global Toothgems. Artiste pour travailler avec vos clientes : 150 créations, 30 Gem Groups, la vue de face, la fiche de placement et le partage par lien, des dossiers pour ranger vos créations et des publications pour les réseaux signées de votre logo. Atelier pour aller plus loin : créations et Gem Groups illimités, votre Glowbook public, l’essayage par IA, qui permet à vos clientes de voir vos créations sur leur propre sourire, et des mises en page pour vos publications."
       },
       {
         "question": "Puis-je changer de formule plus tard ?",
