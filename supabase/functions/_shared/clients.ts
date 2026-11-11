@@ -1,5 +1,14 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
+import {
+  keyMode,
+  type StripeAccount,
+  StripeAccountNotConfigured,
+  stripePublishableKey,
+  stripeSecretKey,
+  type WebhookEndpoint,
+  webhookEndpoints,
+} from "./stripeAccounts.ts";
 
 /**
  * Server-side clients. The secrets come from the Edge Function environment
@@ -14,8 +23,16 @@ export function requireEnv(name: string): string {
   return value;
 }
 
-export function stripeClient(): Stripe {
-  return new Stripe(requireEnv("STRIPE_SECRET_KEY"), {
+const readEnv = (name: string) => Deno.env.get(name);
+
+/**
+ * The Stripe client of one business (decision 131, `stripeAccounts.ts`): `studio`
+ * (the publisher's account, `STRIPE_*`) or `shop` (the seller's, `SHOP_STRIPE_*`,
+ * borrowing the Studio's test keys until it exists). Throws
+ * `StripeAccountNotConfigured` when the account has no usable key.
+ */
+export function stripeClient(account: StripeAccount): Stripe {
+  return new Stripe(stripeSecretKey(readEnv, account), {
     // Pinned: a Stripe dashboard upgrade must not change what these functions receive.
     apiVersion: "2025-08-27.basil",
     httpClient: Stripe.createFetchHttpClient(),
@@ -24,15 +41,35 @@ export function stripeClient(): Stripe {
 }
 
 /**
- * The publishable key mounts Stripe's payment form in the browser. It must belong
- * to the same mode as the secret key (test with test, live with live), otherwise
- * Stripe.js cannot use what the function opened: a mismatch counts as not configured.
+ * The client of an account, created on first use: a function whose account is
+ * not configured still starts (and answers its own "unavailable" error) instead
+ * of failing at boot. The error is `StripeAccountNotConfigured`.
  */
-export function matchingPublishableKey(): string | null {
-  const publishable = Deno.env.get("STRIPE_PUBLISHABLE_KEY")?.trim() ?? "";
-  const secret = Deno.env.get("STRIPE_SECRET_KEY")?.trim() ?? "";
-  const mode = (key: string) => /^(?:pk|sk|rk)_(test|live)_/.exec(key)?.[1] ?? null;
-  return publishable.startsWith("pk_") && mode(publishable) !== null && mode(publishable) === mode(secret) ? publishable : null;
+export function lazyStripeClient(account: StripeAccount): () => Stripe {
+  let client: Stripe | null = null;
+  return () => (client ??= stripeClient(account));
+}
+
+export { StripeAccountNotConfigured };
+
+/**
+ * The publishable key mounting Stripe's payment form in the browser for an
+ * account. It must belong to the same account and mode as the secret key,
+ * otherwise Stripe.js cannot use what the function opened: a mismatch counts as
+ * not configured.
+ */
+export function matchingPublishableKey(account: StripeAccount): string | null {
+  return stripePublishableKey(readEnv, account);
+}
+
+/** Whether the secret key of an account is a test key (Studio billing setup). */
+export function stripeTestMode(account: StripeAccount): boolean {
+  return keyMode(stripeSecretKey(readEnv, account)) === "test";
+}
+
+/** The webhook signing secrets `stripe-webhook` accepts, with the businesses each may carry. */
+export function stripeWebhookEndpoints(): WebhookEndpoint[] {
+  return webhookEndpoints(readEnv);
 }
 
 /** Signature verification with Web Crypto (Deno has no Node `crypto` HMAC in the Stripe SDK path). */
@@ -57,4 +94,4 @@ export function callerClient(token: string): SupabaseClient {
   });
 }
 
-export type { Stripe, SupabaseClient };
+export type { Stripe, StripeAccount, SupabaseClient, WebhookEndpoint };

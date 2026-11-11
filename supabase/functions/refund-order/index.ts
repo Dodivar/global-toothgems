@@ -1,4 +1,4 @@
-import { callerClient, requireEnv, serviceClient, stripeClient } from "../_shared/clients.ts";
+import { callerClient, lazyStripeClient, requireEnv, serviceClient } from "../_shared/clients.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { toDecimalString } from "../_shared/money.ts";
 import { handleRefundOrder, stripeReason, type RefundDeps, type RefundRow } from "./handler.ts";
@@ -9,7 +9,8 @@ import { handleRefundOrder, stripeReason, type RefundDeps, type RefundRow } from
  */
 
 const service = serviceClient();
-const stripe = stripeClient();
+// Orders are paid on the shop's Stripe account (the seller's, decision 131).
+const stripe = lazyStripeClient("shop");
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 
 interface Row {
@@ -68,7 +69,7 @@ const deps: RefundDeps = {
 
   async createStripeRefund({ paymentIntentId, amountMinor, refundId, orderId, reason }) {
     try {
-      const refund = await stripe.refunds.create(
+      const refund = await stripe().refunds.create(
         {
           payment_intent: paymentIntentId,
           amount: amountMinor,

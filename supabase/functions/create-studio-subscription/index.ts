@@ -16,7 +16,8 @@ import { handleStudioCheckout, type StudioCheckoutDeps } from "./handler.ts";
  */
 
 const supabase = serviceClient();
-const stripe = stripeClient();
+// The Studio's Stripe account: the publisher's (DoDigital, decision 131), `STRIPE_*`.
+const stripe = stripeClient("studio");
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 
 async function storedCustomer(userId: string): Promise<string | null> {
@@ -27,7 +28,7 @@ async function storedCustomer(userId: string): Promise<string | null> {
 
 const deps: StudioCheckoutDeps = {
   origins,
-  publishableKey: matchingPublishableKey(),
+  publishableKey: matchingPublishableKey("studio"),
 
   async userFromToken(token) {
     const { data, error } = await supabase.auth.getUser(token);

@@ -11,7 +11,10 @@ import {
  * POST /functions/v1/stripe-webhook — the only path by which a card payment
  * becomes a paid order (AGENTS.md §8).
  *
- *   1. signature checked against STRIPE_WEBHOOK_SECRET (raw body) → 400 if not
+ *   1. signature checked against each endpoint's secret (raw body) → 400 if none
+ *      matches: STRIPE_WEBHOOK_SECRET (the Studio's account, the publisher's) and
+ *      SHOP_STRIPE_WEBHOOK_SECRET (the shop's, the seller's, decision 131); an event
+ *      of a business its endpoint does not carry is acknowledged and ignored
  *   2. event id recorded in stripe_webhook_events (attempts counted); an event
  *      already `processed` or `ignored` is acknowledged without doing anything
  *   3. checkout.session.completed (payment_status 'paid'),
@@ -68,6 +71,20 @@ export interface WebhookEvent {
 
 export type EventStatus = "received" | "processed" | "ignored" | "failed";
 
+/** The two businesses whose Stripe accounts send events here (decision 131). */
+export type Business = "shop" | "studio";
+
+/**
+ * An event whose signature was checked, with the businesses its endpoint may
+ * carry: the Studio's endpoint (the publisher's account) carries the Studio's
+ * events — and the shop's while the shop still borrows that account in test
+ * mode —, the shop's endpoint (the seller's account) only the shop's. Absent:
+ * both (tests that do not exercise the split).
+ */
+export interface VerifiedEvent extends WebhookEvent {
+  handles?: ReadonlySet<Business>;
+}
+
 export interface PaymentDetails {
   methodType: string | null;
   cardBrand: string | null;
@@ -87,8 +104,8 @@ export class DbCallError extends Error {
 }
 
 export interface WebhookDeps {
-  /** Throws when the signature (or the payload) is not valid. */
-  verify(rawBody: string, signature: string): Promise<WebhookEvent>;
+  /** Throws when the signature (or the payload) is not valid against every endpoint's secret. */
+  verify(rawBody: string, signature: string): Promise<VerifiedEvent>;
   /** Records the delivery; the event's status after it (existing rows keep theirs). */
   recordEvent(event: WebhookEvent, objectId: string | null, orderId: string | null): Promise<EventStatus>;
   finishEvent(eventId: string, status: "processed" | "ignored" | "failed", error?: string): Promise<void>;
@@ -289,7 +306,7 @@ export async function handleWebhook(req: Request, deps: WebhookDeps): Promise<Re
   const rawBody = await req.text();
   if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) return text({ error: "payload_too_large" }, 413);
 
-  let event: WebhookEvent;
+  let event: VerifiedEvent;
   try {
     event = await deps.verify(rawBody, signature);
   } catch {
@@ -300,7 +317,13 @@ export async function handleWebhook(req: Request, deps: WebhookDeps): Promise<Re
   const studio = refund ? null : subscriptionTarget(event.type, event.data?.object);
   const session = refund || studio ? null : sessionOf(event);
   const orderId = refund ? uuidOf(refund.metadata?.order_id) : orderIdOf(session);
-  const handled = refund !== null || studio !== null || (HANDLED_EVENTS as readonly string[]).includes(event.type);
+  // Each event belongs to one business; an endpoint only acts for the businesses
+  // its account sells (a Studio-account refund that is not a withdrawal is never
+  // recorded against an order, an order session is never read on the Studio's account).
+  const business: Business = studio || (refund && refund.metadata?.kind === STUDIO_WITHDRAWAL_KIND) ? "studio" : "shop";
+  const ours = !event.handles || event.handles.has(business);
+  const handled = ours &&
+    (refund !== null || studio !== null || (HANDLED_EVENTS as readonly string[]).includes(event.type));
 
   let status: EventStatus;
   try {
@@ -313,6 +336,7 @@ export async function handleWebhook(req: Request, deps: WebhookDeps): Promise<Re
 
   // Not an event of ours (other type, or a session this site did not create).
   if (!handled || (!refund && !studio && (!session || !orderId))) {
+    if (!ours) deps.log(`${event.type} ignored: a ${business} event on an endpoint that does not carry it`);
     try {
       await deps.finishEvent(event.id, "ignored");
     } catch (error) {

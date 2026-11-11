@@ -13,7 +13,8 @@ import { handleStudioWithdraw } from "./handler.ts";
  */
 
 const supabase = serviceClient();
-const stripe = stripeClient();
+// The Studio's Stripe account: the publisher's (DoDigital, decision 131), `STRIPE_*`.
+const stripe = stripeClient("studio");
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 const log = (message: string, detail?: unknown) => console.error(`[studio-withdraw] ${message}`, detail ?? "");
 
