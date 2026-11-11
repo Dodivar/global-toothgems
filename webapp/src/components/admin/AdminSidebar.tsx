@@ -76,7 +76,6 @@ const GROUPS: RailGroup[] = [
       { to: "/admin/promotions", labelKey: "admin.nav.promotions", icon: TicketPercent },
       { to: "/admin/avis", labelKey: "reviews.nav.admin", icon: MessageSquareText },
       { to: "/admin/glowbook", labelKey: "admin.nav.glowbook", icon: Sparkles },
-      { to: "/admin/salons", labelKey: "admin.nav.lounge", icon: MessagesSquare },
     ],
   },
   {
@@ -92,7 +91,10 @@ const GROUPS: RailGroup[] = [
   {
     id: "academy",
     labelKey: "admin.nav.groupAcademy",
-    items: [{ to: "/admin/formations", labelKey: "admin.nav.training", icon: GraduationCap }],
+    items: [
+      { to: "/admin/formations", labelKey: "admin.nav.training", icon: GraduationCap },
+      { to: "/admin/salons", labelKey: "admin.nav.lounge", icon: MessagesSquare },
+    ],
   },
   {
     id: "administration",
