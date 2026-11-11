@@ -118,7 +118,7 @@
   },
   "composer": {
     "label": "Message",
-    "placeholder": "Écrire un message dans {{room}}…",
+    "placeholder": "Message dans {{room}}…",
     "placeholderDm": "Écrire à {{name}}…",
     "send": "Envoyer",
     "emoji": "Insérer un emoji",

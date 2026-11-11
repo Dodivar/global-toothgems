@@ -272,7 +272,7 @@ function MessageToolbar({ message, visible }: { message: ChatMessage; visible: b
         )}
       >
         {(close) => (
-          <div className="grid">
+          <div className="grid grid-cols-[minmax(0,1fr)]">
             <PopoverItem
               icon={Copy}
               onSelect={() => {
