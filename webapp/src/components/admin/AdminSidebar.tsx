@@ -140,7 +140,8 @@ export function AdminSidebar({
 
   const leave = () => {
     signOut();
-    navigate("/admin/connexion", { replace: true });
+    // The back office has no sign-in page of its own: back to the shop.
+    navigate("/", { replace: true });
   };
 
   /* Desktop only: the small-screen drawer closes with its scrim instead. */

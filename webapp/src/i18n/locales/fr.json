@@ -2075,36 +2075,26 @@
         "hex": "Choisissez une teinte valide (#rrggbb)."
       }
     },
-    "login": {
-      "scriptAccent": "Coulisses",
-      "brandTitle": "L’espace de gestion Global Toothgems",
-      "brandBody": "Catalogue, stocks et mises en ligne, au même endroit. Réservé à l’équipe : chaque action y engage ce que voient les clients.",
-      "brandFooter": "Accès restreint et journalisé",
-      "areaBadge": "Espace privé",
-      "title": "Administration",
-      "body": "Connectez-vous avec votre compte administrateur pour gérer le catalogue.",
-      "email": "Adresse e-mail",
-      "password": "Mot de passe",
-      "showPassword": "Afficher le mot de passe",
-      "hidePassword": "Masquer le mot de passe",
-      "remember": "Rester connecté",
-      "forgot": "Mot de passe oublié ?",
-      "submit": "Se connecter",
-      "security": "Cet espace est réservé aux administrateurs. Les tentatives de connexion et les modifications du catalogue seront journalisées.",
-      "successMessage": "Connexion réussie, ouverture de l’espace de gestion…",
+    "secondFactor": {
+      "loading": "Préparation de la vérification…",
+      "enrolTitle": "Activez la double authentification",
+      "enrolBody": "L’espace de gestion demande un code à chaque connexion. Scannez ce QR code avec une application d’authentification (Google Authenticator, Microsoft Authenticator, 1Password…), puis saisissez le code à 6 chiffres qu’elle affiche.",
+      "qrAlt": "QR code à scanner avec votre application d’authentification",
+      "manualKey": "Impossible de scanner ? Saisissez cette clé dans l’application :",
+      "challengeTitle": "Vérification en deux étapes",
+      "challengeBody": "Saisissez le code à 6 chiffres affiché par votre application d’authentification.",
+      "code": "Code de vérification",
+      "codeInvalid": "Le code compte 6 chiffres.",
+      "submit": "Vérifier",
+      "verified": "Code accepté, ouverture de l’espace de gestion…",
+      "unavailable": "La vérification ne peut pas démarrer pour le moment. Rechargez la page dans un instant.",
+      "lostDevice": "Téléphone perdu ou application réinstallée ? Demandez au propriétaire du compte de réinitialiser votre double authentification.",
+      "signOut": "Se déconnecter",
       "errors": {
-        "emailRequired": "L’adresse e-mail est requise.",
-        "emailInvalid": "Cette adresse e-mail semble incomplète.",
-        "passwordRequired": "Le mot de passe est requis.",
-        "rejected": "Identifiants incorrects. Vérifiez votre e-mail et votre mot de passe, puis réessayez.",
-        "notStaff": "Ce compte n’a pas accès à l’administration. Demandez un accès à un administrateur.",
-        "unavailable": "Le service de connexion ne répond pas. Réessayez dans un instant."
-      },
-      "forgotTitle": "Mot de passe oublié",
-      "forgotBody": "Indiquez votre adresse e-mail : un lien de réinitialisation vous sera envoyé.",
-      "forgotSubmit": "Envoyer le lien",
-      "forgotSent": "Si un compte administrateur existe pour {{email}}, un lien de réinitialisation vient de lui être envoyé.",
-      "forgotFailed": "Le lien n’a pas pu être envoyé. Vérifiez l’adresse et réessayez dans un instant."
+        "wrongCode": "Code incorrect ou expiré. Saisissez le code affiché maintenant.",
+        "tooMany": "Trop de tentatives. Patientez quelques minutes avant de réessayer.",
+        "unavailable": "Le service de vérification ne répond pas. Réessayez dans un instant."
+      }
     },
     "orders": {
       "title": "Commandes",

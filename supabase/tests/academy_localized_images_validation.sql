@@ -45,7 +45,7 @@ begin
     ('training-media', 'media/' || enq || '/question-en.jpg');
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   insert into public.training_media (id, kind, storage_path, mime_type, name, bytes) values
     (fr,  'image', 'media/' || fr  || '/fr.jpg',          'image/jpeg', 'Schéma FR', 1000),
@@ -115,7 +115,7 @@ begin
   perform public.admin_grant_course('academy25cst.test@example.invalid', c1);
 
   -- L4: the holder reads the English files and their library entries -----------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   v := public.learner_courses() -> 0;
   if v -> 'modules' -> 0 -> 'steps' -> 0 -> 'blocks' -> 0 -> 'en' ->> 'media_id' is distinct from en::text
      or v -> 'modules' -> 0 -> 'steps' -> 0 -> 'blocks' -> 1 -> 'en' ->> 'poster_media_id' is distinct from enp::text
@@ -133,7 +133,7 @@ begin
   passed := passed || 'L4'::text;
 
   -- L5: another member reads none of them --------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', oth, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', oth, 'role', 'authenticated')::text, true);
   if exists (select 1 from storage.objects where bucket_id = 'training-media'
               and name in ('media/' || en || '/en.jpg', 'media/' || enq || '/question-en.jpg')) then
     raise exception 'FAIL L5: a non-holder reads an English file';
@@ -145,7 +145,7 @@ begin
   passed := passed || 'L5'::text;
 
   -- L6: clearing the English image removes the row (no English text left) -----------------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   v_doc := jsonb_set(v_doc, '{modules,0,steps,0,blocks,0,en}', '{}'::jsonb);
   v_doc := jsonb_set(v_doc, '{modules,0,quiz,questions,0,en}', '{}'::jsonb);
   perform public.admin_save_course(v_doc);

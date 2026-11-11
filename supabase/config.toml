@@ -90,3 +90,9 @@ verify_jwt = false
 # 3D Studio smile try-on (decision 111): the status call is open, the member's token is checked in the function.
 [functions.studio-try-on]
 verify_jwt = false
+
+# Staff rights need a second factor (migration staff_mfa_required): the local
+# stack offers TOTP like the hosted project, for the live E2E suite.
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true

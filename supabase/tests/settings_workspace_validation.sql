@@ -105,7 +105,7 @@ begin
       perform set_config('request.jwt.claims', '{"role": "anon"}', true);
     else
       perform set_config('role', 'authenticated', true);
-      perform set_config('request.jwt.claims', json_build_object('sub', v_who, 'role', 'authenticated')::text, true);
+      perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', v_who, 'role', 'authenticated')::text, true);
     end if;
     foreach v_fn in array array['store', 'shipping', 'taxes', 'languages', 'direct_store', 'direct_lang', 'direct_tr'] loop
       v_state := null;
@@ -142,7 +142,7 @@ begin
   -- ===========================================================================
   -- S1 store details: saved, normalised, translated, publicly readable
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', adm, 'role', 'authenticated')::text, true);
   perform public.admin_save_store_details(v_details);
   select * into v_settings from public.store_settings where id;
   if v_settings.vat_number <> 'FR12345678901' or v_settings.business_email <> 'hello@example.com'
@@ -164,7 +164,7 @@ begin
   select legal_name into v_txt from public.store_settings where id;
   if v_txt is distinct from 'Global Toothgems SAS' then raise exception 'FAIL S1: anon cannot read the legal name'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', adm, 'role', 'authenticated')::text, true);
   passed := array_append(passed, 'S1 store details saved (normalised VAT number and e-mail, empty = null), translations, public read');
 
   -- S2 malformed details refused, nothing half-written

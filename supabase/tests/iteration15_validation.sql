@@ -35,7 +35,7 @@ begin
       jsonb_build_object('storage_path', 'products/test14/pink.webp', 'alt_fr', 'Rose')));
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   -- V1: variants saved with names, swatch, price, stock, derived SKU ----------
   perform public.admin_save_product(base);

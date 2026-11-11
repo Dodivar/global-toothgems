@@ -97,7 +97,7 @@ begin
 
   -- B4: a member's request uses the account address
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   r := public.request_back_in_stock_alert(p_out, null, 'someone-else@example.invalid', 'fr');
   if r <> '{"ok": true}' then raise exception 'FAIL B4: member request %', r; end if;
   v_ok := false;
@@ -186,7 +186,7 @@ begin
   if not v_ok then raise exception 'FAIL B9: a visitor reads the requests'; end if;
   perform set_config('role', 'authenticated', true);
   foreach v_id in array array[m1, viewer] loop
-    perform set_config('request.jwt.claims', json_build_object('sub', v_id, 'role', 'authenticated')::text, true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', v_id, 'role', 'authenticated')::text, true);
     v_ok := false;
     begin
       perform public.admin_back_in_stock_requests(10);
@@ -194,7 +194,7 @@ begin
     end;
     if not v_ok then raise exception 'FAIL B9: % reads the requests', v_id; end if;
   end loop;
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.admin_back_in_stock_requests(5000) a where a.product_id in (p_out, p_var);
   if v_cnt <> 11 then raise exception 'FAIL B9: manager reads % requests (expected 11)', v_cnt; end if;
   if not exists (select 1 from public.admin_back_in_stock_requests(5000) a

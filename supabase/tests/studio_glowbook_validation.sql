@@ -108,14 +108,14 @@ begin
     (other,  'atelier', 'active', 'sub_gb_other',  now() + interval '1 month');
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   insert into public.creations (name, description, scene_data, thumbnail_path)
   values ('Aurora smile', 'Two crystals', v_scene, artist || '/one.jpg') returning id into c_one;
   insert into public.creations (name, scene_data, thumbnail_path)
   values ('Second look', v_scene, artist || '/two.jpg') returning id into c_two;
   insert into public.creations (name, scene_data)
   values ('Empty', v_scene || jsonb_build_object('pieces', '[]'::jsonb)) returning id into c_empty;
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   insert into public.creations (name, scene_data, thumbnail_path)
   values ('Not yours', v_scene, other || '/x.jpg') returning id into c_other;
   execute 'reset role';
@@ -126,14 +126,14 @@ begin
 
   -- G1: no access, bad / reserved / taken handles.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m_none, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_none, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_save_showcase('nobody', 'No body', '', null);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL G1: opened without access (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   foreach v_page in array array['"a"'::jsonb, '"bad handle"', '"x..y"', '"-start"', '"admin"', '"glowbook"'] loop
     v_state := null;
     begin
@@ -155,14 +155,14 @@ begin
   if v_sc.handle <> 'lily.gems' or v_sc.display_name <> 'Lily Gems' or v_sc.instagram <> 'lily.gems' or v_sc.status <> 'pending' then
     raise exception 'FAIL G2: showcase %', row_to_json(v_sc);
   end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_save_showcase('LILY.gems', 'Copycat', '', null);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '23505' then raise exception 'FAIL G1: handle taken twice (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   v_item := public.studio_showcase_add(c_one);
   i_one := v_item.id;
   if v_item.status <> 'pending' or v_item.position <> 0 then raise exception 'FAIL G2: item %', row_to_json(v_item); end if;
@@ -184,7 +184,7 @@ begin
 
   -- G3: members cannot moderate nor write directly.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_moderate_showcase(artist, 'approved');
@@ -218,7 +218,7 @@ begin
   passed := passed || 'G3'::text;
 
   -- G4: moderator approves the page, then one item.
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_showcase_queue() q where q.status = 'pending' and q.user_id = artist;
   if v_cnt <> 3 then raise exception 'FAIL G4: queue has % pending rows', v_cnt; end if;
   select count(*) into v_cnt from storage.objects where bucket_id = 'studio-thumbnails' and name like artist || '/%';
@@ -232,7 +232,7 @@ begin
   end if;
   if v_page ? 'user_id' then raise exception 'FAIL G4: owner id leaked'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   perform public.studio_moderate_showcase_item(i_one, 'approved');
   perform set_config('role', 'anon', true);
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
@@ -258,7 +258,7 @@ begin
 
   -- G5: live edits; a new handle goes back to moderation.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   update public.creations set name = 'Aurora smile v2' where id = c_one;
   v_sc := public.studio_save_showcase('lily.gems', 'Lily G.', 'New bio', null);
   if v_sc.status <> 'approved' then raise exception 'FAIL G5: name edit sent back to moderation'; end if;
@@ -269,7 +269,7 @@ begin
     raise exception 'FAIL G5: edits not live %', v_page;
   end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   v_sc := public.studio_save_showcase('lily.studio', 'Lily G.', 'New bio', null);
   if v_sc.status <> 'pending' then raise exception 'FAIL G5: new handle not moderated'; end if;
   perform set_config('role', 'anon', true);
@@ -278,13 +278,13 @@ begin
     raise exception 'FAIL G5: unmoderated handle public';
   end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   perform public.studio_moderate_showcase(artist, 'approved');
   passed := passed || 'G5'::text;
 
   -- G6: rejection with a note, re-send, take-down.
   perform public.studio_moderate_showcase_item(i_two, 'rejected', 'Render too dark');
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   select * into v_item from public.studio_showcase_items where id = i_two;
   if v_item.status <> 'rejected' or v_item.review_note <> 'Render too dark' then raise exception 'FAIL G6: rejection %', row_to_json(v_item); end if;
   v_item := public.studio_showcase_add(c_two);
@@ -292,13 +292,13 @@ begin
   -- Adding an approved one again changes nothing.
   v_item := public.studio_showcase_add(c_one);
   if v_item.status <> 'approved' then raise exception 'FAIL G6: re-adding reset an approved item'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   perform public.studio_moderate_showcase_item(i_one, 'rejected', 'Taken down');
   perform set_config('role', 'anon', true);
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   if jsonb_array_length(public.studio_public_showcase('lily.studio') -> 'items') <> 0 then raise exception 'FAIL G6: taken-down item public'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   perform public.studio_moderate_showcase_item(i_one, 'approved');
   passed := passed || 'G6'::text;
 
@@ -314,7 +314,7 @@ begin
   select count(*) into v_cnt from storage.objects where bucket_id = 'studio-thumbnails' and name like artist || '/%';
   if v_cnt <> 0 then raise exception 'FAIL G7: renders readable without access (%)', v_cnt; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_showcase_add(c_two);
@@ -324,11 +324,11 @@ begin
   passed := passed || 'G7'::text;
 
   -- G8: others see nothing; the owner removes, then deletes.
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_showcase_items;
   if v_cnt <> 0 then raise exception 'FAIL G8: other member reads items (%)', v_cnt; end if;
   delete from public.studio_showcases where user_id = artist;
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_showcases;
   if v_cnt <> 1 then raise exception 'FAIL G8: other member deleted the Glowbook'; end if;
   delete from public.studio_showcase_items where id = i_two;
@@ -342,17 +342,17 @@ begin
   passed := passed || 'G8'::text;
 
   -- G9: the look (fresh Glowbook for the other member, who still has access).
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   perform public.studio_save_showcase('nova.gems', 'Nova', '', null);
   i_one := (public.studio_showcase_add(c_other)).id;
   execute 'reset role';
   insert into storage.objects (bucket_id, name) values
     ('glowbook-media', other || '/avatar-1.jpg'), ('glowbook-media', artist || '/stolen.jpg');
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   perform public.studio_moderate_showcase(other, 'approved');
   perform public.studio_moderate_showcase_item(i_one, 'approved');
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   v_sc := public.studio_save_showcase_look(jsonb_build_object(
     'accent', 'fuchsia', 'layout', 'large', 'location', ' Lyon ', 'featured_item_id', i_one,
     'avatar_path', other || '/avatar-1.jpg', 'booking_url', 'https://book.example.com/nova'));
@@ -381,14 +381,14 @@ begin
   select count(*) into v_cnt from storage.objects where bucket_id = 'glowbook-media' and (storage.foldername(name))[1] in (artist::text, other::text);
   if v_cnt <> 0 then raise exception 'FAIL G9: anon reads pending pictures (%)', v_cnt; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_moderate_showcase_changes(other, 'approved');
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL G9: member approved changes (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_showcase_queue() q where q.kind = 'changes' and q.user_id = other and q.status = 'pending';
   if v_cnt <> 1 then raise exception 'FAIL G9: changes not queued (%)', v_cnt; end if;
   perform public.studio_moderate_showcase_changes(other, 'approved');
@@ -401,13 +401,13 @@ begin
   select array_agg(name) into v_names from storage.objects where bucket_id = 'glowbook-media' and (storage.foldername(name))[1] in (artist::text, other::text);
   if v_names is distinct from array[other || '/avatar-1.jpg'] then raise exception 'FAIL G9: anon reads pictures %', v_names; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   -- The delete policy refuses files in use (direct SQL deletes are blocked by Storage itself).
   if not private.glowbook_media_in_use(other || '/avatar-1.jpg') then raise exception 'FAIL G9: approved picture deletable'; end if;
   v_sc := public.studio_save_showcase_look(jsonb_build_object('tiktok', '@nova.gems'));
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   perform public.studio_moderate_showcase_changes(other, 'rejected', 'Not your account');
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   select * into v_sc from public.studio_showcases where user_id = other;
   if v_sc.tiktok is not null or v_sc.pending_changes is not null or v_sc.changes_review_note <> 'Not your account' then
     raise exception 'FAIL G9: rejected changes %', row_to_json(v_sc);
@@ -418,7 +418,7 @@ begin
 
   -- G10: sections (the other member's approved page nova.gems, i_one approved).
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   insert into public.creations (name, scene_data) values ('Loose one', v_scene) returning id into c_o2;
   insert into public.creations (name, scene_data) values ('Still pending', v_scene) returning id into c_o3;
   i_o2 := (public.studio_showcase_add(c_o2)).id;
@@ -444,7 +444,7 @@ begin
   select array_agg(name order by position) into v_names from public.studio_showcase_sections where user_id = other;
   if v_names is distinct from array['Fêtes', 'Mariage', 'Minimaliste'] then raise exception 'FAIL G10: order %', v_names; end if;
   -- Moderation: i_o2 approved (no section), i_o3 stays pending (its section stays hidden).
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   perform public.studio_moderate_showcase_item(i_o2, 'approved');
   select q.details -> 'sections' into v_page from public.studio_showcase_queue() q where q.kind = 'showcase' and q.user_id = other;
   if v_page is distinct from '["Fêtes", "Mariage", "Minimaliste"]'::jsonb then raise exception 'FAIL G10: queue sections %', v_page; end if;
@@ -467,7 +467,7 @@ begin
   if v_state is distinct from '42501' then raise exception 'FAIL G10: anon wrote a section (%)', v_state; end if;
   -- A member without access: refused, reads nothing.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m_none, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_none, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_showcase_sections where user_id = other;
   if v_cnt <> 0 then raise exception 'FAIL G10: other member reads sections (%)', v_cnt; end if;
   v_state := null;
@@ -478,7 +478,7 @@ begin
   if v_state is distinct from '42501' then raise exception 'FAIL G10: written without access (%)', v_state; end if;
   delete from public.studio_showcase_sections where id = s_one;
   -- Another member WITH access (staff) and their own Glowbook: nothing on someone else's.
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   perform public.studio_save_showcase('mod.page', 'Mod', '', null);
   insert into public.creations (name, scene_data) values ('Mod look', v_scene) returning id into c_mod;
   i_mod := (public.studio_showcase_add(c_mod)).id;
@@ -512,7 +512,7 @@ begin
   if v_cnt <> 3 then raise exception 'FAIL G10: another member deleted a section (%)', v_cnt; end if;
   -- The owner deletes a section: its creations stay, without a section.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   delete from public.studio_showcase_sections where id = s_one;
   select * into v_item from public.studio_showcase_items where id = i_one;
   if v_item.id is null or v_item.section_id is not null or v_item.user_id <> other then raise exception 'FAIL G10: delete section %', row_to_json(v_item); end if;
@@ -544,7 +544,7 @@ begin
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL G11: anon hid a badge (%)', v_state; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m_none, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_none, 'role', 'authenticated')::text, true);
   if public.studio_my_certification() <> '[]'::jsonb then raise exception 'FAIL G11: badge without a certificate'; end if;
   v_state := null;
   begin
@@ -552,9 +552,9 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from 'P0002' then raise exception 'FAIL G11: hid without a Glowbook (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   perform public.studio_set_showcase_certification(false);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   if public.studio_my_certification() <> jsonb_build_array(jsonb_build_object('fr', 'Pose experte GB test', 'en', 'Expert placement GB test')) then
     raise exception 'FAIL G11: own badge %', public.studio_my_certification();
   end if;
@@ -565,13 +565,13 @@ begin
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   if public.studio_public_showcase('nova.gems') -> 'certification' <> 'null'::jsonb then raise exception 'FAIL G11: hidden badge shown'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   v_sc := public.studio_set_showcase_certification(true);
   passed := passed || 'G11'::text;
 
   -- G13: the spotlight video (the other member's approved page nova.gems, i_one and i_o2 approved).
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   v_sc := public.studio_save_showcase_look(jsonb_build_object('featured_item_id', i_one));
   execute 'reset role';
   insert into storage.objects (bucket_id, name) values
@@ -590,7 +590,7 @@ begin
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL G13: anon recorded (%)', v_state; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m_none, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_none, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 5, v_at);
@@ -599,14 +599,14 @@ begin
   if v_state is distinct from '42501' then raise exception 'FAIL G13: recorded without access (%)', v_state; end if;
   if public.studio_spotlight_video_state() is not null then raise exception 'FAIL G13: state of someone else'; end if;
   -- A member with access, on someone else's spotlight.
-  perform set_config('request.jwt.claims', json_build_object('sub', modr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', modr, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_set_spotlight_video(i_one, other || '/spot-1.mp4', 'video/mp4', 5, v_at);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '22023' then raise exception 'FAIL G13: recorded on another page (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   foreach v_case in array array['not-spotlight', 'their-file', 'no-file', 'type', 'seconds', 'changed'] loop
     v_state := null;
     begin
@@ -665,7 +665,7 @@ begin
    where c.id = (select creation_id from public.studio_showcase_items where id = i_one);
   -- Another spotlight: hidden too.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   if (public.studio_spotlight_video_state() ->> 'current')::boolean is not true then raise exception 'FAIL G13: restored design not current'; end if;
   v_sc := public.studio_save_showcase_look(jsonb_build_object('featured_item_id', i_o2));
   if (public.studio_spotlight_video_state() ->> 'current')::boolean then raise exception 'FAIL G13: video of the former spotlight current'; end if;
@@ -675,7 +675,7 @@ begin
     raise exception 'FAIL G13: video of the former spotlight shown';
   end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   v_sc := public.studio_save_showcase_look(jsonb_build_object('featured_item_id', i_one));
   passed := passed || 'G13'::text;
 
@@ -720,7 +720,7 @@ begin
   if v_state is distinct from '23514' then raise exception 'FAIL G14: precise area stored (%)', v_state; end if;
   -- Another member cannot write it (no direct UPDATE; the function only writes the caller's row).
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', artist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     update public.studio_showcases set place_label = 'Hijacked' where user_id = other;
@@ -734,7 +734,7 @@ begin
     raise exception 'FAIL G14: public place %', v_page #> '{look,place}';
   end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   v_sc := public.studio_save_showcase_look(jsonb_build_object('place', null));
   if v_sc.place_mode is not null or v_sc.place_label is not null or v_sc.place_lat is not null then
     raise exception 'FAIL G14: place not removed';
@@ -743,7 +743,7 @@ begin
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   if public.studio_public_showcase('nova.gems') #> '{look,place}' <> 'null'::jsonb then raise exception 'FAIL G14: removed place shown'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   v_sc := public.studio_save_showcase_look(jsonb_build_object('place', jsonb_build_object(
     'mode', 'area', 'label', 'Lyon', 'lat', 45.75, 'lng', 4.84)));
   passed := passed || 'G14'::text;
@@ -753,7 +753,7 @@ begin
   execute $f$create or replace function private.glowbook_customization_allowed(p_user uuid)
     returns boolean language sql stable security definer set search_path = '' as $b$ select false $b$ $f$;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_save_showcase_section(null, 'Closed');

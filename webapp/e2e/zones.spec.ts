@@ -213,17 +213,6 @@ test("back office: without Supabase the statistics show no figure, never invente
   expect(problems).toEqual([]);
 });
 
-test("back office: signing in on the access screen opens the page asked for", async ({ page, problems }) => {
-  await open(page, "/admin/produits");
-  await expect(page).toHaveURL((url) => url.pathname === "/admin/connexion");
-  await page.getByLabel(/e-mail/i).fill(STAFF.email);
-  await page.getByRole("textbox", { name: "Mot de passe", exact: true }).fill("toothgems2026");
-  await page.getByRole("button", { name: /se connecter/i }).click();
-  await expect(page).toHaveURL((url) => url.pathname === "/admin/produits");
-  expect(problems).toEqual([]);
-});
-
-
 test("a link to another zone opens it, and the back button returns", async ({ page, problems }) => {
   await signInMember(page);
   await open(page, "/fr/boutique");

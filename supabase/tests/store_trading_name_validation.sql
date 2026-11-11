@@ -49,14 +49,14 @@ begin
 
   -- T1 -------------------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   begin
     perform public.admin_save_store_details(v_det || '{"trading_name": "Hacked"}');
     raise exception 'FAIL T1: a customer saved the trading name';
   exception when insufficient_privilege then null;
   end;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', adm, 'role', 'authenticated')::text, true);
   perform public.admin_save_store_details(v_det || '{"trading_name": "  Test Trading  "}');
   if (select trading_name from public.store_settings where id) is distinct from 'Test Trading' then
     raise exception 'FAIL T1: trading name not saved (trimmed)';
@@ -95,13 +95,13 @@ begin
 
   -- T4 -------------------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   begin
     perform public.admin_save_store_details(v_det || '{"publisher_name": "Hacked"}');
     raise exception 'FAIL T4: a customer saved the publisher';
   exception when insufficient_privilege then null;
   end;
-  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', adm, 'role', 'authenticated')::text, true);
   perform public.admin_save_store_details(v_det || jsonb_build_object(
     'publisher_name', ' Studio Test ', 'publisher_legal_name', 'Bob Test', 'publisher_legal_form', 'EI',
     'publisher_registration_number', 'SIRET 987 654 321 00010', 'publisher_address', '2 rue Fictive, 67000 Strasbourg',

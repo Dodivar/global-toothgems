@@ -2075,36 +2075,26 @@
         "hex": "Pick a valid shade (#rrggbb)."
       }
     },
-    "login": {
-      "scriptAccent": "Backstage",
-      "brandTitle": "The Global Toothgems management workspace",
-      "brandBody": "Catalogue, stock and publishing in one place. Team only: everything done here changes what customers see.",
-      "brandFooter": "Restricted and logged access",
-      "areaBadge": "Private area",
-      "title": "Administration",
-      "body": "Sign in with your administrator account to manage the catalogue.",
-      "email": "Email address",
-      "password": "Password",
-      "showPassword": "Show password",
-      "hidePassword": "Hide password",
-      "remember": "Keep me signed in",
-      "forgot": "Forgot password?",
-      "submit": "Sign in",
-      "security": "This area is restricted to administrators. Sign-in attempts and catalogue changes will be logged.",
-      "successMessage": "Signed in, opening the workspace…",
+    "secondFactor": {
+      "loading": "Preparing the verification…",
+      "enrolTitle": "Turn on two-factor authentication",
+      "enrolBody": "The back office asks for a code at every sign-in. Scan this QR code with an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), then type the 6-digit code it shows.",
+      "qrAlt": "QR code to scan with your authenticator app",
+      "manualKey": "Can’t scan it? Type this key in the app:",
+      "challengeTitle": "Two-step verification",
+      "challengeBody": "Type the 6-digit code shown by your authenticator app.",
+      "code": "Verification code",
+      "codeInvalid": "The code has 6 digits.",
+      "submit": "Verify",
+      "verified": "Code accepted, opening the back office…",
+      "unavailable": "The verification can’t start right now. Reload the page in a moment.",
+      "lostDevice": "Lost your phone or reinstalled the app? Ask the account owner to reset your two-factor authentication.",
+      "signOut": "Sign out",
       "errors": {
-        "emailRequired": "The email address is required.",
-        "emailInvalid": "This email address looks incomplete.",
-        "passwordRequired": "The password is required.",
-        "rejected": "Incorrect credentials. Check your email and password and try again.",
-        "notStaff": "This account has no access to the back office. Ask an administrator for access.",
-        "unavailable": "The sign-in service is not responding. Try again in a moment."
-      },
-      "forgotTitle": "Forgotten password",
-      "forgotBody": "Enter your email address and a reset link will be sent to it.",
-      "forgotSubmit": "Send the link",
-      "forgotSent": "If an administrator account exists for {{email}}, a reset link has just been sent to it.",
-      "forgotFailed": "We couldn’t send the link. Check the address and try again in a moment."
+        "wrongCode": "Wrong or expired code. Type the code shown now.",
+        "tooMany": "Too many attempts. Wait a few minutes before trying again.",
+        "unavailable": "The verification service is not answering. Try again in a moment."
+      }
     },
     "orders": {
       "title": "Orders",

@@ -52,7 +52,7 @@ begin
   select count(*) into v_cnt from public.studio_plan_prices;
   if v_cnt <> 3 then raise exception 'FAIL B1: a visitor reads % prices', v_cnt; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   v_ok := false;
   begin
     update public.studio_plan_prices set amount = 0.01;
@@ -103,7 +103,7 @@ begin
 
   -- B4: the subscriber saves; cancelling at period end keeps access until then.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   r := public.studio_access_state();
   if r ->> 'state' <> 'subscribed' or r ->> 'subscription_plan' <> 'atelier' or r ->> 'subscription_interval' <> 'month' then
     raise exception 'FAIL B4: state %', r;
@@ -114,7 +114,7 @@ begin
   perform public.apply_studio_subscription('sub_testBilling01', 'cus_testBilling01', null, 'price_testAtelierMonth',
                                            'active', now() + interval '30 days', true, null, false);
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   r := public.studio_access_state();
   if r ->> 'state' <> 'subscribed' or (r ->> 'subscription_cancel_at_period_end')::boolean is not true then
     raise exception 'FAIL B4: cancellation scheduled %', r;
@@ -127,7 +127,7 @@ begin
   perform public.apply_studio_subscription('sub_testBilling01', 'cus_testBilling01', null, 'price_testAtelierMonth',
                                            'active', now() - interval '1 minute', true, null, false);
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   r := public.studio_access_state();
   if r ->> 'state' <> 'subscription_ended' then raise exception 'FAIL B5: after period end %', r; end if;
   v_state := null;
@@ -192,10 +192,10 @@ begin
   end;
   if v_state is distinct from 'P0002' then raise exception 'FAIL B7: invoice of an unknown subscription (%)', v_state; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_subscription_invoices;
   if v_cnt <> 0 then raise exception 'FAIL B7: another member reads % invoice(s)', v_cnt; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_subscription_invoices;
   if v_cnt <> 2 then raise exception 'FAIL B7: owner reads % invoice(s)', v_cnt; end if;
   passed := passed || 'B7'::text;
@@ -206,7 +206,7 @@ begin
   perform public.apply_studio_subscription('sub_testBilling05', 'cus_testBilling05', m3, 'price_testArtistMonth',
                                            'incomplete_expired', now() + interval '30 days', false, null, false);
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m3, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m3, 'role', 'authenticated')::text, true);
   r := public.studio_access_state();
   if r ->> 'state' <> 'not_started' then raise exception 'FAIL B8: abandoned first payment reads %', r; end if;
   r := public.start_studio_trial();

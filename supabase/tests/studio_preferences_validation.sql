@@ -46,7 +46,7 @@ begin
 
   -- P2 (+ P5: m1 has no Studio access)
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_preferences;
   if v_cnt <> 0 then raise exception 'FAIL P2: a row exists by default'; end if;
   insert into public.studio_preferences (library_view) values ('explorer')
@@ -80,7 +80,7 @@ begin
   passed := passed || 'P3'::text;
 
   -- P4
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_preferences where user_id = m1;
   if v_cnt <> 0 then raise exception 'FAIL P4: another member reads the preference'; end if;
   update public.studio_preferences set library_view = 'grid' where user_id = m1;

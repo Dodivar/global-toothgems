@@ -83,7 +83,7 @@ begin
 
   -- The author's designs (staff have Studio access): two to publish, one kept private.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', author, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', author, 'role', 'authenticated')::text, true);
   insert into public.creations (name, description, tags, scene_data, estimated_price_minor, is_favorite, thumbnail_path)
   values ('Old template', 'First one', '{classic}', v_scene, 4500, true, author || '/old.jpg') returning id into t_old;
   insert into public.creations (name, scene_data, thumbnail_path)
@@ -109,7 +109,7 @@ begin
 
   -- T3: the author publishes; again keeps the first date; audited, flag only.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', author, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', author, 'role', 'authenticated')::text, true);
   v_at := public.studio_set_template(t_old, true);
   if v_at is null then raise exception 'FAIL T3: no publication date'; end if;
   perform public.studio_set_template(t_new, true);
@@ -123,13 +123,13 @@ begin
      and changes ? 'template_published_at' and not changes ? 'scene_data';
   if v_cnt <> 1 then raise exception 'FAIL T3: publication not audited as the flag alone (%)', v_cnt; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', author, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', author, 'role', 'authenticated')::text, true);
   v_at2 := public.studio_set_template(t_old, true);
   if v_at2 is distinct from v_at then raise exception 'FAIL T3: republishing moved the date % → %', v_at, v_at2; end if;
   passed := passed || 'T3'::text;
 
   -- T2: a member without access is refused the library and the copy.
-  perform set_config('request.jwt.claims', json_build_object('sub', m_none, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_none, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_templates();
@@ -145,7 +145,7 @@ begin
   passed := passed || 'T2'::text;
 
   -- T4: a member with access reads the templates, newest first, nothing else.
-  perform set_config('request.jwt.claims', json_build_object('sub', m_trial, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_trial, 'role', 'authenticated')::text, true);
   select array_agg(name order by ord) into v_names
     from (select name, row_number() over () as ord from public.studio_templates()) s;
   if v_names is distinct from array['New template', 'Old template'] then
@@ -187,14 +187,14 @@ begin
   passed := passed || 'T5'::text;
 
   -- T6: a viewer cannot publish; a manager cannot publish another's design.
-  perform set_config('request.jwt.claims', json_build_object('sub', viewer, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', viewer, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_set_template(draft, true);
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL T6: viewer published (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', manager, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', manager, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_set_template(draft, true);
@@ -210,7 +210,7 @@ begin
   passed := passed || 'T6'::text;
 
   -- T7: the copy is the caller's; the template is unchanged.
-  perform set_config('request.jwt.claims', json_build_object('sub', m_trial, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_trial, 'role', 'authenticated')::text, true);
   v_copy := public.studio_use_template(t_old);
   if v_copy.user_id <> m_trial or v_copy.id = t_old or v_copy.template_published_at is not null
      or v_copy.thumbnail_path is not null or v_copy.is_favorite or v_copy.element_count <> 3
@@ -239,21 +239,21 @@ begin
 
   -- T8: template renders only, and only with access.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m_trial, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_trial, 'role', 'authenticated')::text, true);
   select array_agg(name order by name) into v_names from storage.objects
    where bucket_id = 'studio-thumbnails' and name like author || '/%';
   if v_names is distinct from array[author || '/new.jpg', author || '/old.jpg'] then
     raise exception 'FAIL T8: member reads renders %', v_names;
   end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m_none, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_none, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from storage.objects where bucket_id = 'studio-thumbnails' and name like author || '/%';
   if v_cnt <> 0 then raise exception 'FAIL T8: renders read without access (%)', v_cnt; end if;
   passed := passed || 'T8'::text;
 
   -- T9: another manage_content member unpublishes; the copy stays.
-  perform set_config('request.jwt.claims', json_build_object('sub', manager, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', manager, 'role', 'authenticated')::text, true);
   if public.studio_set_template(t_old, false) is not null then raise exception 'FAIL T9: unpublish returned a date'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m_trial, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_trial, 'role', 'authenticated')::text, true);
   select array_agg(name) into v_names from public.studio_templates();
   if v_names is distinct from array['New template'] then raise exception 'FAIL T9: library after unpublish %', v_names; end if;
   select count(*) into v_cnt from public.creations where id = v_copy.id and user_id = m_trial;
@@ -270,7 +270,7 @@ begin
   -- (t_new is still published: T9 took t_old down.)
   perform set_config('role', 'authenticated', true);
   foreach r in array array[to_jsonb(m_trial2), to_jsonb(m_ess)] loop
-    perform set_config('request.jwt.claims', json_build_object('sub', r #>> '{}', 'role', 'authenticated')::text, true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', r #>> '{}', 'role', 'authenticated')::text, true);
     v_state := null;
     begin
       perform public.studio_templates();
@@ -288,14 +288,14 @@ begin
     select count(*) into v_cnt from public.creations where user_id = (r #>> '{}')::uuid;
     if v_cnt <> 0 then raise exception 'FAIL T10: % got a copy (%)', r, v_cnt; end if;
   end loop;
-  perform set_config('request.jwt.claims', json_build_object('sub', m_atl, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_atl, 'role', 'authenticated')::text, true);
   if not exists (select 1 from public.studio_templates() x where x.id = t_new) then raise exception 'FAIL T10: Atelier refused the library'; end if;
   v_copy := public.studio_use_template(t_new);
   if v_copy.user_id <> m_atl then raise exception 'FAIL T10: Atelier copy not theirs'; end if;
   execute 'reset role';
   update public.studio_subscriptions set status = 'canceled', current_period_end = now() - interval '1 second' where user_id = m_trial;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m_trial, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_trial, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_templates();

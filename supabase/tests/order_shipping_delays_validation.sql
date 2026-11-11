@@ -87,7 +87,7 @@ begin
   passed := array_append(passed, 'constraint');
 
   -- 5. A customer: their own delays read, not changed; another customer's order not read.
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   set local role authenticated;
   select shipping_max_days into v_max from public.orders where id = o1;
   if v_max is distinct from 4 then raise exception 'FAIL 5a: owner cannot read the delay'; end if;

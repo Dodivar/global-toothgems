@@ -149,10 +149,10 @@ begin
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL S6: the service role changed an invoice (%)', v_state; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.invoices where studio_invoice_id like 'in_testInv%';
   if v_cnt <> 4 then raise exception 'FAIL S6: the owner reads % documents', v_cnt; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.invoices where studio_invoice_id like 'in_testInv%';
   if v_cnt <> 0 then raise exception 'FAIL S6: another member reads % documents', v_cnt; end if;
   v_state := null;
@@ -192,7 +192,7 @@ begin
   select count(*) into v_cnt from public.invoices where studio_withdrawal_id = w.id;
   if v_cnt <> 1 then raise exception 'FAIL S7: % credit notes after a replay', v_cnt; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m3, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m3, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.invoices where studio_invoice_id = 'in_testInv0301';
   if v_cnt <> 2 then raise exception 'FAIL S7: the member reads % of their documents', v_cnt; end if;
   passed := passed || 'S7'::text;

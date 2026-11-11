@@ -97,7 +97,7 @@ begin
   -- B3: essential and trial members
   perform set_config('role', 'authenticated', true);
   foreach v_text in array array[trial::text, ess::text] loop
-    perform set_config('request.jwt.claims', json_build_object('sub', v_text, 'role', 'authenticated')::text, true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', v_text, 'role', 'authenticated')::text, true);
     v_json := public.studio_share_branding();
     if v_json ->> 'tier' <> 'essential' or v_json ->> 'logo_path' is not null then raise exception 'FAIL B3: branding %', v_json; end if;
     v_state := null;
@@ -121,7 +121,7 @@ begin
   passed := passed || 'B3'::text;
 
   -- B4: an artist
-  perform set_config('request.jwt.claims', json_build_object('sub', art, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', art, 'role', 'authenticated')::text, true);
   insert into storage.objects (bucket_id, name) values ('studio-share-logos', art || '/logo-1.png');
   v_state := null;
   begin
@@ -157,7 +157,7 @@ begin
   passed := passed || 'B4'::text;
 
   -- B5: another member (an atelier one)
-  perform set_config('request.jwt.claims', json_build_object('sub', atl, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', atl, 'role', 'authenticated')::text, true);
   v_json := public.studio_share_branding();
   if v_json ->> 'tier' <> 'atelier' or v_json ->> 'logo_path' is not null or (v_json ->> 'has_logo')::boolean then
     raise exception 'FAIL B5: branding %', v_json;
@@ -175,7 +175,7 @@ begin
   passed := passed || 'B5'::text;
 
   -- B6: the artist's subscription ends (late: an artist without a trial)
-  perform set_config('request.jwt.claims', json_build_object('sub', late, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', late, 'role', 'authenticated')::text, true);
   insert into storage.objects (bucket_id, name) values ('studio-share-logos', late || '/logo.png');
   perform public.studio_set_share_logo(late || '/logo.png');
   execute 'reset role';
@@ -200,7 +200,7 @@ begin
 
   -- B7: share-link previews
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', art, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', art, 'role', 'authenticated')::text, true);
   insert into public.creations (name, description, scene_data, thumbnail_path)
   values ('Shared smile', 'Two crystals',
           jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null, 'pieces', '[]'::jsonb, 'groups', '[]'::jsonb),
@@ -225,7 +225,7 @@ begin
   select array_agg(name) into v_text from storage.objects where bucket_id = 'studio-thumbnails' and name like art || '/%';
   if v_text is distinct from '{' || art || '/shared.jpg}' then raise exception 'FAIL B7: visitor reads renders %', v_text; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', art, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', art, 'role', 'authenticated')::text, true);
   perform public.studio_revoke_creation_share(v_c1);
   perform set_config('role', 'anon', true);
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);

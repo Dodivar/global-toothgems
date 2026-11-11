@@ -116,7 +116,7 @@ begin
   -- T4: service role only
   foreach v_state in array array['anon', 'authenticated'] loop
     perform set_config('role', v_state, true);
-    perform set_config('request.jwt.claims', json_build_object('sub', client, 'role', v_state)::text, true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', client, 'role', v_state)::text, true);
     begin
       perform public.studio_try_on_creation(client, c_lapsed);
       raise exception 'FAIL T4: % calls studio_try_on_creation', v_state;
@@ -134,7 +134,7 @@ begin
   -- T5: requests and the reference bucket
   insert into public.studio_try_on_requests (user_id, creation_id, source) values (artist, c_art, 'own'), (client, c_art, 'glowbook');
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', client, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', client, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_try_on_requests;
   if v_cnt <> 1 then raise exception 'FAIL T5: member reads % rows', v_cnt; end if;
   v_state := null;

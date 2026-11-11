@@ -88,7 +88,7 @@ begin
 
   -- P2: the member's archive holds their rows only, and no secret.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   r := public.my_personal_data();
   if r ->> 'status' <> 'ok' then raise exception 'FAIL P2: status %', r ->> 'status'; end if;
   r := r -> 'archive';
@@ -138,10 +138,10 @@ begin
   -- P5: blockers as the member reads them.
   v_arr := public.my_account_erasure_blockers();
   if v_arr is distinct from array['studio_subscription'] then raise exception 'FAIL P5: m1 blockers %', v_arr; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', staff, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', staff, 'role', 'authenticated')::text, true);
   v_arr := public.my_account_erasure_blockers();
   if not ('staff' = any (v_arr)) then raise exception 'FAIL P5: staff blockers %', v_arr; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
   v_arr := public.my_account_erasure_blockers();
   if cardinality(v_arr) <> 0 then raise exception 'FAIL P5: m2 blockers %', v_arr; end if;
   passed := passed || 'P5'::text;

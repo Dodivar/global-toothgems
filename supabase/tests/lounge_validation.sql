@@ -55,7 +55,7 @@ begin
 
   -- A1: the door ----------------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', outsider, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', outsider, 'role', 'authenticated')::text, true);
   if public.lounge_access() then raise exception 'FAIL A1: a member without course may enter'; end if;
   begin
     perform public.lounge_join(null);
@@ -70,19 +70,19 @@ begin
   exception when insufficient_privilege then null;
   end;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', stf, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', stf, 'role', 'authenticated')::text, true);
   if not public.lounge_access() then raise exception 'FAIL A1: staff refused'; end if;
   perform public.lounge_join('en');
 
   reset role;
   update public.profiles set status = 'suspended' where id = sus;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', sus, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', sus, 'role', 'authenticated')::text, true);
   if public.lounge_access() then raise exception 'FAIL A1: suspended member may enter'; end if;
   passed := passed || 'A1'::text;
 
   -- J1: joining, handles ------------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', a, 'role', 'authenticated')::text, true);
   perform public.lounge_join('en');
   select handle into v_txt from public.lounge_members where user_id = a;
   if v_txt <> 'emma.m' then raise exception 'FAIL J1: handle %', v_txt; end if;
@@ -93,9 +93,9 @@ begin
     raise exception 'FAIL J1: unknown lounge accepted';
   exception when invalid_parameter_value then null;
   end;
-  perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', b, 'role', 'authenticated')::text, true);
   perform public.lounge_join('en');
-  perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', c, 'role', 'authenticated')::text, true);
   perform public.lounge_join('en');
   select handle into v_txt from public.lounge_members where user_id = c;
   if v_txt <> 'emma.m2' then raise exception 'FAIL J1: second handle %', v_txt; end if;
@@ -109,7 +109,7 @@ begin
   perform set_config('role', 'authenticated', true);
 
   -- D0: directory, no personal data ------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', b, 'role', 'authenticated')::text, true);
   select to_jsonb(d) into v from public.lounge_directory() d where d.user_id = a;
   if v ->> 'display_name' <> 'Émma M.' then raise exception 'FAIL D0: display name %', v ->> 'display_name'; end if;
   if v ? 'email' or v ? 'phone' or v ? 'last_name' then raise exception 'FAIL D0: personal data in the directory'; end if;
@@ -124,14 +124,14 @@ begin
   passed := passed || 'D0'::text;
 
   -- P1: posting in a channel, mentions ------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', a, 'role', 'authenticated')::text, true);
   m1 := public.lounge_post_message('en-general', null,
     jsonb_build_array(jsonb_build_object('type', 'text', 'text', 'Hello '), jsonb_build_object('type', 'mention', 'memberId', b)));
   select author_id::text into v_txt from public.lounge_messages where id = m1;
   if v_txt <> a::text then raise exception 'FAIL P1: author'; end if;
   select count(*) into v_cnt from public.lounge_messages where id = m1 and mention_ids = array[b];
   if v_cnt <> 1 then raise exception 'FAIL P1: mention ids'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', b, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.lounge_notifications where user_id = b and kind = 'mention' and message_id = m1 and read_at is null;
   if v_cnt <> 1 then raise exception 'FAIL P1: mention notification'; end if;
   passed := passed || 'P1'::text;
@@ -161,7 +161,7 @@ begin
   exception when invalid_parameter_value then null;
   end;
   m2 := public.lounge_post_message('en-general', null, '[{"type":"text","text":"Thanks!"}]', m1);
-  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', a, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.lounge_notifications where user_id = a and kind = 'reply' and message_id = m2;
   if v_cnt <> 1 then raise exception 'FAIL P3: reply notification'; end if;
   begin
@@ -208,7 +208,7 @@ begin
     raise exception 'FAIL C1: DM to oneself';
   exception when invalid_parameter_value then null;
   end;
-  perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', b, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.lounge_messages where id = dm1;
   if v_cnt <> 1 then raise exception 'FAIL C1: recipient cannot read'; end if;
   v := public.lounge_overview();
@@ -216,7 +216,7 @@ begin
     raise exception 'FAIL C1: DM unread %', v -> 'conversations';
   end if;
   foreach v_txt in array array[c::text, stf::text] loop
-    perform set_config('request.jwt.claims', json_build_object('sub', v_txt, 'role', 'authenticated')::text, true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', v_txt, 'role', 'authenticated')::text, true);
     select count(*) into v_cnt from public.lounge_messages where id = dm1;
     if v_cnt <> 0 then raise exception 'FAIL C1: % reads the DM', v_txt; end if;
     select count(*) into v_cnt from public.lounge_conversations;
@@ -235,7 +235,7 @@ begin
   passed := passed || 'C1'::text;
 
   -- R1: reactions, totals, notifications ------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', b, 'role', 'authenticated')::text, true);
   if not public.lounge_toggle_reaction(m1, 'heart') then raise exception 'FAIL R1: reaction not added'; end if;
   select reactions into v from public.lounge_messages where id = m1;
   if v <> '{"heart": 1}'::jsonb then raise exception 'FAIL R1: totals %', v; end if;
@@ -244,12 +244,12 @@ begin
     raise exception 'FAIL R1: unknown reaction';
   exception when invalid_parameter_value then null;
   end;
-  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', a, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.lounge_notifications where user_id = a and kind = 'reaction' and message_id = m1;
   if v_cnt <> 1 then raise exception 'FAIL R1: reaction notification'; end if;
   select count(*) into v_cnt from public.lounge_reactions;
   if v_cnt <> 0 then raise exception 'FAIL R1: a reads someone else''s reactions'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', b, 'role', 'authenticated')::text, true);
   if public.lounge_toggle_reaction(m1, 'heart') then raise exception 'FAIL R1: reaction not removed'; end if;
   select reactions into v from public.lounge_messages where id = m1;
   if v <> '{}'::jsonb then raise exception 'FAIL R1: totals after removal %', v; end if;
@@ -271,7 +271,7 @@ begin
   perform public.lounge_set_muted('en-general', null, true);
   select x into v from jsonb_array_elements(public.lounge_overview() -> 'channels') x where x ->> 'id' = 'en-general';
   if not (v ->> 'muted')::boolean then raise exception 'FAIL O1: mute'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', a, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.lounge_room_states where user_id = b;
   if v_cnt <> 0 then raise exception 'FAIL O1: a reads b''s read state'; end if;
   begin
@@ -290,7 +290,7 @@ begin
     ('lounge-media', a || '/photo-2.jpg'),
     ('lounge-media', b || '/photo-b.jpg');
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', a, 'role', 'authenticated')::text, true);
   begin
     perform public.lounge_post_message('en-inspiration', null, '[]', null, jsonb_build_array(jsonb_build_object('path', b || '/photo-b.jpg')));
     raise exception 'FAIL S1: someone else''s file attached';
@@ -305,17 +305,17 @@ begin
     jsonb_build_array(jsonb_build_object('path', a || '/photo-1.jpg', 'alt', 'Gold heart')));
   perform public.lounge_post_message(null, b, '[{"type":"text","text":"for you"}]', null,
     jsonb_build_array(jsonb_build_object('path', a || '/photo-2.jpg')));
-  perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', c, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from storage.objects where bucket_id = 'lounge-media' and name = a || '/photo-1.jpg';
   if v_cnt <> 1 then raise exception 'FAIL S1: channel image unreadable'; end if;
   select count(*) into v_cnt from storage.objects where bucket_id = 'lounge-media' and name = a || '/photo-2.jpg';
   if v_cnt <> 0 then raise exception 'FAIL S1: DM image readable by a third party'; end if;
   select count(*) into v_cnt from public.lounge_message_attachments where storage_path = a || '/photo-2.jpg';
   if v_cnt <> 0 then raise exception 'FAIL S1: DM attachment row readable by a third party'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', b, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from storage.objects where bucket_id = 'lounge-media' and name = a || '/photo-2.jpg';
   if v_cnt <> 1 then raise exception 'FAIL S1: recipient cannot read the DM image'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', outsider, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', outsider, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from storage.objects where bucket_id = 'lounge-media' and name = a || '/photo-1.jpg';
   if v_cnt <> 0 then raise exception 'FAIL S1: outsider reads lounge images'; end if;
   select count(*) into v_cnt from public.lounge_messages;
@@ -326,7 +326,7 @@ begin
   reset role;
   update public.course_entitlements set revoked_at = now() where user_id = c;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', c, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.lounge_messages;
   if v_cnt <> 0 then raise exception 'FAIL L1: former member reads messages'; end if;
   begin
@@ -334,7 +334,7 @@ begin
     raise exception 'FAIL L1: former member posts';
   exception when insufficient_privilege then null;
   end;
-  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', a, 'role', 'authenticated')::text, true);
   begin
     perform public.lounge_post_message(null, c, '[{"type":"text","text":"x"}]');
     raise exception 'FAIL L1: DM to a former member';
@@ -345,7 +345,7 @@ begin
   passed := passed || 'L1'::text;
 
   -- T1: rate limit --------------------------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', b, 'role', 'authenticated')::text, true);
   v_ok := false;
   begin
     for i in 1..25 loop
@@ -360,7 +360,7 @@ begin
   reset role;
   update private.lounge_settings set direct_messages_enabled = false;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', a, 'role', 'authenticated')::text, true);
   begin
     perform public.lounge_post_message(null, b, '[{"type":"text","text":"closed"}]');
     raise exception 'FAIL X1: private message posted while closed';

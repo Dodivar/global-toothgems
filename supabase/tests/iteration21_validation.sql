@@ -43,7 +43,7 @@ begin
 
   -- Build as the manager: one published course, one draft ---------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   insert into public.training_media (id, kind, storage_path, mime_type, name, alt_text, bytes, width, height, tags) values
     (cover,  'image', 'media/' || cover  || '/cover.jpg',  'image/jpeg', 'Couverture interne', 'Pose d’une gem', 1000, 1600, 900, '{interne}'),
@@ -163,7 +163,7 @@ begin
 
   -- Customer -------------------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
 
   -- C1: same outline and price, no promotion rows, no other media ---------------------
   select count(*) into v_cnt from public.course_modules where course_id in (c1, c2);
@@ -179,7 +179,7 @@ begin
   passed := passed || 'C1'::text;
 
   -- Viewer (staff) ---------------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
 
   -- V1: staff still read everything, the promotion label included -------------------
   select label into v_txt from public.course_promotions where course_id = c1;
@@ -193,7 +193,7 @@ begin
   passed := passed || 'V1'::text;
 
   -- U1: once withdrawn, the outline, cover and price disappear for visitors -----------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.courses set status = 'unpublished' where id = c1;
   perform set_config('role', 'anon', true);
   perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);

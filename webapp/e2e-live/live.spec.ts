@@ -1,5 +1,5 @@
-import { ACCOUNTS, anonClient, DEMO_MEMBER_ID, serviceClient, signedInClient, testPassword } from "./env";
-import { dismissCookieBanner, expect, open, signIn, test } from "./fixtures";
+import { ACCOUNTS, anonClient, DEMO_MEMBER_ID, serviceClient, signedInClient, staffClient, testPassword } from "./env";
+import { dismissCookieBanner, expect, open, signIn, signInStaff, test } from "./fixtures";
 
 /**
  * Critical journeys against a REAL backend: the local Supabase stack with
@@ -117,9 +117,12 @@ test.describe("back office access", () => {
   test("a customer is refused the back office, by the server", async ({ page, problems }) => {
     await signIn(page, ACCOUNTS.customer);
     await expect(page).not.toHaveURL((url) => url.pathname === "/connexion");
-    const response = await page.request.get("/admin/commandes", { maxRedirects: 0 });
-    expect(response.status()).toBe(307);
-    expect(response.headers().location).toContain("/admin/connexion");
+    // The site's ordinary 404, as for any unknown address (decided 2026-11-11).
+    for (const path of ["/admin/commandes", "/admin/connexion"]) {
+      const response = await page.request.get(path, { maxRedirects: 0 });
+      expect(response.status(), path).toBe(404);
+      expect(response.headers().location, path).toBeUndefined();
+    }
     expect(problems).toEqual([]);
   });
 
@@ -137,9 +140,18 @@ test.describe("back office access", () => {
     expect(staffOnly.error?.code).toBe("42501");
   });
 
+  test("a staff password alone opens nothing: the database wants the second factor", async () => {
+    const passwordOnly = await signedInClient(ACCOUNTS.staff, testPassword());
+    const refused = await passwordOnly.rpc("staff_directory");
+    expect(refused.data).toBeNull();
+    expect(refused.error?.code).toBe("42501");
+    const staff = await staffClient(ACCOUNTS.staff, testPassword());
+    const accepted = await staff.rpc("staff_directory");
+    expect(accepted.error).toBeNull();
+  });
+
   test("a staff member signs in to the back office and reads every order", async ({ page, problems }) => {
-    await signIn(page, ACCOUNTS.staff, "/admin/connexion");
-    await expect(page).toHaveURL((url) => url.pathname.startsWith("/admin") && url.pathname !== "/admin/connexion");
+    await signInStaff(page, ACCOUNTS.staff);
     const orders = await demoOrders();
     await open(page, "/admin/commandes");
     await expect(page.getByText(orders[0].order_number).first()).toBeVisible();
@@ -268,8 +280,7 @@ test.describe("kits, stock derived from their products (decision 117)", () => {
     const trio = await insert(`Trio ${tag}`, 7);
 
     try {
-      await signIn(page, ACCOUNTS.staff, "/admin/connexion");
-      await expect(page).toHaveURL((url) => url.pathname.startsWith("/admin") && url.pathname !== "/admin/connexion");
+      await signInStaff(page, ACCOUNTS.staff, `/admin/produits/${trio}`);
       await open(page, `/admin/produits/${trio}`);
 
       await page.getByText("Ce produit est un kit", { exact: true }).click();
@@ -300,7 +311,7 @@ test.describe("kits, stock derived from their products (decision 117)", () => {
       ]);
 
       // Restocking a product moves the kit; the kit itself has no count to change.
-      const staff = await signedInClient(ACCOUNTS.staff, testPassword());
+      const staff = await staffClient(ACCOUNTS.staff, testPassword());
       const restock = await staff.rpc("admin_adjust_stock", { p_product_id: glossB, p_variant_id: null as unknown as string, p_delta: 4 });
       expect(restock.error).toBeNull();
       const { data: kit } = await db.from("inventory_items").select("quantity_on_hand").eq("product_id", trio).single();

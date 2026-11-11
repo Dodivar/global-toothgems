@@ -133,7 +133,8 @@ test("sitemap and robots.txt list the public pages and keep private areas out", 
   expect(sitemap).not.toMatch(/panier|\/cart<|compte|admin/);
   const robots = await (await request.get("/robots.txt")).text();
   expect(robots).toContain("Disallow: /compte");
-  expect(robots).toContain("Disallow: /admin");
+  // The back office is not advertised (it answers 404 to anyone but staff).
+  expect(robots).not.toContain("/admin");
 });
 
 test("the language switch moves to the same page in the other language and is remembered", async ({ page, context, problems, baseURL }) => {

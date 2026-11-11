@@ -98,7 +98,7 @@ begin
 
   -- Act as m1 ------------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
 
   -- M1: own orders only
   select count(*) into v_cnt from public.orders where id in (o1, o2);
@@ -155,7 +155,7 @@ begin
   passed := passed || 'M8'::text;
 
   -- Act as m2 ------------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
 
   -- M9: the other member sees their own order and nothing of m1's
   if exists (select 1 from public.orders where id = o1)
@@ -170,7 +170,7 @@ begin
   passed := passed || 'M9'::text;
 
   -- Act as staff ---------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', staff, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', staff, 'role', 'authenticated')::text, true);
 
   -- S1: staff read and write the notes
   select count(*) into v_cnt from public.order_notes where order_id in (o1, o2);
