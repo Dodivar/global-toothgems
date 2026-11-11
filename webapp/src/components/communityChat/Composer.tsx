@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ImagePlus, Lock, SendHorizontal, Smile, X, CornerUpLeft } from "lucide-react";
 import clsx from "clsx";
 import type { ChatAttachment, ChatMember } from "../../lib/communityChat/model";
+import { Link } from "../../lib/navigation";
 import { useChat } from "../../lib/communityChat/chatStore";
 import {
   activeMentionQuery,
@@ -31,7 +32,7 @@ const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
  * Tab picks.
  */
 export function Composer() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     draft,
     setDraft,
@@ -47,6 +48,7 @@ export function Composer() {
     typingMember,
     roomKey,
     viewer,
+    silencedUntil,
   } = useChat();
   /* One message at a time: the field stays as it is until the server took it. */
   const [sending, setSending] = useState(false);
@@ -140,7 +142,17 @@ export function Composer() {
     const result = await send(parts, sent);
     setSending(false);
     if (!result.ok) {
-      setError(t(result.reason === "rateLimited" ? "lounge.composer.rateLimited" : result.reason === "forbidden" ? "lounge.composer.forbidden" : "lounge.composer.failed"));
+      setError(
+        t(
+          result.reason === "rateLimited"
+            ? "lounge.composer.rateLimited"
+            : result.reason === "forbidden"
+              ? "lounge.composer.forbidden"
+              : result.reason === "muted"
+                ? "lounge.composer.mutedNow"
+                : "lounge.composer.failed",
+        ),
+      );
       return;
     }
     setPicked({ room: roomKey, list: [], error: null });
@@ -208,6 +220,21 @@ export function Composer() {
   };
 
   const replyAuthor = replyTarget ? memberOf(replyTarget.authorId) : undefined;
+
+  /* Muted by the team (decision 132): the database refuses every write until then; say so instead of a field. */
+  if (silencedUntil !== null) {
+    const until = new Intl.DateTimeFormat(i18n.language === "en" ? "en-GB" : "fr-FR", { dateStyle: "long", timeStyle: "short" }).format(silencedUntil);
+    return (
+      <div className="flex-none px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-2 sm:px-4">
+        <p role="status" className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[var(--radius-md)] border border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] px-3 py-2.5 text-[13.5px] text-[var(--status-warning-fg)]">
+          <span className="font-semibold">{t("lounge.composer.silenced", { date: until })}</span>
+          <Link to="/compte/moderation" className="font-semibold underline underline-offset-2">
+            {t("lounge.composer.silencedWhy")}
+          </Link>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-none px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-1 sm:px-4">

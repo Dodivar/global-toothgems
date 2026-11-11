@@ -14,6 +14,7 @@ import {
   type NotificationRow,
   type Overview,
 } from "./loungeMapping";
+import { mapMyModeration, reportArguments, type MyModeration, type ReportDraft } from "./moderation";
 
 /*
  * The Members' Lounge's only door to Supabase. Every rule lives in the
@@ -196,6 +197,51 @@ export async function readNotifications(ids: string[] | null): Promise<void> {
   if (error) fail(error);
 }
 
+/* ------------------------------------------------------- moderation (decision 132) */
+
+/** Reports a message (or one of its images); resolves to the acknowledgement's date. */
+export async function reportMessage(messageId: string, draft: ReportDraft, attachmentId?: string): Promise<{ id: string; createdAt: string }> {
+  const args = reportArguments(draft);
+  const { data, error } = await requireSupabase().rpc("lounge_report_message", {
+    p_message_id: messageId,
+    p_reason: args.reason,
+    p_illegal_category: nullable(args.category),
+    p_details: args.details,
+    ...(attachmentId ? { p_attachment_id: attachmentId } : {}),
+  });
+  if (error) fail(error);
+  const ack = (data ?? {}) as { id?: unknown; created_at?: unknown };
+  return { id: String(ack.id ?? ""), createdAt: String(ack.created_at ?? new Date().toISOString()) };
+}
+
+/** Hides (or shows again) another member's messages, for the viewer only. */
+export async function setBlocked(memberId: string, blocked: boolean): Promise<void> {
+  const { error } = await requireSupabase().rpc("lounge_set_blocked", { p_member_id: memberId, p_blocked: blocked });
+  if (error) fail(error);
+}
+
+/** The members whose messages the viewer hid. */
+export async function fetchBlocked(userId: string): Promise<string[]> {
+  const { data, error } = await requireSupabase().from("lounge_blocks").select("blocked_id").eq("blocker_id", userId);
+  if (error) fail(error);
+  return (data ?? []).map((row) => row.blocked_id);
+}
+
+/** The viewer's moderation file: restrictions, decisions about them, their reports, hidden members. */
+export async function fetchMyModeration(): Promise<MyModeration> {
+  const { data, error } = await requireSupabase().rpc("lounge_my_moderation");
+  if (error) fail(error);
+  return mapMyModeration(data);
+}
+
+/** Contests a decision (once, within 6 months). */
+export async function submitAppeal(decisionId: string, body: string): Promise<void> {
+  const { error } = await requireSupabase().rpc("lounge_submit_appeal", { p_decision_id: decisionId, p_body: body.trim() });
+  if (error) fail(error);
+}
+
+export type ModerationEventKind = "hidden" | "deleted" | "restored";
+
 /**
  * New and changed messages (reaction totals) and the member's notifications,
  * as they happen. Realtime checks each event against the same RLS as a read,
@@ -203,7 +249,13 @@ export async function readNotifications(ids: string[] | null): Promise<void> {
  */
 export function subscribe(
   userId: string,
-  handlers: { message: (row: MessageRow, kind: "insert" | "update") => void; notification: () => void; status: (ok: boolean) => void },
+  handlers: {
+    message: (row: MessageRow, kind: "insert" | "update") => void;
+    notification: () => void;
+    /** A message hidden, deleted or restored by the moderators (no content: read it again if needed). */
+    moderation: (event: { messageId: string; kind: ModerationEventKind }) => void;
+    status: (ok: boolean) => void;
+  },
 ): () => void {
   const db = requireSupabase();
   const channel: RealtimeChannel = db
@@ -217,6 +269,12 @@ export function subscribe(
     .on("postgres_changes", { event: "*", schema: "public", table: "lounge_notifications", filter: `user_id=eq.${userId}` }, () =>
       handlers.notification(),
     )
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "lounge_moderation_events" }, (payload) => {
+      const row = payload.new as { message_id?: unknown; kind?: unknown };
+      if (typeof row.message_id === "string" && (row.kind === "hidden" || row.kind === "deleted" || row.kind === "restored")) {
+        handlers.moderation({ messageId: row.message_id, kind: row.kind });
+      }
+    })
     .subscribe((status) => handlers.status(status === "SUBSCRIBED"));
   return () => {
     void db.removeChannel(channel);

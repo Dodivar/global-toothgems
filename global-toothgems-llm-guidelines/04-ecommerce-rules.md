@@ -68,6 +68,7 @@ Language, country, currency, tax jurisdiction and shipping zone are separate dim
 ## Promotions, gift cards, loyalty
 
 - The discount engine lives in `create_order()`; the UI previews but never decides — the cart shows what `quote_basket()` answers (same engine, nothing reserved), never a discount computed in the browser. Promotions are saved by `admin_save_promotion()` (one transaction: promotion, scope, segments, code, English text), never by writing the tables from the browser. Stacking, eligibility, limits and code validity are server rules (decisions 21–24).
+- Struck-out prices (Omnibus, decision 129): never typed. The only source is `storefront_price_references()` (lowest price of the 30 days before the reduction, from the trigger-written price history); strike it only when its state is `reduced`, with the percentage it gives. `compare_at_price` is retired (a CHECK refuses any value); do not reintroduce a "was" price field or compute one in the browser.
 - Gift cards are a payment, not a discount; balances are an append-only ledger; codes are bearer credentials never exposed to API roles (staff see `code_last4`); the public balance check must be rate-limited server-side.
 - Loyalty stamps are awarded by the database when an order is paid; the Loyalty Club UI must read `loyalty_overview`, never compute stamps client-side.
 - Referral: post-launch; do not add referral tables speculatively.

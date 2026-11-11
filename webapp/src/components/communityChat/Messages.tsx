@@ -6,13 +6,17 @@ import {
   AtSign,
   Copy,
   CornerUpLeft,
+  EyeOff,
+  Flag,
   Hash,
   MessageCircle,
   MoreHorizontal,
   Reply,
+  ShieldAlert,
   SmilePlus,
   Sparkles,
 } from "lucide-react";
+import { Link } from "../../lib/navigation";
 import clsx from "clsx";
 import {
   CHAT_REACTIONS,
@@ -210,7 +214,8 @@ const QUICK: ChatReaction[] = ["heart", "clap", "sparkles"];
 
 function MessageToolbar({ message, visible }: { message: ChatMessage; visible: boolean }) {
   const { t } = useTranslation();
-  const { react, replyToMessage, nameOf, mention, memberOf, openConversationWith, room, viewer } = useChat();
+  const { react, replyToMessage, nameOf, mention, memberOf, openConversationWith, room, viewer, setBlocked } = useChat();
+  const { openReport } = useLoungeUi();
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -286,6 +291,28 @@ function MessageToolbar({ message, visible }: { message: ChatMessage; visible: b
                 }}
               >
                 {t("lounge.message.mentionAuthor", { name: author.name })}
+              </PopoverItem>
+            )}
+            {!isMine && !message.pending && (
+              <PopoverItem
+                icon={Flag}
+                onSelect={() => {
+                  close();
+                  openReport(message.id);
+                }}
+              >
+                {t("lounge.message.report")}
+              </PopoverItem>
+            )}
+            {!isMine && author && (
+              <PopoverItem
+                icon={EyeOff}
+                onSelect={() => {
+                  close();
+                  void setBlocked(author.id, true);
+                }}
+              >
+                {t("lounge.message.hideAuthor", { name: author.name })}
               </PopoverItem>
             )}
             {LOUNGE_DIRECT_MESSAGES_ENABLED && !isMine && author && room.kind === "channel" && (
@@ -405,7 +432,19 @@ function MessageItem({
 
           {!grouped && parentAuthor && <span className="sr-only">{t("lounge.message.replyingTo", { name: parentAuthor.name })}</span>}
 
-          <MessageText parts={message.parts} className="text-[14.5px] leading-[1.55] text-[var(--text-body)]" />
+          {message.hiddenBy && (
+            <p className="my-1 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[var(--radius-md)] border border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] px-2.5 py-1.5 text-[12.5px] text-[var(--status-warning-fg)]">
+              <ShieldAlert size={14} aria-hidden="true" />
+              <span className="font-semibold">{t("lounge.message.hiddenByTeam")}</span>
+              <Link
+                to={message.hiddenBy.decisionId ? `/compte/moderation?decision=${message.hiddenBy.decisionId}` : "/compte/moderation"}
+                className={clsx("font-semibold underline underline-offset-2", focusRing)}
+              >
+                {t("lounge.message.hiddenWhy")}
+              </Link>
+            </p>
+          )}
+          <MessageText parts={message.parts} className={clsx("text-[14.5px] leading-[1.55] text-[var(--text-body)]", message.hiddenBy && "opacity-70")} />
           {message.pending && <span className="text-[11.5px] text-[var(--text-muted)]">{t("lounge.message.sending")}</span>}
 
           {message.attachments && message.attachments.length > 0 && (
@@ -427,7 +466,7 @@ function MessageItem({
         </div>
       </div>
 
-      <MessageToolbar message={message} visible={touched} />
+      {!message.hiddenBy && <MessageToolbar message={message} visible={touched} />}
     </li>
   );
 }

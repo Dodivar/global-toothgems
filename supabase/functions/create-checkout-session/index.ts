@@ -101,6 +101,12 @@ const deps: CheckoutDeps = {
     return { order: data };
   },
 
+  async recordTermsVersion(orderId, version) {
+    // Only an order without one: a trigger refuses to change a recorded version.
+    const { error } = await supabase.from("orders").update({ terms_version: version }).eq("id", orderId).is("terms_version", null);
+    if (error) throw new Error(error.message);
+  },
+
   async cancelOrder(orderId, reason) {
     const { error } = await supabase.rpc("cancel_order", { p_order_id: orderId, p_reason: reason });
     if (error) throw new Error(error.message);

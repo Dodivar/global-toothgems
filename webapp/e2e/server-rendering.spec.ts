@@ -41,7 +41,7 @@ test("links in the server HTML are the addresses of the page's language", async 
 test("a returning visitor's saved choices hydrate without a mismatch", async ({ page, problems }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.addInitScript(() => {
-    localStorage.setItem("gt-cookie-consent", JSON.stringify({ preferences: false, analytics: false, marketing: false, decidedAt: "2026-09-01T00:00:00Z" }));
+    localStorage.setItem("gt-cookie-consent", JSON.stringify({ analytics: false, decidedAt: new Date().toISOString() }));
   });
   for (const path of ["/fr/academy", "/fr/cookies", "/en/legal-notice", "/fr/boutique/aurora-heart"]) {
     await open(page, path);

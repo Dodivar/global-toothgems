@@ -8,7 +8,7 @@ import { GemColorsSection } from "../../components/admin/GemColorsSection";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useLocalized } from "../../lib/localized";
 import { useFormat } from "../../lib/format";
-import { effectivePrice, stockState } from "../../data/adminCatalog";
+import { stockState } from "../../data/adminCatalog";
 import { useAdminShell } from "./AdminLayout";
 
 /**
@@ -38,7 +38,7 @@ export function AdminCategories() {
     const inCategory = products.filter((p) => p.categoryId === category.id);
     const live = inCategory.filter((p) => p.status === "active");
     const unavailable = live.filter((p) => stockState(p) === "out_of_stock");
-    const prices = inCategory.map(effectivePrice);
+    const prices = inCategory.map((product) => product.price);
     return {
       category,
       families: (category.families ?? [])

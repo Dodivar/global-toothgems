@@ -124,7 +124,7 @@ export function AcademyCourseCard({
               {discounted && (
                 <s className="text-[13px] text-[var(--text-subtle)]">
                   <span className="sr-only">{t("training.priceWas")} </span>
-                  {formatMoney(course.price.minor, course.price.currency)}
+                  {course.referencePrice && formatMoney(course.referencePrice.minor, course.referencePrice.currency)}
                 </s>
               )}
             </span>

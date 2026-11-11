@@ -21,7 +21,7 @@ Security is a functional requirement, not a polishing step.
 | --- | --- | --- |
 | `customer` | 0 | none (own data only) |
 | `viewer` (read only) | 10 | `view_dashboard`, `view_users`, `view_statistics` |
-| `manager` | 20 | the above + `manage_users`, `manage_products`, `manage_training`, `manage_orders`, `manage_customers`, `manage_promotions`, `moderate_reviews`, `manage_content` |
+| `manager` | 20 | the above + `manage_users`, `manage_products`, `manage_training`, `manage_orders`, `manage_customers`, `manage_promotions`, `moderate_reviews`, `moderate_community` (Members' Lounge moderation, decision 132), `manage_content` |
 | `admin` | 30 | everything, incl. `manage_settings` |
 
 - Checks in SQL: `private.is_staff()`, `private.has_permission('<key>')`; the UI reads `my_permissions()` for navigation only.

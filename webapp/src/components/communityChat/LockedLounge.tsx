@@ -1,11 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ArrowRight, Check, LockKeyhole } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, LockKeyhole, ShieldAlert } from "lucide-react";
 import clsx from "clsx";
 import { Link } from "../../lib/navigation";
 import { CHANNEL_KEYS, DEFAULT_SERVER, catalogChannel } from "../../lib/communityChat/model";
 import { focusRing } from "./primitives";
+import { useAuth } from "../../lib/auth";
+import { isSupabaseConfigured } from "../../lib/supabase/client";
+import { fetchMyModeration } from "../../lib/communityChat/loungeApi";
 import { ChannelIcon } from "./channelIcons";
 
 /**
@@ -20,6 +24,7 @@ import { ChannelIcon } from "./channelIcons";
  */
 export function LockedLounge() {
   const { t } = useTranslation();
+  const excluded = useExcluded();
   const channels = CHANNEL_KEYS.map((key) => catalogChannel(DEFAULT_SERVER, key));
 
   return (
@@ -54,6 +59,10 @@ export function LockedLounge() {
 
       <div className="relative grid min-h-[inherit] place-items-center px-4 py-10">
         <section className="gt-glass-panel grid w-full max-w-[520px] gap-5 rounded-[var(--radius-xl)] p-[clamp(22px,4vw,36px)]">
+          {excluded ? (
+            <ExcludedCard />
+          ) : (
+          <>
           <div className="flex items-center gap-3">
             <span className="grid h-12 w-12 flex-none place-items-center rounded-full bg-[var(--surface-inverse)] text-white">
               <LockKeyhole size={20} aria-hidden="true" />
@@ -97,8 +106,68 @@ export function LockedLounge() {
             </Link>
           </div>
           <p className="m-0 text-[12.5px] text-[var(--text-muted)]">{t("lounge.locked.note")}</p>
+          </>
+          )}
         </section>
       </div>
     </div>
+  );
+}
+
+/**
+ * Whether the door is closed because the team excluded the member (decision
+ * 132), read from their moderation file: the locked screen then says so and
+ * leads to the decision and the complaint instead of the courses.
+ */
+function useExcluded(): boolean {
+  const { userId } = useAuth();
+  const [excluded, setExcluded] = useState<{ owner: string; value: boolean } | null>(null);
+  useEffect(() => {
+    if (!isSupabaseConfigured || !userId) return;
+    let cancelled = false;
+    fetchMyModeration()
+      .then((file) => !cancelled && setExcluded({ owner: userId, value: file.bannedAt !== null }))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+  return excluded?.owner === userId && excluded.value;
+}
+
+function ExcludedCard() {
+  const { t } = useTranslation();
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <span className="grid h-12 w-12 flex-none place-items-center rounded-full bg-[var(--status-warning-bg)] text-[var(--status-warning-fg)]">
+          <ShieldAlert size={20} aria-hidden="true" />
+        </span>
+        <span className="gt-eyebrow">{t("lounge.excluded.eyebrow")}</span>
+      </div>
+      <div className="grid gap-2">
+        <h2 className="m-0 text-[clamp(24px,3.2vw,30px)] font-[var(--weight-black)] leading-tight text-[var(--text-primary)]">{t("lounge.excluded.title")}</h2>
+        <p className="m-0 text-[15px] leading-relaxed text-[var(--text-body)]">{t("lounge.excluded.body")}</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          to="/compte/moderation"
+          className={clsx(
+            "inline-flex h-11 items-center gap-2 rounded-[var(--radius-pill)] bg-[var(--surface-inverse)] px-5 text-[14.5px] font-bold text-white",
+            focusRing,
+          )}
+        >
+          {t("lounge.excluded.cta")}
+          <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+        <Link
+          to="/compte"
+          className={clsx("inline-flex h-11 items-center gap-2 rounded-[var(--radius-pill)] px-3 text-[14px] font-semibold text-[var(--text-body)] hover:bg-white/70", focusRing)}
+        >
+          <ArrowLeft size={16} aria-hidden="true" />
+          {t("lounge.locked.back")}
+        </Link>
+      </div>
+    </>
   );
 }

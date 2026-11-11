@@ -26,7 +26,6 @@ const row: ProductRow = {
   description: null,
   category_id: "22222222-2222-4222-8222-222222222222",
   price: 32,
-  compare_at_price: "38.00",
   currency: "EUR",
   status: "active",
   metadata: { material: "Ancienne valeur", tags: ["best-seller", 3], type: "set" },
@@ -76,7 +75,7 @@ describe("rowToProduct", () => {
   });
 
   it("reads stock, prices and presentation metadata", () => {
-    expect(product).toMatchObject({ stock: 12, lowStockThreshold: 4, price: 32, compareAtPrice: 38, type: "set" });
+    expect(product).toMatchObject({ stock: 12, lowStockThreshold: 4, price: 32, type: "set" });
     expect(product.material).toEqual({ fr: "Cristal taillé", en: "" });
     expect(product.specs).toEqual({
       center: { fr: "", en: "" },
@@ -115,7 +114,6 @@ describe("productToPayload", () => {
   const product: AdminProduct = {
     ...rowToProduct(row, url),
     name: { fr: " Cœur Chrome ", en: "Chrome Heart" },
-    promoPrice: 10,
     media: [
       { id: "m1", storagePath: "products/x/1.jpg", src: "", alt: { fr: "", en: "" } },
       { id: "upload-abc", storagePath: "products/x/3.jpg", src: "", alt: { fr: "Trois", en: "" } },
@@ -127,7 +125,8 @@ describe("productToPayload", () => {
   it("never sends a promotional price or a float", () => {
     expect(payload).not.toHaveProperty("promo_price");
     expect(payload.price).toBe("32.00");
-    expect(payload.compare_at_price).toBe("38.00");
+    // Omnibus (decision 129): never a compare-at price.
+    expect(payload).not.toHaveProperty("compare_at_price");
   });
 
   it("sends shape and colour, as null when unset so the merge clears them", () => {

@@ -84,6 +84,16 @@ export const DOCUMENT_MESSAGES = {
         "fileName": "avoir",
         "studioWithdrawal": "Rétractation — part non utilisée de l’abonnement Studio 3D, formule {{plan}}",
         "studioUsedDays": "{{used}} jours utilisés sur {{total}}"
+      },
+      "terms": {
+        "title": "Conditions générales de vente",
+        "fileName": "conditions-generales-de-vente",
+        "version": "Version du",
+        "appliesTo": "Applicable à",
+        "toSupply": "à compléter",
+        "intro": "Version des conditions générales de vente en vigueur à la date de votre commande ou de votre abonnement, remise avec sa confirmation pour que vous puissiez la conserver et la reproduire.",
+        "fieldColumn": "Information",
+        "valueColumn": "Détail"
       }
     }
   },
@@ -169,6 +179,16 @@ export const DOCUMENT_MESSAGES = {
         "fileName": "credit-note",
         "studioWithdrawal": "Withdrawal — unused share of the 3D Studio subscription, {{plan}} plan",
         "studioUsedDays": "{{used}} of {{total}} days used"
+      },
+      "terms": {
+        "title": "Terms of sale",
+        "fileName": "terms-of-sale",
+        "version": "Version of",
+        "appliesTo": "Applies to",
+        "toSupply": "to be supplied",
+        "intro": "The version of the terms of sale in force on the date of your order or subscription, given with its confirmation so that you can keep and reproduce it.",
+        "fieldColumn": "Item",
+        "valueColumn": "Details"
       }
     }
   }

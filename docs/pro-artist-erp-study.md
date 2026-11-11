@@ -50,7 +50,7 @@ The pro module depends on all of these, and none was finished at the time of the
 
 | Prerequisite | State then |
 | --- | --- |
-| Cart → checkout → payment | *Built, not deployed*: `stripe-webhook` and migration `20260930200000` still awaited the owner's go-ahead |
+| Cart → checkout → payment | Live in Stripe test mode (migration `20260930200000` applied; live mode at launch) |
 | Studio 3D subscription | Does not exist: `STUDIO_ACCESS_MODE = "preview"` in `webapp/src/lib/studioAccess.tsx`, no Stripe Billing, no server-side entitlement |
 | Member content moderation | **Absent** from the Members' Lounge (`AGENTS.md` §4 notes it is needed before opening to customers). A public portfolio is the same problem, indexed by search engines |
 | GDPR export / account deletion | Not wired |

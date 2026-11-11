@@ -194,3 +194,13 @@ Deno.test("only POST (and the CORS preflight) is answered", async () => {
   assertEquals((await handleRefundOrder(new Request("https://x/f", { method: "GET" }), deps)).status, 405);
   assertEquals((await handleRefundOrder(new Request("https://x/f", { method: "OPTIONS" }), deps)).status, 204);
 });
+
+Deno.test("a withdrawal's refund brings its own lines and the reason 'return'", () => {
+  const W = "3b0c8f2e-6d1a-4c3b-9e7f-1a2b3c4d5e6f";
+  const ok = parseRefundInput({ ...REQUEST, items: [], reason: "return", restock: true, withdrawal_id: W.toUpperCase() });
+  assert(ok.ok && ok.value.action === "request" && ok.value.withdrawal_id === W && ok.value.restock);
+  assert(!parseRefundInput({ ...REQUEST, reason: "return", withdrawal_id: W }).ok, "lines come from the withdrawal");
+  assert(!parseRefundInput({ ...REQUEST, items: [], reason: "goodwill", withdrawal_id: W }).ok);
+  assert(!parseRefundInput({ ...REQUEST, items: [], reason: "return", withdrawal_id: "nope" }).ok);
+  assert(!parseRefundInput({ ...REQUEST, items: [], reason: "goodwill", restock: true }).ok);
+});

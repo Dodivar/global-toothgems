@@ -152,7 +152,6 @@ export interface ProductVariant {
   name: Localized;
   /** Display price in major units; the server recomputes every price at checkout. */
   price: number;
-  compareAtPrice?: number;
   stock?: "low" | "out";
   /** Gem options (`lib/gemOptions.ts`): stones per pack, and size (SS gauge or millimetres). */
   pack?: number;
@@ -208,7 +207,6 @@ export interface Product {
   price: number;
   /** ISO 4217 code of the prices; absent on the mock products (euros). */
   currency?: string;
-  compareAtPrice?: number;
   badge?: Localized;
   badgeTone?: BadgeTone;
   rating: number;
@@ -281,7 +279,6 @@ export const PRODUCTS: Product[] = [
     name: { fr: "Solitaire Cristal", en: "Crystal Solitaire" },
     subtitle: { fr: "Swarovski · 1,8 mm", en: "Swarovski · 1.8mm" },
     price: 29,
-    compareAtPrice: 35,
     rating: 4.6,
     reviewCount: 318,
     image: img("img-07.jpg"),

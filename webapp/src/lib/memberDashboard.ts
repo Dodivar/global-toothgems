@@ -27,10 +27,14 @@ export interface FavoritesSummary {
   lowStock: number;
 }
 
-export function summarizeFavorites(products: readonly Pick<Product, "price" | "compareAtPrice" | "stock">[]): FavoritesSummary {
+/**
+ * "On sale" means what the shop window strikes out: a reduction the database announces (decision 129, Omnibus),
+ * passed in as `reduced` — never a price compared here.
+ */
+export function summarizeFavorites<P extends Pick<Product, "stock">>(products: readonly P[], reduced: (product: P) => boolean = () => false): FavoritesSummary {
   return {
     total: products.length,
-    onSale: products.filter((p) => p.compareAtPrice !== undefined && p.compareAtPrice > p.price && p.stock !== "out").length,
+    onSale: products.filter((p) => p.stock !== "out" && reduced(p)).length,
     lowStock: products.filter((p) => p.stock === "low").length,
   };
 }

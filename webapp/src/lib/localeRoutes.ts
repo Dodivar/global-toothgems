@@ -53,7 +53,8 @@ export type PublicRouteId =
   | "privacy"
   | "cookies"
   | "shipping"
-  | "returns";
+  | "returns"
+  | "withdrawal";
 
 export interface PublicRoute {
   id: PublicRouteId;
@@ -94,6 +95,8 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { id: "cookies", fr: "/cookies", en: "/cookie-policy", indexed: true },
   { id: "shipping", fr: "/livraison", en: "/shipping", indexed: true },
   { id: "returns", fr: "/retours-remboursements", en: "/returns", indexed: true },
+  // The online withdrawal function for guests (decision 131); the e-mailed link carries its token in the fragment.
+  { id: "withdrawal", fr: "/retours-remboursements/retractation", en: "/returns/withdrawal", indexed: true },
 ];
 
 const ROUTE_BY_ID = new Map(PUBLIC_ROUTES.map((route) => [route.id, route]));

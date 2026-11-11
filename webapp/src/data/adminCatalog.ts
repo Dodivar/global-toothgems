@@ -207,8 +207,6 @@ export interface AdminProduct {
   type: ProductType;
   /** EUR, as typed in the form. See the file note on monetary values. */
   price: number;
-  compareAtPrice?: number;
-  promoPrice?: number;
   media: ProductImage[];
   trackInventory: boolean;
   /** Meaningful only while `trackInventory` is on. */
@@ -423,7 +421,6 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
     familyId: "swarovski",
     type: "single",
     price: 32,
-    compareAtPrice: 38,
     media: [media("img-12.jpg"), media("img-11.jpg"), media("mouth-02.jpg")],
     trackInventory: true,
     stock: 148,
@@ -545,8 +542,6 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
     familyId: "kit-professionnel",
     type: "kit",
     price: 249,
-    compareAtPrice: 289,
-    promoPrice: 219,
     media: [media("img-09.jpg"), media("img-08.jpg"), media("img-14.jpg")],
     trackInventory: true,
     stock: 31,
@@ -842,7 +837,6 @@ const PRODUCT_FIXTURES: AdminProduct[] = [
     categoryId: "gems",
     type: "set",
     price: 72,
-    compareAtPrice: 88,
     media: [media("img-02.jpg"), media("img-06.jpg")],
     trackInventory: true,
     stock: 2,
@@ -952,11 +946,6 @@ export function matchesStockState(product: AdminProduct, state: StockState): boo
 /** Needs restocking: out of stock or low, the product or any of its options. */
 export function needsRestock(product: AdminProduct): boolean {
   return matchesStockState(product, "out_of_stock") || matchesStockState(product, "low_stock");
-}
-
-/** Price actually charged: the promotional price wins when one is set. */
-export function effectivePrice(product: AdminProduct): number {
-  return product.promoPrice ?? product.price;
 }
 
 /**

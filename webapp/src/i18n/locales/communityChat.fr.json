@@ -87,7 +87,11 @@
     "openProfile": "Ouvrir le profil de {{name}}",
     "sending": "Envoi…",
     "loading": "Chargement des messages…",
-    "loadFailed": "Les messages de ce salon n’ont pas pu être chargés."
+    "loadFailed": "Les messages de ce salon n’ont pas pu être chargés.",
+    "report": "Signaler ce message",
+    "hideAuthor": "Masquer les messages de {{name}}",
+    "hiddenByTeam": "Masqué par l’équipe : les autres membres ne le voient plus.",
+    "hiddenWhy": "Voir le motif ou contester"
   },
   "reactions": {
     "heart": "J’adore",
@@ -131,7 +135,10 @@
     "tooMany": "4 images au maximum par message.",
     "rateLimited": "Vous envoyez beaucoup de messages : patientez une minute avant le suivant.",
     "forbidden": "Votre accès au Salon a changé : rechargez la page.",
-    "failed": "Le message n’a pas pu être envoyé. Réessayez."
+    "failed": "Le message n’a pas pu être envoyé. Réessayez.",
+    "silenced": "L’équipe a suspendu votre possibilité d’écrire jusqu’au {{date}}. Vous pouvez toujours lire les salons.",
+    "silencedWhy": "Voir la décision et la contester",
+    "mutedNow": "Votre possibilité d’écrire est suspendue : le message n’a pas été envoyé."
   },
   "members": {
     "heading": "Membres",
@@ -165,7 +172,12 @@
     "selfNote": "Votre profil reprend le nom de votre compte.",
     "statMessages": "Messages",
     "statHelpful": "Réponses utiles",
-    "statSince": "Membre depuis"
+    "statSince": "Membre depuis",
+    "block": "Masquer ses messages",
+    "unblock": "Afficher ses messages",
+    "blockFailed": "Le changement n’a pas pu être enregistré. Réessayez.",
+    "blockedNote": "Vous ne voyez plus ses messages. Ce membre n’en est pas informé.",
+    "blockHint": "Masquer ses messages ne concerne que vous ; ce membre n’en est pas informé."
   },
   "newMessage": {
     "title": "Nouveau message",
@@ -255,5 +267,68 @@
   "memberUnnamed": "Membre",
   "loading": "Ouverture du Salon…",
   "loadFailed": "Le Salon n’a pas pu être chargé. Vérifiez votre connexion et réessayez.",
-  "retry": "Réessayer"
+  "retry": "Réessayer",
+  "excluded": {
+    "eyebrow": "Accès suspendu",
+    "title": "Vous n’avez plus accès aux salons",
+    "body": "Notre équipe de modération vous a exclu·e des salons des membres. Cette décision ne touche ni votre compte ni vos formations. Vous pouvez en lire le motif et la contester pendant 6 mois.",
+    "cta": "Voir la décision"
+  },
+  "report": {
+    "title": "Signaler ce message",
+    "intro": "Notre équipe examine chaque signalement. L’auteur du message ne sait pas qui l’a signalé.",
+    "imageOnly": "(image seule)",
+    "reasonLabel": "Pourquoi le signalez-vous ?",
+    "reasonHints": {
+      "illegal": "Contenu contraire à la loi : haine, menaces, escroquerie, contrefaçon, atteinte à la vie privée…",
+      "harassment": "Propos insultants, intimidation ou acharnement envers une personne.",
+      "spam": "Publicité, liens répétés ou messages sans rapport avec le salon.",
+      "personal_data": "Adresse, téléphone, photo ou informations d’une personne publiées sans son accord.",
+      "other": "Autre manquement aux conditions d’utilisation."
+    },
+    "categoryLabel": "Catégorie de contenu illicite",
+    "categoryPlaceholder": "Choisissez une catégorie",
+    "imageLabel": "Ce que vous signalez",
+    "wholeMessage": "Le message entier",
+    "imageN": "L’image {{n}} {{alt}}",
+    "detailsLabel": "Expliquez-nous pourquoi",
+    "detailsPlaceholder": "Ce qui pose problème, et pour un contenu illicite, pourquoi il vous semble contraire à la loi.",
+    "detailsHint": "Entre {{min}} et {{max}} caractères.",
+    "privacy": "Votre signalement et votre nom sont conservés par l’équipe pour traiter la demande et ne sont jamais montrés à l’auteur du message. Signaler de mauvaise foi peut entraîner des mesures.",
+    "sending": "Envoi…",
+    "submit": "Envoyer le signalement",
+    "receivedTitle": "Signalement reçu",
+    "receivedBody": "Nous avons bien reçu votre signalement le {{date}}. Notre équipe l’examine et vous informera de sa décision par e-mail.",
+    "followUp": "Suivre mes signalements",
+    "errors": {
+      "reason": "Choisissez une raison.",
+      "category": "Choisissez la catégorie du contenu illicite.",
+      "details": "Expliquez en au moins {{min}} caractères.",
+      "duplicate": "Vous avez déjà signalé ce message : il est en cours d’examen.",
+      "rateLimited": "Vous avez envoyé beaucoup de signalements récemment. Réessayez dans un moment.",
+      "unavailable": "Le signalement n’est pas disponible dans cet aperçu.",
+      "failed": "Le signalement n’a pas pu être envoyé. Réessayez."
+    }
+  },
+  "moderation": {
+    "reasons": {
+      "illegal": "Contenu illicite",
+      "harassment": "Harcèlement ou propos injurieux",
+      "spam": "Spam ou publicité",
+      "personal_data": "Données personnelles d’autrui",
+      "other": "Autre"
+    },
+    "categories": {
+      "hate_speech": "Incitation à la haine ou discrimination",
+      "violence_threats": "Violence ou menaces",
+      "terrorism": "Contenu terroriste",
+      "child_safety": "Atteinte à la protection des mineurs",
+      "scam_fraud": "Escroquerie ou fraude",
+      "counterfeit_ip": "Contrefaçon ou atteinte à la propriété intellectuelle",
+      "privacy_image": "Atteinte à la vie privée ou au droit à l’image",
+      "defamation": "Diffamation ou injure",
+      "illegal_products": "Produits ou pratiques illicites",
+      "other_illegal": "Autre contenu illicite"
+    }
+  }
 }

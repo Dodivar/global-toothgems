@@ -47,8 +47,11 @@ import academyPageEn from "./locales/academyPage.en.json";
 // The Members' Lounge (community chat at /compte/salons), under `lounge`.
 import loungeFr from "./locales/communityChat.fr.json";
 import loungeEn from "./locales/communityChat.en.json";
+// Members' Lounge moderation (/compte/moderation, /admin/salons, decision 132), under `moderation`.
+import moderationFr from "./locales/moderation.fr.json";
+import moderationEn from "./locales/moderation.en.json";
 
 export const resources = {
-  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr, templates: studioTemplatesFr, glowbook: studioGlowbookFr, socialExport: studioSocialExportFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, studioPage: studioPageFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr } },
-  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn, templates: studioTemplatesEn, glowbook: studioGlowbookEn, socialExport: studioSocialExportEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, studioPage: studioPageEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn } },
+  fr: { translation: { ...fr, promo: promoFr, reviews: reviewsFr, settings: settingsFr, studio: { ...studioFr, workspace: studioWorkspaceFr, templates: studioTemplatesFr, glowbook: studioGlowbookFr, socialExport: studioSocialExportFr }, homeAlt: homeAltFr, shopAlt: shopAltFr, studioPage: studioPageFr, learning: learningFr, trainingMedia: trainingMediaFr, academyPage: academyPageFr, lounge: loungeFr, moderation: moderationFr } },
+  en: { translation: { ...en, promo: promoEn, reviews: reviewsEn, settings: settingsEn, studio: { ...studioEn, workspace: studioWorkspaceEn, templates: studioTemplatesEn, glowbook: studioGlowbookEn, socialExport: studioSocialExportEn }, homeAlt: homeAltEn, shopAlt: shopAltEn, studioPage: studioPageEn, learning: learningEn, trainingMedia: trainingMediaEn, academyPage: academyPageEn, lounge: loungeEn, moderation: moderationEn } },
 };

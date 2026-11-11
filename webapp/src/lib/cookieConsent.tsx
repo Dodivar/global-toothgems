@@ -9,43 +9,56 @@ import { useHydrated } from "./useHydrated";
  * Studio events of `lib/studioAnalytics.ts`) is opted in only while the
  * `analytics` category is accepted. It follows the behaviour a real consent layer must have:
  *
- * - optional categories start refused — nothing is pre-ticked;
+ * - the only optional category is the one the site really uses (analytics,
+ *   PostHog): no preference, advertising or social-network tracker exists, so
+ *   none is offered — a switch that changes nothing would mislead;
+ * - it starts refused — nothing is pre-ticked;
  * - refusing is one click, exactly like accepting;
  * - the choice can be reopened and changed at any time (footer, cookie policy);
- * - the decision carries a timestamp, which is what a real record would keep
- *   as proof of consent alongside the policy version.
+ * - the decision carries a timestamp and is valid for `CONSENT_MAX_AGE_MS`
+ *   (6 months, the CNIL's recommendation for both an acceptance and a
+ *   refusal), after which the banner asks again and analytics stop until then.
  *
- * The choice is kept in localStorage so the banner does not come back on every
- * page. Whether that storage is disclosed as a strictly necessary item is to be
- * decided with the cookie policy.
+ * The choice is kept in localStorage (`gt-cookie-consent`), disclosed as a
+ * strictly necessary item in the cookie policy (`data/legal/cookies.ts`).
+ * Records written before the categories were narrowed (with `preferences` and
+ * `marketing` keys) are still read: only their `analytics` value counts.
  */
 
-export type OptionalCategory = "preferences" | "analytics" | "marketing";
-export const OPTIONAL_CATEGORIES: OptionalCategory[] = ["preferences", "analytics", "marketing"];
+export type OptionalCategory = "analytics";
+export const OPTIONAL_CATEGORIES: OptionalCategory[] = ["analytics"];
 
 export type ConsentChoices = Record<OptionalCategory, boolean>;
 
-interface ConsentRecord extends ConsentChoices {
+export interface ConsentRecord extends ConsentChoices {
   decidedAt: string;
 }
 
-export const NO_OPTIONAL_CONSENT: ConsentChoices = { preferences: false, analytics: false, marketing: false };
-const ALL_CONSENT: ConsentChoices = { preferences: true, analytics: true, marketing: true };
+export const NO_OPTIONAL_CONSENT: ConsentChoices = { analytics: false };
+const ALL_CONSENT: ConsentChoices = { analytics: true };
 
 const STORAGE_KEY = "gt-cookie-consent";
 
+/** How long a choice stands before the visitor is asked again: 6 months. */
+export const CONSENT_MAX_AGE_MS = 182 * 24 * 60 * 60 * 1000;
+
+/** The stored record, or null when it is missing, malformed or older than `CONSENT_MAX_AGE_MS`. */
+export function parseConsentRecord(raw: string | null, now: number): ConsentRecord | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<ConsentRecord> | null;
+    if (!parsed || typeof parsed.decidedAt !== "string") return null;
+    const decided = Date.parse(parsed.decidedAt);
+    if (Number.isNaN(decided) || now - decided > CONSENT_MAX_AGE_MS) return null;
+    return { analytics: parsed.analytics === true, decidedAt: parsed.decidedAt };
+  } catch {
+    return null;
+  }
+}
+
 function readStored(): ConsentRecord | null {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<ConsentRecord>;
-    if (typeof parsed.decidedAt !== "string") return null;
-    return {
-      preferences: parsed.preferences === true,
-      analytics: parsed.analytics === true,
-      marketing: parsed.marketing === true,
-      decidedAt: parsed.decidedAt,
-    };
+    return parseConsentRecord(window.localStorage.getItem(STORAGE_KEY), Date.now());
   } catch {
     return null;
   }

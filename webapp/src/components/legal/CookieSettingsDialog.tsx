@@ -7,10 +7,10 @@ import { Button } from "../ui/Button";
 import { ToggleSwitch } from "../admin/ToggleSwitch";
 import { NO_OPTIONAL_CONSENT, OPTIONAL_CATEGORIES, useCookieConsent, type ConsentChoices } from "../../lib/cookieConsent";
 import { LEGAL_PATHS } from "../../data/legal/routes";
-import { Placeholder } from "./RichText";
 
 /**
- * Cookie preferences, one switch per optional category.
+ * Cookie preferences, one switch per optional category, each with the
+ * services it covers (the same ones the cookie policy lists).
  *
  * Opens on the visitor's current choice, or on everything off when there is
  * none yet — an optional category is never switched on for them. "Reject all"
@@ -28,9 +28,7 @@ export function CookieSettingsDialog() {
 function CookieSettingsPanel() {
   const { t } = useTranslation();
   const { record, closeSettings, save, acceptAll, rejectAll } = useCookieConsent();
-  const [draft, setDraft] = useState<ConsentChoices>(() =>
-    record ? { preferences: record.preferences, analytics: record.analytics, marketing: record.marketing } : NO_OPTIONAL_CONSENT,
-  );
+  const [draft, setDraft] = useState<ConsentChoices>(() => (record ? { analytics: record.analytics } : NO_OPTIONAL_CONSENT));
 
   return (
     <Dialog
@@ -64,6 +62,9 @@ function CookieSettingsPanel() {
               <p className="m-0 text-[length:var(--text-caption)] leading-[1.5] text-[var(--text-muted)]">
                 {t("legal.cookies.category.essential.body")}
               </p>
+              <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
+                {t("legal.cookies.providers")} {t("legal.cookies.category.essential.providers")}
+              </span>
             </div>
             <span className="inline-flex flex-none items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--gt-ink-100)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-body)]">
               <Lock size={11} aria-hidden="true" />
@@ -80,8 +81,7 @@ function CookieSettingsPanel() {
               onChange={(checked) => setDraft((d) => ({ ...d, [category]: checked }))}
             />
             <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">
-              {t("legal.cookies.providers")}{" "}
-              <Placeholder label={t("legal.cookies.providersPlaceholder")} />
+              {t("legal.cookies.providers")} {t(`legal.cookies.category.${category}.providers`)}
             </span>
           </li>
         ))}

@@ -45,6 +45,7 @@ const MEMBER_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/compte/securite", heading: /^Sécurité et confidentialité$/ },
   { path: "/compte/fidelite", heading: /^Ma carte de fidélité$/ },
   { path: "/compte/avis", heading: /^Mes avis$/ },
+  { path: "/compte/moderation", heading: /^Modération des salons$/ },
   { path: "/compte/salons/en/discussion", heading: /^Salon des membres$/ },
 ];
 
@@ -129,6 +130,7 @@ const STAFF_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/admin/produits", heading: /^Produits$/ },
   { path: "/admin/categories", heading: /^Catégories$/ },
   { path: "/admin/alertes-stock", heading: /^Alertes retour en stock$/ },
+  { path: "/admin/salons", heading: /^Salons des membres$/ },
   { path: "/admin/promotions", heading: /^Promotions$/ },
   { path: "/admin/avis", heading: /^Avis$/ },
   { path: "/admin/parametres", heading: /^Paramètres$/ },

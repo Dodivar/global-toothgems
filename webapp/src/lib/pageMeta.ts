@@ -48,6 +48,7 @@ const PAGES: Partial<Record<PublicRouteId, { title: Text; description?: Text }>>
   cookies: { title: { legal: COOKIE_POLICY }, description: { legal: COOKIE_POLICY } },
   shipping: { title: { legal: SHIPPING }, description: { legal: SHIPPING } },
   returns: { title: { legal: RETURNS }, description: { legal: RETURNS } },
+  withdrawal: { title: { key: "withdrawal.guest.title" }, description: { key: "withdrawal.guest.intro" } },
 };
 
 /** A UI string by its dotted key, as plain text (no markup, no line breaks). */

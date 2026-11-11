@@ -24,7 +24,6 @@ import { useAdminCatalog } from "../../lib/adminCatalog";
 import { useFormat } from "../../lib/format";
 import {
   displayState,
-  effectivePrice,
   type AdminProduct,
 } from "../../data/adminCatalog";
 import type { ProductRowActions } from "./ProductRow";
@@ -59,7 +58,6 @@ export function ProductPreview({
 
   const cover = product.media[Math.min(activeImage, product.media.length - 1)];
   const archived = product.status === "archived";
-  const discounted = product.promoPrice != null && product.promoPrice < product.price;
 
   const facts: { label: string; value: React.ReactNode }[] = [
     { label: t("admin.table.sku"), value: <span className="font-[family-name:var(--gt-font-mono)]">{product.sku}</span> },
@@ -154,18 +152,8 @@ export function ProductPreview({
           {/* Price */}
           <div className="mt-5 flex items-end gap-3">
             <span className="text-[length:var(--text-h2)] font-bold tabular-nums text-[var(--text-primary)]">
-              {formatPrice(effectivePrice(product))}
+              {formatPrice(product.price)}
             </span>
-            {discounted && (
-              <span className="pb-1.5 text-[length:var(--text-body-sm)] text-[var(--text-muted)] line-through tabular-nums">
-                {formatPrice(product.price)}
-              </span>
-            )}
-            {product.compareAtPrice != null && !discounted && (
-              <span className="pb-1.5 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                {t("admin.preview.compareAt", { price: formatPrice(product.compareAtPrice) })}
-              </span>
-            )}
           </div>
 
           <RichText

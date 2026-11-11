@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { isSupabaseConfigured } from "./supabase/client";
-import { buildOfferBook, type OfferBook, type OfferProduct, type ProductOffer } from "./storefrontOffers";
+import { buildOfferBook, type OfferBook, type OfferProduct, type PriceReference, type ProductOffer } from "./storefrontOffers";
 import type { Product } from "../data/products";
 import { fetchOfferSources } from "./storefrontOffersApi";
 
@@ -30,13 +30,16 @@ function load(): Promise<OfferBook | null> {
   return inflight;
 }
 
-/** The offer of one shop product (null until the offers are read, and when none applies). */
-export function useProductOffer(product: Pick<Product, "dbId" | "cat" | "currency" | "compareAtPrice">): ProductOffer | null {
+/** The offer of one shop product, or of the variant shown (null until the offers are read, and when none applies). */
+export function useProductOffer(product: Pick<Product, "dbId" | "cat" | "currency">, variantId?: string | null): ProductOffer | null {
   const { offerFor } = useStorefrontOffers();
-  return offerFor({ dbId: product.dbId, cat: product.cat, currency: product.currency ?? "EUR", compareAtPrice: product.compareAtPrice });
+  return offerFor({ dbId: product.dbId, variantId, cat: product.cat, currency: product.currency ?? "EUR" });
 }
 
-export function useStorefrontOffers(): { offerFor: (product: OfferProduct) => ProductOffer | null } {
+export function useStorefrontOffers(): {
+  offerFor: (product: OfferProduct) => ProductOffer | null;
+  courseReference: (courseId: string | undefined) => PriceReference | null;
+} {
   const [book, setBook] = useState<OfferBook | null>(null);
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -46,5 +49,8 @@ export function useStorefrontOffers(): { offerFor: (product: OfferProduct) => Pr
       current = false;
     };
   }, []);
-  return { offerFor: (product) => (book ? book.offerFor(product) : null) };
+  return {
+    offerFor: (product) => (book ? book.offerFor(product) : null),
+    courseReference: (courseId) => (book ? book.courseReference(courseId) : null),
+  };
 }

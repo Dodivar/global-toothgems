@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { findCourseByKey, lessonCount, checkCount, resolveCourseAddress, courseAddresses, isDiscounted, PREVIEW_MODULES } from "./publicCourse";
 import { coverSrc, mapPublicCourse, mapPublicCourses, type PublicCourseRow } from "./publicCourseMapping";
+import type { PriceReferenceRow } from "../storefrontOffers";
 import { productSlugTranslator } from "../catalog/productSlugs";
 import { FIXTURE_COURSES } from "./fixtures";
 
@@ -132,7 +133,34 @@ describe("mapPublicCourse", () => {
     expect(course.price).toEqual({ minor: 34900, currency: "EUR" });
     expect(course.currentPrice).toEqual({ minor: 27920, currency: "EUR" });
     expect(course.promotionEndsAt).toBe("2026-10-08T00:00:00.000Z");
+    // Omnibus (decision 129): without the database's reference, nothing is struck out.
+    expect(course.referencePrice).toBeNull();
+    expect(isDiscounted(course)).toBe(false);
+  });
+
+  it("strikes out only the database's reference price, when it says the price is a reduction", () => {
+    const price = { course_id: "0f6c2a8e-1111-4c1e-9a55-000000000001", current_price: "279.20", promotion_ends_at: null };
+    const ref = (over: Partial<PriceReferenceRow> = {}): PriceReferenceRow => ({
+      product_id: null,
+      variant_id: null,
+      course_id: price.course_id,
+      currency: "EUR",
+      list_price: "349.00",
+      price: "279.20",
+      reference_price: "299.00",
+      discount_percent: 6,
+      reduction_started_at: "2026-10-01T00:00:00Z",
+      state: "reduced",
+      ...over,
+    });
+    const [course] = mapPublicCourses([row({ price: "349.00" })], [price], [ref()]);
+    expect(course.referencePrice).toEqual({ minor: 29900, currency: "EUR" });
     expect(isDiscounted(course)).toBe(true);
+    const [notLower] = mapPublicCourses([row({ price: "349.00" })], [price], [ref({ state: "not_lower", reference_price: "250.00", discount_percent: null })]);
+    expect(notLower.referencePrice).toBeNull();
+    expect(isDiscounted(notLower)).toBe(false);
+    const [otherCurrency] = mapPublicCourses([row({ price: "349.00" })], [price], [ref({ currency: "USD" })]);
+    expect(otherCurrency.referencePrice).toBeNull();
   });
 
   it("falls back to the list price without a current price, never below it", () => {

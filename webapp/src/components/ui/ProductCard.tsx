@@ -11,6 +11,7 @@ import { Stars } from "../reviews/Stars";
 import { useSubjectReviews } from "../reviews/ReviewsSection";
 import { OfferBadges } from "../shop/OfferBadges";
 import { offerPrice, type ProductOffer } from "../../lib/storefrontOffers";
+import { StruckPrice } from "../shop/StruckPrice";
 
 /** Named variants shown as chips before the rest collapse into "+n". */
 const MAX_VARIANT_CHIPS = 4;
@@ -20,7 +21,6 @@ interface ProductCardData {
   name: string;
   subtitle?: string;
   price: number;
-  compareAtPrice?: number;
   image?: string;
   /** Second image, crossfaded in on hover. Omitted when the product has no gallery. */
   hoverImage?: string;
@@ -30,7 +30,7 @@ interface ProductCardData {
   stock?: "in" | "low" | "out";
   /** Purchasable options of the product, shown as a summary under the name. */
   variants?: ProductVariant[];
-  /** The running campaign and promotion of the product: badges, and the price they leave (struck-out original). */
+  /** The running campaign and promotion of the product (badges), and the database's price now and reference price. */
   offer?: ProductOffer | null;
 }
 
@@ -54,10 +54,10 @@ export function ProductCard({ product, to, onSave, saved = false, eager = false,
   const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const {
-    name, subtitle, price, compareAtPrice, image, hoverImage, imageLabel,
+    name, subtitle, price, image, hoverImage, imageLabel,
     badge, badgeTone = "highlight", stock = "in", variants = [], offer = null,
   } = product;
-  const shown = offerPrice(price, compareAtPrice, offer);
+  const shown = offerPrice(price, offer);
 
   // Same published reviews as the product page's rating line, so the card and
   // the page can never disagree.
@@ -163,10 +163,8 @@ export function ProductCard({ product, to, onSave, saved = false, eager = false,
         )}
         <VariantSummary variants={variants} lang={i18n.language} />
         <span className="flex items-baseline gap-2 pt-0.5">
-          <strong className={`text-[15px] font-bold ${offer?.promotion?.priceOffPercent ? "text-[var(--accent-highlight-ink)]" : "text-[var(--text-primary)]"}`}>{formatPrice(shown.price)}</strong>
-          {shown.was !== undefined && (
-            <span className="text-xs text-[var(--text-subtle)] line-through">{formatPrice(shown.was)}</span>
-          )}
+          <strong className={`text-[15px] font-bold ${shown.was !== undefined ? "text-[var(--accent-highlight-ink)]" : "text-[var(--text-primary)]"}`}>{formatPrice(shown.price)}</strong>
+          {shown.was !== undefined && <StruckPrice value={shown.was} className="text-xs text-[var(--text-subtle)]" />}
         </span>
       </div>
     </article>

@@ -21,7 +21,6 @@ import { useCart } from "../lib/cart";
 import { useOrders } from "../lib/orders";
 import { useAuth } from "../lib/auth";
 import { useProgress } from "../lib/progress";
-import { LEARN_BASE } from "../lib/academyUrl";
 import { bestSellers } from "../data/products";
 import { useCatalog } from "../lib/catalog/CatalogProvider";
 import { toMajorUnits } from "../lib/catalog/money";
@@ -38,6 +37,7 @@ import { GiftCardCodes } from "../components/shop/GiftCardCodes";
 import { PromotionCodes } from "../components/shop/PromotionCodes";
 import { OfferBadges } from "../components/shop/OfferBadges";
 import { useStorefrontOffers } from "../lib/useStorefrontOffers";
+import { basketLineStruck } from "../lib/storefrontOffers";
 import { guestQuoteEmail, isLineDiscount, lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
 import { useBasketQuote } from "../lib/checkout/useBasketQuote";
 import { giftCardPayable, refusedGiftCodes } from "../lib/checkout/giftCardQuote";
@@ -253,7 +253,7 @@ export function Cart() {
     lineDiscount(quoteState, line.dbProductId, line.variantId);
   const lineOffer = (line: (typeof lines)[number]) => {
     const found = products.find((p) => p.dbId === line.dbProductId);
-    return found ? offerFor({ dbId: found.dbId, cat: found.cat, currency: found.currency ?? "EUR" }) : null;
+    return found ? offerFor({ dbId: found.dbId, variantId: line.variantId, cat: found.cat, currency: found.currency ?? "EUR" }) : null;
   };
   // The shop-window badge belongs to a promotion only: a cut that comes from the loyalty reward alone (the promotion is
   // used up, or the reward beats it) carries no campaign badge.
@@ -471,7 +471,7 @@ export function Cart() {
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             {boughtCourse ? (
-              <Button variant="primary" onClick={() => navigate(LEARN_BASE)}>{t("checkout.course.openCourses")}</Button>
+              <Button variant="primary" onClick={() => navigate("/compte")}>{t("checkout.course.openCourses")}</Button>
             ) : (
               <Button variant="primary" onClick={() => navigate("/compte")}>{t("cart.confirmedOpenAccount")}</Button>
             )}
@@ -505,11 +505,10 @@ export function Cart() {
                   name: pick(p.name, lang),
                   subtitle: pick(p.subtitle, lang),
                   price: p.price,
-                  compareAtPrice: p.compareAtPrice,
                   image: p.image,
                   hoverImage: p.gallery?.[1]?.src,
                   stock: p.stock,
-                  offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR", compareAtPrice: p.compareAtPrice }),
+                  offer: offerFor({ dbId: p.dbId, cat: p.cat, currency: p.currency ?? "EUR" }),
                 }}
               />
             ))}
@@ -669,15 +668,16 @@ export function Cart() {
                     </div>
                   )}
                   {(() => {
-                    // What the database says this line carries of the discount: struck-out original, net price, and the
-                    // campaign / promotion it belongs to (as shown in the shop window).
+                    // What the database says this line carries of the discount: net price, the struck-out amount by the
+                    // shop window's rule (Omnibus, `basketLineStruck`), and the campaign / promotion it belongs to.
                     const cut = lineCut(line);
+                    const struck = basketLineStruck({ unitCents: line.unitPrice, qty: line.qty, cutCents: cut }, lineOffer(line)?.reference);
                     return (
                       <span className="ml-auto grid w-24 justify-items-end gap-0.5 text-right">
                         <strong className={cut > 0 ? "text-sm text-[var(--accent-highlight-ink)]" : "text-sm text-[var(--text-primary)]"} aria-label={t("cart.lineTotalAria")}>
                           {money(line.unitPrice * line.qty - cut)}
                         </strong>
-                        {cut > 0 && <s className="text-xs text-[var(--text-subtle)]">{money(line.unitPrice * line.qty)}</s>}
+                        {struck !== null && struck > line.unitPrice * line.qty - cut && <s className="text-xs text-[var(--text-subtle)]">{money(struck)}</s>}
                       </span>
                     );
                   })()}
