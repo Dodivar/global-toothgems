@@ -28,7 +28,7 @@ import {
 } from "../_shared/email/studioContent.ts";
 import { type InvoiceRow, type Json, mapInvoice } from "../_shared/documents/invoiceModel.ts";
 import type { LegalStoreDetails } from "../_shared/legal/storeFill.ts";
-import { orderReference, studioReference, termsOfSaleForEmail, type TermsForEmail, withTerms } from "../_shared/email/termsPdf.ts";
+import { orderReference, studioReference, studioTermsForEmail, termsOfSaleForEmail, type TermsForEmail, withTerms } from "../_shared/email/termsPdf.ts";
 import type { EmailContent } from "../_shared/email/render.ts";
 
 export interface ShowcaseContext {
@@ -205,7 +205,8 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
   const studioNote = attachDocument(mapInvoice(studioCreditNoteRow(ctx)), LOCALE, mapInvoice(studioInvoiceRow(ctx, "FA-EXEMPLE-000002")));
   const plan = studioPlanName("artist", LOCALE);
   const orderTerms = termsOfSaleForEmail(ctx.legalStore, LOCALE, orderReference(ORDER.orderNumber, LOCALE));
-  const studioTerms = termsOfSaleForEmail(ctx.legalStore, LOCALE, studioReference(plan, LOCALE));
+  // The Studio is sold by the publisher, under its own terms (decision 135).
+  const studioTerms = studioTermsForEmail(ctx.legalStore, LOCALE, studioReference(plan, LOCALE));
   const termsFiles = (terms: TermsForEmail) => withTerms(terms, LOCALE).attachments;
   const tracking = "https://www.laposte.fr/outils/suivre-vos-envois?code=6A00000000000";
 

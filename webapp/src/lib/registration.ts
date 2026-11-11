@@ -346,7 +346,19 @@ export const LEGAL_POLICY_VERSION = "2026-10-04";
  * marketing consents. The trigger re-validates every value and never derives
  * a role from it, so this is convenience, not trust.
  */
-export function registrationMetadata(data: RegistrationData, locale: string): Record<string, string | boolean> {
+/**
+ * Where the visitor came from when they created the account, when it matters
+ * later: "studio" = from a 3D Studio page. Kept in the auth user's metadata
+ * (nothing else reads it); the dashboard's first-steps card then does not
+ * pitch the Studio to someone who came for it.
+ */
+export type SignupOrigin = "studio";
+
+export function registrationMetadata(
+  data: RegistrationData,
+  locale: string,
+  origin?: SignupOrigin,
+): Record<string, string | boolean> {
   const meta: Record<string, string | boolean> = {
     first_name: data.firstName.trim(),
     last_name: data.lastName.trim(),
@@ -360,5 +372,6 @@ export function registrationMetadata(data: RegistrationData, locale: string): Re
   if (data.country) meta.country = data.country.toUpperCase();
   if (data.persona) meta.persona = data.persona;
   if (data.interest) meta.interest = data.interest;
+  if (origin) meta.signup_origin = origin;
   return meta;
 }

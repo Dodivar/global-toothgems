@@ -15,7 +15,7 @@ export const STUDIO_TERMS_VERSION = "2026-11-11";
 
 /**
  * Terms of the 3D Studio subscription ("conditions générales d'abonnement au
- * Studio 3D"), decision 133.
+ * Studio 3D"), decision 135.
  *
  * The Studio is not sold by the shop's seller: it is sold, invoiced and
  * collected by the website publisher (DoDigital), on its own Stripe account and

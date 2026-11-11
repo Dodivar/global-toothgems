@@ -13,7 +13,7 @@ import {
  *
  *   1. signature checked against each endpoint's secret (raw body) → 400 if none
  *      matches: STRIPE_WEBHOOK_SECRET (the Studio's account, the publisher's) and
- *      SHOP_STRIPE_WEBHOOK_SECRET (the shop's, the seller's, decision 133); an event
+ *      SHOP_STRIPE_WEBHOOK_SECRET (the shop's, the seller's, decision 135); an event
  *      of a business its endpoint does not carry is acknowledged and ignored
  *   2. event id recorded in stripe_webhook_events (attempts counted); an event
  *      already `processed` or `ignored` is acknowledged without doing anything
@@ -71,7 +71,7 @@ export interface WebhookEvent {
 
 export type EventStatus = "received" | "processed" | "ignored" | "failed";
 
-/** The two businesses whose Stripe accounts send events here (decision 133). */
+/** The two businesses whose Stripe accounts send events here (decision 135). */
 export type Business = "shop" | "studio";
 
 /**

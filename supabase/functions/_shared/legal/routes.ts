@@ -18,7 +18,7 @@ export const LEGAL_PATHS = {
   legalNotice: "/mentions-legales",
   terms: "/conditions-generales",
   termsOfUse: "/conditions-generales-utilisation",
-  /** The 3D Studio subscription terms: the Studio is sold by the publisher (decision 133). */
+  /** The 3D Studio subscription terms: the Studio is sold by the publisher (decision 135). */
   studioTerms: "/conditions-abonnement-studio",
   privacy: "/confidentialite",
   cookies: "/cookies",

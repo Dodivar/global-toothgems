@@ -27,7 +27,7 @@ export interface LegalStoreDetails {
   legalForm: string;
   publisherName: string;
   publisherLegalName: string;
-  /** The publisher sells the 3D Studio (decision 133): its identity fills the Studio subscription terms. */
+  /** The publisher sells the 3D Studio (decision 135): its identity fills the Studio subscription terms. */
   publisherLegalForm: string;
   publisherRegistrationNumber: string;
   /** One line, country included ("2 rue …, 67000 Strasbourg, France"). */
@@ -71,7 +71,7 @@ export function publisherName(store: Pick<LegalStoreDetails, "publisherName" | "
 }
 
 /**
- * The 3D Studio's seller — the website publisher (decision 133) — as the
+ * The 3D Studio's seller — the website publisher (decision 135) — as the
  * Studio subscription terms name it: "DoDigital — <legal name>, <legal form>",
  * or what of it is known.
  */

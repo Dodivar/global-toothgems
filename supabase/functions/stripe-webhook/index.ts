@@ -9,7 +9,7 @@ import { invoiceLineFacts, type StudioInvoiceLine } from "./subscriptions.ts";
  */
 
 const supabase = serviceClient();
-// Two businesses, two Stripe accounts (decision 133): the shop's (the seller's,
+// Two businesses, two Stripe accounts (decision 135): the shop's (the seller's,
 // SHOP_STRIPE_*, borrowing the Studio's test keys until it exists) and the
 // Studio's (the publisher's, STRIPE_*). Each read-back uses the account that
 // owns the object.

@@ -214,6 +214,23 @@ begin
   if v_cnt <> 3 then raise exception 'FAIL S7: viewer cannot read the subscriptions'; end if;
   passed := passed || 'S7'::text;
 
+  -- S8: subscribing during the trial cancels what is left of it, for good.
+  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  r := public.start_studio_trial();
+  if r ->> 'state' <> 'trial_active' then raise exception 'FAIL S8: trial not active %', r; end if;
+  execute 'reset role';
+  insert into public.studio_subscriptions (user_id, plan, status, stripe_subscription_id, current_period_end)
+  values (m2, 'essential', 'active', 'sub_test_m2', now() + interval '1 month');
+  if (select trial_expires_at from public.studio_trials where user_id = m2) > now() then
+    raise exception 'FAIL S8: the trial survived the subscription';
+  end if;
+  update public.studio_subscriptions set status = 'canceled', current_period_end = now() - interval '1 second' where user_id = m2;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  r := public.studio_access_state();
+  if r ->> 'state' <> 'trial_expired' then raise exception 'FAIL S8: trial came back after the subscription %', r; end if;
+  passed := passed || 'S8'::text;
+
   raise exception 'ALL STUDIO TRIAL TESTS PASSED (%)', array_to_string(passed, ', ');
 end;
 $$;

@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import { LEGAL_STORE } from "../_shared/email/termsPdf_fixtures.ts";
-import { TERMS_OF_SALE_VERSION } from "../_shared/email/termsPdf.ts";
+import { STUDIO_TERMS_VERSION, TERMS_OF_SALE_VERSION } from "../_shared/email/termsPdf.ts";
 import { buildShowcase, withDocuments } from "./showcase.ts";
 
 const ctx = {
@@ -22,6 +22,7 @@ const ctx = {
 };
 
 const TERMS_FILE = `conditions-generales-de-vente-${TERMS_OF_SALE_VERSION}.pdf`;
+const STUDIO_TERMS_FILE = `conditions-abonnement-studio-3d-${STUDIO_TERMS_VERSION}.pdf`;
 
 Deno.test("one sample per database template and per Auth template, all to the owner", () => {
   const samples = buildShowcase(ctx);
@@ -38,20 +39,24 @@ Deno.test("one sample per database template and per Auth template, all to the ow
 
 Deno.test("the documents are real PDFs with sample numbers", () => {
   const withPdf = buildShowcase(ctx).flatMap((s) => (s.kind === "template" ? s.request.attachments ?? [] : []));
-  const invoices = withPdf.filter((a) => a.filename !== TERMS_FILE);
+  const invoices = withPdf.filter((a) => a.filename !== TERMS_FILE && a.filename !== STUDIO_TERMS_FILE);
   assertEquals(invoices.length, 4);
   for (const a of invoices) assert(a.filename.includes("EXEMPLE"), a.filename);
   for (const a of withPdf) assert(atob(a.content).startsWith("%PDF"));
 });
 
-Deno.test("every contract confirmation shows the terms of sale PDF and names its version (decision 130)", () => {
+Deno.test("every contract confirmation shows its terms PDF and names its version (decisions 130, 135)", () => {
   const byKey = new Map(buildShowcase(ctx).flatMap((s) => (s.kind === "template" ? [[s.request.templateKey, s.request] as const] : [])));
-  for (const key of ["order_confirmation", "studio_subscription_confirmation"]) {
-    const request = byKey.get(key)!;
-    assert(request.attachments?.some((a) => a.filename === TERMS_FILE), key);
-    const content = typeof request.content === "function" ? request.content("fr") : request.content;
-    assertEquals(content?.footerNote, "Conditions générales de vente jointes à cet e-mail (PDF) : version du 10 novembre 2026.", key);
-  }
+  const order = byKey.get("order_confirmation")!;
+  assert(order.attachments?.some((a) => a.filename === TERMS_FILE));
+  const orderContent = typeof order.content === "function" ? order.content("fr") : order.content;
+  assertEquals(orderContent?.footerNote, "Conditions générales de vente jointes à cet e-mail (PDF) : version du 11 novembre 2026.");
+  // The Studio is sold by the publisher, under its own terms.
+  const studio = byKey.get("studio_subscription_confirmation")!;
+  assert(studio.attachments?.some((a) => a.filename === STUDIO_TERMS_FILE));
+  assert(!studio.attachments?.some((a) => a.filename === TERMS_FILE));
+  const studioContent = typeof studio.content === "function" ? studio.content("fr") : studio.content;
+  assertEquals(studioContent?.footerNote, "Conditions générales d’abonnement au Studio 3D jointes à cet e-mail (PDF) : version du 11 novembre 2026.");
   for (const key of ["order_refunded", "course_enrolment"]) assert(!byKey.get(key)!.attachments?.some((a) => a.filename === TERMS_FILE), key);
 });
 

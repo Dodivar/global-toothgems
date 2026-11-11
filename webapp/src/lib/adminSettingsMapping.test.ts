@@ -444,6 +444,9 @@ describe("trading name (decision 120)", () => {
     expect(fieldsOf(privacy, "controller").map((f) => f.value?.fr)).toEqual([
       "PIMP TON SMILE — Ada Test, Entrepreneur individuel (EI)",
       "1 rue Fictive, 75004 Paris, France",
+      // The 3D Studio's controller: the publisher, which sells it (decision 135).
+      "Studio Test — Bob Test, Entrepreneur individuel (EI)",
+      "2 rue Fictive, 67000 Strasbourg, France",
       "support@example.com",
       "Non désigné",
     ]);

@@ -14,7 +14,7 @@ import { handleSetup, type SetupDeps } from "./handler.ts";
  */
 
 const supabase = serviceClient();
-// The Studio's Stripe account: the publisher's (DoDigital, decision 133), `STRIPE_*`.
+// The Studio's Stripe account: the publisher's (DoDigital, decision 135), `STRIPE_*`.
 const stripe = stripeClient("studio");
 const site = requireEnv("SITE_URL");
 

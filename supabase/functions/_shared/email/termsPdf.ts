@@ -3,7 +3,7 @@
  * L221-13 of the French Consumer Code, decision 130): the terms of sale with
  * the shop order confirmation (goods, courses and gift cards bought — the
  * seller), the 3D Studio subscription terms with the Studio subscription
- * confirmation (the website publisher, decision 133).
+ * confirmation (the website publisher, decision 135).
  *
  * The PDF is drawn from the web page's own data (`_shared/legal/`, a generated
  * copy of webapp/src/data/legal/, `npm run sync:documents`) by the documents'
@@ -209,7 +209,7 @@ export function termsOfSaleForEmail(
   return contractTermsForEmail("sale", store, locale, reference, options);
 }
 
-/** The 3D Studio subscription terms for one e-mail (the publisher's contract, decision 133). */
+/** The 3D Studio subscription terms for one e-mail (the publisher's contract, decision 135). */
 export function studioTermsForEmail(
   store: LegalStoreDetails | null,
   locale: string,
