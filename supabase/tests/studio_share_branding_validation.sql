@@ -14,7 +14,12 @@
 --       readable, the member still removes it (row and file);
 --   B7  share-link previews (migration 20261021172034): a visitor reads the
 --       name and render of a creation with an active share link, nothing for
---       another creation, an unknown token or once the link is revoked.
+--       another creation, an unknown token or once the link is revoked;
+--   B8  share links are the Artist plan's and above (decision 133, migration
+--       20261111093241): a trial or Essential member is refused a link (42501)
+--       but still disables an old one; the link of an owner who drops below
+--       Artist no longer opens (viewer, preview, render) and comes back on an
+--       upgrade; staff (atelier) create links.
 -- ONE transaction, ALWAYS rolled back by raising `ALL STUDIO SHARE BRANDING TESTS PASSED`.
 -- =============================================================================
 
@@ -234,6 +239,54 @@ begin
   if v_cnt <> 0 then raise exception 'FAIL B7: render readable after revocation (%)', v_cnt; end if;
   execute 'reset role';
   passed := passed || 'B7'::text;
+
+  -- B8: share links from the Artist plan up
+  perform set_config('role', 'authenticated', true);
+  foreach v_text in array array[trial::text, ess::text] loop
+    perform set_config('request.jwt.claims', json_build_object('sub', v_text, 'role', 'authenticated')::text, true);
+    insert into public.creations (name, scene_data)
+    values ('Below Artist', jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null, 'pieces', '[]'::jsonb, 'groups', '[]'::jsonb))
+    returning id into v_c1;
+    v_state := null;
+    begin
+      perform public.studio_share_creation(v_c1);
+    exception when others then v_state := sqlstate;
+    end;
+    if v_state is distinct from '42501' then raise exception 'FAIL B8: % created a share link (%)', v_text, v_state; end if;
+    perform public.studio_revoke_creation_share(v_c1);
+  end loop;
+  perform set_config('request.jwt.claims', json_build_object('sub', staff, 'role', 'authenticated')::text, true);
+  insert into public.creations (name, scene_data)
+  values ('Staff share', jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null, 'pieces', '[]'::jsonb, 'groups', '[]'::jsonb))
+  returning id into v_c1;
+  if public.studio_share_creation(v_c1) is null then raise exception 'FAIL B8: staff refused a link'; end if;
+  -- `late` (Artist) shares, then the subscription becomes Essential.
+  -- (B6 ended it: renewed first.)
+  execute 'reset role';
+  update public.studio_subscriptions set status = 'active', current_period_end = now() + interval '1 month' where user_id = late;
+  insert into storage.objects (bucket_id, name) values ('studio-thumbnails', late || '/late.jpg');
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', late, 'role', 'authenticated')::text, true);
+  insert into public.creations (name, scene_data, thumbnail_path)
+  values ('Late share', jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null, 'pieces', '[]'::jsonb, 'groups', '[]'::jsonb),
+          late || '/late.jpg')
+  returning id into v_c1;
+  v_token := public.studio_share_creation(v_c1);
+  execute 'reset role';
+  update public.studio_subscriptions set plan = 'essential' where user_id = late;
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  if exists (select 1 from public.studio_shared_creation(v_token)) then raise exception 'FAIL B8: link of an Essential owner opens'; end if;
+  if public.studio_shared_creation_preview(v_token) is not null then raise exception 'FAIL B8: link of an Essential owner previewed'; end if;
+  select count(*) into v_cnt from storage.objects where bucket_id = 'studio-thumbnails' and name = late || '/late.jpg';
+  if v_cnt <> 0 then raise exception 'FAIL B8: render of an Essential owner readable'; end if;
+  execute 'reset role';
+  update public.studio_subscriptions set plan = 'artist' where user_id = late;
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  if not exists (select 1 from public.studio_shared_creation(v_token)) then raise exception 'FAIL B8: link not back after the upgrade'; end if;
+  execute 'reset role';
+  passed := passed || 'B8'::text;
 
   raise exception 'ALL STUDIO SHARE BRANDING TESTS PASSED (%)', array_to_string(passed, ', ');
 end;

@@ -82,6 +82,8 @@ export function ShareExportMenu() {
   const saved = !ws.dirty && linked && linked.elementCount > 0 ? linked : null;
   const transparentAllowed = useStudioFeature("transparentExport");
   const tryOnAllowed = useStudioFeature("tryOn");
+  // Read-only links (with the front view and the placement sheet) are the Artist plan's and above (decision 133).
+  const linksAllowed = useStudioFeature("clientTools");
   // The raw JSON is a team tool, not a member export.
   const staff = useStudioStaff();
 
@@ -101,7 +103,7 @@ export function ShareExportMenu() {
   // Refreshed on each opening too (the share dialog may have created or disabled the link),
   // keeping the last answer on screen meanwhile.
   useEffect(() => {
-    if (!linked) return;
+    if (!linked || linksAllowed === false) return;
     let live = true;
     existingShareLink(linked)
       .then((l) => live && setLookup({ creationId: linked.id, link: l }))
@@ -109,7 +111,7 @@ export function ShareExportMenu() {
     return () => {
       live = false;
     };
-  }, [linked, open, existingShareLink]);
+  }, [linked, open, existingShareLink, linksAllowed]);
   const link = linked && lookup?.creationId === linked.id ? lookup.link : undefined;
 
   const close = () => {
@@ -124,7 +126,7 @@ export function ShareExportMenu() {
   };
 
   const shareImage = (file: File) => {
-    const text = linked && link ? `${t("studio.workspace.share.nativeText", { name: linked.name })} ${link.url}` : t("studio.editor.share.message");
+    const text = linked && link && linksAllowed ? `${t("studio.workspace.share.nativeText", { name: linked.name })} ${link.url}` : t("studio.editor.share.message");
     close();
     navigator.share({ files: [file], title: linked?.name ?? t("studio.editor.share.title"), text }).catch((err: unknown) => {
       if (err instanceof DOMException && err.name === "AbortError") return; // closed by the customer
@@ -246,7 +248,15 @@ export function ShareExportMenu() {
         </>
       )}
       <PopoverLabel>{t("studio.editor.share.linkSection")}</PopoverLabel>
-      {!linked ? (
+      {linksAllowed === false ? (
+        <PopoverItem
+          locked
+          icon={<Link2 size={14} />}
+          label={t("studio.editor.share.createLink")}
+          sub={withPlan("clientTools")}
+          onClick={() => showLocked("clientTools")}
+        />
+      ) : !linked ? (
         <PopoverItem
           icon={<Save size={14} />}
           label={t("studio.editor.share.saveFirst")}
@@ -278,7 +288,7 @@ export function ShareExportMenu() {
           <PopoverItem icon={<Settings2 size={14} />} label={t("studio.editor.share.manageLink")} onClick={openShareDialog} />
         </>
       )}
-      {linked && ws.dirty && <p className="m-0 px-2.5 pb-1 text-[11.5px] leading-snug text-[var(--text-muted)]">{t("studio.editor.share.unsavedHint")}</p>}
+      {linked && ws.dirty && linksAllowed !== false && <p className="m-0 px-2.5 pb-1 text-[11.5px] leading-snug text-[var(--text-muted)]">{t("studio.editor.share.unsavedHint")}</p>}
 
       <PopoverSeparator />
       <PopoverLabel>{t("studio.editor.export.images")}</PopoverLabel>

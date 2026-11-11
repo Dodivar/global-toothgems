@@ -9,7 +9,17 @@ import studioFr from "../i18n/locales/studio.fr.json";
 import studioEn from "../i18n/locales/studio.en.json";
 
 const TIERS: StudioPaidPlanId[] = ["essential", "artist", "atelier"];
-const FEATURES: StudioFeature[] = ["ownLogo", "postLayouts", "transparentExport", "templates", "collections", "glowbook", "tryOn"];
+const FEATURES: StudioFeature[] = [
+  "ownLogo",
+  "postLayouts",
+  "posts",
+  "clientTools",
+  "transparentExport",
+  "templates",
+  "collections",
+  "glowbook",
+  "tryOn",
+];
 
 /**
  * Who gets what (decision 113). The expected table is written out here, on
@@ -19,9 +29,39 @@ const FEATURES: StudioFeature[] = ["ownLogo", "postLayouts", "transparentExport"
  * `studio_try_on_allowed()`, `studio_user_tier()`).
  */
 const EXPECTED: Record<StudioPaidPlanId, Record<StudioFeature, boolean>> = {
-  essential: { ownLogo: false, postLayouts: false, transparentExport: false, templates: false, collections: false, glowbook: false, tryOn: false },
-  artist: { ownLogo: true, postLayouts: false, transparentExport: true, templates: true, collections: true, glowbook: false, tryOn: false },
-  atelier: { ownLogo: true, postLayouts: true, transparentExport: true, templates: true, collections: true, glowbook: true, tryOn: true },
+  essential: {
+    ownLogo: false,
+    postLayouts: false,
+    posts: false,
+    clientTools: false,
+    transparentExport: false,
+    templates: true,
+    collections: false,
+    glowbook: false,
+    tryOn: false,
+  },
+  artist: {
+    ownLogo: true,
+    postLayouts: false,
+    posts: true,
+    clientTools: true,
+    transparentExport: true,
+    templates: true,
+    collections: true,
+    glowbook: false,
+    tryOn: false,
+  },
+  atelier: {
+    ownLogo: true,
+    postLayouts: true,
+    posts: true,
+    clientTools: true,
+    transparentExport: true,
+    templates: true,
+    collections: true,
+    glowbook: true,
+    tryOn: true,
+  },
 };
 
 describe("hasFeature", () => {
@@ -34,11 +74,18 @@ describe("hasFeature", () => {
     expect(planFeatures(null)).toBeNull();
   });
 
-  it("keeps the templates page and the folders from the Artist plan up only", () => {
-    expect(hasFeature("essential", "templates")).toBe(false);
+  it("opens the templates to every plan, keeps the folders from the Artist plan up (decisions 113 (b), 133)", () => {
+    expect(hasFeature("essential", "templates")).toBe(true);
     expect(hasFeature("essential", "collections")).toBe(false);
-    expect(lowestPlanWith("templates")).toBe("artist");
+    expect(lowestPlanWith("templates")).toBe("essential");
     expect(lowestPlanWith("collections")).toBe("artist");
+  });
+
+  it("keeps the posts and the appointment tools (front view, placement sheet, links) from the Artist plan up (decision 133)", () => {
+    expect(hasFeature("essential", "posts")).toBe(false);
+    expect(hasFeature("essential", "clientTools")).toBe(false);
+    expect(lowestPlanWith("posts")).toBe("artist");
+    expect(lowestPlanWith("clientTools")).toBe("artist");
   });
 
   it("keeps the Glowbook, the AI try-on and the post layouts for Atelier", () => {
@@ -116,7 +163,7 @@ describe("the database's answer drives the rights", () => {
       limits: { creations: 15, gem_groups: 3 },
       usage: { creations: 15, gem_groups: 0 },
     })!;
-    for (const feature of FEATURES) expect(hasFeature(info.tier, feature)).toBe(false);
+    for (const feature of FEATURES) expect(hasFeature(info.tier, feature)).toBe(feature === "templates");
     expect(atLimit(info, "creations")).toBe(true);
     expect(atLimit(info, "gemGroups")).toBe(false);
   });
@@ -163,7 +210,7 @@ describe("every plan string exists in French and English", () => {
     const keys = [
       // Plan cards (StudioPlans: PlanFeatureList)
       ...FEATURES.map((f) => `plans.features.${f}`),
-      ...["title", "plus", "creations_one", "creations_other", "gemGroups_one", "gemGroups_other", "unlimited", "library", "tools", "watermark"].map(
+      ...["title", "plus", "creations_one", "creations_other", "gemGroups_one", "gemGroups_other", "unlimited", "library"].map(
         (k) => `plans.features.${k}`,
       ),
       ...TIERS.map((tier) => `plans.items.${tier}`),
@@ -178,12 +225,12 @@ describe("every plan string exists in French and English", () => {
       ),
       ...["watermark", "ownLogo", "unlimited"].map((k) => `account.compare.values.${k}`),
       // Usage block (StudioPlanUsage)
-      ...["title", "creations", "gemGroups", "of", "unlimited", "templates", "collections", "glowbook", "tryOn", "included", "withPlan"].map(
+      ...["title", "creations", "gemGroups", "of", "unlimited", "templates", "clientTools", "posts", "collections", "glowbook", "tryOn", "included", "withPlan"].map(
         (k) => `account.usage.${k}`,
       ),
       // Locked panels (PlanLocked) and the limit toast
       "access.planLocked.cta",
-      ...(["glowbook", "templates", "collections"] as const).flatMap((f) => ["title", "short", "body", "kept"].map((k) => `access.planLocked.${f}.${k}`)),
+      ...(["glowbook", "templates", "collections", "transparentExport", "tryOn", "posts", "clientTools"] as const).flatMap((f) => ["title", "short", "body", "kept"].map((k) => `access.planLocked.${f}.${k}`)),
       ...["title", "creations", "gemGroups"].map((k) => `access.limit.${k}`),
     ];
     for (const key of studioKeys) expect(at(studio, key), `studio.${key}`).toEqual(expect.any(String));

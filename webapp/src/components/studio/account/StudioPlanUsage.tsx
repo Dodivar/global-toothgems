@@ -54,7 +54,7 @@ export function StudioPlanUsage({ info }: { info: StudioAccessInfo }) {
     );
   };
 
-  const flag = (key: "templates" | "collections" | "glowbook" | "tryOn", on: boolean) => (
+  const flag = (key: "templates" | "clientTools" | "posts" | "collections" | "glowbook" | "tryOn", on: boolean) => (
     <li key={key} className="flex items-start gap-2 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
       {on ? (
         <Check size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--status-success-fg)]" />
@@ -77,6 +77,8 @@ export function StudioPlanUsage({ info }: { info: StudioAccessInfo }) {
       {meter("gemGroups")}
       <ul className="m-0 grid list-none gap-2 p-0">
         {flag("templates", hasFeature(info.tier, "templates"))}
+        {flag("clientTools", hasFeature(info.tier, "clientTools"))}
+        {flag("posts", hasFeature(info.tier, "posts"))}
         {flag("collections", hasFeature(info.tier, "collections"))}
         {flag("glowbook", info.glowbook)}
         {flag("tryOn", hasFeature(info.tier, "tryOn"))}
