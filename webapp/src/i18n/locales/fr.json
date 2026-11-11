@@ -3363,7 +3363,7 @@
       },
       "studioRevenue": {
         "title": "Studio 3D : argent encaissé",
-        "description": "Les paiements d’abonnement de la période : ce qui est acquis, ce qui peut encore être en partie remboursé pendant les 14 jours de rétractation, et ce qui a été remboursé.",
+        "description": "Les paiements d’abonnement de la période, encaissés et facturés par l’éditeur du site (le vendeur du Studio, factures FS-) et non par la boutique : ce qui est acquis, ce qui peut encore être en partie remboursé pendant les 14 jours de rétractation, et ce qui a été remboursé.",
         "received": "Encaissé",
         "settled": "Acquis",
         "settledHint": "Renouvellements, premiers paiements après 14 jours, et la part gardée pour les jours utilisés lors d’une rétractation.",
@@ -4996,6 +4996,7 @@
       "vatTitle": "Récapitulatif de la TVA",
       "vatFranchise": "TVA non applicable, art. 293 B du CGI",
       "paid": "Facture acquittée le {{date}} : paiement comptant à la commande, aucun escompte pour paiement anticipé.",
+      "studioSoldBy": "Abonnement au Studio 3D {{brand}}, vendu et facturé par {{seller}}.",
       "giftCardNote": "Cartes cadeaux : bons à usages multiples, hors du champ de la TVA lors de leur achat ; la TVA est due lors de leur utilisation.",
       "latePayment": "Clients professionnels : en cas de retard de paiement, pénalités au taux de trois fois le taux d’intérêt légal et indemnité forfaitaire de 40 € pour frais de recouvrement (art. L441-10 du Code de commerce).",
       "fileName": "facture",

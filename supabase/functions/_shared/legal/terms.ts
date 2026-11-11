@@ -8,7 +8,7 @@ import { l, type LegalDocument } from "./types.ts";
  * keeps the version in force when it was placed (`orders.terms_version`), a
  * and each order confirmation e-mail carries this text as a PDF in this
  * version (decision 130). The 3D Studio has terms of its own, sold by the
- * publisher (`studioTerms.ts`, decision 133). **Change it with
+ * publisher (`studioTerms.ts`, decision 135). **Change it with
  * any change to the text below**: `termsDocument.test.ts` fails while the
  * text's fingerprint and this version disagree.
  */

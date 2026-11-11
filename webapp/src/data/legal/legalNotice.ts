@@ -52,7 +52,7 @@ function sellerSentence(store: StoreDetails | null): Localized {
 }
 
 /**
- * Who sells the 3D Studio: the website publisher (decision 133), identified in
+ * Who sells the 3D Studio: the website publisher (decision 135), identified in
  * the publisher section above; its subscriptions follow their own terms.
  */
 function studioSellerSentence(store: StoreDetails | null): Localized {

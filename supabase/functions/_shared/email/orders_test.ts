@@ -120,8 +120,8 @@ Deno.test("the terms of sale are in the order's language, for that order, and th
   const bytes = atob(pdf.content);
   assertEquals(bytes.slice(0, 5), "%PDF-");
   assertStringIncludes(bytes, "/Lang <FEFF00660072>");
-  assertStringIncludes(body.text, "Conditions générales de vente jointes à cet e-mail (PDF) : version du 10 novembre 2026.");
-  assertStringIncludes(body.html, "version du 10 novembre 2026");
+  assertStringIncludes(body.text, "Conditions générales de vente jointes à cet e-mail (PDF) : version du 11 novembre 2026.");
+  assertStringIncludes(body.html, "version du 11 novembre 2026");
 });
 
 Deno.test("a PDF that cannot be drawn puts the full terms into the e-mail, never an e-mail without them", async () => {
@@ -131,10 +131,10 @@ Deno.test("a PDF that cannot be drawn puts the full terms into the e-mail, never
   await sendOrderConfirmation(deps, { loadOrder: () => Promise.resolve(ORDER) }, ORDER.id, provider.terms);
   const body = await seen.requests[0].json();
   assertEquals(body.attachments, undefined);
-  assertStringIncludes(body.text, "TERMS OF SALE — VERSION OF 10 NOVEMBER 2026");
+  assertStringIncludes(body.text, "TERMS OF SALE — VERSION OF 11 NOVEMBER 2026");
   assertStringIncludes(body.text, "1. Scope");
   assertStringIncludes(body.text, "PIMP TON SMILE — Ada Test, Entrepreneur individuel (EI)");
-  assertStringIncludes(body.text, "Terms of sale reproduced in this email: version of 10 November 2026.");
+  assertStringIncludes(body.text, "Terms of sale reproduced in this email: version of 11 November 2026.");
   assertEquals(logged, ["terms of sale PDF not drawn: the text goes into the e-mail"]);
 });
 

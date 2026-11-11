@@ -16,7 +16,7 @@ import type { Block, LegalDocument } from "./types";
  * The same flattened blocks feed the e-mail's HTML fallback when a PDF cannot
  * be drawn (`supabase/functions/_shared/email/termsPdf.ts`).
  *
- * Two contracts, two sellers (decision 133): the terms of sale (`terms.ts`,
+ * Two contracts, two sellers (decision 135): the terms of sale (`terms.ts`,
  * the seller: shop, Academy, gift cards) and the 3D Studio subscription terms
  * (`studioTerms.ts`, the website publisher). Each PDF carries its own version
  * and its own seller's legal mentions in the footer.
