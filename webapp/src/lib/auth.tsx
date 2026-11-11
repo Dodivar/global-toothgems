@@ -9,7 +9,8 @@ import { authConfirmUrl, isSafeNext } from "./authRoutes";
 import { rememberGoogleTerms, takeGoogleTerms } from "./googleTerms";
 import { TermsGate } from "../components/auth/TermsGate";
 import { useHydrated } from "./useHydrated";
-import { isAuthRateLimit } from "./supabase/authErrors";
+import { isAuthCaptchaRefusal, isAuthRateLimit } from "./supabase/authErrors";
+import { authCaptchaToken } from "./captcha/authCaptcha";
 import { initialsOf } from "./initials";
 
 /**
@@ -61,7 +62,7 @@ const DEMO_POSTAL: Pick<Profile, "phone" | "addressLine" | "postalCode" | "city"
 };
 
 /** Outcome of a password sign-in, each with its own message on the login page. */
-export type SignInResult = "accepted" | "rejected" | "unconfirmed" | "suspended" | "rateLimited" | "unavailable";
+export type SignInResult = "accepted" | "rejected" | "unconfirmed" | "suspended" | "rateLimited" | "captcha" | "unavailable";
 
 /** Outcome of an account creation. */
 type SignUpResult =
@@ -70,6 +71,7 @@ type SignUpResult =
   | "emailTaken"
   | "weakPassword"
   | "rateLimited"
+  | "captcha"
   | "emailSend"
   | "network"
   | "server";
@@ -360,9 +362,11 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const signInWithPassword = useCallback(
     async (email: string, password: string): Promise<SignInResult> => {
       if (!supabase) return "unavailable";
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const captchaToken = await authCaptchaToken();
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password, options: { captchaToken } });
       if (error) {
         if (error.code === "email_not_confirmed") return "unconfirmed";
+        if (isAuthCaptchaRefusal(error)) return "captcha";
         if (isAuthRateLimit(error)) return "rateLimited";
         return error.status === 400 || error.status === 401 ? "rejected" : "unavailable";
       }
@@ -381,12 +385,14 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(
     async (data: RegistrationData, locale: string, redirectTo: string): Promise<SignUpResult> => {
       if (!supabase) return "server";
+      const captchaToken = await authCaptchaToken();
       const { data: result, error } = await supabase.auth.signUp({
         email: data.email.trim(),
         password: data.password,
-        options: { emailRedirectTo: redirectTo, data: registrationMetadata(data, locale) },
+        options: { emailRedirectTo: redirectTo, data: registrationMetadata(data, locale), captchaToken },
       });
       if (error) {
+        if (isAuthCaptchaRefusal(error)) return "captcha";
         if (error.code === "user_already_exists" || error.code === "email_exists") return "emailTaken";
         if (error.code === "weak_password") return "weakPassword";
         if (isAuthRateLimit(error)) return "rateLimited";
@@ -416,7 +422,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.resend({
       type: "signup",
       email: email.trim(),
-      options: { emailRedirectTo: redirectTo },
+      options: { emailRedirectTo: redirectTo, captchaToken: await authCaptchaToken() },
     });
     if (!error) return "sent";
     return isAuthRateLimit(error) ? "rateLimited" : "failed";
@@ -447,7 +453,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     async (token: string, nonce: string, options?: { termsAccepted?: boolean }): Promise<GoogleTokenResult> => {
       if (!supabase) return "unavailable";
       if (options?.termsAccepted) rememberGoogleTerms();
-      const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token, nonce });
+      const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token, nonce, options: { captchaToken: await authCaptchaToken() } });
       return error ? "unavailable" : "signedIn";
     },
     [],

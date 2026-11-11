@@ -531,6 +531,8 @@
       "suspendedBody": "Ce compte est suspendu ou désactivé. Contactez-nous pour en savoir plus.",
       "rateLimitedTitle": "Trop de tentatives",
       "rateLimitedBody": "Patientez quelques minutes avant de réessayer.",
+      "captchaTitle": "La vérification anti-robot n’a pas abouti",
+      "captchaBody": "Rechargez la page puis réessayez. Si un bloqueur de publicités est actif, autorisez challenges.cloudflare.com.",
       "unavailableTitle": "Connexion impossible pour le moment",
       "unavailableBody": "Un problème est survenu de notre côté. Réessayez dans un instant."
     }
@@ -707,6 +709,8 @@
       "retry": "Réessayer",
       "rateLimitedTitle": "Trop de tentatives",
       "rateLimitedBody": "Patientez quelques minutes, puis réessayez. Vos informations restent dans ce formulaire.",
+      "captchaTitle": "La vérification anti-robot n’a pas abouti",
+      "captchaBody": "Rechargez la page puis réessayez : tout ce que vous avez saisi est conservé. Si un bloqueur de publicités est actif, autorisez challenges.cloudflare.com.",
       "weakPasswordTitle": "Mot de passe refusé",
       "weakPasswordBody": "Ce mot de passe ne respecte pas nos règles de sécurité. Revenez à la première étape pour en choisir un autre.",
       "emailSendTitle": "L’e-mail de confirmation n’a pas pu être envoyé",

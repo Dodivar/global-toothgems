@@ -15,7 +15,7 @@ const LEGAL_HREF: Record<LegalDoc, string> = {
   privacy: "/confidentialite",
 };
 
-export type CreateFailure = "network" | "server" | "rateLimited" | "weakPassword" | "emailSend" | null;
+export type CreateFailure = "network" | "server" | "rateLimited" | "captcha" | "weakPassword" | "emailSend" | null;
 
 /**
  * Step 3 — optional personalisation, then consent.

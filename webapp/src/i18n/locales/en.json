@@ -531,6 +531,8 @@
       "suspendedBody": "This account is suspended or deactivated. Contact us to find out more.",
       "rateLimitedTitle": "Too many attempts",
       "rateLimitedBody": "Wait a few minutes before trying again.",
+      "captchaTitle": "The anti-bot check did not go through",
+      "captchaBody": "Reload the page and try again. If an ad blocker is on, allow challenges.cloudflare.com.",
       "unavailableTitle": "Sign-in is unavailable right now",
       "unavailableBody": "Something went wrong on our side. Try again in a moment."
     }
@@ -707,6 +709,8 @@
       "retry": "Try again",
       "rateLimitedTitle": "Too many attempts",
       "rateLimitedBody": "Wait a few minutes, then try again. Your details stay in this form.",
+      "captchaTitle": "The anti-bot check did not go through",
+      "captchaBody": "Reload the page and try again: everything you typed is kept. If an ad blocker is on, allow challenges.cloudflare.com.",
       "weakPasswordTitle": "Password refused",
       "weakPasswordBody": "This password does not meet our security rules. Go back to the first step to choose another one.",
       "emailSendTitle": "The confirmation email could not be sent",

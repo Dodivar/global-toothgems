@@ -2,6 +2,7 @@ import { supabase } from "./supabase/client";
 import { VERIFY_PATH } from "./accountSecurity";
 import { authConfirmUrl } from "./authRoutes";
 import { isAuthRateLimit } from "./supabase/authErrors";
+import { authCaptchaToken } from "./captcha/authCaptcha";
 
 /**
  * Changing the sign-in credentials of the signed-in member through Supabase
@@ -32,7 +33,8 @@ export async function verifyCurrentPassword(currentPassword: string): Promise<Ve
   const email = data.user?.email;
   if (!email) return { ok: false, result: "failed" };
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+  const captchaToken = await authCaptchaToken();
+  const { error } = await supabase.auth.signInWithPassword({ email, password: currentPassword, options: { captchaToken } });
   if (!error) return { ok: true };
   if (isAuthRateLimit(error)) return { ok: false, result: "rateLimited" };
   return { ok: false, result: error.code === "invalid_credentials" || error.status === 400 ? "wrongPassword" : "failed" };
@@ -78,7 +80,7 @@ export async function resendEmailChangeLink(newEmail: string): Promise<EmailRese
   const { error } = await supabase.auth.resend({
     type: "email_change",
     email: newEmail,
-    options: { emailRedirectTo: emailChangeRedirect() },
+    options: { emailRedirectTo: emailChangeRedirect(), captchaToken: await authCaptchaToken() },
   });
   if (!error) return "sent";
   return isAuthRateLimit(error) ? "rateLimited" : "failed";
