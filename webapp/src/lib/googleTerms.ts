@@ -1,9 +1,9 @@
 /**
- * The terms acceptance given just before leaving for Google.
+ * The terms acceptance given just before leaving for Google or Apple.
  *
  * On the registration page the visitor accepts the terms in a dialog, then
- * the browser leaves for Google and comes back signed in. Nothing can travel
- * through Google, so the acceptance waits in this browser for a short while
+ * the browser leaves for Google or Apple and comes back signed in. Nothing can travel
+ * through the provider, so the acceptance waits in this browser for a short while
  * and is recorded (`consent_records`) once the new account is open. It is only
  * a note of what the visitor did a moment ago: the database holds the proof,
  * and the checkout refuses an account whose proof is missing.

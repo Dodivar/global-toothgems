@@ -3,15 +3,19 @@ import { Link } from "../../../lib/navigation";
 import { PasswordField, TextField } from "../Field";
 import { PasswordStrength } from "../PasswordStrength";
 import { GoogleMark } from "../GoogleMark";
+import { AppleMark } from "../../auth/AppleMark";
+import { LastUsedFrame } from "../../auth/LastUsedFrame";
+import type { SignInMethod } from "../../../lib/lastSignInMethod";
 import { StepHeading } from "./StepHeading";
 import { suggestEmail, validateField } from "../../../lib/registration";
 import type { StepProps } from "./types";
 
 /**
- * Step 1 — email and password, or Google.
+ * Step 1 — email and password, or Google / Apple.
  *
- * Google sits first because it is the shortest path (it leaves for Google and
- * comes back signed in); the email route follows a labelled divider.
+ * The providers sit first because they are the shortest path (they leave for
+ * the provider and come back signed in); the email route follows a labelled
+ * divider. Apple is offered once the owner has switched it on (`onApple`).
  */
 export function AccountStep({
   data,
@@ -23,12 +27,16 @@ export function AccountStep({
   touched,
   emailTaken,
   onGoogle,
+  onApple,
+  lastMethod,
   signInState,
   onForgotPassword,
 }: StepProps & {
   touched: (name: "email" | "password" | "confirmPassword") => boolean;
   emailTaken: boolean;
   onGoogle: () => void;
+  onApple?: () => void;
+  lastMethod: SignInMethod | null;
   signInState: unknown;
   onForgotPassword: () => void;
 }) {
@@ -43,14 +51,35 @@ export function AccountStep({
       <StepHeading headingRef={headingRef} title={t("register.account.title")} body={t("register.account.body")} />
 
       <>
-          <button
-            type="button"
-            onClick={onGoogle}
-            className="gt-google-btn flex h-[52px] w-full items-center justify-center gap-3 rounded-[var(--radius-control)] border border-[var(--border-default)] bg-white px-5 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] shadow-[var(--shadow-xs)] transition-[border-color,box-shadow,background-color] duration-[var(--duration-fast)] hover:border-[var(--gt-ink-400)] hover:shadow-[var(--shadow-sm)] active:scale-[0.99]"
-          >
-            <GoogleMark size={19} />
-            {t("register.google.cta")}
-          </button>
+          <LastUsedFrame active={lastMethod === "google"}>
+            {(describedBy) => (
+              <button
+                type="button"
+                onClick={onGoogle}
+                aria-describedby={describedBy}
+                className="gt-google-btn flex h-[52px] w-full items-center justify-center gap-3 rounded-[var(--radius-control)] border border-[var(--border-default)] bg-white px-5 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] shadow-[var(--shadow-xs)] transition-[border-color,box-shadow,background-color] duration-[var(--duration-fast)] hover:border-[var(--gt-ink-400)] hover:shadow-[var(--shadow-sm)] active:scale-[0.99]"
+              >
+                <GoogleMark size={19} />
+                {t("register.google.cta")}
+              </button>
+            )}
+          </LastUsedFrame>
+
+          {onApple && (
+            <LastUsedFrame active={lastMethod === "apple"}>
+              {(describedBy) => (
+                <button
+                  type="button"
+                  onClick={onApple}
+                  aria-describedby={describedBy}
+                  className="flex h-[52px] w-full items-center justify-center gap-3 rounded-[var(--radius-control)] border border-black bg-black px-5 text-[length:var(--text-body-sm)] font-semibold text-white shadow-[var(--shadow-xs)] transition-[background-color,box-shadow] duration-[var(--duration-fast)] hover:bg-[#1f1f1f] hover:shadow-[var(--shadow-sm)] active:scale-[0.99]"
+                >
+                  <AppleMark size={19} />
+                  {t("register.apple.cta")}
+                </button>
+              )}
+            </LastUsedFrame>
+          )}
 
           <div className="flex items-center gap-3 text-[length:var(--text-caption)] text-[var(--text-muted)]" role="separator" aria-label={t("register.account.divider")}>
             <span aria-hidden="true" className="h-px flex-1 bg-[var(--border-subtle)]" />

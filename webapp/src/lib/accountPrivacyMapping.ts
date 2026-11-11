@@ -91,7 +91,16 @@ export function archiveFileName(generatedAt: string): string {
   return `global-toothgems-mes-donnees-${day}.json`;
 }
 
-/** Whether the account can confirm with a password (else: Google only, signs in again with Google). */
+/** Whether the account can confirm with a password (else: Google or Apple only, signs in again with it). */
 export function hasPasswordSignIn(providers: unknown): boolean {
   return Array.isArray(providers) && providers.includes("email");
+}
+
+/** How the member confirms a sensitive step: the password, else a fresh sign-in with the provider the account has. */
+export type ReauthMethod = "password" | "google" | "apple";
+
+export function reauthMethodOf(providers: unknown): ReauthMethod {
+  if (hasPasswordSignIn(providers)) return "password";
+  const list = Array.isArray(providers) ? providers : [];
+  return list.includes("apple") && !list.includes("google") ? "apple" : "google";
 }

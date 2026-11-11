@@ -182,6 +182,15 @@ export const COOKIE_POLICY: LegalDocument = {
               duration: l("1 an (cookie), jusqu’à modification (stockage local)", "1 year (cookie), until changed (local storage)"),
             },
             {
+              name: l("gt-last-sign-in (stockage local)", "gt-last-sign-in (local storage)"),
+              provider: l("Global Toothgems", "Global Toothgems"),
+              category: l(
+                "Nécessaire — rappelle le moyen de connexion utilisé en dernier (e-mail, Google ou Apple), sans aucune donnée du compte",
+                "Necessary — remembers the sign-in method used last (email, Google or Apple), without any account data",
+              ),
+              duration: l("Jusqu’à la suppression du compte ou l’effacement par le navigateur", "Until the account is deleted or the browser clears it"),
+            },
+            {
               name: l("gt-cart (stockage de session)", "gt-cart (session storage)"),
               provider: l("Global Toothgems", "Global Toothgems"),
               category: l("Nécessaire — panier", "Necessary — cart"),

@@ -98,7 +98,7 @@ export const PRIVACY: LegalDocument = {
             {
               context: l("Compte", "Account"),
               data: l("Nom, e-mail, mot de passe (chiffré), profil choisi, préférences, photo de profil", "Name, email, password (hashed), chosen profile, preferences, profile picture"),
-              source: l("Vous, Google si vous vous connectez avec Google", "You, Google if you sign in with Google"),
+              source: l("Vous, Google ou Apple si vous vous connectez avec l’un d’eux", "You, Google or Apple if you sign in with one of them"),
             },
             {
               context: l("Commandes et facturation", "Orders and billing"),
@@ -182,6 +182,13 @@ export const PRIVACY: LegalDocument = {
           text: l(
             "Si vous vous connectez avec votre compte Google, nous recevons uniquement votre nom, votre adresse e-mail et, le cas échéant, votre photo de profil.",
             "If you sign in with your Google account, we only receive your name, email address and, where available, your profile picture.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Si vous vous connectez avec votre identifiant Apple, nous recevons uniquement votre nom (lors de la première connexion, si vous acceptez de le partager) et une adresse e-mail : la vôtre, ou une adresse relais créée par Apple si vous choisissez de masquer la vôtre. Nos e-mails envoyés à cette adresse relais vous sont transmis par Apple.",
+            "If you sign in with your Apple ID, we only receive your name (at the first sign-in, if you agree to share it) and an email address: yours, or a relay address created by Apple if you choose to hide yours. Our emails sent to that relay address are forwarded to you by Apple.",
           ),
         },
       ],
@@ -315,6 +322,7 @@ export const PRIVACY: LegalDocument = {
             { role: l("Mesure d’audience, avec votre accord", "Audience measurement, with your consent"), provider: l("PostHog Inc.", "PostHog Inc."), location: l("Union européenne (Francfort)", "European Union (Frankfurt)") },
             { role: l("Livraison", "Delivery"), provider: l("La Poste (Colissimo), Chronopost, GLS", "La Poste (Colissimo), Chronopost, GLS"), location: l("France et pays de destination", "France and the destination country") },
             { role: l("Connexion avec Google", "Sign-in with Google"), provider: l("Google Ireland Ltd / Google LLC", "Google Ireland Ltd / Google LLC"), location: US_DPF },
+            { role: l("Connexion avec Apple", "Sign-in with Apple"), provider: l("Apple Distribution International Ltd / Apple Inc.", "Apple Distribution International Ltd / Apple Inc."), location: US_DPF },
             { role: l("Essai d’une création sur un sourire (IA)", "Trying a creation on a smile (AI)"), provider: l("Google (API Gemini)", "Google (Gemini API)"), location: US_DPF },
             {
               role: l("Cartes des pages Glowbook (chargées quand vous les faites défiler)", "Glowbook page maps (loaded as you scroll to them)"),
@@ -434,8 +442,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Notre base de données est hébergée dans l’Union européenne. Certains prestataires (Vercel, Resend, Google) sont établis aux États-Unis et peuvent y traiter des données : ces transferts reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework) lorsque le prestataire y adhère, et à défaut sur les clauses contractuelles types de la Commission européenne. Les transferts vers le Royaume-Uni reposent sur une décision d’adéquation.",
-            "Our database is hosted in the European Union. Some providers (Vercel, Resend, Google) are established in the United States and may process data there: these transfers rely on the EU–US Data Privacy Framework where the provider has joined it, and otherwise on the European Commission’s standard contractual clauses. Transfers to the United Kingdom rely on an adequacy decision.",
+            "Notre base de données est hébergée dans l’Union européenne. Certains prestataires (Vercel, Resend, Google, Apple) sont établis aux États-Unis et peuvent y traiter des données : ces transferts reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework) lorsque le prestataire y adhère, et à défaut sur les clauses contractuelles types de la Commission européenne. Les transferts vers le Royaume-Uni reposent sur une décision d’adéquation.",
+            "Our database is hosted in the European Union. Some providers (Vercel, Resend, Google, Apple) are established in the United States and may process data there: these transfers rely on the EU–US Data Privacy Framework where the provider has joined it, and otherwise on the European Commission’s standard contractual clauses. Transfers to the United Kingdom rely on an adequacy decision.",
           ),
         },
       ],

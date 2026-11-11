@@ -7,6 +7,8 @@ import { DELIVERY_COUNTRIES } from "../data/countries";
 import { LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData, type SignupOrigin } from "./registration";
 import { authConfirmUrl, isSafeNext } from "./authRoutes";
 import { rememberGoogleTerms, takeGoogleTerms } from "./googleTerms";
+import { notePendingSignIn, rememberSignInMethod, settlePendingSignIn } from "./lastSignInMethod";
+import type { OAuthProvider } from "./authProviders";
 import { TermsGate } from "../components/auth/TermsGate";
 import { useHydrated } from "./useHydrated";
 import { isAuthCaptchaRefusal, isAuthRateLimit } from "./supabase/authErrors";
@@ -76,7 +78,7 @@ type SignUpResult =
   | "network"
   | "server";
 
-/** Outcome of starting the Google sign-in. */
+/** Outcome of starting a Google or Apple sign-in (a redirect). */
 type GoogleSignInResult = "redirecting" | "unavailable";
 
 /** Outcome of signing in with a Google ID token (Google's own button, no redirect). */
@@ -118,6 +120,13 @@ interface AuthContextValue {
    */
   signInWithGoogle: (next?: string, options?: { termsAccepted?: boolean }) => Promise<GoogleSignInResult>;
   /**
+   * The same redirect through Apple (Sign in with Apple, Supabase's `apple`
+   * provider). Offered only once the owner has switched Apple on in the
+   * Supabase dashboard (`useAppleSignInEnabled`). An Apple member may share a
+   * relay address (`…@privaterelay.appleid.com`) instead of their own.
+   */
+  signInWithApple: (next?: string, options?: { termsAccepted?: boolean }) => Promise<GoogleSignInResult>;
+  /**
    * Opens the session from an ID token Google's own button returned (the
    * nonce is the raw value whose hash Google put in the token). No redirect:
    * "signedIn" means the session is open; "unavailable" in mock mode or when
@@ -127,7 +136,7 @@ interface AuthContextValue {
   /**
    * Whether the account has accepted the terms and the privacy policy:
    * null while signed out or unknown. False for an account created through
-   * Google without the registration form, which the member space, the learner
+   * Google or Apple without the registration form, which the member space, the learner
    * pages and the checkout then ask to settle (the database refuses the
    * payment meanwhile).
    */
@@ -306,6 +315,28 @@ async function recordTerms(userId: string, source: "account" | "checkout"): Prom
   return !error;
 }
 
+/**
+ * Sends the browser to Google or Apple, which bring it back through
+ * `/auth/confirm` to `landing` with the session open. The terms accepted in the
+ * registration dialog and the provider (for the "Last used" badge) wait in this
+ * browser until then.
+ */
+async function signInWithRedirect(
+  provider: OAuthProvider,
+  next?: string,
+  options?: { termsAccepted?: boolean },
+): Promise<GoogleSignInResult> {
+  if (!supabase) return "unavailable";
+  if (options?.termsAccepted) rememberGoogleTerms();
+  const landing = next && isSafeNext(next) ? next : "/compte";
+  notePendingSignIn(provider);
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: authConfirmUrl(landing, window.location.origin) },
+  });
+  return error ? "unavailable" : "redirecting";
+}
+
 function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -322,8 +353,10 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       setTermsAccepted(null);
       return loaded;
     }
+    // Back from Google or Apple: the "Last used" badge follows the provider.
+    if (loaded) settlePendingSignIn(user!.identities);
     let accepted = loaded ? await loadTermsAccepted(user!.id) : null;
-    // Back from Google after accepting in the registration dialog: that
+    // Back from Google or Apple after accepting in the registration dialog: that
     // acceptance is recorded now that the account exists.
     if (loaded && accepted === false && takeGoogleTerms() && (await recordTerms(user!.id, "account"))) accepted = true;
     setProfile(loaded?.profile ?? null);
@@ -377,6 +410,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
         return "unavailable";
       }
+      rememberSignInMethod("email");
       return "accepted";
     },
     [applyUser],
@@ -438,23 +472,24 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     [userId],
   );
 
-  const signInWithGoogle = useCallback(async (next?: string, options?: { termsAccepted?: boolean }): Promise<GoogleSignInResult> => {
-    if (!supabase) return "unavailable";
-    if (options?.termsAccepted) rememberGoogleTerms();
-    const landing = next && isSafeNext(next) ? next : "/compte";
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: authConfirmUrl(landing, window.location.origin) },
-    });
-    return error ? "unavailable" : "redirecting";
-  }, []);
+  const signInWithGoogle = useCallback(
+    (next?: string, options?: { termsAccepted?: boolean }) => signInWithRedirect("google", next, options),
+    [],
+  );
+
+  const signInWithApple = useCallback(
+    (next?: string, options?: { termsAccepted?: boolean }) => signInWithRedirect("apple", next, options),
+    [],
+  );
 
   const signInWithGoogleToken = useCallback(
     async (token: string, nonce: string, options?: { termsAccepted?: boolean }): Promise<GoogleTokenResult> => {
       if (!supabase) return "unavailable";
       if (options?.termsAccepted) rememberGoogleTerms();
       const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token, nonce, options: { captchaToken: await authCaptchaToken() } });
-      return error ? "unavailable" : "signedIn";
+      if (error) return "unavailable";
+      rememberSignInMethod("google");
+      return "signedIn";
     },
     [],
   );
@@ -570,6 +605,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         signUp,
         resendConfirmation,
         signInWithGoogle,
+        signInWithApple,
         signInWithGoogleToken,
         termsAccepted,
         acceptTerms,
@@ -577,7 +613,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         signOut,
         updateProfile,
       }),
-    [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, signInWithGoogleToken, termsAccepted, acceptTerms, signIn, signOut, updateProfile],
+    [profile, restoring, userId, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, signInWithApple, signInWithGoogleToken, termsAccepted, acceptTerms, signIn, signOut, updateProfile],
   );
 
   return (
@@ -665,6 +701,7 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (): Promise<SignUpResult> => "confirmationSent", []);
   const resendConfirmation = useCallback(async (): Promise<ResendResult> => "sent", []);
   const signInWithGoogle = useCallback(async (): Promise<GoogleSignInResult> => "unavailable", []);
+  const signInWithApple = useCallback(async (): Promise<GoogleSignInResult> => "unavailable", []);
   const signInWithGoogleToken = useCallback(async (): Promise<GoogleTokenResult> => "unavailable", []);
 
   const signOut = useCallback(() => setProfile(null), [setProfile]);
@@ -689,6 +726,7 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
         signUp,
         resendConfirmation,
         signInWithGoogle,
+        signInWithApple,
         signInWithGoogleToken,
         // The mock has no consent records.
         termsAccepted: profile ? true : null,
@@ -697,7 +735,7 @@ function DemoAuthProvider({ children }: { children: ReactNode }) {
         signOut,
         updateProfile,
       }),
-    [profile, hydrated, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, signInWithGoogleToken, signIn, signOut, updateProfile],
+    [profile, hydrated, signInWithPassword, signUp, resendConfirmation, signInWithGoogle, signInWithApple, signInWithGoogleToken, signIn, signOut, updateProfile],
   );
 
   return (

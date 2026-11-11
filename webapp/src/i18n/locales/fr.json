@@ -502,6 +502,9 @@
     "dialogTitle": "Avant de continuer avec Google",
     "dialogBody": "Un compte sera créé avec votre adresse Google, ou retrouvé s’il existe déjà.",
     "googleCta": "J’accepte et je continue avec Google",
+    "appleDialogTitle": "Avant de continuer avec Apple",
+    "appleDialogBody": "Un compte sera créé avec votre identifiant Apple, ou retrouvé s’il existe déjà. Si vous choisissez de masquer votre adresse, Apple nous transmet une adresse relais qui vous fait suivre nos e-mails.",
+    "appleCta": "J’accepte et je continue avec Apple",
     "checkoutCta": "J’accepte et je règle ma commande"
   },
   "authAlt": {
@@ -512,6 +515,10 @@
     "google": "Continuer avec Google",
     "googleErrorTitle": "Connexion Google impossible",
     "googleErrorBody": "Nous n’avons pas pu joindre Google. Réessayez dans un instant ou utilisez votre e-mail.",
+    "apple": "Continuer avec Apple",
+    "appleErrorTitle": "Connexion Apple impossible",
+    "appleErrorBody": "Nous n’avons pas pu joindre Apple. Réessayez dans un instant ou utilisez votre e-mail.",
+    "lastUsed": "Dernière utilisée",
     "switchToSignUpPrompt": "Pas encore de compte ?",
     "errorEmail": "Indiquez une adresse e-mail valide."
   },
@@ -718,6 +725,9 @@
     },
     "google": {
       "cta": "Continuer avec Google"
+    },
+    "apple": {
+      "cta": "Continuer avec Apple"
     },
     "legal": {
       "summaryNote": "L’essentiel, en langage clair. Le texte juridique complet sera publié avec le site.",
@@ -4595,6 +4605,9 @@
       "passwordLabel": "Votre mot de passe",
       "googleHint": "Pour confirmer qu’il s’agit bien de vous, reconnectez-vous avec Google si votre dernière connexion date de plus de 10 minutes.",
       "googleAgain": "Me reconnecter avec Google",
+      "appleHint": "Pour confirmer qu’il s’agit bien de vous, reconnectez-vous avec Apple si votre dernière connexion date de plus de 10 minutes.",
+      "appleAgain": "Me reconnecter avec Apple",
+      "reauthAppleBody": "Votre dernière connexion date de plus de 10 minutes. Reconnectez-vous avec Apple, puis confirmez à nouveau.",
       "reauthTitle": "Reconnectez-vous pour confirmer",
       "reauthPasswordBody": "Votre connexion est trop ancienne pour supprimer le compte. Saisissez à nouveau votre mot de passe et réessayez.",
       "reauthGoogleBody": "Votre dernière connexion date de plus de 10 minutes. Reconnectez-vous avec Google, puis confirmez à nouveau."
