@@ -61,7 +61,7 @@ export function TrainingHero({
   );
 
   return (
-    <header className="relative overflow-hidden bg-[var(--surface-page)] px-[clamp(14px,4vw,48px)] pb-[clamp(40px,6vw,72px)] pt-[clamp(20px,3vw,36px)]">
+    <header className="relative overflow-hidden bg-[var(--surface-page)] px-[clamp(16px,4vw,72px)] pb-[clamp(40px,6vw,72px)] pt-[clamp(20px,3vw,36px)]">
       {/* The brand's gem wash, kept faint: it separates the Academy from the
           storefront without ever competing with the title. */}
       <div
@@ -73,7 +73,7 @@ export function TrainingHero({
         }}
       />
 
-      <div className="relative mx-auto max-w-[var(--max-width-content)]">
+      <div className="relative mx-auto max-w-[1760px]">
         <nav
           aria-label={t("lesson.breadcrumbAcademy")}
           className="mb-[clamp(20px,3vw,32px)] flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-muted)]"

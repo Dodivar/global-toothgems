@@ -1,0 +1,54 @@
+{
+ "photo": "P1",
+ "photoFile": "IMG_8344.jpeg",
+ "scene": "S2",
+ "sceneName": "Essai 2 — Symétrie haut et bas (5 paires miroir)",
+ "started": "2026-11-05T11:12:38.093Z",
+ "calls": [
+  {
+   "response": {
+    "at": 1746,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 1771,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 4688,
+    "status": 422,
+    "body": {
+     "ok": false,
+     "code": "photo_unsuitable",
+     "reasons": [
+      "not_frontal"
+     ]
+    }
+   }
+  }
+ ],
+ "creationTitle": "Essai 2 — Symétrie haut et bas (5 paires miroir)",
+ "clicked": 2135,
+ "ended": 4974,
+ "outcome": "error",
+ "error": "Cette photo ne permet pas un bon rendu\nRien n’a été généré et ce rendu n’est pas compté. Reprenez une photo :\nde face : le téléphone à hauteur du sourire, sans tourner ni pencher la tête, les deux dents de devant bien visibles ;\nAUTRE PHOTO",
+ "total": 5023
+}

@@ -1,0 +1,244 @@
+{
+ "photo": "P4",
+ "photoFile": "IMG_8349.jpeg",
+ "scene": "S3",
+ "sceneName": "Essai 3 — Grappes denses (21 en haut, 41 et 31 en bas)",
+ "started": "2026-11-05T11:29:19.751Z",
+ "calls": [
+  {
+   "response": {
+    "at": 1771,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 1771,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 6650,
+    "status": 200,
+    "body": {
+     "ok": true,
+     "crop": {
+      "x": 164,
+      "y": 757,
+      "width": 1208,
+      "height": 517,
+      "photo_width": 1536,
+      "photo_height": 2048
+     },
+     "teeth": [
+      {
+       "fdi": "13",
+       "x": 211,
+       "y": 184,
+       "width": 77,
+       "height": 93
+      },
+      {
+       "fdi": "12",
+       "x": 284,
+       "y": 178,
+       "width": 72,
+       "height": 99
+      },
+      {
+       "fdi": "11",
+       "x": 356,
+       "y": 173,
+       "width": 97,
+       "height": 119
+      },
+      {
+       "fdi": "21",
+       "x": 574,
+       "y": 168,
+       "width": 96,
+       "height": 119
+      },
+      {
+       "fdi": "22",
+       "x": 670,
+       "y": 173,
+       "width": 85,
+       "height": 98
+      },
+      {
+       "fdi": "23",
+       "x": 755,
+       "y": 173,
+       "width": 85,
+       "height": 93
+      },
+      {
+       "fdi": "24",
+       "x": 840,
+       "y": 178,
+       "width": 72,
+       "height": 78
+      },
+      {
+       "fdi": "25",
+       "x": 912,
+       "y": 178,
+       "width": 60,
+       "height": 68
+      },
+      {
+       "fdi": "42",
+       "x": 344,
+       "y": 266,
+       "width": 73,
+       "height": 73
+      },
+      {
+       "fdi": "41",
+       "x": 417,
+       "y": 266,
+       "width": 84,
+       "height": 88
+      },
+      {
+       "fdi": "31",
+       "x": 501,
+       "y": 266,
+       "width": 85,
+       "height": 88
+      },
+      {
+       "fdi": "32",
+       "x": 586,
+       "y": 266,
+       "width": 84,
+       "height": 83
+      },
+      {
+       "fdi": "33",
+       "x": 670,
+       "y": 266,
+       "width": 73,
+       "height": 73
+      },
+      {
+       "fdi": "34",
+       "x": 743,
+       "y": 266,
+       "width": 60,
+       "height": 57
+      }
+     ],
+     "centrals": {
+      "x": 392,
+      "y": 158,
+      "width": 424,
+      "height": 197
+     },
+     "teeth_readings": {
+      "asked": 1,
+      "answered": 1,
+      "kept": 1
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 37131,
+    "status": 200,
+    "body": {
+     "ok": true,
+     "image": "<image/png>",
+     "crop": {
+      "x": 164,
+      "y": 757,
+      "width": 1208,
+      "height": 517,
+      "photo_width": 1536,
+      "photo_height": 2048
+     }
+    }
+   }
+  }
+ ],
+ "creationTitle": "Essai 3 — Grappes denses (21 en haut, 41 et 31 en bas)",
+ "clicked": 2113,
+ "placement": {
+  "audience": "artist",
+  "source": "own",
+  "teeth_found": 14,
+  "teeth_kept": 12,
+  "teeth_set_aside": 2,
+  "centrals_box": true,
+  "confidence": 0.86,
+  "reliable": true,
+  "issues": [
+   "outliers"
+  ],
+  "rms": 0.159,
+  "lower_offset_mm": -0.37,
+  "renumbered_upper": 0,
+  "renumbered_lower": 0,
+  "midline_error": 0.059,
+  "gems_placed": 11,
+  "gems_hidden": 2,
+  "gems_on_fitted_teeth": 0,
+  "gems_skipped": 0,
+  "marks": 9,
+  "left_out": 2,
+  "arbiter": "applied",
+  "arbiter_triggered": true,
+  "arbiter_gap_found": true,
+  "arbiter_teeth_offset": -0.58,
+  "arbiter_centrals_offset": 0.36,
+  "arbiter_corrections": [
+   "half_shifted"
+  ],
+  "arbiter_snapped": 0,
+  "arbiter_segmented_upper": 4,
+  "arbiter_segmented_lower": 5,
+  "arbiter_would_be_reliable": null,
+  "arbiter_would_midline_error": null,
+  "outcome": "render"
+ },
+ "result": {
+  "audience": "artist",
+  "source": "own",
+  "outcome": "ok",
+  "masked": true,
+  "gems_checked": 9,
+  "gems_drawn": 9,
+  "gems_missing": 0,
+  "gems_drifted": 1,
+  "gems_resized": 1,
+  "gems_reseated": 2,
+  "drift_mean": 0.21,
+  "drift_max": 0.66,
+  "size_mean": 1.05,
+  "size_max": 1.38
+ },
+ "ended": 37870,
+ "outcome": "result",
+ "report": "",
+ "notes": [
+  "2 gemmes de la création n’ont pas été posées : l’endroit des dents où elles vont n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents)."
+ ],
+ "total": 38002
+}
