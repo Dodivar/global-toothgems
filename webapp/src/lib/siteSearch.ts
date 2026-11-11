@@ -57,6 +57,7 @@ const SEARCHABLE_PAGES: readonly PublicRouteId[] = [
   "legalNotice",
   "terms",
   "termsOfUse",
+  "studioTerms",
   "privacy",
   "cookies",
   "about",

@@ -18,6 +18,8 @@ export const LEGAL_PATHS = {
   legalNotice: "/mentions-legales",
   terms: "/conditions-generales",
   termsOfUse: "/conditions-generales-utilisation",
+  /** The 3D Studio subscription terms: the Studio is sold by the publisher (decision 133). */
+  studioTerms: "/conditions-abonnement-studio",
   privacy: "/confidentialite",
   cookies: "/cookies",
   about: "/a-propos",
@@ -31,6 +33,7 @@ export const LEGAL_ALIASES: Record<string, string> = {
   "/legal-notice": LEGAL_PATHS.legalNotice,
   "/terms-of-sale": LEGAL_PATHS.terms,
   "/terms-of-use": LEGAL_PATHS.termsOfUse,
+  "/studio-subscription-terms": LEGAL_PATHS.studioTerms,
   "/privacy-policy": LEGAL_PATHS.privacy,
   "/cookie-policy": LEGAL_PATHS.cookies,
   "/about": LEGAL_PATHS.about,

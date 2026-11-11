@@ -18,7 +18,7 @@ import { useAuth } from "../../../lib/auth";
 import { STUDIO_PATH } from "../../../lib/studioUrl";
 import { RETURN_PARAM, SIGN_IN_PATH } from "../../../lib/authRoutes";
 import type { StudioAccessKind } from "../../../lib/studioAccessState";
-import { useVatFranchise, vatNoticeKey } from "../../../lib/vatRegime";
+import { useStudioVatFranchise, vatNoticeKey } from "../../../lib/vatRegime";
 
 /**
  * What stands in front of the Studio editor: the trial invitation, a sign-in
@@ -348,7 +348,7 @@ function ErrorScreen({ onRetry }: { onRetry: () => void }) {
 
 function LockedScreen({ state }: { state: StudioAccessKind }) {
   const { t } = useTranslation();
-  const vatNotice = vatNoticeKey(useVatFranchise());
+  const vatNotice = vatNoticeKey(useStudioVatFranchise());
   const access = useStudioAccess()!;
   const navigate = useNavigate();
   const heading = useHeadingFocus();

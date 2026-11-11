@@ -1,6 +1,6 @@
 /** Test fixtures for the terms of sale attached to the contract confirmations (decision 130). */
 import type { LegalStoreDetails } from "../legal/storeFill.ts";
-import { termsOfSaleForEmail, type TermsOptions, type TermsProvider } from "./termsPdf.ts";
+import { contractTermsForEmail, type TermsOptions, type TermsProvider } from "./termsPdf.ts";
 
 export const LEGAL_STORE: LegalStoreDetails = {
   tradingName: "PIMP TON SMILE",
@@ -8,6 +8,9 @@ export const LEGAL_STORE: LegalStoreDetails = {
   legalForm: "Entrepreneur individuel (EI)",
   publisherName: "Studio Test",
   publisherLegalName: "",
+  publisherLegalForm: "",
+  publisherRegistrationNumber: "",
+  publisherAddress: "",
   registrationNumber: "SIREN 123 456 789",
   supportEmail: "support@example.com",
   country: "FR",
@@ -23,9 +26,9 @@ export function testTermsProvider(options: TermsOptions = {}): { terms: TermsPro
   const asked: { locale: string; reference: string }[] = [];
   return {
     asked,
-    terms: (locale, reference) => {
+    terms: (locale, reference, kind = "sale") => {
       asked.push({ locale, reference });
-      return Promise.resolve(termsOfSaleForEmail(LEGAL_STORE, locale, reference, options));
+      return Promise.resolve(contractTermsForEmail(kind, LEGAL_STORE, locale, reference, options));
     },
   };
 }

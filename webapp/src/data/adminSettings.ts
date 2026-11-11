@@ -54,6 +54,12 @@ export interface StoreDetails {
   publisherEmail: string;
   /** Required for an individual publisher (LCEN art. 6 III 1). */
   publisherPhone: string;
+  /*
+   * The publisher also sells the 3D Studio (decision 133): its own VAT number
+   * and VAT regime, frozen on the Studio's FS-/AS- invoices.
+   */
+  publisherVatNumber: string;
+  publisherVatFranchise: boolean;
   legalForm: string;
   shareCapital: string;
   /** Registration number and register (RCS, SIREN…). */

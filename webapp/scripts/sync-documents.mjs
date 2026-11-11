@@ -52,6 +52,7 @@ export const LEGAL = {
   "data/legal/routes.ts": "routes.ts",
   "data/legal/policies.ts": "policies.ts",
   "data/legal/terms.ts": "terms.ts",
+  "data/legal/studioTerms.ts": "studioTerms.ts",
   "data/legal/storeFill.ts": "storeFill.ts",
   "data/legal/termsDocument.ts": "termsDocument.ts",
 };

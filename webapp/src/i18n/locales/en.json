@@ -4637,6 +4637,7 @@
       "legalNotice": "Legal notice",
       "terms": "Terms of sale",
       "termsOfUse": "Terms of use",
+      "studioTerms": "3D Studio subscription terms",
       "privacy": "Privacy policy",
       "cookies": "Cookie policy"
     },
@@ -4654,6 +4655,7 @@
         "legalNotice": "Publisher, host and intellectual property.",
         "terms": "The rules that govern your purchases.",
         "termsOfUse": "The rules for using the site and your account.",
+        "studioTerms": "The rules of the 3D Studio subscription.",
         "privacy": "Your data, how it is used and your rights.",
         "cookies": "Cookies and how to manage your choices."
       }
@@ -5036,9 +5038,14 @@
       "version": "Version of",
       "appliesTo": "Applies to",
       "toSupply": "to be supplied",
-      "intro": "The version of the terms of sale in force on the date of your order or subscription, given with its confirmation so that you can keep and reproduce it.",
+      "intro": "The version of the terms of sale in force on the date of your order, given with its confirmation so that you can keep and reproduce it.",
       "fieldColumn": "Item",
       "valueColumn": "Details"
+    },
+    "studioTerms": {
+      "title": "3D Studio subscription terms",
+      "fileName": "3d-studio-subscription-terms",
+      "intro": "The version of the 3D Studio subscription terms in force on the date of your subscription, given with its confirmation so that you can keep and reproduce it."
     }
   },
   "newsletter": {

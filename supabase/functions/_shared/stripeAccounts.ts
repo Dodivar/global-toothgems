@@ -1,5 +1,5 @@
 /**
- * Two businesses, two Stripe accounts (decision 131).
+ * Two businesses, two Stripe accounts (decision 133).
  *
  *   - `studio`: the 3D Studio subscriptions, sold and collected by the website
  *     publisher (DoDigital). Its keys are the original `STRIPE_*` secrets: the

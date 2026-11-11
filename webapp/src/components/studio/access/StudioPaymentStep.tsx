@@ -7,8 +7,9 @@ import { Check, CircleAlert, CreditCard, Lock, RefreshCcw, ShieldCheck } from "l
 import { Checkbox } from "../../ui/Checkbox";
 import { StripePaymentForm } from "../../checkout/StripePaymentForm";
 import { Link } from "../../../lib/navigation";
+import { LEGAL_PATHS } from "../../../data/legal/routes";
 import { useFormat } from "../../../lib/format";
-import { useVatFranchise, vatNoticeKey } from "../../../lib/vatRegime";
+import { useStudioVatFranchise, vatNoticeKey } from "../../../lib/vatRegime";
 import { trackStudio } from "../../../lib/studioAnalytics";
 import type { StudioCheckoutError, StudioConsentAnswer, StudioPayment } from "../../../lib/studioBillingMapping";
 import type { StudioCheckoutQuery } from "../../../lib/studioUrl";
@@ -39,7 +40,7 @@ interface StudioPaymentStepProps {
 
 export default function StudioPaymentStep({ query, payment, locale, recordConsent, onPaid, onRestart }: StudioPaymentStepProps) {
   const { t } = useTranslation();
-  const vatNotice = vatNoticeKey(useVatFranchise());
+  const vatNotice = vatNoticeKey(useStudioVatFranchise());
   const { formatMoney } = useFormat();
   const { plan, interval, surface } = query;
   const [consent, setConsent] = useState(false);
@@ -134,11 +135,11 @@ export default function StudioPaymentStep({ query, payment, locale, recordConsen
             onRestart={onRestart}
             footer={
               <p className="m-0 text-center text-xs leading-relaxed text-[var(--text-muted)]">
-                {t("checkout.payment.consentBefore")}{" "}
-                <Link to="/conditions-generales" target="_blank" className="underline decoration-1 underline-offset-2 hover:text-[var(--text-primary)]">
-                  {t("checkout.payment.consentLink")}
+                {t("studio.access.payment.consentBefore")}{" "}
+                <Link to={LEGAL_PATHS.studioTerms} target="_blank" className="underline decoration-1 underline-offset-2 hover:text-[var(--text-primary)]">
+                  {t("studio.access.payment.consentLink")}
                 </Link>
-                {t("checkout.payment.consentAfter")}
+                {t("studio.access.payment.consentAfter")}
               </p>
             }
           >

@@ -1,6 +1,7 @@
 import { legalFooterLines, type Translate } from "../../lib/documents/legal.ts";
 import type { BusinessDocument, DocumentBlock } from "../../lib/documents/template.ts";
 import { officeAddress, withStoreDetails, type LegalStoreDetails } from "./storeFill";
+import { STUDIO_TERMS, STUDIO_TERMS_VERSION } from "./studioTerms";
 import { TERMS, TERMS_OF_SALE_VERSION } from "./terms";
 import type { Block, LegalDocument } from "./types";
 
@@ -15,10 +16,18 @@ import type { Block, LegalDocument } from "./types";
  * The same flattened blocks feed the e-mail's HTML fallback when a PDF cannot
  * be drawn (`supabase/functions/_shared/email/termsPdf.ts`).
  *
+ * Two contracts, two sellers (decision 133): the terms of sale (`terms.ts`,
+ * the seller: shop, Academy, gift cards) and the 3D Studio subscription terms
+ * (`studioTerms.ts`, the website publisher). Each PDF carries its own version
+ * and its own seller's legal mentions in the footer.
+ *
  * Pure and portable: copied to `supabase/functions/_shared/legal/` by
- * `npm run sync:documents`, with `terms.ts`, `policies.ts`, `types.ts`,
- * `routes.ts` and `storeFill.ts`.
+ * `npm run sync:documents`, with `terms.ts`, `studioTerms.ts`, `policies.ts`,
+ * `types.ts`, `routes.ts` and `storeFill.ts`.
  */
+
+/** Which contract's terms: the terms of sale, or the 3D Studio subscription terms. */
+export type ContractTermsKind = "sale" | "studio";
 
 export type TermsLang = "fr" | "en";
 
@@ -122,45 +131,104 @@ export function termsOfSaleSource(store: LegalStoreDetails | null): LegalDocumen
   return withStoreDetails(TERMS, store);
 }
 
-/** The terms of sale, version `TERMS_OF_SALE_VERSION`, as a document for the PDF template. */
-export function termsOfSaleDocument(options: TermsPdfOptions): BusinessDocument {
+/** The 3D Studio subscription terms in force, filled with the Studio seller's (the publisher's) details. */
+export function studioTermsSource(store: LegalStoreDetails | null): LegalDocument {
+  return withStoreDetails(STUDIO_TERMS, store);
+}
+
+/** A contract's terms in force, filled with its seller's details. */
+export function contractTermsSource(kind: ContractTermsKind, store: LegalStoreDetails | null): LegalDocument {
+  return kind === "studio" ? studioTermsSource(store) : termsOfSaleSource(store);
+}
+
+/** The version of a contract's terms this build holds. */
+export function contractTermsVersion(kind: ContractTermsKind): string {
+  return kind === "studio" ? STUDIO_TERMS_VERSION : TERMS_OF_SALE_VERSION;
+}
+
+/** The i18n namespace of a contract's PDF strings (title, file name, introduction). */
+function termsKeys(kind: ContractTermsKind): string {
+  return kind === "studio" ? "documents.studioTerms" : "documents.terms";
+}
+
+/** The seller's legal mentions printed at the foot of each page: the shop's seller, or the Studio's (the publisher). */
+function sellerFooter(kind: ContractTermsKind, store: LegalStoreDetails, lang: TermsLang, t: Translate): string[] {
+  if (kind === "studio") {
+    return legalFooterLines(
+      {
+        tradingName: store.publisherName,
+        name: store.publisherLegalName,
+        legalForm: store.publisherLegalForm,
+        shareCapital: "",
+        registrationNumber: store.publisherRegistrationNumber,
+        vatNumber: "",
+        address: store.publisherAddress,
+        email: store.supportEmail,
+      },
+      t,
+    );
+  }
+  return legalFooterLines(
+    {
+      tradingName: store.tradingName,
+      name: store.legalName,
+      legalForm: store.legalForm,
+      shareCapital: "",
+      registrationNumber: store.registrationNumber,
+      vatNumber: "",
+      address: officeAddress(store, lang),
+      email: store.supportEmail,
+    },
+    t,
+  );
+}
+
+/** A contract's terms, in this build's version, as a document for the PDF template. */
+export function contractTermsDocument(kind: ContractTermsKind, options: TermsPdfOptions): BusinessDocument {
   const { lang, t, store } = options;
-  const doc = termsOfSaleSource(store);
-  const seller = store ? store.tradingName.trim() || store.legalName.trim() : "";
-  const footer = store
-    ? legalFooterLines(
-        {
-          tradingName: store.tradingName,
-          name: store.legalName,
-          legalForm: store.legalForm,
-          shareCapital: "",
-          registrationNumber: store.registrationNumber,
-          vatNumber: "",
-          address: officeAddress(store, lang),
-          email: store.supportEmail,
-        },
-        t,
-      )
-    : [];
-  const version = options.date(TERMS_OF_SALE_VERSION);
+  const keys = termsKeys(kind);
+  const doc = contractTermsSource(kind, store);
+  const seller = store
+    ? kind === "studio"
+      ? store.publisherName.trim() || store.publisherLegalName.trim()
+      : store.tradingName.trim() || store.legalName.trim()
+    : "";
+  const footer = store ? sellerFooter(kind, store, lang, t) : [];
+  const version = options.date(contractTermsVersion(kind));
+  const title = t(`${keys}.title`);
   return {
     lang,
-    title: t("documents.terms.title"),
+    title,
     meta: [
       { label: t("documents.terms.version"), value: version },
       ...(options.reference ? [{ label: t("documents.terms.appliesTo"), value: options.reference }] : []),
     ],
     parties: [],
-    blocks: [{ kind: "paragraph", tone: "notice", text: t("documents.terms.intro") }, ...legalDocumentBlocks(doc, lang, t)],
+    blocks: [{ kind: "paragraph", tone: "notice", text: t(`${keys}.intro`) }, ...legalDocumentBlocks(doc, lang, t)],
     footer: footer.length ? footer : [doc.title[lang]],
     pageLabel: (page, count) => t("documents.page", { page, count }),
-    info: { title: `${t("documents.terms.title")} — ${version}`, author: seller || "Global Toothgems", subject: options.reference },
+    info: { title: `${title} — ${version}`, author: seller || "Global Toothgems", subject: options.reference },
   };
 }
 
-/** "conditions-generales-de-vente-2026-11-09.pdf" / "terms-of-sale-2026-11-09.pdf". */
-export function termsOfSaleFileName(t: Translate): string {
-  return `${t("documents.terms.fileName")}-${TERMS_OF_SALE_VERSION}.pdf`;
+/** The terms of sale, version `TERMS_OF_SALE_VERSION`, as a document for the PDF template. */
+export function termsOfSaleDocument(options: TermsPdfOptions): BusinessDocument {
+  return contractTermsDocument("sale", options);
 }
 
-export { TERMS_OF_SALE_VERSION };
+/** The 3D Studio subscription terms, version `STUDIO_TERMS_VERSION`, as a document for the PDF template. */
+export function studioTermsDocument(options: TermsPdfOptions): BusinessDocument {
+  return contractTermsDocument("studio", options);
+}
+
+/** "conditions-generales-de-vente-2026-11-11.pdf" / "conditions-abonnement-studio-3d-2026-11-11.pdf"… */
+export function contractTermsFileName(kind: ContractTermsKind, t: Translate): string {
+  return `${t(`${termsKeys(kind)}.fileName`)}-${contractTermsVersion(kind)}.pdf`;
+}
+
+/** "conditions-generales-de-vente-2026-11-11.pdf" / "terms-of-sale-2026-11-11.pdf". */
+export function termsOfSaleFileName(t: Translate): string {
+  return contractTermsFileName("sale", t);
+}
+
+export { STUDIO_TERMS_VERSION, TERMS_OF_SALE_VERSION };

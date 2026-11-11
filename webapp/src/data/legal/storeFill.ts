@@ -4,7 +4,7 @@ import type { LegalDocument } from "./types";
 
 /**
  * Fills the "business information to supply" markers of a static legal page
- * (terms of sale, terms of use, privacy policy) with the details saved in Settings › Store,
+ * (terms of sale, Studio subscription terms, terms of use, privacy policy) with the details saved in Settings › Store,
  * as the legal notice does. A detail that has not been supplied keeps its
  * marker, so the page still shows what is missing instead of inventing it.
  *
@@ -26,6 +26,11 @@ export interface LegalStoreDetails {
   legalForm: string;
   publisherName: string;
   publisherLegalName: string;
+  /** The publisher sells the 3D Studio (decision 133): its identity fills the Studio subscription terms. */
+  publisherLegalForm: string;
+  publisherRegistrationNumber: string;
+  /** One line, country included ("2 rue …, 67000 Strasbourg, France"). */
+  publisherAddress: string;
   registrationNumber: string;
   supportEmail: string;
   country: string;
@@ -64,8 +69,26 @@ export function publisherName(store: Pick<LegalStoreDetails, "publisherName" | "
   return store.publisherName.trim() || store.publisherLegalName.trim();
 }
 
+/**
+ * The 3D Studio's seller — the website publisher (decision 133) — as the
+ * Studio subscription terms name it: "DoDigital — <legal name>, <legal form>",
+ * or what of it is known.
+ */
+export function studioSellerIdentity(
+  store: Pick<LegalStoreDetails, "publisherName" | "publisherLegalName" | "publisherLegalForm">,
+): string {
+  const trading = store.publisherName.trim();
+  const legal = store.publisherLegalName.trim();
+  const who = [legal === trading ? "" : legal, store.publisherLegalForm.trim()].filter(Boolean).join(", ");
+  return [trading, who].filter(Boolean).join(" — ");
+}
+
 function replacements(store: LegalStoreDetails): Replacements {
   const publisher = publisherName(store);
+  // The Studio's seller has markers of its own: the Studio terms can never be filled with the shop's seller.
+  const studioSeller = store.publisherLegalName.trim() ? studioSellerIdentity(store) : "";
+  const studioAddress = store.publisherAddress.trim();
+  const studioRegistration = store.publisherRegistrationNumber.trim();
   const seller = store.legalName.trim() ? sellerIdentity(store) : "";
   const office = (lang: "fr" | "en") => officeAddress(store, lang);
   const registration = store.registrationNumber.trim();
@@ -79,6 +102,9 @@ function replacements(store: LegalStoreDetails): Replacements {
       "[[!Numéro d’immatriculation]]": registration,
       "[[!E-mail du service client]]": support,
       "[[!E-mail confidentialité]]": support,
+      "[[!Vendeur du Studio, dénomination et forme juridique]]": studioSeller,
+      "[[!Adresse du vendeur du Studio]]": studioAddress,
+      "[[!Immatriculation du vendeur du Studio]]": studioRegistration,
     },
     en: {
       "[[!Legal business name]]": publisher,
@@ -88,6 +114,9 @@ function replacements(store: LegalStoreDetails): Replacements {
       "[[!Registration number]]": registration,
       "[[!Customer service email]]": support,
       "[[!Privacy email]]": support,
+      "[[!Studio seller legal name and entity type]]": studioSeller,
+      "[[!Studio seller address]]": studioAddress,
+      "[[!Studio seller registration number]]": studioRegistration,
     },
   };
 }

@@ -41,8 +41,8 @@ export const TERMS_OF_USE: LegalDocument = {
       tone: "policy",
       title: l("En bref", "In short"),
       text: l(
-        "Un seul compte donne accès à la boutique, à l’Academy et au Studio 3D. Vous restez responsable de ce que vous publiez, nous modérons les contenus qui ne respectent pas ces règles, et les achats sont régis par les <<conditions générales de vente|/conditions-generales>>.",
-        "One account gives you access to the shop, the Academy and the 3D Studio. You remain responsible for what you post, we moderate content that does not follow these rules, and purchases are governed by the <<terms of sale|/conditions-generales>>.",
+        "Un seul compte donne accès à la boutique, à l’Academy et au Studio 3D. Vous restez responsable de ce que vous publiez, nous modérons les contenus qui ne respectent pas ces règles, et les achats sont régis par les <<conditions générales de vente|/conditions-generales>>, l’abonnement au Studio 3D par ses <<conditions d’abonnement|/conditions-abonnement-studio>>.",
+        "One account gives you access to the shop, the Academy and the 3D Studio. You remain responsible for what you post, we moderate content that does not follow these rules, and purchases are governed by the <<terms of sale|/conditions-generales>>, the 3D Studio subscription by its <<subscription terms|/conditions-abonnement-studio>>.",
       ),
     },
   ],
@@ -289,8 +289,8 @@ export const TERMS_OF_USE: LegalDocument = {
           kind: "callout",
           tone: "policy",
           text: l(
-            "L’éditeur du Studio est accessible avec un compte : un essai gratuit de 48 heures, une fois par compte, puis un abonnement (Essential, Artist ou Atelier). Ce que chaque formule permet est présenté sur la page du Studio 3D ; les conditions de paiement, de résiliation et de rétractation figurent dans les <<conditions générales de vente|/conditions-generales#studio>>. Les créations publiées sur une page Glowbook sont relues par notre équipe avant d’être visibles publiquement.",
-            "The Studio editor is available with an account: a free 48-hour trial, once per account, then a subscription (Essential, Artist or Atelier). What each plan allows is set out on the 3D Studio page; payment, cancellation and withdrawal terms are in the <<terms of sale|/conditions-generales#studio>>. Creations published on a Glowbook page are reviewed by our team before they become publicly visible.",
+            "L’éditeur du Studio est accessible avec un compte : un essai gratuit de 48 heures, une fois par compte, puis un abonnement (Essential, Artist ou Atelier). Ce que chaque formule permet est présenté sur la page du Studio 3D ; l’abonnement est vendu par l’éditeur du site et ses conditions de paiement, de résiliation et de rétractation figurent dans les <<conditions générales d’abonnement au Studio 3D|/conditions-abonnement-studio>>. Les créations publiées sur une page Glowbook sont relues par notre équipe avant d’être visibles publiquement.",
+            "The Studio editor is available with an account: a free 48-hour trial, once per account, then a subscription (Essential, Artist or Atelier). What each plan allows is set out on the 3D Studio page; the subscription is sold by the website publisher, and its payment, cancellation and withdrawal terms are in the <<3D Studio subscription terms|/conditions-abonnement-studio>>. Creations published on a Glowbook page are reviewed by our team before they become publicly visible.",
           ),
         },
       ],

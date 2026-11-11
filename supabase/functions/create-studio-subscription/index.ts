@@ -7,7 +7,7 @@ import {
   STUDIO_METADATA_KIND,
   STUDIO_WITHDRAWAL_CONSENT,
 } from "../_shared/studioBilling.ts";
-import { TERMS_OF_SALE_VERSION } from "../_shared/legal/terms.ts";
+import { STUDIO_TERMS_VERSION } from "../_shared/legal/studioTerms.ts";
 import { handleStudioCheckout, type StudioCheckoutDeps } from "./handler.ts";
 
 /*
@@ -16,7 +16,7 @@ import { handleStudioCheckout, type StudioCheckoutDeps } from "./handler.ts";
  */
 
 const supabase = serviceClient();
-// The Studio's Stripe account: the publisher's (DoDigital, decision 131), `STRIPE_*`.
+// The Studio's Stripe account: the publisher's (DoDigital, decision 133), `STRIPE_*`.
 const stripe = stripeClient("studio");
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 
@@ -80,7 +80,7 @@ const deps: StudioCheckoutDeps = {
         policy_version: STUDIO_WITHDRAWAL_CONSENT.version,
         source: "checkout",
         // The terms of sale in force when the member pays: the subscription's accepted version (decision 130).
-        terms_version: TERMS_OF_SALE_VERSION,
+        terms_version: STUDIO_TERMS_VERSION,
       })
       .select("id")
       .single();

@@ -1,8 +1,9 @@
 /**
- * The terms of sale every contract confirmation carries on a durable medium
- * (art. L221-13 of the French Consumer Code, decision 130): the shop order
- * confirmation (goods, courses and gift cards bought), the course enrolment
- * and the 3D Studio subscription confirmation.
+ * The terms every contract confirmation carries on a durable medium (art.
+ * L221-13 of the French Consumer Code, decision 130): the terms of sale with
+ * the shop order confirmation (goods, courses and gift cards bought — the
+ * seller), the 3D Studio subscription terms with the Studio subscription
+ * confirmation (the website publisher, decision 133).
  *
  * The PDF is drawn from the web page's own data (`_shared/legal/`, a generated
  * copy of webapp/src/data/legal/, `npm run sync:documents`) by the documents'
@@ -22,11 +23,14 @@ import type { DocumentBlock } from "../documents/template.ts";
 import { renderDocument } from "../documents/template.ts";
 import type { LegalStoreDetails } from "../legal/storeFill.ts";
 import {
+  contractTermsDocument,
+  contractTermsFileName,
+  contractTermsSource,
+  contractTermsVersion,
+  type ContractTermsKind,
   legalDocumentBlocks,
+  STUDIO_TERMS_VERSION,
   type TermsLang,
-  termsOfSaleDocument,
-  termsOfSaleFileName,
-  termsOfSaleSource,
   TERMS_OF_SALE_VERSION,
 } from "../legal/termsDocument.ts";
 import { type Block, heading, paragraph } from "./components.ts";
@@ -35,10 +39,12 @@ import { documentFormat, documentTranslator, type MailAttachment, toBase64 } fro
 import { chromeLocale } from "./layout.ts";
 import { color, fontStack } from "./tokens.ts";
 
-export { TERMS_OF_SALE_VERSION };
+export { type ContractTermsKind, STUDIO_TERMS_VERSION, TERMS_OF_SALE_VERSION };
 
-/** The terms of sale ready for one e-mail: attached as a PDF, or written into it. */
+/** A contract's terms ready for one e-mail: attached as a PDF, or written into it. */
 export interface TermsForEmail {
+  /** Which contract's terms: the terms of sale, or the 3D Studio subscription terms. */
+  kind: ContractTermsKind;
   version: string;
   /** The language of the copy (the order's or the member's). */
   lang: TermsLang;
@@ -48,8 +54,8 @@ export interface TermsForEmail {
   fallback: Block[];
 }
 
-/** Produces the terms for an e-mail in a locale, for a reference ("Order GT-…"). */
-export type TermsProvider = (locale: string, reference: string) => Promise<TermsForEmail>;
+/** Produces a contract's terms for an e-mail in a locale, for a reference ("Order GT-…"); the terms of sale by default. */
+export type TermsProvider = (locale: string, reference: string, kind?: ContractTermsKind) => Promise<TermsForEmail>;
 
 type Log = (message: string, detail?: unknown) => void;
 
@@ -57,20 +63,46 @@ const LABELS = {
   fr: {
     order: (number: string) => `Commande ${number}`,
     studio: (plan: string) => `Abonnement Studio 3D — ${plan}`,
-    attached: (version: string) => `Conditions générales de vente jointes à cet e-mail (PDF) : version du ${version}.`,
-    inline: (version: string) => `Conditions générales de vente reproduites dans cet e-mail : version du ${version}.`,
-    fallbackTitle: (version: string) => `Conditions générales de vente — version du ${version}`,
-    fallbackIntro:
-      "Le document PDF n’a pas pu être joint : voici le texte intégral des conditions générales de vente qui s’appliquent à votre commande. Conservez cet e-mail.",
   },
   en: {
     order: (number: string) => `Order ${number}`,
     studio: (plan: string) => `3D Studio subscription — ${plan}`,
-    attached: (version: string) => `Terms of sale attached to this email (PDF): version of ${version}.`,
-    inline: (version: string) => `Terms of sale reproduced in this email: version of ${version}.`,
-    fallbackTitle: (version: string) => `Terms of sale — version of ${version}`,
-    fallbackIntro:
-      "The PDF could not be attached: here is the full text of the terms of sale that apply to your order. Keep this email.",
+  },
+} as const;
+
+/** The e-mail's words for each contract's terms. */
+const TERMS_LABELS = {
+  sale: {
+    fr: {
+      attached: (version: string) => `Conditions générales de vente jointes à cet e-mail (PDF) : version du ${version}.`,
+      inline: (version: string) => `Conditions générales de vente reproduites dans cet e-mail : version du ${version}.`,
+      fallbackTitle: (version: string) => `Conditions générales de vente — version du ${version}`,
+      fallbackIntro:
+        "Le document PDF n’a pas pu être joint : voici le texte intégral des conditions générales de vente qui s’appliquent à votre commande. Conservez cet e-mail.",
+    },
+    en: {
+      attached: (version: string) => `Terms of sale attached to this email (PDF): version of ${version}.`,
+      inline: (version: string) => `Terms of sale reproduced in this email: version of ${version}.`,
+      fallbackTitle: (version: string) => `Terms of sale — version of ${version}`,
+      fallbackIntro:
+        "The PDF could not be attached: here is the full text of the terms of sale that apply to your order. Keep this email.",
+    },
+  },
+  studio: {
+    fr: {
+      attached: (version: string) => `Conditions générales d’abonnement au Studio 3D jointes à cet e-mail (PDF) : version du ${version}.`,
+      inline: (version: string) => `Conditions générales d’abonnement au Studio 3D reproduites dans cet e-mail : version du ${version}.`,
+      fallbackTitle: (version: string) => `Conditions générales d’abonnement au Studio 3D — version du ${version}`,
+      fallbackIntro:
+        "Le document PDF n’a pas pu être joint : voici le texte intégral des conditions d’abonnement qui s’appliquent à votre abonnement. Conservez cet e-mail.",
+    },
+    en: {
+      attached: (version: string) => `3D Studio subscription terms attached to this email (PDF): version of ${version}.`,
+      inline: (version: string) => `3D Studio subscription terms reproduced in this email: version of ${version}.`,
+      fallbackTitle: (version: string) => `3D Studio subscription terms — version of ${version}`,
+      fallbackIntro:
+        "The PDF could not be attached: here is the full text of the subscription terms that apply to your subscription. Keep this email.",
+    },
   },
 } as const;
 
@@ -89,14 +121,15 @@ export function studioReference(planName: string, locale: string): string {
   return LABELS[termsLang(locale)].studio(planName);
 }
 
-function versionLabel(lang: TermsLang): string {
-  return documentFormat(lang).date(`${TERMS_OF_SALE_VERSION}T12:00:00Z`);
+function versionLabel(kind: ContractTermsKind, lang: TermsLang): string {
+  return documentFormat(lang).date(`${contractTermsVersion(kind)}T12:00:00Z`);
 }
 
-/** The footer line naming the version given, in the e-mail's language. */
+/** The footer line naming the terms and the version given, in the e-mail's language. */
 export function termsFooterNote(terms: TermsForEmail, locale: string): string {
   const lang = termsLang(locale);
-  return terms.attachment ? LABELS[lang].attached(versionLabel(lang)) : LABELS[lang].inline(versionLabel(lang));
+  const words = TERMS_LABELS[terms.kind][lang];
+  return terms.attachment ? words.attached(versionLabel(terms.kind, lang)) : words.inline(versionLabel(terms.kind, lang));
 }
 
 const strongStyle = `margin:18px 0 8px;font-family:${fontStack};font-size:16px;line-height:1.4;font-weight:700;color:${color.ink};`;
@@ -106,9 +139,10 @@ function clause(text: string): Block {
 }
 
 /** The flattened terms as e-mail blocks (the same blocks the PDF lays out). */
-export function termsFallbackBlocks(blocks: DocumentBlock[], lang: TermsLang): Block[] {
-  const version = versionLabel(lang);
-  const out: Block[] = [heading(LABELS[lang].fallbackTitle(version)), paragraph(LABELS[lang].fallbackIntro)];
+export function termsFallbackBlocks(blocks: DocumentBlock[], lang: TermsLang, kind: ContractTermsKind = "sale"): Block[] {
+  const version = versionLabel(kind, lang);
+  const words = TERMS_LABELS[kind][lang];
+  const out: Block[] = [heading(words.fallbackTitle(version)), paragraph(words.fallbackIntro)];
   for (const block of blocks) {
     if (block.kind === "heading") out.push(block.level === 2 ? clause(block.text) : heading(block.text));
     else if (block.kind === "paragraph") out.push(paragraph(block.text));
@@ -128,8 +162,9 @@ export interface TermsOptions {
   log?: Log;
 }
 
-/** The terms of sale for one e-mail: the PDF, else the text written into the e-mail (logged). */
-export function termsOfSaleForEmail(
+/** A contract's terms for one e-mail: the PDF, else the text written into the e-mail (logged). */
+export function contractTermsForEmail(
+  kind: ContractTermsKind,
   store: LegalStoreDetails | null,
   locale: string,
   reference: string,
@@ -137,28 +172,51 @@ export function termsOfSaleForEmail(
 ): TermsForEmail {
   const lang = termsLang(locale);
   const t = documentTranslator(lang);
+  const version = contractTermsVersion(kind);
   try {
     const bytes = (options.render ?? renderDocument)(
-      termsOfSaleDocument({ lang, t, date: (iso) => documentFormat(lang).date(`${iso}T12:00:00Z`), store, reference }),
+      contractTermsDocument(kind, { lang, t, date: (iso) => documentFormat(lang).date(`${iso}T12:00:00Z`), store, reference }),
     );
     return {
-      version: TERMS_OF_SALE_VERSION,
+      kind,
+      version,
       lang,
-      attachment: { filename: termsOfSaleFileName(t), content: toBase64(bytes) },
+      attachment: { filename: contractTermsFileName(kind, t), content: toBase64(bytes) },
       fallback: [],
     };
   } catch (error) {
-    options.log?.("terms of sale PDF not drawn: the text goes into the e-mail", {
+    options.log?.(`${kind === "studio" ? "Studio subscription terms" : "terms of sale"} PDF not drawn: the text goes into the e-mail`, {
       reference,
       error: error instanceof Error ? error.message : error,
     });
     return {
-      version: TERMS_OF_SALE_VERSION,
+      kind,
+      version,
       lang,
       attachment: null,
-      fallback: termsFallbackBlocks(legalDocumentBlocks(termsOfSaleSource(store), lang, t), lang),
+      fallback: termsFallbackBlocks(legalDocumentBlocks(contractTermsSource(kind, store), lang, t), lang, kind),
     };
   }
+}
+
+/** The terms of sale for one e-mail (the shop's contracts). */
+export function termsOfSaleForEmail(
+  store: LegalStoreDetails | null,
+  locale: string,
+  reference: string,
+  options: TermsOptions = {},
+): TermsForEmail {
+  return contractTermsForEmail("sale", store, locale, reference, options);
+}
+
+/** The 3D Studio subscription terms for one e-mail (the publisher's contract, decision 133). */
+export function studioTermsForEmail(
+  store: LegalStoreDetails | null,
+  locale: string,
+  reference: string,
+  options: TermsOptions = {},
+): TermsForEmail {
+  return contractTermsForEmail("studio", store, locale, reference, options);
 }
 
 /** The store details the terms quote, read from Settings › Store; null when no row exists. */
@@ -166,7 +224,7 @@ export async function loadLegalStore(db: SupabaseClient): Promise<LegalStoreDeta
   const { data, error } = await db
     .from("store_settings")
     .select(
-      "trading_name, legal_name, legal_form, publisher_name, publisher_legal_name, registration_number, support_email, country_code, address_line1, address_line2, postal_code, city, region",
+      "trading_name, legal_name, legal_form, publisher_name, publisher_legal_name, publisher_legal_form, publisher_registration_number, publisher_address, registration_number, support_email, country_code, address_line1, address_line2, postal_code, city, region",
     )
     .limit(1)
     .maybeSingle();
@@ -179,6 +237,9 @@ export async function loadLegalStore(db: SupabaseClient): Promise<LegalStoreDeta
     legalForm: text(data.legal_form),
     publisherName: text(data.publisher_name),
     publisherLegalName: text(data.publisher_legal_name),
+    publisherLegalForm: text(data.publisher_legal_form),
+    publisherRegistrationNumber: text(data.publisher_registration_number),
+    publisherAddress: text(data.publisher_address),
     registrationNumber: text(data.registration_number),
     supportEmail: text(data.support_email),
     country: text(data.country_code) || "FR",
@@ -196,12 +257,12 @@ export async function loadLegalStore(db: SupabaseClient): Promise<LegalStoreDeta
  */
 export function supabaseTermsProvider(db: SupabaseClient, log?: Log): TermsProvider {
   let store: Promise<LegalStoreDetails | null> | null = null;
-  return async (locale, reference) => {
+  return async (locale, reference, kind = "sale") => {
     store ??= loadLegalStore(db).catch((error) => {
       store = null;
       throw error;
     });
-    return termsOfSaleForEmail(await store, locale, reference, { log });
+    return contractTermsForEmail(kind, await store, locale, reference, { log });
   };
 }
 

@@ -336,7 +336,7 @@ Deno.test("a Studio withdrawal's refund settles the withdrawal, never an order",
   assertEquals(state.events.get("evt_w2")?.status, "processed");
 });
 
-// Two businesses, two Stripe accounts (decision 131): an endpoint acts only for
+// Two businesses, two Stripe accounts (decision 133): an endpoint acts only for
 // the businesses its account sells.
 function onEndpoint(deps: WebhookDeps, handles: Business[]): WebhookDeps {
   return { ...deps, verify: async (raw, sig) => ({ ...(await deps.verify(raw, sig)), handles: new Set(handles) }) };

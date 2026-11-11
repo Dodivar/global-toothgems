@@ -22,8 +22,9 @@
  * (`studio_invoice`); the withdrawal's AV- credit note follows the
  * acknowledgement on its own (`studio_credit_note`) once the refund is
  * confirmed — never attached to the acknowledgement, which may race it.
- * The Studio subscription confirmation carries the terms of sale (L221-13,
- * decision 130, `termsPdf.ts`): without a terms provider it is not sent (the
+ * The Studio subscription confirmation carries the 3D Studio subscription
+ * terms — the publisher's contract, decision 133 — (L221-13, decision 130,
+ * `termsPdf.ts`): without a terms provider it is not sent (the
  * next run, given one, sends it). The course enrolment carries none: the
  * order confirmation already did.
  * One row never stops the others, and nothing here throws for a failed e-mail.
@@ -376,9 +377,9 @@ export function sendStudioSubscriptionEmails(
   const terms = options.terms;
   return source.studioSubscriptions(options.limit ?? 25).then((rows) =>
     sendEach(rows, "studio subscription", (r) => r.subscriptionId, async (sub) => {
-      // The confirmation of the subscription contract carries the terms of sale (their Studio clause included).
+      // The confirmation of the subscription contract carries its own terms: the 3D Studio subscription terms.
       if (!terms) return null;
-      const copy = await terms(sub.locale, studioReference(studioPlanName(sub.plan, sub.locale), sub.locale));
+      const copy = await terms(sub.locale, studioReference(studioPlanName(sub.plan, sub.locale), sub.locale), "studio");
       const extra = withTerms(copy, sub.locale);
       const invoiceId = sub.stripeInvoiceId;
       const invoice = docs && invoiceId

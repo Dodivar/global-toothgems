@@ -7,7 +7,7 @@ import { readSiteOrigins } from "../_shared/http.ts";
 import { handleCheckout, releasePaymentStep, type CheckoutDeps, type ReleaseDeps } from "./handler.ts";
 
 const supabase = serviceClient();
-// The shop's Stripe account (the seller's, decision 131): created on first use, so a
+// The shop's Stripe account (the seller's, decision 133): created on first use, so a
 // missing account answers payment_unavailable instead of failing at boot.
 const stripe = lazyStripeClient("shop");
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));

@@ -9,7 +9,7 @@ import { handleRefundOrder, stripeReason, type RefundDeps, type RefundRow } from
  */
 
 const service = serviceClient();
-// Orders are paid on the shop's Stripe account (the seller's, decision 131).
+// Orders are paid on the shop's Stripe account (the seller's, decision 133).
 const stripe = lazyStripeClient("shop");
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 

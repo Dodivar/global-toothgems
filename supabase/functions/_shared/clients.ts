@@ -26,7 +26,7 @@ export function requireEnv(name: string): string {
 const readEnv = (name: string) => Deno.env.get(name);
 
 /**
- * The Stripe client of one business (decision 131, `stripeAccounts.ts`): `studio`
+ * The Stripe client of one business (decision 133, `stripeAccounts.ts`): `studio`
  * (the publisher's account, `STRIPE_*`) or `shop` (the seller's, `SHOP_STRIPE_*`,
  * borrowing the Studio's test keys until it exists). Throws
  * `StripeAccountNotConfigured` when the account has no usable key.
