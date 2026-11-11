@@ -15,12 +15,15 @@ import { describe, expect, it } from "vitest";
  * not fails here, before it reaches production.
  */
 
-const SRC = join(__dirname, "..", "..");
+/** The webapp root: `src/`, the App Router's `app/` (server routes) and the root `proxy.ts`. */
+const ROOT = join(__dirname, "..", "..", "..");
+const SCANNED = [join(ROOT, "src"), join(ROOT, "app"), join(ROOT, "proxy.ts")];
 
 /** The Auth methods Supabase checks a captcha token on. */
 const PROTECTED = ["signInWithPassword", "signUp", "resetPasswordForEmail", "resend", "signInWithIdToken", "signInWithOtp", "signInAnonymously"];
 
 function sourceFiles(dir: string): string[] {
+  if (!statSync(dir).isDirectory()) return [dir];
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) return name === "node_modules" ? [] : sourceFiles(path);
@@ -46,10 +49,10 @@ interface CallSite {
 
 function protectedCalls(): CallSite[] {
   const pattern = new RegExp(`\\.auth\\.(${PROTECTED.join("|")})\\s*\\(`, "g");
-  return sourceFiles(SRC).flatMap((path) => {
+  return SCANNED.flatMap(sourceFiles).flatMap((path) => {
     const source = readFileSync(path, "utf8");
     return Array.from(source.matchAll(pattern), (match) => ({
-      file: relative(SRC, path).replace(/\\/g, "/"),
+      file: relative(ROOT, path).replace(/\\/g, "/"),
       method: match[1],
       args: argumentsOf(source, (match.index ?? 0) + match[0].length - 1),
     }));
