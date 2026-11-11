@@ -19,6 +19,7 @@ import { PreferencesStep, type CreateFailure } from "../components/register/step
 import { useAuth } from "../lib/auth";
 import { confirmationRedirect, isSafeNext } from "../lib/authRedirect";
 import { useToast } from "../lib/toast";
+import { STUDIO_PATH } from "../lib/studioUrl";
 import { FORGOT_PATH } from "../lib/accountSecurity";
 import {
   EMPTY_REGISTRATION,
@@ -182,7 +183,7 @@ export function Register() {
   const create = async () => {
     setFailure(null);
     setCreating(true);
-    const result = await signUp(data, i18n.language, confirmationRedirect(afterConfirmation));
+    const result = await signUp(data, i18n.language, confirmationRedirect(afterConfirmation), returnPath?.startsWith(STUDIO_PATH) ? "studio" : undefined);
     setCreating(false);
     switch (result) {
       case "confirmationSent":

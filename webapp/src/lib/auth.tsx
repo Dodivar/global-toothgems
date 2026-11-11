@@ -4,7 +4,7 @@ import { Navigate, useLocation } from "./navigation";
 import type { User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
 import { DELIVERY_COUNTRIES } from "../data/countries";
-import { LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData } from "./registration";
+import { LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData, type SignupOrigin } from "./registration";
 import { authConfirmUrl, isSafeNext } from "./authRoutes";
 import { rememberGoogleTerms, takeGoogleTerms } from "./googleTerms";
 import { TermsGate } from "../components/auth/TermsGate";
@@ -105,7 +105,7 @@ interface AuthContextValue {
   initials: string;
   signInWithPassword: (email: string, password: string) => Promise<SignInResult>;
   /** Creates the account. `redirectTo` is where the confirmation link lands. */
-  signUp: (data: RegistrationData, locale: string, redirectTo: string) => Promise<SignUpResult>;
+  signUp: (data: RegistrationData, locale: string, redirectTo: string, origin?: SignupOrigin) => Promise<SignUpResult>;
   resendConfirmation: (email: string, redirectTo: string) => Promise<ResendResult>;
   /**
    * Sends the browser to Google, which brings it back through `/auth/confirm`
@@ -379,12 +379,12 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signUp = useCallback(
-    async (data: RegistrationData, locale: string, redirectTo: string): Promise<SignUpResult> => {
+    async (data: RegistrationData, locale: string, redirectTo: string, origin?: SignupOrigin): Promise<SignUpResult> => {
       if (!supabase) return "server";
       const { data: result, error } = await supabase.auth.signUp({
         email: data.email.trim(),
         password: data.password,
-        options: { emailRedirectTo: redirectTo, data: registrationMetadata(data, locale) },
+        options: { emailRedirectTo: redirectTo, data: registrationMetadata(data, locale, origin) },
       });
       if (error) {
         if (error.code === "user_already_exists" || error.code === "email_exists") return "emailTaken";

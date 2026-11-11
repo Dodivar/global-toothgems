@@ -4478,6 +4478,42 @@ export type Database = {
           },
         ]
       }
+      member_preferences: {
+        Row: {
+          created_at: string
+          updated_at: string
+          user_id: string
+          welcome_dismissed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          welcome_dismissed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          welcome_dismissed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "member_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscriptions: {
         Row: {
           confirm_expires_at: string | null

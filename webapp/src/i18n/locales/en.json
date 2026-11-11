@@ -985,6 +985,20 @@
     "navProfile": "Profile",
     "greeting": "Hi {{name}}",
     "memberSince": "Member since {{date}}",
+    "welcome": {
+      "eyebrow": "First steps",
+      "title": "Welcome! Where to start?",
+      "lead": "A few places worth a visit to get the most out of your account.",
+      "dismiss": "Hide the first steps",
+      "progress": "{{done}} of {{total}} done",
+      "done": "done",
+      "steps": {
+        "profile": { "title": "Complete my profile", "text": "Phone and delivery address, to order in two clicks." },
+        "shop": { "title": "Explore the shop", "text": "Add a favourite: we tell you when it goes on sale." },
+        "studio": { "title": "Try the 3D Studio", "text": "A free 48-hour trial to design your smile in 3D." },
+        "academy": { "title": "See the Academy", "text": "Professional training, with a certificate at the end." }
+      }
+    },
     "shell": {
       "openMenu": "Open the member space menu",
       "closeMenu": "Close the menu",
