@@ -187,8 +187,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Si vous vous connectez avec votre identifiant Apple, nous recevons uniquement votre nom (lors de la première connexion, si vous acceptez de le partager) et une adresse e-mail : la vôtre, ou une adresse relais créée par Apple si vous choisissez de masquer la vôtre. Nos e-mails envoyés à cette adresse relais vous sont transmis par Apple.",
-            "If you sign in with your Apple ID, we only receive your name (at the first sign-in, if you agree to share it) and an email address: yours, or a relay address created by Apple if you choose to hide yours. Our emails sent to that relay address are forwarded to you by Apple.",
+            "Si vous vous connectez avec votre identifiant Apple, nous recevons uniquement un identifiant attribué par Apple et une adresse e-mail : la vôtre, ou une adresse relais créée par Apple si vous choisissez de masquer la vôtre. Nos e-mails envoyés à cette adresse relais vous sont transmis par Apple.",
+            "If you sign in with your Apple ID, we only receive an identifier assigned by Apple and an email address: yours, or a relay address created by Apple if you choose to hide yours. Our emails sent to that relay address are forwarded to you by Apple.",
           ),
         },
       ],

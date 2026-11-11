@@ -57,6 +57,8 @@ function storage(): Storage | null {
 export function rememberSignInMethod(method: SignInMethod): void {
   try {
     storage()?.setItem(KEY, method);
+    // An abandoned redirect must not overwrite this method later.
+    storage()?.removeItem(PENDING_KEY);
   } catch {
     // Storage blocked: no badge, nothing else changes.
   }
