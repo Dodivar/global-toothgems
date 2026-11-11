@@ -72,7 +72,7 @@
   },
   "admin": {
     "title": "Members’ lounges",
-    "description": "Reports, decisions and complaints of the members’ lounges. Every decision is explained by e-mail to the member concerned and to the authors of the reports.",
+    "description": "Reports, decisions and complaints of the members’ lounges. Every decision is explained by e-mail to the member concerned; the authors of the reports are told the outcome.",
     "unavailableTitle": "Moderation unavailable",
     "unavailableBody": "Lounge moderation needs the database connection.",
     "forbiddenTitle": "Restricted",
@@ -169,7 +169,7 @@
     },
     "statementLabel": "Explanation (required)",
     "statementHintDismiss": "E-mailed to the authors of the reports. At least {{min}} characters.",
-    "statementHint": "E-mailed to the member concerned (statement of reasons) and visible to the authors of the reports. At least {{min}} characters; do not name the people who reported.",
+    "statementHint": "E-mailed to the member concerned (statement of reasons). The authors of the reports only receive the outcome. At least {{min}} characters; do not name the people who reported.",
     "cancel": "Cancel",
     "appellant": {
       "target": "Member concerned",

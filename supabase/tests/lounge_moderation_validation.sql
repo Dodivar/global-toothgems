@@ -399,6 +399,11 @@ begin
   exception when invalid_parameter_value then null;
   end;
   perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
+  v := public.lounge_my_moderation();
+  if not exists (select 1 from jsonb_array_elements(v -> 'reports') r
+                  where r -> 'decision' ->> 'action' = 'dismiss' and r -> 'decision' ->> 'statement' like 'A greeting%') then
+    raise exception 'FAIL A2: the reporter does not read the dismissal''s explanation %', v -> 'reports';
+  end if;
   ap1 := (public.lounge_submit_appeal(dec2, 'There is context you did not see.') ->> 'id')::uuid;
   perform set_config('request.jwt.claims', json_build_object('sub', mdr, 'role', 'authenticated')::text, true);
   perform public.lounge_answer_appeal(ap1, 'reversed', 'We are looking at the message again with that context.');
@@ -449,6 +454,14 @@ begin
   if v_cnt <> 1 then raise exception 'FAIL B1: unblocking'; end if;
   perform public.lounge_set_blocked(c, true);
   passed := passed || 'B1'::text;
+
+  -- R1: a reporter reads the outcome, not the statement written for the member concerned ------
+  v := public.lounge_my_moderation();
+  if exists (select 1 from jsonb_array_elements(v -> 'reports') r
+              where r -> 'decision' ->> 'action' <> 'dismiss' and r -> 'decision' ->> 'statement' is not null) then
+    raise exception 'FAIL R1: a reporter reads the statement of another member''s decision %', v -> 'reports';
+  end if;
+  passed := passed || 'R1'::text;
 
   -- E1: the export ----------------------------------------------------------------------------
   v := public.my_personal_data();

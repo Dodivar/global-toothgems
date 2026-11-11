@@ -670,7 +670,11 @@ begin
       select jsonb_agg(jsonb_build_object(
                'id', r.id, 'message_id', r.message_id, 'reason', r.reason, 'illegal_category', r.illegal_category,
                'status', r.status, 'created_at', r.created_at, 'resolved_at', r.resolved_at,
-               'decision', case when r.decision_id is not null then private.lounge_decision_json(r.decision_id, v_user) end)
+               -- The statement is written for the member concerned: a reporter reads it for a dismissal only.
+               'decision', case when r.decision_id is not null then
+                             private.lounge_decision_json(r.decision_id, v_user)
+                             || case when (select d.action from public.lounge_moderation_decisions d where d.id = r.decision_id) <> 'dismiss'
+                                     then jsonb_build_object('statement', null) else '{}'::jsonb end end)
              order by r.created_at desc)
         from public.lounge_reports r
        where r.reporter_id = v_user), '[]'::jsonb),

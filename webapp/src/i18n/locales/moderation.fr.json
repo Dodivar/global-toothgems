@@ -72,7 +72,7 @@
   },
   "admin": {
     "title": "Salons des membres",
-    "description": "Signalements, décisions et contestations des salons des membres. Chaque décision est expliquée par e-mail au membre concerné et aux auteurs des signalements.",
+    "description": "Signalements, décisions et contestations des salons des membres. Chaque décision est expliquée par e-mail au membre concerné ; les auteurs des signalements sont informés de la suite donnée.",
     "unavailableTitle": "Modération indisponible",
     "unavailableBody": "La modération des salons nécessite la connexion à la base de données.",
     "forbiddenTitle": "Accès réservé",
@@ -169,7 +169,7 @@
     },
     "statementLabel": "Explication (obligatoire)",
     "statementHintDismiss": "Envoyée par e-mail aux auteurs des signalements. Au moins {{min}} caractères.",
-    "statementHint": "Envoyée par e-mail au membre concerné (exposé des motifs) et visible des auteurs des signalements. Au moins {{min}} caractères ; n’y mettez pas le nom des personnes qui ont signalé.",
+    "statementHint": "Envoyée par e-mail au membre concerné (exposé des motifs). Les auteurs des signalements reçoivent seulement la suite donnée. Au moins {{min}} caractères ; n’y mettez pas le nom des personnes qui ont signalé.",
     "cancel": "Annuler",
     "appellant": {
       "target": "Membre concerné",
