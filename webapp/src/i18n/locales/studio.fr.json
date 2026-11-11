@@ -663,6 +663,8 @@
     "trialUntil": "Votre essai gratuit vous donne accès au Studio jusqu’au {{date}}.",
     "noPlan": "Choisissez une formule pour utiliser le Studio 3D. Vos créations restent dans votre compte.",
     "staffNote": "Votre compte d’équipe ouvre le Studio sans abonnement.",
+    "trialPlansTitle": "S’abonner dès maintenant",
+    "trialPlansBody": "Choisissez une formule pour vous abonner tout de suite. Votre essai gratuit prend alors fin et votre abonnement commence immédiatement ; rien n’est perdu, vos créations restent dans votre compte.",
     "choosePlan": "Choisir une formule",
     "openStudio": "Ouvrir le Studio",
     "withdrawal": {

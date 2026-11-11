@@ -663,6 +663,8 @@
     "trialUntil": "Your free trial gives you access to the Studio until {{date}}.",
     "noPlan": "Choose a plan to use the 3D Studio. Your creations stay in your account.",
     "staffNote": "Your team account opens the Studio without a subscription.",
+    "trialPlansTitle": "Subscribe now",
+    "trialPlansBody": "Choose a plan to subscribe right away. Your free trial then ends and your subscription starts at once; nothing is lost, your creations stay in your account.",
     "choosePlan": "Choose a plan",
     "openStudio": "Open the Studio",
     "withdrawal": {

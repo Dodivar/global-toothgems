@@ -5,6 +5,8 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { Clock, Sparkles } from "lucide-react";
+import { Link } from "../../../lib/navigation";
+import { ACCOUNT_STUDIO_PATH } from "../StudioPlans";
 import { useStudioAccess } from "../../../lib/studioAccess";
 import {
   countdownTickMs,
@@ -91,9 +93,10 @@ export function StudioAccessBadge() {
   const warning = isTrialWarning(left);
   const time = left > 0 ? t("studio.access.countdown.left", { time: formatRemaining(t, left) }) : t("studio.access.countdown.ended");
   return (
-    <span
+    <Link
+      to={ACCOUNT_STUDIO_PATH}
       className={clsx(
-        "inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-pill)] border px-2 py-0.5 text-[11px] font-semibold",
+        "inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-pill)] border px-2 py-0.5 text-[11px] font-semibold no-underline",
         warning
           ? "border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] text-[var(--status-warning-fg)]"
           : "border-[var(--gt-blue-200)] bg-[var(--gt-blue-50)] text-[var(--gt-blue-700)]",
@@ -102,6 +105,6 @@ export function StudioAccessBadge() {
       <Clock size={12} aria-hidden="true" />
       <span className="max-sm:sr-only">{t("studio.access.countdown.label")} · </span>
       {time}
-    </span>
+    </Link>
   );
 }
