@@ -228,7 +228,12 @@ begin
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
   r := public.studio_access_state();
-  if r ->> 'state' <> 'trial_expired' then raise exception 'FAIL S8: trial came back after the subscription %', r; end if;
+  -- The trial does not come back: no tier, and the state is the ended subscription
+  -- (since migration product_inclusions an ended subscription outranks an expired trial).
+  if r ->> 'state' <> 'subscription_ended' or r ->> 'tier' is not null
+     or (r ->> 'trial_expires_at')::timestamptz > now() then
+    raise exception 'FAIL S8: trial came back after the subscription %', r;
+  end if;
   passed := passed || 'S8'::text;
 
   raise exception 'ALL STUDIO TRIAL TESTS PASSED (%)', array_to_string(passed, ', ');

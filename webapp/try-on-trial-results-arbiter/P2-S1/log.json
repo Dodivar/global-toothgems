@@ -1,0 +1,273 @@
+{
+ "photo": "P2",
+ "photoFile": "IMG_8347.jpeg",
+ "scene": "S1",
+ "sceneName": "Essai 1 — Deux lignes (12 ronds, de 13 à 23 et de 43 à 33)",
+ "started": "2026-11-05T11:12:43.119Z",
+ "calls": [
+  {
+   "response": {
+    "at": 1614,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 1628,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 8045,
+    "status": 200,
+    "body": {
+     "ok": true,
+     "crop": {
+      "x": 77,
+      "y": 705,
+      "width": 1345,
+      "height": 576,
+      "photo_width": 1536,
+      "photo_height": 2048
+     },
+     "teeth": [
+      {
+       "fdi": "13",
+       "x": 316,
+       "y": 175,
+       "width": 67,
+       "height": 150
+      },
+      {
+       "fdi": "12",
+       "x": 370,
+       "y": 170,
+       "width": 81,
+       "height": 161
+      },
+      {
+       "fdi": "11",
+       "x": 451,
+       "y": 158,
+       "width": 107,
+       "height": 179
+      },
+      {
+       "fdi": "21",
+       "x": 558,
+       "y": 158,
+       "width": 108,
+       "height": 179
+      },
+      {
+       "fdi": "22",
+       "x": 666,
+       "y": 164,
+       "width": 107,
+       "height": 167
+      },
+      {
+       "fdi": "23",
+       "x": 773,
+       "y": 164,
+       "width": 95,
+       "height": 156
+      },
+      {
+       "fdi": "24",
+       "x": 868,
+       "y": 164,
+       "width": 94,
+       "height": 144
+      },
+      {
+       "fdi": "25",
+       "x": 962,
+       "y": 176,
+       "width": 80,
+       "height": 126
+      },
+      {
+       "fdi": "26",
+       "x": 1042,
+       "y": 181,
+       "width": 68,
+       "height": 110
+      },
+      {
+       "fdi": "43",
+       "x": 370,
+       "y": 320,
+       "width": 67,
+       "height": 75
+      },
+      {
+       "fdi": "42",
+       "x": 424,
+       "y": 320,
+       "width": 80,
+       "height": 86
+      },
+      {
+       "fdi": "41",
+       "x": 504,
+       "y": 325,
+       "width": 81,
+       "height": 87
+      },
+      {
+       "fdi": "31",
+       "x": 585,
+       "y": 325,
+       "width": 94,
+       "height": 93
+      },
+      {
+       "fdi": "32",
+       "x": 679,
+       "y": 320,
+       "width": 94,
+       "height": 92
+      },
+      {
+       "fdi": "33",
+       "x": 773,
+       "y": 314,
+       "width": 81,
+       "height": 86
+      },
+      {
+       "fdi": "34",
+       "x": 854,
+       "y": 308,
+       "width": 81,
+       "height": 81
+      },
+      {
+       "fdi": "35",
+       "x": 935,
+       "y": 302,
+       "width": 80,
+       "height": 70
+      },
+      {
+       "fdi": "36",
+       "x": 1015,
+       "y": 297,
+       "width": 81,
+       "height": 63
+      }
+     ],
+     "centrals": {
+      "x": 508,
+      "y": 157,
+      "width": 360,
+      "height": 258
+     },
+     "teeth_readings": {
+      "asked": 1,
+      "answered": 1,
+      "kept": 1
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 44594,
+    "status": 200,
+    "body": {
+     "ok": true,
+     "image": "<image/png>",
+     "crop": {
+      "x": 77,
+      "y": 705,
+      "width": 1345,
+      "height": 576,
+      "photo_width": 1536,
+      "photo_height": 2048
+     }
+    }
+   }
+  }
+ ],
+ "creationTitle": "Essai 1 — Deux lignes (12 ronds, de 13 à 23 et de 43 à 33)",
+ "clicked": 2114,
+ "placement": {
+  "audience": "artist",
+  "source": "own",
+  "teeth_found": 18,
+  "teeth_kept": 14,
+  "teeth_set_aside": 4,
+  "centrals_box": true,
+  "confidence": 0.83,
+  "reliable": true,
+  "issues": [
+   "outliers",
+   "design_teeth_missing"
+  ],
+  "rms": 0.162,
+  "lower_offset_mm": -0.88,
+  "renumbered_upper": 0,
+  "renumbered_lower": 0,
+  "midline_error": 0.058,
+  "gems_placed": 12,
+  "gems_hidden": 0,
+  "gems_on_fitted_teeth": 1,
+  "gems_skipped": 0,
+  "marks": 11,
+  "left_out": 1,
+  "arbiter": "applied",
+  "arbiter_triggered": true,
+  "arbiter_gap_found": true,
+  "arbiter_teeth_offset": -0.96,
+  "arbiter_centrals_offset": 0.25,
+  "arbiter_corrections": [
+   "shifted"
+  ],
+  "arbiter_snapped": 0,
+  "arbiter_segmented_upper": 7,
+  "arbiter_segmented_lower": 6,
+  "arbiter_would_be_reliable": null,
+  "arbiter_would_midline_error": null,
+  "outcome": "render"
+ },
+ "result": {
+  "audience": "artist",
+  "source": "own",
+  "outcome": "ok",
+  "masked": true,
+  "gems_checked": 11,
+  "gems_drawn": 11,
+  "gems_missing": 0,
+  "gems_drifted": 6,
+  "gems_resized": 6,
+  "gems_reseated": 6,
+  "drift_mean": 0.81,
+  "drift_max": 1.93,
+  "size_mean": 1.36,
+  "size_max": 1.9
+ },
+ "ended": 45134,
+ "outcome": "result",
+ "report": "",
+ "notes": [
+  "1 gemme de la création n’a pas été posée : l’endroit de la dent où elle va n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents)."
+ ],
+ "total": 45261
+}

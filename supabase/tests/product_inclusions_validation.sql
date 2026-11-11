@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Product inclusions validation suite (migration 20261108170000_product_inclusions)
 -- =============================================================================
--- Proves, as the roles that really call it (decision 127):
+-- Proves, as the roles that really call it (decision 129):
 --
 --   P1  a visitor, a customer and a `viewer` cannot set what a product grants
 --       (42501); a manager can; invalid inclusions are refused;
@@ -87,7 +87,7 @@ begin
 
   -- The course, as the manager; then the pack's kit and inclusions ---------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform public.admin_save_course(jsonb_build_object(
     'id', c1, 'slug', 'pack-test-course', 'title', 'Masterclass test', 'category', 'technique', 'level', 'beginner',
     'price', '500.00', 'modules', jsonb_build_array(
@@ -115,7 +115,7 @@ begin
     raise exception 'FAIL P1: a refused call left inclusions';
   end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   perform public.admin_save_product_bundle(pack, jsonb_build_array(jsonb_build_object('product_id', kitpro, 'quantity', 1)));
   select count(*) into v_cnt from public.admin_save_product_inclusions(pack, jsonb_build_array(

@@ -1,0 +1,54 @@
+{
+ "photo": "P1",
+ "photoFile": "IMG_8344.jpeg",
+ "scene": "S1",
+ "sceneName": "Essai 1 — Deux lignes (12 ronds, de 13 à 23 et de 43 à 33)",
+ "started": "2026-11-05T11:12:26.237Z",
+ "calls": [
+  {
+   "response": {
+    "at": 6928,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 6929,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 11485,
+    "status": 422,
+    "body": {
+     "ok": false,
+     "code": "photo_unsuitable",
+     "reasons": [
+      "not_frontal"
+     ]
+    }
+   }
+  }
+ ],
+ "creationTitle": "Essai 1 — Deux lignes (12 ronds, de 13 à 23 et de 43 à 33)",
+ "clicked": 6935,
+ "ended": 11801,
+ "outcome": "error",
+ "error": "Cette photo ne permet pas un bon rendu\nRien n’a été généré et ce rendu n’est pas compté. Reprenez une photo :\nde face : le téléphone à hauteur du sourire, sans tourner ni pencher la tête, les deux dents de devant bien visibles ;\nAUTRE PHOTO",
+ "total": 11855
+}

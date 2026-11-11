@@ -1,4 +1,10 @@
 import type { NextConfig } from "next";
+import { assertProductionConfig } from "./src/lib/supabase/productionGuard";
+
+// A production deployment never falls back to the mock data (AGENTS.md §4):
+// without the Supabase variables the app would serve demo products, a demo
+// payment and mock accounts. Vercel production builds stop here instead.
+assertProductionConfig(process.env);
 
 /**
  * See docs/migration-nextjs.md. Deployed on Vercel as a regular Next.js app
