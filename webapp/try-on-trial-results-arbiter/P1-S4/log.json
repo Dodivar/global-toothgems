@@ -1,0 +1,11 @@
+{
+ "photo": "P1",
+ "photoFile": "IMG_8344.jpeg",
+ "scene": "S4",
+ "sceneName": "Essai 4 — Zones difficiles (prémolaires, collets, bords)",
+ "outcome": "error",
+ "error": "Cette photo ne permet pas un bon rendu\nRien n’a été généré et ce rendu n’est pas compté. Reprenez une photo :\nde face : le téléphone à hauteur du sourire, sans tourner ni pencher la tête, les deux dents de devant bien visibles ;\nAUTRE PHOTO",
+ "skipped": "photo refused 2 times in a row (last on S2)",
+ "total": 0,
+ "calls": []
+}

@@ -827,7 +827,7 @@
     "metaDiplomaLabel": "You earn",
     "metaModules": "{{count}} modules",
     "metaDiploma": "Diploma included",
-    "priceNote": "One-off payment · 24-month access",
+    "priceNote": "One-off payment · lifetime access",
     "ctaStart": "Start this training",
     "ctaResume": "Resume this training",
     "ctaReview": "Revisit this training",
@@ -936,7 +936,7 @@
   "lesson": {
     "eyebrow": "Course in progress",
     "progressLabel": "{{done}} of {{total}} lessons",
-    "remainingVideo": "{{minutes}} min of video left · 24-month access",
+    "remainingVideo": "{{minutes}} min of video left · lifetime access",
     "certificateTitle": "Certificate",
     "certificateBody": "Awarded after all 9 lessons, each module's quiz, and three case-review submissions.",
     "certificateLink": "View my certificates",
@@ -4791,6 +4791,8 @@
         "fileType": "Only JPG, PNG and PDF files are accepted.",
         "send": {
           "rate_limited": "You have sent several messages in a row. Please wait a few minutes before trying again.",
+          "captcha_required": "The anti-robot check is still running… Try again in a moment; your details stay in this form.",
+          "captcha_failed": "The anti-robot check did not succeed. Reload the page and try again; if an ad blocker is active, allow challenges.cloudflare.com.",
           "file_type": "An attachment was not recognised: only JPG, PNG and PDF files are accepted.",
           "too_many_files": "You can attach up to 5 files.",
           "files_too_large": "Your attachments are over 20 MB in total.",

@@ -28,7 +28,7 @@ export const POLICY = {
     "the cost of sending the goods back is yours",
   ),
   damageReport: l("3 jours ouvrés suivant la réception", "3 working days of receipt"),
-  courseAccess: l("24 mois à compter de l’achat", "24 months from purchase"),
+  courseAccess: l("sans limite de durée", "with no time limit"),
   currency: l("euros (EUR), toutes zones de livraison confondues", "euros (EUR), whatever the delivery zone"),
   paymentMethods: l(
     "carte bancaire (Visa, Mastercard, American Express…) et, selon votre appareil et votre pays, les autres moyens proposés par le formulaire de paiement (par exemple Apple Pay ou Google Pay)",
