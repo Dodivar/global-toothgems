@@ -1,9 +1,12 @@
 // `npm run sync:documents`: copies the portable part of the PDF documents
 // (src/lib/documents/) to supabase/functions/_shared/documents/, where the
 // Edge Functions that e-mail invoices and credit notes import it, plus the
-// documents' French and English strings. The webapp is the source; the copies
-// are generated, and `src/lib/documents/sync.test.ts` fails when they are
-// stale. `--check` only reports the difference.
+// documents' French and English strings; and the terms of sale with what they
+// are made of (src/data/legal/: text, shop rules, seller fill, PDF builder) to
+// supabase/functions/_shared/legal/, so the PDF every contract confirmation
+// carries is the web page's own text (decision 130). The webapp is the source;
+// the copies are generated, and `src/lib/documents/sync.test.ts` fails when
+// they are stale. `--check` only reports the difference.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,6 +14,7 @@ import { fileURLToPath } from "node:url";
 const WEBAPP = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = join(WEBAPP, "src/lib/documents");
 export const TARGET = join(WEBAPP, "../supabase/functions/_shared/documents");
+export const LEGAL_TARGET = join(WEBAPP, "../supabase/functions/_shared/legal");
 
 /** Modules with no import outside this list but the money helper (Edge: `_shared/money.ts`). */
 export const PORTABLE = [
@@ -36,7 +40,35 @@ function messages() {
   );
 }
 
-/** Every generated file: name in the target folder → content. */
+/**
+ * The terms of sale and their dependencies: source (from src/) → name in
+ * _shared/legal/. The webapp writes extensionless imports; Deno needs them
+ * spelled out, so each one is rewritten to its copy.
+ */
+export const LEGAL = {
+  "data/types.ts": "localized.ts",
+  "lib/countryName.ts": "countryName.ts",
+  "data/legal/types.ts": "types.ts",
+  "data/legal/routes.ts": "routes.ts",
+  "data/legal/policies.ts": "policies.ts",
+  "data/legal/terms.ts": "terms.ts",
+  "data/legal/studioTerms.ts": "studioTerms.ts",
+  "data/legal/storeFill.ts": "storeFill.ts",
+  "data/legal/termsDocument.ts": "termsDocument.ts",
+};
+
+function legalCopy(from) {
+  const source = readFileSync(join(WEBAPP, "src", from), "utf8")
+    .replaceAll('from "../types"', 'from "./localized.ts"')
+    .replaceAll('from "../../lib/countryName"', 'from "./countryName.ts"')
+    .replace(/from "\.\.\/\.\.\/lib\/documents\/([\w.]+)\.ts"/g, 'from "../documents/$1.ts"')
+    .replace(/from "\.\/(\w+)"/g, 'from "./$1.ts"');
+  const outside = /from "(?!\.\/\w+\.ts"|\.\.\/documents\/[\w.]+\.ts")[^"]*"/.exec(source);
+  if (outside) throw new Error(`${from} imports ${outside[0]}, which is not copied to _shared/legal`);
+  return `// Generated from webapp/src/${from} by webapp/scripts/sync-documents.mjs — edit the source, then run \`npm run sync:documents\`.\n` + source;
+}
+
+/** Every generated file: path from supabase/functions/_shared/documents → content. */
 export function expectedFiles() {
   const files = {};
   for (const name of PORTABLE) {
@@ -45,6 +77,7 @@ export function expectedFiles() {
     files[name] = header(name) + source;
   }
   files["messages.generated.ts"] = messages();
+  for (const [from, name] of Object.entries(LEGAL)) files[`../legal/${name}`] = legalCopy(from);
   return files;
 }
 
@@ -62,13 +95,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (process.argv.includes("--check")) {
     const stale = staleFiles();
     if (stale.length) {
-      console.error(`Stale copies in supabase/functions/_shared/documents: ${stale.join(", ")}. Run npm run sync:documents.`);
+      console.error(`Stale copies in supabase/functions/_shared: ${stale.join(", ")}. Run npm run sync:documents.`);
       process.exit(1);
     }
     console.log("Documents copies are up to date.");
   } else {
     mkdirSync(TARGET, { recursive: true });
+    mkdirSync(LEGAL_TARGET, { recursive: true });
     for (const [name, content] of Object.entries(expectedFiles())) writeFileSync(join(TARGET, name), content);
-    console.log(`Wrote ${Object.keys(expectedFiles()).length} files to supabase/functions/_shared/documents.`);
+    console.log(`Wrote ${Object.keys(expectedFiles()).length} files to supabase/functions/_shared/{documents,legal}.`);
   }
 }

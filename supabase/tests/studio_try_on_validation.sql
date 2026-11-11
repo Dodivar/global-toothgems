@@ -85,8 +85,8 @@ begin
   if v_json ? 'user_id' or v_json::text like '%' || artist || '%' then raise exception 'FAIL T2: owner id exposed'; end if;
   select s.try_on into v_flag from public.studio_shared_creation(v_token) s;
   if v_flag is distinct from true then raise exception 'FAIL T2: share flag %', v_flag; end if;
-  select s.try_on into v_flag from public.studio_shared_creation(v_lapsed_token) s;
-  if v_flag is distinct from false then raise exception 'FAIL T2: lapsed owner share flag %', v_flag; end if;
+  -- Decision 133: the link of an owner below the Artist plan no longer opens at all.
+  if exists (select 1 from public.studio_shared_creation(v_lapsed_token)) then raise exception 'FAIL T2: lapsed owner share link still opens'; end if;
   execute 'reset role';
   passed := passed || 'T2'::text;
 
@@ -116,7 +116,7 @@ begin
   -- T4: service role only
   foreach v_state in array array['anon', 'authenticated'] loop
     perform set_config('role', v_state, true);
-    perform set_config('request.jwt.claims', json_build_object('sub', client, 'role', v_state)::text, true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', client, 'role', v_state)::text, true);
     begin
       perform public.studio_try_on_creation(client, c_lapsed);
       raise exception 'FAIL T4: % calls studio_try_on_creation', v_state;
@@ -134,7 +134,7 @@ begin
   -- T5: requests and the reference bucket
   insert into public.studio_try_on_requests (user_id, creation_id, source) values (artist, c_art, 'own'), (client, c_art, 'glowbook');
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', client, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', client, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_try_on_requests;
   if v_cnt <> 1 then raise exception 'FAIL T5: member reads % rows', v_cnt; end if;
   v_state := null;

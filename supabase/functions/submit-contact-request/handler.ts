@@ -26,7 +26,7 @@ export const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
 const MAX_REQUEST_BYTES = MAX_TOTAL_BYTES + 512 * 1024;
 
 const CATEGORIES = [
-  "order", "delivery", "returns", "product", "training", "technical", "privacy", "professional", "other",
+  "order", "delivery", "returns", "product", "training", "technical", "privacy", "professional", "illegal_content", "other",
 ] as const;
 type Category = (typeof CATEGORIES)[number];
 
@@ -40,6 +40,7 @@ const CATEGORY_LABELS: Record<Category, string> = {
   technical: "Problème technique",
   privacy: "Demande de confidentialité",
   professional: "Demande professionnelle",
+  illegal_content: "Signalement de contenu illicite",
   other: "Autre",
 };
 

@@ -28,6 +28,7 @@ function course(id: string, overrides: Partial<PublicCourse> = {}): PublicCourse
     issuesCertificate: true,
     price,
     currentPrice: price,
+    referencePrice: null,
     promotionEndsAt: null,
     cover: null,
     modules: [],

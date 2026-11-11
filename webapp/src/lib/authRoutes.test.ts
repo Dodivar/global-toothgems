@@ -17,10 +17,10 @@ describe("gateFor", () => {
     }
   });
 
-  it("gates the back office behind staff, except its sign-in screen", () => {
+  it("gates the whole back office behind staff, with no open sign-in screen", () => {
     expect(gateFor("/admin")).toBe("staff");
     expect(gateFor("/admin/produits/42")).toBe("staff");
-    expect(gateFor("/admin/connexion")).toBeNull();
+    expect(gateFor("/admin/connexion")).toBe("staff");
   });
 
   it("leaves every other page open", () => {
@@ -31,9 +31,8 @@ describe("gateFor", () => {
 });
 
 describe("signInRedirect / returnPathFrom", () => {
-  it("sends members and staff to their own sign-in page with the path they asked for", () => {
-    expect(signInRedirect("account", "/compte/commandes", "?page=2")).toBe("/connexion?suite=%2Fcompte%2Fcommandes%3Fpage%3D2");
-    expect(signInRedirect("staff", "/admin", "")).toBe("/admin/connexion?suite=%2Fadmin");
+  it("sends members to the sign-in page with the path they asked for", () => {
+    expect(signInRedirect("/compte/commandes", "?page=2")).toBe("/connexion?suite=%2Fcompte%2Fcommandes%3Fpage%3D2");
   });
 
   it("reads the return path back, only when it stays on the site", () => {

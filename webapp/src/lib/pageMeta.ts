@@ -4,6 +4,7 @@ import { LEGAL_NOTICE } from "../data/legal/legalNotice";
 import { PRIVACY } from "../data/legal/privacy";
 import { RETURNS } from "../data/legal/returns";
 import { SHIPPING } from "../data/legal/shipping";
+import { STUDIO_TERMS } from "../data/legal/studioTerms";
 import { TERMS } from "../data/legal/terms";
 import { TERMS_OF_USE } from "../data/legal/termsOfUse";
 import type { LegalDocument } from "../data/legal/types";
@@ -44,10 +45,12 @@ const PAGES: Partial<Record<PublicRouteId, { title: Text; description?: Text }>>
   legalNotice: { title: { legal: LEGAL_NOTICE }, description: { legal: LEGAL_NOTICE } },
   terms: { title: { legal: TERMS }, description: { legal: TERMS } },
   termsOfUse: { title: { legal: TERMS_OF_USE }, description: { legal: TERMS_OF_USE } },
+  studioTerms: { title: { legal: STUDIO_TERMS }, description: { legal: STUDIO_TERMS } },
   privacy: { title: { legal: PRIVACY }, description: { legal: PRIVACY } },
   cookies: { title: { legal: COOKIE_POLICY }, description: { legal: COOKIE_POLICY } },
   shipping: { title: { legal: SHIPPING }, description: { legal: SHIPPING } },
   returns: { title: { legal: RETURNS }, description: { legal: RETURNS } },
+  withdrawal: { title: { key: "withdrawal.guest.title" }, description: { key: "withdrawal.guest.intro" } },
 };
 
 /** A UI string by its dotted key, as plain text (no markup, no line breaks). */

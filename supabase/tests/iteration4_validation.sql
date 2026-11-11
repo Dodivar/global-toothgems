@@ -159,7 +159,7 @@ begin
   passed := array_append(passed, 'G7 empty or unknown cards refused with the same generic error');
 
   -- G12 staff operations -----------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   v_manual := public.issue_gift_card(100, 'Bob.Test@example.invalid', 'Bob', 'Geste commercial', null, 'Retard de livraison');
   select balance, state into v_num, v_txt from public.gift_cards where id = v_manual;
@@ -206,7 +206,7 @@ begin
   select display_status into v_txt from public.gift_card_overview where id = gc.id;
   if v_txt <> 'redeemed' then raise exception 'FAIL G13: display status %', v_txt; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   select count(id) into v_cnt from public.gift_cards;
   if v_cnt <> 0 then raise exception 'FAIL G13: customer lists gift cards'; end if;
   v_state := null;
@@ -319,7 +319,7 @@ begin
   passed := array_append(passed, 'G16 scheduled cards cannot be used before their delivery date');
 
   -- G12b cancel ------------------------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   perform public.cancel_gift_card(v_manual, 'Fraude suspectée');
   select balance, state into v_num, v_txt from public.gift_cards where id = v_manual;

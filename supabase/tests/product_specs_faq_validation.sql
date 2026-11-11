@@ -55,7 +55,7 @@ begin
 
   -- S1: characteristics through admin_save_product()
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   r := public.admin_save_product(jsonb_build_object(
     'id', p_a, 'category_id', cat, 'sku', 'FAQ-TEST-A', 'slug', 'faq-test-a', 'name', 'FAQ A',
     'price', '12.00', 'status', 'active',
@@ -118,7 +118,7 @@ begin
   end;
   if not v_ok then raise exception 'FAIL S2: a visitor saved a group'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', cust, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cust, 'role', 'authenticated')::text, true);
   v_ok := false;
   begin
     perform public.admin_save_faq_group(jsonb_build_object('id', g_cat, 'name', 'X'));
@@ -131,7 +131,7 @@ begin
   exception when insufficient_privilege then v_ok := true;
   end;
   if not v_ok then raise exception 'FAIL S2: a customer inserted a group'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', viewer, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', viewer, 'role', 'authenticated')::text, true);
   v_ok := false;
   begin
     perform public.admin_save_faq_group(jsonb_build_object('id', g_cat, 'name', 'X'));
@@ -141,7 +141,7 @@ begin
   passed := passed || 'S2'::text;
 
   -- S3: a manager saves, resaves, and is refused bad payloads
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   r := public.admin_save_faq_group(jsonb_build_object(
     'id', g_cat, 'name', 'Catégorie test', 'status', 'published',
     'items', jsonb_build_array(
@@ -209,7 +209,7 @@ begin
 
   -- S5: a product's own published group replaces the category's
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform public.admin_save_faq_group(jsonb_build_object(
     'id', g_own, 'name', 'Produit B', 'status', 'published',
     'items', jsonb_build_array(jsonb_build_object('id', gen_random_uuid(), 'question', 'Propre ?', 'answer', 'Oui')),

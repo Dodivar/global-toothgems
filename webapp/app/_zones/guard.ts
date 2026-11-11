@@ -1,6 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { gateFor, signInRedirect } from "../../src/lib/authRoutes";
 import { PATH_HEADER } from "../../src/lib/localeHeader";
@@ -12,9 +12,10 @@ import { isActiveStaff, STAFF_PROFILE_COLUMNS, type StaffProfileRow } from "../.
  * Server-side turning away of signed-out visitors for the member space, the
  * learner pages and the back office (docs/migration-nextjs.md, phase 4) — the
  * same rule as the proxy (`gateFor`, `signInRedirect`), checked again where
- * the page is rendered — and, for the back office, of a signed-in account
- * that is not an active staff member (decided by the user, 2026-10-01): sent
- * to the back office's access screen, as `RequireAdmin` does in the browser.
+ * the page is rendered. The back office answers the site's 404 to anyone who
+ * is not an active staff member, signed in or not (decided by the user,
+ * 2026-10-01; a 404 rather than a sign-in page since 2026-11-11), as
+ * `RequireAdmin` does in the browser.
  * Navigation, not authorization: RLS decides every read and write. Mock mode
  * (no Supabase): nothing to check, the client guards decide, as before.
  */
@@ -35,9 +36,9 @@ const isStaffSession = cache(async (user: string): Promise<boolean> => {
 });
 
 /**
- * Redirects (307) a signed-out visitor away from a gated address to its
- * sign-in page, with `?suite=`; for the back office, a signed-in account
- * without an active staff role too.
+ * Redirects (307) a signed-out visitor away from a member address to the
+ * sign-in page, with `?suite=`; answers 404 on a back-office address to
+ * anyone without an active staff role.
  */
 export async function guardAddress(pathname: string, search: string) {
   if (!isSupabaseConfigured) return;
@@ -45,7 +46,8 @@ export async function guardAddress(pathname: string, search: string) {
   if (!gate) return;
   const user = await sessionUser();
   if (user && (gate !== "staff" || (await isStaffSession(user)))) return;
-  redirect(signInRedirect(gate, pathname, search));
+  if (gate === "staff") notFound();
+  redirect(signInRedirect(pathname, search));
 }
 
 /**

@@ -146,7 +146,10 @@
       },
       "consentTitle": "Right of withdrawal",
       "pay": "Pay {{amount}} and subscribe",
-      "seePlans": "See the plans"
+      "seePlans": "See the plans",
+      "consentBefore": "By clicking “Pay”, you take out a subscription with an obligation to pay and accept the",
+      "consentLink": "3D Studio subscription terms",
+      "consentAfter": "."
     },
     "activating": {
       "title": "We are activating your subscription",
@@ -195,7 +198,19 @@
         "title": "AI try-on comes with the {{plan}} plan",
         "short": "Show a design on a real smile photo before the appointment.",
         "body": "From a smile photo, the AI shows the saved design set on the teeth: a way to picture it before the appointment. Visitors can also try it from your Glowbook.",
-        "kept": "Your designs, the estimate and the placement sheet stay available with your current plan."
+        "kept": "Your designs and the estimate sheet stay available with your current plan."
+      },
+      "posts": {
+        "title": "Social posts come with the {{plan}} plan",
+        "short": "Turn a design into an HD image or a 360° video for your social networks.",
+        "body": "Create a post from a design: an HD image or a 360° video, in Story, square or portrait format, signed with your logo or without a watermark, ready to share from your phone.",
+        "kept": "Meanwhile, the PNG snapshot stays available, on the Studio backdrop with the Global Toothgems logo."
+      },
+      "clientTools": {
+        "title": "The front view, the placement sheet and sharing by link come with the {{plan}} plan",
+        "short": "Prepare the appointment and show the design to your client.",
+        "body": "The numbered front view of both arches, the placement sheet as a PDF to print for the appointment, and a read-only link to show the design in 3D to your client.",
+        "kept": "Your designs and the estimate sheet stay available. The links you had created no longer open for now and come back as they were as soon as you return to this plan."
       }
     }
   },
@@ -810,6 +825,8 @@
       "tryOn": "AI try-on for your clients",
       "included": "included",
       "withPlan": "with the {{plan}} plan",
+      "clientTools": "Front view, placement sheet and sharing by link",
+      "posts": "Social posts",
       "templates": "Global Toothgems templates",
       "collections": "Folders for your creations"
     }

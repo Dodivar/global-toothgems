@@ -37,6 +37,10 @@ export function WorkspaceDialogs() {
   // Below the Artist plan folders cannot be created, renamed or filled (decision 113 (b)):
   // those actions open the plan panel instead; deleting a folder stays open.
   const collectionsLocked = useStudioFeature("collections") === false;
+  // Share links and social posts are the Artist plan's and above (decision 133): every way in
+  // (card menu, creation detail, editor) lands here, so the plan panel replaces the dialog.
+  const clientToolsLocked = useStudioFeature("clientTools") === false;
+  const postsLocked = useStudioFeature("posts") === false;
   const close = closeWorkspaceDialog;
   if (!dialog) return null;
 
@@ -57,10 +61,12 @@ export function WorkspaceDialogs() {
     case "creationDetail":
       return <CreationDetail creationId={dialog.creationId} onClose={close} />;
     case "shareCreation":
+      if (clientToolsLocked) return <PlanLockedDialog feature="clientTools" onClose={close} />;
       return <ShareDialog creation={dialog.creation} onClose={close} />;
     case "tryOn":
       return <TryOnDialog creation={dialog.creation} source={{ kind: "own", creationId: dialog.creation.id }} onClose={close} />;
     case "socialExport":
+      if (postsLocked) return <PlanLockedDialog feature="posts" onClose={close} />;
       return (
         <Suspense fallback={null}>
           <SocialExportDialog creation={dialog.creation} onClose={close} />

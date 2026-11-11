@@ -25,12 +25,9 @@ test.describe("proxy", () => {
     ["/compte/commandes?page=2", "/connexion?suite=%2Fcompte%2Fcommandes%3Fpage%3D2"],
     ["/academy/lecon", "/connexion?suite=%2Facademy%2Flecon"],
     ["/academy/mes-formations/fondation/lecon/m1", "/connexion?suite=%2Facademy%2Fmes-formations%2Ffondation%2Flecon%2Fm1"],
-    ["/admin", "/admin/connexion?suite=%2Fadmin"],
-    ["/admin/produits/42", "/admin/connexion?suite=%2Fadmin%2Fproduits%2F42"],
     // Phase 4: every zone's own segment (the proxy, then the zone's layout and page).
     ["/compte/salons/en/discussion", "/connexion?suite=%2Fcompte%2Fsalons%2Fen%2Fdiscussion"],
     ["/academy/mes-formations/business/terminee", "/connexion?suite=%2Facademy%2Fmes-formations%2Fbusiness%2Fterminee"],
-    ["/admin/avis?vue=signales", "/admin/connexion?suite=%2Fadmin%2Favis%3Fvue%3Dsignales"],
     // An order's detail page.
     ["/compte/commandes/GT-100001", "/connexion?suite=%2Fcompte%2Fcommandes%2FGT-100001"],
   ]) {
@@ -41,12 +38,31 @@ test.describe("proxy", () => {
     });
   }
 
-  for (const path of ["/fr", "/en/shop", "/connexion", "/admin/connexion", "/fr/academy/formation/pose-essentielle", "/fr/studio-3d", "/studio-3d/atelier", "/studio-3d/partage/abc"]) {
+  for (const path of ["/fr", "/en/shop", "/connexion", "/fr/academy/formation/pose-essentielle", "/fr/studio-3d", "/studio-3d/atelier", "/studio-3d/partage/abc"]) {
     test(`leaves ${path} open`, async ({ request }) => {
       const response = await request.get(path, noRedirect);
       expect(response.status()).toBe(200);
     });
   }
+
+  // The back office has no sign-in page and answers anyone who is not staff
+  // exactly like an address the site does not have (decided 2026-11-11).
+  for (const path of ["/admin", "/admin/connexion", "/admin/produits/42", "/admin/avis?vue=signales", "/zz-adresse-inconnue"]) {
+    test(`answers a signed-out visitor of ${path} with the site's 404`, async ({ request }) => {
+      const response = await request.get(path, noRedirect);
+      expect(response.status()).toBe(404);
+      expect(response.headers()["location"]).toBeUndefined();
+    });
+  }
+
+  test("the back office's 404 is the site's own page", async ({ request }) => {
+    const unknown = await (await request.get("/zz-adresse-inconnue", noRedirect)).text();
+    const admin = await (await request.get("/admin", noRedirect)).text();
+    // Same document, apart from per-request ids: same title and no admin chrome.
+    const title = (html: string) => /<title>([^<]*)<\/title>/.exec(html)?.[1];
+    expect(title(admin)).toBe(title(unknown));
+    expect(admin).not.toContain("_introuvable");
+  });
 
   test("does not trust a forged session cookie", async ({ request }) => {
     const forged = `base64-${Buffer.from(JSON.stringify({ access_token: "forged.token.value", refresh_token: "x", expires_at: 9999999999 })).toString("base64url")}`;
@@ -71,12 +87,13 @@ test.describe("/auth/confirm", () => {
     for (const path of ["/compte/salons", "/academy/lecon"]) {
       expect((await request.get(path, noRedirect)).status(), path).toBe(200);
     }
-    // The back office does not: a signed-in account that is not staff is sent
-    // to its access screen (decided 2026-10-01), by the page's own check.
-    const admin = await request.get("/admin/produits?vue=archives", noRedirect);
-    expect(admin.status()).toBe(307);
-    expect(location(admin)).toBe("/admin/connexion?suite=%2Fadmin%2Fproduits%3Fvue%3Darchives");
-    expect((await request.get("/admin/connexion", noRedirect)).status()).toBe(200);
+    // The back office does not: a signed-in account that is not staff gets
+    // the site's 404 (decided 2026-10-01; 404 since 2026-11-11).
+    for (const path of ["/admin/produits?vue=archives", "/admin", "/admin/connexion"]) {
+      const admin = await request.get(path, noRedirect);
+      expect(admin.status(), path).toBe(404);
+      expect(admin.headers()["location"], path).toBeUndefined();
+    }
   });
 
   test("lets an active staff member into the back office", async ({ request }) => {

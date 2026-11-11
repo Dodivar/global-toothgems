@@ -37,7 +37,7 @@ begin
 
   -- T1: the owner writes the render path with the group, then changes it.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', ma, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', ma, 'role', 'authenticated')::text, true);
   insert into public.gem_groups (name, group_data, thumbnail_path)
     values ('Papillon', v_data, ma::text || '/groups/first.jpg')
     returning id into v_id;
@@ -56,7 +56,7 @@ begin
   passed := array_append(passed, 'T2 render path outside the owner folder refused');
 
   -- T3: another member neither sees nor changes the group.
-  perform set_config('request.jwt.claims', json_build_object('sub', mb, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mb, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.gem_groups where id = v_id;
   if v_cnt <> 0 then raise exception 'FAIL T3: other member sees the group'; end if;
   update public.gem_groups set thumbnail_path = null where id = v_id;
@@ -79,7 +79,7 @@ begin
   -- T5: designs of the former built-in library (format 1) are refused.
   execute 'reset role';
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', ma, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', ma, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     insert into public.creations (name, scene_data) values ('Old', '{"version":1,"pieces":[]}');
@@ -124,7 +124,7 @@ begin
 
   -- T7: a member cannot write the drawing rows.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', ma, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', ma, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     insert into public.studio_gem_appearances (product_id, shape, material, color) values (v_archived, 'heart', 'crystal', '#000000');

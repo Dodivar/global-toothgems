@@ -590,7 +590,7 @@
         "points": [
           "Type : image HD (PNG le plus net, ou JPEG plus léger), ou vidéo 360° (un tour complet en boucle, en MP4 sur téléphone et Safari).",
           "Format : Story (9:16), carré ou portrait (4:5).",
-          "Signature : avec la formule Essentielle et l’essai, le filigrane Global Toothgems figure sur chaque export. Les formules Artiste et Atelier signent avec votre propre logo (PNG, JPEG ou WebP, 2 Mo max.) ou sans rien. La formule Atelier ajoute des mises en page (fond, cadre, titre et votre compte).",
+          "Formules : les posts sont inclus à partir de la formule Artiste. Ils sont signés de votre propre logo (PNG, JPEG ou WebP, 2 Mo max.) ou sans rien. La formule Atelier ajoute des mises en page (fond, cadre, titre et votre compte).",
           "Publier : « Partager » ouvre le menu de partage de votre appareil avec le fichier (Instagram, TikTok, WhatsApp, Photos…) ; « Télécharger » enregistre le fichier, à publier ensuite depuis l’application ou le site de votre choix.",
           "Gardez l’onglet ouvert pendant l’enregistrement d’une vidéo. Certains navigateurs d’ordinateur enregistrent en WebM, que certaines applications refusent : un téléphone ou Safari enregistre en MP4."
         ]
@@ -655,11 +655,11 @@
       "plans": {
         "title": "Ce que comprend chaque formule",
         "body": [
-          "L’éditeur, toute la bibliothèque de gemmes, la vue de face, la fiche de pose, les liens de partage et les posts sont ouverts à toutes les formules. Elles diffèrent par ce que vous enregistrez et par les outils avancés :"
+          "L’éditeur, toute la bibliothèque de gemmes, la fiche d’estimation, la capture PNG et les modèles Global Toothgems sont ouverts à toutes les formules. Elles diffèrent par ce que vous enregistrez et par les outils avancés :"
         ],
         "points": [
-          "Essentielle : 15 créations et 3 groupes de gemmes enregistrés ; posts avec le filigrane Global Toothgems.",
-          "Artiste : 150 créations et 30 groupes ; posts signés de votre logo ou sans signature ; collections et dossiers ; modèles Global Toothgems.",
+          "Essentielle : 15 créations et 3 groupes de gemmes enregistrés ; modèles Global Toothgems.",
+          "Artiste : 150 créations et 30 groupes ; vue de face, fiche de pose et liens de partage ; posts pour les réseaux, signés de votre logo ou sans signature ; collections et dossiers.",
           "Atelier : créations et groupes illimités ; tout ce que comprend Artiste ; mises en page des posts ; Glowbook ; essai sur un sourire par IA, pour vous et pour les visiteurs de vos créations.",
           "Au-delà de la limite, un nouvel enregistrement est refusé (rien n’est perdu) : modifier ou supprimer une création reste toujours possible."
         ]

@@ -60,7 +60,7 @@ begin
 
   -- Courses, as the manager ------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform public.admin_save_course(jsonb_build_object(
     'id', c1, 'slug', 'vente-test-23', 'title', 'Vente test', 'category', 'technique', 'level', 'beginner',
     'price', '200.00', 'modules', jsonb_build_array(
@@ -165,13 +165,13 @@ begin
   if v_cnt <> 1 then raise exception 'FAIL D4: purchase entitlement not audited'; end if;
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', buyer, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.course_entitlements where course_id = c1;
   if v_cnt <> 1 then raise exception 'FAIL D4: the buyer reads % entitlements', v_cnt; end if;
   if jsonb_array_length(public.learner_courses()) <> 1 then raise exception 'FAIL D4: the buyer cannot open the course'; end if;
   select count(*) into v_cnt from public.order_items where order_id = o.id and course_id = c1;
   if v_cnt <> 1 then raise exception 'FAIL D4: the buyer cannot read the course line of their order'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', oth, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', oth, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.course_entitlements where course_id = c1;
   if v_cnt <> 0 then raise exception 'FAIL D4: another member reads the buyer''s entitlement'; end if;
   if public.learner_courses() <> '[]'::jsonb then raise exception 'FAIL D4: another member opens the course'; end if;
@@ -254,7 +254,7 @@ begin
 
   -- D11 -------------------------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', oth, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', oth, 'role', 'authenticated')::text, true);
   begin
     perform public.create_order(oth, 'o23@example.invalid', jsonb_build_array(jsonb_build_object('course_id', c1, 'quantity', 1)), fr);
     raise exception 'FAIL D11: a member called create_order';

@@ -15,6 +15,10 @@ if (!projectToken) {
     // Nothing is captured until the visitor accepts the analytics category
     // (`CookieConsentProvider` opts in and out).
     opt_out_capturing_by_default: true,
+    // ...and nothing is stored either: while opted out PostHog keeps no
+    // `ph_<token>_posthog` cookie or local entry (an identifier set before
+    // consent would itself need consent), and opting out erases it.
+    opt_out_persistence_by_default: true,
     debug: process.env.NODE_ENV === "development",
   });
 }

@@ -252,7 +252,7 @@ begin
   -- ===========================================================================
   -- Customers
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
 
   v_state := null;
@@ -309,7 +309,7 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '23514' then raise exception 'FAIL N: avatar_path outside own folder (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from storage.objects where bucket_id = 'avatars';
   if v_cnt <> 0 then raise exception 'FAIL N: Bob reads Alice avatar'; end if;
   passed := array_append(passed, 'N avatars: own folder only, private to owner, product-media admin-only, path constraint');
@@ -338,7 +338,7 @@ begin
   -- ===========================================================================
   -- Admin
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
 
   -- L. translation workflow

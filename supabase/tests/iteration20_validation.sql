@@ -39,7 +39,7 @@ begin
 
   -- Act as the manager ------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   -- A1: media rows; the path must sit under the media id, the MIME match the kind
   insert into public.training_media (id, kind, storage_path, mime_type, name, bytes, width, height)
@@ -238,7 +238,7 @@ begin
   passed := passed || 'P4'::text;
 
   -- Act as the viewer (staff, read only) -------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
 
   -- V1: reads everything, writes nothing --------------------------------------------
   select count(*) into v_cnt from public.quiz_answers where question_id = q1;
@@ -260,7 +260,7 @@ begin
   passed := passed || 'V1'::text;
 
   -- Act as a customer ---------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
 
   -- C1: a customer reads the published course and its price, none of the content ----
   select count(*) into v_cnt from public.courses where id = c1;
@@ -283,10 +283,10 @@ begin
 
   -- C2: an unpublished course disappears for customers -------------------------------
   reset role;
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.courses set status = 'unpublished' where id = c1;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.courses where id = c1;
   if v_cnt <> 0 then raise exception 'FAIL C2: unpublished course visible'; end if;
   passed := passed || 'C2'::text;

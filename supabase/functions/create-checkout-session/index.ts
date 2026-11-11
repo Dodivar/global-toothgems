@@ -1,36 +1,26 @@
 import { courseOrderItems, orderItems } from "../_shared/checkoutInput.ts";
 import { COURSE_CONSENT_PURPOSE, COURSE_WITHDRAWAL_CONSENT } from "../_shared/courseConsent.ts";
-import { serviceClient, stripeClient, requireEnv } from "../_shared/clients.ts";
+import { lazyStripeClient, matchingPublishableKey, requireEnv, serviceClient } from "../_shared/clients.ts";
 import { notifyOrderPaid } from "../_shared/email/notify.ts";
 import { toDecimalString } from "../_shared/money.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { handleCheckout, releasePaymentStep, type CheckoutDeps, type ReleaseDeps } from "./handler.ts";
 
 const supabase = serviceClient();
-const stripe = stripeClient();
+// The shop's Stripe account (the seller's, decision 133): created on first use, so a
+// missing account answers payment_unavailable instead of failing at boot.
+const stripe = lazyStripeClient("shop");
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 
 const LABELS = { fr: "Commande", en: "Order" } as const;
 
-/**
- * The publishable key mounts the payment form in the browser. It must belong to
- * the same mode as the secret key (test with test, live with live), otherwise
- * Stripe.js cannot open the session: a mismatch counts as not configured.
- */
-function matchingPublishableKey(): string | null {
-  const publishable = Deno.env.get("STRIPE_PUBLISHABLE_KEY")?.trim() ?? "";
-  const secret = Deno.env.get("STRIPE_SECRET_KEY")?.trim() ?? "";
-  const mode = (key: string) => /^(?:pk|sk|rk)_(test|live)_/.exec(key)?.[1] ?? null;
-  return publishable.startsWith("pk_") && mode(publishable) !== null && mode(publishable) === mode(secret) ? publishable : null;
-}
-
 const releaseDeps: ReleaseDeps = {
   async retrieveSession(sessionId) {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await stripe().checkout.sessions.retrieve(sessionId);
     return { clientSecret: session.client_secret, status: session.status, orderId: session.metadata?.order_id ?? null };
   },
   async expireSession(sessionId) {
-    await stripe.checkout.sessions.expire(sessionId);
+    await stripe().checkout.sessions.expire(sessionId);
   },
   async orderState(orderId) {
     const { data, error } = await supabase.from("orders").select("status, payment_status").eq("id", orderId).maybeSingle();
@@ -45,7 +35,7 @@ const releaseDeps: ReleaseDeps = {
 
 const deps: CheckoutDeps = {
   origins,
-  publishableKey: matchingPublishableKey(),
+  publishableKey: matchingPublishableKey("shop"),
 
   async maintenanceEnabled() {
     const { data, error } = await supabase.from("store_settings").select("maintenance_enabled").limit(1).maybeSingle();
@@ -101,6 +91,12 @@ const deps: CheckoutDeps = {
     return { order: data };
   },
 
+  async recordTermsVersion(orderId, version) {
+    // Only an order without one: a trigger refuses to change a recorded version.
+    const { error } = await supabase.from("orders").update({ terms_version: version }).eq("id", orderId).is("terms_version", null);
+    if (error) throw new Error(error.message);
+  },
+
   async cancelOrder(orderId, reason) {
     const { error } = await supabase.rpc("cancel_order", { p_order_id: orderId, p_reason: reason });
     if (error) throw new Error(error.message);
@@ -116,9 +112,9 @@ const deps: CheckoutDeps = {
       let closed = true;
       for (const sessionId of held.checkout_session_ids ?? []) {
         try {
-          await stripe.checkout.sessions.expire(sessionId);
+          await stripe().checkout.sessions.expire(sessionId);
         } catch {
-          const session = await stripe.checkout.sessions.retrieve(sessionId);
+          const session = await stripe().checkout.sessions.retrieve(sessionId);
           if (session.status !== "expired") closed = false;
         }
       }
@@ -135,7 +131,7 @@ const deps: CheckoutDeps = {
 
   async createStripeSession(params, idempotencyKey) {
     const metadata = { order_id: params.orderId, order_number: params.orderNumber };
-    const session = await stripe.checkout.sessions.create(
+    const session = await stripe().checkout.sessions.create(
       {
         // The payment form (Payment Element) is mounted inside our own checkout page.
         ui_mode: "custom",

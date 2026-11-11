@@ -80,7 +80,10 @@ export interface StudioCheckoutDeps {
   /** True when the account holds a subscription in a blocking status (`BLOCKING_STATUSES`). */
   hasBlockingSubscription(userId: string): Promise<boolean>;
   planPrice(plan: StudioPlan, interval: StudioInterval): Promise<PlanPrice | null>;
-  /** Records the immediate-access request (`STUDIO_WITHDRAWAL_CONSENT.version`); returns the row's id. */
+  /**
+   * Records the immediate-access request (`STUDIO_WITHDRAWAL_CONSENT.version`) with the
+   * version of the terms of sale in force (`terms_version`, decision 130); returns the row's id.
+   */
   recordWithdrawalConsent(userId: string): Promise<string>;
   /** The account's Stripe customer id, created (and stored) on first use. */
   ensureCustomer(userId: string, email: string | null): Promise<string>;

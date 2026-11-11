@@ -126,6 +126,9 @@ export function validateStore(d: StoreDetails): StoreErrors {
   if (d.businessEmail.trim() && !EMAIL.test(d.businessEmail.trim())) e.businessEmail = "email";
   if (d.publisherEmail.trim() && !EMAIL.test(d.publisherEmail.trim())) e.publisherEmail = "email";
   if (d.publisherPhone.trim() && !PHONE.test(d.publisherPhone.trim())) e.publisherPhone = "phone";
+  if (d.publisherVatNumber.trim() && !VAT_NUMBER.test(d.publisherVatNumber.replace(/\s/g, "").toUpperCase())) {
+    e.publisherVatNumber = "vatNumber";
+  }
   if (d.phone.trim() && !PHONE.test(d.phone.trim())) e.phone = "phone";
   if (d.vatNumber.trim() && !VAT_NUMBER.test(d.vatNumber.replace(/\s/g, "").toUpperCase())) e.vatNumber = "vatNumber";
   if (d.country === "FR" && d.postalCode.trim() && !/^\d{5}$/.test(d.postalCode.trim())) e.postalCode = "postalFr";

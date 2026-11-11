@@ -9,7 +9,6 @@
  */
 
 export const SIGN_IN_PATH = "/connexion";
-const ADMIN_SIGN_IN_PATH = "/admin/connexion";
 const AUTH_CONFIRM_PATH = "/auth/confirm";
 
 /** The query key carrying the page to return to (also used by `/confirmation-compte`). */
@@ -33,13 +32,14 @@ type Gate = "account" | "staff";
 
 /**
  * The session a path needs, or null when it is open. Mirrors the client
- * guards in `App.tsx`: `RequireAccount` (member space, learner pages) and
- * `RequireAdmin` (back office, except its own sign-in screen). The staff role
- * itself is checked by the back office and by RLS, not here.
+ * guards: `RequireAccount` (member space, learner pages) and `RequireAdmin`
+ * (back office). The back office has no sign-in page of its own (decided
+ * 2026-11-11): staff sign in on `/connexion` like everyone, and anyone else
+ * gets the site's ordinary 404 there, so the address reveals nothing. The
+ * staff role itself is checked by the proxy, the back office and RLS, not here.
  */
 export function gateFor(pathname: string): Gate | null {
   const under = (prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
-  if (under(ADMIN_SIGN_IN_PATH)) return null;
   if (under("/admin")) return "staff";
   if (under("/compte") || under("/academy/lecon") || pathname.startsWith("/academy/mes-formations/")) return "account";
   // The Studio subscription's checkout: a subscription belongs to an account.
@@ -47,10 +47,10 @@ export function gateFor(pathname: string): Gate | null {
   return null;
 }
 
-/** Where a signed-out visitor is sent, carrying the page they asked for. */
-export function signInRedirect(gate: Gate, pathname: string, search: string): string {
+/** Where a signed-out visitor of the member zones is sent, carrying the page they asked for. */
+export function signInRedirect(pathname: string, search: string): string {
   const params = new URLSearchParams({ [RETURN_PARAM]: pathname + search });
-  return `${gate === "staff" ? ADMIN_SIGN_IN_PATH : SIGN_IN_PATH}?${params}`;
+  return `${SIGN_IN_PATH}?${params}`;
 }
 
 /** The return path in a query string, when it is a safe same-site path. */

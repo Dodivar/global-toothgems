@@ -1,6 +1,6 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import Stripe from "npm:stripe@18.5.0";
-import { DbCallError, handleWebhook, type EventStatus, type WebhookDeps, type WebhookEvent } from "./handler.ts";
+import { type Business, DbCallError, handleWebhook, type EventStatus, type WebhookDeps, type WebhookEvent } from "./handler.ts";
 
 // Signatures are made and checked by the real Stripe SDK with Web Crypto,
 // exactly as in index.ts; only the database is faked.
@@ -334,4 +334,43 @@ Deno.test("a Studio withdrawal's refund settles the withdrawal, never an order",
   assertEquals(state.succeededRefunds, []);
   assertEquals(state.refundFollowUps, 0);
   assertEquals(state.events.get("evt_w2")?.status, "processed");
+});
+
+// Two businesses, two Stripe accounts (decision 133): an endpoint acts only for
+// the businesses its account sells.
+function onEndpoint(deps: WebhookDeps, handles: Business[]): WebhookDeps {
+  return { ...deps, verify: async (raw, sig) => ({ ...(await deps.verify(raw, sig)), handles: new Set(handles) }) };
+}
+
+Deno.test("the Studio's endpoint never pays an order or records a shop refund once the shop has its own account", async () => {
+  const { deps, state } = fakeDb();
+  const studioOnly = onEndpoint(deps, ["studio"]);
+  assertEquals((await handleWebhook(await signed(sessionEvent("checkout.session.completed"), SECRET), studioOnly)).status, 200);
+  assertEquals((await handleWebhook(await signed(refundEvent("refund.updated", { metadata: {} }, "evt_r_studio")), studioOnly)).status, 200);
+  assertEquals(state.paid, []);
+  assertEquals(state.externalRefunds, []);
+  assertEquals(state.events.get("evt_test_1")?.status, "ignored");
+  assertEquals(state.events.get("evt_r_studio")?.status, "ignored");
+});
+
+Deno.test("the shop's endpoint never settles a Studio withdrawal", async () => {
+  const { deps, state } = fakeDb();
+  const metadata = { kind: "studio_withdrawal", withdrawal_id: "77777777-6666-4555-8444-333333333333", user_id: "u" };
+  const shopOnly = onEndpoint(deps, ["shop"]);
+  assertEquals((await handleWebhook(await signed(refundEvent("refund.updated", { metadata }, "evt_w_shop")), shopOnly)).status, 200);
+  assertEquals(state.withdrawals, []);
+  assertEquals(state.events.get("evt_w_shop")?.status, "ignored");
+  // …while the shop's own events go through.
+  assertEquals((await handleWebhook(await signed(sessionEvent("checkout.session.completed", {}, "evt_shop_paid")), shopOnly)).status, 200);
+  assertEquals(state.paid.length, 1);
+});
+
+Deno.test("while the shop borrows the Studio's test account, one endpoint carries both businesses", async () => {
+  const { deps, state } = fakeDb();
+  const shared = onEndpoint(deps, ["studio", "shop"]);
+  const metadata = { kind: "studio_withdrawal", withdrawal_id: "77777777-6666-4555-8444-333333333333", user_id: "u" };
+  assertEquals((await handleWebhook(await signed(sessionEvent("checkout.session.completed")), shared)).status, 200);
+  assertEquals((await handleWebhook(await signed(refundEvent("refund.updated", { metadata }, "evt_w_shared")), shared)).status, 200);
+  assertEquals(state.paid.length, 1);
+  assertEquals(state.withdrawals.length, 1);
 });

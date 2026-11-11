@@ -75,6 +75,8 @@ export interface ChatAttachment {
   alt: string;
   /** The picked file, until it is sent. */
   file?: File;
+  /** The attachment's database id, once sent (to report one image). */
+  id?: string;
 }
 
 export interface ChatMessage {
@@ -93,6 +95,8 @@ export interface ChatMessage {
   sentAt?: number;
   /** Sent from this page and not confirmed by the server yet. */
   pending?: boolean;
+  /** Hidden by the moderators: only its author still sees it, with the decision (decision 132). */
+  hiddenBy?: { decisionId?: string };
 }
 
 /* ---------------------------------------------------------------- channels */

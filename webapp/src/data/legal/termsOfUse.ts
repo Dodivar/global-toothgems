@@ -41,8 +41,8 @@ export const TERMS_OF_USE: LegalDocument = {
       tone: "policy",
       title: l("En bref", "In short"),
       text: l(
-        "Un seul compte donne accès à la boutique, à l’Academy et au Studio 3D. Vous restez responsable de ce que vous publiez, nous modérons les contenus qui ne respectent pas ces règles, et les achats sont régis par les <<conditions générales de vente|/conditions-generales>>.",
-        "One account gives you access to the shop, the Academy and the 3D Studio. You remain responsible for what you post, we moderate content that does not follow these rules, and purchases are governed by the <<terms of sale|/conditions-generales>>.",
+        "Un seul compte donne accès à la boutique, à l’Academy et au Studio 3D. Vous restez responsable de ce que vous publiez, nous modérons les contenus qui ne respectent pas ces règles, et les achats sont régis par les <<conditions générales de vente|/conditions-generales>>, l’abonnement au Studio 3D par ses <<conditions d’abonnement|/conditions-abonnement-studio>>.",
+        "One account gives you access to the shop, the Academy and the 3D Studio. You remain responsible for what you post, we moderate content that does not follow these rules, and purchases are governed by the <<terms of sale|/conditions-generales>>, the 3D Studio subscription by its <<subscription terms|/conditions-abonnement-studio>>.",
       ),
     },
   ],
@@ -289,8 +289,8 @@ export const TERMS_OF_USE: LegalDocument = {
           kind: "callout",
           tone: "policy",
           text: l(
-            "L’éditeur du Studio est accessible avec un compte : un essai gratuit de 48 heures, une fois par compte, puis un abonnement (Essential, Artist ou Atelier). Ce que chaque formule permet est présenté sur la page du Studio 3D ; les conditions de paiement, de résiliation et de rétractation figurent dans les <<conditions générales de vente|/conditions-generales#studio>>. Les créations publiées sur une page Glowbook sont relues par notre équipe avant d’être visibles publiquement.",
-            "The Studio editor is available with an account: a free 48-hour trial, once per account, then a subscription (Essential, Artist or Atelier). What each plan allows is set out on the 3D Studio page; payment, cancellation and withdrawal terms are in the <<terms of sale|/conditions-generales#studio>>. Creations published on a Glowbook page are reviewed by our team before they become publicly visible.",
+            "L’éditeur du Studio est accessible avec un compte : un essai gratuit de 48 heures, une fois par compte, puis un abonnement (Essential, Artist ou Atelier). Ce que chaque formule permet est présenté sur la page du Studio 3D ; l’abonnement est vendu par l’éditeur du site et ses conditions de paiement, de résiliation et de rétractation figurent dans les <<conditions générales d’abonnement au Studio 3D|/conditions-abonnement-studio>>. Les créations publiées sur une page Glowbook sont relues par notre équipe avant d’être visibles publiquement.",
+            "The Studio editor is available with an account: a free 48-hour trial, once per account, then a subscription (Essential, Artist or Atelier). What each plan allows is set out on the 3D Studio page; the subscription is sold by the website publisher, and its payment, cancellation and withdrawal terms are in the <<3D Studio subscription terms|/conditions-abonnement-studio>>. Creations published on a Glowbook page are reviewed by our team before they become publicly visible.",
           ),
         },
       ],
@@ -337,19 +337,65 @@ export const TERMS_OF_USE: LegalDocument = {
           ),
         },
         {
+          kind: "p",
+          text: l(
+            "Dans les salons des membres, les messages sont publiés immédiatement et ne sont pas relus à l’avance : notre équipe agit sur signalement. Selon la gravité, elle peut masquer un message (il reste visible de son seul auteur), le supprimer avec ses images, suspendre la possibilité d’écrire d’un membre pour une durée déterminée, ou l’exclure des salons. Ces mesures reposent sur ces conditions ou sur le caractère illicite du contenu ; elles ne touchent ni le compte ni les formations du membre. Aucune décision n’est prise par un procédé automatisé.",
+            "In the members’ lounges, messages are published immediately and are not checked in advance: our team acts on reports. Depending on how serious it is, it can hide a message (it stays visible to its author only), delete it with its images, suspend a member’s ability to write for a set period, or exclude them from the lounges. These measures rest on these terms or on the content being unlawful; they affect neither the member’s account nor their courses. No decision is taken by automated means.",
+          ),
+        },
+        {
           kind: "callout",
           tone: "instruction",
+          title: l("Signaler un contenu", "Reporting content"),
           text: l(
-            "Pour signaler un contenu, <<contactez-nous|/contact?sujet=other>> en indiquant votre nom et votre e-mail, l’adresse de la page, le contenu concerné et les raisons pour lesquelles il vous paraît illicite ou contraire à ces conditions.",
-            "To report content, <<contact us|/contact?sujet=other>> giving your name and email, the page address, the content concerned and why you think it is unlawful or contrary to these terms.",
+            "Toute personne peut nous signaler un contenu qu’elle estime illicite ou contraire à ces conditions :",
+            "Anyone can report content they consider unlawful or contrary to these terms:",
+          ),
+          items: [
+            l(
+              "dans les salons, avec « Signaler ce message » dans le menu d’un message : un motif (dont la catégorie pour un contenu illicite) et une explication. Un accusé de réception s’affiche aussitôt ; un même message ne peut être signalé qu’une fois par membre ;",
+              "in the lounges, with “Report this message” in a message’s menu: a reason (with the category for unlawful content) and an explanation. An acknowledgement is shown at once; a member can report the same message once;",
+            ),
+            l(
+              "partout ailleurs, et si vous n’êtes pas membre, avec le <<formulaire de contact|/contact?sujet=illegal_content>> (catégorie « Signaler un contenu illicite ») en indiquant votre nom et votre e-mail, l’endroit exact du contenu, et les raisons pour lesquelles il vous paraît illicite. Un e-mail vous confirme la réception.",
+              "everywhere else, and if you are not a member, with the <<contact form|/contact?sujet=illegal_content>> (“Report unlawful content” category), giving your name and email, the exact place of the content, and why you think it is unlawful. An email confirms we received it.",
+            ),
+          ],
+        },
+        {
+          kind: "p",
+          text: l(
+            "Nous examinons chaque signalement de manière diligente, objective et non arbitraire, en général sous 2 jours ouvrés, et retirons sans attendre un contenu manifestement illicite. Signaler sciemment un contenu licite comme illicite pour le faire retirer est sanctionné par la loi et peut entraîner des mesures ; nous pouvons cesser de traiter les signalements d’une personne qui en envoie de manifestement infondés de façon répétée.",
+            "We review every report diligently, objectively and in a non-arbitrary way, usually within 2 working days, and remove manifestly unlawful content without delay. Knowingly reporting lawful content as unlawful to have it removed is punished by law and may lead to measures; we may stop handling the reports of someone who repeatedly sends manifestly unfounded ones.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Lorsqu’un de vos messages est masqué ou supprimé, ou qu’une mesure vous concerne, nous vous en informons par e-mail en indiquant la décision, le contenu concerné, son motif, sa base (ces conditions ou le caractère illicite du contenu), le fait qu’elle n’a pas été automatisée et la façon de la contester. L’auteur d’un signalement est informé de la suite donnée.",
+            "When one of your messages is hidden or deleted, or a measure concerns you, we tell you by email, stating the decision, the content concerned, its reason, its ground (these terms or the content being unlawful), that it was not automated and how to contest it. The author of a report is told what we decided.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Vous pouvez contester une décision qui vous concerne, ou la suite donnée à votre signalement, pendant 6 mois, depuis <<Modération des salons|/compte/moderation>> ou le lien de l’e-mail reçu. Un membre de l’équipe réexamine la décision et vous répond par e-mail ; une décision infondée est annulée (un message masqué est alors rétabli). Vous pouvez aussi saisir un organisme de règlement extrajudiciaire des litiges certifié au titre du règlement européen sur les services numériques, ou les juridictions compétentes.",
+            "You can contest a decision that concerns you, or what we did with your report, for 6 months, from <<Lounge moderation|/compte/moderation>> or the link in the email you received. A member of the team reviews the decision and answers you by email; an unfounded decision is reversed (a hidden message is then restored). You can also turn to an out-of-court dispute settlement body certified under the EU Digital Services Act, or to the competent courts.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Chaque membre peut aussi masquer, pour lui seul, les messages d’un autre membre, depuis le menu d’un message ou la fiche du membre ; ce membre n’en est pas informé.",
+            "Each member can also hide another member’s messages for themself only, from a message’s menu or the member’s card; that member is not told.",
           ),
         },
         {
           kind: "callout",
           tone: "legal",
           text: l(
-            "En tant qu’hébergeur des contenus publiés par les membres (article 6 de la loi pour la confiance dans l’économie numérique et règlement européen sur les services numériques), nous ne les contrôlons pas tous a priori, mais retirons promptement tout contenu manifestement illicite qui nous est signalé, et traitons chaque signalement de manière diligente et objective.",
-            "As a host of the content posted by members (article 6 of the French law on confidence in the digital economy and the EU Digital Services Act), we do not check all of it in advance, but promptly remove any manifestly unlawful content reported to us, and handle every report diligently and objectively.",
+            "En tant qu’hébergeur des contenus publiés par les membres (article 6 de la loi pour la confiance dans l’économie numérique et règlement européen sur les services numériques), nous ne les contrôlons pas tous a priori, mais retirons promptement tout contenu manifestement illicite qui nous est signalé. Point de contact unique pour les autorités et les utilisateurs (articles 11 et 12 du règlement sur les services numériques) : [[!E-mail du service client]], en français ou en anglais.",
+            "As a host of the content posted by members (article 6 of the French law on confidence in the digital economy and the EU Digital Services Act), we do not check all of it in advance, but promptly remove any manifestly unlawful content reported to us. Single point of contact for authorities and users (articles 11 and 12 of the Digital Services Act): [[!Customer service email]], in French or English.",
           ),
         },
       ],

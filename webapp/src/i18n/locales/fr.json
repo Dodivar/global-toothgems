@@ -907,7 +907,7 @@
     "diplomaDocAria": "Aperçu du diplôme délivré pour « {{title}} »",
     "notFoundCta": "Voir toutes les formations",
     "createAccount": "Créer un compte",
-    "priceWas": "Prix habituel",
+    "priceWas": "Prix de référence (le plus bas des 30 jours précédant la réduction)",
     "priceNow": "Prix actuel",
     "promoUntil": "Offre valable jusqu’au {{date}}",
     "requirementsTitle": "Prérequis",
@@ -1483,7 +1483,8 @@
       "training": "Formations",
       "analytics": "Statistiques",
       "settings": "Réglages",
-      "users": "Utilisateurs"
+      "users": "Utilisateurs",
+      "lounge": "Salons des membres"
     },
     "role": {
       "owner": "Propriétaire",
@@ -1614,7 +1615,6 @@
       "threshold": "Seuil d’alerte",
       "created": "Créé le",
       "updated": "Modifié le",
-      "compareAt": "Prix barré : {{price}}",
       "showImage": "Afficher le visuel {{index}}"
     },
     "media": {
@@ -1674,10 +1674,6 @@
       "pricingBody": "Montants en euros, taxes comprises. Le prix promotionnel remplace le prix de vente lorsqu’il est renseigné.",
       "price": "Prix de vente",
       "priceHint": "Le prix réellement facturé, hors promotion.",
-      "compareAtPrice": "Prix barré",
-      "compareAtPriceHint": "Facultatif. Doit être supérieur au prix de vente.",
-      "promoPrice": "Prix promotionnel",
-      "promoPriceHint": "Facultatif. Doit être inférieur au prix de vente.",
       "mediaTitle": "Visuels",
       "mediaBody": "Trois visuels au minimum pour une fiche complète : le produit seul, de profil, et porté.",
       "inventoryTitle": "Stock et disponibilité",
@@ -1740,8 +1736,6 @@
         "skuRequired": "Le SKU est requis.",
         "skuTaken": "Ce SKU est déjà utilisé par un autre produit.",
         "pricePositive": "Le prix doit être supérieur à 0.",
-        "compareAtTooLow": "Le prix barré doit être supérieur au prix de vente.",
-        "promoTooHigh": "Le prix promotionnel doit être inférieur au prix de vente.",
         "stockInvalid": "La quantité doit être un nombre entier positif.",
         "thresholdInvalid": "Le seuil doit être un nombre entier positif.",
         "skuFormat": "Majuscules, chiffres et tirets uniquement, 2 à 64 caractères (ex. GEM-STAR-001).",
@@ -1761,6 +1755,21 @@
         "optionsDuplicate": "Deux options, ou deux valeurs d’une même option, portent le même nom."
       },
       "promoInPromotions": "Les prix promotionnels se gèrent dans l’espace Promotions : le prix affiché ici est le prix de vente normal.",
+      "reference": {
+        "title": "Prix barré (règle Omnibus) — lecture seule",
+        "intro": "Aucun prix barré ne se saisit ici. La boutique n’affiche un prix barré que pendant une promotion automatique (pourcentage sur des produits choisis, sans condition), si le prix réduit est strictement inférieur au prix de référence : le prix le plus bas pratiqué pendant les 30 jours précédant le début de la réduction (promotions comprises). C’est toujours ce prix de référence qui est barré.",
+        "priceNow": "Prix affiché maintenant",
+        "reference": "Prix de référence",
+        "none": "Pas encore d’historique",
+        "option": "Option",
+        "loading": "Lecture de l’historique des prix…",
+        "error": "L’historique des prix n’a pas pu être lu. Réessayez plus tard.",
+        "reduced": "Prix barré affiché : {{reference}} (−{{percent}} %), réduction commencée le {{date}}.",
+        "notLower": "Aucun prix barré : pendant les 30 jours précédant le début de la réduction ({{date}}), le produit a déjà été vendu {{reference}}, un prix inférieur ou égal au prix réduit.",
+        "noHistory": "Aucun prix barré : aucun prix n’est connu avant le début de la réduction ({{date}}). Le produit doit avoir été vendu à un autre prix avant qu’une réduction puisse être annoncée.",
+        "noReduction": "Aucun prix barré : aucune promotion ne baisse ce prix en ce moment. Une promotion lancée maintenant barrerait {{reference}} (le prix le plus bas des 30 derniers jours).",
+        "noReductionNoHistory": "Aucun prix barré : aucune promotion ne baisse ce prix, et l’historique des prix est encore trop court pour annoncer une réduction."
+      },
       "databaseNotice": "Enregistré dans la base Supabase : un produit « En ligne » apparaît en boutique. Les visuels sont envoyés dès leur ajout.",
       "optionsTitle": "Packs et tailles de pierre",
       "optionsBody": "Vendez cette gem en packs du nombre de pierres de votre choix, dans une ou plusieurs tailles : en SS pour une pierre ronde, en millimètres pour toute autre taille. Chaque pack × taille est une option avec son propre prix et son propre stock, et le Studio 3D dessine la pierre à la taille choisie.",
@@ -2075,36 +2084,26 @@
         "hex": "Choisissez une teinte valide (#rrggbb)."
       }
     },
-    "login": {
-      "scriptAccent": "Coulisses",
-      "brandTitle": "L’espace de gestion Global Toothgems",
-      "brandBody": "Catalogue, stocks et mises en ligne, au même endroit. Réservé à l’équipe : chaque action y engage ce que voient les clients.",
-      "brandFooter": "Accès restreint et journalisé",
-      "areaBadge": "Espace privé",
-      "title": "Administration",
-      "body": "Connectez-vous avec votre compte administrateur pour gérer le catalogue.",
-      "email": "Adresse e-mail",
-      "password": "Mot de passe",
-      "showPassword": "Afficher le mot de passe",
-      "hidePassword": "Masquer le mot de passe",
-      "remember": "Rester connecté",
-      "forgot": "Mot de passe oublié ?",
-      "submit": "Se connecter",
-      "security": "Cet espace est réservé aux administrateurs. Les tentatives de connexion et les modifications du catalogue seront journalisées.",
-      "successMessage": "Connexion réussie, ouverture de l’espace de gestion…",
+    "secondFactor": {
+      "loading": "Préparation de la vérification…",
+      "enrolTitle": "Activez la double authentification",
+      "enrolBody": "L’espace de gestion demande un code à chaque connexion. Scannez ce QR code avec une application d’authentification (Google Authenticator, Microsoft Authenticator, 1Password…), puis saisissez le code à 6 chiffres qu’elle affiche.",
+      "qrAlt": "QR code à scanner avec votre application d’authentification",
+      "manualKey": "Impossible de scanner ? Saisissez cette clé dans l’application :",
+      "challengeTitle": "Vérification en deux étapes",
+      "challengeBody": "Saisissez le code à 6 chiffres affiché par votre application d’authentification.",
+      "code": "Code de vérification",
+      "codeInvalid": "Le code compte 6 chiffres.",
+      "submit": "Vérifier",
+      "verified": "Code accepté, ouverture de l’espace de gestion…",
+      "unavailable": "La vérification ne peut pas démarrer pour le moment. Rechargez la page dans un instant.",
+      "lostDevice": "Téléphone perdu ou application réinstallée ? Demandez au propriétaire du compte de réinitialiser votre double authentification.",
+      "signOut": "Se déconnecter",
       "errors": {
-        "emailRequired": "L’adresse e-mail est requise.",
-        "emailInvalid": "Cette adresse e-mail semble incomplète.",
-        "passwordRequired": "Le mot de passe est requis.",
-        "rejected": "Identifiants incorrects. Vérifiez votre e-mail et votre mot de passe, puis réessayez.",
-        "notStaff": "Ce compte n’a pas accès à l’administration. Demandez un accès à un administrateur.",
-        "unavailable": "Le service de connexion ne répond pas. Réessayez dans un instant."
-      },
-      "forgotTitle": "Mot de passe oublié",
-      "forgotBody": "Indiquez votre adresse e-mail : un lien de réinitialisation vous sera envoyé.",
-      "forgotSubmit": "Envoyer le lien",
-      "forgotSent": "Si un compte administrateur existe pour {{email}}, un lien de réinitialisation vient de lui être envoyé.",
-      "forgotFailed": "Le lien n’a pas pu être envoyé. Vérifiez l’adresse et réessayez dans un instant."
+        "wrongCode": "Code incorrect ou expiré. Saisissez le code affiché maintenant.",
+        "tooMany": "Trop de tentatives. Patientez quelques minutes avant de réessayer.",
+        "unavailable": "Le service de vérification ne répond pas. Réessayez dans un instant."
+      }
     },
     "orders": {
       "title": "Commandes",
@@ -2975,7 +2974,8 @@
         "manageCustomers": "Gérer les clients",
         "managePromotions": "Gérer les promotions",
         "moderateReviews": "Modérer les avis",
-        "manageContent": "Gérer les contenus"
+        "manageContent": "Gérer les contenus",
+        "moderateCommunity": "Modérer les salons des membres"
       },
       "allowed": "Autorisé",
       "notAllowed": "Non autorisé",
@@ -4627,6 +4627,7 @@
       "legalNotice": "Mentions légales",
       "terms": "Conditions générales de vente",
       "termsOfUse": "Conditions générales d’utilisation",
+      "studioTerms": "Conditions d’abonnement au Studio 3D",
       "privacy": "Politique de confidentialité",
       "cookies": "Politique cookies"
     },
@@ -4644,13 +4645,14 @@
         "legalNotice": "Éditeur, hébergeur et propriété intellectuelle.",
         "terms": "Les règles qui encadrent vos achats.",
         "termsOfUse": "Les règles d’utilisation du site et de votre compte.",
+        "studioTerms": "Les règles de l’abonnement au Studio 3D.",
         "privacy": "Vos données, leur usage et vos droits.",
         "cookies": "Les cookies et comment gérer vos choix."
       }
     },
     "cookies": {
       "bannerTitle": "Vos cookies, votre choix",
-      "bannerBody": "Certains cookies sont indispensables au fonctionnement du site et ne peuvent pas être désactivés. D’autres sont optionnels — mémoriser vos préférences, mesurer l’audience, personnaliser la publicité — et ne sont utilisés qu’avec votre accord. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
+      "bannerBody": "Certains cookies sont indispensables au fonctionnement du site (connexion, panier, paiement) et ne peuvent pas être désactivés. Avec votre accord seulement, nous mesurons l’audience du site avec PostHog, hébergé dans l’Union européenne, pour l’améliorer. Aucun cookie publicitaire. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
       "policyLink": "Lire la politique cookies",
       "rejectNonEssential": "Refuser les non essentiels",
       "acceptAll": "Tout accepter",
@@ -4658,28 +4660,21 @@
       "customize": "Personnaliser",
       "save": "Enregistrer mes choix",
       "settingsTitle": "Paramètres cookies",
-      "settingsBody": "Choisissez les cookies optionnels que vous acceptez. Ils sont désactivés tant que vous ne les activez pas.",
-      "settingsFoot": "Vous pouvez modifier ces choix à tout moment.",
+      "settingsBody": "Choisissez si vous acceptez la mesure d’audience. Elle reste désactivée tant que vous ne l’activez pas. Nous n’utilisons aucun cookie publicitaire ni de réseau social.",
+      "settingsFoot": "Votre choix est conservé 6 mois ; vous pouvez le modifier à tout moment.",
       "settingsLink": "Paramètres cookies",
       "alwaysActive": "Toujours actifs",
       "providers": "Services concernés :",
-      "providersPlaceholder": "Liste des services selon l’implémentation",
       "category": {
         "essential": {
           "title": "Essentiels",
-          "body": "Nécessaires au fonctionnement du site : panier, connexion, sécurité, mémorisation de ce choix."
-        },
-        "preferences": {
-          "title": "Préférences",
-          "body": "Mémorisent vos choix, comme la langue d’affichage."
+          "body": "Nécessaires au fonctionnement du site : connexion, panier, paiement sécurisé, langue choisie, mémorisation de ce choix.",
+          "providers": "Global Toothgems, Supabase (connexion), Stripe (paiement)"
         },
         "analytics": {
           "title": "Mesure d’audience",
-          "body": "Nous aident à comprendre l’utilisation du site pour l’améliorer."
-        },
-        "marketing": {
-          "title": "Marketing",
-          "body": "Mesurent nos campagnes et personnalisent la publicité sur d’autres sites."
+          "body": "Nous aident à comprendre l’utilisation du site et à corriger ses erreurs.",
+          "providers": "PostHog (serveurs dans l’Union européenne)"
         }
       },
       "currentTitle": "Vos choix actuels",
@@ -4719,7 +4714,8 @@
         "technical": "Problème technique",
         "privacy": "Demande de confidentialité",
         "professional": "Demande professionnelle",
-        "other": "Autre"
+        "other": "Autre",
+        "illegal_content": "Signaler un contenu illicite"
       },
       "fields": {
         "category": "Sujet de votre demande",
@@ -4788,7 +4784,8 @@
         "response": "Délai de réponse"
       },
       "quickTitle": "Réponses rapides",
-      "trackOrder": "Suivre une commande"
+      "trackOrder": "Suivre une commande",
+      "illegalContentHint": "Indiquez où se trouve le contenu (page, salon, date et auteur du message), en quoi il vous paraît illicite et, si possible, la loi concernée. Votre nom et votre e-mail nous permettent de vous informer de la suite donnée. Un signalement abusif peut être sanctionné."
     },
     "about": {
       "eyebrow": "L’entreprise",
@@ -5024,6 +5021,21 @@
       "fileName": "avoir",
       "studioWithdrawal": "Rétractation — part non utilisée de l’abonnement Studio 3D, formule {{plan}}",
       "studioUsedDays": "{{used}} jours utilisés sur {{total}}"
+    },
+    "terms": {
+      "title": "Conditions générales de vente",
+      "fileName": "conditions-generales-de-vente",
+      "version": "Version du",
+      "appliesTo": "Applicable à",
+      "toSupply": "à compléter",
+      "intro": "Version des conditions générales de vente en vigueur à la date de votre commande, remise avec sa confirmation pour que vous puissiez la conserver et la reproduire.",
+      "fieldColumn": "Information",
+      "valueColumn": "Détail"
+    },
+    "studioTerms": {
+      "title": "Conditions générales d’abonnement au Studio 3D",
+      "fileName": "conditions-abonnement-studio-3d",
+      "intro": "Version des conditions générales d’abonnement au Studio 3D en vigueur à la date de votre abonnement, remise avec sa confirmation pour que vous puissiez la conserver et la reproduire."
     }
   },
   "newsletter": {
@@ -5050,6 +5062,146 @@
       "retry": "Réessayer",
       "shop": "Découvrir la boutique",
       "home": "Retour à l’accueil"
+    }
+  },
+  "withdrawal": {
+    "title": "Droit de rétractation",
+    "cta": "Se rétracter du contrat ici",
+    "openUntil": "Vous pouvez vous rétracter de cette commande jusqu’au {{date}} inclus, sans avoir à vous justifier.",
+    "openNotStarted": "Vous pouvez vous rétracter dès maintenant : le délai de 14 jours ne commence qu’à la réception de votre dernier colis.",
+    "declaredOn": "Déclarée le {{date}}",
+    "nextStep": "Renvoyez les articles sous 14 jours : la marche à suivre est dans l’e-mail d’accusé de réception.",
+    "loadError": "Le droit de rétractation de cette commande n’a pas pu être chargé. Rechargez la page ou contactez-nous.",
+    "closed": {
+      "not_paid": "Cette commande n’est pas payée : il n’y a rien à rétracter.",
+      "professional": "Cette commande a été passée par un professionnel : le droit de rétractation ne s’applique pas. Contactez-nous pour toute demande de retour.",
+      "deadline_passed": "Le délai de rétractation de 14 jours est écoulé pour cette commande. Pour un produit défectueux, les garanties légales restent acquises : contactez-nous.",
+      "nothing_left": "Il ne reste aucun article à rétracter dans cette commande."
+    },
+    "excluded": {
+      "course": "formation : règles propres (voir les CGV)",
+      "gift_card": "carte cadeau : non concernée",
+      "digital": "contenu numérique : non concerné",
+      "taken": "déjà retourné ou remboursé"
+    },
+    "form": {
+      "itemsLegend": "Articles dont vous vous rétractez",
+      "quantity": "Quantité",
+      "keep": "Je le garde",
+      "ofTotal": "{{count}} sur {{total}}",
+      "sealQuestion": "Cet article est scellé pour des raisons d’hygiène. Son emballage scellé est-il :",
+      "sealIntact": "Intact, jamais ouvert",
+      "sealOpened": "Ouvert",
+      "sealOpenedHelp": "Un produit pour la bouche dont l’emballage scellé a été ouvert après la livraison ne peut plus faire l’objet d’une rétractation (article L221-28 du Code de la consommation). Gardez-le ou choisissez « Je le garde ».",
+      "name": "Votre nom et prénom",
+      "consumer": "J’ai passé cette commande en tant que consommateur",
+      "consumerHelp": "Le droit de rétractation est réservé aux achats faits à titre personnel, pas pour une activité professionnelle.",
+      "continue": "Continuer",
+      "cancel": "Annuler"
+    },
+    "problem": {
+      "name": "Indiquez votre nom.",
+      "nothing_selected": "Choisissez au moins un article.",
+      "seal_answer_required": "Dites-nous si l’emballage scellé de chaque produit pour la bouche est intact.",
+      "unsealed_hygiene": "Un produit pour la bouche descellé ne peut pas être rétracté : retirez-le de votre déclaration.",
+      "quantity": "La quantité choisie dépasse ce qui peut encore être rétracté.",
+      "consumer": "Confirmez que vous avez acheté en tant que consommateur."
+    },
+    "confirm": {
+      "title": "Vérifiez votre déclaration de rétractation",
+      "order": "Commande",
+      "items": "Articles",
+      "notice": "En confirmant, vous vous rétractez du contrat pour ces articles. Vous recevez aussitôt un accusé de réception par e-mail, avec la date et l’heure de votre déclaration et la marche à suivre pour le retour.",
+      "action": "Confirmer la rétractation",
+      "edit": "Modifier"
+    },
+    "done": {
+      "title": "Votre rétractation est enregistrée",
+      "body": "Déclarée le {{date}} (heure de Paris). L’accusé de réception vient de partir par e-mail : il indique comment nous renvoyer les articles sous 14 jours."
+    },
+    "status": {
+      "declared": "Rétractation déclarée",
+      "return_received": "Retour reçu",
+      "refunded": "Remboursée",
+      "refused": "Refusée",
+      "refundPending": "Remboursement en cours"
+    },
+    "refusal": {
+      "deadline_passed": "Délai de 14 jours dépassé",
+      "unsealed_hygiene": "Produit pour la bouche descellé",
+      "professional_buyer": "Achat à titre professionnel",
+      "goods_not_returned": "Articles non renvoyés",
+      "goods_damaged": "Articles dépréciés par une manipulation excessive",
+      "other": "Autre motif"
+    },
+    "error": {
+      "not_paid": "Cette commande n’est pas payée.",
+      "professional": "Le droit de rétractation ne s’applique pas aux achats professionnels.",
+      "professional_buyer": "Le droit de rétractation ne s’applique pas aux achats professionnels.",
+      "deadline_passed": "Le délai de rétractation est écoulé.",
+      "excluded_line": "Un des articles n’est pas concerné par la rétractation.",
+      "unsealed_hygiene": "Un produit pour la bouche descellé ne peut pas être rétracté.",
+      "quantity": "Ces articles ont déjà été déclarés ou remboursés. Rechargez la page.",
+      "seal_answer_required": "Dites-nous si l’emballage scellé est intact.",
+      "not_allowed": "Cette commande n’est pas accessible avec ce compte ou ce lien.",
+      "link_invalid": "Ce lien n’est plus valable : demandez-en un nouveau.",
+      "sign_in_required": "Reconnectez-vous puis réessayez.",
+      "session_expired": "Votre session a expiré : reconnectez-vous puis réessayez.",
+      "invalid_request": "Vérifiez les informations saisies.",
+      "rate_limited": "Trop de demandes depuis cette connexion. Réessayez dans une heure.",
+      "captcha_required": "La vérification anti-robot n’a pas abouti. Réessayez.",
+      "captcha_failed": "La vérification anti-robot a échoué. Désactivez un éventuel bloqueur puis réessayez.",
+      "unavailable": "Le service est momentanément indisponible. Réessayez ou contactez-nous : votre droit est préservé si vous nous écrivez avant la fin du délai."
+    },
+    "guest": {
+      "eyebrow": "Retours",
+      "title": "Se rétracter d’une commande",
+      "intro": "Vous avez commandé sans compte ? Indiquez le numéro de votre commande et l’adresse e-mail utilisée : nous vous envoyons un lien personnel pour déclarer votre rétractation en ligne.",
+      "formTitle": "Recevoir mon lien de rétractation",
+      "orderNumber": "Numéro de commande",
+      "email": "Adresse e-mail de la commande",
+      "send": "Recevoir le lien",
+      "missing": "Indiquez le numéro de commande et l’adresse e-mail.",
+      "privacy": "Le lien est envoyé à l’adresse de la commande et reste valable 48 heures. Pour votre sécurité, nous ne confirmons pas ici l’existence d’une commande.",
+      "sentTitle": "Vérifiez votre boîte e-mail",
+      "sentBody": "Si une commande correspond à ces informations, un lien valable 48 heures vient d’être envoyé à son adresse e-mail. Pensez à regarder dans les courriers indésirables.",
+      "loading": "Chargement de votre commande…",
+      "linkInvalid": "Ce lien n’est plus valable (il expire au bout de 48 heures). Demandez-en un nouveau.",
+      "askAgain": "Demander un nouveau lien",
+      "member": "Vous avez un compte ?",
+      "memberLink": "Retrouvez la fonction de rétractation sur la page de votre commande."
+    },
+    "admin": {
+      "title": "Rétractations",
+      "empty": "Aucune rétractation déclarée pour cette commande.",
+      "via": {
+        "account": "depuis le compte",
+        "email_link": "par lien e-mail (sans compte)"
+      },
+      "deadline": "Délai jugé : jusqu’au {{date}}",
+      "noDeadline": "Délai non commencé lors de la déclaration (colis non livré)",
+      "suggested": "Remboursement suggéré : {{amount}} (articles{{shipping}})",
+      "suggestedShipping": " + livraison",
+      "returnReceived": "Retour reçu",
+      "refund": "Rembourser",
+      "refuse": "Refuser",
+      "refundTitle": "Rembourser la rétractation",
+      "refundAmount": "Montant remboursé",
+      "refundHelp": "Les articles de la déclaration sont remboursés par carte (Stripe) ; le remboursement est confirmé par Stripe. Pour une livraison express, ne remboursez que le tarif standard le moins cher.",
+      "restock": "Remettre les articles en stock",
+      "refundSubmit": "Envoyer le remboursement",
+      "refuseTitle": "Refuser la rétractation",
+      "refuseReason": "Motif",
+      "refuseNote": "Message au client (affiché sur sa commande)",
+      "refuseSubmit": "Refuser",
+      "cancel": "Annuler",
+      "sealIntact": "scellé intact déclaré",
+      "errors": {
+        "forbidden": "Action réservée aux personnes qui gèrent les commandes.",
+        "settled": "Cette rétractation a déjà été traitée ou un remboursement est en cours.",
+        "invalid": "Vérifiez le motif et le message.",
+        "unavailable": "Action impossible pour le moment."
+      }
     }
   }
 }

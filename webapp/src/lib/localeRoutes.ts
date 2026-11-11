@@ -50,10 +50,12 @@ export type PublicRouteId =
   | "legalNotice"
   | "terms"
   | "termsOfUse"
+  | "studioTerms"
   | "privacy"
   | "cookies"
   | "shipping"
-  | "returns";
+  | "returns"
+  | "withdrawal";
 
 export interface PublicRoute {
   id: PublicRouteId;
@@ -90,10 +92,14 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { id: "legalNotice", fr: "/mentions-legales", en: "/legal-notice", indexed: true },
   { id: "terms", fr: "/conditions-generales", en: "/terms-of-sale", indexed: true },
   { id: "termsOfUse", fr: "/conditions-generales-utilisation", en: "/terms-of-use", indexed: true },
+  // The 3D Studio's own terms: the Studio is sold by the website publisher (decision 133).
+  { id: "studioTerms", fr: "/conditions-abonnement-studio", en: "/studio-subscription-terms", indexed: true },
   { id: "privacy", fr: "/confidentialite", en: "/privacy-policy", indexed: true },
   { id: "cookies", fr: "/cookies", en: "/cookie-policy", indexed: true },
   { id: "shipping", fr: "/livraison", en: "/shipping", indexed: true },
   { id: "returns", fr: "/retours-remboursements", en: "/returns", indexed: true },
+  // The online withdrawal function for guests (decision 131); the e-mailed link carries its token in the fragment.
+  { id: "withdrawal", fr: "/retours-remboursements/retractation", en: "/returns/withdrawal", indexed: true },
 ];
 
 const ROUTE_BY_ID = new Map(PUBLIC_ROUTES.map((route) => [route.id, route]));
@@ -225,6 +231,7 @@ const LEGACY_ALIASES: Record<string, string> = {
   "/legal-notice": localizedPath("legalNotice", "en"),
   "/terms-of-sale": localizedPath("terms", "en"),
   "/terms-of-use": localizedPath("termsOfUse", "en"),
+  "/studio-subscription-terms": localizedPath("studioTerms", "en"),
   "/privacy-policy": localizedPath("privacy", "en"),
   "/cookie-policy": localizedPath("cookies", "en"),
   "/about": localizedPath("about", "en"),

@@ -71,7 +71,7 @@ begin
 
   -- GC1 customer ----------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   -- Since migration 20261007181011 a buyer reads the cards of their own purchases (to draw them on the
   -- order page), and nothing else: not the cards issued to others, never the code.
   select count(*) into v_cnt from public.gift_card_overview;
@@ -114,7 +114,7 @@ begin
 
   -- GC2 read-only staff -----------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.gift_card_overview where id in (v_card, v_expired, v_cancelled, v_empty);
   if v_cnt <> 4 then raise exception 'FAIL GC2: viewer reads % of the 4 cards', v_cnt; end if;
   select count(*) into v_cnt from public.gift_card_transactions where gift_card_id = v_card;
@@ -138,7 +138,7 @@ begin
   passed := array_append(passed, 'GC2 read-only staff read cards and ledger; issue/adjust/extend/cancel/settings refused');
 
   -- GC3 manage_promotions ---------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   v_id := public.issue_gift_card(25.50, ' Lea.GC@Example.invalid ', 'Léa', 'Merci', null, 'Réclamation');
   select count(*) into v_cnt from public.gift_card_overview
    where id = v_id and display_status = 'active' and balance = 25.50 and recipient_email = 'lea.gc@example.invalid'
@@ -238,7 +238,7 @@ begin
   select count(*) into v_cnt from public.unpaid_orders_holding_gift_cards(array[v_code_empty]);
   if v_cnt <> 0 then raise exception 'FAIL GC5b: a released order is still listed'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.unpaid_orders_holding_gift_cards(array[v_code_empty]);
@@ -251,7 +251,7 @@ begin
 
   -- GC6 staff input validation -------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   foreach v_msg in array array['subcent', 'zero', 'huge', 'email', 'past', 'adjust_note', 'adjust_subcent', 'cancel_note'] loop
     v_state := null;
     begin
@@ -280,7 +280,7 @@ begin
   select count(*) into v_cnt from public.gift_card_settings;
   if v_cnt <> 0 then raise exception 'FAIL GC7: visitors read unpublished settings'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.gift_card_settings set is_published = true where id;
   perform set_config('role', 'anon', true);
   perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);

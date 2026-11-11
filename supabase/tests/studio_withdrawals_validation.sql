@@ -58,7 +58,7 @@ begin
 
   -- X1: members cannot decide or write.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.request_studio_withdrawal(m1, now() - interval '3 days', now() + interval '27 days');
@@ -82,10 +82,10 @@ begin
      or (r ->> 'used_amount')::numeric <> 1.99 or (r ->> 'refund_amount')::numeric <> 17.91 then
     raise exception 'FAIL X2: quote %', r;
   end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
   r := public.studio_withdrawal_quote();
   if (r ->> 'eligible')::boolean is not false or r ->> 'reason' <> 'deadline_passed' then raise exception 'FAIL X2: m2 quote %', r; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m3, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m3, 'role', 'authenticated')::text, true);
   r := public.studio_withdrawal_quote();
   if r ->> 'reason' <> 'manual_review' then raise exception 'FAIL X2: m3 quote %', r; end if;
   passed := passed || 'X2'::text;
@@ -169,10 +169,10 @@ begin
 
   -- X7: owners read theirs; another member reads nothing; the quote reports the withdrawal.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_withdrawals;
   if v_cnt <> 0 then raise exception 'FAIL X7: another member reads % withdrawal(s)', v_cnt; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_withdrawals;
   if v_cnt <> 1 then raise exception 'FAIL X7: owner reads % withdrawal(s)', v_cnt; end if;
   r := public.studio_withdrawal_quote();

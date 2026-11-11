@@ -81,7 +81,7 @@ begin
 
   -- Act as the read-only team member --------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', viewer, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', viewer, 'role', 'authenticated')::text, true);
 
   -- V1: every order, with the columns the back office reads
   select count(*) into v_cnt from public.orders where id in (o1, o2);
@@ -140,7 +140,7 @@ begin
   passed := passed || 'G1'::text;
 
   -- Act as a manager --------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', manager, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', manager, 'role', 'authenticated')::text, true);
 
   -- W1: a status change and a cancellation of an unpaid order go through
   update public.orders set status = 'processing', fulfillment_status = 'preparing' where id = o1;
@@ -152,7 +152,7 @@ begin
   passed := passed || 'W1'::text;
 
   -- Act as the customer m2 --------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
 
   -- C1: nothing of m1's order, no note, no gift card; no write
   if exists (select 1 from public.orders where id = o1)

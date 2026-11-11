@@ -57,8 +57,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Le responsable du traitement de vos données est le vendeur des produits, formations et abonnements proposés sur le site, identifié dans les <<mentions légales|/mentions-legales#seller>>. L’éditeur du site, qui en assure la réalisation et la maintenance technique, agit pour son compte et selon ses instructions.",
-            "The controller of your data is the seller of the products, courses and subscriptions offered on the site, identified in the <<legal notice|/mentions-legales#seller>>. The website publisher, which builds and maintains the site, acts on the seller’s behalf and on its instructions.",
+            "Deux entreprises sont responsables de vos données, chacune pour ce qu’elle vous vend. Le vendeur des produits, formations et cartes cadeaux, identifié dans les <<mentions légales|/mentions-legales#seller>>, est responsable de votre compte, de vos commandes, de l’Academy, du Club fidélité, de la newsletter et de vos échanges avec le service client. L’éditeur du site, qui vend le Studio 3D (<<mentions légales|/mentions-legales#studio-seller>>), est responsable de votre abonnement au Studio (paiement, factures), de vos créations, de la page Glowbook et de l’essai sur un sourire. L’éditeur assure aussi la réalisation et la maintenance technique du site pour le compte du vendeur, selon ses instructions.",
+            "Two businesses are responsible for your data, each for what it sells you. The seller of the products, courses and gift cards, identified in the <<legal notice|/mentions-legales#seller>>, is the controller of your account, your orders, the Academy, the Loyalty Club, the newsletter and your exchanges with customer service. The website publisher, which sells the 3D Studio (<<legal notice|/mentions-legales#studio-seller>>), is the controller of your Studio subscription (payment, invoices), your creations, the Glowbook page and the smile try-on. The publisher also builds and maintains the site on the seller’s behalf and on its instructions.",
           ),
         },
         {
@@ -66,6 +66,11 @@ export const PRIVACY: LegalDocument = {
           fields: [
             { label: l("Responsable du traitement", "Data controller"), value: l("[[!Responsable du traitement]]", "[[!Data controller]]") },
             { label: l("Adresse", "Address"), value: l("[[!Adresse du siège]]", "[[!Registered office address]]") },
+            {
+              label: l("Responsable du traitement — Studio 3D", "Data controller — 3D Studio"),
+              value: l("[[!Vendeur du Studio, dénomination et forme juridique]]", "[[!Studio seller legal name and entity type]]"),
+            },
+            { label: l("Adresse — Studio 3D", "Address — 3D Studio"), value: l("[[!Adresse du vendeur du Studio]]", "[[!Studio seller address]]") },
             { label: l("Contact confidentialité", "Privacy contact"), value: l("[[!E-mail confidentialité]]", "[[!Privacy email]]") },
             {
               label: l("Délégué à la protection des données", "Data protection officer"),
@@ -137,6 +142,14 @@ export const PRIVACY: LegalDocument = {
               context: l("Avis et communauté", "Reviews and community"),
               data: l("Avis, notes, photos, messages dans les salons des membres, nom d’affichage", "Reviews, ratings, photos, messages in the members’ lounges, display name"),
               source: l("Vous", "You"),
+            },
+            {
+              context: l("Modération des salons", "Lounge moderation"),
+              data: l(
+                "Vos signalements et leurs explications, les décisions de l’équipe qui vous concernent (avec une copie du contenu visé), vos contestations, les membres dont vous masquez les messages",
+                "Your reports and their explanations, the team’s decisions that concern you (with a copy of the content concerned), your complaints, the members whose messages you hide",
+              ),
+              source: l("Vous, notre équipe", "You, our team"),
             },
             {
               context: l("Newsletter et marketing", "Newsletter and marketing"),
@@ -339,6 +352,10 @@ export const PRIVACY: LegalDocument = {
             { purpose: l("Répondre à vos demandes", "Answer your requests"), basis: l("Intérêt légitime ou mesures précontractuelles", "Legitimate interest or pre-contractual steps") },
             { purpose: l("Prévenir la fraude et sécuriser le site", "Prevent fraud and secure the site"), basis: l("Intérêt légitime", "Legitimate interest") },
             { purpose: l("Publier vos avis et messages", "Publish your reviews and posts"), basis: l("Exécution du contrat (CGU), à votre initiative", "Performance of a contract (terms of use), at your initiative") },
+            {
+              purpose: l("Traiter les signalements, modérer les salons, répondre aux contestations", "Handle reports, moderate the lounges, answer complaints"),
+              basis: l("Obligation légale (loi pour la confiance dans l’économie numérique, règlement sur les services numériques) et exécution du contrat (CGU)", "Legal obligation (French LCEN, Digital Services Act) and performance of a contract (terms of use)"),
+            },
             { purpose: l("Envoyer la newsletter et des e-mails marketing", "Send the newsletter and marketing emails"), basis: l("Consentement", "Consent") },
             { purpose: l("Mesure d’audience et cookies non essentiels", "Audience measurement and non-essential cookies"), basis: l("Consentement", "Consent") },
           ],
@@ -380,6 +397,13 @@ export const PRIVACY: LegalDocument = {
               period: l(
                 "Tant que le consentement est en vigueur, puis 5 ans après son retrait ou son remplacement ; 5 ans pour une preuve liée à un achat",
                 "While the consent is in force, then 5 years after it is withdrawn or replaced; 5 years for a proof tied to a purchase",
+              ),
+            },
+            {
+              data: l("Signalements, décisions de modération et contestations des salons", "Lounge reports, moderation decisions and complaints"),
+              period: l(
+                "Les textes (explications, copie du contenu visé, contestation) 12 mois après la décision, puis le reste 3 ans après, sauf contestation en cours ; effacés ou détachés de votre compte s’il est supprimé. Les membres que vous masquez : jusqu’à la suppression de votre compte",
+                "The texts (explanations, copy of the content concerned, complaint) 12 months after the decision, then the rest 3 years after, unless a complaint is under way; erased or detached from your account if it is deleted. The members you hide: until you delete your account",
               ),
             },
             { data: l("Photo envoyée pour un essai sur un sourire", "Photo sent for a smile try-on"), period: l("Non conservée par nous (24 heures au plus sur votre appareil)", "Not kept by us (24 hours at most on your device)") },

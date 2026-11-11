@@ -34,6 +34,8 @@ export interface EmailDocument {
   blocks: Block[];
   /** Marketing e-mails only: a one-click unsubscribe address. Transactional e-mails have none. */
   unsubscribeUrl?: string;
+  /** A line above the reason for the e-mail (the version of the attached terms of sale, say). */
+  footerNote?: string;
 }
 
 interface Chrome {
@@ -158,6 +160,9 @@ function footer(doc: EmailDocument, layout: LayoutOptions): { html: string; text
   const unsubscribe = doc.unsubscribeUrl ? ` ${footerLink(t.unsubscribe, doc.unsubscribeUrl)}` : "";
   const address = layout.postalAddress ? `<br>${escapeHtml(layout.postalAddress)}` : "";
   const muted = `${font}font-size:12px;line-height:1.6;color:${color.muted};`;
+  const note = doc.footerNote?.trim()
+    ? `<tr><td align="center" class="gt-px" style="padding:0 32px 10px;${muted}">${escapeHtml(doc.footerNote.trim())}</td></tr>\n`
+    : "";
 
   const html = `<table ${TABLE} width="100%" style="width:100%;">
 <tr><td align="center" class="gt-px" style="padding:32px 32px 18px;"><p style="margin:0;${font}font-size:15px;line-height:1.5;color:${color.body};">${escapeHtml(t.support)}</p><p style="margin:6px 0 0;${font}font-size:15px;line-height:1.5;font-weight:700;">${
@@ -165,11 +170,12 @@ function footer(doc: EmailDocument, layout: LayoutOptions): { html: string; text
   }</p></td></tr>
 <tr><td align="center" style="padding:0 32px 18px;"><table ${TABLE} width="64" style="width:64px;"><tr><td style="border-top:1px solid ${color.blue};font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>
 ${social}<tr><td align="center" class="gt-px" style="padding:0 24px 16px;${font}font-size:13px;line-height:2;" role="navigation" aria-label="${escapeHtml(t.footerNav)}">${legal}</td></tr>
-<tr><td align="center" class="gt-px" style="padding:0 32px;${muted}">${escapeHtml(reason)}${unsubscribe}</td></tr>
+${note}<tr><td align="center" class="gt-px" style="padding:0 32px;${muted}">${escapeHtml(reason)}${unsubscribe}</td></tr>
 <tr><td align="center" class="gt-px" style="padding:14px 32px 0;${muted}"><span style="font-weight:700;letter-spacing:0.32em;text-transform:uppercase;color:${color.ink};">${brand}</span><br>${escapeHtml(t.tagline)}${address}<br>&copy; ${year} ${brand}</td></tr>
 </table>`;
 
   const text = [
+    doc.footerNote?.trim() ?? "",
     doc.unsubscribeUrl ? `${t.unsubscribe}: ${doc.unsubscribeUrl.trim()}` : "",
     `${t.contact}: ${sitePath(site, lang, "contact")}`,
     `— ${layout.brandName}\n${site}`,

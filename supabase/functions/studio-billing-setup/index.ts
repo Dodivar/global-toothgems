@@ -1,4 +1,4 @@
-import { requireEnv, serviceClient, stripeClient, type Stripe } from "../_shared/clients.ts";
+import { requireEnv, serviceClient, stripeClient, stripeTestMode, type Stripe } from "../_shared/clients.ts";
 import { hasInternalSecret } from "../_shared/internalAuth.ts";
 import { accountStudioUrl, STUDIO_METADATA_KIND, STUDIO_SUBSCRIPTION_EVENTS } from "../_shared/studioBilling.ts";
 import { toDecimalString } from "../_shared/money.ts";
@@ -14,7 +14,8 @@ import { handleSetup, type SetupDeps } from "./handler.ts";
  */
 
 const supabase = serviceClient();
-const stripe = stripeClient();
+// The Studio's Stripe account: the publisher's (DoDigital, decision 133), `STRIPE_*`.
+const stripe = stripeClient("studio");
 const site = requireEnv("SITE_URL");
 
 const PRODUCT_NAMES = { essential: "Essential", artist: "Artist", atelier: "Atelier" } as const;
@@ -29,7 +30,7 @@ async function testEndpoint() {
 
 const deps: SetupDeps = {
   authorized: (req) => hasInternalSecret(req, Deno.env.get("EMAIL_INTERNAL_SECRET")),
-  testMode: requireEnv("STRIPE_SECRET_KEY").startsWith("sk_test_"),
+  testMode: stripeTestMode("studio"),
 
   async ensureProduct(plan) {
     const found = await stripe.products.search({ query: `metadata['kind']:'studio_plan' AND metadata['plan']:'${plan}' AND active:'true'` });

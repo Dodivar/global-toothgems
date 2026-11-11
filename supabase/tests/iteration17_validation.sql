@@ -30,7 +30,7 @@ begin
 
   -- Act as m1 --------------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
 
   -- W1: a member adds a shop product; the owner comes from the session ----------
   insert into public.wishlist_items (product_id) values (p_live);

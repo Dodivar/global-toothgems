@@ -20,12 +20,12 @@ import {
  * explicitly so a signed-in admin browsing the shop sees what customers see.
  */
 const productSelect = (options: boolean) => `
-  id, slug, name, short_description, description, meta_title, meta_description, price, compare_at_price, currency, is_featured, metadata,
+  id, slug, name, short_description, description, meta_title, meta_description, price, currency, is_featured, metadata,
   spec_material, spec_center, spec_back, spec_packaging, spec_wear,
   category:categories ( slug, name, category_translations ( locale, name, status ) ),
   product_translations ( locale, name, slug, short_description, description, meta_title, meta_description, status,
     spec_material, spec_center, spec_back, spec_packaging, spec_wear ),
-  product_variants ( id, name, attributes, price, compare_at_price, is_active, position,
+  product_variants ( id, name, attributes, price, is_active, position,
     product_variant_translations ( locale, name, status ),${options ? "\n    product_variant_option_values ( option_id, value_id )," : ""}
     inventory_items ( stock_status ) ),${
       options

@@ -36,6 +36,7 @@ import {
   type ChatContextValue,
   type ChatNotification,
   type ConversationView,
+  type ReportResult,
   type SendResult,
 } from "./chatContext";
 
@@ -230,6 +231,10 @@ function reducer(state: State, action: Action): State {
 let localIds = 0;
 
 const noop = () => {};
+
+const NO_BLOCKS: ReadonlySet<string> = new Set();
+const unavailableBlock = () => Promise.resolve(false);
+const unavailableReport = (): Promise<ReportResult> => Promise.resolve({ ok: false, reason: "unavailable" });
 
 export function MockChatProvider({ children }: { children: ReactNode }) {
   const { viewer: communityViewer } = useCommunity();
@@ -503,6 +508,11 @@ export function MockChatProvider({ children }: { children: ReactNode }) {
   );
 
   const value: ChatContextValue = {
+    /* Moderation needs the database (decision 132): nothing is simulated here. */
+    blockedIds: NO_BLOCKS,
+    setBlocked: unavailableBlock,
+    report: unavailableReport,
+    silencedUntil: null,
     servers: CHAT_SERVERS,
     server,
     room: state.room,

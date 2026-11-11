@@ -10,6 +10,7 @@ import { CustomVariantsEditor } from "./CustomVariantsEditor";
 import { MoneyInput, NumberInput } from "./AdminNumberInputs";
 import { FormField } from "./FormField";
 import { GemOptionsEditor } from "./GemOptionsEditor";
+import { PriceReferencePanel } from "./PriceReferencePanel";
 import { ProductMediaUploader } from "./ProductMediaUploader";
 import { RichTextArea } from "./RichTextArea";
 import { ShapePicker } from "./ShapePicker";
@@ -63,7 +64,7 @@ interface ProductFormProps {
 }
 
 type FieldKey =
-  | "name" | "sku" | "price" | "compareAtPrice" | "promoPrice" | "stock" | "lowStockThreshold" | "category" | "family" | "options"
+  | "name" | "sku" | "price" | "stock" | "lowStockThreshold" | "category" | "family" | "options"
   | "variants" | "bundle";
 
 /** Same rule as the `products.sku` column: upper-case letters, digits and hyphens. */
@@ -87,9 +88,6 @@ export function ProductForm({
   const { formatDate } = useFormat();
   const { t } = useTranslation();
   const { source, categories, uploadImage, gemColors } = useAdminCatalog();
-  // The database has no promotional price: discounts are the promotions
-  // workspace's job, so the field only exists in the prototype.
-  const withPromoPrice = source === "mock";
   const [draft, setDraft] = useState<AdminProduct>(initial);
   const [lang, setLang] = useState<ContentLang>("fr");
   const [submitted, setSubmitted] = useState(false);
@@ -156,7 +154,7 @@ export function ProductForm({
     const gemLook = isGem ? {} : { shape: undefined, color: undefined };
     const variantKind = showCustomVariants ? { gemOptions: undefined } : { customVariants: undefined, variantOptions: undefined };
     onSubmit(
-      { ...draft, ...gemLook, ...variantKind, status, promoPrice: withPromoPrice ? draft.promoPrice : undefined },
+      { ...draft, ...gemLook, ...variantKind, status },
       intent,
     );
   };
@@ -351,7 +349,7 @@ export function ProductForm({
           )}
 
           <Section title={t("admin.form.pricingTitle")} description={t("admin.form.pricingBody")}>
-            <div className={clsx("grid gap-4", withPromoPrice ? "md:grid-cols-3" : "md:grid-cols-2")}>
+            <div className="grid gap-4 md:grid-cols-2">
               <FormField label={t("admin.form.price")} required error={showError("price")} hint={t("admin.form.priceHint")}>
                 {(props) => (
                   <MoneyInput
@@ -362,42 +360,9 @@ export function ProductForm({
                   />
                 )}
               </FormField>
-
-              <FormField
-                label={t("admin.form.compareAtPrice")}
-                error={showError("compareAtPrice")}
-                hint={t("admin.form.compareAtPriceHint")}
-              >
-                {(props) => (
-                  <MoneyInput
-                    {...props}
-                    value={draft.compareAtPrice}
-                    onValueChange={(value) => set("compareAtPrice", value)}
-                    onBlur={blur("compareAtPrice")}
-                  />
-                )}
-              </FormField>
-
-              {withPromoPrice && (
-                <FormField
-                  label={t("admin.form.promoPrice")}
-                  error={showError("promoPrice")}
-                  hint={t("admin.form.promoPriceHint")}
-                >
-                  {(props) => (
-                    <MoneyInput
-                      {...props}
-                      value={draft.promoPrice}
-                      onValueChange={(value) => set("promoPrice", value)}
-                      onBlur={blur("promoPrice")}
-                    />
-                  )}
-                </FormField>
-              )}
             </div>
-            {!withPromoPrice && (
-              <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.form.promoInPromotions")}</p>
-            )}
+            <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("admin.form.promoInPromotions")}</p>
+            {source === "supabase" && mode === "edit" && <PriceReferencePanel productId={initial.id} variants={initial.customVariants} />}
           </Section>
 
           <Section title={t("admin.form.mediaTitle")} description={t("admin.form.mediaBody")}>
@@ -770,14 +735,6 @@ function validate(
     errors.price = t("admin.form.errors.pricePositive");
   } else if (!isCentAmount(draft.price)) {
     errors.price = t("admin.form.errors.priceCents");
-  }
-  if (draft.compareAtPrice != null && draft.compareAtPrice <= draft.price) {
-    errors.compareAtPrice = t("admin.form.errors.compareAtTooLow");
-  } else if (draft.compareAtPrice != null && !isCentAmount(draft.compareAtPrice)) {
-    errors.compareAtPrice = t("admin.form.errors.priceCents");
-  }
-  if (draft.promoPrice != null && draft.promoPrice >= draft.price) {
-    errors.promoPrice = t("admin.form.errors.promoTooHigh");
   }
 
   const kit = draft.bundle !== undefined;

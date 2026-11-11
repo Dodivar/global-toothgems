@@ -39,7 +39,6 @@ const PUBLIC_ROUTES: { path: string; heading: RegExp }[] = [
   { path: "/fr/confidentialite", heading: /Politique de confidentialité/ },
   { path: "/fr/cookies", heading: /Politique cookies/ },
   { path: "/fr/a-propos", heading: /À propos de Global Toothgems/ },
-  { path: "/admin/connexion", heading: /Administration/ },
   { path: "/erreur", heading: /Quelque chose s’est un peu déréglé/ },
   { path: "/maintenance", heading: /Nous revenons très vite/ },
 ];

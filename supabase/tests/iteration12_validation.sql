@@ -55,7 +55,7 @@ begin
 
   -- Act as the new member ------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
 
   -- S4: the member edits their own name and phone -------------------------------
   update public.profiles set first_name = 'Léna', phone = '+33 6 00 00 00 00' where id = m1;

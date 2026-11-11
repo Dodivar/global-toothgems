@@ -86,8 +86,8 @@ begin
   foreach v_cnt in array array[1, 2, 3] loop
     perform set_config('role', case v_cnt when 3 then 'anon' else 'authenticated' end, true);
     perform set_config('request.jwt.claims',
-      case v_cnt when 1 then json_build_object('sub', viewer, 'role', 'authenticated')::text
-                 when 2 then json_build_object('sub', m1, 'role', 'authenticated')::text
+      case v_cnt when 1 then json_build_object('aal', 'aal2', 'sub', viewer, 'role', 'authenticated')::text
+                 when 2 then json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text
                  else '{}' end, true);
     begin
       perform public.create_shipment(o1, jsonb_build_array(jsonb_build_object('order_item_id', a1, 'quantity', 1)),
@@ -115,7 +115,7 @@ begin
 
   -- Manager ---------------------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', manager, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', manager, 'role', 'authenticated')::text, true);
 
   begin
     perform public.record_external_refund('pi_shiprefund_o1', 're_shiprefund_x', 1.00, 'EUR');
@@ -294,7 +294,7 @@ begin
   insert into public.gift_cards (code, state, source, currency, initial_amount, order_id, order_item_id, recipient_email)
   values ('GT-AAAA-BBBB-CCCC', 'active', 'purchase', 'EUR', 20.00, o3, e3, 'recipient.test@example.invalid');
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', manager, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', manager, 'role', 'authenticated')::text, true);
   begin
     perform public.request_refund(o3, 5.00, 'goodwill');
     raise exception 'FAIL R4: refunded an order whose gift card is active';
@@ -303,14 +303,14 @@ begin
   execute 'reset role';
   update public.gift_cards set state = 'cancelled', cancelled_at = now() where code = 'GT-AAAA-BBBB-CCCC';
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', manager, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', manager, 'role', 'authenticated')::text, true);
   v_ref := public.request_refund(o3, 5.00, 'goodwill');
   if v_ref.status <> 'pending' then raise exception 'FAIL R4: refund after cancelling the card'; end if;
   passed := passed || 'R4'::text;
 
   -- R5: a pending refund can be cancelled by staff; a customer reads their own parcels
   update public.refunds set status = 'cancelled' where id = v_ref.id;
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.shipments where order_id in (o1, o2);
   if v_cnt < 3 then raise exception 'FAIL R5: customer reads % of their parcels', v_cnt; end if;
   passed := passed || 'R5'::text;

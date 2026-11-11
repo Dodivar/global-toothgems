@@ -236,7 +236,17 @@ export function StudioPaidPlans({
 const PREVIOUS_PLAN: Partial<Record<StudioPaidPlanId, StudioPaidPlanId>> = { artist: "essential", atelier: "artist" };
 
 /** The features a card names, in its order, when the plan has them and the one below does not. */
-const ADDED_FEATURES: readonly StudioFeature[] = ["ownLogo", "transparentExport", "templates", "collections", "glowbook", "tryOn", "postLayouts"];
+const ADDED_FEATURES: readonly StudioFeature[] = [
+  "templates",
+  "clientTools",
+  "posts",
+  "ownLogo",
+  "transparentExport",
+  "collections",
+  "glowbook",
+  "tryOn",
+  "postLayouts",
+];
 
 /**
  * What a plan includes, from `STUDIO_PLAN_FEATURES` (decision 113): Essential
@@ -254,7 +264,7 @@ function PlanFeatureList({ plan }: { plan: StudioPaidPlanId }) {
     if (f.creations !== null) lines.push(t(`${k}.creations`, { count: f.creations }));
     if (f.gemGroups !== null) lines.push(t(`${k}.gemGroups`, { count: f.gemGroups }));
   }
-  if (!previous) lines.push(t(`${k}.library`), t(`${k}.tools`), t(`${k}.watermark`));
+  if (!previous) lines.push(t(`${k}.library`));
   for (const feature of ADDED_FEATURES) {
     if (hasFeature(plan, feature) && !hasFeature(previous, feature)) lines.push(t(`${k}.${feature}`));
   }

@@ -121,14 +121,14 @@ begin
     'opening_hours', v_s.opening_hours, 'support_message', coalesce(v_s.support_message, ''));
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   begin
     perform public.admin_save_store_details(v_det || '{"vat_franchise": false}');
     raise exception 'FAIL F4: a customer switched the franchise';
   exception when insufficient_privilege then null;
   end;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', adm, 'role', 'authenticated')::text, true);
   perform public.admin_save_store_details(v_det || '{"vat_franchise": false}');
   if (select vat_franchise from public.store_settings where id) then raise exception 'FAIL F4: switch off not saved'; end if;
   perform public.admin_save_store_details(v_det);

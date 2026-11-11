@@ -1,8 +1,8 @@
 /*
  * Who may enter the back office (`/admin`): an active profile whose role is a
- * staff role (`roles.is_staff`). One rule for the browser (`adminAuth.tsx`,
- * which also signs any other account back out of the access screen) and for
- * the server's check of the back-office pages (`app/_zones/guard.ts`).
+ * staff role (`roles.is_staff`). One rule for the browser (`adminAuth.tsx`)
+ * and for the proxy's and the server's check of the back-office pages
+ * (`proxy.ts`, `app/_zones/guard.ts`), which answer 404 to anyone else.
  * Navigation only: RLS and `private.is_staff()` decide every read and write.
  */
 

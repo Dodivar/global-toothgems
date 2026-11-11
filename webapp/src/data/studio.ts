@@ -133,10 +133,15 @@ export const STUDIO_TRIAL_DAYS = STUDIO_PLANS.find((plan) => plan.id === "trial"
  *   * the numbers: `private.studio_plan_limit()` (migration
  *     `20261026170231_studio_plan_entitlements`), a save over them is refused;
  *   * the Glowbook: `private.glowbook_allowed()` (same migration);
- *   * templates and collections: `private.studio_artist_plan()` (decision 113 (b),
- *     migration `20261026190000_studio_templates_collections_artist`);
+ *   * collections: `private.studio_artist_plan()` (decision 113 (b), migration
+ *     `20261026190000_studio_templates_collections_artist`); templates: any Studio
+ *     tier since decision 133 (owner's request 2026-11-11);
  *   * the smile try-on: `private.studio_try_on_allowed()` (decision 111 (a));
- *   * the post signature and layouts: `private.studio_user_tier()` (decision 101).
+ *   * the post signature and layouts: `private.studio_user_tier()` (decision 101);
+ *   * share links: `private.studio_share_links_allowed()` (decision 133, migration
+ *     `20261111093241_studio_essential_plan_tools`); posts, the front view and the
+ *     placement sheet are drawn in the browser from the member's own data, so
+ *     only the screens hold them back.
  * A trial counts as Essential, active staff as Atelier. `null` = unlimited.
  */
 export interface StudioPlanFeatures {
@@ -145,6 +150,10 @@ export interface StudioPlanFeatures {
   /** How social posts are signed: the Global Toothgems watermark, or the member's own logo (or nothing). */
   postSignature: "watermark" | "ownLogo";
   postLayouts: boolean;
+  /** "Create a post" for the social networks: HD still or 360° video (decision 133: Artist and up). */
+  posts: boolean;
+  /** The appointment tools: front view, printable placement sheet and read-only share links (decision 133: Artist and up). */
+  clientTools: boolean;
   /** PNG export with a transparent background (owner's request 2026-10-28); below it the image keeps the stage and the watermark. */
   transparentExport: boolean;
   /** The Global Toothgems templates page (browse and copy). */
@@ -161,8 +170,10 @@ export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> 
     gemGroups: 3,
     postSignature: "watermark",
     postLayouts: false,
+    posts: false,
+    clientTools: false,
     transparentExport: false,
-    templates: false,
+    templates: true,
     collections: false,
     glowbook: false,
     tryOn: false,
@@ -172,6 +183,8 @@ export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> 
     gemGroups: 30,
     postSignature: "ownLogo",
     postLayouts: false,
+    posts: true,
+    clientTools: true,
     transparentExport: true,
     templates: true,
     collections: true,
@@ -183,6 +196,8 @@ export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> 
     gemGroups: null,
     postSignature: "ownLogo",
     postLayouts: true,
+    posts: true,
+    clientTools: true,
     transparentExport: true,
     templates: true,
     collections: true,

@@ -74,7 +74,7 @@ begin
     'media', '[]'::jsonb);
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   res := public.admin_save_product(base);
   if res ->> 'family_id' is distinct from f_ess::text then raise exception 'FAIL F4: create returned %', res; end if;
