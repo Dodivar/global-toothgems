@@ -72,4 +72,6 @@ Une phrase par point. Coche au fur et à mesure (`- [x]`).
 - [ ] Remplacer, si besoin, l'e-mail personnel de l'éditeur imprimé sur les factures Studio (Paramètres › Boutique › Éditeur).
 - [ ] Ajouter la modération (masquer, signaler, bloquer) avant d'ouvrir le salon des membres aux clients.
 - [ ] Remplacer les champs `[A COMPLÉTER]` restants dans les fiches produits.
+- [ ] Appliquer la migration de double authentification de l'équipe une fois `dev` fusionné dans `main`, après que chaque membre a activé son application d'authentification sur `/admin` (décision 134).
+- [ ] Activer le captcha de Supabase Auth (Authentication › Attack Protection › Captcha : Cloudflare Turnstile, avec la clé secrète Turnstile du site), maintenant que le site envoie le jeton (décision 137).
 - [ ] Faire une commande test complète en mode live (produit, formation, carte cadeau) puis la rembourser.
