@@ -8820,6 +8820,8 @@ export type Database = {
           publisher_name: string | null
           publisher_phone: string | null
           publisher_registration_number: string | null
+          publisher_vat_franchise: boolean
+          publisher_vat_number: string | null
           region: string | null
           registration_number: string | null
           share_capital: string | null
@@ -8865,6 +8867,8 @@ export type Database = {
           publisher_name?: string | null
           publisher_phone?: string | null
           publisher_registration_number?: string | null
+          publisher_vat_franchise?: boolean
+          publisher_vat_number?: string | null
           region?: string | null
           registration_number?: string | null
           share_capital?: string | null
@@ -8910,6 +8914,8 @@ export type Database = {
           publisher_name?: string | null
           publisher_phone?: string | null
           publisher_registration_number?: string | null
+          publisher_vat_franchise?: boolean
+          publisher_vat_number?: string | null
           region?: string | null
           registration_number?: string | null
           share_capital?: string | null
