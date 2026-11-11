@@ -23,7 +23,7 @@
  * acknowledgement on its own (`studio_credit_note`) once the refund is
  * confirmed — never attached to the acknowledgement, which may race it.
  * The Studio subscription confirmation carries the 3D Studio subscription
- * terms — the publisher's contract, decision 133 — (L221-13, decision 130,
+ * terms — the publisher's contract, decision 135 — (L221-13, decision 130,
  * `termsPdf.ts`): without a terms provider it is not sent (the
  * next run, given one, sends it). The course enrolment carries none: the
  * order confirmation already did.

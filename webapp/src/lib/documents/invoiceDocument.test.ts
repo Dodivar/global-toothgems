@@ -226,6 +226,43 @@ describe("invoice PDF", () => {
     expect(all).toContain("paiement de l’abonnement par carte");
     expect(all).toContain("TVA non applicable, art. 293 B du CGI");
     expect(all).not.toContain("Commande");
+    // A document issued before decision 135 (no studio_seller flag) says nothing more.
+    expect(all).not.toContain("vendu et facturé par");
+  });
+
+  it("a 3D Studio invoice issued by the publisher keeps the brand and says who sells (decision 135)", () => {
+    const studio: InvoiceRow = {
+      ...invoiceRow,
+      invoice_number: "FS-2026-000001",
+      total_excl_tax: "19.90",
+      total_tax: "0",
+      total_incl_tax: "19.90",
+      seller: {
+        store_name: "Global Toothgems",
+        trading_name: "DoDigital",
+        legal_name: "Bob Test EI",
+        legal_form: "Entreprise individuelle (EI)",
+        registration_number: "SIRET 987 654 321 00010",
+        vat_number: "",
+        vat_franchise: true,
+        email: "studio@example.com",
+        address_line1: "2 rue Fictive, 67000 Strasbourg, France",
+        studio_seller: true,
+      },
+      buyer: { email: "camille@example.com", order_number: "", address: { first_name: "Camille", last_name: "Roussel" } },
+      lines: [
+        { kind: "subscription", description: "Artiste", plan: "artist", interval: "month", proration: false, period_start: null, period_end: null, quantity: 1, unit_price_incl: 19.9, unit_price_excl: 19.9, discount_incl: 0, vat_rate_bp: 0, total_incl: 19.9, vat_amount: 0, total_excl: 19.9 },
+      ],
+      vat_breakdown: [{ vat_rate_bp: 0, total_excl: 19.9, vat_amount: 0, total_incl: 19.9 }],
+      payment: { paid_at: "2026-11-11T10:00:00Z", gift_card_amount: 0, charged_amount: 19.9, balance_amount: 0, billing_reason: "subscription_create" },
+    };
+    const inv = mapInvoice(studio);
+    expect(inv.seller.studioSeller).toBe(true);
+    const doc = invoiceDocument(inv, t, fmt);
+    const all = texts(doc);
+    expect(all).toContain("Abonnement au Studio 3D Global Toothgems, vendu et facturé par DoDigital — Bob Test EI.");
+    expect(doc.footer.join(" ")).toContain("DoDigital · Bob Test EI, Entreprise individuelle (EI)");
+    expect(doc.footer.join(" ")).toContain("SIRET 987 654 321 00010");
   });
 
   it("a 3D Studio withdrawal credit note names the unused share and the days used", () => {

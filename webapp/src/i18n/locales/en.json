@@ -3363,7 +3363,7 @@
       },
       "studioRevenue": {
         "title": "3D Studio: money received",
-        "description": "Subscription payments in the period: what is settled, what may still be partly refunded during the 14-day withdrawal period, and what was refunded.",
+        "description": "Collected and invoiced by the website publisher (the Studio’s seller, FS- invoices), not by the shop. Subscription payments in the period: what is settled, what may still be partly refunded during the 14-day withdrawal period, and what was refunded.",
         "received": "Received",
         "settled": "Settled",
         "settledHint": "Renewals, first payments past 14 days, and the share kept for the days used when a member withdrew.",
@@ -4996,6 +4996,7 @@
       "vatTitle": "VAT summary",
       "vatFranchise": "TVA non applicable, art. 293 B du CGI (VAT not applicable, article 293 B of the French General Tax Code).",
       "paid": "Invoice paid on {{date}}: payment in full when ordering, no discount for early payment.",
+      "studioSoldBy": "{{brand}} 3D Studio subscription, sold and invoiced by {{seller}}.",
       "giftCardNote": "Gift cards: multi-purpose vouchers, outside the scope of VAT when bought; VAT is due when they are used.",
       "latePayment": "Business customers: late payment incurs interest at three times the French legal rate and a fixed €40 recovery fee (French Commercial Code, art. L441-10).",
       "fileName": "invoice",

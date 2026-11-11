@@ -6,7 +6,7 @@ import { supabase } from "./supabase/client";
  * art. 293 B du CGI, decision 114), public by design:
  *
  *   - the shop (goods, courses, gift cards — the seller): `store_settings.vat_franchise`;
- *   - the 3D Studio (the website publisher, decision 133): `store_settings.publisher_vat_franchise`.
+ *   - the 3D Studio (the website publisher, decision 135): `store_settings.publisher_vat_franchise`.
  *
  * The database charges the VAT (`vat_rate_bp()` is 0 under the franchise; a
  * Studio invoice freezes the publisher's regime); this only chooses the words

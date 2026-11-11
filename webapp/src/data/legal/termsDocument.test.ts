@@ -127,7 +127,7 @@ describe("legal page flattening", () => {
   });
 });
 
-// The 3D Studio is sold by the website publisher, under terms of its own (decision 133).
+// The 3D Studio is sold by the website publisher, under terms of its own (decision 135).
 function studioText(lang: TermsLang, reference?: string): string {
   const doc = studioTermsDocument({ lang, t: T[lang], date: dateIn(lang), store, reference });
   return layoutDocument(doc)

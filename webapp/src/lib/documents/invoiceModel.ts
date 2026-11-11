@@ -90,6 +90,11 @@ export interface InvoiceSeller {
   email: string;
   addressLines: string[];
   countryCode: string;
+  /**
+   * A 3D Studio document, sold and issued by the website publisher (decision 135):
+   * the document says who sells under the site's brand.
+   */
+  studioSeller: boolean;
 }
 
 export interface OrderInvoice {
@@ -207,6 +212,7 @@ function seller(value: Json | undefined): InvoiceSeller {
       Boolean,
     ),
     countryCode: str(s.country_code).toUpperCase(),
+    studioSeller: s.studio_seller === true,
   };
 }
 
