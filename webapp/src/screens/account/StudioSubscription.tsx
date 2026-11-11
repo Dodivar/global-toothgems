@@ -9,6 +9,7 @@ import { useNavigate } from "../../lib/navigation";
 import { useFormat } from "../../lib/format";
 import { StudioAccessProvider, useStudioAccess } from "../../lib/studioAccess";
 import { StudioWithdrawalPanel } from "../../components/studio/account/StudioWithdrawalPanel";
+import { StudioCheckoutPlans } from "../../components/studio/StudioPlans";
 import { StudioBillingManager } from "../../components/studio/account/StudioBillingManager";
 import { StudioPlanUsage } from "../../components/studio/account/StudioPlanUsage";
 import { STUDIO_EDITOR_PATH, STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl";
@@ -48,6 +49,17 @@ function StudioSubscriptionContent() {
       ) : status.kind === "ready" ? (
         <>
           <SubscriptionPanel info={status.info} />
+          {status.info.state === "trial_active" && (
+            <section aria-labelledby="studio-trial-plans" className="grid gap-4">
+              <div className="grid gap-1">
+                <h2 id="studio-trial-plans" className="text-[length:var(--text-h3)]">
+                  {t("studio.account.trialPlansTitle")}
+                </h2>
+                <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("studio.account.trialPlansBody")}</p>
+              </div>
+              <StudioCheckoutPlans surface="studio_subscribe_page" />
+            </section>
+          )}
           {status.info.subscriptionPlan !== null && <StudioBillingManager onChanged={refresh} />}
           {status.info.subscriptionPlan !== null && <StudioWithdrawalPanel onWithdrawn={refresh} />}
         </>
