@@ -2793,8 +2793,8 @@ VAT rates, shipping zones/rates mirroring the Settings prototype. Media rows ref
      that day). Templates: any Studio tier (`private.studio_templates_allowed()`); collections stay Artist and up.
      Share links: created only from the Artist plan up (`private.studio_share_links_allowed()`); an owner below Artist
      can still disable a link; **the existing links of an owner below Artist no longer open** (viewer, preview card,
-     card render) and come back as they were on an upgrade — like folders and the Glowbook (**to confirm** with the
-     owner). Posts, front view and placement sheet are drawn in the browser from the member's own creation: only the
+     card render) and come back as they were on an upgrade — like folders and the Glowbook (**confirmed by the
+     owner on 2026-11-11**). Posts, front view and placement sheet are drawn in the browser from the member's own creation: only the
      screens hold them back (`STUDIO_PLAN_FEATURES.posts` / `clientTools`, locked rows opening the plan panel). The
      estimate sheet and the plain PNG snapshot (and its system share sheet) stay open to every plan (assumption: the
      owner's "fiche client" is the placement sheet, as on the plan cards). A trial counts as Essential, so the 48-hour
