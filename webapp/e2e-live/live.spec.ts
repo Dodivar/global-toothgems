@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { ACCOUNTS, anonClient, DEMO_MEMBER_ID, serviceClient, signedInClient, staffClient, testPassword } from "./env";
 import { dismissCookieBanner, expect, open, signIn, signInStaff, test } from "./fixtures";
 
@@ -323,6 +324,79 @@ test.describe("kits, stock derived from their products (decision 117)", () => {
     } finally {
       await db.from("products").delete().eq("id", trio);
       await db.from("products").delete().in("id", [glossA, glossB]);
+    }
+  });
+});
+
+test.describe("Academy learner access, through Auth and RLS (decision: courses are not products)", () => {
+  test("a granted course opens to its member only; progress is the server's; revoking closes it", async ({ page, problems }) => {
+    const db = serviceClient();
+    const staff = await staffClient(ACCOUNTS.staff, testPassword());
+    const customer = await signedInClient(ACCOUNTS.customer, testPassword());
+    const other = await signedInClient(ACCOUNTS.demo, testPassword());
+    const tag = Date.now().toString(36);
+    const title = `Parcours E2E ${tag}`;
+    const [courseId, moduleId, step1, step2] = [randomUUID(), randomUUID(), randomUUID(), randomUUID()];
+
+    try {
+      // Authored by a staff member past the second factor, through the back office's own function.
+      const saved = await staff.rpc("admin_save_course", {
+        p_course: {
+          id: courseId, slug: `parcours-e2e-${tag}`, title, category: "technique", level: "beginner", price: "120.00",
+          modules: [{ id: moduleId, title: "Module 1", steps: [
+            { id: step1, title: "Hygiène", duration_minutes: 5 },
+            { id: step2, title: "Matériel", duration_minutes: 5 },
+          ] }],
+        },
+      });
+      expect(saved.error).toBeNull();
+      expect((await db.from("courses").update({ status: "published" }).eq("id", courseId)).error).toBeNull();
+
+      // A customer can neither grant themselves the course nor write an entitlement row.
+      const selfGrant = await customer.rpc("admin_grant_course", { p_email: ACCOUNTS.customer, p_course_id: courseId });
+      expect(selfGrant.error?.code).toBe("42501");
+      const { data: me } = await customer.auth.getUser();
+      const forged = await customer.from("course_entitlements").insert({ user_id: me.user!.id, course_id: courseId, source: "manual_grant" });
+      expect(forged.error).not.toBeNull();
+
+      // Before any grant the course is nobody's.
+      const before = await customer.rpc("learner_courses");
+      expect(before.error).toBeNull();
+      expect(JSON.stringify(before.data)).not.toContain(courseId);
+      expect((await customer.rpc("complete_course_step", { p_step_id: step1 })).error?.code).toBe("42501");
+
+      const grant = await staff.rpc("admin_grant_course", { p_email: ACCOUNTS.customer, p_course_id: courseId });
+      expect(grant.error).toBeNull();
+      const entitlementId = grant.data as string;
+
+      // The member reads the course and records progress; the database keeps it.
+      const granted = await customer.rpc("learner_courses");
+      expect(JSON.stringify(granted.data)).toContain(courseId);
+      expect((await customer.rpc("complete_course_step", { p_step_id: step1 })).error).toBeNull();
+      const progress = await db.from("lesson_progress").select("step_id").eq("user_id", me.user!.id).eq("course_id", courseId);
+      expect(progress.data).toEqual([{ step_id: step1 }]);
+
+      // Another member and an anonymous visitor get nothing, and cannot write progress.
+      expect(JSON.stringify((await other.rpc("learner_courses")).data)).not.toContain(courseId);
+      expect((await other.rpc("complete_course_step", { p_step_id: step2 })).error?.code).toBe("42501");
+      expect((await anonClient().rpc("learner_courses")).error).not.toBeNull();
+      expect((await other.from("lesson_progress").select("step_id").eq("course_id", courseId)).data ?? []).toEqual([]);
+
+      // The member space lists the course, read from the database.
+      await signIn(page, ACCOUNTS.customer, "/connexion?suite=%2Fcompte");
+      await expect(page).toHaveURL((url) => url.pathname === "/compte");
+      await expect(page.getByText(title).first()).toBeVisible();
+
+      // Revoking closes it again, server-side.
+      expect((await staff.rpc("admin_revoke_course_entitlement", { p_entitlement_id: entitlementId })).error).toBeNull();
+      expect(JSON.stringify((await customer.rpc("learner_courses")).data)).not.toContain(courseId);
+      expect((await customer.rpc("complete_course_step", { p_step_id: step2 })).error?.code).toBe("42501");
+
+      expect(problems).toEqual([]);
+    } finally {
+      await db.from("lesson_progress").delete().eq("course_id", courseId);
+      await db.from("course_entitlements").delete().eq("course_id", courseId);
+      await db.from("courses").delete().eq("id", courseId);
     }
   });
 });

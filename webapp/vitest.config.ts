@@ -21,7 +21,7 @@ function nextStaticImages(): Plugin {
  * Coverage (`npm run test:coverage`) measures the domain logic in `src/lib`
  * (rules, mappings, money); screens and components are covered by the
  * Playwright suites instead. Thresholds are a floor set just under the
- * measured baseline (2026-10-14: lines 49.7 %, branches 52.9 %), to be raised
+ * measured baseline (2026-11-11: lines 56.2 %, branches 58.8 %), to be raised
  * as tests are added, never lowered to make a run pass. The modules that
  * compute money, cart lines and grading carry their own, stricter floor.
  */
@@ -31,10 +31,10 @@ const coverage = {
   exclude: ["src/lib/**/*.test.ts", "src/lib/supabase/database.types.ts"],
   reporter: ["text-summary", "json-summary", "html", "lcov"],
   thresholds: {
-    lines: 49,
-    statements: 49,
-    branches: 52,
-    functions: 55,
+    lines: 55,
+    statements: 55,
+    branches: 58,
+    functions: 60,
     "src/lib/catalog/money.ts": { lines: 100, branches: 100, functions: 100, statements: 100 },
     "src/lib/checkout/cartLines.ts": { lines: 100, branches: 95 },
     "src/lib/checkout/giftCardQuote.ts": { lines: 100, branches: 95 },
@@ -48,6 +48,9 @@ const coverage = {
     "src/lib/staffProfile.ts": { lines: 100, branches: 100 },
     "src/lib/promotionRules.ts": { lines: 69, branches: 69 },
     "src/lib/registration.ts": { lines: 81, branches: 77 },
+    "src/lib/checkout/api.ts": { lines: 88, branches: 85 },
+    "src/lib/orderWithdrawal.ts": { lines: 88, branches: 70 },
+    "src/lib/supabase/productionGuard.ts": { lines: 95, branches: 100 },
   },
 } as const;
 
