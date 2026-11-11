@@ -46,7 +46,7 @@ begin
   passed := passed || 'M1'::text;
 
   -- M2: no aal claim ------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', adm, 'role', 'authenticated')::text, true);
   if private.is_staff() or private.has_permission('manage_users') then
     raise exception 'FAIL M2: a token without aal counts as aal2';
   end if;

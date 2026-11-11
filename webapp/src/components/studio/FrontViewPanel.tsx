@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
-import { ChevronDown, FileDown, Smile } from "lucide-react";
+import { ChevronDown, FileDown, Lock, Smile } from "lucide-react";
 import type { PlacedJewelry } from "../../data/studioEditor";
 import type { FrontViewProjection } from "../../lib/studio3d/frontView";
 import type { SceneModel } from "../../lib/studioWorkspace/scene";
@@ -11,6 +11,9 @@ import { FrontView } from "./FrontView";
 import { useFrontView } from "./useFrontView";
 import { useFrontViewLabels } from "./frontViewLabels";
 import { usePlacementSheet, type PlacementSheetRequest } from "./usePlacementSheet";
+import { useStudioFeature } from "../../lib/studioAccess";
+import { lowestPlanWith } from "../../lib/studioEntitlements";
+import { openWorkspaceDialog } from "../../lib/studioWorkspace/workspaceUi";
 
 /**
  * The front view as the Studio shows it: the drawing (named and described for
@@ -195,6 +198,29 @@ export function FrontViewSection({
   const projection = useFrontView(pieces, model);
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
+  // The front view is the Artist plan's and above (decision 133): below it, the row opens the plan panel.
+  const locked = useStudioFeature("clientTools") === false;
+  if (locked) {
+    return (
+      <section aria-label={t("studio.frontView.title")} className={clsx("grid gap-2", className)}>
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => openWorkspaceDialog({ kind: "planLocked", feature: "clientTools" })}
+          className="flex min-h-11 w-full items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3.5 text-left transition-colors hover:border-[var(--gt-blue-400)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+        >
+          <span className="flex min-w-0 items-center gap-2.5">
+            <Smile size={16} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
+            <span className="text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.frontView.title")}</span>
+          </span>
+          <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold text-[var(--text-muted)]">
+            <Lock size={13} aria-hidden="true" />
+            {t("studio.access.planLocked.withPlan", { plan: t(`studio.plans.items.${lowestPlanWith("clientTools")}.name`) })}
+          </span>
+        </button>
+      </section>
+    );
+  }
   return (
     <section aria-label={t("studio.frontView.title")} className={clsx("grid gap-2", className)}>
       <h3 className="m-0">

@@ -15,7 +15,7 @@ export function courseCardData(course: PublicCourse, lang: string, t: TFunction)
     duration: formatDuration(course.minutes, lang),
     price: toMajorUnits(course.currentPrice.minor),
     currency: course.currentPrice.currency,
-    compareAt: isDiscounted(course) ? toMajorUnits(course.price.minor) : undefined,
+    compareAt: isDiscounted(course) && course.referencePrice ? toMajorUnits(course.referencePrice.minor) : undefined,
     image: course.cover?.src,
   };
 }

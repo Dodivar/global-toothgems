@@ -195,7 +195,19 @@
         "title": "L’essayage par IA est inclus dans l’abonnement {{plan}}",
         "short": "Montrez une création sur une vraie photo de sourire avant la pose.",
         "body": "À partir d’une photo de sourire, l’IA montre la création enregistrée posée sur les dents : de quoi se projeter avant le rendez-vous. Toute personne qui visite votre Glowbook peut aussi l’essayer.",
-        "kept": "Vos créations, l’estimation et la fiche de pose restent disponibles avec votre abonnement actuel."
+        "kept": "Vos créations et la fiche d’estimation restent disponibles avec votre abonnement actuel."
+      },
+      "posts": {
+        "title": "Les publications pour les réseaux sont incluses dans l’abonnement {{plan}}",
+        "short": "Transformez une création en image HD ou en vidéo 360° pour vos réseaux.",
+        "body": "Créez un post à partir d’une création : image HD ou vidéo 360°, en format Story, carré ou portrait, signé de votre logo ou sans filigrane, prêt à partager depuis votre téléphone.",
+        "kept": "En attendant, la capture PNG reste disponible, sur le fond du Studio et avec le logo Global Toothgems."
+      },
+      "clientTools": {
+        "title": "La vue de face, la fiche de pose et le partage par lien sont inclus dans l’abonnement {{plan}}",
+        "short": "Préparez le rendez-vous et montrez la création à votre cliente.",
+        "body": "La vue de face numérotée des deux arcades, la fiche de pose en PDF à imprimer pour le rendez-vous, et un lien en lecture seule pour montrer la création en 3D à votre cliente.",
+        "kept": "Vos créations et la fiche d’estimation restent disponibles. Les liens que vous aviez créés ne s’ouvrent plus pour l’instant et reviennent tels quels dès que vous repassez à cette formule."
       }
     }
   },
@@ -808,6 +820,8 @@
       "tryOn": "Essayage par IA pour vos clientes",
       "included": "inclus",
       "withPlan": "avec la formule {{plan}}",
+      "clientTools": "Vue de face, fiche de pose et partage par lien",
+      "posts": "Publications pour les réseaux",
       "templates": "Modèles Global Toothgems",
       "collections": "Dossiers pour ranger vos créations"
     }

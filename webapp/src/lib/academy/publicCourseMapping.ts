@@ -1,3 +1,4 @@
+import { indexPriceReferences, type PriceReference, type PriceReferenceRow } from "../storefrontOffers";
 import type { Localized } from "../../data/types";
 import { toMinorUnits } from "../catalog/money";
 import { COURSE_CATEGORIES, COURSE_LEVELS, type CourseCategory, type CourseLevel, type PublicCourse, type PublicModule, previewStepTitle } from "./publicCourse";
@@ -131,7 +132,11 @@ function mapModule(row: NonNullable<PublicCourseRow["course_modules"]>[number], 
   };
 }
 
-export function mapPublicCourse(row: PublicCourseRow, price: CoursePriceRow | undefined): PublicCourse {
+/**
+ * `reference`: the course's `storefront_price_references()` row (decision 129, Omnibus). The struck-out price is its
+ * reference price, only when the database says the price now is a reduction from it — never the list price.
+ */
+export function mapPublicCourse(row: PublicCourseRow, price: CoursePriceRow | undefined, reference: PriceReference | null = null): PublicCourse {
   const t = english(row.course_translations);
   const listPrice = toMinorUnits(row.price);
   // Without its current price (a view row RLS hides at the same time as the
@@ -157,6 +162,10 @@ export function mapPublicCourse(row: PublicCourseRow, price: CoursePriceRow | un
     issuesCertificate: row.issues_certificate,
     price: { minor: listPrice, currency: row.currency },
     currentPrice: { minor: Math.min(now, listPrice), currency: row.currency },
+    referencePrice:
+      reference && reference.struckCents !== null && reference.currency === row.currency && reference.struckCents > Math.min(now, listPrice)
+        ? { minor: reference.struckCents, currency: row.currency }
+        : null,
     promotionEndsAt: now < listPrice ? (price?.promotion_ends_at ?? null) : null,
     cover: cover
       ? {
@@ -169,7 +178,8 @@ export function mapPublicCourse(row: PublicCourseRow, price: CoursePriceRow | un
   };
 }
 
-export function mapPublicCourses(rows: PublicCourseRow[], prices: CoursePriceRow[]): PublicCourse[] {
+export function mapPublicCourses(rows: PublicCourseRow[], prices: CoursePriceRow[], references: readonly PriceReferenceRow[] = []): PublicCourse[] {
   const byCourse = new Map(prices.map((price) => [price.course_id, price]));
-  return rows.map((row) => mapPublicCourse(row, byCourse.get(row.id)));
+  const index = indexPriceReferences(references);
+  return rows.map((row) => mapPublicCourse(row, byCourse.get(row.id), index.course(row.id)));
 }

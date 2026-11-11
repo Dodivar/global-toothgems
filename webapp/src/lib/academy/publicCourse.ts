@@ -78,6 +78,11 @@ export interface PublicCourse extends SluggedProduct {
   price: Money;
   /** Price now, after the running promotion; equals `price` without one. */
   currentPrice: Money;
+  /**
+   * The struck-out price: the database's reference price (lowest of the 30 days before the reduction, decision
+   * 129, Omnibus), set only while the price now is a reduction from it. Null otherwise — then nothing is struck.
+   */
+  referencePrice: Money | null;
   /** End of the running promotion, null when open-ended or none. */
   promotionEndsAt: string | null;
   cover: { src: string; alt: Localized | null } | null;
@@ -125,8 +130,9 @@ export function moduleMinutes(module: PublicModule): number {
   return module.steps.reduce((sum, step) => sum + step.minutes, 0);
 }
 
-export function isDiscounted(course: Pick<PublicCourse, "price" | "currentPrice">): boolean {
-  return course.currentPrice.minor < course.price.minor;
+/** A reduction to announce (struck-out reference price), as the database decided it. */
+export function isDiscounted(course: Pick<PublicCourse, "currentPrice" | "referencePrice">): boolean {
+  return course.referencePrice !== null && course.currentPrice.minor < course.referencePrice.minor;
 }
 
 export function courseSlug(course: PublicCourse, locale: Locale): string {

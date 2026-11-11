@@ -145,6 +145,8 @@ export interface RefundInput {
   reason: string;
   lines: ParcelLineInput[];
   restock: boolean;
+  /** The shop withdrawal this refund settles (decision 131): the database takes its lines; reason `return`. */
+  withdrawalId?: string;
 }
 
 async function callRefundFunction(body: Record<string, unknown>): Promise<FulfillmentResult> {
@@ -167,8 +169,9 @@ export function requestRefund(orderId: string, input: RefundInput): Promise<Fulf
     order_id: orderId,
     amount_minor: input.amountMinor,
     reason: input.reason,
-    items: input.lines.map((l) => ({ order_item_id: l.orderItemId, quantity: l.quantity })),
+    items: input.withdrawalId ? [] : input.lines.map((l) => ({ order_item_id: l.orderItemId, quantity: l.quantity })),
     restock: input.restock,
+    ...(input.withdrawalId ? { withdrawal_id: input.withdrawalId } : {}),
   });
 }
 

@@ -85,8 +85,8 @@ begin
   if v_json ? 'user_id' or v_json::text like '%' || artist || '%' then raise exception 'FAIL T2: owner id exposed'; end if;
   select s.try_on into v_flag from public.studio_shared_creation(v_token) s;
   if v_flag is distinct from true then raise exception 'FAIL T2: share flag %', v_flag; end if;
-  select s.try_on into v_flag from public.studio_shared_creation(v_lapsed_token) s;
-  if v_flag is distinct from false then raise exception 'FAIL T2: lapsed owner share flag %', v_flag; end if;
+  -- Decision 133: the link of an owner below the Artist plan no longer opens at all.
+  if exists (select 1 from public.studio_shared_creation(v_lapsed_token)) then raise exception 'FAIL T2: lapsed owner share link still opens'; end if;
   execute 'reset role';
   passed := passed || 'T2'::text;
 

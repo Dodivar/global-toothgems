@@ -38,6 +38,17 @@ const deps: RefundDeps = {
   },
 
   async requestRefund(token, input) {
+    if (input.withdrawal_id) {
+      // A withdrawal's refund: its lines and the link are set by the database.
+      const { data, error } = await callerClient(token).rpc("request_withdrawal_refund", {
+        p_withdrawal_id: input.withdrawal_id,
+        p_order_id: input.order_id,
+        p_amount: toDecimalString(input.amount_minor),
+        p_restock: input.restock,
+      });
+      if (error) return { error: { code: error.code, message: error.message } };
+      return { refund: toRow(data as Row) };
+    }
     const { data, error } = await callerClient(token).rpc("request_refund", {
       p_order_id: input.order_id,
       p_amount: toDecimalString(input.amount_minor),

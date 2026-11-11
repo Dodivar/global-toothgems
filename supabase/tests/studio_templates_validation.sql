@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 3D Studio templates validation suite
 -- (migrations 20261018224657_studio_templates, 20261026190000_studio_templates_collections_artist,
---  decisions 97 and 113 (b))
+--  20261111093241_studio_essential_plan_tools, decisions 97, 113 (b) and 133)
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
@@ -24,9 +24,9 @@
 --       renders are not, and nothing without access;
 --   T9  another manage_content member unpublishes the template: it leaves the
 --       library, the member's copy stays theirs.
---   T10 below the Artist plan (a trial, an Essential subscription, an
---       Artist subscription that ended) the library, the copy and the renders
---       are refused; an Atelier subscription has them (decision 113 (b)).
+--   T10 every Studio tier has the library, the copy and the renders — a
+--       trial, an Essential and an Atelier subscription (decision 133; Artist
+--       and up under decision 113 (b)); a subscription that ended is refused.
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL STUDIO TEMPLATE TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -266,27 +266,18 @@ begin
   if v_state is distinct from 'P0002' then raise exception 'FAIL T9: copied an unpublished template (%)', v_state; end if;
   passed := passed || 'T9'::text;
 
-  -- T10: the Artist plan and above only (decision 113 (b)).
+  -- T10: every Studio tier since decision 133 (the Artist plan and above under 113 (b)).
   -- (t_new is still published: T9 took t_old down.)
   perform set_config('role', 'authenticated', true);
   foreach r in array array[to_jsonb(m_trial2), to_jsonb(m_ess)] loop
     perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', r #>> '{}', 'role', 'authenticated')::text, true);
-    v_state := null;
-    begin
-      perform public.studio_templates();
-    exception when others then v_state := sqlstate;
-    end;
-    if v_state is distinct from '42501' then raise exception 'FAIL T10: % read the templates (%)', r, v_state; end if;
-    v_state := null;
-    begin
-      perform public.studio_use_template(t_new);
-    exception when others then v_state := sqlstate;
-    end;
-    if v_state is distinct from '42501' then raise exception 'FAIL T10: % copied a template (%)', r, v_state; end if;
-    select count(*) into v_cnt from storage.objects where bucket_id = 'studio-thumbnails' and name like author || '/%';
-    if v_cnt <> 0 then raise exception 'FAIL T10: % read template renders (%)', r, v_cnt; end if;
-    select count(*) into v_cnt from public.creations where user_id = (r #>> '{}')::uuid;
-    if v_cnt <> 0 then raise exception 'FAIL T10: % got a copy (%)', r, v_cnt; end if;
+    if not exists (select 1 from public.studio_templates() x where x.id = t_new) then
+      raise exception 'FAIL T10: % refused the library', r;
+    end if;
+    select count(*) into v_cnt from storage.objects where bucket_id = 'studio-thumbnails' and name = author || '/new.jpg';
+    if v_cnt <> 1 then raise exception 'FAIL T10: % cannot read the template render (%)', r, v_cnt; end if;
+    v_copy := public.studio_use_template(t_new);
+    if v_copy.user_id <> (r #>> '{}')::uuid then raise exception 'FAIL T10: % copy not theirs', r; end if;
   end loop;
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_atl, 'role', 'authenticated')::text, true);
   if not exists (select 1 from public.studio_templates() x where x.id = t_new) then raise exception 'FAIL T10: Atelier refused the library'; end if;
@@ -301,7 +292,7 @@ begin
     perform public.studio_templates();
   exception when others then v_state := sqlstate;
   end;
-  if v_state is distinct from '42501' then raise exception 'FAIL T10: ended Artist subscription read the templates (%)', v_state; end if;
+  if v_state is distinct from '42501' then raise exception 'FAIL T10: ended subscription read the templates (%)', v_state; end if;
   passed := passed || 'T10'::text;
 
   raise exception 'ALL STUDIO TEMPLATE TESTS PASSED (%)', array_to_string(passed, ', ');

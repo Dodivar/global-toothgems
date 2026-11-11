@@ -1,6 +1,7 @@
 import { requireSupabase, type TypedSupabaseClient } from "../supabase/client";
 import type { PublicCourse } from "./publicCourse";
 import { mapPublicCourses, type CoursePriceRow, type PublicCourseRow } from "./publicCourseMapping";
+import type { PriceReferenceRow } from "../storefrontOffers";
 
 /**
  * The published Academy as a visitor reads it (migration
@@ -31,15 +32,20 @@ export async function fetchPublicCourses(signal?: AbortSignal, db: TypedSupabase
     .order("published_at", { ascending: true })
     .order("title", { ascending: true });
   let prices = db.from("course_current_prices").select("course_id, current_price, promotion_ends_at");
+  // The struck-out price, only from the database's reference (decision 129, Omnibus).
+  let references = db.rpc("storefront_price_references");
   if (signal) {
     courses = courses.abortSignal(signal);
     prices = prices.abortSignal(signal);
+    references = references.abortSignal(signal);
   }
-  const [courseResult, priceResult] = await Promise.all([courses, prices]);
+  const [courseResult, priceResult, referenceResult] = await Promise.all([courses, prices, references]);
   if (courseResult.error) throw courseResult.error;
   if (priceResult.error) throw priceResult.error;
+  if (referenceResult.error) throw referenceResult.error;
   return mapPublicCourses(
     (courseResult.data ?? []) as unknown as PublicCourseRow[],
     (priceResult.data ?? []) as CoursePriceRow[],
+    ((referenceResult.data ?? []) as PriceReferenceRow[]).filter((r) => r.course_id !== null),
   );
 }

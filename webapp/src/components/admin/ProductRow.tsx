@@ -29,7 +29,6 @@ import { isBundle } from "../../lib/productBundles";
 import { useFormat } from "../../lib/format";
 import {
   displayState,
-  effectivePrice,
   inventoryState,
   stockState,
   type AdminProduct,
@@ -103,8 +102,6 @@ export function ProductRow({
   const stock = stockState(product);
   const archived = product.status === "archived";
   const cover = product.media[0];
-  const price = effectivePrice(product);
-  const discounted = product.promoPrice != null && product.promoPrice < product.price;
 
   const { shape, color } = product;
 
@@ -276,13 +273,8 @@ export function ProductRow({
       <td className="py-3 pr-4 align-middle">
         <span className="grid gap-0.5">
           <span className="text-[length:var(--text-body-sm)] font-semibold tabular-nums text-[var(--text-primary)]">
-            {formatPrice(price)}
+            {formatPrice(product.price)}
           </span>
-          {discounted && (
-            <span className="text-[length:var(--text-caption)] text-[var(--text-muted)] line-through tabular-nums">
-              {formatPrice(product.price)}
-            </span>
-          )}
         </span>
       </td>
 

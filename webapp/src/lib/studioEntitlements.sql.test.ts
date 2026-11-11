@@ -59,15 +59,25 @@ describe("the plan table matches the database", () => {
     expect(tiersAllowed(latestDefinition("private.studio_share_logo_allowed"))).toEqual(fromTier(lowestPlanWith("ownLogo")));
   });
 
-  it("templates and folders (private.studio_artist_plan)", () => {
-    const allowed = tiersAllowed(latestDefinition("private.studio_artist_plan"));
-    expect(allowed).toEqual(fromTier(lowestPlanWith("templates")));
-    expect(allowed).toEqual(fromTier(lowestPlanWith("collections")));
+  it("folders (private.studio_artist_plan)", () => {
+    expect(tiersAllowed(latestDefinition("private.studio_artist_plan"))).toEqual(fromTier(lowestPlanWith("collections")));
   });
 
-  it("templates, folder reads and folder writes go through that check, not plain Studio access", () => {
-    expect(latestDefinition("public.studio_templates")).toMatch(/not private\.studio_artist_plan\(\)/);
-    expect(latestDefinition("public.studio_use_template")).toMatch(/not private\.studio_artist_plan\(\)/);
+  it("templates (private.studio_templates_allowed, decision 133)", () => {
+    expect(tiersAllowed(latestDefinition("private.studio_templates_allowed"))).toEqual(fromTier(lowestPlanWith("templates")));
+  });
+
+  it("share links (private.studio_share_links_allowed, decision 133)", () => {
+    expect(tiersAllowed(latestDefinition("private.studio_share_links_allowed"))).toEqual(fromTier(lowestPlanWith("clientTools")));
+    expect(latestDefinition("public.studio_share_creation")).toMatch(/not private\.studio_share_links_allowed\(v_user\)/);
+    for (const fn of ["public.studio_shared_creation", "public.studio_shared_creation_preview", "private.is_shared_creation_thumbnail"]) {
+      expect(latestDefinition(fn), fn).toMatch(/private\.studio_share_links_allowed\(s\.user_id\)/);
+    }
+  });
+
+  it("templates, folder reads and folder writes go through their checks, not plain Studio access", () => {
+    expect(latestDefinition("public.studio_templates")).toMatch(/not private\.studio_templates_allowed\(\)/);
+    expect(latestDefinition("public.studio_use_template")).toMatch(/not private\.studio_templates_allowed\(\)/);
     const files = readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort();
     const sql = files.map((f) => readFileSync(join(MIGRATIONS, f), "utf8")).join("\n");
     for (const policy of [

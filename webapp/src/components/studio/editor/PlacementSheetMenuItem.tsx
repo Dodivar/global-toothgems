@@ -1,6 +1,9 @@
 import { FileDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "../../../lib/toast";
+import { useStudioFeature } from "../../../lib/studioAccess";
+import { lowestPlanWith } from "../../../lib/studioEntitlements";
+import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { studioStore } from "../../../lib/studio3d/store";
 import { usePlacementSheet } from "../usePlacementSheet";
 import { PopoverItem } from "./EditorPopover";
@@ -14,6 +17,22 @@ export function PlacementSheetMenuItem({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const { download, ready } = usePlacementSheet();
+  // The Artist plan's and above (decision 133): below it, listed locked and opening the plan panel.
+  const allowed = useStudioFeature("clientTools");
+  if (allowed === false) {
+    return (
+      <PopoverItem
+        locked
+        icon={<FileDown size={14} />}
+        label={t("studio.placementSheet.action")}
+        sub={t("studio.access.planLocked.withPlan", { plan: t(`studio.plans.items.${lowestPlanWith("clientTools")}.name`) })}
+        onClick={() => {
+          onDone();
+          openWorkspaceDialog({ kind: "planLocked", feature: "clientTools" });
+        }}
+      />
+    );
+  }
   return (
     <PopoverItem
       icon={<FileDown size={14} />}

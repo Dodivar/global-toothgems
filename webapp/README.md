@@ -624,6 +624,8 @@ With Supabase, files go to the private `training-media` bucket under `media/<id>
 
 ## The Members' Lounge (`/compte/salons`)
 
+**Moderation (decision 132):** a message's menu offers *Signaler ce message* (`components/communityChat/ReportDialog.tsx`: reason, category, explanation, acknowledgement) and *Masquer les messages de…* (also on the profile card); the member's own hidden message carries the team's notice and a link to `/compte/moderation` (`screens/account/LoungeModeration.tsx`: decisions, complaints, reports, hidden members); a muted member sees a notice instead of the composer, an excluded one a locked screen leading to the decision. Back office: `/admin/salons` (`screens/admin/AdminLounge.tsx`, `lib/adminLoungeModeration*.ts`, permission `moderate_community`). Data rules: `supabase/README.md`, *Members' Lounge moderation*. Mock mode simulates none of it (report and block answer "unavailable").
+
 The community's private chat — *Salon des membres* / *Members' Lounge*. The door: an account with an active course entitlement, or an active team member — asked of the database (`lounge_access()`, through `useCommunity().hasAccess`) and enforced by it on every read and write. Without access, the page is an invitation (`LockedLounge`): the lounge's channels and the outline of a conversation (no member's words) blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
 
 Language lounges (English by default, French, German, Spanish; Italian and Portuguese announced in the switcher) with the same five channels each (introductions, general, inspiration, techniques & tips, business & growth), and private conversations that belong to the community, not to a lounge.
@@ -729,10 +731,17 @@ provider named is Stripe. The EU consumer-law and GDPR summaries, labelled
 served. All of it must be reviewed by the business and by counsel before
 publication.
 
-- **Cookie consent** (`lib/cookieConsent.tsx`, `components/legal/Cookie*`) only
-  records the visitor's choice in localStorage. No script is loaded or blocked.
-  Optional categories start off, and "Reject" is as prominent as "Accept". The
-  preferences dialog can be reopened from "Cookie settings" in the footer.
+- **Cookie consent** (`lib/cookieConsent.tsx`, `components/legal/Cookie*`)
+  records the visitor's choice in localStorage (`gt-cookie-consent`) and gates
+  PostHog: it captures and stores nothing (`opt_out_persistence_by_default` in
+  `instrumentation-client.ts`) until the analytics category is accepted, and
+  withdrawing erases its identifier. Analytics is the only optional category
+  (the site has no preference, advertising or social-network tracker; add a
+  category only with the tracker it gates). It starts off, "Reject" is as
+  prominent as "Accept", a choice stands 6 months (CNIL recommendation) and the
+  dialog can be reopened from "Cookie settings" in the footer. The inventory in
+  `data/legal/cookies.ts` lists every cookie and browser storage the site writes:
+  update it with any new key.
 - **Review annotations** (`lib/reviewMode.tsx`): the hatched internal notes and
   the Stripe/compliance checklist on `/aide` can be hidden with the toggle at
   the top of each page, to preview the customer-facing version. Placeholders are

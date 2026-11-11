@@ -10,6 +10,7 @@ import { EmptyPanel } from "../../components/account/SectionHeader";
 import { OrderStatusBadges, ShipmentTracking } from "../../components/account/OrderCard";
 import { OrderLineThumb } from "../../components/account/OrderLineThumb";
 import { OrderLineReviewAction } from "../../components/reviews/OrderLineReviewAction";
+import { OrderWithdrawal } from "../../components/account/OrderWithdrawal";
 import { isActiveOrder, isShipment, type Order, type OrderAddress, type OrderParcel } from "../../data/orders";
 import { pick } from "../../data/types";
 import { useFormat } from "../../lib/format";
@@ -36,6 +37,9 @@ import { countryName } from "../../lib/countryName";
  * legal invoice the database numbered when the order was paid and the credit
  * note of each confirmed refund (supabase/README.md, "Invoices"); an order
  * paid before invoicing existed offers the order form instead.
+ *
+ * The withdrawal function (decision 131) sits under the lines for orders with
+ * goods: `components/account/OrderWithdrawal.tsx`.
  */
 export function OrderDetail() {
   const { t } = useTranslation();
@@ -138,6 +142,9 @@ function OrderDetailView({ order, back }: { order: Order; back: ReactNode }) {
           <Lines order={order} lang={i18n.language} />
           <Delivery order={order} lang={i18n.language} />
           {order.refunds.length > 0 && <Refunds order={order} lang={i18n.language} />}
+          {order.ships && (
+            <OrderWithdrawal reference={order.reference} defaultName={order.billingAddress?.name ?? order.shippingAddress?.name} />
+          )}
         </div>
         <div className="grid gap-[clamp(20px,3vw,32px)]">
           <Amounts order={order} />

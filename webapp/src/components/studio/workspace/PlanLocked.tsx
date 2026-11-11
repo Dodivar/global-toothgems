@@ -1,4 +1,4 @@
-import { ArrowRight, FolderPlus, LayoutTemplate, ScanFace, Sparkles, SquareDashed, type LucideIcon } from "lucide-react";
+import { ArrowRight, Clapperboard, FolderPlus, LayoutTemplate, ScanFace, Sparkles, SquareDashed, Smile, type LucideIcon } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { useNavigate } from "../../../lib/navigation";
@@ -13,6 +13,8 @@ const ICON: Record<LockedFeature, LucideIcon> = {
   collections: FolderPlus,
   transparentExport: SquareDashed,
   tryOn: ScanFace,
+  posts: Clapperboard,
+  clientTools: Smile,
 };
 
 /**

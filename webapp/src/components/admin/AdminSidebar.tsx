@@ -14,6 +14,7 @@ import {
   Package,
   Settings,
   ShoppingBag,
+  MessagesSquare,
   Sparkles,
   Store,
   Tags,
@@ -90,7 +91,10 @@ const GROUPS: RailGroup[] = [
   {
     id: "academy",
     labelKey: "admin.nav.groupAcademy",
-    items: [{ to: "/admin/formations", labelKey: "admin.nav.training", icon: GraduationCap }],
+    items: [
+      { to: "/admin/formations", labelKey: "admin.nav.training", icon: GraduationCap },
+      { to: "/admin/salons", labelKey: "admin.nav.lounge", icon: MessagesSquare },
+    ],
   },
   {
     id: "administration",

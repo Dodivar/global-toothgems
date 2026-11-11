@@ -25,16 +25,12 @@ describe("ordersOnTheirWay", () => {
 });
 
 describe("summarizeFavorites", () => {
-  it("counts the favourites on sale (still buyable) and nearly gone", () => {
-    expect(
-      summarizeFavorites([
-        { price: 10, compareAtPrice: 12 },
-        { price: 10, compareAtPrice: 12, stock: "out" },
-        { price: 10, compareAtPrice: 10 },
-        { price: 10, stock: "low" },
-        { price: 10 },
-      ]),
-    ).toEqual({ total: 5, onSale: 1, lowStock: 1 });
+  const favourites: { id: string; stock?: "low" | "out" }[] = [{ id: "a" }, { id: "a", stock: "out" }, { id: "b" }, { id: "c", stock: "low" }, { id: "d" }];
+  it("counts the favourites with a reduction the database announces (still buyable) and nearly gone", () => {
+    expect(summarizeFavorites(favourites, (p) => p.id === "a")).toEqual({ total: 5, onSale: 1, lowStock: 1 });
+  });
+  it("counts none on sale without the database's word", () => {
+    expect(summarizeFavorites(favourites)).toEqual({ total: 5, onSale: 0, lowStock: 1 });
   });
 });
 

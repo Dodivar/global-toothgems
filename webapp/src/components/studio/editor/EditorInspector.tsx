@@ -12,6 +12,7 @@ import {
   Crosshair,
   FlipHorizontal2,
   FlipVertical2,
+  Lock,
   Maximize2,
   RotateCcw,
   RotateCw,
@@ -46,6 +47,9 @@ import { FrontViewDialog, FrontViewFigure } from "../FrontViewPanel";
 import { SaveSelectionAsGroup } from "../workspace/SaveSelectionAsGroup";
 import { HelpMoreLink } from "../workspace/HelpMoreLink";
 import type { HelpTopicId } from "../../../lib/studioWorkspace/helpTopics";
+import { useStudioFeature } from "../../../lib/studioAccess";
+import { lowestPlanWith } from "../../../lib/studioEntitlements";
+import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 
 const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
 const selectClass = clsx(
@@ -684,10 +688,22 @@ function FrontViewSection({ snap }: { snap: StudioSnapshot }) {
   const { t } = useEditorLabels();
   const [open, setOpen] = useState(false);
   const projection = useFrontView(snap.jewels, snap.modelMode);
+  // The front view and the placement sheet are the Artist plan's and above (decision 133).
+  const locked = useStudioFeature("clientTools") === false;
   return (
     <>
       <SectionLabel info={t("studio.frontView.hint")} topic="frontView">{t("studio.frontView.title")}</SectionLabel>
-      {snap.jewels.length ? (
+      {locked ? (
+        <div className="grid gap-2">
+          <Hint>{t("studio.access.planLocked.clientTools.short")}</Hint>
+          <div className="flex">
+            <button type="button" className={miniButton} aria-haspopup="dialog" onClick={() => openWorkspaceDialog({ kind: "planLocked", feature: "clientTools" })}>
+              <Lock size={13} aria-hidden="true" />
+              {t("studio.access.planLocked.withPlan", { plan: t(`studio.plans.items.${lowestPlanWith("clientTools")}.name`) })}
+            </button>
+          </div>
+        </div>
+      ) : snap.jewels.length ? (
         <>
           <FrontViewFigure projection={projection} list={false} />
           <div className="mt-2 flex">
