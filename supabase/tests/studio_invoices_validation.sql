@@ -1,11 +1,11 @@
 -- =============================================================================
 -- 3D Studio legal invoices and credit notes validation suite
--- (migrations 20261026211240_studio_invoices, decision 115, and studio_seller_publisher, decision 131)
+-- (migrations 20261026211240_studio_invoices, decision 115, and studio_seller_publisher, decision 133)
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
 --   S1  a paid Studio invoice with its Stripe lines issues one FS- invoice
---       sold by the website publisher (decision 131):
+--       sold by the website publisher (decision 133):
 --       one `subscription` line per Stripe line (plan from the price, period),
 --       VAT 0 and seller.vat_franchise under the franchise, buyer = the member;
 --   S2  a replay issues nothing more (same number);
@@ -255,7 +255,7 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '23514' then raise exception 'FAIL S9: an order invoice took an FS number (%)', v_state; end if;
-  -- A legacy FA Studio invoice (test mode, before decision 131) is credited by an AV note with its own seller.
+  -- A legacy FA Studio invoice (test mode, before decision 133) is credited by an AV note with its own seller.
   insert into public.invoice_sequences (series) values ('FA-1999') on conflict do nothing;
   perform set_config('role', 'service_role', true);
   perform set_config('request.jwt.claims', '{"role":"service_role"}', true);

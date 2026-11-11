@@ -1,5 +1,5 @@
 -- =============================================================================
--- The 3D Studio is sold and invoiced by the website publisher — decision 131
+-- The 3D Studio is sold and invoiced by the website publisher — decision 133
 -- =============================================================================
 -- Owner's decision (2026-11-11): the shop and the Academy are sold by the
 -- seller (PIMP TON SMILE), the 3D Studio subscriptions by the website
@@ -28,9 +28,9 @@ alter table public.store_settings
   add column publisher_vat_franchise boolean not null default true;
 
 comment on column public.store_settings.publisher_vat_number is
-  'Intra-EU VAT number of the website publisher, which sells the 3D Studio (decision 131); printed on Studio invoices when set. Public.';
+  'Intra-EU VAT number of the website publisher, which sells the 3D Studio (decision 133); printed on Studio invoices when set. Public.';
 comment on column public.store_settings.publisher_vat_franchise is
-  'The website publisher sells the 3D Studio under the VAT franchise (art. 293 B du CGI, decision 131). Public.';
+  'The website publisher sells the 3D Studio under the VAT franchise (art. 293 B du CGI, decision 133). Public.';
 
 -- 2. Numbering: two more series ----------------------------------------------------
 alter table public.invoice_sequences drop constraint invoice_sequences_series_check;
@@ -38,7 +38,7 @@ alter table public.invoice_sequences add constraint invoice_sequences_series_che
   check (series ~ '^(FA|AV|FS|AS)-[0-9]{4}$');
 
 comment on table public.invoice_sequences is
-  'Last number issued per invoice series: FA-YYYY / AV-YYYY (seller: shop, Academy), FS-YYYY / AS-YYYY (publisher: 3D Studio, decision 131). Backend only.';
+  'Last number issued per invoice series: FA-YYYY / AV-YYYY (seller: shop, Academy), FS-YYYY / AS-YYYY (publisher: 3D Studio, decision 133). Backend only.';
 
 create or replace function private.take_invoice_number(p_prefix text, out o_series text, out o_number integer, out o_issued_at timestamptz)
 language plpgsql
@@ -136,7 +136,7 @@ begin
   select * into v_sub from public.studio_subscriptions where id = v_si.subscription_id;
   select coalesce(p.preferred_locale, 'fr') into v_locale from public.profiles p where p.id = v_si.user_id;
 
-  -- The Studio's seller is the website publisher (DoDigital, decision 131), with its own VAT regime.
+  -- The Studio's seller is the website publisher (DoDigital, decision 133), with its own VAT regime.
   v_franchise := coalesce((select s.publisher_vat_franchise from public.store_settings s where s.id), true);
   v_rate := case when v_franchise then 0
                  else coalesce(private.configured_vat_rate_bp(
@@ -258,7 +258,7 @@ begin
     'vat_amount', public.vat_included(w.refund_amount, v_rate),
     'total_excl', w.refund_amount - public.vat_included(w.refund_amount, v_rate)));
 
-  -- A credit note follows the invoice it credits (decision 131): same business, same
+  -- A credit note follows the invoice it credits (decision 133): same business, same
   -- frozen seller, its own series (FS → AS for DoDigital; a legacy FA → AV).
   select * into v_number from private.take_invoice_number(case when v_invoice.series like 'FS-%' then 'AS' else 'AV' end);
   insert into public.invoices

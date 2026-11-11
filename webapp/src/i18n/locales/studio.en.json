@@ -146,7 +146,10 @@
       },
       "consentTitle": "Right of withdrawal",
       "pay": "Pay {{amount}} and subscribe",
-      "seePlans": "See the plans"
+      "seePlans": "See the plans",
+      "consentBefore": "By clicking “Pay”, you take out a subscription with an obligation to pay and accept the",
+      "consentLink": "3D Studio subscription terms",
+      "consentAfter": "."
     },
     "activating": {
       "title": "We are activating your subscription",

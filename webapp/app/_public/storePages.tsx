@@ -5,6 +5,7 @@ import { RETURNS } from "../../src/data/legal/returns";
 import { SHIPPING } from "../../src/data/legal/shipping";
 import { withShippingGrid } from "../../src/data/legal/shippingGrid";
 import { withStoreDetails } from "../../src/data/legal/storeFill";
+import { STUDIO_TERMS } from "../../src/data/legal/studioTerms";
 import { TERMS } from "../../src/data/legal/terms";
 import { TERMS_OF_USE } from "../../src/data/legal/termsOfUse";
 import { loadShippingGrid } from "../../src/lib/shippingGridServer";
@@ -29,6 +30,10 @@ export async function ContactPage() {
 
 export async function TermsPage() {
   return <LegalDocumentPage doc={withStoreDetails(TERMS, await loadStoreDetails())} />;
+}
+
+export async function StudioTermsPage() {
+  return <LegalDocumentPage doc={withStoreDetails(STUDIO_TERMS, await loadStoreDetails())} />;
 }
 
 export async function TermsOfUsePage() {

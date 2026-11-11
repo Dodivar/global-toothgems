@@ -50,6 +50,7 @@ export type PublicRouteId =
   | "legalNotice"
   | "terms"
   | "termsOfUse"
+  | "studioTerms"
   | "privacy"
   | "cookies"
   | "shipping"
@@ -91,6 +92,8 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { id: "legalNotice", fr: "/mentions-legales", en: "/legal-notice", indexed: true },
   { id: "terms", fr: "/conditions-generales", en: "/terms-of-sale", indexed: true },
   { id: "termsOfUse", fr: "/conditions-generales-utilisation", en: "/terms-of-use", indexed: true },
+  // The 3D Studio's own terms: the Studio is sold by the website publisher (decision 133).
+  { id: "studioTerms", fr: "/conditions-abonnement-studio", en: "/studio-subscription-terms", indexed: true },
   { id: "privacy", fr: "/confidentialite", en: "/privacy-policy", indexed: true },
   { id: "cookies", fr: "/cookies", en: "/cookie-policy", indexed: true },
   { id: "shipping", fr: "/livraison", en: "/shipping", indexed: true },
@@ -228,6 +231,7 @@ const LEGACY_ALIASES: Record<string, string> = {
   "/legal-notice": localizedPath("legalNotice", "en"),
   "/terms-of-sale": localizedPath("terms", "en"),
   "/terms-of-use": localizedPath("termsOfUse", "en"),
+  "/studio-subscription-terms": localizedPath("studioTerms", "en"),
   "/privacy-policy": localizedPath("privacy", "en"),
   "/cookie-policy": localizedPath("cookies", "en"),
   "/about": localizedPath("about", "en"),

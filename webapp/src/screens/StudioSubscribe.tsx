@@ -5,7 +5,7 @@ import { ArrowLeft, Box, Info } from "lucide-react";
 import { Link } from "../lib/navigation";
 import { useAuth } from "../lib/auth";
 import { useHydrated } from "../lib/useHydrated";
-import { useVatFranchise, vatNoticeKey } from "../lib/vatRegime";
+import { useStudioVatFranchise, vatNoticeKey } from "../lib/vatRegime";
 import { StudioCheckoutPlans } from "../components/studio/StudioPlans";
 import { STUDIO_PATH } from "../lib/studioUrl";
 
@@ -19,7 +19,7 @@ import { STUDIO_PATH } from "../lib/studioUrl";
  */
 export function StudioSubscribe() {
   const { t } = useTranslation();
-  const vatNotice = vatNoticeKey(useVatFranchise());
+  const vatNotice = vatNoticeKey(useStudioVatFranchise());
   const { signedIn } = useAuth();
   // Server-rendered page: the account is only known once hydrated (no mismatch for a signed-in member).
   const hydrated = useHydrated();

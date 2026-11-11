@@ -9,7 +9,7 @@ import { StudioPlans } from "../components/studio/StudioPlans";
 import { StudioFaq } from "../components/studio/StudioFaq";
 import { useNavigate } from "../lib/navigation";
 import { useFormat } from "../lib/format";
-import { useVatFranchise, vatNoticeKey } from "../lib/vatRegime";
+import { useStudioVatFranchise, vatNoticeKey } from "../lib/vatRegime";
 import { useReveal } from "../lib/useReveal";
 import { STUDIO_ENTRY_PLAN, STUDIO_TRIAL_DAYS } from "../data/studio";
 import { STUDIO_EDITOR_PATH } from "../lib/studioUrl";
@@ -74,7 +74,7 @@ function SectionHeading({ id, eyebrow, title, body }: { id: string; eyebrow: str
 
 export function Studio() {
   const { t } = useTranslation();
-  const vatNotice = vatNoticeKey(useVatFranchise());
+  const vatNotice = vatNoticeKey(useStudioVatFranchise());
   const { formatMoney } = useFormat();
   const navigate = useNavigate();
   // The editor itself shows the trial invitation or the plans (StudioAccessGate).

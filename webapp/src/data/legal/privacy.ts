@@ -57,8 +57,8 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Le responsable du traitement de vos données est le vendeur des produits, formations et abonnements proposés sur le site, identifié dans les <<mentions légales|/mentions-legales#seller>>. L’éditeur du site, qui en assure la réalisation et la maintenance technique, agit pour son compte et selon ses instructions.",
-            "The controller of your data is the seller of the products, courses and subscriptions offered on the site, identified in the <<legal notice|/mentions-legales#seller>>. The website publisher, which builds and maintains the site, acts on the seller’s behalf and on its instructions.",
+            "Deux entreprises sont responsables de vos données, chacune pour ce qu’elle vous vend. Le vendeur des produits, formations et cartes cadeaux, identifié dans les <<mentions légales|/mentions-legales#seller>>, est responsable de votre compte, de vos commandes, de l’Academy, du Club fidélité, de la newsletter et de vos échanges avec le service client. L’éditeur du site, qui vend le Studio 3D (<<mentions légales|/mentions-legales#studio-seller>>), est responsable de votre abonnement au Studio (paiement, factures), de vos créations, de la page Glowbook et de l’essai sur un sourire. L’éditeur assure aussi la réalisation et la maintenance technique du site pour le compte du vendeur, selon ses instructions.",
+            "Two businesses are responsible for your data, each for what it sells you. The seller of the products, courses and gift cards, identified in the <<legal notice|/mentions-legales#seller>>, is the controller of your account, your orders, the Academy, the Loyalty Club, the newsletter and your exchanges with customer service. The website publisher, which sells the 3D Studio (<<legal notice|/mentions-legales#studio-seller>>), is the controller of your Studio subscription (payment, invoices), your creations, the Glowbook page and the smile try-on. The publisher also builds and maintains the site on the seller’s behalf and on its instructions.",
           ),
         },
         {
@@ -66,6 +66,11 @@ export const PRIVACY: LegalDocument = {
           fields: [
             { label: l("Responsable du traitement", "Data controller"), value: l("[[!Responsable du traitement]]", "[[!Data controller]]") },
             { label: l("Adresse", "Address"), value: l("[[!Adresse du siège]]", "[[!Registered office address]]") },
+            {
+              label: l("Responsable du traitement — Studio 3D", "Data controller — 3D Studio"),
+              value: l("[[!Vendeur du Studio, dénomination et forme juridique]]", "[[!Studio seller legal name and entity type]]"),
+            },
+            { label: l("Adresse — Studio 3D", "Address — 3D Studio"), value: l("[[!Adresse du vendeur du Studio]]", "[[!Studio seller address]]") },
             { label: l("Contact confidentialité", "Privacy contact"), value: l("[[!E-mail confidentialité]]", "[[!Privacy email]]") },
             {
               label: l("Délégué à la protection des données", "Data protection officer"),

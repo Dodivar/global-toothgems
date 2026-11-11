@@ -250,7 +250,7 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
 
   // Without the publishable key the payment form cannot be shown: nothing is reserved.
   if (!deps.publishableKey) {
-    deps.log("STRIPE_PUBLISHABLE_KEY missing or not matching the secret key's mode");
+    deps.log("the shop's Stripe publishable key is missing or does not match its secret key (SHOP_STRIPE_* or, in test mode, STRIPE_*)");
     return fail("payment_unavailable");
   }
 

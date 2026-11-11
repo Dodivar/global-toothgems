@@ -1,6 +1,6 @@
-import { requireEnv, serviceClient, stripeClient, stripeCryptoProvider } from "../_shared/clients.ts";
+import { lazyStripeClient, serviceClient, stripeCryptoProvider, stripeWebhookEndpoints } from "../_shared/clients.ts";
 import { notifyOrderPaid, notifyRefundConfirmed } from "../_shared/email/notify.ts";
-import { DbCallError, handleWebhook, type WebhookDeps, type WebhookEvent } from "./handler.ts";
+import { DbCallError, handleWebhook, type VerifiedEvent, type WebhookDeps } from "./handler.ts";
 import { invoiceLineFacts, type StudioInvoiceLine } from "./subscriptions.ts";
 
 /*
@@ -9,8 +9,14 @@ import { invoiceLineFacts, type StudioInvoiceLine } from "./subscriptions.ts";
  */
 
 const supabase = serviceClient();
-const stripe = stripeClient();
-const webhookSecret = requireEnv("STRIPE_WEBHOOK_SECRET");
+// Two businesses, two Stripe accounts (decision 133): the shop's (the seller's,
+// SHOP_STRIPE_*, borrowing the Studio's test keys until it exists) and the
+// Studio's (the publisher's, STRIPE_*). Each read-back uses the account that
+// owns the object.
+const shopStripe = lazyStripeClient("shop");
+const studioStripe = lazyStripeClient("studio");
+const endpoints = stripeWebhookEndpoints();
+if (endpoints.length === 0) throw new Error("Missing environment variable STRIPE_WEBHOOK_SECRET");
 
 function dbError(error: { message: string; code?: string }): DbCallError {
   return new DbCallError(error.message, error.code);
@@ -18,14 +24,23 @@ function dbError(error: { message: string; code?: string }): DbCallError {
 
 const deps: WebhookDeps = {
   async verify(rawBody, signature) {
-    const event = await stripe.webhooks.constructEventAsync(
-      rawBody,
-      signature,
-      webhookSecret,
-      undefined,
-      stripeCryptoProvider,
-    );
-    return event as unknown as WebhookEvent;
+    // The signature names no account: try each endpoint's secret in turn.
+    let lastError: unknown = new Error("no webhook secret");
+    for (const endpoint of endpoints) {
+      try {
+        const event = await studioStripe().webhooks.constructEventAsync(
+          rawBody,
+          signature,
+          endpoint.secret,
+          undefined,
+          stripeCryptoProvider,
+        );
+        return { ...(event as unknown as VerifiedEvent), handles: endpoint.handles };
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError;
   },
 
   async recordEvent(event, objectId, orderId) {
@@ -59,7 +74,7 @@ const deps: WebhookDeps = {
   },
 
   async paymentDetails(paymentIntentId) {
-    const intent = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ["latest_charge"] });
+    const intent = await shopStripe().paymentIntents.retrieve(paymentIntentId, { expand: ["latest_charge"] });
     const charge = typeof intent.latest_charge === "object" ? intent.latest_charge : null;
     const details = charge?.payment_method_details;
     const card = details?.card;
@@ -150,7 +165,7 @@ const deps: WebhookDeps = {
 
   studio: {
     async retrieveSubscription(subscriptionId) {
-      const sub = await stripe.subscriptions.retrieve(subscriptionId);
+      const sub = await studioStripe().subscriptions.retrieve(subscriptionId);
       const item = sub.items.data[0];
       return {
         id: sub.id,
@@ -201,7 +216,7 @@ const deps: WebhookDeps = {
 
     async invoiceLines(invoiceId) {
       const lines: StudioInvoiceLine[] = [];
-      for await (const line of stripe.invoices.listLineItems(invoiceId, { limit: 100 })) {
+      for await (const line of studioStripe().invoices.listLineItems(invoiceId, { limit: 100 })) {
         const facts = invoiceLineFacts(line);
         if (facts) lines.push(facts);
       }

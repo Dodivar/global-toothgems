@@ -34,7 +34,7 @@ function publisherSentence(store: StoreDetails | null): Localized {
 }
 
 /**
- * Who sells: the seller of the goods, courses and subscriptions, named by its
+ * Who sells: the seller of the goods, courses and gift cards, named by its
  * trading name; its legal identity is in the field list, as the law requires
  * (LCEN art. 19), not put forward (decision 120).
  */
@@ -42,12 +42,29 @@ function sellerSentence(store: StoreDetails | null): Localized {
   const seller = store ? store.tradingName.trim() || store.legalName.trim() : "";
   return seller
     ? l(
-        `Les produits, formations et abonnements proposés sur le site sont vendus par ${seller}, avec qui les ventes sont conclues selon nos <<conditions générales de vente|/conditions-generales>>.`,
-        `The products, courses and subscriptions offered on the site are sold by ${seller}, with whom sales are concluded under our <<terms of sale|/conditions-generales>>.`,
+        `Les produits, formations et cartes cadeaux proposés sur le site sont vendus par ${seller}, avec qui les ventes sont conclues selon nos <<conditions générales de vente|/conditions-generales>>.`,
+        `The products, courses and gift cards offered on the site are sold by ${seller}, with whom sales are concluded under our <<terms of sale|/conditions-generales>>.`,
       )
     : l(
-        "Les produits, formations et abonnements proposés sur le site sont vendus par l’entreprise identifiée ci-dessous.",
-        "The products, courses and subscriptions offered on the site are sold by the business identified below.",
+        "Les produits, formations et cartes cadeaux proposés sur le site sont vendus par l’entreprise identifiée ci-dessous.",
+        "The products, courses and gift cards offered on the site are sold by the business identified below.",
+      );
+}
+
+/**
+ * Who sells the 3D Studio: the website publisher (decision 133), identified in
+ * the publisher section above; its subscriptions follow their own terms.
+ */
+function studioSellerSentence(store: StoreDetails | null): Localized {
+  const publisher = store ? store.publisherName.trim() || store.publisherLegalName.trim() : "";
+  return publisher
+    ? l(
+        `Les abonnements au Studio 3D sont vendus par l’éditeur du site, ${publisher}, identifié ci-dessus, selon les <<conditions générales d’abonnement au Studio 3D|/conditions-abonnement-studio>>. C’est lui qui encaisse ces abonnements et en émet les factures.`,
+        `3D Studio subscriptions are sold by the website publisher, ${publisher}, identified above, under the <<3D Studio subscription terms|/conditions-abonnement-studio>>. It collects these subscriptions and issues their invoices.`,
+      )
+    : l(
+        "Les abonnements au Studio 3D sont vendus par l’éditeur du site, identifié ci-dessus, selon les <<conditions générales d’abonnement au Studio 3D|/conditions-abonnement-studio>>.",
+        "3D Studio subscriptions are sold by the website publisher, identified above, under the <<3D Studio subscription terms|/conditions-abonnement-studio>>.",
       );
 }
 
@@ -157,6 +174,24 @@ export function legalNotice(store: StoreDetails | null): LegalDocument {
                 value: store?.showPhone ? same(store.phone) : undefined,
                 placeholder: l("Numéro de téléphone", "Telephone number"),
                 hint: l("Obligatoire pour un vendeur en ligne (LCEN, art. 19).", "Mandatory for an online seller (LCEN, art. 19)."),
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "studio-seller",
+        title: l("Vendeur du Studio 3D", "3D Studio seller"),
+        blocks: [
+          { kind: "p", text: studioSellerSentence(store) },
+          {
+            kind: "fields",
+            fields: [
+              {
+                label: l("Numéro de TVA intracommunautaire", "VAT number"),
+                value: same(store?.publisherVatNumber),
+                placeholder: l("Numéro de TVA", "VAT number"),
+                hint: l("Uniquement si l’entreprise est assujettie à la TVA.", "Only if the business is registered for VAT."),
               },
             ],
           },

@@ -91,9 +91,14 @@ export const DOCUMENT_MESSAGES = {
         "version": "Version du",
         "appliesTo": "Applicable à",
         "toSupply": "à compléter",
-        "intro": "Version des conditions générales de vente en vigueur à la date de votre commande ou de votre abonnement, remise avec sa confirmation pour que vous puissiez la conserver et la reproduire.",
+        "intro": "Version des conditions générales de vente en vigueur à la date de votre commande, remise avec sa confirmation pour que vous puissiez la conserver et la reproduire.",
         "fieldColumn": "Information",
         "valueColumn": "Détail"
+      },
+      "studioTerms": {
+        "title": "Conditions générales d’abonnement au Studio 3D",
+        "fileName": "conditions-abonnement-studio-3d",
+        "intro": "Version des conditions générales d’abonnement au Studio 3D en vigueur à la date de votre abonnement, remise avec sa confirmation pour que vous puissiez la conserver et la reproduire."
       }
     }
   },
@@ -186,9 +191,14 @@ export const DOCUMENT_MESSAGES = {
         "version": "Version of",
         "appliesTo": "Applies to",
         "toSupply": "to be supplied",
-        "intro": "The version of the terms of sale in force on the date of your order or subscription, given with its confirmation so that you can keep and reproduce it.",
+        "intro": "The version of the terms of sale in force on the date of your order, given with its confirmation so that you can keep and reproduce it.",
         "fieldColumn": "Item",
         "valueColumn": "Details"
+      },
+      "studioTerms": {
+        "title": "3D Studio subscription terms",
+        "fileName": "3d-studio-subscription-terms",
+        "intro": "The version of the 3D Studio subscription terms in force on the date of your subscription, given with its confirmation so that you can keep and reproduce it."
       }
     }
   }
