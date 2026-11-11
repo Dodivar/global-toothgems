@@ -55,7 +55,7 @@ begin
 
   -- Build as the manager -------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   insert into public.training_media (id, kind, storage_path, mime_type, name, bytes) values
     (cov, 'image', 'media/' || cov || '/cover.jpg',  'image/jpeg', 'Couverture', 1000),
@@ -94,7 +94,7 @@ begin
     'price', '100.00', 'modules', '[]'::jsonb));
 
   -- E1: grants are staff-only, by function --------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   begin
     perform public.admin_grant_course('academy22cst.test@example.invalid', c1);
     raise exception 'FAIL E1: a customer granted a course';
@@ -108,7 +108,7 @@ begin
   passed := passed || 'E1'::text;
 
   -- E2: the manager grants by e-mail; duplicates, drafts, unknown members refused -------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   ent := public.admin_grant_course(' Academy22CST.test@example.invalid ', c1, null, 'Offerte');
   perform public.admin_grant_course('academy22cs2.test@example.invalid', c1);
   begin
@@ -136,7 +136,7 @@ begin
   passed := passed || 'E2'::text;
 
   -- O1: another member is refused everything ------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', oth, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', oth, 'role', 'authenticated')::text, true);
   if public.learner_courses() <> '[]'::jsonb then raise exception 'FAIL O1: content returned to a non-holder'; end if;
   begin
     perform public.complete_course_step(s1);
@@ -170,7 +170,7 @@ begin
   passed := passed || 'O1'::text;
 
   -- H1: the holder reads the course, without answer keys or feedback -------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   v := public.learner_courses();
   if jsonb_array_length(v) <> 1 or v -> 0 ->> 'id' <> c1::text then raise exception 'FAIL H1: %', v; end if;
   if jsonb_array_length(v -> 0 -> 'modules') <> 2 then raise exception 'FAIL H1: modules missing'; end if;
@@ -223,13 +223,13 @@ begin
     execute 'reset role';
     update public.course_quizzes set passing_score = 51 where module_id = m1;
     perform set_config('role', 'authenticated', true);
-    perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
     v := public.submit_quiz_answers(m1, jsonb_build_object(q1, a1, q2, a4));
     if (v ->> 'score')::int <> 50 or (v ->> 'passed')::boolean then raise exception 'FAIL Q0: 50%% against a 51%% mark %', v; end if;
     execute 'reset role';
     update public.course_quizzes set passing_score = 50 where module_id = m1;
     perform set_config('role', 'authenticated', true);
-    perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
     v := public.submit_quiz_answers(m1, jsonb_build_object(q1, a1, q2, a4));
     if (v ->> 'score')::int <> 50 or not (v ->> 'passed')::boolean then raise exception 'FAIL Q0: 50%% against a 50%% mark %', v; end if;
     raise exception 'Q0 done' using errcode = 'ZX001';
@@ -301,7 +301,7 @@ begin
   passed := passed || 'C1'::text;
 
   -- A1: attempts are not limited: a failing member retries until they pass -----------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', cs2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cs2, 'role', 'authenticated')::text, true);
   perform public.complete_course_step(s1);
   perform public.complete_course_step(s2);
   perform public.submit_quiz_answers(m1, jsonb_build_object(q1, a1, q2, a3));
@@ -321,7 +321,7 @@ begin
   passed := passed || 'A1'::text;
 
   -- O2: the other member reads no one's progress -----------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', oth, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', oth, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.lesson_progress;
   if v_cnt <> 0 then raise exception 'FAIL O2: % progress rows', v_cnt; end if;
   select count(*) into v_cnt from public.quiz_attempts;
@@ -331,9 +331,9 @@ begin
   passed := passed || 'O2'::text;
 
   -- U1: withdrawn — greyed out for holders, closed to everyone ---------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.courses set status = 'unpublished' where id = c1;
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   v := public.learner_courses();
   if v -> 0 ->> 'status' <> 'unpublished' or v -> 0 -> 'modules' <> 'null'::jsonb
      or v -> 0 -> 'media' ? img::text or not (v -> 0 -> 'media' ? cov::text) then
@@ -352,23 +352,23 @@ begin
   if exists (select 1 from storage.objects where bucket_id = 'training-media' and name = 'media/' || img || '/lesson.jpg') then
     raise exception 'FAIL U1: holder reads lesson media of a withdrawn course';
   end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', oth, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', oth, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.courses where id = c1;
   if v_cnt <> 0 then raise exception 'FAIL U1: non-holder sees the withdrawn course'; end if;
   passed := passed || 'U1'::text;
 
   -- R1: revoked — nothing left but the certificate record ---------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.courses set status = 'published' where id = c1;
   perform public.admin_revoke_course_entitlement(ent);
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   if public.learner_courses() <> '[]'::jsonb then raise exception 'FAIL R1: revoked member still reads the course'; end if;
   if exists (select 1 from storage.objects where bucket_id = 'training-media' and name = 'media/' || img || '/lesson.jpg') then
     raise exception 'FAIL R1: revoked member reads lesson media';
   end if;
   select count(*) into v_cnt from public.course_completions where user_id = cst;
   if v_cnt <> 1 then raise exception 'FAIL R1: completion lost on revocation'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform public.admin_grant_course('academy22cst.test@example.invalid', c1);  -- re-grant after revocation
   passed := passed || 'R1'::text;
 

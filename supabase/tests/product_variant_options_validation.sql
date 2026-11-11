@@ -64,7 +64,7 @@ begin
   update public.profiles set role = 'manager' where id = mgr;
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   base := jsonb_build_object(
     'id', p, 'category_id', cat, 'sku', 'OPT-LED-01', 'slug', 'options-test-lamp', 'name', 'Lampe test',
@@ -244,7 +244,7 @@ begin
 
   -- S4: a customer and a viewer cannot write
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', cust, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cust, 'role', 'authenticated')::text, true);
   v_ok := false;
   begin
     insert into public.product_option_values (option_id, name) values (o_col, 'Or');
@@ -253,7 +253,7 @@ begin
   if not v_ok then raise exception 'FAIL S4: a customer inserted a value'; end if;
   update public.product_options set name = 'Hacked' where id = o_col;
   delete from public.product_variant_option_values where variant_id = v_ag;
-  perform set_config('request.jwt.claims', json_build_object('sub', viewer, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', viewer, 'role', 'authenticated')::text, true);
   v_ok := false;
   begin
     perform public.admin_save_product(base || jsonb_build_object('variant_options', '[]'::jsonb, 'custom_variants', '[]'::jsonb));
@@ -261,7 +261,7 @@ begin
   end;
   if not v_ok then raise exception 'FAIL S4: a viewer saved a product'; end if;
   update public.product_option_values set name = 'Hacked' where id = x_ag;
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   if (select name from public.product_options where id = o_col) <> 'Couleur'
      or (select name from public.product_option_values where id = x_ag) <> 'Argent'
      or (select count(*) from public.product_variant_option_values where variant_id = v_ag) <> 2 then

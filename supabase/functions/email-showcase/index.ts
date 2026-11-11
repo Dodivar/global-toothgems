@@ -1,6 +1,7 @@
 import { serviceClient } from "../_shared/clients.ts";
 import { emailDepsFromEnv, sendTemplatedEmail } from "../_shared/email/mod.ts";
 import { sendWithResend } from "../_shared/email/resend.ts";
+import { loadLegalStore } from "../_shared/email/termsPdf.ts";
 import { isValidAddress } from "../_shared/email/send.ts";
 import { hasInternalSecret } from "../_shared/internalAuth.ts";
 import { json, readJson } from "../_shared/http.ts";
@@ -13,8 +14,8 @@ import { buildShowcase, type Sample, withDocuments } from "./showcase.ts";
  * owner sees them all (see showcase.ts). Deployed with verify_jwt = false
  * (supabase/config.toml): the caller is the database or the team, with the
  * shared secret EMAIL_INTERNAL_SECRET in `x-internal-secret`, like the other
- * e-mail jobs. `only_documents` keeps the samples carrying an invoice or a
- * credit note (PDF attached). Answer: the status of each sample, no content.
+ * e-mail jobs. `only_documents` keeps the samples carrying a PDF: an invoice,
+ * a credit note or the terms of sale (decision 130). Answer: the status of each sample, no content.
  */
 
 const log = (message: string, detail?: unknown) => console.error(`[email-showcase] ${message}`, detail ?? "");
@@ -56,6 +57,7 @@ Deno.serve(async (req) => {
       siteUrl: deps.layout.siteUrl,
       mediaBaseUrl: `${supabaseUrl}/storage/v1/object/public/product-media`,
       seller: await currentSeller(),
+      legalStore: await loadLegalStore(serviceClient()),
       product: { name: "Kit d’Application Premium", slug: "kit-application-premium", imagePath: "products/kit-application-premium/01.jpg" },
     });
 

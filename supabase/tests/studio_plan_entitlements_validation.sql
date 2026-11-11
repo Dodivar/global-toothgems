@@ -65,7 +65,7 @@ begin
 
   -- P2: the trial member, as themselves
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', trialist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', trialist, 'role', 'authenticated')::text, true);
   for n in 1..15 loop
     insert into public.creations (name, scene_data) values ('Look ' || n, v_scene) returning id into c_show;
     if n = 1 then c_first := c_show; end if;
@@ -93,21 +93,21 @@ begin
   passed := passed || 'P2'::text;
 
   -- P3: Artist beyond Essential; Atelier and staff unlimited
-  perform set_config('request.jwt.claims', json_build_object('sub', artistm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artistm, 'role', 'authenticated')::text, true);
   for n in 1..20 loop
     insert into public.creations (name, scene_data) values ('Art ' || n, v_scene);
   end loop;
   for n in 1..5 loop
     insert into public.gem_groups (name, group_data) values ('Art group ' || n, v_group);
   end loop;
-  perform set_config('request.jwt.claims', json_build_object('sub', atelierm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', atelierm, 'role', 'authenticated')::text, true);
   for n in 1..160 loop
     insert into public.creations (name, scene_data) values ('Atl ' || n, v_scene) returning id into c_show;
   end loop;
   for n in 1..35 loop
     insert into public.gem_groups (name, group_data) values ('Atl group ' || n, v_group);
   end loop;
-  perform set_config('request.jwt.claims', json_build_object('sub', staffer, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', staffer, 'role', 'authenticated')::text, true);
   for n in 1..20 loop
     insert into public.gem_groups (name, group_data) values ('Staff group ' || n, v_group);
   end loop;
@@ -117,7 +117,7 @@ begin
   execute 'reset role';
   update public.studio_subscriptions set plan = 'essential' where user_id = artistm;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', artistm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artistm, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.creations;
   if v_cnt <> 20 then raise exception 'FAIL P4: rows after downgrade (%)', v_cnt; end if;
   update public.creations set description = 'Still editable' where name = 'Art 1';
@@ -136,7 +136,7 @@ begin
   -- P5: the Glowbook is Atelier's
   perform set_config('role', 'authenticated', true);
   foreach v_json in array array[to_jsonb(artistm), to_jsonb(trialist)] loop
-    perform set_config('request.jwt.claims', json_build_object('sub', v_json #>> '{}', 'role', 'authenticated')::text, true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', v_json #>> '{}', 'role', 'authenticated')::text, true);
     v_state := null;
     begin
       perform public.studio_save_showcase('plan.' || substr(v_json #>> '{}', 33), 'Below Atelier', '', null);
@@ -144,7 +144,7 @@ begin
     end;
     if v_state is distinct from '42501' then raise exception 'FAIL P5: Glowbook below Atelier (%)', v_state; end if;
   end loop;
-  perform set_config('request.jwt.claims', json_build_object('sub', atelierm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', atelierm, 'role', 'authenticated')::text, true);
   perform public.studio_save_showcase('plan.atelier', 'Atelier', '', null);
   update public.creations set thumbnail_path = atelierm || '/show.jpg' where id = c_show;
   i_show := (public.studio_showcase_add(c_show)).id;
@@ -169,7 +169,7 @@ begin
   select count(*) into v_cnt from storage.objects where bucket_id = 'studio-thumbnails' and name = atelierm || '/show.jpg';
   if v_cnt <> 0 then raise exception 'FAIL P5: render readable after downgrade'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', atelierm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', atelierm, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.studio_showcase_reorder(array[c_show]);
@@ -185,21 +185,21 @@ begin
   execute 'reset role';
   update public.studio_subscriptions set plan = 'artist' where user_id = atelierm;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', atelierm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', atelierm, 'role', 'authenticated')::text, true);
   delete from public.studio_showcases where user_id = atelierm;
   get diagnostics v_cnt = row_count;
   if v_cnt <> 1 then raise exception 'FAIL P5: owner could not delete after downgrade'; end if;
   passed := passed || 'P5'::text;
 
   -- P6: what the browser is told (the trial member: 15 creations, 3 groups)
-  perform set_config('request.jwt.claims', json_build_object('sub', trialist, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', trialist, 'role', 'authenticated')::text, true);
   v_json := public.studio_access_state();
   if v_json ->> 'tier' <> 'essential' or (v_json ->> 'glowbook')::boolean
      or (v_json #>> '{limits,creations}')::int <> 15 or (v_json #>> '{limits,gem_groups}')::int <> 3
      or (v_json #>> '{usage,creations}')::int <> 15 or (v_json #>> '{usage,gem_groups}')::int <> 3 then
     raise exception 'FAIL P6: trial state %', v_json;
   end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', staffer, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', staffer, 'role', 'authenticated')::text, true);
   v_json := public.studio_access_state();
   if v_json ->> 'tier' <> 'atelier' or not (v_json ->> 'glowbook')::boolean
      or v_json #> '{limits,creations}' <> 'null'::jsonb or (v_json #>> '{usage,gem_groups}')::int <> 20 then

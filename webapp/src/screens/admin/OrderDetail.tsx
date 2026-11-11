@@ -17,6 +17,7 @@ import {
   type ParcelAction,
 } from "../../components/admin/DetailPanels";
 import { ParcelDialog, RefundDialog } from "../../components/admin/FulfillmentDialogs";
+import { OrderWithdrawalsCard } from "../../components/admin/OrderWithdrawalsCard";
 import { LoadError } from "../../components/admin/OrdersPlaceholders";
 import { OrderTimeline } from "../../components/admin/OrderTimeline";
 import { OrderNotes } from "../../components/admin/OrderNotes";
@@ -294,6 +295,7 @@ export function OrderDetail() {
               );
             }}
           />
+          <OrderWithdrawalsCard reference={order.reference} currency={order.currency} refund={refund} showToast={showToast} />
           <OrderNotes
             notes={order.notes}
             author={operator}

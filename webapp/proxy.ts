@@ -15,9 +15,10 @@ import { refreshSession } from "./src/lib/supabase/proxySession";
  *    request is passed on to the root layout (`<html lang>`).
  * 2. Session (phase 2): keeps the Supabase session fresh and turns signed-out
  *    visitors away from the member space, the learner pages and the back
- *    office, to the matching sign-in page with `?suite=<the page asked for>`;
- *    the back office also turns away a signed-in account that is not an active
- *    staff member (its own profile, read under RLS; decided 2026-10-01).
+ *    office: the member zones to `/connexion?suite=<the page asked for>`; the
+ *    back office answers the site's 404 to anyone who is not an active staff
+ *    member (its own profile, read under RLS; decided 2026-10-01, 404
+ *    instead of a sign-in page since 2026-11-11).
  *    Navigation, not authorization: RLS decides every read and write. In mock
  *    mode (no Supabase variables) the client guards decide, as before. The
  *    zones' server layouts and pages check again (`app/_zones/guard.ts`).
@@ -48,15 +49,26 @@ export async function proxy(request: NextRequest) {
 
   const gate = gateFor(pathname);
   const { response, signedIn, staff } = await refreshSession(request, requestHeaders, { checkStaff: gate === "staff" });
-  // The back office also turns away a signed-in account that is not an
-  // active staff member (decided 2026-10-01): to its access screen.
   if (!gate || (signedIn && (gate !== "staff" || staff))) return response;
 
-  const redirect = NextResponse.redirect(new URL(signInRedirect(gate, pathname, search), request.url));
+  // The back office answers anyone who is not an active staff member, signed
+  // in or not, with the site's 404 (decided 2026-11-11): no redirect and no
+  // sign-in page confirming the address. A rewrite, because only the proxy
+  // can still set the status: the pages' own `notFound()` comes after the
+  // stream has started (200). Next.js keeps an `x-middleware-rewrite` header
+  // on the response; the route names are in the public bundles anyway, so
+  // this is noise reduction, not secrecy — the second factor is the lock.
+  const refused =
+    gate === "staff"
+      ? NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url), { request: { headers: requestHeaders } })
+      : NextResponse.redirect(new URL(signInRedirect(pathname, search), request.url));
   // Keep whatever the refresh wrote (a cleared, expired session included).
-  for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
-  return redirect;
+  for (const cookie of response.cookies.getAll()) refused.cookies.set(cookie);
+  return refused;
 }
+
+/** An address no route matches (`_` folders are never routes): rendered by `app/not-found.tsx` with a 404. */
+const NOT_FOUND_PATH = "/_introuvable";
 
 export const config = {
   matcher: [

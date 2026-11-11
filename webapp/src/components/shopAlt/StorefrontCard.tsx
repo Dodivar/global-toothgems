@@ -13,6 +13,7 @@ import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import type { Product, ProductVariant } from "../../data/products";
 import { OfferBadges } from "../shop/OfferBadges";
 import { offerPrice } from "../../lib/storefrontOffers";
+import { StruckPrice } from "../shop/StruckPrice";
 import { useProductOffer } from "../../lib/useStorefrontOffers";
 import { cardVariants } from "../../lib/productOptions";
 
@@ -54,9 +55,9 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
   const eyebrow = product.family ? familyName(product.family) : categoryLabel;
   const quickAdd = canQuickAdd(product, source);
   const hoverImage = product.gallery?.[1]?.src;
-  // The running campaign and promotion of this product (read once hydrated), and the price they leave.
+  // The running campaign and promotion of this product (read once hydrated), and the database's price and reference price.
   const offer = useProductOffer(product);
-  const shown = offerPrice(product.price, product.compareAtPrice, offer);
+  const shown = offerPrice(product.price, offer);
 
   // Same published reviews as the product page's rating line.
   const subject = useMemo(() => ({ kind: "product" as const, id: product.id }), [product.id]);
@@ -188,10 +189,8 @@ export function StorefrontCard({ product, source, saved, onSave, eager = false }
         <VariantAvailability variants={cardVariants(product) ?? []} />
         <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 pt-1.5">
           <span className="flex items-baseline gap-1.5">
-            <strong className={`text-[15px] font-bold ${shown.was !== undefined && offer?.promotion?.priceOffPercent ? "text-[var(--accent-highlight-ink)]" : "text-[var(--text-primary)]"}`}>{formatPrice(shown.price)}</strong>
-            {shown.was !== undefined && (
-              <span className="text-xs text-[var(--text-subtle)] line-through">{formatPrice(shown.was)}</span>
-            )}
+            <strong className={`text-[15px] font-bold ${shown.was !== undefined ? "text-[var(--accent-highlight-ink)]" : "text-[var(--text-primary)]"}`}>{formatPrice(shown.price)}</strong>
+            {shown.was !== undefined && <StruckPrice value={shown.was} className="text-xs text-[var(--text-subtle)]" />}
           </span>
           <Availability stock={stock} />
         </div>

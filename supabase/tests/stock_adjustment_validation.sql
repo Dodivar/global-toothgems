@@ -58,14 +58,14 @@ begin
   end;
   if not v_ok then raise exception 'FAIL S1: a visitor changed the stock'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', cust, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cust, 'role', 'authenticated')::text, true);
   v_ok := false;
   begin
     perform public.admin_adjust_stock(p_one, null, 10);
   exception when insufficient_privilege then v_ok := true;
   end;
   if not v_ok then raise exception 'FAIL S1: a customer changed the stock'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', viewer, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', viewer, 'role', 'authenticated')::text, true);
   v_ok := false;
   begin
     perform public.admin_adjust_stock(p_one, null, 10);
@@ -75,7 +75,7 @@ begin
   passed := passed || 'S1'::text;
 
   -- S2: a manager adds units; a sale in between is kept
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   execute 'reset role';
   update public.inventory_items set quantity_on_hand = 2 where product_id = p_one;  -- a sale
   perform set_config('role', 'authenticated', true);

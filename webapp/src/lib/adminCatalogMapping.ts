@@ -51,7 +51,7 @@ import { oneOf } from "./oneOf";
  */
 const adminProductSelect = (options: boolean) => `
   id, sku, slug, name, short_description, description, category_id,
-  price, compare_at_price, currency, status, metadata, created_at, updated_at,
+  price, currency, status, metadata, created_at, updated_at,
   spec_material, spec_center, spec_back, spec_packaging, spec_wear,
   product_translations ( locale, name, short_description, description,
     spec_material, spec_center, spec_back, spec_packaging, spec_wear ),
@@ -114,7 +114,6 @@ export interface ProductRow extends SpecColumns {
   family_id?: string | null;
   /** PostgREST sends numeric as a JSON number, occasionally as a string. */
   price: number | string;
-  compare_at_price: number | string | null;
   currency: string;
   status: string;
   metadata: Json;
@@ -332,7 +331,6 @@ export function rowToProduct(row: ProductRow, publicUrl: (path: string) => strin
     familyId: row.family_id ?? null,
     type: oneOf(metadata.type, PRODUCT_TYPES, "single"),
     price: amountFromDb(row.price),
-    compareAtPrice: row.compare_at_price == null ? undefined : amountFromDb(row.compare_at_price),
     media,
     trackInventory: inventory?.track_inventory ?? true,
     // Units on the shelf. Reservations held by unpaid orders are not
@@ -480,8 +478,9 @@ export function readGemOptions(rows: VariantRow[]): GemOptions | undefined {
  * Payload of `admin_save_product()` (migrations `…_admin_product_management`,
  * `…_gem_pack_stone_size_options` and `…_product_custom_variants`).
  *
- * `promoPrice` is deliberately not sent: the database has no column for it and
- * discounts belong to the promotions domain, not to the product.
+ * No struck-out price is sent: the compare-at price is retired (decision 129,
+ * Omnibus; the database refuses any value) and a struck-out price comes only
+ * from the price history (`storefront_price_references()`).
  */
 export function productToPayload(product: AdminProduct, { derivedStock = false }: { derivedStock?: boolean } = {}): Json {
   const name = { fr: product.name.fr.trim(), en: product.name.en.trim() };
@@ -501,7 +500,6 @@ export function productToPayload(product: AdminProduct, { derivedStock = false }
     short_description: product.shortDescription.fr.trim(),
     description: product.description.fr.trim(),
     price: amountToDb(product.price),
-    compare_at_price: product.compareAtPrice == null ? null : amountToDb(product.compareAtPrice),
     status: product.status,
     metadata: {
       type: product.type,

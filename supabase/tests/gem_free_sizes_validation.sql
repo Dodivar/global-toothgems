@@ -33,7 +33,7 @@ begin
   perform set_config('role', 'authenticated', true);
 
   -- S1: a customer cannot save a product, sizes or not -------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', cust, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cust, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.admin_save_product(base || jsonb_build_object('variants', '[{"pack": 10, "mm": [2, 4]}]'::jsonb));
@@ -42,7 +42,7 @@ begin
   if v_state is distinct from '42501' then raise exception 'FAIL S1: customer saved a product (%)', v_state; end if;
   passed := array_append(passed, 'S1 customer refused');
 
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   -- S2: millimetre sizes become named, SKU'd variants, dimensions ascending ----
   res := public.admin_save_product(base || jsonb_build_object('variants', jsonb_build_array(

@@ -59,7 +59,7 @@ begin
 
   -- Read-only member ------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', vw, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vw, 'role', 'authenticated')::text, true);
 
   -- V1: reads the team (with statuses) and the matrix
   select count(*) into v_cnt from public.staff_directory() where user_id in (admin1, admin2, mgr, mgr2, vw, susp);
@@ -106,7 +106,7 @@ begin
   passed := passed || 'V2'::text;
 
   -- Manager -------------------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   -- M1: never promotes anyone to administrator
   begin
@@ -192,7 +192,7 @@ begin
   exception when insufficient_privilege then null;
   end;
   update public.profiles set first_name = 'Myself' where id = mgr;  -- own names stay editable
-  perform set_config('request.jwt.claims', json_build_object('sub', admin1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin1, 'role', 'authenticated')::text, true);
   begin
     update public.profiles set role = 'manager' where id = admin1;
     raise exception 'FAIL S1: admin changed their own role';
@@ -223,7 +223,7 @@ begin
   update public.profiles set status = 'suspended' where id = susp;
   get diagnostics v_cnt = row_count;
   if v_cnt <> 1 then raise exception 'FAIL X1: admin could not suspend'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', susp, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', susp, 'role', 'authenticated')::text, true);
 
   -- X1: no directory, no permission, no write, no staff read
   begin
@@ -242,7 +242,7 @@ begin
   passed := passed || 'X1'::text;
 
   -- Customer --------------------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', cust, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cust, 'role', 'authenticated')::text, true);
 
   -- C1: no directory, no staff details, no matrix, no permission, no promotion of themselves
   begin

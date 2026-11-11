@@ -59,6 +59,7 @@ export const DOCUMENT_MESSAGES = {
         "vatTitle": "Récapitulatif de la TVA",
         "vatFranchise": "TVA non applicable, art. 293 B du CGI",
         "paid": "Facture acquittée le {{date}} : paiement comptant à la commande, aucun escompte pour paiement anticipé.",
+        "studioSoldBy": "Abonnement au Studio 3D {{brand}}, vendu et facturé par {{seller}}.",
         "giftCardNote": "Cartes cadeaux : bons à usages multiples, hors du champ de la TVA lors de leur achat ; la TVA est due lors de leur utilisation.",
         "latePayment": "Clients professionnels : en cas de retard de paiement, pénalités au taux de trois fois le taux d’intérêt légal et indemnité forfaitaire de 40 € pour frais de recouvrement (art. L441-10 du Code de commerce).",
         "fileName": "facture",
@@ -84,6 +85,21 @@ export const DOCUMENT_MESSAGES = {
         "fileName": "avoir",
         "studioWithdrawal": "Rétractation — part non utilisée de l’abonnement Studio 3D, formule {{plan}}",
         "studioUsedDays": "{{used}} jours utilisés sur {{total}}"
+      },
+      "terms": {
+        "title": "Conditions générales de vente",
+        "fileName": "conditions-generales-de-vente",
+        "version": "Version du",
+        "appliesTo": "Applicable à",
+        "toSupply": "à compléter",
+        "intro": "Version des conditions générales de vente en vigueur à la date de votre commande, remise avec sa confirmation pour que vous puissiez la conserver et la reproduire.",
+        "fieldColumn": "Information",
+        "valueColumn": "Détail"
+      },
+      "studioTerms": {
+        "title": "Conditions générales d’abonnement au Studio 3D",
+        "fileName": "conditions-abonnement-studio-3d",
+        "intro": "Version des conditions générales d’abonnement au Studio 3D en vigueur à la date de votre abonnement, remise avec sa confirmation pour que vous puissiez la conserver et la reproduire."
       }
     }
   },
@@ -144,6 +160,7 @@ export const DOCUMENT_MESSAGES = {
         "vatTitle": "VAT summary",
         "vatFranchise": "TVA non applicable, art. 293 B du CGI (VAT not applicable, article 293 B of the French General Tax Code).",
         "paid": "Invoice paid on {{date}}: payment in full when ordering, no discount for early payment.",
+        "studioSoldBy": "{{brand}} 3D Studio subscription, sold and invoiced by {{seller}}.",
         "giftCardNote": "Gift cards: multi-purpose vouchers, outside the scope of VAT when bought; VAT is due when they are used.",
         "latePayment": "Business customers: late payment incurs interest at three times the French legal rate and a fixed €40 recovery fee (French Commercial Code, art. L441-10).",
         "fileName": "invoice",
@@ -169,6 +186,21 @@ export const DOCUMENT_MESSAGES = {
         "fileName": "credit-note",
         "studioWithdrawal": "Withdrawal — unused share of the 3D Studio subscription, {{plan}} plan",
         "studioUsedDays": "{{used}} of {{total}} days used"
+      },
+      "terms": {
+        "title": "Terms of sale",
+        "fileName": "terms-of-sale",
+        "version": "Version of",
+        "appliesTo": "Applies to",
+        "toSupply": "to be supplied",
+        "intro": "The version of the terms of sale in force on the date of your order, given with its confirmation so that you can keep and reproduce it.",
+        "fieldColumn": "Item",
+        "valueColumn": "Details"
+      },
+      "studioTerms": {
+        "title": "3D Studio subscription terms",
+        "fileName": "3d-studio-subscription-terms",
+        "intro": "The version of the 3D Studio subscription terms in force on the date of your subscription, given with its confirmation so that you can keep and reproduce it."
       }
     }
   }

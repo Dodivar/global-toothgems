@@ -11,7 +11,8 @@ import { type ChargeOutcome, handleStudioManage, type ManagedContext, type Studi
  */
 
 const supabase = serviceClient();
-const stripe = stripeClient();
+// The Studio's Stripe account: the publisher's (DoDigital, decision 135), `STRIPE_*`.
+const stripe = stripeClient("studio");
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 const log = (message: string, detail?: unknown) => console.error(`[studio-manage-subscription] ${message}`, detail ?? "");
 
@@ -71,7 +72,7 @@ function cardOf(method: Stripe.PaymentMethod | null) {
 
 const deps: StudioManageDeps = {
   origins,
-  publishableKey: matchingPublishableKey(),
+  publishableKey: matchingPublishableKey("studio"),
 
   async userFromToken(token) {
     const { data, error } = await supabase.auth.getUser(token);

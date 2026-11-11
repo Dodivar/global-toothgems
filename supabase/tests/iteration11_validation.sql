@@ -29,7 +29,7 @@ begin
     'media', '[]'::jsonb);
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   -- G1: packs × sizes become variants with names, SKUs, prices and stock -------
   res := public.admin_save_product(base || jsonb_build_object('variants', jsonb_build_array(
@@ -116,7 +116,7 @@ begin
   insert into public.order_items (order_id, product_id, variant_id, product_name, variant_name, sku, unit_price, quantity)
   values ('00000000-0000-4000-a000-0000001100f1', p_gem, v_id, 'Strass test', 'Pack de 50 · SS6', 'GEM-SS-TEST-P50-SS6', 25.00, 1);
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform public.admin_save_product(base || jsonb_build_object('variants', '[{"pack": 20, "ss": 6}]'::jsonb));
   if (select is_active from public.product_variants where id = v_id) is distinct from false then
     raise exception 'FAIL G5: ordered option not kept inactive';

@@ -44,8 +44,10 @@ import {
   type ChatNotification,
   type ConversationView,
   type LoadStatus,
+  type ReportResult,
   type SendResult,
 } from "./chatContext";
+import { activeMute, type ReportDraft } from "./moderation";
 
 /**
  * The Members' Lounge on Supabase.
@@ -115,6 +117,9 @@ export function LiveChatProvider({ children }: { children: ReactNode }) {
   const [mine, setMine] = useState<Record<string, ChatReaction[]>>({});
   const [presence, setPresenceState] = useState<Presence>("online");
   const [attempt, setAttempt] = useState(0);
+  /* Moderation (decision 132): the viewer's blocks and the mute the team put on them. */
+  const [blockedIds, setBlockedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [silencedUntil, setSilencedUntil] = useState<number | null>(null);
 
   /* -------------------------------------------------------------- UI state */
   const [serverId, setServerId] = useState<ServerId>(DEFAULT_SERVER);
@@ -196,15 +201,20 @@ export function LiveChatProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         await api.joinLounge();
-        const [directory, overview, notifications, ownPresence] = await Promise.all([
+        const [directory, overview, notifications, ownPresence, blocked, moderation] = await Promise.all([
           api.fetchDirectory(),
           api.fetchOverview(),
           api.fetchNotifications(userId),
           api.fetchOwnPresence(userId),
+          api.fetchBlocked(userId),
+          /* The lounge opens without it: writing is still checked by the database. */
+          api.fetchMyModeration().catch(() => null),
         ]);
         if (cancelled) return;
         setData({ owner: userId, ...toMembers(directory), overview, notifications });
         if (ownPresence) setPresenceState(ownPresence);
+        setBlockedIds(new Set(blocked));
+        setSilencedUntil(moderation ? activeMute(moderation, Date.now()) : null);
         setStatus("ready");
       } catch (error) {
         if (cancelled) return;
@@ -224,6 +234,8 @@ export function LiveChatProvider({ children }: { children: ReactNode }) {
     setDrafts({});
     setReplyTo({});
     setDivider(null);
+    setBlockedIds(new Set());
+    setSilencedUntil(null);
   }, [userId]);
 
   /** The database id of the private conversation with a member, once there is one. */
@@ -380,6 +392,36 @@ export function LiveChatProvider({ children }: { children: ReactNode }) {
         }
       },
       notification: scheduleNotifications,
+      moderation: ({ messageId, kind }) => {
+        const { rooms: cache, userId: viewerId } = latest.current;
+        const located = Object.entries(cache).find(([, c]) => c.messages.some((m) => m.id === messageId));
+        const mine = located?.[1].messages.find((m) => m.id === messageId)?.authorId === viewerId;
+        if (kind === "deleted" || (kind === "hidden" && !mine)) {
+          /* Gone for this member: out of every room on screen. */
+          setRooms((previous) => {
+            let changed = false;
+            const next: Record<string, RoomCache> = {};
+            for (const [roomKey, c] of Object.entries(previous)) {
+              const messages = c.messages.filter((m) => m.id !== messageId);
+              changed ||= messages.length !== c.messages.length;
+              next[roomKey] = messages.length === c.messages.length ? c : { ...c, messages };
+            }
+            return changed ? next : previous;
+          });
+        } else {
+          /* Restored, or the viewer's own message hidden: read it again as the database serves it now. */
+          void api
+            .fetchMessage(messageId)
+            .then((full) => {
+              if (!full) return;
+              const target = roomOfRow(full);
+              if (!target || !latest.current.rooms[keyOf(target)]) return;
+              return mapRows([full]).then(([message]) => message && upsertMessage(keyOf(target), message));
+            })
+            .catch(() => undefined);
+        }
+        scheduleOverview();
+      },
       status: (ok) => {
         /* Back after a disconnection: catch up on what was missed. */
         if (ok) scheduleOverview();
@@ -392,6 +434,13 @@ export function LiveChatProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(readTimer.current);
     };
   }, [status, userId, enabled, roomOfRow, upsertMessage, mapRows, markRoomsRead, scheduleOverview, scheduleNotifications, refreshDirectory]);
+
+  /* A mute ends on its own: the composer comes back at its end (the database lifts it at the same time). */
+  useEffect(() => {
+    if (silencedUntil === null) return;
+    const timer = window.setTimeout(() => setSilencedUntil(null), Math.max(0, Math.min(silencedUntil - Date.now(), 2 ** 31 - 1)));
+    return () => window.clearTimeout(timer);
+  }, [silencedUntil]);
 
   /* Presence: a heartbeat every minute while the member space is open, and the others' presence with it. */
   useEffect(() => {
@@ -695,7 +744,9 @@ export function LiveChatProvider({ children }: { children: ReactNode }) {
           return cache ? { ...previous, [roomKey]: { ...cache, messages: cache.messages.filter((m) => m.id !== localId) } } : previous;
         });
         void api.removeImages(uploaded.map((u) => u.path)).catch(() => undefined);
-        return { ok: false, reason: error instanceof api.LoungeError ? error.reason : "failed" };
+        const reason = error instanceof api.LoungeError ? error.reason : "failed";
+        if (reason === "muted") void api.fetchMyModeration().then((m) => setSilencedUntil(activeMute(m, Date.now())), () => undefined);
+        return { ok: false, reason: reason === "rateLimited" || reason === "forbidden" || reason === "muted" ? reason : "failed" };
       }
     },
     [room, replyTo, upsertMessage, mapRows, refreshOverview],
@@ -797,6 +848,44 @@ export function LiveChatProvider({ children }: { children: ReactNode }) {
 
   const focusComposer = useCallback(() => setComposerFocus((n) => n + 1), []);
 
+  const setBlocked = useCallback(
+    async (memberId: string, blocked: boolean) => {
+      try {
+        await api.setBlocked(memberId, blocked);
+      } catch {
+        return false;
+      }
+      setBlockedIds((previous) => {
+        const next = new Set(previous);
+        if (blocked) next.add(memberId);
+        else next.delete(memberId);
+        return next;
+      });
+      /* The database now serves other messages: rooms are read again, the one on screen at once. */
+      const onScreen = latest.current.room;
+      setRooms((previous) => {
+        const keep = previous[keyOf(onScreen)];
+        return keep ? { [keyOf(onScreen)]: keep } : {};
+      });
+      void loadRoom(onScreen);
+      void refreshOverview();
+      void refreshNotifications();
+      return true;
+    },
+    [loadRoom, refreshOverview, refreshNotifications],
+  );
+
+  const report = useCallback(async (message: ChatMessage, draft: ReportDraft, attachmentId?: string): Promise<ReportResult> => {
+    if (message.pending) return { ok: false, reason: "failed" };
+    try {
+      const ack = await api.reportMessage(message.id, draft, attachmentId);
+      return { ok: true, createdAt: ack.createdAt };
+    } catch (error) {
+      const reason = error instanceof api.LoungeError ? error.reason : "failed";
+      return { ok: false, reason: reason === "duplicate" || reason === "rateLimited" ? reason : "failed" };
+    }
+  }, []);
+
   const retry = useCallback(() => {
     if (status === "error") setAttempt((n) => n + 1);
     else if (latest.current.rooms[keyOf(latest.current.room)]?.status === "error") void loadRoom(latest.current.room);
@@ -806,6 +895,10 @@ export function LiveChatProvider({ children }: { children: ReactNode }) {
   const serverMembers = useMemo(() => activeMembers.filter((m) => m.languages.includes(server.id)), [activeMembers, server.id]);
 
   const value: ChatContextValue = {
+    blockedIds,
+    setBlocked,
+    report,
+    silencedUntil,
     status: enabled ? status : "loading",
     roomStatus,
     retry,

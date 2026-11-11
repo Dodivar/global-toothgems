@@ -29,7 +29,7 @@ begin
   payload := jsonb_build_object(
     'id', p_new, 'category_id', c_gems, 'sku', 'GEM-TEST-100', 'slug', 'etoile-cristal',
     'name', 'Étoile test', 'short_description', 'Courte', 'description', 'Longue',
-    'price', '12.50', 'compare_at_price', '15.00', 'status', 'draft',
+    'price', '12.50', 'status', 'draft',
     'metadata', jsonb_build_object('type', 'single', 'material', jsonb_build_object('fr', 'Cristal', 'en', 'Crystal'), 'tags', jsonb_build_array('test')),
     'translations', jsonb_build_object('en', jsonb_build_object('name', 'Test star', 'slug', 'test-star', 'short_description', 'Short', 'description', 'Long')),
     'inventory', jsonb_build_object('track_inventory', true, 'quantity_on_hand', 40, 'low_stock_threshold', 8, 'availability', 'in_stock'),
@@ -48,7 +48,7 @@ begin
   if v_state is distinct from '42501' then raise exception 'FAIL P1: anon got %', v_state; end if;
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.admin_save_product(payload);
@@ -60,7 +60,7 @@ begin
 
   -- P2: create = product + translation + stock + media, one call -------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   res := public.admin_save_product(payload);
   execute 'reset role';
 
@@ -89,7 +89,7 @@ begin
     || jsonb_build_object('media', jsonb_build_array(
          jsonb_build_object('id', m_second, 'storage_path', 'ignored', 'alt_fr', 'Vue B', 'alt_en', 'View B')));
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   res := public.admin_save_product(payload);
   execute 'reset role';
 
@@ -113,7 +113,7 @@ begin
 
   -- P4: money and consistency are validated server-side -----------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   foreach v_txt in array array['12.345', 'abc', '-1', '1e3'] loop
     v_state := null;
     begin
@@ -127,7 +127,7 @@ begin
     perform public.admin_save_product(payload || jsonb_build_object('compare_at_price', '10.00'));
   exception when others then v_state := sqlstate;
   end;
-  if v_state is distinct from '23514' then raise exception 'FAIL P4: compare-at below price gave %', v_state; end if;
+  if v_state is distinct from '23514' then raise exception 'FAIL P4: a compare-at price (retired, decision 129) gave %', v_state; end if;
   v_state := null;
   begin
     perform public.admin_save_product(payload || jsonb_build_object('media', jsonb_build_array(
@@ -140,7 +140,7 @@ begin
 
   -- P5: recommendations replaced in order, self and duplicates dropped --------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform public.admin_save_product_recommendations(p_new, array[p_gel, p_new, p_star, p_gel], array[p_star]);
   execute 'reset role';
   select array_agg(recommended_product_id order by position) into v_ids
@@ -152,7 +152,7 @@ begin
 
   -- P6: delete returns only files no other product uses -----------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   -- A duplicate shares the remaining image file.
   perform public.admin_save_product(payload || jsonb_build_object(
     'id', p_dup, 'sku', 'GEM-TEST-100-COPY', 'slug', 'etoile-test-copie', 'status', 'draft',
@@ -172,7 +172,7 @@ begin
 
   -- P7: a product with variants keeps its stock on the variants ---------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform public.admin_save_product(jsonb_build_object(
     'id', p_star, 'category_id', c_gems, 'sku', 'GEM-STAR-001', 'name', 'Étoile Cristal', 'price', '33.00',
     'status', 'active', 'translations', jsonb_build_object('en', jsonb_build_object('name', 'Crystal Star')),

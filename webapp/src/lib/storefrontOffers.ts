@@ -18,8 +18,13 @@ import type { Localized } from "../data/types";
  *   or a collection never put a badge or a price cut on the product cards.
  * - Promotions for a type of customer (new, existing, segments) are not shown
  *   in the shop window: a visitor cannot tell whether they qualify.
- * - A product already on sale (`compareAtPrice`) is skipped by promotions that
- *   exclude discounted products, as the engine does.
+ * - The price shown and the struck-out price come from the database
+ *   (`storefront_price_references()`, decision 129, Omnibus): a struck-out price
+ *   is shown only when the price now is strictly below the reference price (the
+ *   lowest price of the 30 days before the reduction started), it is always that
+ *   reference, and the percentage is computed on it. A percentage promotion that
+ *   cuts the unit price shows its badge with that percentage, or no percentage at
+ *   all when the database says there is no reduction to announce.
  */
 
 type OfferPromotionType = "percentage" | "fixed_amount" | "buy_x_get_y" | "free_shipping" | "bundle" | "gift";
@@ -62,6 +67,8 @@ export interface OfferCampaignRow {
 
 export interface OfferSources {
   promotions: OfferPromotionRow[];
+  /** `storefront_price_references()` rows (decision 129). */
+  references?: PriceReferenceRow[];
   campaigns: OfferCampaignRow[];
   /** `categories.id` by slug (a shop product carries its category's slug). */
   categoryIds: Record<string, string>;
@@ -94,18 +101,52 @@ export interface OfferPromotion {
   conditional: boolean;
 }
 
+/**
+ * One row of `storefront_price_references()`: an active product, variant or published course with a price cut
+ * running now. Amounts are decimal (major units) as Postgres returns them.
+ */
+export interface PriceReferenceRow {
+  product_id: string | null;
+  variant_id: string | null;
+  course_id: string | null;
+  currency: string;
+  list_price: number | string;
+  price: number | string;
+  reference_price: number | string | null;
+  discount_percent: number | null;
+  reduction_started_at: string | null;
+  state: string;
+}
+
+export type PriceReferenceState = "reduced" | "not_lower" | "no_history" | "no_reduction";
+
+/** What the database says about the price of one item now (minor units). */
+export interface PriceReference {
+  currency: string;
+  listCents: number;
+  /** The price to show now (the cut price while a cut runs). */
+  priceCents: number;
+  /** The struck-out price: set only when the price now is strictly below the reference (state `reduced`). */
+  struckCents: number | null;
+  /** The reduction, computed on the struck-out price, rounded down. */
+  percent: number | null;
+  state: PriceReferenceState;
+}
+
 export interface ProductOffer {
   campaign: OfferCampaign | null;
   promotion: OfferPromotion | null;
+  /** The database's price now and reference price, when a cut runs on this item. */
+  reference: PriceReference | null;
 }
 
 export interface OfferProduct {
   dbId?: string;
+  /** The variant shown, when the product has options (its own price and history). */
+  variantId?: string | null;
   /** Category slug. */
   cat?: string | null;
   currency?: string;
-  /** The "was" price, when the product is already on sale. */
-  compareAtPrice?: number;
 }
 
 const cents = (value: number | string | null): number | null => {
@@ -113,6 +154,46 @@ const cents = (value: number | string | null): number | null => {
   const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? Math.round(n * 100) : null;
 };
+
+const STATES: readonly PriceReferenceState[] = ["reduced", "not_lower", "no_history", "no_reduction"];
+
+/**
+ * A database row as the shop shows it. Defensive: a struck-out price only for a `reduced` row whose figures agree
+ * (reference strictly above the price), never one computed here.
+ */
+export function mapPriceReference(row: PriceReferenceRow): PriceReference | null {
+  const listCents = cents(row.list_price);
+  const priceCents = cents(row.price);
+  if (listCents === null || priceCents === null) return null;
+  const state = (STATES as readonly string[]).includes(row.state) ? (row.state as PriceReferenceState) : "not_lower";
+  const reference = cents(row.reference_price);
+  const reduced = state === "reduced" && reference !== null && priceCents < reference;
+  return {
+    currency: row.currency,
+    listCents,
+    priceCents,
+    struckCents: reduced ? reference : null,
+    percent: reduced && row.discount_percent !== null && row.discount_percent > 0 ? row.discount_percent : null,
+    state: reduced ? "reduced" : state === "reduced" ? "not_lower" : state,
+  };
+}
+
+/** The references by item: products and variants by `productId:variantId` (empty for the product), courses by id. */
+export function indexPriceReferences(rows: readonly PriceReferenceRow[]) {
+  const products = new Map<string, PriceReference>();
+  const courses = new Map<string, PriceReference>();
+  for (const row of rows) {
+    const reference = mapPriceReference(row);
+    if (!reference) continue;
+    if (row.course_id) courses.set(row.course_id, reference);
+    else if (row.product_id) products.set(`${row.product_id}:${row.variant_id ?? ""}`, reference);
+  }
+  return {
+    product: (productId: string, variantId?: string | null): PriceReference | null =>
+      products.get(`${productId}:${variantId ?? ""}`) ?? null,
+    course: (courseId: string): PriceReference | null => courses.get(courseId) ?? null,
+  };
+}
 
 const localized = (fr: string, translations: { locale: string; title?: string; description?: string | null }[], key: "title" | "description"): Localized => {
   const en = translations.find((t) => t.locale === "en")?.[key];
@@ -126,6 +207,7 @@ const running = (startsAt: string, endsAt: string | null, now: number) =>
 const KIND_ORDER: OfferPromotionType[] = ["percentage", "buy_x_get_y", "bundle", "gift", "fixed_amount"];
 
 export function buildOfferBook(sources: OfferSources) {
+  const references = indexPriceReferences(sources.references ?? []);
   const applies = (row: OfferPromotionRow, product: OfferProduct): boolean => {
     const id = product.dbId;
     if (!id) return false;
@@ -170,7 +252,6 @@ export function buildOfferBook(sources: OfferSources) {
           row.customer_eligibility === "all" &&
           row.type !== "free_shipping" &&
           (!product.currency || row.currency === product.currency) &&
-          !(row.exclude_discounted_products && product.compareAtPrice !== undefined) &&
           applies(row, product),
       );
       const best = candidates
@@ -180,11 +261,19 @@ export function buildOfferBook(sources: OfferSources) {
           // Among the cheaper-unit promotions, the biggest cut.
           return rank !== 0 ? rank : (b.priceOffPercent ?? 0) - (a.priceOffPercent ?? 0);
         })[0];
-      if (!campaign && !best) return null;
+      const reference = references.product(product.dbId, product.variantId);
+      if (!campaign && !best && !reference) return null;
+      // A promotion that cuts the unit price announces the database's reduction, never its own percentage.
+      const promotion = best && best.priceOffPercent !== null ? { ...best, percent: reference?.percent ?? null } : (best ?? null);
       return {
         campaign: campaign ? { id: campaign.id, title: localized(campaign.title, campaign.campaign_translations, "title"), theme: campaign.theme } : null,
-        promotion: best ?? null,
+        promotion,
+        reference,
       };
+    },
+    /** The database's price now and reference price of a published course (null without a running cut). */
+    courseReference(courseId: string | undefined): PriceReference | null {
+      return courseId ? references.course(courseId) : null;
     },
   };
 }
@@ -192,15 +281,38 @@ export function buildOfferBook(sources: OfferSources) {
 export type OfferBook = ReturnType<typeof buildOfferBook>;
 
 /**
- * The price to show for a unit price (major units) under an offer: the new price, and the struck-out one when
- * there is something to strike — the product's own "was" price when it has one, else the price before the cut.
+ * Whether the promotion has a badge: a percentage promotion that cuts the unit price shows the database's
+ * percentage (Omnibus, computed on the reference price), and no badge when there is no reduction to announce.
  */
-export function offerPrice(price: number, compareAt: number | undefined, offer: ProductOffer | null | undefined): { price: number; was: number | undefined } {
-  const promotion = offer?.promotion;
-  if (!promotion || promotion.priceOffPercent === null) return { price, was: compareAt };
-  const unit = Math.round(price * 100);
-  const off = Math.round((unit * promotion.priceOffPercent) / 100);
-  const net = Math.max(0, unit - off);
-  if (net >= unit) return { price, was: compareAt };
-  return { price: net / 100, was: compareAt !== undefined && compareAt > price ? compareAt : price };
+export function promotionBadgeShown(promotion: ProductOffer["promotion"]): boolean {
+  return promotion !== null && !(promotion.type === "percentage" && promotion.percent === null);
+}
+
+/**
+ * The price to show for a unit price (major units): the database's price now when a cut runs on the item, and a
+ * struck-out price only when the database says the price is strictly below the reference price (Omnibus) — then
+ * that reference, with the percentage computed on it. Without a reference (no cut, offers not read yet, mock
+ * mode) the list price, nothing struck.
+ */
+export function offerPrice(price: number, offer: Pick<ProductOffer, "reference"> | null | undefined): { price: number; was: number | undefined; percent: number | null } {
+  const reference = offer?.reference;
+  if (!reference) return { price, was: undefined, percent: null };
+  return {
+    price: reference.priceCents / 100,
+    was: reference.struckCents !== null ? reference.struckCents / 100 : undefined,
+    percent: reference.percent,
+  };
+}
+
+/**
+ * The struck-out amount of a basket line (minor units), next to its net total once the database's quote applied
+ * discounts. A line whose item has a cut for everyone running (a reference row) follows the shop window's rule:
+ * its reference price only when the database says it is a reduction (Omnibus), otherwise nothing struck. A line
+ * discounted only by what this customer typed or holds (a code, the loyalty reward, a basket condition) shows its
+ * total before that discount: the arithmetic of the customer's own order, not a price reduction announcement.
+ */
+export function basketLineStruck(line: { unitCents: number; qty: number; cutCents: number }, reference: PriceReference | null | undefined): number | null {
+  if (line.cutCents <= 0) return null;
+  if (reference) return reference.struckCents !== null ? reference.struckCents * line.qty : null;
+  return line.unitCents * line.qty;
 }

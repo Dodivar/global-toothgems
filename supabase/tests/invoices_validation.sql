@@ -130,7 +130,7 @@ begin
 
   -- I4 -----------------------------------------------------------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.invoices;
   if v_cnt <> 1 then raise exception 'FAIL I4: the owner reads % invoices', v_cnt; end if;
   begin
@@ -145,7 +145,7 @@ begin
     raise exception 'FAIL I4: a member read the counters';
   exception when insufficient_privilege then null;
   end;
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.invoices where order_id = o1;
   if v_cnt <> 0 then raise exception 'FAIL I4: another member reads the invoice'; end if;
   perform set_config('role', 'anon', true);

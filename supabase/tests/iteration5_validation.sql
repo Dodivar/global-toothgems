@@ -59,7 +59,7 @@ begin
   -- ===========================================================================
   -- M2 profile: customer edits preferences, not the system columns
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
 
   update public.profiles set persona = 'student', preferred_locale = 'fr', birth_date = '1994-05-22',
@@ -130,7 +130,7 @@ begin
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL M3: consent deleted (%)', v_state; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.consent_records where user_id = alice;
   if v_cnt <> 0 then raise exception 'FAIL M3: bob reads alice consents'; end if;
   passed := array_append(passed, 'M3 consents append-only, own only, server timestamp, allowed sources, opt-in cache and latest view follow');
@@ -138,7 +138,7 @@ begin
   -- ===========================================================================
   -- M4 data export requests
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   insert into public.data_export_requests (user_id, status, storage_path, ready_at, expires_at)
   values (alice, 'ready', alice::text || '/fake.zip', now(), now() + interval '1 year');
   select status into v_txt from public.data_export_requests where user_id = alice;
@@ -161,7 +161,7 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL M4: request for someone else (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.data_export_requests;
   if v_cnt <> 0 then raise exception 'FAIL M4: bob sees alice request'; end if;
   passed := array_append(passed, 'M4 data export: own request only, forced pending, one in flight, backend-only progress');
@@ -219,7 +219,7 @@ begin
     raise exception 'FAIL M5: next card not started %', row_to_json(lo);
   end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   v_state := null;
   begin
@@ -235,7 +235,7 @@ begin
   end;
   get diagnostics v_cnt = row_count;
   if v_state is null and v_cnt <> 0 then raise exception 'FAIL M5: customer changed the rules'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.loyalty_cards;
   if v_cnt <> 0 then raise exception 'FAIL M5: bob sees alice cards'; end if;
   select count(*) into v_cnt from public.loyalty_overview;
@@ -245,7 +245,7 @@ begin
   -- ===========================================================================
   -- M6 CRM tags/notes: staff only
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   insert into public.customer_tags (user_id, tag) values (alice, 'vip');
   insert into public.customer_notes (user_id, body) values (alice, 'Studio partenaire, facturation société.');
   v_state := null;
@@ -255,7 +255,7 @@ begin
   end;
   if v_state is distinct from '23514' then raise exception 'FAIL M6: unknown tag (%)', v_state; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.customer_tags;
   select v_cnt + count(*) into v_cnt from public.customer_notes;
   if v_cnt <> 0 then raise exception 'FAIL M6: customer reads CRM data'; end if;
@@ -277,7 +277,7 @@ begin
   insert into public.shipments (order_id, status, carrier, tracking_number)
   values (o.id, 'preparing', 'Colissimo', '6A55555555555') returning id into v_ship;
   insert into public.shipment_items (shipment_id, order_item_id, quantity) values (v_ship, i_kit, 1);
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   select count(*) into v_cnt from public.review_requests where product_id = p_kit;
   if v_cnt <> 0 then raise exception 'FAIL M7: request before shipping'; end if;
@@ -290,7 +290,7 @@ begin
   values (p_kit, alice, 5, 'Top', 'Un kit très complet, parfait pour débuter en cabine.', 'fr');
   select count(*) into v_cnt from public.review_requests where product_id = p_kit;
   if v_cnt <> 0 then raise exception 'FAIL M7: reviewed product still requested'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.review_requests;
   if v_cnt <> 0 then raise exception 'FAIL M7: bob sees alice requests'; end if;
   passed := array_append(passed, 'M7 review requests: shipped, not yet reviewed, own orders only');

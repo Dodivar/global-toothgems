@@ -51,7 +51,6 @@ export interface VariantRow {
   /** Option values, e.g. `{ "pack": 50, "ss": 6 }` for a gem. */
   attributes?: Json;
   price: number | null;
-  compare_at_price: number | null;
   is_active: boolean;
   position: number;
   product_variant_translations: (TranslationRow & { name: string })[];
@@ -105,7 +104,6 @@ export interface ProductRow extends SpecColumns {
   meta_title?: string | null;
   meta_description?: string | null;
   price: number;
-  compare_at_price: number | null;
   currency: string;
   is_featured: boolean;
   metadata: Json;
@@ -261,7 +259,6 @@ function mapVariant(
   optionValues: string[] | undefined,
 ): ProductVariant {
   const price = displayPrice(row.price ?? productPrice);
-  const compareAt = row.compare_at_price != null ? displayPrice(row.compare_at_price) : undefined;
   const gem = parseGemAttributes(row.attributes);
   const swatch = swatchOf(row.attributes);
   return {
@@ -272,7 +269,6 @@ function mapVariant(
     ...(image ? { image } : {}),
     ...(optionValues ? { optionValues } : {}),
     price,
-    compareAtPrice: compareAt != null && compareAt > price ? compareAt : undefined,
     stock: stockBadge(row.inventory_items[0]?.stock_status),
   };
 }
@@ -343,7 +339,6 @@ export function mapProduct(
     : stockBadge(row.inventory_items[0]?.stock_status);
 
   const price = displayPrice(row.price);
-  const compareAtPrice = row.compare_at_price != null ? displayPrice(row.compare_at_price) : undefined;
 
   const aliases = row.product_translations
     .filter((t) => t.status === "published" && t.slug && t.slug !== row.slug)
@@ -365,7 +360,6 @@ export function mapProduct(
     subtitle: specs.material ?? categoryName ?? { fr: "", en: "" },
     price,
     currency: row.currency,
-    compareAtPrice: compareAtPrice != null && compareAtPrice > price ? compareAtPrice : undefined,
     rating: stats?.average_rating ?? 0,
     reviewCount: stats?.review_count ?? 0,
     stock,

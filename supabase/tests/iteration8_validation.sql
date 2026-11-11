@@ -81,7 +81,7 @@ begin
   -- S1 who may read statistics
   -- ===========================================================================
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.analytics_snapshot('2020-03-10', '2020-03-11');
@@ -102,7 +102,7 @@ begin
   -- S2 the snapshot, read by a read-only team member
   -- ===========================================================================
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   s := public.analytics_snapshot('2020-03-10', '2020-03-11');
 
   if s ->> 'step' <> 'day' or (s ->> 'previousStart') <> '2020-03-08' or (s ->> 'previousEnd') <> '2020-03-09'

@@ -824,6 +824,7 @@ export type Database = {
           policy_version: string
           purpose: string
           source: string
+          terms_version: string | null
           user_id: string | null
         }
         Insert: {
@@ -833,6 +834,7 @@ export type Database = {
           policy_version: string
           purpose: string
           source: string
+          terms_version?: string | null
           user_id?: string | null
         }
         Update: {
@@ -842,6 +844,7 @@ export type Database = {
           policy_version?: string
           purpose?: string
           source?: string
+          terms_version?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -3858,6 +3861,128 @@ export type Database = {
           },
         ]
       }
+      lounge_appeals: {
+        Row: {
+          answered_at: string | null
+          answered_by: string | null
+          appellant_id: string | null
+          appellant_role: string
+          body: string | null
+          created_at: string
+          decision_id: string
+          id: string
+          response: string | null
+          status: string
+        }
+        Insert: {
+          answered_at?: string | null
+          answered_by?: string | null
+          appellant_id?: string | null
+          appellant_role: string
+          body?: string | null
+          created_at?: string
+          decision_id: string
+          id?: string
+          response?: string | null
+          status?: string
+        }
+        Update: {
+          answered_at?: string | null
+          answered_by?: string | null
+          appellant_id?: string | null
+          appellant_role?: string
+          body?: string | null
+          created_at?: string
+          decision_id?: string
+          id?: string
+          response?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_appeals_answered_by_fkey"
+            columns: ["answered_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_appeals_answered_by_fkey"
+            columns: ["answered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_appeals_appellant_id_fkey"
+            columns: ["appellant_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_appeals_appellant_id_fkey"
+            columns: ["appellant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_appeals_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_moderation_decisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lounge_channels: {
         Row: {
           created_at: string
@@ -3940,31 +4065,37 @@ export type Database = {
       }
       lounge_members: {
         Row: {
+          banned_at: string | null
           handle: string
           is_mentor: boolean
           joined_at: string
           languages: string[]
           last_seen_at: string | null
+          muted_until: string | null
           presence: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          banned_at?: string | null
           handle: string
           is_mentor?: boolean
           joined_at?: string
           languages?: string[]
           last_seen_at?: string | null
+          muted_until?: string | null
           presence?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          banned_at?: string | null
           handle?: string
           is_mentor?: boolean
           joined_at?: string
           languages?: string[]
           last_seen_at?: string | null
+          muted_until?: string | null
           presence?: string
           updated_at?: string
           user_id?: string
@@ -4028,8 +4159,11 @@ export type Database = {
           channel_id: string | null
           conversation_id: string | null
           created_at: string
+          hidden_at: string | null
+          hidden_decision_id: string | null
           id: string
           mention_ids: string[]
+          moderation_status: string
           parts: Json
           reactions: Json
           reply_to_id: string | null
@@ -4040,8 +4174,11 @@ export type Database = {
           channel_id?: string | null
           conversation_id?: string | null
           created_at?: string
+          hidden_at?: string | null
+          hidden_decision_id?: string | null
           id?: string
           mention_ids?: string[]
+          moderation_status?: string
           parts?: Json
           reactions?: Json
           reply_to_id?: string | null
@@ -4052,8 +4189,11 @@ export type Database = {
           channel_id?: string | null
           conversation_id?: string | null
           created_at?: string
+          hidden_at?: string | null
+          hidden_decision_id?: string | null
           id?: string
           mention_ids?: string[]
+          moderation_status?: string
           parts?: Json
           reactions?: Json
           reply_to_id?: string | null
@@ -4088,10 +4228,173 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lounge_messages_hidden_decision_fk"
+            columns: ["hidden_decision_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_moderation_decisions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lounge_messages_reply_to_id_fkey"
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "lounge_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_moderation_decisions: {
+        Row: {
+          action: string
+          appeal_id: string | null
+          automated: boolean
+          created_at: string
+          decided_by: string | null
+          ends_at: string | null
+          ground: string | null
+          id: string
+          illegal_category: string | null
+          message_id: string | null
+          reason: string | null
+          report_count: number
+          statement: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          appeal_id?: string | null
+          automated?: boolean
+          created_at?: string
+          decided_by?: string | null
+          ends_at?: string | null
+          ground?: string | null
+          id?: string
+          illegal_category?: string | null
+          message_id?: string | null
+          reason?: string | null
+          report_count?: number
+          statement: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          appeal_id?: string | null
+          automated?: boolean
+          created_at?: string
+          decided_by?: string | null
+          ends_at?: string | null
+          ground?: string | null
+          id?: string
+          illegal_category?: string | null
+          message_id?: string | null
+          reason?: string | null
+          report_count?: number
+          statement?: string
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_decisions_appeal_fk"
+            columns: ["appeal_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_appeals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_moderation_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_moderation_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_moderation_decisions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_moderation_decisions_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_moderation_decisions_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_moderation_events: {
+        Row: {
+          channel_id: string | null
+          conversation_id: string | null
+          created_at: string
+          id: number
+          kind: string
+          message_id: string
+        }
+        Insert: {
+          channel_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: never
+          kind: string
+          message_id: string
+        }
+        Update: {
+          channel_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: never
+          kind?: string
+          message_id?: string
+        }
+        Relationships: []
+      }
+      lounge_moderation_snapshots: {
+        Row: {
+          attachment_count: number
+          body_text: string
+          channel_id: string | null
+          created_at: string
+          decision_id: string
+          message_created_at: string | null
+        }
+        Insert: {
+          attachment_count?: number
+          body_text?: string
+          channel_id?: string | null
+          created_at?: string
+          decision_id: string
+          message_created_at?: string | null
+        }
+        Update: {
+          attachment_count?: number
+          body_text?: string
+          channel_id?: string | null
+          created_at?: string
+          decision_id?: string
+          message_created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_moderation_snapshots_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: true
+            referencedRelation: "lounge_moderation_decisions"
             referencedColumns: ["id"]
           },
         ]
@@ -4202,6 +4505,101 @@ export type Database = {
           {
             foreignKeyName: "lounge_reactions_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lounge_reports: {
+        Row: {
+          attachment_id: string | null
+          created_at: string
+          decision_id: string | null
+          details: string | null
+          id: string
+          illegal_category: string | null
+          message_author_id: string | null
+          message_id: string | null
+          reason: string
+          reporter_id: string | null
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          attachment_id?: string | null
+          created_at?: string
+          decision_id?: string | null
+          details?: string | null
+          id?: string
+          illegal_category?: string | null
+          message_author_id?: string | null
+          message_id?: string | null
+          reason: string
+          reporter_id?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          attachment_id?: string | null
+          created_at?: string
+          decision_id?: string | null
+          details?: string | null
+          id?: string
+          illegal_category?: string | null
+          message_author_id?: string | null
+          message_id?: string | null
+          reason?: string
+          reporter_id?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lounge_reports_attachment_id_fkey"
+            columns: ["attachment_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_message_attachments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_moderation_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_message_author_id_fkey"
+            columns: ["message_author_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_message_author_id_fkey"
+            columns: ["message_author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "lounge_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "lounge_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -4778,6 +5176,61 @@ export type Database = {
           },
         ]
       }
+      order_item_inclusions: {
+        Row: {
+          course_id: string | null
+          course_title: string | null
+          created_at: string
+          id: number
+          kind: string
+          order_item_id: string
+          studio_months: number | null
+          studio_plan: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          course_title?: string | null
+          created_at?: string
+          id?: never
+          kind: string
+          order_item_id: string
+          studio_months?: number | null
+          studio_plan?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          course_title?: string | null
+          created_at?: string
+          id?: never
+          kind?: string
+          order_item_id?: string
+          studio_months?: number | null
+          studio_plan?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_item_inclusions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "order_item_inclusions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_item_inclusions_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           course_id: string | null
@@ -4941,6 +5394,159 @@ export type Database = {
           },
         ]
       }
+      order_withdrawal_items: {
+        Row: {
+          order_item_id: string
+          quantity: number
+          seal_opened: boolean | null
+          withdrawal_id: string
+        }
+        Insert: {
+          order_item_id: string
+          quantity: number
+          seal_opened?: boolean | null
+          withdrawal_id: string
+        }
+        Update: {
+          order_item_id?: string
+          quantity?: number
+          seal_opened?: boolean | null
+          withdrawal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_withdrawal_items_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_withdrawal_items_withdrawal_id_fkey"
+            columns: ["withdrawal_id"]
+            isOneToOne: false
+            referencedRelation: "order_withdrawals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_withdrawal_links: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          order_id: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          order_id: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          order_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_withdrawal_links_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_withdrawals: {
+        Row: {
+          channel: string
+          created_at: string
+          customer_name: string
+          deadline_at: string | null
+          declared_at: string
+          email: string
+          handled_by: string | null
+          id: string
+          locale: string
+          order_id: string
+          refunded_at: string | null
+          refusal_note: string | null
+          refusal_reason: string | null
+          refused_at: string | null
+          return_received_at: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          customer_name: string
+          deadline_at?: string | null
+          declared_at?: string
+          email: string
+          handled_by?: string | null
+          id?: string
+          locale?: string
+          order_id: string
+          refunded_at?: string | null
+          refusal_note?: string | null
+          refusal_reason?: string | null
+          refused_at?: string | null
+          return_received_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          customer_name?: string
+          deadline_at?: string | null
+          declared_at?: string
+          email?: string
+          handled_by?: string | null
+          id?: string
+          locale?: string
+          order_id?: string
+          refunded_at?: string | null
+          refusal_note?: string | null
+          refusal_reason?: string | null
+          refused_at?: string | null
+          return_received_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_withdrawals_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_withdrawals_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           admin_note: string | null
@@ -4973,6 +5579,7 @@ export type Database = {
           subtotal_amount: number
           tax_amount: number
           tax_country_code: string | null
+          terms_version: string | null
           total_amount: number
           updated_at: string
           updated_by: string | null
@@ -5010,6 +5617,7 @@ export type Database = {
           subtotal_amount: number
           tax_amount?: number
           tax_country_code?: string | null
+          terms_version?: string | null
           total_amount: number
           updated_at?: string
           updated_by?: string | null
@@ -5047,6 +5655,7 @@ export type Database = {
           subtotal_amount?: number
           tax_amount?: number
           tax_country_code?: string | null
+          terms_version?: string | null
           total_amount?: number
           updated_at?: string
           updated_by?: string | null
@@ -5205,6 +5814,135 @@ export type Database = {
         }
         Relationships: []
       }
+      price_cut_history: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          id: string
+          product_id: string | null
+          source: string
+          source_id: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          currency: string
+          discount_type: string
+          discount_value: number
+          id?: string
+          product_id?: string | null
+          source: string
+          source_id: string
+          valid_from: string
+          valid_to?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          product_id?: string | null
+          source?: string
+          source_id?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_cut_history_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "price_cut_history_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_cut_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_history: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          price: number
+          product_id: string | null
+          valid_from: string
+          valid_to: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          currency: string
+          id?: string
+          price: number
+          product_id?: string | null
+          valid_from: string
+          valid_to?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          price?: number
+          product_id?: string | null
+          valid_from?: string
+          valid_to?: string | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_history_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "price_history_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_history_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_bundle_items: {
         Row: {
           bundle_product_id: string
@@ -5327,6 +6065,98 @@ export type Database = {
           },
         ]
       }
+      product_inclusions: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          position: number
+          product_id: string
+          studio_months: number | null
+          studio_plan: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          position?: number
+          product_id: string
+          studio_months?: number | null
+          studio_plan?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          position?: number
+          product_id?: string
+          studio_months?: number | null
+          studio_plan?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_inclusions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_inclusions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_media: {
         Row: {
           alt_text: string | null
@@ -5334,6 +6164,7 @@ export type Database = {
           id: string
           is_primary: boolean
           media_type: string
+          option_value_id: string | null
           position: number
           product_id: string
           storage_path: string
@@ -5346,6 +6177,7 @@ export type Database = {
           id?: string
           is_primary?: boolean
           media_type?: string
+          option_value_id?: string | null
           position?: number
           product_id: string
           storage_path: string
@@ -5358,6 +6190,7 @@ export type Database = {
           id?: string
           is_primary?: boolean
           media_type?: string
+          option_value_id?: string | null
           position?: number
           product_id?: string
           storage_path?: string
@@ -5365,6 +6198,13 @@ export type Database = {
           variant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "product_media_option_value_id_fkey"
+            columns: ["option_value_id"]
+            isOneToOne: false
+            referencedRelation: "product_option_values"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_media_product_id_fkey"
             columns: ["product_id"]
@@ -5433,6 +6273,265 @@ export type Database = {
           },
           {
             foreignKeyName: "product_media_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_option_translations: {
+        Row: {
+          created_at: string
+          locale: string
+          name: string
+          option_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          locale: string
+          name: string
+          option_id: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          locale?: string
+          name?: string
+          option_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_option_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "product_option_translations_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "product_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_option_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_option_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_option_value_translations: {
+        Row: {
+          created_at: string
+          locale: string
+          name: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          value_id: string
+        }
+        Insert: {
+          created_at?: string
+          locale: string
+          name: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          value_id: string
+        }
+        Update: {
+          created_at?: string
+          locale?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          value_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_option_value_translations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "product_option_value_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_option_value_translations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_option_value_translations_value_id_fkey"
+            columns: ["value_id"]
+            isOneToOne: false
+            referencedRelation: "product_option_values"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_option_values: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          option_id: string
+          position: number
+          swatch: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          option_id: string
+          position?: number
+          swatch?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          option_id?: string
+          position?: number
+          swatch?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_option_values_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_option_values_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_option_values_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "product_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_option_values_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_option_values_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_options: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          position: number
+          product_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          position?: number
+          product_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          position?: number
+          product_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_options_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_options_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_options_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_options_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_options_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -5604,6 +6703,46 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variant_option_values: {
+        Row: {
+          option_id: string
+          value_id: string
+          variant_id: string
+        }
+        Insert: {
+          option_id: string
+          value_id: string
+          variant_id: string
+        }
+        Update: {
+          option_id?: string
+          value_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variant_option_values_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "product_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variant_option_values_value_fkey"
+            columns: ["value_id", "option_id"]
+            isOneToOne: false
+            referencedRelation: "product_option_values"
+            referencedColumns: ["id", "option_id"]
+          },
+          {
+            foreignKeyName: "product_variant_option_values_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -5784,6 +6923,7 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           weight_grams: number | null
+          withdrawal_hygiene_seal: boolean
         }
         Insert: {
           category_id?: string | null
@@ -5814,6 +6954,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           weight_grams?: number | null
+          withdrawal_hygiene_seal?: boolean
         }
         Update: {
           category_id?: string | null
@@ -5844,6 +6985,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           weight_grams?: number | null
+          withdrawal_hygiene_seal?: boolean
         }
         Relationships: [
           {
@@ -6829,6 +7971,7 @@ export type Database = {
           restock: boolean
           status: string
           updated_at: string
+          withdrawal_id: string | null
         }
         Insert: {
           amount: number
@@ -6845,6 +7988,7 @@ export type Database = {
           restock?: boolean
           status?: string
           updated_at?: string
+          withdrawal_id?: string | null
         }
         Update: {
           amount?: number
@@ -6861,6 +8005,7 @@ export type Database = {
           restock?: boolean
           status?: string
           updated_at?: string
+          withdrawal_id?: string | null
         }
         Relationships: [
           {
@@ -6896,6 +8041,13 @@ export type Database = {
             columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_withdrawal_id_fkey"
+            columns: ["withdrawal_id"]
+            isOneToOne: false
+            referencedRelation: "order_withdrawals"
             referencedColumns: ["id"]
           },
         ]
@@ -7695,6 +8847,8 @@ export type Database = {
           opening_hours: Json
           phone: string | null
           postal_code: string | null
+          publication_director: string | null
+          publication_director_role: string | null
           publisher_address: string | null
           publisher_email: string | null
           publisher_legal_form: string | null
@@ -7702,8 +8856,8 @@ export type Database = {
           publisher_name: string | null
           publisher_phone: string | null
           publisher_registration_number: string | null
-          publication_director: string | null
-          publication_director_role: string | null
+          publisher_vat_franchise: boolean
+          publisher_vat_number: string | null
           region: string | null
           registration_number: string | null
           share_capital: string | null
@@ -7740,6 +8894,8 @@ export type Database = {
           opening_hours?: Json
           phone?: string | null
           postal_code?: string | null
+          publication_director?: string | null
+          publication_director_role?: string | null
           publisher_address?: string | null
           publisher_email?: string | null
           publisher_legal_form?: string | null
@@ -7747,8 +8903,8 @@ export type Database = {
           publisher_name?: string | null
           publisher_phone?: string | null
           publisher_registration_number?: string | null
-          publication_director?: string | null
-          publication_director_role?: string | null
+          publisher_vat_franchise?: boolean
+          publisher_vat_number?: string | null
           region?: string | null
           registration_number?: string | null
           share_capital?: string | null
@@ -7785,6 +8941,8 @@ export type Database = {
           opening_hours?: Json
           phone?: string | null
           postal_code?: string | null
+          publication_director?: string | null
+          publication_director_role?: string | null
           publisher_address?: string | null
           publisher_email?: string | null
           publisher_legal_form?: string | null
@@ -7792,8 +8950,8 @@ export type Database = {
           publisher_name?: string | null
           publisher_phone?: string | null
           publisher_registration_number?: string | null
-          publication_director?: string | null
-          publication_director_role?: string | null
+          publisher_vat_franchise?: boolean
+          publisher_vat_number?: string | null
           region?: string | null
           registration_number?: string | null
           share_capital?: string | null
@@ -7990,6 +9148,101 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "review_requests"
             referencedColumns: ["order_id"]
+          },
+        ]
+      }
+      studio_access_grants: {
+        Row: {
+          created_at: string
+          ends_at: string
+          id: string
+          order_id: string
+          order_item_id: string
+          plan: string
+          revoked_at: string | null
+          revoked_by: string | null
+          source: string
+          starts_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          id?: string
+          order_id: string
+          order_item_id: string
+          plan: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source?: string
+          starts_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          id?: string
+          order_id?: string
+          order_item_id?: string
+          plan?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source?: string
+          starts_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_access_grants_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: true
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "studio_access_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -9660,6 +10913,48 @@ export type Database = {
         }
         Returns: string
       }
+      admin_price_references: {
+        Args: { p_product_id: string }
+        Returns: {
+          currency: string
+          discount_percent: number
+          list_price: number
+          price: number
+          reduction_started_at: string
+          reference_price: number
+          state: string
+          variant_id: string
+        }[]
+      }
+      admin_refuse_withdrawal: {
+        Args: { p_note?: string; p_reason: string; p_withdrawal_id: string }
+        Returns: {
+          channel: string
+          created_at: string
+          customer_name: string
+          deadline_at: string | null
+          declared_at: string
+          email: string
+          handled_by: string | null
+          id: string
+          locale: string
+          order_id: string
+          refunded_at: string | null
+          refusal_note: string | null
+          refusal_reason: string | null
+          refused_at: string | null
+          return_received_at: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "order_withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_reorder_gem_colors: {
         Args: { p_ids: string[] }
         Returns: undefined
@@ -9678,6 +10973,28 @@ export type Database = {
         Args: { p_components: Json; p_product_id: string }
         Returns: Json
       }
+      admin_save_product_inclusions: {
+        Args: { p_inclusions: Json; p_product_id: string }
+        Returns: {
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          position: number
+          product_id: string
+          studio_months: number | null
+          studio_plan: string | null
+          updated_at: string
+          updated_by: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "product_inclusions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_save_product_recommendations: {
         Args: {
           p_complementary: string[]
@@ -9693,6 +11010,35 @@ export type Database = {
         Returns: undefined
       }
       admin_save_tax_rates: { Args: { p_rates: Json }; Returns: undefined }
+      admin_withdrawal_return_received: {
+        Args: { p_withdrawal_id: string }
+        Returns: {
+          channel: string
+          created_at: string
+          customer_name: string
+          deadline_at: string | null
+          declared_at: string
+          email: string
+          handled_by: string | null
+          id: string
+          locale: string
+          order_id: string
+          refunded_at: string | null
+          refusal_note: string | null
+          refusal_reason: string | null
+          refused_at: string | null
+          return_received_at: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "order_withdrawals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       analytics_snapshot: {
         Args: {
           p_currency?: string
@@ -9762,6 +11108,7 @@ export type Database = {
           subtotal_amount: number
           tax_amount: number
           tax_country_code: string | null
+          terms_version: string | null
           total_amount: number
           updated_at: string
           updated_by: string | null
@@ -9858,6 +11205,7 @@ export type Database = {
           subtotal_amount: number
           tax_amount: number
           tax_country_code: string | null
+          terms_version: string | null
           total_amount: number
           updated_at: string
           updated_by: string | null
@@ -9901,6 +11249,43 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "shipments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      declare_order_withdrawal: {
+        Args: {
+          p_as_consumer: boolean
+          p_customer_name: string
+          p_items: Json
+          p_link_token?: string
+          p_locale?: string
+          p_order_id: string
+          p_user_id?: string
+        }
+        Returns: {
+          channel: string
+          created_at: string
+          customer_name: string
+          deadline_at: string | null
+          declared_at: string
+          email: string
+          handled_by: string | null
+          id: string
+          locale: string
+          order_id: string
+          refunded_at: string | null
+          refusal_note: string | null
+          refusal_reason: string | null
+          refused_at: string | null
+          return_received_at: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "order_withdrawals"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -10004,6 +11389,11 @@ export type Database = {
       }
       learner_courses: { Args: never; Returns: Json }
       lounge_access: { Args: never; Returns: boolean }
+      lounge_answer_appeal: {
+        Args: { p_appeal_id: string; p_outcome: string; p_response: string }
+        Returns: string
+      }
+      lounge_appeals_queue: { Args: { p_status?: string }; Returns: Json }
       lounge_directory: {
         Args: never
         Returns: {
@@ -10026,6 +11416,38 @@ export type Database = {
         Args: { p_channel_ids?: string[]; p_conversation_ids?: string[] }
         Returns: undefined
       }
+      lounge_moderate_member: {
+        Args: {
+          p_action: string
+          p_ground: string
+          p_illegal_category: string
+          p_message_id?: string
+          p_reason: string
+          p_statement: string
+          p_until?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      lounge_moderate_message: {
+        Args: {
+          p_action: string
+          p_ground: string
+          p_illegal_category: string
+          p_message_id: string
+          p_reason: string
+          p_statement: string
+        }
+        Returns: string
+      }
+      lounge_moderation_context: {
+        Args: { p_message_id: string; p_radius?: number }
+        Returns: Json
+      }
+      lounge_moderation_history: { Args: { p_limit?: number }; Returns: Json }
+      lounge_moderation_queue: { Args: { p_status?: string }; Returns: Json }
+      lounge_moderation_stats: { Args: { p_from: string; p_to: string }; Returns: Json }
+      lounge_my_moderation: { Args: never; Returns: Json }
       lounge_overview: { Args: never; Returns: Json }
       lounge_post_message: {
         Args: {
@@ -10041,6 +11463,17 @@ export type Database = {
         Args: { p_ids?: string[] }
         Returns: undefined
       }
+      lounge_report_message: {
+        Args: {
+          p_attachment_id?: string
+          p_details: string
+          p_illegal_category: string
+          p_message_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      lounge_set_blocked: { Args: { p_blocked: boolean; p_member_id: string }; Returns: undefined }
       lounge_set_muted: {
         Args: {
           p_channel_id: string
@@ -10049,6 +11482,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      lounge_submit_appeal: { Args: { p_body: string; p_decision_id: string }; Returns: Json }
       lounge_toggle_reaction: {
         Args: { p_message_id: string; p_reaction: string }
         Returns: boolean
@@ -10095,6 +11529,7 @@ export type Database = {
           subtotal_amount: number
           tax_amount: number
           tax_country_code: string | null
+          terms_version: string | null
           total_amount: number
           updated_at: string
           updated_by: string | null
@@ -10125,6 +11560,7 @@ export type Database = {
           restock: boolean
           status: string
           updated_at: string
+          withdrawal_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -10150,6 +11586,7 @@ export type Database = {
           restock: boolean
           status: string
           updated_at: string
+          withdrawal_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -10187,6 +11624,18 @@ export type Database = {
         Returns: Json
       }
       newsletter_unsubscribe: { Args: { p_token: string }; Returns: boolean }
+      order_withdrawal_ip_allowed: {
+        Args: { p_ip_hash: string }
+        Returns: boolean
+      }
+      order_withdrawal_options: {
+        Args: { p_order_id: string }
+        Returns: Json
+      }
+      order_withdrawal_options_by_token: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       pending_back_in_stock_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -10213,6 +11662,16 @@ export type Database = {
           order_number: string
         }[]
       }
+      pending_lounge_moderation_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          event_key: string
+          kind: string
+          locale: string
+          payload: Json
+        }[]
+      }
       pending_newsletter_contacts: {
         Args: { p_limit?: number }
         Returns: {
@@ -10223,6 +11682,21 @@ export type Database = {
           locale: string
           subscribed: boolean
           tags: string[]
+        }[]
+      }
+      pending_order_withdrawal_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          customer_name: string
+          declared_at: string
+          email: string
+          is_member: boolean
+          items: Json
+          locale: string
+          order_id: string
+          order_number: string
+          return_address: string
+          withdrawal_id: string
         }[]
       }
       pending_refund_emails: {
@@ -10381,6 +11855,7 @@ export type Database = {
           restock: boolean
           status: string
           updated_at: string
+          withdrawal_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -10483,7 +11958,7 @@ export type Database = {
           updated_at: string
           used_amount: number
           used_days: number
-          user_id: string
+          user_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -10503,6 +11978,10 @@ export type Database = {
           p_product_id: string
           p_variant_id?: string
         }
+        Returns: Json
+      }
+      request_order_withdrawal_link: {
+        Args: { p_email: string; p_order_number: string }
         Returns: Json
       }
       request_refund: {
@@ -10528,6 +12007,7 @@ export type Database = {
           restock: boolean
           status: string
           updated_at: string
+          withdrawal_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -10543,6 +12023,37 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      request_withdrawal_refund: {
+        Args: {
+          p_amount: number
+          p_order_id: string
+          p_restock?: boolean
+          p_withdrawal_id: string
+        }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          failure_reason: string | null
+          id: string
+          order_id: string
+          payment_id: string
+          processed_at: string | null
+          provider_refund_id: string | null
+          reason: string
+          requested_by: string | null
+          restock: boolean
+          status: string
+          updated_at: string
+          withdrawal_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "refunds"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       set_shipment_status: {
         Args: {
@@ -10604,7 +12115,7 @@ export type Database = {
           updated_at: string
           used_amount: number
           used_days: number
-          user_id: string
+          user_id: string | null
         }
         SetofOptions: {
           from: "*"
@@ -10637,6 +12148,21 @@ export type Database = {
         }[]
       }
       start_studio_trial: { Args: never; Returns: Json }
+      storefront_price_references: {
+        Args: never
+        Returns: {
+          course_id: string
+          currency: string
+          discount_percent: number
+          list_price: number
+          price: number
+          product_id: string
+          reduction_started_at: string
+          reference_price: number
+          state: string
+          variant_id: string
+        }[]
+      }
       studio_access_state: { Args: never; Returns: Json }
       studio_moderate_showcase: {
         Args: { p_note?: string; p_status: string; p_user_id: string }

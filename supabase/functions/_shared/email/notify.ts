@@ -2,7 +2,8 @@
  * What happens after an order becomes paid, called by the two paths that pay
  * one (stripe-webhook, and create-checkout-session for an order fully covered
  * by gift cards): the confirmation e-mail, the delivery of the gift cards
- * bought in the order, and the enrolment e-mail of each course it bought.
+ * bought in the order, and the enrolment e-mail of each course it bought. The
+ * confirmation carries the terms of sale (decision 130).
  *
  * It never throws: the payment is already recorded and an e-mail problem must
  * not turn a paid order into a failed webhook or a failed checkout. A failure
@@ -16,6 +17,7 @@ import { deliverGiftCards, supabaseGiftCardSource } from "./giftCards.ts";
 import { sendCourseEnrolmentEmails, sendRefundEmails, supabasePendingSource } from "./events.ts";
 import { supabaseInvoiceSource } from "./invoicePdf.ts";
 import { sendOrderConfirmation, supabaseOrderSource } from "./orders.ts";
+import { supabaseTermsProvider } from "./termsPdf.ts";
 import type { EmailDeps } from "./send.ts";
 
 export type Logger = (message: string, detail?: unknown) => void;
@@ -37,10 +39,11 @@ export async function notifyOrderPaid(orderId: string, log: Logger): Promise<voi
     return;
   }
   const db = serviceClient();
+  const terms = supabaseTermsProvider(db, log);
 
   // Independent steps: a failing confirmation must not hold back the gift cards, nor the reverse.
   try {
-    const result = await sendOrderConfirmation(deps, supabaseOrderSource(db), orderId);
+    const result = await sendOrderConfirmation(deps, supabaseOrderSource(db), orderId, terms, log);
     if (result.status === "failed" || result.status === "invalid" || result.status === "template_missing") {
       log(`order confirmation not sent (${result.status})`, { orderId, ...result });
     }

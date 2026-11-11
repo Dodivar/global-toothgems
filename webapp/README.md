@@ -66,7 +66,7 @@ Public pages live at `/fr/…` and `/en/…` with English segments (`/fr/boutiqu
 With Supabase configured (phase 2 of `docs/migration-nextjs.md`):
 
 - **The session lives in cookies** (`@supabase/ssr`): `src/lib/supabase/client.ts` is the browser client, `server.ts` the one for route handlers (the visitor's session, publishable key, RLS), `proxySession.ts` the proxy's. A member signed in before the switch had the session in `localStorage`; the browser client carries it over once into cookies (`sessionReady`, which the auth providers wait for).
-- **`proxy.ts`** refreshes the session on every page request (`getClaims()`, which validates the token rather than trusting the cookie) and redirects a signed-out visitor away from `/compte/*`, `/academy/lecon`, `/academy/mes-formations/*` (to `/connexion`) and `/admin/*` except its sign-in screen (to `/admin/connexion`), with `?suite=<page>`; both sign-in pages read it to send the visitor back. The back office also turns away a signed-in account that is not an active staff member (its own profile read under RLS, `src/lib/staffProfile.ts`; decided 2026-10-01) to `/admin/connexion?suite=…`. The client guards (`RequireAccount`, `RequireAdmin`) stay. The private zones' server layouts and pages check again with the same rules (`app/_zones/guard.ts`, server client, never the service role; their redirect reaches the browser within the streamed page, the proxy's is a 307). RLS remains the authority. In mock mode the proxy and those checks do nothing.
+- **`proxy.ts`** refreshes the session on every page request (`getClaims()`, which validates the token rather than trusting the cookie) and redirects a signed-out visitor away from `/compte/*`, `/academy/lecon`, `/academy/mes-formations/*` (to `/connexion`, with `?suite=<page>`, which the sign-in page reads to send the visitor back). Every `/admin` address answers the site's ordinary 404 to anyone who is not an active staff member, signed in or not (its own profile read under RLS, `src/lib/staffProfile.ts`; decided 2026-10-01, a 404 with no back-office sign-in page since 2026-11-11): the proxy rewrites the request to an address no route matches (404 status), the server check calls `notFound()` as a second line. The client guards (`RequireAccount`, `RequireAdmin`) stay. The private zones' server layouts and pages check again with the same rules (`app/_zones/guard.ts`, server client, never the service role; their redirect reaches the browser within the streamed page, the proxy's is a 307). RLS remains the authority. In mock mode the proxy and those checks do nothing.
 - **`/auth/confirm`** receives every Auth e-mail link — `?token_hash=…&type=…` (the templates in `supabase/templates/`, any device) or `?code=…` (Supabase's default templates, same browser only) — opens the session and forwards to `next` (a same-site path only) or to the page for the kind of link, with `error`/`error_code` when the link is refused. The app passes `…/auth/confirm?next=…` as the redirect of sign-up, resend, password reset and e-mail change. Supabase dashboard settings: `supabase/README.md`, "Member sign-up".
 - The rules (which paths need a session, safe redirects, link kinds) are pure and unit-tested in `src/lib/authRoutes.ts`.
 
@@ -76,7 +76,7 @@ Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT
 
 With them set:
 
-- **`/admin/connexion` signs in through Supabase Auth.** Only an active profile whose role is a staff role (`admin`, `manager`, `viewer`) gets past the screen; any other account is signed straight back out. Writing to the catalogue needs the `manage_products` permission (`admin` and `manager`); a `viewer` can look but every save is refused by the database. To give someone access, create the user in Supabase (Authentication → Users), then set their role:
+- **Staff sign in on `/connexion`** (there is no back-office sign-in page since 2026-11-11) and open `/admin` from the member space. Only an active profile whose role is a staff role (`admin`, `manager`, `viewer`) sees the back office; anyone else gets the 404. A staff session then passes its **second factor** (an authenticator app, TOTP; enrolment with a QR code the first time, a 6-digit code at each sign-in — `components/admin/StaffSecondFactor.tsx`): the database refuses every staff right below `aal2` (migration `staff_mfa_required`, decision 134). Writing to the catalogue needs the `manage_products` permission (`admin` and `manager`); a `viewer` can look but every save is refused by the database. To give someone access, create the user in Supabase (Authentication → Users), then set their role:
 
   ```sql
   update public.profiles set role = 'admin' where email = 'someone@example.com';
@@ -624,6 +624,8 @@ With Supabase, files go to the private `training-media` bucket under `media/<id>
 
 ## The Members' Lounge (`/compte/salons`)
 
+**Moderation (decision 132):** a message's menu offers *Signaler ce message* (`components/communityChat/ReportDialog.tsx`: reason, category, explanation, acknowledgement) and *Masquer les messages de…* (also on the profile card); the member's own hidden message carries the team's notice and a link to `/compte/moderation` (`screens/account/LoungeModeration.tsx`: decisions, complaints, reports, hidden members); a muted member sees a notice instead of the composer, an excluded one a locked screen leading to the decision. Back office: `/admin/salons` (`screens/admin/AdminLounge.tsx`, `lib/adminLoungeModeration*.ts`, permission `moderate_community`). Data rules: `supabase/README.md`, *Members' Lounge moderation*. Mock mode simulates none of it (report and block answer "unavailable").
+
 The community's private chat — *Salon des membres* / *Members' Lounge*. The door: an account with an active course entitlement, or an active team member — asked of the database (`lounge_access()`, through `useCommunity().hasAccess`) and enforced by it on every read and write. Without access, the page is an invitation (`LockedLounge`): the lounge's channels and the outline of a conversation (no member's words) blurred behind one card, *Découvrir les formations*, and the way back to the account. The member-space sidebar carries both entries, each marked "accès avec une formation" when locked.
 
 Language lounges (English by default, French, German, Spanish; Italian and Portuguese announced in the switcher) with the same five channels each (introductions, general, inspiration, techniques & tips, business & growth), and private conversations that belong to the community, not to a lounge.
@@ -657,7 +659,6 @@ A separate, desktop-first management workspace for the product catalogue. Produc
 
 | Route | Screen |
 | --- | --- |
-| `/admin/connexion` | Access screen — validation, loading, error and success states, plus a password-recovery dialog (Supabase Auth reset e-mail) |
 | `/admin` | Dashboard — catalogue counts, the products that cannot currently be sold, and recent product activity |
 | `/admin/commandes` | Order book — KPI row, search and filters, the table, bulk actions, export |
 | `/admin/commandes/:reference` | One order in full: items and money, shipping, payment, customer, timeline, internal notes |
@@ -666,7 +667,7 @@ A separate, desktop-first management workspace for the product catalogue. Produc
 | `/admin/produits/:id` | Edit a product |
 | `/admin/categories` | Categories, read-only, with per-category counts and price ranges |
 
-Without Supabase, sign in with `camille@globaltoothgems.com` / `toothgems2026`; the screen prints both. With Supabase, use a staff account. The customers workspace (`/admin/clients`) is described in "Customers on Supabase" below.
+Without Supabase there is no way into the back office from the UI: the smoke tests open the demo staff session directly (`gt-demo-admin-session` in the tab's sessionStorage). With Supabase, sign in on `/connexion` with a staff account. The customers workspace (`/admin/clients`) is described in "Customers on Supabase" below.
 
 ### How it is put together
 
@@ -730,10 +731,17 @@ provider named is Stripe. The EU consumer-law and GDPR summaries, labelled
 served. All of it must be reviewed by the business and by counsel before
 publication.
 
-- **Cookie consent** (`lib/cookieConsent.tsx`, `components/legal/Cookie*`) only
-  records the visitor's choice in localStorage. No script is loaded or blocked.
-  Optional categories start off, and "Reject" is as prominent as "Accept". The
-  preferences dialog can be reopened from "Cookie settings" in the footer.
+- **Cookie consent** (`lib/cookieConsent.tsx`, `components/legal/Cookie*`)
+  records the visitor's choice in localStorage (`gt-cookie-consent`) and gates
+  PostHog: it captures and stores nothing (`opt_out_persistence_by_default` in
+  `instrumentation-client.ts`) until the analytics category is accepted, and
+  withdrawing erases its identifier. Analytics is the only optional category
+  (the site has no preference, advertising or social-network tracker; add a
+  category only with the tracker it gates). It starts off, "Reject" is as
+  prominent as "Accept", a choice stands 6 months (CNIL recommendation) and the
+  dialog can be reopened from "Cookie settings" in the footer. The inventory in
+  `data/legal/cookies.ts` lists every cookie and browser storage the site writes:
+  update it with any new key.
 - **Review annotations** (`lib/reviewMode.tsx`): the hatched internal notes and
   the Stripe/compliance checklist on `/aide` can be hidden with the toggle at
   the top of each page, to preview the customer-facing version. Placeholders are

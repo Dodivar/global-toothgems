@@ -52,7 +52,7 @@ begin
   -- ===========================================================================
   -- ALICE: cannot review before the parcel leaves
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   v_state := null;
   begin
@@ -66,7 +66,7 @@ begin
   -- ===========================================================================
   -- ADMIN: shipments
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
 
   v_state := null;
   begin
@@ -129,7 +129,7 @@ begin
   -- ===========================================================================
   -- Customers and shipments
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.shipments where order_id = o.id and tracking_number is not null;
   if v_cnt <> 2 then raise exception 'FAIL S7: customer cannot track own parcels (%)', v_cnt; end if;
   select count(*) into v_cnt from public.shipment_items si join public.shipments s on s.id = si.shipment_id where s.order_id = o.id;
@@ -140,13 +140,13 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL S7: customer created a shipment (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.shipments;
   if v_cnt <> 0 then raise exception 'FAIL S7: Bob sees Alice parcels'; end if;
   passed := array_append(passed, 'S7 customers track their own parcels only, cannot create shipments');
 
   -- Delivered ------------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   update public.shipments set status = 'delivered' where id in (s1, s2);
   select * into o from public.orders where id = o.id;
   if o.status <> 'delivered' then raise exception 'FAIL S8: delivered sync %', o.status; end if;
@@ -157,7 +157,7 @@ begin
   -- ===========================================================================
   -- REVIEWS
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   insert into public.reviews (product_id, user_id, rating, title, body, language, tags,
                               status, helpful_count, published_at, order_id, author_name)
   values (p_gel, alice, 5, '  Parfait après la pose  ', 'Un gel très doux, parfait les jours qui suivent la pose. Je recommande !',
@@ -190,7 +190,7 @@ begin
   end;
   if v_state is distinct from '23514' then raise exception 'FAIL R5: body under 30 characters (%)', v_state; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     insert into public.reviews (product_id, user_id, rating, title, body, language)
@@ -221,7 +221,7 @@ begin
   passed := array_append(passed, 'R6 pending reviews hidden from visitors; visitors cannot read account ids');
 
   -- R7 moderation
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   v_state := null;
   begin
@@ -252,7 +252,7 @@ begin
   passed := array_append(passed, 'R8 published review public with privacy name; rating stats');
 
   -- R9 helpful votes
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   insert into public.review_helpful_votes (review_id, user_id) values (v_review, bob);
   select helpful_count into v_cnt from public.reviews where id = v_review;
@@ -268,7 +268,7 @@ begin
   if v_cnt <> 0 then raise exception 'FAIL R9: vote withdrawal count %', v_cnt; end if;
   select count(*) into v_cnt from public.review_notes;
   if v_cnt <> 0 then raise exception 'FAIL R13: customer reads internal notes'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     insert into public.review_helpful_votes (review_id, user_id) values (v_review, alice);
@@ -284,7 +284,7 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL R10: author reported own review (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   insert into public.review_reports (review_id, reason, source, resolution, resolved_at)
   values (v_review, 'fake', 'team', 'kept', now());
   select count(*) into v_cnt from public.review_reports
@@ -298,14 +298,14 @@ begin
   if v_state is distinct from '23505' then raise exception 'FAIL R10: duplicate report (%)', v_state; end if;
   select status into v_txt from public.reviews where id = v_review;
   if v_txt <> 'published' then raise exception 'FAIL R10: report changed the review'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   update public.review_reports set resolution = 'hidden' where review_id = v_review;
   select status into v_txt from public.reviews where id = v_review;
   if v_txt <> 'hidden' then raise exception 'FAIL R10: hidden resolution not applied (%)', v_txt; end if;
   passed := array_append(passed, 'R10 reports: not on own review, one per customer, never change the review until resolved; "hidden" resolution applied');
 
   -- R11 author edits -> pending, cannot self-publish
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     update public.reviews set status = 'published' where id = v_review;
@@ -343,7 +343,7 @@ begin
   select count(*) into v_cnt from storage.objects where bucket_id = 'review-photos';
   if v_cnt <> 0 then raise exception 'FAIL R12: unmoderated photo public'; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   update public.reviews set status = 'published' where id = v_review;
 
@@ -354,7 +354,7 @@ begin
   select with_photos_count into v_cnt from public.product_review_stats where product_id = p_gel;
   if v_cnt <> 1 then raise exception 'FAIL R12: with-photos stat'; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   delete from public.review_photos where review_id = v_review and position = 3;
   select status into v_txt from public.reviews where id = v_review;
@@ -370,7 +370,7 @@ begin
   -- ===========================================================================
   -- REFUNDS
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   v_state := null;
   begin
@@ -379,7 +379,7 @@ begin
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL F1: customer requested a refund (%)', v_state; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.request_refund(o.id, 300.00, 'goodwill');
@@ -449,11 +449,11 @@ begin
   passed := array_append(passed, 'F6/F9 confirmed refund updates payment + order, restocks returned lines (ledger), idempotent, final');
 
   -- F7 customer visibility
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   select count(*) into v_cnt from public.refunds where order_id = o.id;
   if v_cnt <> 2 then raise exception 'FAIL F7: customer refund list (%)', v_cnt; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.refunds;
   if v_cnt <> 0 then raise exception 'FAIL F7: Bob sees Alice refunds'; end if;
   passed := array_append(passed, 'F7 customers see refunds on their own orders only');
@@ -477,7 +477,7 @@ begin
   passed := array_append(passed, 'F8 full refund -> payment and order "refunded"; nothing left to refund');
 
   -- R14 GDPR: author deletes own review
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   delete from public.reviews where id = v_review;
   get diagnostics v_cnt = row_count;

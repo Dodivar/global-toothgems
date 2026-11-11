@@ -34,7 +34,7 @@ begin
 
   -- CW1: a member records their own waiver, not someone else's.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   insert into public.consent_records (user_id, purpose, granted, policy_version, source, created_at)
   values (m1, 'course_immediate_access', true, 'course-withdrawal-2026-11', 'checkout', now() - interval '2 minutes')
   returning id into v_waiver;

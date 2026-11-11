@@ -7,7 +7,6 @@ import { useNavigate, useSearchParams } from "../lib/navigation";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { useCart } from "../lib/cart";
-import { LEARN_BASE } from "../lib/academyUrl";
 import { hasCourse } from "../lib/checkout/cartLines";
 import { useProgress } from "../lib/progress";
 import { fetchCheckoutStatus, isCheckoutSessionId, type CheckoutStatus } from "../lib/checkout/api";
@@ -126,7 +125,7 @@ export function CheckoutReturn() {
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           {boughtCourse ? (
-            <Button variant="primary" onClick={() => navigate(LEARN_BASE)}>{t("checkout.course.openCourses")}</Button>
+            <Button variant="primary" onClick={() => navigate("/compte")}>{t("checkout.course.openCourses")}</Button>
           ) : (
             <Button variant="primary" onClick={() => navigate("/compte/commandes")}>{t("cart.confirmedOpenAccount")}</Button>
           )}

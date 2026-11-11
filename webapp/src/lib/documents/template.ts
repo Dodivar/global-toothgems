@@ -43,7 +43,8 @@ export interface DocumentTotalRow {
 }
 
 export type DocumentBlock =
-  | { kind: "heading"; text: string }
+  /** Level 1 (default): a section; level 2: a clause inside it, smaller. */
+  | { kind: "heading"; text: string; level?: 1 | 2 }
   | { kind: "table"; columns: DocumentColumn[]; rows: DocumentTableRow[] }
   | { kind: "totals"; rows: DocumentTotalRow[] }
   | { kind: "paragraph"; text: string; tone?: "body" | "muted" | "notice" };
@@ -174,11 +175,14 @@ function drawParties(cursor: Cursor, doc: BusinessDocument) {
   cursor.y += height + GAP;
 }
 
-function drawHeading(cursor: Cursor, doc: BusinessDocument, value: string) {
+function drawHeading(cursor: Cursor, doc: BusinessDocument, value: string, level: 1 | 2 = 1) {
+  const size = level === 1 ? 11 : BODY + 0.8;
+  const leading = size + 4;
+  const lines = wrapText(value, "bold", size, CONTENT_WIDTH);
   // Kept with at least the start of what follows.
-  ensure(cursor, doc, 52);
-  text(cursor.ops, MARGIN.x, cursor.y + 10, value, "bold", 11, DOC_INK.ink);
-  cursor.y += 20;
+  ensure(cursor, doc, lines.length * leading + 32);
+  lines.forEach((line, i) => text(cursor.ops, MARGIN.x, cursor.y + size - 1 + i * leading, line, "bold", size, level === 1 ? DOC_INK.ink : DOC_INK.accent));
+  cursor.y += lines.length * leading + (level === 1 ? 6 : 3);
 }
 
 function drawTable(cursor: Cursor, doc: BusinessDocument, block: Extract<DocumentBlock, { kind: "table" }>) {
@@ -274,7 +278,7 @@ export function layoutDocument(doc: BusinessDocument): PdfOp[][] {
   newPage(cursor, doc);
   drawParties(cursor, doc);
   for (const block of doc.blocks) {
-    if (block.kind === "heading") drawHeading(cursor, doc, block.text);
+    if (block.kind === "heading") drawHeading(cursor, doc, block.text, block.level);
     else if (block.kind === "table") drawTable(cursor, doc, block);
     else if (block.kind === "totals") drawTotals(cursor, doc, block.rows);
     else drawParagraph(cursor, doc, block);

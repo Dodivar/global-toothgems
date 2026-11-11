@@ -1,5 +1,4 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Navigate, useLocation } from "./navigation";
 import { isActiveStaff, type StaffProfileRow } from "./staffProfile";
 import type { User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
@@ -9,16 +8,21 @@ import { initialsOf } from "./initials";
 /**
  * Administrator session.
  *
- * Separate from `lib/auth.tsx` on purpose: a customer account and an
- * administrator account are different identities with different lifetimes.
+ * The back office has no sign-in page of its own (decided 2026-11-11): staff
+ * sign in on `/connexion` like every member, and this provider recognises the
+ * session as a staff one when the account's profile is an active staff
+ * member's. That check only decides which screens open: every read and write
+ * is still authorized by Row Level Security and `private.has_permission()` in
+ * Postgres, never by this file.
  *
- * With Supabase configured this is a real Supabase Auth session, accepted only
- * for an active profile whose role is a staff role. That check only decides
- * which screens open: every read and write is still authorized by Row Level
- * Security and `private.has_permission()` in Postgres, never by this file.
+ * Staff also need their second factor (Supabase Auth MFA, an authenticator
+ * app): `secondFactor` is true once the session is at assurance level aal2,
+ * which the database requires for every staff right (migration
+ * `staff_mfa_required`). Until then the back office shows the second-factor
+ * screen (`components/admin/StaffSecondFactor.tsx`).
  *
- * Without Supabase it falls back to the prototype's single demo account, which
- * verifies nothing and exists only so the back office can be clicked through.
+ * Without Supabase it falls back to the prototype's demo staff session, kept
+ * for the tab and opened by the smoke tests; it verifies nothing.
  */
 
 interface AdminIdentity {
@@ -29,28 +33,17 @@ interface AdminIdentity {
   initials: string;
 }
 
-/** Outcome of a sign-in attempt, each with its own message on the access screen. */
-type AdminSignInResult = "accepted" | "rejected" | "notStaff" | "unavailable";
-
 interface AdminAuthValue {
   admin: AdminIdentity | null;
   signedIn: boolean;
   /** True while an existing session is being restored at page load. */
   restoring: boolean;
-  /** True when sign-in goes through Supabase Auth rather than the demo account. */
-  realAuth: boolean;
-  signIn: (email: string, password: string) => Promise<AdminSignInResult>;
+  /** True once the session has passed the second factor (aal2); always true in mock mode. */
+  secondFactor: boolean;
   signOut: () => void;
 }
 
 const AdminAuthContext = createContext<AdminAuthValue | null>(null);
-
-/** The single demo account the prototype accepts when Supabase is not configured. */
-const DEMO_ADMIN_EMAIL = "camille@globaltoothgems.com";
-const DEMO_ADMIN_PASSWORD = "toothgems2026";
-
-/** How long the fake sign-in takes. Long enough to read the loading state. */
-const SIGN_IN_DELAY_MS = 900;
 
 function nameFromEmail(email: string): string {
   const local = email.split("@")[0].replace(/[._-]+/g, " ").trim();
@@ -90,18 +83,26 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/** Whether the session has passed the second factor. Read from the session's own token: no request. */
+async function hasSecondFactor(): Promise<boolean> {
+  if (!supabase) return false;
+  const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  return !error && data?.currentLevel === "aal2";
+}
+
 function SupabaseAdminAuthProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<AdminIdentity | null>(null);
+  const [secondFactor, setSecondFactor] = useState(false);
   const [restoring, setRestoring] = useState(true);
 
   useEffect(() => {
     if (!supabase) return;
     let active = true;
-    // Restores a session kept by supabase-js, and follows sign-ins, sign-outs
-    // and token expiry from any tab. Sign-ins are followed too because the
-    // member login opens the same session: a staff member who signs in there
-    // is recognised without a reload (the member space then offers the way
-    // to the back office). A non-staff account simply resolves to null.
+    // Restores a session kept by supabase-js, and follows sign-ins, sign-outs,
+    // a second factor verified (MFA_CHALLENGE_VERIFIED) and token expiry from
+    // any tab. Staff sign in on the member login: a staff member is
+    // recognised without a reload (the member space then offers the way to
+    // the back office). A non-staff account simply resolves to null.
     // Subscribes once a pre-migration session has been carried over (`sessionReady`).
     const client = supabase;
     let unsubscribe = () => {};
@@ -111,8 +112,10 @@ function SupabaseAdminAuthProvider({ children }: { children: ReactNode }) {
         // Supabase warns against awaiting its own calls inside this callback.
         setTimeout(async () => {
           const identity = session?.user ? await staffIdentity(session.user) : null;
+          const verified = identity ? await hasSecondFactor() : false;
           if (!active) return;
           setAdmin(identity);
+          setSecondFactor(verified);
           setRestoring(false);
         }, 0);
       });
@@ -124,28 +127,15 @@ function SupabaseAdminAuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string): Promise<AdminSignInResult> => {
-    if (!supabase) return "unavailable";
-    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (error) return error.status === 400 || error.status === 401 ? "rejected" : "unavailable";
-    const identity = await staffIdentity(data.user);
-    if (!identity) {
-      // A valid account without staff access leaves no session behind.
-      await supabase.auth.signOut();
-      return "notStaff";
-    }
-    setAdmin(identity);
-    return "accepted";
-  }, []);
-
   const signOut = useCallback(() => {
     setAdmin(null);
+    setSecondFactor(false);
     void supabase?.auth.signOut();
   }, []);
 
   const value = useMemo<AdminAuthValue>(
-    () => ({ admin, signedIn: admin !== null, restoring, realAuth: true, signIn, signOut }),
-    [admin, restoring, signIn, signOut],
+    () => ({ admin, signedIn: admin !== null, restoring, secondFactor, signOut }),
+    [admin, restoring, secondFactor, signOut],
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
@@ -189,21 +179,11 @@ function DemoAdminAuthProvider({ children }: { children: ReactNode }) {
     setChanged(value);
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string): Promise<AdminSignInResult> => {
-    await new Promise((resolve) => setTimeout(resolve, SIGN_IN_DELAY_MS));
-    // The single credential the prototype knows. Checking it here rather than
-    // in the form is what keeps a rejected attempt from opening a session.
-    if (password !== DEMO_ADMIN_PASSWORD) return "rejected";
-    const name = email.toLowerCase() === DEMO_ADMIN_EMAIL ? "Camille Dubois" : nameFromEmail(email);
-    setAdmin({ name, email: email.trim(), role: "owner", initials: initialsOf(name) });
-    return "accepted";
-  }, [setAdmin]);
-
   const signOut = useCallback(() => setAdmin(null), [setAdmin]);
 
   const value = useMemo<AdminAuthValue>(
-    () => ({ admin, signedIn: admin !== null, restoring: !hydrated, realAuth: false, signIn, signOut }),
-    [admin, hydrated, signIn, signOut],
+    () => ({ admin, signedIn: admin !== null, restoring: !hydrated, secondFactor: true, signOut }),
+    [admin, hydrated, signOut],
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
@@ -213,23 +193,4 @@ export function useAdminAuth() {
   const ctx = useContext(AdminAuthContext);
   if (!ctx) throw new Error("useAdminAuth must be used within AdminAuthProvider");
   return ctx;
-}
-
-/**
- * Sends anyone without an open administrator session to the access screen.
- * A navigation gate only — the database enforces access on every request.
- */
-export function RequireAdmin({ children }: { children: ReactNode }) {
-  const { signedIn, restoring } = useAdminAuth();
-  const location = useLocation();
-
-  // Wait for a kept session before deciding, or a refresh would bounce a
-  // signed-in administrator to the access screen.
-  if (restoring) {
-    return <div aria-busy="true" className="min-h-screen" />;
-  }
-  if (!signedIn) {
-    return <Navigate to="/admin/connexion" state={{ from: location.pathname + location.search }} replace />;
-  }
-  return <>{children}</>;
 }

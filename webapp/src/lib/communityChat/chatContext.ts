@@ -12,6 +12,7 @@ import type {
   ServerId,
 } from "./model";
 import type { ChatRoom } from "./chatLogic";
+import type { ReportDraft } from "./moderation";
 
 /**
  * State of the Members' Lounge for the signed-in member: what the screens
@@ -59,7 +60,12 @@ export interface ConversationView {
 /** Where some data stands: on its way, there, or failed (with a way to try again). */
 export type LoadStatus = "loading" | "ready" | "error";
 
-export type SendResult = { ok: true } | { ok: false; reason: "rateLimited" | "forbidden" | "failed" };
+export type SendResult = { ok: true } | { ok: false; reason: "rateLimited" | "forbidden" | "muted" | "failed" };
+
+/** A report sent (its acknowledgement's date) or why it was not. */
+export type ReportResult =
+  | { ok: true; createdAt: string }
+  | { ok: false; reason: "duplicate" | "rateLimited" | "unavailable" | "failed" };
 
 export interface ChatContextValue {
   /** The lounge itself: members, rooms and counts. */
@@ -105,6 +111,15 @@ export interface ChatContextValue {
   focus: { messageId: string; nonce: number } | null;
   composerFocus: number;
   presence: Presence;
+
+  /** Moderation (decision 132): members whose messages the viewer hid (a database preference, not a filter here). */
+  blockedIds: ReadonlySet<string>;
+  /** Hides or shows again a member's messages; resolves to whether the database took it. */
+  setBlocked: (memberId: string, blocked: boolean) => Promise<boolean>;
+  /** Reports a message, or one of its images. */
+  report: (message: ChatMessage, draft: ReportDraft, attachmentId?: string) => Promise<ReportResult>;
+  /** End of the mute the team put on the viewer (epoch ms), or null when they may write. */
+  silencedUntil: number | null;
 
   /** Everything waiting across the lounges: unread messages, and what is addressed to you (mentions, private messages). */
   activity: { unread: number; attention: number };

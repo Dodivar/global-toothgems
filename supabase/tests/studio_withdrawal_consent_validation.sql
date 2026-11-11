@@ -37,7 +37,7 @@ begin
 
   -- W1: a member records their own request; not someone else's; unknown purposes stay refused.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   insert into public.consent_records (user_id, purpose, granted, policy_version, source)
   values (m1, 'studio_immediate_access', true, 'studio-withdrawal-2026-10', 'checkout');
   select count(*) into v_cnt from public.consent_records where user_id = m1 and purpose = 'studio_immediate_access';

@@ -590,7 +590,7 @@
         "points": [
           "Type: HD image (PNG, sharpest, or lighter JPEG), or 360° video (one full turn, looping, MP4 on phones and Safari).",
           "Format: Story (9:16), square or portrait (4:5).",
-          "Signature: with the Essential plan and the trial, every export carries the Global Toothgems watermark. The Artist and Atelier plans sign with your own logo (PNG, JPEG or WebP, 2 MB max.) or nothing. The Atelier plan adds layouts (background, frame, title and your handle).",
+          "Plans: posts come with the Artist plan and above. They are signed with your own logo (PNG, JPEG or WebP, 2 MB max.) or nothing. The Atelier plan adds layouts (background, frame, title and your handle).",
           "Publishing: “Share” opens your device’s share menu with the file (Instagram, TikTok, WhatsApp, Photos…); “Download” saves the file, to post from the app or site of your choice.",
           "Keep the tab open while a video records. Some desktop browsers record WebM, which some apps refuse: a phone or Safari records MP4."
         ]
@@ -655,11 +655,11 @@
       "plans": {
         "title": "What each plan includes",
         "body": [
-          "The editor, the whole gem library, the front view, the placement sheet, share links and posts are open to every plan. Plans differ by what you save and by the advanced tools:"
+          "The editor, the whole gem library, the estimate sheet, the PNG snapshot and the Global Toothgems templates are open to every plan. Plans differ by what you save and by the advanced tools:"
         ],
         "points": [
-          "Essential: 15 saved creations and 3 Gem Groups; posts with the Global Toothgems watermark.",
-          "Artist: 150 creations and 30 groups; posts signed with your logo or unsigned; collections and folders; Global Toothgems templates.",
+          "Essential: 15 saved creations and 3 Gem Groups; Global Toothgems templates.",
+          "Artist: 150 creations and 30 groups; front view, placement sheet and share links; social posts, signed with your logo or unsigned; collections and folders.",
           "Atelier: unlimited creations and groups; everything in Artist; post layouts; Glowbook; AI smile try-on, for you and for visitors of your creations.",
           "Over the limit, a new save is refused (nothing is lost): editing or deleting a creation is always possible."
         ]

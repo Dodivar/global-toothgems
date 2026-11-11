@@ -29,6 +29,11 @@ export interface RequestInput {
   reason: RefundReason;
   items: RefundLine[];
   restock: boolean;
+  /**
+   * The shop withdrawal this refund settles (decision 131): the database then takes
+   * the withdrawal's lines and the reason `return` (request_withdrawal_refund()).
+   */
+  withdrawal_id?: string;
 }
 
 export interface CancelInput {
@@ -85,9 +90,16 @@ export function parseRefundInput(body: unknown): Parsed {
     seen.add(id);
     items.push({ order_item_id: id, quantity });
   }
+  let withdrawalId: string | undefined;
+  if (body.withdrawal_id !== undefined) {
+    if (typeof body.withdrawal_id !== "string" || !UUID_RE.test(body.withdrawal_id)) return { ok: false, field: "withdrawal_id" };
+    // The withdrawal brings its own lines and reason.
+    if (items.length > 0 || body.reason !== "return") return { ok: false, field: "withdrawal_id" };
+    withdrawalId = body.withdrawal_id.toLowerCase();
+  }
   // Restocking means something: it needs the lines that come back.
   const restock = body.restock === true;
-  if (restock && items.length === 0) return { ok: false, field: "restock" };
+  if (restock && items.length === 0 && !withdrawalId) return { ok: false, field: "restock" };
 
   return {
     ok: true,
@@ -98,6 +110,7 @@ export function parseRefundInput(body: unknown): Parsed {
       reason: body.reason as RefundReason,
       items,
       restock,
+      ...(withdrawalId ? { withdrawal_id: withdrawalId } : {}),
     },
   };
 }
