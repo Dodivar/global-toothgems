@@ -46,7 +46,7 @@ begin
   -- ===========================================================================
   -- R1 customers cannot call the staff reads, nor read the CRM tables
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   foreach v_txt in array array['history', 'courses'] loop
     v_state := null;
     begin
@@ -63,7 +63,7 @@ begin
   -- ===========================================================================
   -- W1 read-only staff read the base but write nothing
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.profiles where id in (cst, oth);
   if v_cnt <> 2 then raise exception 'FAIL W1: viewer cannot read customers (%)', v_cnt; end if;
   perform * from public.admin_customer_status_history(cst);
@@ -88,7 +88,7 @@ begin
   -- ===========================================================================
   -- W2 a manager edits the profile; email and marketing consent stay read-only
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.profiles set first_name = 'Cléo', last_name = 'Martin', phone = '+33 6 00 00 00 00',
                              country_code = 'BE', birth_date = '1990-05-01', status = 'suspended'
    where id = cst;
@@ -125,10 +125,10 @@ begin
   update public.profiles set status = 'suspended' where id = mg2;
   update public.profiles set status = 'active' where id = mg2;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.admin_customer_status_history(mg2);
   if v_cnt <> 0 then raise exception 'FAIL H2: a team member''s history is readable (% rows)', v_cnt; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   passed := array_append(passed, 'H2 status history of team accounts: no rows');
 
   -- ===========================================================================
@@ -142,15 +142,15 @@ begin
   end;
   if v_state is distinct from '23505' then raise exception 'FAIL T1: duplicate tag (%)', v_state; end if;
   insert into public.customer_notes (user_id, body) values (cst, 'Première note') returning id into v_note;
-  perform set_config('request.jwt.claims', json_build_object('sub', mg2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mg2, 'role', 'authenticated')::text, true);
   update public.customer_notes set body = 'Réécrite' where id = v_note;
   get diagnostics v_cnt = row_count;
   if v_cnt <> 0 then raise exception 'FAIL T1: another manager rewrote a note'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.customer_notes set body = 'Corrigée' where id = v_note;
   get diagnostics v_cnt = row_count;
   if v_cnt <> 1 then raise exception 'FAIL T1: author could not edit the note'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.customer_notes;
   select v_cnt + count(*) into v_cnt from public.customer_tags;
   if v_cnt <> 0 then raise exception 'FAIL T1: the customer reads the CRM'; end if;
@@ -159,7 +159,7 @@ begin
   -- ===========================================================================
   -- C1 course progress: steps + checks, revoked seats left out
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform public.admin_save_course(jsonb_build_object(
     'id', c1, 'slug', 'clients-test-c1', 'title', 'Cours test', 'category', 'technique', 'level', 'beginner',
     'price', '100.00', 'min_score', 70,
@@ -184,7 +184,7 @@ begin
                                     correct_count, score, passing_score, passed, started_at, submitted_at)
   values (cst, c1, m1, qz1, 'submitted', '{}'::jsonb, 1, 1, 100, 50, true, now(), now());
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.admin_customer_courses(cst);
   if v_cnt <> 1 then raise exception 'FAIL C1: % seats (revoked one included?)', v_cnt; end if;
   select * into r from public.admin_customer_courses(cst);

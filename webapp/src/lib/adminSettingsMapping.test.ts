@@ -200,6 +200,8 @@ describe("store details", () => {
     publisher_name: null,
     publisher_phone: null,
     publisher_registration_number: null,
+    publisher_vat_number: null,
+    publisher_vat_franchise: true,
     legal_name: "Global Toothgems SAS",
     legal_form: "SAS",
     share_capital: null,
@@ -299,6 +301,8 @@ describe("legal notice", () => {
           publisher_name: null,
           publisher_phone: null,
           publisher_registration_number: null,
+          publisher_vat_number: null,
+          publisher_vat_franchise: true,
           legal_name: "Global Toothgems SAS",
           legal_form: "SAS",
           share_capital: "10 000 €",
@@ -355,6 +359,8 @@ describe("trading name (decision 120)", () => {
         publisher_name: "Studio Test",
         publisher_phone: "+33 6 00 00 00 00",
         publisher_registration_number: "SIRET 987 654 321 00010",
+        publisher_vat_number: null,
+        publisher_vat_franchise: true,
         legal_name: "Ada Test",
         legal_form: "Entrepreneur individuel (EI)",
         share_capital: null,
@@ -438,6 +444,9 @@ describe("trading name (decision 120)", () => {
     expect(fieldsOf(privacy, "controller").map((f) => f.value?.fr)).toEqual([
       "PIMP TON SMILE — Ada Test, Entrepreneur individuel (EI)",
       "1 rue Fictive, 75004 Paris, France",
+      // The 3D Studio's controller: the publisher, which sells it (decision 135).
+      "Studio Test — Bob Test, Entrepreneur individuel (EI)",
+      "2 rue Fictive, 67000 Strasbourg, France",
       "support@example.com",
       "Non désigné",
     ]);

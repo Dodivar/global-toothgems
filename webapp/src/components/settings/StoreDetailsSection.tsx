@@ -125,7 +125,14 @@ export function StoreDetailsSection() {
             {text("publisherAddress", { className: "md:col-span-2", autoComplete: "off" })}
             {text("publisherEmail", { type: "email", inputMode: "email", autoComplete: "off" })}
             {text("publisherPhone", { type: "tel", inputMode: "tel", autoComplete: "off", placeholder: "+33 6 12 34 56 78" })}
+            {text("publisherVatNumber", { placeholder: "FR12345678901", autoComplete: "off" })}
           </FieldGrid>
+          <ToggleSwitch
+            label={t("settings.store.publisherVatFranchise.label")}
+            description={t("settings.store.publisherVatFranchise.description")}
+            checked={d.publisherVatFranchise}
+            onChange={(v) => set("publisherVatFranchise", v)}
+          />
           <SubHeading>{t("settings.store.legal.director")}</SubHeading>
           <FieldGrid>
             {text("publicationDirector")}

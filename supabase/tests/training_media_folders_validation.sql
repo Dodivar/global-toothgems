@@ -29,7 +29,7 @@ begin
   update public.profiles set role = 'viewer' where id = vwr;
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
 
   insert into public.training_media (id, kind, storage_path, mime_type, name, bytes) values
     (m1, 'image', 'media/' || m1 || '/schema.jpg', 'image/jpeg', 'Schéma', 1000),
@@ -78,7 +78,7 @@ begin
   passed := passed || 'F3'::text;
 
   -- F4: read-only staff read the folders but change nothing ---------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select count(*) into n from public.training_media_folders where id = f1;
   if n <> 1 then
     raise exception 'FAIL F4: staff cannot read the folders';
@@ -102,7 +102,7 @@ begin
   passed := passed || 'F4'::text;
 
   -- F5: a member sees no folder and writes none ---------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   select count(*) into n from public.training_media_folders;
   if n <> 0 then
     raise exception 'FAIL F5: a member reads the folders';
@@ -115,7 +115,7 @@ begin
   passed := passed || 'F5'::text;
 
   -- F6: deleting a folder unfiles its files and keeps them ----------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   delete from public.training_media_folders where id = f1;
   select count(*) into n from public.training_media where id in (m1, m2) and folder_id is null;
   if n <> 2 then

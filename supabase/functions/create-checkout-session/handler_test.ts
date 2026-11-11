@@ -1,5 +1,6 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import { readSiteOrigins } from "../_shared/http.ts";
+import { TERMS_OF_SALE_VERSION } from "../_shared/legal/terms.ts";
 import { handleCheckout, releasePaymentStep, RESERVATION_MINUTES, SESSION_MINUTES, type CheckoutDeps, type CheckoutSessionParams, type OrderRow, type ReleaseDeps } from "./handler.ts";
 
 const ORDER: OrderRow = {
@@ -35,6 +36,7 @@ function fakeDeps(overrides: Partial<CheckoutDeps> = {}) {
     recorded: [] as string[],
     released: [] as { sessionId: string; secret: string }[],
     courseConsents: [] as string[],
+    termsVersions: [] as { orderId: string; version: string }[],
   };
   const deps: CheckoutDeps = {
     publishableKey: "pk_test_123",
@@ -52,6 +54,10 @@ function fakeDeps(overrides: Partial<CheckoutDeps> = {}) {
     },
     cancelOrder: (id) => {
       calls.cancelled.push(id);
+      return Promise.resolve();
+    },
+    recordTermsVersion: (orderId, version) => {
+      calls.termsVersions.push({ orderId, version });
       return Promise.resolve();
     },
     createStripeSession: (params, key) => {
@@ -418,4 +424,36 @@ Deno.test("release: a completed or completing payment, or a paid order, is never
   assertEquals(await releasePaymentStep("cs_test_Old0Old0Old0Old0", PREVIOUS, paid.deps), "released");
   assertEquals(paid.calls.cancelled.length, 0);
   assertEquals(paid.calls.expired.length, 0);
+});
+
+Deno.test("the order keeps the version of the terms of sale in force (decision 130)", async () => {
+  const { deps, calls } = fakeDeps();
+  const res = await handleCheckout(post(BODY), deps);
+  assertEquals(res.status, 200);
+  assertEquals(calls.termsVersions, [{ orderId: ORDER.id, version: TERMS_OF_SALE_VERSION }]);
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(TERMS_OF_SALE_VERSION));
+});
+
+Deno.test("an unpaid order whose terms version cannot be recorded is released, nothing is charged", async () => {
+  const { deps, calls } = fakeDeps({ recordTermsVersion: () => Promise.reject(new Error("db down")) });
+  const res = await handleCheckout(post(BODY), deps);
+  assertEquals(res.status, 500);
+  assertEquals((await res.json()).error, "server_error");
+  assertEquals(calls.cancelled, [ORDER.id]);
+  assertEquals(calls.sessions, []);
+});
+
+Deno.test("an order paid in full by gift cards stands even if its terms version is not recorded", async () => {
+  const paid = { ...ORDER, amount_due: "0.00", payment_status: "paid" };
+  const followUps: string[] = [];
+  const { deps, calls } = fakeDeps({
+    createOrder: () => Promise.resolve({ order: paid }),
+    recordTermsVersion: () => Promise.reject(new Error("db down")),
+    orderPaid: (id) => (followUps.push(id), Promise.resolve()),
+  });
+  const res = await handleCheckout(post(BODY), deps);
+  assertEquals(res.status, 200);
+  assertEquals((await res.json()).status, "paid");
+  assertEquals(calls.cancelled, []);
+  assertEquals(followUps, [ORDER.id]);
 });

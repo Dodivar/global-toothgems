@@ -135,9 +135,9 @@
       "gemGroups_other": "{{count}} Gem Groups, your reusable arrangements",
       "unlimited": "Unlimited creations and Gem Groups",
       "library": "The shop’s whole gem library, at their real sizes",
-      "tools": "Front view, printable placement sheet and sharing by link",
+      "clientTools": "Front view, printable placement sheet and sharing by link",
       "templates": "The Global Toothgems templates, to copy into your creations",
-      "watermark": "Social posts, with the Global Toothgems watermark",
+      "posts": "Social posts: HD image and 360° video",
       "ownLogo": "Posts signed with your logo, or without a watermark",
       "transparentExport": "PNG snapshots without a background, ready to cut out",
       "glowbook": "Your Glowbook: the public showcase of your creations, customised, with a QR code and a map",
@@ -170,7 +170,7 @@
       },
       {
         "question": "Which subscription should I choose?",
-        "answer": "Essential to imagine your first looks: 15 creations and 3 Gem Groups, the whole library and posts with the Global Toothgems watermark. Artist to work with your clients: 150 creations, 30 Gem Groups, the Global Toothgems templates, folders to file your creations and posts signed with your logo. Atelier to go further: unlimited creations and Gem Groups, your public Glowbook, the AI try-on, which lets your clients see your creations on their own smile, and layouts for your posts."
+        "answer": "Essential to imagine your first looks: 15 creations and 3 Gem Groups, the whole library and the Global Toothgems templates. Artist to work with your clients: 150 creations, 30 Gem Groups, the front view, the placement sheet and sharing by link, folders to file your creations and social posts signed with your logo. Atelier to go further: unlimited creations and Gem Groups, your public Glowbook, the AI try-on, which lets your clients see your creations on their own smile, and layouts for your posts."
       },
       {
         "question": "Can I change my subscription later?",

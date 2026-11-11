@@ -91,8 +91,8 @@ begin
     perform set_config('role', case v_cnt when 1 then 'anon' else 'authenticated' end, true);
     perform set_config('request.jwt.claims',
       case v_cnt when 1 then '{"role":"anon"}'
-                 when 2 then json_build_object('sub', cust, 'role', 'authenticated')::text
-                 else json_build_object('sub', viewer, 'role', 'authenticated')::text end, true);
+                 when 2 then json_build_object('aal', 'aal2', 'sub', cust, 'role', 'authenticated')::text
+                 else json_build_object('aal', 'aal2', 'sub', viewer, 'role', 'authenticated')::text end, true);
     v_ok := false;
     begin
       perform public.admin_save_product_bundle(kit, jsonb_build_array(jsonb_build_object('product_id', g1, 'quantity', 1)));
@@ -105,7 +105,7 @@ begin
   passed := passed || 'K1'::text;
 
   -- K2: a manager makes the trio a kit; invalid compositions refused --------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   r := public.admin_save_product_bundle(kit, jsonb_build_array(
          jsonb_build_object('product_id', g1, 'quantity', 1),
@@ -195,17 +195,17 @@ begin
   if not v_ok then raise exception 'FAIL K5: a kit was oversold'; end if;
   -- The snapshot is the owner's (and staff's) to read.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', other, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.order_item_components where order_item_id = kit_line;
   if v_cnt <> 0 then raise exception 'FAIL K5: another customer read the snapshot'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', cust, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cust, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.order_item_components where order_item_id = kit_line;
   if v_cnt <> 3 then raise exception 'FAIL K5: the owner reads % components', v_cnt; end if;
   execute 'reset role';
   passed := passed || 'K5'::text;
 
   -- K6: the composition changes, then the order is paid: the snapshot is sold ---------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   perform public.admin_save_product_bundle(kit, jsonb_build_array(jsonb_build_object('product_id', g1, 'quantity', 2)));
   execute 'reset role';
@@ -300,7 +300,7 @@ begin
   passed := passed || 'K11'::text;
 
   -- K12: the public reads an active kit's contents, not a draft's ------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   perform public.admin_save_product_bundle(kit2, jsonb_build_array(jsonb_build_object('product_id', g2, 'quantity', 1)));
   perform set_config('role', 'anon', true);

@@ -1,12 +1,15 @@
 import { LEGAL_PATHS } from "./routes";
-import { DRAFT_DATE, l, type LegalDocument } from "./types";
+import { l, type LegalDocument } from "./types";
 
 /**
  * Cookie policy.
  *
  * Mirrors what the site really does: PostHog only after the analytics choice
  * (`lib/cookieConsent.tsx`), OpenFreeMap tiles for the Glowbook maps, Stripe
- * on the payment page. Update it when a cookie, a provider or a category changes.
+ * on the payment page. Every name and duration in the inventory was checked
+ * against the code on 2026-11-08 (`lib/cookieConsent.tsx`, `i18n/preference.ts`,
+ * `lib/cartStorage.ts`, `@supabase/ssr` defaults, `instrumentation-client.ts`).
+ * Update it — and `updated` — when a cookie, a provider or a category changes.
  */
 export const COOKIE_POLICY: LegalDocument = {
   id: "cookies",
@@ -17,8 +20,7 @@ export const COOKIE_POLICY: LegalDocument = {
     "Ce que sont les cookies, à quoi ils servent sur Global Toothgems, et comment accepter, refuser ou changer d’avis à tout moment.",
     "What cookies are, what they are used for on Global Toothgems, and how to accept, refuse or change your mind at any time.",
   ),
-  updated: DRAFT_DATE,
-  showKey: true,
+  updated: "2026-11-08",
   contactCategory: "privacy",
   lead: [{ kind: "widget", widget: "cookieChoices" }],
   sections: [
@@ -69,19 +71,14 @@ export const COOKIE_POLICY: LegalDocument = {
               used: l("Oui", "Yes"),
               consent: l("Refusée par défaut, à accepter", "Off by default, you opt in"),
             },
-            {
-              category: l("Préférences", "Preferences"),
-              purpose: l("Aucune donnée de confort soumise au consentement", "No comfort data that requires consent"),
-              used: l("Non", "No"),
-              consent: l("—", "—"),
-            },
-            {
-              category: l("Marketing", "Marketing"),
-              purpose: l("Publicité et suivi des campagnes", "Advertising and campaign tracking"),
-              used: l("Non", "No"),
-              consent: l("—", "—"),
-            },
           ],
+        },
+        {
+          kind: "p",
+          text: l(
+            "Nous n’utilisons **aucun cookie publicitaire, de ciblage ou de réseau social** (pas de pixel Meta, TikTok ou Google Ads). Les liens de nos campagnes peuvent porter des paramètres d’adresse (utm, identifiant de clic) : ils servent seulement à afficher la page de présentation du Studio 3D sans le menu de la boutique, ne sont transmis à aucun tiers et ne sont comptés dans la mesure d’audience qu’avec votre accord.",
+            "We use **no advertising, targeting or social-network cookies** (no Meta, TikTok or Google Ads pixel). Links in our campaigns may carry address parameters (utm, click identifier): they are only used to show the 3D Studio presentation page without the shop menu, are passed to no third party, and are counted in audience measurement only with your agreement.",
+          ),
         },
       ],
     },
@@ -94,6 +91,13 @@ export const COOKIE_POLICY: LegalDocument = {
           text: l(
             "Ils permettent d’utiliser les fonctions de base : se connecter à son compte, garder un panier, payer en sécurité, retenir la langue que vous avez choisie et vos choix cookies. Sans eux, le site ne peut pas fonctionner correctement ; ils sont déposés sans consentement et ne peuvent pas être désactivés depuis nos paramètres.",
             "They make the basic functions possible: signing in to your account, keeping a cart, paying securely, remembering the language you chose and your cookie choices. Without them the site cannot work properly; they are set without consent and cannot be switched off in our settings.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Le site garde aussi dans votre navigateur des réglages que vous choisissez vous-même (disposition de l’éditeur du Studio 3D, visite guidée déjà vue, dossiers repliés) et, dans le Studio, les essais « sur mon sourire » des dernières 24 heures, effacés à la déconnexion. Ces données restent sur votre appareil et ne nous sont pas envoyées.",
+            "The site also keeps in your browser settings you choose yourself (3D Studio editor layout, guided tour already seen, folded folders) and, in the Studio, your “on my smile” try-ons of the last 24 hours, erased when you sign out. This data stays on your device and is not sent to us.",
           ),
         },
       ],
@@ -112,8 +116,8 @@ export const COOKIE_POLICY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "PostHog enregistre un identifiant dans votre navigateur. Si vous êtes connecté, il est rattaché à votre compte, avec votre adresse e-mail et votre nom. Ces données servent uniquement à notre propre analyse. Vous pouvez retirer votre accord à tout moment (voir plus bas).",
-            "PostHog stores an identifier in your browser. If you are signed in, it is linked to your account, with your e-mail address and name. This data is used only for our own analysis. You can withdraw your agreement at any time (see below).",
+            "Une fois votre accord donné, PostHog enregistre un identifiant dans votre navigateur. Si vous êtes connecté, il est rattaché à votre compte, avec votre adresse e-mail et votre nom. Ces données servent uniquement à notre propre analyse et ne sont ni vendues ni utilisées pour de la publicité. Si vous retirez votre accord, la collecte s’arrête et cet identifiant est effacé de votre navigateur (voir plus bas).",
+            "Once you agree, PostHog stores an identifier in your browser. If you are signed in, it is linked to your account, with your e-mail address and name. This data is used only for our own analysis and is neither sold nor used for advertising. If you withdraw your agreement, collection stops and that identifier is erased from your browser (see below).",
           ),
         },
       ],
@@ -145,8 +149,8 @@ export const COOKIE_POLICY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Votre choix de cookies est conservé dans votre navigateur jusqu’à ce que vous le modifiiez ou effaciez les données du site.",
-            "Your cookie choice is kept in your browser until you change it or clear the site’s data.",
+            "Votre choix de cookies, qu’il s’agisse d’un accord ou d’un refus, est conservé 6 mois dans votre navigateur ; nous vous le redemandons ensuite. Aucun cookie optionnel n’a une durée de vie supérieure à 13 mois.",
+            "Your cookie choice, whether an acceptance or a refusal, is kept for 6 months in your browser; we ask you again after that. No optional cookie lives longer than 13 months.",
           ),
         },
         {
@@ -160,40 +164,70 @@ export const COOKIE_POLICY: LegalDocument = {
           ],
           rows: [
             {
-              name: l("sb-…-auth-token", "sb-…-auth-token"),
+              name: l("sb-…-auth-token (cookie)", "sb-…-auth-token (cookie)"),
               provider: l("Global Toothgems (Supabase Auth)", "Global Toothgems (Supabase Auth)"),
-              category: l("Nécessaire", "Necessary"),
-              duration: l("Session de connexion", "Sign-in session"),
+              category: l("Nécessaire — connexion", "Necessary — sign-in"),
+              duration: l("Jusqu’à la déconnexion, au plus 400 jours", "Until you sign out, at most 400 days"),
             },
             {
-              name: l("gt-cookie-consent", "gt-cookie-consent"),
+              name: l("gt-cookie-consent (stockage local)", "gt-cookie-consent (local storage)"),
               provider: l("Global Toothgems", "Global Toothgems"),
-              category: l("Nécessaire", "Necessary"),
-              duration: l("Jusqu’à modification", "Until changed"),
+              category: l("Nécessaire — votre choix cookies", "Necessary — your cookie choice"),
+              duration: l("6 mois", "6 months"),
             },
             {
-              name: l("gt-lang", "gt-lang"),
+              name: l("gt-lang (cookie et stockage local)", "gt-lang (cookie and local storage)"),
               provider: l("Global Toothgems", "Global Toothgems"),
-              category: l("Nécessaire", "Necessary"),
-              duration: l("Jusqu’à modification", "Until changed"),
+              category: l("Nécessaire — langue choisie", "Necessary — chosen language"),
+              duration: l("1 an (cookie), jusqu’à modification (stockage local)", "1 year (cookie), until changed (local storage)"),
             },
             {
-              name: l("Panier (stockage de session)", "Cart (session storage)"),
+              name: l("gt-cart (stockage de session)", "gt-cart (session storage)"),
               provider: l("Global Toothgems", "Global Toothgems"),
-              category: l("Nécessaire", "Necessary"),
+              category: l("Nécessaire — panier", "Necessary — cart"),
               duration: l("Fermeture de l’onglet", "Until the tab is closed"),
             },
             {
-              name: l("__stripe_mid, __stripe_sid", "__stripe_mid, __stripe_sid"),
+              name: l("Autres gt-… (stockage de session)", "Other gt-… (session storage)"),
+              provider: l("Global Toothgems", "Global Toothgems"),
+              category: l("Nécessaire — navigation, paiement Studio en cours, liens temporaires des fichiers", "Necessary — navigation, Studio payment under way, temporary file links"),
+              duration: l("Fermeture de l’onglet", "Until the tab is closed"),
+            },
+            {
+              name: l("gt-studio3d-… (stockage local)", "gt-studio3d-… (local storage)"),
+              provider: l("Global Toothgems", "Global Toothgems"),
+              category: l("Nécessaire — réglages de l’éditeur que vous choisissez", "Necessary — editor settings you choose"),
+              duration: l("Jusqu’à modification", "Until changed"),
+            },
+            {
+              name: l("gt-studio-try-on (base locale du navigateur)", "gt-studio-try-on (browser local database)"),
+              provider: l("Global Toothgems", "Global Toothgems"),
+              category: l("Nécessaire — essais sur votre sourire, sur votre appareil uniquement", "Necessary — try-ons on your smile, on your device only"),
+              duration: l("24 heures, effacés à la déconnexion", "24 hours, erased when you sign out"),
+            },
+            {
+              name: l("__stripe_mid, __stripe_sid (cookies)", "__stripe_mid, __stripe_sid (cookies)"),
               provider: l("Stripe", "Stripe"),
-              category: l("Nécessaire (paiement)", "Necessary (payment)"),
+              category: l("Nécessaire — paiement et prévention de la fraude", "Necessary — payment and fraud prevention"),
               duration: l("1 an, 30 minutes", "1 year, 30 minutes"),
             },
             {
-              name: l("ph_…_posthog", "ph_…_posthog"),
+              name: l("__ph_opt_in_out_… (stockage local)", "__ph_opt_in_out_… (local storage)"),
               provider: l("PostHog", "PostHog"),
-              category: l("Mesure d’audience", "Analytics"),
-              duration: l("1 an, avec votre accord", "1 year, with your agreement"),
+              category: l("Nécessaire — retient l’accord ou le refus de mesure d’audience", "Necessary — remembers whether analytics is allowed"),
+              duration: l("Jusqu’à modification", "Until changed"),
+            },
+            {
+              name: l("ph_…_posthog (cookie et stockage local)", "ph_…_posthog (cookie and local storage)"),
+              provider: l("PostHog", "PostHog"),
+              category: l("Mesure d’audience — seulement avec votre accord", "Analytics — only with your agreement"),
+              duration: l("1 an, effacé si vous retirez votre accord", "1 year, erased if you withdraw your agreement"),
+            },
+            {
+              name: l("gt-studio-evt:… (stockage local et de session)", "gt-studio-evt:… (local and session storage)"),
+              provider: l("Global Toothgems", "Global Toothgems"),
+              category: l("Mesure d’audience — seulement avec votre accord, évite de compter deux fois une étape du Studio", "Analytics — only with your agreement, avoids counting a Studio step twice"),
+              duration: l("Jusqu’à effacement (local), fermeture de l’onglet (session)", "Until cleared (local), until the tab is closed (session)"),
             },
           ],
         },
@@ -207,8 +241,8 @@ export const COOKIE_POLICY: LegalDocument = {
           kind: "callout",
           tone: "instruction",
           text: l(
-            "Cliquez sur « Paramètres cookies » en bas de chaque page, ou utilisez le bouton « Modifier mes choix » en haut de cette page. Vous pouvez activer ou désactiver chaque catégorie optionnelle séparément.",
-            "Click “Cookie settings” at the bottom of any page, or use the “Change my choices” button at the top of this page. You can switch each optional category on or off separately.",
+            "Cliquez sur « Paramètres cookies » en bas de chaque page, ou utilisez le bouton « Modifier mes choix » en haut de cette page. Vous pouvez y activer ou désactiver la mesure d’audience, seule catégorie optionnelle du site.",
+            "Click “Cookie settings” at the bottom of any page, or use the “Change my choices” button at the top of this page. There you can switch audience measurement, the site’s only optional category, on or off.",
           ),
         },
       ],
@@ -220,8 +254,8 @@ export const COOKIE_POLICY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Vous pouvez retirer votre consentement à tout moment, aussi simplement que vous l’avez donné, depuis les mêmes paramètres. Le retrait vaut pour l’avenir ; il est aussi possible de supprimer les cookies déjà déposés depuis votre navigateur.",
-            "You can withdraw consent at any time, as easily as you gave it, from the same settings. Withdrawal applies from then on; you can also delete cookies already set from your browser.",
+            "Vous pouvez retirer votre consentement à tout moment, aussi simplement que vous l’avez donné, depuis les mêmes paramètres. Le retrait vaut pour l’avenir : la mesure d’audience s’arrête aussitôt et l’identifiant PostHog est effacé de votre navigateur. Vous pouvez aussi supprimer depuis votre navigateur les cookies déjà déposés.",
+            "You can withdraw consent at any time, as easily as you gave it, from the same settings. Withdrawal applies from then on: audience measurement stops at once and the PostHog identifier is erased from your browser. You can also delete cookies already set from your browser.",
           ),
         },
       ],

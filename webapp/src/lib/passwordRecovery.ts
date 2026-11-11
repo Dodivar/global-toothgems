@@ -2,6 +2,7 @@ import { supabase } from "./supabase/client";
 import { RESET_PATH } from "./accountSecurity";
 import { authConfirmUrl } from "./authRoutes";
 import { isAuthRateLimit } from "./supabase/authErrors";
+import { authCaptchaToken } from "./captcha/authCaptcha";
 
 /**
  * Password recovery through Supabase Auth, used by `/mot-de-passe-oublie` and
@@ -21,6 +22,7 @@ export async function sendPasswordReset(email: string): Promise<RecoveryRequestR
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
     // Through `/auth/confirm`, which opens the recovery session server-side.
     redirectTo: authConfirmUrl(RESET_PATH, window.location.origin),
+    captchaToken: await authCaptchaToken(),
   });
   if (!error) return "sent";
   return isAuthRateLimit(error) ? "rateLimited" : "failed";

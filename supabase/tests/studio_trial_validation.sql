@@ -76,7 +76,7 @@ begin
 
   -- S2: no trial, no saving; the trial starts once, for exactly 48 hours.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   r := public.studio_access_state();
   if r ->> 'state' <> 'not_started' or r -> 'trial_expires_at' <> 'null'::jsonb then
     raise exception 'FAIL S2: initial state %', r;
@@ -128,7 +128,7 @@ begin
   exception when insufficient_privilege then v_ok := true;
   end;
   if not v_ok then raise exception 'FAIL S4: member wrote a subscription'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_trials where user_id = m1;
   if v_cnt <> 0 then raise exception 'FAIL S4: another member reads the trial'; end if;
   select count(*) into v_cnt from public.creations where id = v_id;
@@ -141,7 +141,7 @@ begin
      set trial_started_at = now() - interval '48 hours', trial_expires_at = now()
    where user_id = m1;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   r := public.studio_access_state();
   if r ->> 'state' <> 'trial_expired' then raise exception 'FAIL S5: state at expiry %', r; end if;
   v_state := null;
@@ -177,13 +177,13 @@ begin
          (m4, 'essential', 'canceled', 'sub_test_m4', now() - interval '1 day'),
          (m5, 'artist', 'incomplete', 'sub_test_m5', now() + interval '1 month');
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m3, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m3, 'role', 'authenticated')::text, true);
   r := public.start_studio_trial();
   if (r ->> 'started')::boolean is not false or r ->> 'state' <> 'subscribed' or r ->> 'subscription_plan' <> 'essential' then
     raise exception 'FAIL S6: subscriber start %', r;
   end if;
   insert into public.creations (name, scene_data) values ('Abonnée', v_scene);
-  perform set_config('request.jwt.claims', json_build_object('sub', m4, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m4, 'role', 'authenticated')::text, true);
   r := public.start_studio_trial();
   if (r ->> 'started')::boolean is not false or r ->> 'state' <> 'subscription_ended' then
     raise exception 'FAIL S6: former subscriber %', r;
@@ -194,7 +194,7 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL S6: former subscriber saved (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m5, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m5, 'role', 'authenticated')::text, true);
   r := public.studio_access_state();
   if r ->> 'state' <> 'subscription_pending' then raise exception 'FAIL S6: incomplete subscription %', r; end if;
   execute 'reset role';
@@ -204,7 +204,7 @@ begin
 
   -- S7: active staff have access; a viewer reads every trial, not as a writer.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', viewer, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', viewer, 'role', 'authenticated')::text, true);
   r := public.studio_access_state();
   if r ->> 'state' <> 'staff' then raise exception 'FAIL S7: staff state %', r; end if;
   insert into public.creations (name, scene_data) values ('Équipe', v_scene);
@@ -213,6 +213,23 @@ begin
   select count(*) into v_cnt from public.studio_subscriptions where user_id in (m3, m4, m5);
   if v_cnt <> 3 then raise exception 'FAIL S7: viewer cannot read the subscriptions'; end if;
   passed := passed || 'S7'::text;
+
+  -- S8: subscribing during the trial cancels what is left of it, for good.
+  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  r := public.start_studio_trial();
+  if r ->> 'state' <> 'trial_active' then raise exception 'FAIL S8: trial not active %', r; end if;
+  execute 'reset role';
+  insert into public.studio_subscriptions (user_id, plan, status, stripe_subscription_id, current_period_end)
+  values (m2, 'essential', 'active', 'sub_test_m2', now() + interval '1 month');
+  if (select trial_expires_at from public.studio_trials where user_id = m2) > now() then
+    raise exception 'FAIL S8: the trial survived the subscription';
+  end if;
+  update public.studio_subscriptions set status = 'canceled', current_period_end = now() - interval '1 second' where user_id = m2;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  r := public.studio_access_state();
+  if r ->> 'state' <> 'trial_expired' then raise exception 'FAIL S8: trial came back after the subscription %', r; end if;
+  passed := passed || 'S8'::text;
 
   raise exception 'ALL STUDIO TRIAL TESTS PASSED (%)', array_to_string(passed, ', ');
 end;

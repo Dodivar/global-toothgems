@@ -73,7 +73,7 @@ begin
 
   -- C4: a read-only staff member reads everything and writes nothing ----------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   if (select count(*) from public.gem_colors) <> 11 then raise exception 'FAIL C4: viewer misses hidden colours'; end if;
   v_state := null;
   begin
@@ -86,7 +86,7 @@ begin
 
   -- C5: a manager creates a colour: slug made unique, hex normalised, EN published
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   res := public.admin_save_gem_color('{"slug":"crystal","name":"Cristal fumé","name_en":"Smoked crystal","hex":"#A0A4AB"}');
   v_new := (res ->> 'id')::uuid;
   if res ->> 'slug' <> 'crystal-2' then raise exception 'FAIL C5: slug not made unique: %', res; end if;

@@ -44,7 +44,7 @@ begin
   select id into p_gel   from public.products where slug = 'gel-de-suivi';            -- 19.00, hygiene
   select id into p_kit   from public.products where slug = 'kit-decouverte';          -- 129.00, kits (draft in the seed)
   update public.products set status = 'active' where id = p_kit;
-  select id into p_prem  from public.products where slug = 'kit-application-premium'; -- 249.00, on sale (279)
+  select id into p_prem  from public.products where slug = 'kit-application-premium'; -- 249.00 (no compare-at price since decision 129)
   select id into p_pince from public.products where slug = 'pince-de-depose';         -- 78.00, outils
   select id into p_gc    from public.products where slug = 'carte-cadeau';
   select id into c_kits  from public.categories where slug = 'kits';
@@ -57,31 +57,32 @@ begin
   -- R1 permission matrix
   -- ===========================================================================
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.my_permissions();
   if v_cnt <> 3 or not private.has_permission('view_users') or private.has_permission('manage_products') then
     raise exception 'FAIL R1: viewer permissions (%)', v_cnt;
   end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.my_permissions();
-  -- 11 since migration 20260924210824 (manage_content granted to manager and admin).
-  if v_cnt <> 11 or not private.has_permission('manage_promotions') or private.has_permission('manage_settings') then
+  -- 11 since migration 20260924210824 (manage_content granted to manager and admin),
+  -- 12 since 20261110124815 (moderate_community, decision 132).
+  if v_cnt <> 12 or not private.has_permission('manage_promotions') or private.has_permission('manage_settings') then
     raise exception 'FAIL R1: manager permissions (%)', v_cnt;
   end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', adm, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.my_permissions();
-  if v_cnt <> 12 then raise exception 'FAIL R1: admin permissions (%)', v_cnt; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  if v_cnt <> 13 then raise exception 'FAIL R1: admin permissions (%)', v_cnt; end if;
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.my_permissions();
   if v_cnt <> 0 or private.is_staff() then raise exception 'FAIL R1: customer has permissions'; end if;
   select count(*) into v_cnt from public.role_permissions;
   if v_cnt <> 0 then raise exception 'FAIL R1: customer reads the permission matrix'; end if;
-  passed := array_append(passed, 'R1 viewer 3 / manager 11 / admin 12 permissions, customers none');
+  passed := array_append(passed, 'R1 viewer 3 / manager 12 / admin 13 permissions, customers none');
 
   -- ===========================================================================
   -- R2 read-only staff read the back office and change nothing
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.profiles where id in (alice, bob);
   if v_cnt <> 2 then raise exception 'FAIL R2: viewer cannot read customers'; end if;
   update public.products set price = 1 where id = p_gel;
@@ -100,7 +101,7 @@ begin
   -- ===========================================================================
   -- R3 manager vs administrator areas
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.products set price = price where id = p_gel;
   get diagnostics v_cnt = row_count;
   if v_cnt <> 1 then raise exception 'FAIL R3: manager cannot edit the catalogue'; end if;
@@ -109,7 +110,7 @@ begin
   if v_cnt <> 0 then raise exception 'FAIL R3: manager changed VAT settings'; end if;
   select count(*) into v_cnt from public.audit_logs;
   if v_cnt <> 0 then raise exception 'FAIL R3: manager reads the audit log'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', adm, 'role', 'authenticated')::text, true);
   update public.tax_rates set rate_bp = rate_bp where country_code = 'FR';
   get diagnostics v_cnt = row_count;
   if v_cnt = 0 then raise exception 'FAIL R3: admin cannot manage settings'; end if;
@@ -120,7 +121,7 @@ begin
   -- ===========================================================================
   -- R4 role management within rank
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.profiles set role = 'viewer' where id = bob;              -- customer -> read only: ok
   select role into v_txt from public.profiles where id = bob;
   if v_txt <> 'viewer' then raise exception 'FAIL R4: manager could not invite a viewer'; end if;
@@ -141,12 +142,12 @@ begin
   update public.profiles set status = 'suspended' where id = alice;       -- customer status: manage_customers
   update public.profiles set status = 'active' where id = alice;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   update public.profiles set role = 'viewer' where id = bob;              -- RLS: the row is not writable
   get diagnostics v_cnt = row_count;
   if v_cnt <> 0 then raise exception 'FAIL R4: viewer managed roles'; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', adm, 'role', 'authenticated')::text, true);
   update public.profiles set role = 'admin' where id = bob;
   update public.profiles set role = 'customer' where id = bob;
   execute 'reset role';
@@ -158,9 +159,9 @@ begin
   -- R5 a suspended team member loses access at once
   -- ===========================================================================
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.profiles set status = 'suspended' where id = mgr2;         -- same rank: allowed
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr2, 'role', 'authenticated')::text, true);
   update public.products set price = price where id = p_gel;
   get diagnostics v_cnt = row_count;
   if v_cnt <> 0 or private.is_staff() then raise exception 'FAIL R5: suspended manager still works'; end if;
@@ -171,7 +172,7 @@ begin
   -- ===========================================================================
   -- R6 staff profiles and directory
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   insert into public.staff_profiles (user_id, job_title, team, invited_by) values (vwr, 'Data analyst', 'finance', adm);
   select invited_by into v_txt from public.staff_profiles where user_id = vwr;
   if v_txt <> mgr::text then raise exception 'FAIL R6: inviter forged'; end if;
@@ -182,14 +183,14 @@ begin
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL R6: manager edited an admin file (%)', v_state; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select status into v_txt from public.staff_directory() where user_id = vwr;
   if v_txt <> 'invited' then raise exception 'FAIL R6: never signed in should be invited (%)', v_txt; end if;
   select status into v_txt from public.staff_directory() where user_id = mgr2;
   if v_txt <> 'suspended' then raise exception 'FAIL R6: suspended not shown (%)', v_txt; end if;
   select count(*) into v_cnt from public.staff_directory() where user_id in (alice, bob);
   if v_cnt <> 0 then raise exception 'FAIL R6: customers listed as team'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.staff_directory();
@@ -206,7 +207,7 @@ begin
   o := public.create_order(alice, 'alice6.test@example.invalid',
          jsonb_build_array(jsonb_build_object('product_id', p_gel, 'quantity', 1)), fr, fr, r_std);
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   foreach v_txt in array array[
     format('select public.cancel_order(%L)', o.id),
     'select public.issue_gift_card(20, ''x@example.invalid'')'] loop
@@ -217,7 +218,7 @@ begin
     end;
     if v_state is distinct from '42501' then raise exception 'FAIL R7: viewer ran % (%)', v_txt, v_state; end if;
   end loop;
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform public.cancel_order(o.id, 'test');
   execute 'reset role';
   select status into v_txt from public.orders where id = o.id;
@@ -225,7 +226,8 @@ begin
   passed := array_append(passed, 'R7 cancel_order / gift card staff functions: permission checked');
 
   -- ===========================================================================
-  -- P1 automatic percentage on a category; on-sale product excluded; VAT on net
+  -- P1 automatic percentage on a category; VAT on net. Since decision 129 no product has a
+  -- compare-at price, so exclude_discounted_products excludes nothing: the premium kit is discounted too.
   -- ===========================================================================
   perform set_config('request.jwt.claims', '', true);
   insert into public.promotions (name, title, type, percent_off, applies_to, lifecycle, starts_at)
@@ -238,21 +240,21 @@ begin
          jsonb_build_array(jsonb_build_object('product_id', p_kit, 'quantity', 1),
                            jsonb_build_object('product_id', p_gel, 'quantity', 1),
                            jsonb_build_object('product_id', p_prem, 'quantity', 1)), fr, fr, r_std);
-  if o.discount_amount <> 12.90 or o.subtotal_amount <> 397 or o.total_amount <> 397 - 12.90 + 4.90 then
+  if o.discount_amount <> 37.80 or o.subtotal_amount <> 397 or o.total_amount <> 397 - 37.80 + 4.90 then
     raise exception 'FAIL P1: order %', row_to_json(o);
   end if;
   for it in select * from public.order_items where order_id = o.id loop
-    v_num := case when it.product_id = p_kit then 12.90 else 0 end;
+    v_num := case when it.product_id = p_kit then 12.90 when it.product_id = p_prem then 24.90 else 0 end;
     if it.discount_amount <> v_num
        or it.tax_amount <> public.vat_included(it.unit_price * it.quantity - it.discount_amount, it.tax_rate_bp) then
       raise exception 'FAIL P1: line %', row_to_json(it);
     end if;
   end loop;
   select * into d from public.order_discounts where order_id = o.id;
-  if d.promotion_id <> pr_kits or d.goods_amount <> 12.90 or d.label <> 'Kits -10 %' or d.user_id <> alice then
+  if d.promotion_id <> pr_kits or d.goods_amount <> 37.80 or d.label <> 'Kits -10 %' or d.user_id <> alice then
     raise exception 'FAIL P1: discount record %', row_to_json(d);
   end if;
-  passed := array_append(passed, 'P1 automatic -10 % on kits: on-sale kit excluded, per-line discount, VAT on discounted line, ledger row');
+  passed := array_append(passed, 'P1 automatic -10 % on kits: every kit discounted (no compare-at price), per-line discount, VAT on discounted line, ledger row');
 
   -- ===========================================================================
   -- P2 codes: best offer wins, case-insensitive, invalid codes rejected
@@ -500,16 +502,16 @@ begin
   if v_state is distinct from '42501' then raise exception 'FAIL P12: visitors read codes (%)', v_state; end if;
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.promotion_codes;
   if v_cnt <> 0 then raise exception 'FAIL P12: customers read codes'; end if;
   select count(*) into v_cnt from public.order_discounts;
   if v_cnt = 0 then raise exception 'FAIL P12: alice cannot read her discounts'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.order_discounts od join public.orders o3 on o3.id = od.order_id where o3.user_id = alice;
   if v_cnt <> 0 then raise exception 'FAIL P12: bob reads alice discounts'; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.promotion_codes;
   if v_cnt = 0 then raise exception 'FAIL P12: read-only staff cannot see codes'; end if;
   v_state := null;
@@ -518,7 +520,7 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL P12: viewer created a promotion (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   insert into public.promotions (name, title, type, percent_off) values ('m', 'm', 'percentage', 5);
   execute 'reset role';
   perform set_config('request.jwt.claims', '', true);

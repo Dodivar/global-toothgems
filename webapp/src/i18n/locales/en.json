@@ -531,6 +531,8 @@
       "suspendedBody": "This account is suspended or deactivated. Contact us to find out more.",
       "rateLimitedTitle": "Too many attempts",
       "rateLimitedBody": "Wait a few minutes before trying again.",
+      "captchaTitle": "The anti-bot check did not go through",
+      "captchaBody": "Reload the page and try again. If an ad blocker is on, allow challenges.cloudflare.com.",
       "unavailableTitle": "Sign-in is unavailable right now",
       "unavailableBody": "Something went wrong on our side. Try again in a moment."
     }
@@ -707,6 +709,8 @@
       "retry": "Try again",
       "rateLimitedTitle": "Too many attempts",
       "rateLimitedBody": "Wait a few minutes, then try again. Your details stay in this form.",
+      "captchaTitle": "The anti-bot check did not go through",
+      "captchaBody": "Reload the page and try again: everything you typed is kept. If an ad blocker is on, allow challenges.cloudflare.com.",
       "weakPasswordTitle": "Password refused",
       "weakPasswordBody": "This password does not meet our security rules. Go back to the first step to choose another one.",
       "emailSendTitle": "The confirmation email could not be sent",
@@ -907,7 +911,7 @@
     "diplomaDocAria": "Preview of the diploma awarded for “{{title}}”",
     "notFoundCta": "See all trainings",
     "createAccount": "Create an account",
-    "priceWas": "Usual price",
+    "priceWas": "Reference price (lowest in the 30 days before the reduction)",
     "priceNow": "Current price",
     "promoUntil": "Offer valid until {{date}}",
     "requirementsTitle": "Prerequisites",
@@ -985,6 +989,20 @@
     "navProfile": "Profile",
     "greeting": "Hi {{name}}",
     "memberSince": "Member since {{date}}",
+    "welcome": {
+      "eyebrow": "First steps",
+      "title": "Welcome! Where to start?",
+      "lead": "A few places worth a visit to get the most out of your account.",
+      "dismiss": "Hide the first steps",
+      "progress": "{{done}} of {{total}} done",
+      "done": "done",
+      "steps": {
+        "profile": { "title": "Complete my profile", "text": "Phone and delivery address, to order in two clicks." },
+        "shop": { "title": "Explore the shop", "text": "Add a favourite: we tell you when it goes on sale." },
+        "studio": { "title": "Try the 3D Studio", "text": "A free 48-hour trial to design your smile in 3D." },
+        "academy": { "title": "See the Academy", "text": "Professional training, with a certificate at the end." }
+      }
+    },
     "shell": {
       "openMenu": "Open the member space menu",
       "closeMenu": "Close the menu",
@@ -1483,7 +1501,8 @@
       "training": "Training",
       "analytics": "Analytics",
       "settings": "Settings",
-      "users": "Users"
+      "users": "Users",
+      "lounge": "Members’ lounges"
     },
     "role": {
       "owner": "Owner",
@@ -1614,7 +1633,6 @@
       "threshold": "Low-stock threshold",
       "created": "Created",
       "updated": "Updated",
-      "compareAt": "Compare-at price: {{price}}",
       "showImage": "Show image {{index}}"
     },
     "media": {
@@ -1674,10 +1692,6 @@
       "pricingBody": "Amounts in euro, tax included. A promotional price replaces the selling price while it is set.",
       "price": "Selling price",
       "priceHint": "What is actually charged, before any promotion.",
-      "compareAtPrice": "Compare-at price",
-      "compareAtPriceHint": "Optional. Must be higher than the selling price.",
-      "promoPrice": "Promotional price",
-      "promoPriceHint": "Optional. Must be lower than the selling price.",
       "mediaTitle": "Media",
       "mediaBody": "Three images at least for a complete record: the product alone, from the side, and worn.",
       "inventoryTitle": "Inventory and availability",
@@ -1740,8 +1754,6 @@
         "skuRequired": "The SKU is required.",
         "skuTaken": "This SKU is already used by another product.",
         "pricePositive": "The price must be greater than 0.",
-        "compareAtTooLow": "The compare-at price must be higher than the selling price.",
-        "promoTooHigh": "The promotional price must be lower than the selling price.",
         "stockInvalid": "The quantity must be a positive whole number.",
         "thresholdInvalid": "The threshold must be a positive whole number.",
         "skuFormat": "Capital letters, digits and hyphens only, 2 to 64 characters (e.g. GEM-STAR-001).",
@@ -1761,6 +1773,21 @@
         "optionsDuplicate": "Two options, or two values of one option, have the same name."
       },
       "promoInPromotions": "Promotional prices are managed in Promotions: the price here is the regular selling price.",
+      "reference": {
+        "title": "Struck-out price (Omnibus rule) — read only",
+        "intro": "No struck-out price is typed here. The shop shows a struck-out price only during an automatic promotion (a percentage on chosen products, with no condition), when the reduced price is strictly below the reference price: the lowest price charged in the 30 days before the reduction started (promotions included). The struck-out price is always that reference price.",
+        "priceNow": "Price shown now",
+        "reference": "Reference price",
+        "none": "No history yet",
+        "option": "Option",
+        "loading": "Reading the price history…",
+        "error": "The price history could not be read. Try again later.",
+        "reduced": "Struck-out price shown: {{reference}} (−{{percent}}%), reduction started on {{date}}.",
+        "notLower": "No struck-out price: in the 30 days before the reduction started ({{date}}), the product already sold at {{reference}}, a price lower than or equal to the reduced price.",
+        "noHistory": "No struck-out price: no price is known before the reduction started ({{date}}). The product must have sold at another price before a reduction can be announced.",
+        "noReduction": "No struck-out price: no promotion lowers this price right now. A promotion started now would strike out {{reference}} (the lowest price of the last 30 days).",
+        "noReductionNoHistory": "No struck-out price: no promotion lowers this price, and the price history is still too short to announce a reduction."
+      },
       "databaseNotice": "Saved to the Supabase database: an active product appears in the shop. Images upload as soon as they are added.",
       "optionsTitle": "Packs and stone sizes",
       "optionsBody": "Sell this gem in packs of any number of stones and in one or more sizes: in SS for a round stone, in millimetres for any other cut. Each pack × size is an option with its own price and stock, and the 3D Studio draws the stone at the chosen size.",
@@ -2075,36 +2102,26 @@
         "hex": "Pick a valid shade (#rrggbb)."
       }
     },
-    "login": {
-      "scriptAccent": "Backstage",
-      "brandTitle": "The Global Toothgems management workspace",
-      "brandBody": "Catalogue, stock and publishing in one place. Team only: everything done here changes what customers see.",
-      "brandFooter": "Restricted and logged access",
-      "areaBadge": "Private area",
-      "title": "Administration",
-      "body": "Sign in with your administrator account to manage the catalogue.",
-      "email": "Email address",
-      "password": "Password",
-      "showPassword": "Show password",
-      "hidePassword": "Hide password",
-      "remember": "Keep me signed in",
-      "forgot": "Forgot password?",
-      "submit": "Sign in",
-      "security": "This area is restricted to administrators. Sign-in attempts and catalogue changes will be logged.",
-      "successMessage": "Signed in, opening the workspace…",
+    "secondFactor": {
+      "loading": "Preparing the verification…",
+      "enrolTitle": "Turn on two-factor authentication",
+      "enrolBody": "The back office asks for a code at every sign-in. Scan this QR code with an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), then type the 6-digit code it shows.",
+      "qrAlt": "QR code to scan with your authenticator app",
+      "manualKey": "Can’t scan it? Type this key in the app:",
+      "challengeTitle": "Two-step verification",
+      "challengeBody": "Type the 6-digit code shown by your authenticator app.",
+      "code": "Verification code",
+      "codeInvalid": "The code has 6 digits.",
+      "submit": "Verify",
+      "verified": "Code accepted, opening the back office…",
+      "unavailable": "The verification can’t start right now. Reload the page in a moment.",
+      "lostDevice": "Lost your phone or reinstalled the app? Ask the account owner to reset your two-factor authentication.",
+      "signOut": "Sign out",
       "errors": {
-        "emailRequired": "The email address is required.",
-        "emailInvalid": "This email address looks incomplete.",
-        "passwordRequired": "The password is required.",
-        "rejected": "Incorrect credentials. Check your email and password and try again.",
-        "notStaff": "This account has no access to the back office. Ask an administrator for access.",
-        "unavailable": "The sign-in service is not responding. Try again in a moment."
-      },
-      "forgotTitle": "Forgotten password",
-      "forgotBody": "Enter your email address and a reset link will be sent to it.",
-      "forgotSubmit": "Send the link",
-      "forgotSent": "If an administrator account exists for {{email}}, a reset link has just been sent to it.",
-      "forgotFailed": "We couldn’t send the link. Check the address and try again in a moment."
+        "wrongCode": "Wrong or expired code. Type the code shown now.",
+        "tooMany": "Too many attempts. Wait a few minutes before trying again.",
+        "unavailable": "The verification service is not answering. Try again in a moment."
+      }
     },
     "orders": {
       "title": "Orders",
@@ -2975,7 +2992,8 @@
         "manageCustomers": "Manage customers",
         "managePromotions": "Manage promotions",
         "moderateReviews": "Moderate reviews",
-        "manageContent": "Manage content"
+        "manageContent": "Manage content",
+        "moderateCommunity": "Moderate the members’ lounges"
       },
       "allowed": "Allowed",
       "notAllowed": "Not allowed",
@@ -3363,7 +3381,7 @@
       },
       "studioRevenue": {
         "title": "3D Studio: money received",
-        "description": "Subscription payments in the period: what is settled, what may still be partly refunded during the 14-day withdrawal period, and what was refunded.",
+        "description": "Collected and invoiced by the website publisher (the Studio’s seller, FS- invoices), not by the shop. Subscription payments in the period: what is settled, what may still be partly refunded during the 14-day withdrawal period, and what was refunded.",
         "received": "Received",
         "settled": "Settled",
         "settledHint": "Renewals, first payments past 14 days, and the share kept for the days used when a member withdrew.",
@@ -4627,6 +4645,7 @@
       "legalNotice": "Legal notice",
       "terms": "Terms of sale",
       "termsOfUse": "Terms of use",
+      "studioTerms": "3D Studio subscription terms",
       "privacy": "Privacy policy",
       "cookies": "Cookie policy"
     },
@@ -4644,13 +4663,14 @@
         "legalNotice": "Publisher, host and intellectual property.",
         "terms": "The rules that govern your purchases.",
         "termsOfUse": "The rules for using the site and your account.",
+        "studioTerms": "The rules of the 3D Studio subscription.",
         "privacy": "Your data, how it is used and your rights.",
         "cookies": "Cookies and how to manage your choices."
       }
     },
     "cookies": {
       "bannerTitle": "Your cookies, your choice",
-      "bannerBody": "Some cookies are essential for the site to work and cannot be switched off. Others are optional — remembering your preferences, measuring audience, personalising advertising — and are only used if you allow them. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
+      "bannerBody": "Some cookies are essential for the site to work (sign-in, cart, payment) and cannot be switched off. Only with your agreement, we measure the site’s audience with PostHog, hosted in the European Union, to improve it. No advertising cookies. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
       "policyLink": "Read our cookie policy",
       "rejectNonEssential": "Reject non-essential",
       "acceptAll": "Accept all",
@@ -4658,28 +4678,21 @@
       "customize": "Customize",
       "save": "Save my choices",
       "settingsTitle": "Cookie settings",
-      "settingsBody": "Choose which optional cookies you accept. They stay off until you switch them on.",
-      "settingsFoot": "You can change these choices at any time.",
+      "settingsBody": "Choose whether you accept audience measurement. It stays off until you switch it on. We use no advertising or social-network cookies.",
+      "settingsFoot": "Your choice is kept for 6 months; you can change it at any time.",
       "settingsLink": "Cookie settings",
       "alwaysActive": "Always active",
       "providers": "Services concerned:",
-      "providersPlaceholder": "List of services per the implementation",
       "category": {
         "essential": {
           "title": "Essential",
-          "body": "Needed for the site to work: cart, sign-in, security, remembering this choice."
-        },
-        "preferences": {
-          "title": "Preferences",
-          "body": "Remember your choices, such as display language."
+          "body": "Needed for the site to work: sign-in, cart, secure payment, chosen language, remembering this choice.",
+          "providers": "Global Toothgems, Supabase (sign-in), Stripe (payment)"
         },
         "analytics": {
           "title": "Analytics",
-          "body": "Help us understand how the site is used so we can improve it."
-        },
-        "marketing": {
-          "title": "Marketing",
-          "body": "Measure our campaigns and personalise advertising on other sites."
+          "body": "Help us understand how the site is used and fix its errors.",
+          "providers": "PostHog (servers in the European Union)"
         }
       },
       "currentTitle": "Your current choices",
@@ -4719,7 +4732,8 @@
         "technical": "Technical issue",
         "privacy": "Privacy request",
         "professional": "Professional inquiry",
-        "other": "Other"
+        "other": "Other",
+        "illegal_content": "Report unlawful content"
       },
       "fields": {
         "category": "What is it about?",
@@ -4788,7 +4802,8 @@
         "response": "Response time"
       },
       "quickTitle": "Quick answers",
-      "trackOrder": "Track an order"
+      "trackOrder": "Track an order",
+      "illegalContentHint": "Tell us where the content is (page, lounge, date and author of the message), why you think it is unlawful and, if possible, the law concerned. Your name and e-mail let us tell you what we decided. An abusive report may be penalised."
     },
     "about": {
       "eyebrow": "Company",
@@ -4999,6 +5014,7 @@
       "vatTitle": "VAT summary",
       "vatFranchise": "TVA non applicable, art. 293 B du CGI (VAT not applicable, article 293 B of the French General Tax Code).",
       "paid": "Invoice paid on {{date}}: payment in full when ordering, no discount for early payment.",
+      "studioSoldBy": "{{brand}} 3D Studio subscription, sold and invoiced by {{seller}}.",
       "giftCardNote": "Gift cards: multi-purpose vouchers, outside the scope of VAT when bought; VAT is due when they are used.",
       "latePayment": "Business customers: late payment incurs interest at three times the French legal rate and a fixed €40 recovery fee (French Commercial Code, art. L441-10).",
       "fileName": "invoice",
@@ -5024,6 +5040,21 @@
       "fileName": "credit-note",
       "studioWithdrawal": "Withdrawal — unused share of the 3D Studio subscription, {{plan}} plan",
       "studioUsedDays": "{{used}} of {{total}} days used"
+    },
+    "terms": {
+      "title": "Terms of sale",
+      "fileName": "terms-of-sale",
+      "version": "Version of",
+      "appliesTo": "Applies to",
+      "toSupply": "to be supplied",
+      "intro": "The version of the terms of sale in force on the date of your order, given with its confirmation so that you can keep and reproduce it.",
+      "fieldColumn": "Item",
+      "valueColumn": "Details"
+    },
+    "studioTerms": {
+      "title": "3D Studio subscription terms",
+      "fileName": "3d-studio-subscription-terms",
+      "intro": "The version of the 3D Studio subscription terms in force on the date of your subscription, given with its confirmation so that you can keep and reproduce it."
     }
   },
   "newsletter": {
@@ -5050,6 +5081,146 @@
       "retry": "Try again",
       "shop": "Visit the shop",
       "home": "Back to the home page"
+    }
+  },
+  "withdrawal": {
+    "title": "Right of withdrawal",
+    "cta": "Withdraw from the contract here",
+    "openUntil": "You can withdraw from this order until {{date}} inclusive, without giving any reason.",
+    "openNotStarted": "You can withdraw right now: the 14-day period only starts when you receive your last parcel.",
+    "declaredOn": "Declared on {{date}}",
+    "nextStep": "Send the items back within 14 days: how to do it is in the acknowledgement e-mail.",
+    "loadError": "The right of withdrawal of this order could not be loaded. Reload the page or contact us.",
+    "closed": {
+      "not_paid": "This order is not paid: there is nothing to withdraw from.",
+      "professional": "This order was placed by a business: the right of withdrawal does not apply. Contact us about any return.",
+      "deadline_passed": "The 14-day withdrawal period is over for this order. For a faulty product, the legal guarantees still apply: contact us.",
+      "nothing_left": "There is no item left to withdraw from in this order."
+    },
+    "excluded": {
+      "course": "course: its own rules (see the terms of sale)",
+      "gift_card": "gift card: not concerned",
+      "digital": "digital content: not concerned",
+      "taken": "already returned or refunded"
+    },
+    "form": {
+      "itemsLegend": "Items you withdraw from",
+      "quantity": "Quantity",
+      "keep": "I keep it",
+      "ofTotal": "{{count}} of {{total}}",
+      "sealQuestion": "This item is sealed for hygiene reasons. Is its sealed packaging:",
+      "sealIntact": "Intact, never opened",
+      "sealOpened": "Opened",
+      "sealOpenedHelp": "A product for the mouth whose sealed packaging was opened after delivery can no longer be withdrawn from (article L221-28 of the French Consumer Code). Keep it, or choose “I keep it”.",
+      "name": "Your full name",
+      "consumer": "I placed this order as a consumer",
+      "consumerHelp": "The right of withdrawal covers purchases made for personal use, not for a business.",
+      "continue": "Continue",
+      "cancel": "Cancel"
+    },
+    "problem": {
+      "name": "Enter your name.",
+      "nothing_selected": "Choose at least one item.",
+      "seal_answer_required": "Tell us whether the sealed packaging of each product for the mouth is intact.",
+      "unsealed_hygiene": "An unsealed product for the mouth cannot be withdrawn from: remove it from your declaration.",
+      "quantity": "The quantity chosen is more than can still be withdrawn.",
+      "consumer": "Confirm that you bought as a consumer."
+    },
+    "confirm": {
+      "title": "Check your withdrawal declaration",
+      "order": "Order",
+      "items": "Items",
+      "notice": "By confirming, you withdraw from the contract for these items. You immediately receive an acknowledgement by e-mail, with the date and time of your declaration and how to return the items.",
+      "action": "Confirm withdrawal",
+      "edit": "Edit"
+    },
+    "done": {
+      "title": "Your withdrawal is recorded",
+      "body": "Declared on {{date}} (Paris time). The acknowledgement has just been e-mailed: it explains how to send the items back within 14 days."
+    },
+    "status": {
+      "declared": "Withdrawal declared",
+      "return_received": "Return received",
+      "refunded": "Refunded",
+      "refused": "Refused",
+      "refundPending": "Refund under way"
+    },
+    "refusal": {
+      "deadline_passed": "14-day period exceeded",
+      "unsealed_hygiene": "Unsealed product for the mouth",
+      "professional_buyer": "Purchase made as a business",
+      "goods_not_returned": "Items not sent back",
+      "goods_damaged": "Items diminished in value by excessive handling",
+      "other": "Other reason"
+    },
+    "error": {
+      "not_paid": "This order is not paid.",
+      "professional": "The right of withdrawal does not apply to business purchases.",
+      "professional_buyer": "The right of withdrawal does not apply to business purchases.",
+      "deadline_passed": "The withdrawal period is over.",
+      "excluded_line": "One of the items is not covered by the right of withdrawal.",
+      "unsealed_hygiene": "An unsealed product for the mouth cannot be withdrawn from.",
+      "quantity": "These items were already declared or refunded. Reload the page.",
+      "seal_answer_required": "Tell us whether the sealed packaging is intact.",
+      "not_allowed": "This order cannot be reached with this account or link.",
+      "link_invalid": "This link is no longer valid: ask for a new one.",
+      "sign_in_required": "Sign in again, then try again.",
+      "session_expired": "Your session expired: sign in again, then try again.",
+      "invalid_request": "Check the details you entered.",
+      "rate_limited": "Too many requests from this connection. Try again in an hour.",
+      "captcha_required": "The anti-robot check did not complete. Try again.",
+      "captcha_failed": "The anti-robot check failed. Turn off any blocker, then try again.",
+      "unavailable": "The service is temporarily unavailable. Try again or contact us: your right is preserved if you write to us before the period ends."
+    },
+    "guest": {
+      "eyebrow": "Returns",
+      "title": "Withdraw from an order",
+      "intro": "Ordered without an account? Enter your order number and the e-mail address you used: we send you a personal link to declare your withdrawal online.",
+      "formTitle": "Get my withdrawal link",
+      "orderNumber": "Order number",
+      "email": "Order e-mail address",
+      "send": "Get the link",
+      "missing": "Enter the order number and the e-mail address.",
+      "privacy": "The link is sent to the order's address and stays valid for 48 hours. For your security, we do not confirm here whether an order exists.",
+      "sentTitle": "Check your inbox",
+      "sentBody": "If an order matches these details, a link valid for 48 hours has just been sent to its e-mail address. Remember to check your spam folder.",
+      "loading": "Loading your order…",
+      "linkInvalid": "This link is no longer valid (it expires after 48 hours). Ask for a new one.",
+      "askAgain": "Ask for a new link",
+      "member": "Have an account?",
+      "memberLink": "The withdrawal function is on your order's page."
+    },
+    "admin": {
+      "title": "Withdrawals",
+      "empty": "No withdrawal declared for this order.",
+      "via": {
+        "account": "from the account",
+        "email_link": "through an e-mailed link (no account)"
+      },
+      "deadline": "Period judged: until {{date}}",
+      "noDeadline": "Period not started at declaration (parcel not delivered)",
+      "suggested": "Suggested refund: {{amount}} (items{{shipping}})",
+      "suggestedShipping": " + delivery",
+      "returnReceived": "Return received",
+      "refund": "Refund",
+      "refuse": "Refuse",
+      "refundTitle": "Refund the withdrawal",
+      "refundAmount": "Amount refunded",
+      "refundHelp": "The declaration's items are refunded to the card (Stripe); Stripe confirms the refund. For an express delivery, only refund the cheapest standard rate.",
+      "restock": "Put the items back in stock",
+      "refundSubmit": "Send the refund",
+      "refuseTitle": "Refuse the withdrawal",
+      "refuseReason": "Reason",
+      "refuseNote": "Message to the customer (shown on their order)",
+      "refuseSubmit": "Refuse",
+      "cancel": "Cancel",
+      "sealIntact": "seal declared intact",
+      "errors": {
+        "forbidden": "Only people who manage orders can do this.",
+        "settled": "This withdrawal was already handled or a refund is under way.",
+        "invalid": "Check the reason and the message.",
+        "unavailable": "Not possible right now."
+      }
     }
   }
 }

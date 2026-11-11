@@ -25,12 +25,12 @@ export const RETURNS: LegalDocument = {
   lead: [
     {
       kind: "steps",
-      label: l("Retourner un article en cinq étapes", "Returning an item in five steps"),
+      label: l("Se rétracter d’un achat en cinq étapes", "Withdrawing from a purchase in five steps"),
       items: [
-        { icon: "mail", title: l("Contactez-nous", "Contact us"), text: l("Via le <<formulaire|/contact?sujet=returns>>, catégorie « Retour ».", "Through the <<form|/contact?sujet=returns>>, “Return” category.") },
-        { icon: "clipboard", title: l("Instructions de retour", "Return instructions"), text: l("Nous vous envoyons l’adresse et la marche à suivre.", "We send you the address and what to do.") },
-        { icon: "package", title: l("Envoyez le produit", "Send the product"), text: l("Bien emballé, avec votre n° de commande.", "Well packed, with your order number.") },
-        { icon: "search", title: l("Vérification", "Inspection"), text: l("Nous contrôlons l’état du produit, si nécessaire.", "We check the product’s condition, where applicable.") },
+        { icon: "mail", title: l("Déclarez-le en ligne", "Declare it online"), text: l("« Se rétracter du contrat ici » sur la page de votre commande, ou <<sans compte|/retours-remboursements/retractation>>.", "“Withdraw from the contract here” on your order’s page, or <<without an account|/retours-remboursements/retractation>>.") },
+        { icon: "clipboard", title: l("Accusé de réception", "Acknowledgement"), text: l("Reçu aussitôt par e-mail, avec l’adresse et la marche à suivre.", "Received at once by e-mail, with the address and what to do.") },
+        { icon: "package", title: l("Envoyez le produit", "Send the product"), text: l("Sous 14 jours, bien emballé, avec votre n° de commande.", "Within 14 days, well packed, with your order number.") },
+        { icon: "search", title: l("Vérification", "Inspection"), text: l("Nous contrôlons l’état du produit à réception.", "We check the product’s condition on receipt.") },
         { icon: "wallet", title: l("Remboursement", "Refund processed"), text: l("Sur votre moyen de paiement d’origine.", "To your original payment method.") },
       ],
     },
@@ -113,9 +113,18 @@ export const RETURNS: LegalDocument = {
         {
           kind: "callout",
           tone: "instruction",
+          title: l("Se rétracter en ligne", "Withdrawing online"),
           text: l(
-            "Écrivez-nous via le <<formulaire de contact|/contact?sujet=returns>> (catégorie « Retour / remboursement ») avant d’envoyer quoi que ce soit. Indiquez :",
-            "Write to us through the <<contact form|/contact?sujet=returns>> (“Return / refund” category) before sending anything. Include:",
+            "Pendant tout le délai de rétractation, vous pouvez vous rétracter en ligne, gratuitement et sans justification. Avec un compte : ouvrez la commande dans <<Mes commandes|/compte/commandes>> et choisissez « Se rétracter du contrat ici ». Sans compte : indiquez votre numéro de commande et son adresse e-mail sur la page <<Se rétracter d’une commande|/retours-remboursements/retractation>> ; nous envoyons à l’adresse de la commande un lien valable 48 heures. Vous choisissez les articles et les quantités, indiquez votre nom, puis confirmez par « Confirmer la rétractation ». Un accusé de réception reprenant votre déclaration, sa date et son heure vous est envoyé aussitôt par e-mail. Vous pouvez aussi nous adresser le formulaire de rétractation des CGV ou toute autre déclaration dénuée d’ambiguïté.",
+            "Throughout the withdrawal period, you can withdraw online, free of charge and without giving a reason. With an account: open the order in <<My orders|/compte/commandes>> and choose “Withdraw from the contract here”. Without an account: enter your order number and its e-mail address on the <<Withdraw from an order|/retours-remboursements/retractation>> page; we send a link valid 48 hours to the order’s address. You choose the items and quantities, give your name, then confirm with “Confirm withdrawal”. An acknowledgement repeating your declaration, its date and time is e-mailed to you at once. You can also send us the withdrawal form of the terms of sale or any other unequivocal statement.",
+          ),
+        },
+        {
+          kind: "callout",
+          tone: "instruction",
+          text: l(
+            "Pour un produit défectueux, endommagé ou erroné, écrivez-nous via le <<formulaire de contact|/contact?sujet=returns>> (catégorie « Retour / remboursement ») avant d’envoyer quoi que ce soit. Indiquez :",
+            "For a defective, damaged or wrong product, write to us through the <<contact form|/contact?sujet=returns>> (“Return / refund” category) before sending anything. Include:",
           ),
           items: [
             l("votre numéro de commande ;", "your order number;"),
@@ -140,8 +149,8 @@ export const RETURNS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "N’envoyez pas de colis sans avoir reçu nos instructions : un retour non annoncé peut retarder son traitement.",
-            "Please do not send a parcel before receiving our instructions: an unannounced return may delay processing.",
+            "N’envoyez pas de colis sans avoir déclaré votre rétractation ou reçu nos instructions : un retour non annoncé peut retarder son traitement. L’accusé de réception de votre rétractation indique l’adresse et la date limite de renvoi.",
+            "Please do not send a parcel before declaring your withdrawal or receiving our instructions: an unannounced return may delay processing. The acknowledgement of your withdrawal gives the address and the date to send the goods back by.",
           ),
         },
       ],

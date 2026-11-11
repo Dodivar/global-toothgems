@@ -32,7 +32,7 @@ Other facts that shape the plan:
 - **Studio 3D (three.js, three-mesh-bvh):** the editor and the share viewer are lazy chunks (`React.lazy`) loading `src/assets/studio3d/dentition.glb`. WebGL only exists in the browser: these routes stay client-only (`dynamic(..., { ssr: false })` or a client component that mounts the engine in an effect) even after phase 4.
 - **Supabase Auth (before phase 2):** `src/lib/supabase/client.ts` created one browser client with `persistSession`, `autoRefreshToken` and `detectSessionInUrl: true` — the session lives in `localStorage` and e-mail links use the implicit flow (tokens in the URL fragment, read by `authLinkErrorFromUrl` and the confirmation/reset pages). A server never sees a fragment nor `localStorage`: phase 2 moves the session to cookies (`@supabase/ssr`) and e-mail links to the PKCE flow (`?code=` exchanged by a route handler), which changes the redirect URLs configured in Supabase Auth.
 - **Redirect URLs are built from `window.location.origin`** (`authRedirect.ts`, `passwordRecovery.ts`, `accountCredentials.ts`, `studioWorkspace/share.ts`): local development must keep port 5173 or the Supabase allow-list must change.
-- **Route guards are client components:** `RequireAccount` (→ `/connexion`), `RequireAdmin` (→ `/admin/connexion`), `RequireStudioAccess` (lets everyone in during the preview).
+- **Route guards are client components:** `RequireAccount` (→ `/connexion`), `RequireAdmin` (→ the 404 for non-staff, the second-factor screen for staff at aal1, since 2026-11-11), `RequireStudioAccess` (lets everyone in during the preview).
 - **i18n:** react-i18next with `i18next-browser-languagedetector`, language cached in `localStorage` (`gt-lang`), French default; `DocumentLanguage` sets `<html lang>` after mount. The server cannot know the language today — this ties SSR to the locale URL decision.
 - **Vite-only code:** `import.meta.env.VITE_*` (Supabase client), `import.meta.glob` (`lib/images.ts`), `new URL(\`../assets/photos/${name}\`, import.meta.url)` (six `data/*.ts` fixtures), `?url` import of the `.glb`, image imports used as strings (20 files). All handled in phase 1 (see below).
 - **Bundle:** the Vite build ships a 3.2 MB (830 kB gzip) main chunk: every page is in it except the Studio editor/share chunks. Code-splitting per route is a phase 3–4 benefit, not a phase 1 goal.
@@ -159,7 +159,7 @@ Decided by the user (2026-09-30): one catch-all segment per zone mounting a Reac
 | public | public pages (`/fr/…`, `/en/…`), sign-in, registration, recovery, e-mail landings, `/erreur`, `/maintenance`, legacy aliases, 404 | `app/[[...slug]]` (+ product segments) | none | server + hydration for public pages, browser only for the rest |
 | account | `/compte`, `/compte/*` (member space, community) | `app/compte/[[...slug]]` | session (layout + page) | browser only |
 | learn | `/academy/lecon`, `/academy/mes-formations/*` | `app/academy/(learner)/lecon`, `…/mes-formations/[...slug]` | session (layout + page) | browser only |
-| admin | `/admin/connexion` (open), `/admin`, `/admin/*` | `app/admin/connexion`, `app/admin/(staff)/[[...slug]]` | session (layout + page), not the staff role | browser only |
+| admin | `/admin`, `/admin/*` (no sign-in page since 2026-11-11) | `app/admin/(staff)/…`, `app/admin/[...rest]` | active staff (proxy + layout + page answer 404 otherwise) | browser only |
 | studio | `/studio-3d/atelier/*`, `/studio-3d/partage/*` | `app/studio-3d/atelier/[[...slug]]`, `app/studio-3d/partage/[[...slug]]` | none (open during the preview) | browser only (three.js still a lazy chunk inside the zone) |
 
 How it works:
@@ -196,7 +196,7 @@ How it works:
 - **Kept on purpose**: `ScrollToTop` (above), `DocumentLanguage` (above), screens' own `useDocumentTitle`. Removed: `DocumentTitle` (the metadata of each segment titles the tab on every navigation), `ZoneExit`/`ZoneArrival`, `localizedHistory`, `AppRoot`, `ClientApp`/`ServerApp`, the zone apps, `appZones.ts`, `productSlugRegistry.ts`, `isKnownPath` (unknown addresses are 404 because no segment exists), `react-router-dom`. `vite` stays: it is Vitest's peer dependency (`^6.4.0 || ^7.0.0 || ^8.0.0`, checked in `node_modules/vitest/package.json`).
 - **404 "back" action**: React Router numbered its history entries; `NotFound` now offers "back" when another page of the site was shown in this tab, or the page was opened from the site (`history.ts`).
 - **Redirects**: `/connexion-b` is moved by the proxy (308, `legacyAddress`). The Studio's former English aliases `/studio-3d/editor/*` and `/studio-3d/share(/<token>)` were moved (308) during the phase, then dropped on the user's decision (2026-10-01: the project is in development, no old link to keep): they answer 404.
-- **Back office refused to non-staff on the server** (decided by the user, 2026-10-01): the proxy reads the signed-in account's own profile (RLS, `src/lib/staffProfile.ts`, the rule `adminAuth.tsx` also uses) and sends an account that is not an active staff member to `/admin/connexion?suite=…` (307), as `RequireAdmin` does in the browser; the back office's layout and pages check again (`app/_zones/guard.ts`; their redirect reaches the browser within the streamed page). A profile that cannot be read counts as not staff. Navigation only: RLS remains the authority. Tested in `auth-server.spec.ts` (a member refused, a staff member let in, against a staff account added to the fake Supabase).
+- **Back office refused to non-staff on the server** (decided by the user, 2026-10-01): the proxy reads the signed-in account's own profile (RLS, `src/lib/staffProfile.ts`, the rule `adminAuth.tsx` also uses) and sends an account that is not an active staff member to `/admin/connexion?suite=…` (307), as `RequireAdmin` does in the browser; the back office's layout and pages check again (`app/_zones/guard.ts`; their redirect reaches the browser within the streamed page). A profile that cannot be read counts as not staff. Navigation only: RLS remains the authority. Tested in `auth-server.spec.ts` (a member refused, a staff member let in, against a staff account added to the fake Supabase). **Since 2026-11-11** (owner's decision): no redirect and no back-office sign-in page any more; the proxy rewrites every `/admin` request from a visitor who is not active staff, signed in or not, to an address no route matches, so the response is the site's 404 (`app/not-found.tsx`) with a 404 status (the pages' own `notFound()`, kept as a second line in `guardAddress()`, comes after the stream started and answers 200); Next.js keeps an `x-middleware-rewrite` header on it. Staff sign in on `/connexion`.
 
 Bundle sizes (production build in mock mode, JavaScript downloaded by Chromium after `networkidle` + 1.5 s, gzip via zlib; same throwaway script before and after):
 
@@ -303,7 +303,7 @@ Legend (phase 1 done: every route below was served by the catch-all shell; phase
 
 | Route | Access | P1 | Smoke | Native | SSR | Target |
 | --- | --- | --- | --- | --- | --- | --- |
-| `/admin/connexion` | open | ✅ | ✅ | ✅ `app/admin/connexion` | — | done (5): one segment per screen |
+| ~~`/admin/connexion`~~ (removed 2026-11-11: 404) | open | ✅ | ✅ | ✅ `app/admin/connexion` | — | done (5): one segment per screen |
 | `/admin` | staff | ✅ | ✅ (client and proxy redirects) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
 | `/admin/commandes`, `/admin/commandes/:reference` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
 | `/admin/clients`, `/admin/clients/:id` | staff | ✅ | ✅ list only (`zones.spec.ts`) | ✅ `app/admin/(staff)/…` | — | done (5): one segment per screen |
@@ -363,7 +363,7 @@ Legend (phase 1 done: every route below was served by the catch-all shell; phase
 | Where sign-in, registration, recovery, `/erreur`, `/maintenance` live | phase 4 | **decided** (2026-09-30): public zone; Studio aliases stay browser redirects |
 | Phase 5 shape (order, navigation helper, providers, history state, commits) | phase 5 | **decided** (2026-09-30): zone by zone; navigation module with React Router's API over next/link + next/navigation; providers in the root layout; history state handed over in sessionStorage (option A); `/erreur` kept beside `error.tsx` |
 | Studio aliases (`/studio-3d/editor/*`, `/studio-3d/share/*`) | phase 5 | **decided** (2026-10-01): dropped, they answer 404 (the project is in development, no old link to keep) |
-| Refusing a signed-in non-staff visitor on the server for `/admin` | if wanted | **decided** (2026-10-01) and built: proxy (307 to `/admin/connexion?suite=…`) + layout + page; RLS remains the authority |
+| Refusing a signed-in non-staff visitor on the server for `/admin` | if wanted | **decided** (2026-10-01) and built: proxy + layout + page (307 to `/admin/connexion` until 2026-11-11, the site's 404 since); RLS remains the authority |
 
 ## Log
 

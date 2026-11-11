@@ -1,6 +1,6 @@
 import { test as base, expect, type Page } from "@playwright/test";
 import { installReactCommitCounter, waitForReactSettled } from "../e2e/support/react-settled";
-import { liveEnv, testPassword } from "./env";
+import { liveEnv, staffTotpSecret, testPassword, totpCode } from "./env";
 
 /**
  * Same discipline as the smoke tests' fixture (e2e/fixtures.ts): console
@@ -67,7 +67,7 @@ export async function dismissCookieBanner(page: Page) {
   if (await refuse.isVisible()) await refuse.click();
 }
 
-/** Signs in through the real form of `/connexion` (or `/admin/connexion`). */
+/** Signs in through the real form of `/connexion` (staff included: the back office has no sign-in page). */
 export async function signIn(page: Page, email: string, path = "/connexion", password = testPassword()) {
   await page.goto(path);
   await page.waitForLoadState("networkidle");
@@ -79,4 +79,18 @@ export async function signIn(page: Page, email: string, path = "/connexion", pas
   await form.getByLabel(/e-mail/i).fill(email);
   await form.getByLabel(/^mot de passe/i).fill(password);
   await submit.click();
+}
+
+/**
+ * Opens the back office as staff: signs in on `/connexion`, opens `path`,
+ * then passes the second-factor screen with the account's current code.
+ */
+export async function signInStaff(page: Page, email: string, path = "/admin") {
+  await signIn(page, email);
+  await expect(page).not.toHaveURL((url) => url.pathname === "/connexion");
+  await page.goto(path);
+  await page.getByRole("heading", { level: 1, name: "Vérification en deux étapes" }).waitFor();
+  await page.getByLabel("Code de vérification").fill(totpCode(staffTotpSecret()));
+  await page.getByRole("button", { name: "Vérifier" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Vérification en deux étapes" })).toHaveCount(0, { timeout: 30_000 });
 }

@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -46,6 +47,42 @@ export async function signedInClient(email: string, password: string): Promise<S
   const client = createClient(env.url, env.publishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw new Error(`Cannot sign in as ${email}: ${error.message}`);
+  return client;
+}
+
+/**
+ * The current 6-digit code of a TOTP secret (RFC 6238: SHA-1, 30 s steps),
+ * as an authenticator app would show it. The staff account's secret is
+ * enrolled by the global setup (`E2E_STAFF_TOTP_SECRET`).
+ */
+export function totpCode(secret: string, now = Date.now()): string {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const char of secret.replace(/=+$/, "").toUpperCase()) bits += alphabet.indexOf(char).toString(2).padStart(5, "0");
+  const key = Buffer.from(Array.from({ length: Math.floor(bits.length / 8) }, (_, i) => parseInt(bits.slice(i * 8, i * 8 + 8), 2)));
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(now / 30_000)));
+  const hash = createHmac("sha1", key).update(counter).digest();
+  const offset = hash[hash.length - 1] & 0xf;
+  return String((hash.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).padStart(6, "0");
+}
+
+export function staffTotpSecret(): string {
+  return required("E2E_STAFF_TOTP_SECRET");
+}
+
+/**
+ * The staff account signed in AND past its second factor (aal2): the
+ * database refuses every staff right to a password-only session
+ * (migration `staff_mfa_required`).
+ */
+export async function staffClient(email: string, password: string): Promise<SupabaseClient> {
+  const client = await signedInClient(email, password);
+  const { data, error } = await client.auth.mfa.listFactors();
+  const factor = data?.totp.find((f) => f.status === "verified");
+  if (error || !factor) throw new Error(`${email} has no verified second factor: run the global setup.`);
+  const verified = await client.auth.mfa.challengeAndVerify({ factorId: factor.id, code: totpCode(staffTotpSecret()) });
+  if (verified.error) throw new Error(`Second factor refused for ${email}: ${verified.error.message}`);
   return client;
 }
 

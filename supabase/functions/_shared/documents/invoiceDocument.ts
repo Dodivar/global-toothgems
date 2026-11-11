@@ -34,6 +34,14 @@ function sellerName(seller: InvoiceSeller): string {
   return seller.tradingName || seller.legalName || seller.storeName || "Global Toothgems";
 }
 
+/** "3D Studio subscription Global Toothgems, sold by DoDigital — <legal name>". */
+export function studioSoldBy(seller: InvoiceSeller, t: Translate): string {
+  const trading = seller.tradingName.trim();
+  const legal = seller.legalName.trim();
+  const who = [trading, legal === trading ? "" : legal].filter(Boolean).join(" — ");
+  return t("documents.invoice.studioSoldBy", { brand: seller.storeName.trim() || "Global Toothgems", seller: who || "—" });
+}
+
 function buyerParty(invoice: OrderInvoice, t: Translate, fmt: InvoiceFormat): DocumentParty {
   const a = invoice.buyer.address;
   return {
@@ -158,6 +166,11 @@ export function invoiceDocument(invoice: OrderInvoice, t: Translate, fmt: Invoic
     },
   ];
   if (franchise) blocks[0] = franchiseTable(invoice, t, money, fmt);
+  // A 3D Studio document is issued by the website publisher under the site's brand (decision 135):
+  // it says so above the lines, so the customer recognises both.
+  if (invoice.seller.studioSeller) {
+    blocks.unshift({ kind: "paragraph", tone: "muted", text: studioSoldBy(invoice.seller, t) });
+  }
 
   const totals: DocumentTotalRow[] = franchise
     ? [{ label: t(`${scope}.total`), value: money(invoice.totalIncl), emphasis: "strong" }]

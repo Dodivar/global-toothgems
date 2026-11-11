@@ -110,6 +110,10 @@
       "description": "Published on the legal notice. The store name is the one customers see."
     },
     "currency": "Store currency: {{currency}}. Every price, shipping rate and order is in this currency.",
+    "publisherVatFranchise": {
+      "label": "Publisher's VAT franchise (3D Studio)",
+      "description": "The VAT regime of the 3D Studio subscriptions, sold by the publisher. On: their invoices carry the mention “TVA non applicable, art. 293 B du CGI” and the Studio's prices are net. Turn it off the day the publisher becomes liable for VAT."
+    },
     "vatFranchise": {
       "label": "VAT franchise (micro-enterprise)",
       "description": "No VAT is charged: prices are net and invoices carry the mention “TVA non applicable, art. 293 B du CGI”. Turn it off the day the business becomes liable for VAT; the rates of the VAT tab will then apply to new orders."
@@ -129,7 +133,7 @@
       "host": "Hosting provider",
       "hostHint": "The company hosting the website. If several providers host the application and its data, name the main one here.",
       "publisher": "Website publisher",
-      "publisherHint": "The business that owns and publishes the website, if it is not the seller above. Empty: the legal notice shows it as to be supplied."
+      "publisherHint": "The business that owns and publishes the website, if it is not the seller above. It also sells the 3D Studio: its subscriptions are collected and invoiced in its name (FS- invoices, AS- credit notes). Empty: the legal notice shows it as to be supplied."
     },
     "public": {
       "title": "Contact page",
@@ -170,7 +174,8 @@
       "publisherRegistrationNumber": "Publisher's registration number",
       "publisherAddress": "Publisher's address",
       "publisherEmail": "Publisher's email",
-      "publisherPhone": "Publisher's phone"
+      "publisherPhone": "Publisher's phone",
+      "publisherVatNumber": "Publisher's VAT number"
     },
     "hints": {
       "storeName": "The website's name, as customers know it.",

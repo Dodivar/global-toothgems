@@ -294,13 +294,13 @@ export function PopoverItem({
       aria-current={current ? "true" : undefined}
       onClick={onSelect}
       className={clsx(
-        "flex w-full items-center gap-2.5 rounded-[var(--radius-sm)] px-2.5 py-2 text-left text-[length:var(--text-body-sm)] text-[var(--text-body)] transition-colors",
+        "flex w-full min-w-0 items-center gap-2.5 rounded-[var(--radius-sm)] px-2.5 py-2 text-left text-[length:var(--text-body-sm)] text-[var(--text-body)] transition-colors",
         "hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)] focus-visible:bg-[var(--gt-ink-100)] focus-visible:outline-none",
         current && "font-semibold text-[var(--text-primary)]",
       )}
     >
       {Icon && <Icon size={15} strokeWidth={2} aria-hidden="true" className="flex-none" />}
-      <span className="min-w-0 flex-1 truncate">{children}</span>
+      <span className="min-w-0 flex-1 break-words">{children}</span>
       {trailing}
     </button>
   );

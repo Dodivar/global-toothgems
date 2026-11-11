@@ -1,7 +1,7 @@
 import { Clock3, Tag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { pick } from "../../data/types";
-import type { ProductOffer } from "../../lib/storefrontOffers";
+import { promotionBadgeShown, type ProductOffer } from "../../lib/storefrontOffers";
 import { OfferBadges, useOfferLabel } from "./OfferBadges";
 
 /**
@@ -12,10 +12,10 @@ import { OfferBadges, useOfferLabel } from "./OfferBadges";
 export function OfferNotice({ offer }: { offer: ProductOffer | null }) {
   const { t, i18n } = useTranslation();
   const label = useOfferLabel();
-  if (!offer) return null;
+  if (!offer || (!offer.campaign && !offer.promotion)) return null;
   const { campaign, promotion } = offer;
   const endsIn = promotion?.endsAt ? Math.ceil((Date.parse(promotion.endsAt) - Date.now()) / 86_400_000) : null;
-  const title = promotion ? pick(promotion.title, i18n.language) || label(promotion) : "";
+  const title = promotion ? pick(promotion.title, i18n.language) || (promotionBadgeShown(promotion) ? label(promotion) : "") : "";
   const description = promotion ? pick(promotion.description, i18n.language) : "";
   return (
     <div className="grid gap-2 rounded-[var(--radius-md)] border border-[var(--gt-fuchsia-300)] bg-[var(--gt-fuchsia-50)] p-3.5" data-testid="offer-notice">

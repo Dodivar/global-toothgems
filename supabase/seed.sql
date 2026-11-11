@@ -35,13 +35,13 @@ update public.categories set report_group = case slug
 insert into public.products
   (category_id, name, slug, short_description, description, sku, price, compare_at_price,
    status, is_featured, metadata)
-select c.id, v.name, v.slug, v.short_description, v.description, v.sku, v.price, v.compare_at_price,
+select c.id, v.name, v.slug, v.short_description, v.description, v.sku, v.price, v.compare_at_price::numeric,
        v.status, v.is_featured, v.metadata::jsonb
 from (values
   ('gems', 'Étoile Cristal', 'etoile-cristal',
    'Étoile cinq branches en cristal taillé, 2,2 mm.',
    'Étoile cinq branches en cristal taillé à dos plat, calibrée 2,2 mm pour les incisives latérales. Bords polis, livrée en capsule stérile à usage unique.',
-   'GEM-STAR-001', 32.00, 38.00, 'active', true,
+   'GEM-STAR-001', 32.00, null, 'active', true,
    '{"material": "Cristal taillé", "tags": ["best-seller", "étoile"]}'),
   ('gems', 'Charm Étoile Or 18k', 'charm-etoile-or-18k',
    'Charm étoile en or jaune 18 carats.',
@@ -61,7 +61,7 @@ from (values
   ('kits', 'Kit d’Application Premium', 'kit-application-premium',
    'Le kit complet pour une pose professionnelle.',
    'Mordançage, adhésif, composite fluide, applicateurs, écarteurs et une sélection de 20 cristaux : tout le nécessaire pour une pose professionnelle en cabine.',
-   'KIT-PRO-001', 249.00, 279.00, 'active', true,
+   'KIT-PRO-001', 249.00, null, 'active', true,
    '{"tags": ["pro", "kit"]}'),
   ('kits', 'Kit Découverte', 'kit-decouverte',
    'Un kit d’initiation pour débuter en formation.',

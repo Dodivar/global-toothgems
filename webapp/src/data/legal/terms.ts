@@ -1,6 +1,17 @@
 import { lp } from "./policies";
 import { LEGAL_PATHS } from "./routes";
-import { DRAFT_DATE, l, type LegalDocument } from "./types";
+import { l, type LegalDocument } from "./types";
+
+/**
+ * The version of these terms: the date they took effect (ISO). Every order
+ * keeps the version in force when it was placed (`orders.terms_version`), a
+ * and each order confirmation e-mail carries this text as a PDF in this
+ * version (decision 130). The 3D Studio has terms of its own, sold by the
+ * publisher (`studioTerms.ts`, decision 135). **Change it with
+ * any change to the text below**: `termsDocument.test.ts` fails while the
+ * text's fingerprint and this version disagree.
+ */
+export const TERMS_OF_SALE_VERSION = "2026-11-11";
 
 /**
  * Terms of sale ("conditions générales de vente").
@@ -19,7 +30,7 @@ const PART = {
   products: l("Produits et prix", "Products and prices"),
   ordering: l("Commande", "Ordering"),
   payment: l("Paiement", "Payment"),
-  offers: l("Cartes cadeaux et abonnements", "Gift cards and subscriptions"),
+  offers: l("Cartes cadeaux", "Gift cards"),
   withdrawal: l("Annulation, rétractation et retours", "Cancellation, withdrawal and returns"),
   delivery: l("Livraison", "Delivery"),
   guarantees: l("Garanties et responsabilité", "Guarantees and liability"),
@@ -33,10 +44,10 @@ export const TERMS: LegalDocument = {
   eyebrow: l("Informations légales", "Legal information"),
   title: l("Conditions générales de vente", "Terms of sale"),
   intro: l(
-    "Les règles qui s’appliquent lorsque vous achetez des produits, des formations, des cartes cadeaux ou un abonnement au Studio 3D sur Global Toothgems : commande, paiement, livraison, rétractation, retours et garanties.",
-    "The rules that apply when you buy products, courses, gift cards or a 3D Studio subscription on Global Toothgems: ordering, payment, delivery, withdrawal, returns and guarantees.",
+    "Les règles qui s’appliquent lorsque vous achetez des produits, des formations ou des cartes cadeaux sur Global Toothgems : commande, paiement, livraison, rétractation, retours et garanties.",
+    "The rules that apply when you buy products, courses or gift cards on Global Toothgems: ordering, payment, delivery, withdrawal, returns and guarantees.",
   ),
-  updated: DRAFT_DATE,
+  updated: TERMS_OF_SALE_VERSION,
   numbered: true,
   showKey: true,
   contactCategory: "order",
@@ -52,8 +63,16 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les présentes conditions s’appliquent à toute commande passée sur le site Global Toothgems : produits physiques (gems, outils, kits, produits de suivi), formations en ligne de l’Academy, cartes cadeaux et abonnements au Studio 3D. Elles sont acceptées au moment de la validation de la commande.",
-            "These terms apply to every order placed on the Global Toothgems website: physical products (gems, tools, kits, aftercare products), Academy online courses, gift cards and 3D Studio subscriptions. They are accepted when the order is confirmed.",
+            "Les présentes conditions s’appliquent à toute commande passée sur le site Global Toothgems : produits physiques (gems, outils, kits, produits de suivi), formations en ligne de l’Academy et cartes cadeaux. Elles sont acceptées au moment de la validation de la commande.",
+            "These terms apply to every order placed on the Global Toothgems website: physical products (gems, tools, kits, aftercare products), Academy online courses and gift cards. They are accepted when the order is confirmed.",
+          ),
+        },
+        {
+          kind: "callout",
+          tone: "instruction",
+          text: l(
+            "Les abonnements au Studio 3D ne sont pas régis par les présentes conditions : ils sont vendus par l’éditeur du site, [[!Vendeur du Studio, dénomination et forme juridique]], selon les <<conditions générales d’abonnement au Studio 3D|/conditions-abonnement-studio>>.",
+            "3D Studio subscriptions are not governed by these terms: they are sold by the website publisher, [[!Studio seller legal name and entity type]], under the <<3D Studio subscription terms|/conditions-abonnement-studio>>.",
           ),
         },
         {
@@ -101,8 +120,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les pages de formation décrivent le programme, le format, la durée d’accès et les conditions de validation de chaque formation. La page du Studio 3D présente le contenu et le prix de chaque formule d’abonnement.",
-            "Course pages describe each course’s programme, format, access duration and completion requirements. The 3D Studio page sets out what each subscription plan includes and its price.",
+            "Les pages de formation décrivent le programme, le format, la durée d’accès et les conditions de validation de chaque formation.",
+            "Course pages describe each course’s programme, format, access duration and completion requirements.",
           ),
         },
       ],
@@ -179,8 +198,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les produits physiques et les cartes cadeaux peuvent être commandés sans compte, avec votre seule adresse e-mail. Un compte est nécessaire pour acheter une formation ou un abonnement au Studio 3D, et pour retrouver vos commandes, vos formations et vos attestations. Vous êtes responsable de la confidentialité de vos identifiants.",
-            "Physical products and gift cards can be ordered without an account, with just your email address. An account is needed to buy a course or a 3D Studio subscription, and to find your orders, courses and certificates. You are responsible for keeping your login details confidential.",
+            "Les produits physiques et les cartes cadeaux peuvent être commandés sans compte, avec votre seule adresse e-mail. Un compte est nécessaire pour acheter une formation, et pour retrouver vos commandes, vos formations et vos attestations. Vous êtes responsable de la confidentialité de vos identifiants.",
+            "Physical products and gift cards can be ordered without an account, with just your email address. An account is needed to buy a course, and to find your orders, courses and certificates. You are responsible for keeping your login details confidential.",
           ),
         },
         {
@@ -201,8 +220,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Après le paiement, un récapitulatif s’affiche et un e-mail de confirmation vous est envoyé, avec le détail de la commande, les prix et la facture. La commande est considérée comme confirmée à réception de la confirmation de paiement par notre prestataire.",
-            "After payment, a summary is shown and a confirmation email is sent to you, with the order details, prices and the invoice. The order is considered confirmed once our payment provider confirms the payment.",
+            "Après le paiement, un récapitulatif s’affiche et un e-mail de confirmation vous est envoyé, avec le détail de la commande et les prix. Les présentes conditions générales de vente y sont jointes au format PDF, dans la version en vigueur à la date de votre commande, pour que vous puissiez les conserver et les reproduire. La facture est disponible dans <<Mes commandes|/compte/commandes>> ou sur simple demande. La commande est considérée comme confirmée à réception de la confirmation de paiement par notre prestataire.",
+            "After payment, a summary is shown and a confirmation email is sent to you, with the order details and prices. These terms of sale are attached to it as a PDF, in the version in force on the date of your order, so that you can keep and reproduce them. The invoice is available in <<My orders|/compte/commandes>> or on request. The order is considered confirmed once our payment provider confirms the payment.",
           ),
         },
         {
@@ -253,8 +272,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Le paiement est opéré par Stripe Payments Europe, Ltd. (Dublin, Irlande), établissement de paiement agréé. Vos données de carte sont saisies dans un formulaire sécurisé fourni par Stripe et intégré à notre page de paiement : elles sont transmises directement à Stripe et ne sont ni reçues ni conservées par Global Toothgems. Les abonnements au Studio 3D sont prélevés par Stripe à chaque échéance sur le moyen de paiement enregistré.",
-            "Payment is handled by Stripe Payments Europe, Ltd. (Dublin, Ireland), a licensed payment institution. Your card details are entered in a secure form provided by Stripe and embedded in our payment page: they go straight to Stripe and are neither received nor stored by Global Toothgems. 3D Studio subscriptions are charged by Stripe on each renewal date to the saved payment method.",
+            "Le paiement est opéré par Stripe Payments Europe, Ltd. (Dublin, Irlande), établissement de paiement agréé. Vos données de carte sont saisies dans un formulaire sécurisé fourni par Stripe et intégré à notre page de paiement : elles sont transmises directement à Stripe et ne sont ni reçues ni conservées par Global Toothgems.",
+            "Payment is handled by Stripe Payments Europe, Ltd. (Dublin, Ireland), a licensed payment institution. Your card details are entered in a secure form provided by Stripe and embedded in our payment page: they go straight to Stripe and are neither received nor stored by Global Toothgems.",
           ),
         },
       ],
@@ -269,49 +288,6 @@ export const TERMS: LegalDocument = {
           text: l(
             "La carte cadeau est envoyée par e-mail à la personne choisie, à la date choisie. Elle est valable 12 mois à compter de son émission, s’utilise en une ou plusieurs fois sur la boutique et l’Academy, et son solde restant est indiqué dans le panier. Elle ne peut être échangée contre de l’argent ni remboursée une fois utilisée ; un solde non utilisé à la date d’expiration est perdu.",
             "The gift card is emailed to the person chosen, on the date chosen. It is valid for 12 months from issue, can be used in one or several goes on the shop and the Academy, and its remaining balance is shown in the cart. It cannot be exchanged for cash or refunded once used; any balance left unused on the expiry date is lost.",
-          ),
-        },
-      ],
-    },
-    {
-      id: "studio",
-      part: PART.offers,
-      title: l("Abonnements au Studio 3D", "3D Studio subscriptions"),
-      blocks: [
-        {
-          kind: "p",
-          text: l(
-            "Chaque compte peut ouvrir une fois un essai gratuit de 48 heures du Studio 3D, sans moyen de paiement. Les formules d’abonnement (Essential, Artist, Atelier), leur contenu et leur prix mensuel ou annuel sont présentés sur la page du Studio 3D.",
-            "Each account can start a free 48-hour trial of the 3D Studio once, without a payment method. The subscription plans (Essential, Artist, Atelier), what they include and their monthly or yearly price are set out on the 3D Studio page.",
-          ),
-        },
-        {
-          kind: "list",
-          items: [
-            l(
-              "L’abonnement est payé d’avance et se renouvelle automatiquement à la fin de chaque période (mois ou année), au prix en vigueur, jusqu’à sa résiliation.",
-              "The subscription is paid in advance and renews automatically at the end of each period (month or year), at the current price, until it is cancelled.",
-            ),
-            l(
-              "Vous pouvez le résilier à tout moment depuis <<Mon abonnement Studio|/compte/studio>> : la résiliation prend effet à la fin de la période déjà payée, sans remboursement de celle-ci, et vous gardez l’accès jusque-là.",
-              "You can cancel it at any time from <<My Studio subscription|/compte/studio>>: cancellation takes effect at the end of the period already paid, which is not refunded, and you keep access until then.",
-            ),
-            l(
-              "Un changement de formule prend effet immédiatement ; la différence de prix est calculée au prorata du temps restant et reportée sur la prochaine échéance.",
-              "A change of plan takes effect immediately; the price difference is prorated over the time left and carried to the next payment.",
-            ),
-            l(
-              "Si un paiement échoue, l’accès aux fonctions payantes peut être suspendu jusqu’à sa régularisation. Vos créations restent consultables.",
-              "If a payment fails, access to paid features may be suspended until it is settled. Your creations remain viewable.",
-            ),
-          ],
-        },
-        {
-          kind: "callout",
-          tone: "legal",
-          text: l(
-            "Vous demandez expressément, au moment du paiement, que l’accès au Studio commence immédiatement. Si vous vous rétractez dans les 14 jours suivant la souscription, vous êtes remboursé du montant payé, diminué de la part correspondant aux jours d’accès déjà utilisés (article L221-25 du Code de la consommation).",
-            "When paying, you expressly ask for access to the Studio to start immediately. If you withdraw within 14 days of subscribing, you are refunded the amount paid, less the share corresponding to the days of access already used (article L221-25 of the French Consumer Code).",
           ),
         },
       ],
@@ -350,8 +326,8 @@ export const TERMS: LegalDocument = {
           kind: "callout",
           tone: "legal",
           text: l(
-            "Pour un achat à distance, le consommateur dispose d’un délai de 14 jours pour se rétracter, sans avoir à se justifier ni à payer de pénalité (articles L221-18 et suivants du Code de la consommation). Pour un produit, ce délai court à partir de la réception (du dernier article, en cas de livraison en plusieurs colis) ; pour une formation, une carte cadeau ou un abonnement, à partir de la conclusion du contrat.",
-            "For a distance purchase, the consumer has 14 days to withdraw, without giving a reason or paying a penalty (articles L221-18 et seq. of the French Consumer Code). For goods, the period runs from receipt (of the last item, when delivered in several parcels); for a course, a gift card or a subscription, from the conclusion of the contract.",
+            "Pour un achat à distance, le consommateur dispose d’un délai de 14 jours pour se rétracter, sans avoir à se justifier ni à payer de pénalité (articles L221-18 et suivants du Code de la consommation). Pour un produit, ce délai court à partir de la réception (du dernier article, en cas de livraison en plusieurs colis) ; pour une formation ou une carte cadeau, à partir de la conclusion du contrat.",
+            "For a distance purchase, the consumer has 14 days to withdraw, without giving a reason or paying a penalty (articles L221-18 et seq. of the French Consumer Code). For goods, the period runs from receipt (of the last item, when delivered in several parcels); for a course or a gift card, from the conclusion of the contract.",
           ),
         },
         {
@@ -359,16 +335,25 @@ export const TERMS: LegalDocument = {
           tone: "policy",
           text: lp(
             (p) =>
-              `Délai appliqué par Global Toothgems pour les produits : ${p.returnPeriod}. Pour une formation, une carte cadeau non utilisée ou un abonnement au Studio 3D : 14 jours à compter de l’achat.`,
-            (p) => `Period applied by Global Toothgems for products: ${p.returnPeriod}. For a course, an unused gift card or a 3D Studio subscription: 14 days from purchase.`,
+              `Délai appliqué par Global Toothgems pour les produits : ${p.returnPeriod}. Pour une formation ou une carte cadeau non utilisée : 14 jours à compter de l’achat.`,
+            (p) => `Period applied by Global Toothgems for products: ${p.returnPeriod}. For a course or an unused gift card: 14 days from purchase.`,
           ),
         },
         {
           kind: "callout",
           tone: "instruction",
           text: l(
-            "Pour exercer ce droit, informez-nous de votre décision par une déclaration claire avant la fin du délai : via le <<formulaire de contact|/contact?sujet=returns>>, par e-mail à [[!E-mail du service client]], ou en nous envoyant le modèle de formulaire de rétractation ci-dessous. Pour un abonnement au Studio 3D, vous pouvez aussi vous rétracter directement depuis <<Mon abonnement Studio|/compte/studio>>.",
-            "To exercise this right, tell us of your decision with a clear statement before the period ends: through the <<contact form|/contact?sujet=returns>>, by email to [[!Customer service email]], or by sending us the model withdrawal form below. For a 3D Studio subscription, you can also withdraw directly from <<My Studio subscription|/compte/studio>>.",
+            "Pour exercer ce droit, informez-nous de votre décision par une déclaration claire avant la fin du délai : via le <<formulaire de contact|/contact?sujet=returns>>, par e-mail à [[!E-mail du service client]], ou en nous envoyant le modèle de formulaire de rétractation ci-dessous.",
+            "To exercise this right, tell us of your decision with a clear statement before the period ends: through the <<contact form|/contact?sujet=returns>>, by email to [[!Customer service email]], or by sending us the model withdrawal form below.",
+          ),
+        },
+        {
+          kind: "callout",
+          tone: "instruction",
+          title: l("Fonction de rétractation en ligne", "Online withdrawal function"),
+          text: l(
+            "Pour les produits, une fonction de rétractation en ligne gratuite est disponible pendant tout le délai (article L221-21 du Code de la consommation) : sur la page de la commande dans <<Mes commandes|/compte/commandes>> (« Se rétracter du contrat ici ») ou, pour une commande passée sans compte, sur la page <<Se rétracter d’une commande|/retours-remboursements/retractation>>, après réception d’un lien envoyé à l’adresse e-mail de la commande. Vous indiquez votre nom, la commande et les articles concernés (rétractation totale ou partielle), puis confirmez par « Confirmer la rétractation ». Nous accusons réception sans délai, par e-mail, du contenu de votre déclaration ainsi que de sa date et de son heure.",
+            "For products, a free online withdrawal function is available throughout the period (article L221-21 of the French Consumer Code): on the order’s page in <<My orders|/compte/commandes>> (“Withdraw from the contract here”) or, for an order placed without an account, on the <<Withdraw from an order|/retours-remboursements/retractation>> page, after receiving a link sent to the order’s e-mail address. You give your name, the order and the items concerned (full or partial withdrawal), then confirm with “Confirm withdrawal”. We acknowledge receipt without delay, by e-mail, with the content of your declaration and its date and time.",
           ),
         },
       ],
@@ -532,8 +517,8 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Les formations en ligne et les abonnements au Studio 3D ne sont pas expédiés : ils sont accessibles depuis votre espace membre dès confirmation du paiement. Les cartes cadeaux sont envoyées par e-mail.",
-            "Online courses and 3D Studio subscriptions are not shipped: they are available from your member area as soon as payment is confirmed. Gift cards are sent by email.",
+            "Les formations en ligne ne sont pas expédiées : elles sont accessibles depuis votre espace membre dès confirmation du paiement. Les cartes cadeaux sont envoyées par e-mail.",
+            "Online courses are not shipped: they are available from your member area as soon as payment is confirmed. Gift cards are sent by email.",
           ),
         },
       ],
@@ -860,15 +845,15 @@ export const TERMS: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Nous pouvons modifier ces conditions, par exemple pour tenir compte d’une évolution de la loi ou de nos services. Les conditions applicables à une commande sont celles en vigueur à la date de cette commande ; pour un abonnement, une modification vous est annoncée par e-mail au moins 30 jours avant de s’appliquer à votre prochaine échéance, et vous pouvez résilier d’ici là. La date de dernière mise à jour figure en haut de cette page.",
-            "We may change these terms, for example to reflect a change in the law or in our services. The terms that apply to an order are those in force on the date of that order; for a subscription, a change is announced to you by email at least 30 days before it applies to your next renewal, and you can cancel before then. The last-updated date is shown at the top of this page.",
+            "Nous pouvons modifier ces conditions, par exemple pour tenir compte d’une évolution de la loi ou de nos services. Les conditions applicables à une commande sont celles en vigueur à la date de cette commande. La date de dernière mise à jour figure en haut de cette page.",
+            "We may change these terms, for example to reflect a change in the law or in our services. The terms that apply to an order are those in force on the date of that order. The last-updated date is shown at the top of this page.",
           ),
         },
         {
           kind: "p",
           text: l(
-            "Nous conservons chaque version de ces conditions avec sa date d’entrée en vigueur ; la version applicable à votre commande vous est communiquée sur simple demande.",
-            "We keep every version of these terms with the date it took effect; the version that applies to your order is sent to you on request.",
+            "Chaque version de ces conditions est identifiée par sa date d’entrée en vigueur, que nous conservons avec chaque commande et chaque abonnement. La version applicable vous est remise avec l’e-mail de confirmation de votre commande ou de votre abonnement, et de nouveau sur simple demande.",
+            "Each version of these terms is identified by the date it took effect, which we keep with every order and every subscription. The version that applies is given to you with the confirmation email of your order or subscription, and again on request.",
           ),
         },
       ],

@@ -2,6 +2,7 @@ import { parseCheckoutInput, parseClientSecret, type CheckoutInput, type Checkou
 import { corsHeaders, json, readJson, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
 import { toMinorUnits } from "../_shared/money.ts";
 import { checkoutErrorCode, checkoutErrorStatus, type DbError } from "../_shared/orderErrors.ts";
+import { TERMS_OF_SALE_VERSION } from "../_shared/legal/terms.ts";
 
 /**
  * POST /functions/v1/create-checkout-session
@@ -123,6 +124,12 @@ export interface CheckoutDeps {
   >;
   cancelOrder(orderId: string, reason: string): Promise<void>;
   /**
+   * Records on the new order the version of the terms of sale in force, the one
+   * the customer accepts by ordering (`orders.terms_version`, frozen once set;
+   * decision 130). Throws on failure.
+   */
+  recordTermsVersion(orderId: string, version: string): Promise<void>;
+  /**
    * Unpaid orders of an abandoned payment still holding these gift cards: their Stripe sessions
    * are expired and the orders cancelled (the cards are credited back). Orders whose session
    * cannot be proven closed are left alone. Returns how many were released.
@@ -243,7 +250,7 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
 
   // Without the publishable key the payment form cannot be shown: nothing is reserved.
   if (!deps.publishableKey) {
-    deps.log("STRIPE_PUBLISHABLE_KEY missing or not matching the secret key's mode");
+    deps.log("the shop's Stripe publishable key is missing or does not match its secret key (SHOP_STRIPE_* or, in test mode, STRIPE_*)");
     return fail("payment_unavailable");
   }
 
@@ -265,6 +272,22 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
     return fail(code);
   }
   const order = created.order;
+
+  // The order keeps the version of the terms it was placed under; its confirmation e-mail carries that text.
+  try {
+    await deps.recordTermsVersion(order.id, TERMS_OF_SALE_VERSION);
+  } catch (error) {
+    deps.log("terms of sale version not recorded", error instanceof Error ? error.message : error);
+    if (order.payment_status !== "paid") {
+      try {
+        await deps.cancelOrder(order.id, "checkout_failed");
+      } catch (cancelError) {
+        deps.log("cancel_order after the terms version failed", cancelError instanceof Error ? cancelError.message : cancelError);
+      }
+      return fail("server_error");
+    }
+    // Paid in full by gift cards inside create_order(): the order stands; the e-mail still carries the terms.
+  }
 
   // Entirely paid with gift cards: create_order() already marked it paid.
   const amountDue = toMinorUnits(order.amount_due);

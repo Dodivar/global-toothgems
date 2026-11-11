@@ -4,6 +4,7 @@ import { Button } from "../../ui/Button";
 import { Menu } from "../../ui/Menu";
 import { useFormat } from "../../../lib/format";
 import { useToast } from "../../../lib/toast";
+import { useStudioFeature } from "../../../lib/studioAccess";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CreationCollectionsSummary } from "./Collections";
@@ -28,6 +29,9 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
   const { openInStudio } = useWorkspaceActions();
   const { showToast } = useToast();
   const placementSheet = usePlacementSheet();
+  // The placement sheet is the Artist plan's and above (decision 133); share links and posts
+  // are held back by the dialogs themselves (WorkspaceDialogs).
+  const clientToolsLocked = useStudioFeature("clientTools") === false;
   const creation = ws.creations.find((c) => c.id === creationId);
   if (!creation) return null;
 
@@ -152,6 +156,10 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
                 icon: FileDown,
                 disabled: creation.elementCount === 0,
                 onSelect: () => {
+                  if (clientToolsLocked) {
+                    openWorkspaceDialog({ kind: "planLocked", feature: "clientTools" });
+                    return;
+                  }
                   // The menu is gone by the time the PDF is ready: the outcome is said in a toast.
                   if (!placementSheet.ready) {
                     showToast(t("studio.placementSheet.notReady"), undefined, "info");

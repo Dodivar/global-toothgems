@@ -19,6 +19,7 @@ const course: PublicCourse = {
   issuesCertificate: true,
   price: { minor: 34900, currency: "EUR" },
   currentPrice: { minor: 34900, currency: "EUR" },
+  referencePrice: null,
   promotionEndsAt: null,
   cover: { src: "/media/formations/abc?v=1", alt: null },
   modules: [],

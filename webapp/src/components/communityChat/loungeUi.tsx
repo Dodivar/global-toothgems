@@ -14,6 +14,8 @@ export interface LoungeUi {
   openSearch: () => void;
   openInbox: () => void;
   openNewMessage: () => void;
+  /** Opens the report form for a message (decision 132). */
+  openReport: (messageId: string) => void;
   /** Opens the mobile navigation drawer on a tab. */
   openNav: (tab?: NavTab) => void;
   /** Closes the mobile navigation drawer, after a choice was made in it. */

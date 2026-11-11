@@ -12,6 +12,7 @@ import { LoungeActivityCard } from "../../components/communityChat/LoungeActivit
 import { ResumeCourseCard } from "../../components/account/dashboard/ResumeCourseCard";
 import { ShipmentCard } from "../../components/account/dashboard/ShipmentCard";
 import { LoyaltyTile } from "../../components/account/dashboard/LoyaltyTile";
+import { WelcomeChecklist } from "../../components/account/dashboard/WelcomeChecklist";
 import { StudioTile } from "../../components/account/dashboard/StudioTile";
 import { CertificatesTile } from "../../components/account/dashboard/CertificatesTile";
 import { FavoritesTile } from "../../components/account/dashboard/FavoritesTile";
@@ -94,6 +95,9 @@ function DashboardContent() {
     <>
       <section className="grid gap-5">
         <SectionHeader eyebrow={t("account.eyebrow")} title={t("account.greeting", { name: displayName })} />
+
+        {/* New accounts only: a few places to visit, ticked from what the account holds. */}
+        <WelcomeChecklist />
 
         {/* What needs the member now. On a phone these come straight under the greeting. */}
         <ShipmentCard orders={onTheirWay} />

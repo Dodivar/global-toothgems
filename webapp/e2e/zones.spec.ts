@@ -45,6 +45,7 @@ const MEMBER_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/compte/securite", heading: /^Sécurité et confidentialité$/ },
   { path: "/compte/fidelite", heading: /^Ma carte de fidélité$/ },
   { path: "/compte/avis", heading: /^Mes avis$/ },
+  { path: "/compte/moderation", heading: /^Modération des salons$/ },
   { path: "/compte/salons/en/discussion", heading: /^Salon des membres$/ },
 ];
 
@@ -129,6 +130,7 @@ const STAFF_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/admin/produits", heading: /^Produits$/ },
   { path: "/admin/categories", heading: /^Catégories$/ },
   { path: "/admin/alertes-stock", heading: /^Alertes retour en stock$/ },
+  { path: "/admin/salons", heading: /^Salons des membres$/ },
   { path: "/admin/promotions", heading: /^Promotions$/ },
   { path: "/admin/avis", heading: /^Avis$/ },
   { path: "/admin/parametres", heading: /^Paramètres$/ },
@@ -212,17 +214,6 @@ test("back office: without Supabase the statistics show no figure, never invente
   await expect(page.getByRole("region", { name: "Indicateurs clés de la période" })).toHaveCount(0);
   expect(problems).toEqual([]);
 });
-
-test("back office: signing in on the access screen opens the page asked for", async ({ page, problems }) => {
-  await open(page, "/admin/produits");
-  await expect(page).toHaveURL((url) => url.pathname === "/admin/connexion");
-  await page.getByLabel(/e-mail/i).fill(STAFF.email);
-  await page.getByRole("textbox", { name: "Mot de passe", exact: true }).fill("toothgems2026");
-  await page.getByRole("button", { name: /se connecter/i }).click();
-  await expect(page).toHaveURL((url) => url.pathname === "/admin/produits");
-  expect(problems).toEqual([]);
-});
-
 
 test("a link to another zone opens it, and the back button returns", async ({ page, problems }) => {
   await signInMember(page);

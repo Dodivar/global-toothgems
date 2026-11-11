@@ -16,17 +16,16 @@ test("/compte/commandes redirects a signed-out visitor to the sign-in page", asy
   expect(problems).toEqual([]);
 });
 
-test("/admin redirects a signed-out visitor to the back-office sign-in", async ({ page, problems }) => {
-  await open(page, "/admin");
-  await expect(page).toHaveURL((url) => url.pathname === "/admin/connexion");
-  expect(problems).toEqual([]);
-});
-
-test("/admin/produits redirects a signed-out visitor to the back-office sign-in", async ({ page, problems }) => {
-  await open(page, "/admin/produits");
-  await expect(page).toHaveURL((url) => url.pathname === "/admin/connexion");
-  expect(problems).toEqual([]);
-});
+/* The back office has no sign-in page (decided 2026-11-11): a visitor who is
+   not staff sees the site's ordinary 404, with the address asked for. */
+for (const path of ["/admin", "/admin/produits", "/admin/connexion"]) {
+  test(`${path} shows a signed-out visitor the 404`, async ({ page, problems }) => {
+    await open(page, path);
+    await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText("Oups, cette page a fait un petit détour.", { timeout: 30_000 });
+    expect(new URL(page.url()).pathname).toBe(path);
+    expect(problems).toEqual([]);
+  });
+}
 
 test("signing in lands on the member area", async ({ page, problems }) => {
   await open(page, "/compte");

@@ -33,6 +33,11 @@ describe("registrationMetadata", () => {
     });
   });
 
+  it("records where the sign-up came from only when it matters", () => {
+    expect(registrationMetadata(filled, "fr").signup_origin).toBeUndefined();
+    expect(registrationMetadata(filled, "fr", "studio").signup_origin).toBe("studio");
+  });
+
   it("always sends the policy version, without which no consent is recorded", () => {
     expect(registrationMetadata(EMPTY_REGISTRATION, "en").policy_version).toBe(LEGAL_POLICY_VERSION);
   });

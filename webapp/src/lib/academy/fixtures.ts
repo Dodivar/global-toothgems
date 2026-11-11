@@ -64,6 +64,7 @@ export const FIXTURE_COURSES: PublicCourse[] = COURSES.map((course) => {
     issuesCertificate: true,
     price,
     currentPrice: price,
+    referencePrice: null,
     promotionEndsAt: null,
     cover: { src: course.image, alt: null },
     modules: OUTLINE,

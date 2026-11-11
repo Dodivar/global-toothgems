@@ -63,7 +63,7 @@ begin
   -- ===========================================================================
   -- ADMIN session
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
 
   -- 3. Admin creates a category
@@ -123,7 +123,7 @@ begin
   -- ===========================================================================
   -- ALICE (customer) session
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
 
   -- 7. Alice manages her addresses; optional fields null (T16)
   insert into public.customer_addresses
@@ -242,7 +242,7 @@ begin
   -- ===========================================================================
   -- ALICE again: read own data only
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
 
   select count(*) into v_cnt from public.orders where id = v_order;
@@ -282,7 +282,7 @@ begin
   -- ===========================================================================
   -- BOB session: must see none of Alice's private data
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
 
   select count(*) into v_cnt from public.orders;
   if v_cnt <> 0 then raise exception 'FAIL T13: Bob sees % orders', v_cnt; end if;
@@ -334,7 +334,7 @@ begin
   -- ===========================================================================
   -- ADMIN session: full access, but order history is protected
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
 
   select count(*) into v_cnt from public.orders where id = v_order;
@@ -382,7 +382,7 @@ begin
   end;
   if not v_ok then raise exception 'FAIL T14: ordered product was hard-deleted'; end if;
   -- Customer address edits do not change the order snapshot.
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   update public.customer_addresses set city = 'Marseille' where id = v_addr;
   select shipping_address ->> 'city' into v_txt from public.orders where id = v_order;
   if v_txt <> 'Paris' then raise exception 'FAIL T14: address snapshot changed (%)', v_txt; end if;
@@ -408,7 +408,7 @@ begin
 
   -- A suspended admin loses admin rights immediately.
   update public.profiles set status = 'suspended' where id = admin;
-  perform set_config('request.jwt.claims', json_build_object('sub', admin, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', admin, 'role', 'authenticated')::text, true);
   perform set_config('role', 'authenticated', true);
   select count(*) into v_cnt from public.orders;
   if v_cnt <> 0 then raise exception 'FAIL: suspended admin still reads orders'; end if;

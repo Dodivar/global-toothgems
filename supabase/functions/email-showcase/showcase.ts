@@ -3,7 +3,8 @@
  * once (owner's request, 2026-11-01). Each sample goes through the real
  * pipeline — the database template, the shared layout, the same content
  * builders and, for the documents, a real PDF drawn with the store's current
- * seller identity — but with example data: no order, card, subscription or
+ * seller identity, and the terms of sale every contract confirmation carries
+ * (decision 130) — but with example data: no order, card, subscription or
  * ticket is created or read, and the documents carry "EXEMPLE" numbers.
  *
  * The two Supabase Auth e-mails (sign-up confirmation, staff invitation) are
@@ -26,6 +27,9 @@ import {
   studioWithdrawalContent,
 } from "../_shared/email/studioContent.ts";
 import { type InvoiceRow, type Json, mapInvoice } from "../_shared/documents/invoiceModel.ts";
+import type { LegalStoreDetails } from "../_shared/legal/storeFill.ts";
+import { orderReference, studioReference, studioTermsForEmail, termsOfSaleForEmail, type TermsForEmail, withTerms } from "../_shared/email/termsPdf.ts";
+import type { EmailContent } from "../_shared/email/render.ts";
 
 export interface ShowcaseContext {
   to: string;
@@ -35,6 +39,8 @@ export interface ShowcaseContext {
   mediaBaseUrl: string;
   /** The seller as `private.invoice_seller()` freezes it (store_settings row). */
   seller: Record<string, unknown>;
+  /** Settings › Store, as the terms of sale quote it (null: the "to supply" markers stay). */
+  legalStore: LegalStoreDetails | null;
   /** A real product, so the back-in-stock card shows its picture and links to its page. */
   product: { name: string; slug: string; imagePath: string | null };
 }
@@ -184,6 +190,12 @@ function textOf(html: string): string {
   return html.replace(/<style[\s\S]*?<\/style>/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+/** A contract confirmation's content with the terms of sale: their blocks (none when attached) and footer line. */
+function withTermsContent(content: EmailContent, terms: TermsForEmail, locale: string): EmailContent {
+  const extra = withTerms(terms, locale);
+  return { ...content, blocks: [...(content.blocks ?? []), ...extra.blocks], footerNote: extra.footerNote };
+}
+
 export function buildShowcase(ctx: ShowcaseContext): Sample[] {
   const key = (name: string) => `showcase:${ctx.runId}:${name}`;
   const base = { to: ctx.to, locale: LOCALE };
@@ -192,16 +204,21 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
   const studioRenewal = attachDocument(mapInvoice(studioInvoiceRow(ctx, "FA-EXEMPLE-000003")), LOCALE);
   const studioNote = attachDocument(mapInvoice(studioCreditNoteRow(ctx)), LOCALE, mapInvoice(studioInvoiceRow(ctx, "FA-EXEMPLE-000002")));
   const plan = studioPlanName("artist", LOCALE);
+  const orderTerms = termsOfSaleForEmail(ctx.legalStore, LOCALE, orderReference(ORDER.orderNumber, LOCALE));
+  // The Studio is sold by the publisher, under its own terms (decision 135).
+  const studioTerms = studioTermsForEmail(ctx.legalStore, LOCALE, studioReference(plan, LOCALE));
+  const termsFiles = (terms: TermsForEmail) => withTerms(terms, LOCALE).attachments;
   const tracking = "https://www.laposte.fr/outils/suivre-vos-envois?code=6A00000000000";
 
   const samples: Sample[] = [
     {
       kind: "template",
-      label: "Confirmation de commande",
+      label: "Confirmation de commande (+ CGV PDF)",
       request: {
         ...base, templateKey: "order_confirmation", eventKey: key("order_confirmation"),
         variables: { first_name: "Camille", order_number: ORDER.orderNumber },
-        content: (locale) => orderConfirmationContent(ORDER, locale, ctx.siteUrl),
+        attachments: termsFiles(orderTerms),
+        content: (locale) => withTermsContent(orderConfirmationContent(ORDER, locale, ctx.siteUrl), orderTerms, locale),
       },
     },
     {
@@ -306,17 +323,21 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
     },
     {
       kind: "template",
-      label: "Studio 3D : abonnement activé (+ facture PDF)",
+      label: "Studio 3D : abonnement activé (+ facture PDF + CGV PDF)",
       request: {
         ...base, templateKey: "studio_subscription_confirmation", eventKey: key("studio_subscription_confirmation"),
         variables: { plan_name: plan },
-        attachments: [studioFirst.attachment],
+        attachments: [studioFirst.attachment, ...termsFiles(studioTerms)],
         content: (locale) =>
-          studioSubscriptionContent(
-            { plan: "artist", interval: "month", amount: 19, currency: "EUR", consentVersion: "studio-immediate-access-2026-10-18", consentedAt: NOW },
+          withTermsContent(
+            studioSubscriptionContent(
+              { plan: "artist", interval: "month", amount: 19, currency: "EUR", consentVersion: "studio-immediate-access-2026-10-18", consentedAt: NOW },
+              locale,
+              ctx.siteUrl,
+              studioFirst.number,
+            ),
+            studioTerms,
             locale,
-            ctx.siteUrl,
-            studioFirst.number,
           ),
       },
     },
@@ -386,7 +407,7 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
   return samples;
 }
 
-/** The samples that carry a document (invoice or credit note as a PDF). */
+/** The samples that carry a document (invoice, credit note or terms of sale as a PDF). */
 export function withDocuments(samples: Sample[]): Sample[] {
   return samples.filter((s) => s.kind === "template" && (s.request.attachments?.length ?? 0) > 0);
 }

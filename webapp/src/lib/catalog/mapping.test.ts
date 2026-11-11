@@ -9,7 +9,6 @@ function variant(overrides: Partial<VariantRow>): VariantRow {
     id: "v1",
     name: "Cristal",
     price: null,
-    compare_at_price: null,
     is_active: true,
     position: 0,
     product_variant_translations: [],
@@ -26,7 +25,6 @@ function row(overrides: Partial<ProductRow> = {}): ProductRow {
     short_description: "Étoile cinq branches.",
     description: null,
     price: 32,
-    compare_at_price: 38,
     currency: "EUR",
     is_featured: true,
     metadata: { material: "Ancienne valeur", shape: "star", color: "crystal" },
@@ -105,7 +103,8 @@ describe("mapProduct", () => {
     expect(p.name).toEqual({ fr: "Étoile Cristal", en: "Crystal Star Tooth Gem" });
     expect(p.description).toEqual({ fr: "Étoile cinq branches.", en: "Five-point star." });
     expect(p.price).toBe(32);
-    expect(p.compareAtPrice).toBe(38);
+    // Omnibus (decision 129): a struck-out price never comes from the product row.
+    expect(p).not.toHaveProperty("compareAtPrice");
     expect(p.cat).toBe("gems");
     expect(p.family).toBeNull();
     expect(p.shape).toBe("star");
@@ -188,11 +187,6 @@ describe("mapProduct", () => {
     expect(p.variants?.[0]).toMatchObject({ price: 32, name: { fr: "2 mm", en: "2mm" }, stock: undefined });
     expect(p.variants?.[1]).toMatchObject({ price: 109, stock: "out" });
     expect(p.stock).toBeUndefined();
-  });
-
-  it("drops a compare-at price that is not above the price", () => {
-    const p = mapProduct(row({ compare_at_price: 32 }), undefined, url);
-    expect(p.compareAtPrice).toBeUndefined();
   });
 });
 

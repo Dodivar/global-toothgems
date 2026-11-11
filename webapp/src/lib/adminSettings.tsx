@@ -90,6 +90,8 @@ const EMPTY: SectionValues = {
     publisherAddress: "",
     publisherEmail: "",
     publisherPhone: "",
+    publisherVatNumber: "",
+    publisherVatFranchise: true,
     legalName: "",
     legalForm: "",
     shareCapital: "",

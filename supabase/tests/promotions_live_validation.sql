@@ -70,7 +70,7 @@ begin
   perform set_config('role', 'authenticated', true);
   foreach v_txt in array array['customer', 'viewer'] loop
     perform set_config('request.jwt.claims',
-      json_build_object('sub', case v_txt when 'customer' then cst else vwr end, 'role', 'authenticated')::text, true);
+      json_build_object('aal', 'aal2', 'sub', case v_txt when 'customer' then cst else vwr end, 'role', 'authenticated')::text, true);
     v_state := null;
     begin perform public.admin_save_promotion(base);
     exception when others then v_state := sqlstate; end;
@@ -83,7 +83,7 @@ begin
   passed := array_append(passed, 'PL1 customers and viewers refused');
 
   -- PL2 -------------------------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   v_p1 := public.admin_save_promotion(base);
   select count(*) into v_cnt from public.promotions where id = v_p1 and lifecycle = 'live' and title = 'Dix pour cent';
   if v_cnt <> 1 then raise exception 'FAIL PL2: promotion not saved live'; end if;
@@ -150,7 +150,7 @@ begin
   end if;
   -- the typed code of the live code promotion (PL4's first unique code is private: use a shared one)
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   v_p4 := public.admin_save_promotion(base || jsonb_build_object('name', 'Shared 25', 'percent_off', 25, 'code', 'plshare25',
                                      'combinable', false));
   perform set_config('role', 'anon', true);
@@ -168,7 +168,7 @@ begin
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL PL6: a visitor reads codes (%)', v_state; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.promotion_codes;
   if v_cnt <> 0 then raise exception 'FAIL PL6: a customer reads codes'; end if;
   v_json := public.quote_basket(v_items, array['PLSHARE25'], null, true);
@@ -188,7 +188,7 @@ begin
   passed := array_append(passed, 'PL6 quote: automatic, typed code, refusals counted then locked, reward + code refused, codes unreadable');
 
   -- PL7: campaigns -------------------------------------------------------------------------------
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   v_camp := public.admin_save_campaign(jsonb_build_object(
     'name', 'Camp', 'title', jsonb_build_object('fr', 'Soldes', 'en', 'Sale'),
     'description', jsonb_build_object('fr', '', 'en', ''),
@@ -212,7 +212,7 @@ begin
 
   -- PL8: a draft waits for its code; going live without one is refused ----------------------------
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   v_p1 := public.admin_save_promotion(base || jsonb_build_object('name', 'Waiting', 'code', '', 'lifecycle', 'draft'));
   select count(*) into v_cnt from public.promotions where id = v_p1 and lifecycle = 'draft' and activation = 'code';
   if v_cnt <> 1 then raise exception 'FAIL PL8: draft without code not saved'; end if;
@@ -262,10 +262,10 @@ begin
   insert into public.loyalty_cards (user_id, status, stamps_required, reward_percent, stamps_count, completed_at)
   values (cst, 'completed', 5, 10, 5, now());
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.promotions set lifecycle = 'archived' where lifecycle = 'live';
   v_p1 := public.admin_save_promotion(base || jsonb_build_object('name', 'Auto 5', 'percent_off', 5, 'activation', 'automatic', 'code', '', 'code_kind', null));
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   -- a) 5 % promotion vs 10 % reward: the reward wins, alone
   v_json := public.quote_basket(v_items, null, null, true);
   if not (v_json ->> 'ok')::boolean or (v_json ->> 'goods_discount')::numeric <> round(v_price * 2 * 0.10, 2)
@@ -276,19 +276,19 @@ begin
   v_json := public.quote_basket(v_items);
   if (v_json ->> 'goods_discount')::numeric <> round(v_price * 2 * 0.05, 2) then raise exception 'FAIL PL11: promotion lost (%)', v_json; end if;
   -- b) 30 % promotion vs reward: the promotion wins and the reward is not used
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   v_p2 := public.admin_save_promotion(base || jsonb_build_object('name', 'Auto 30', 'percent_off', 30, 'activation', 'automatic', 'code', '', 'code_kind', null));
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   v_json := public.quote_basket(v_items, null, null, true);
   if (v_json ->> 'goods_discount')::numeric <> round(v_price * 2 * 0.30, 2) or v_json #>> '{discounts,0,type}' = 'loyalty' then
     raise exception 'FAIL PL11b: a 30 %% promotion should beat the reward (%)', v_json;
   end if;
   -- c) a promotion that accepts the reward: both, the reward on what is left
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.promotions set lifecycle = 'archived' where id = v_p2;
   perform public.admin_save_promotion(base || jsonb_build_object('id', v_p1, 'name', 'Auto 5', 'percent_off', 5, 'activation', 'automatic',
                                       'code', '', 'code_kind', null, 'combinable_with_loyalty', true));
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   v_json := public.quote_basket(v_items, null, null, true);
   if jsonb_array_length(v_json -> 'discounts') <> 2
      or abs((v_json ->> 'goods_discount')::numeric - round(v_price * 2 * (0.05 + 0.95 * 0.10), 2)) > 0.02 then
@@ -298,9 +298,9 @@ begin
   perform set_config('role', 'postgres', true);
   delete from public.promotion_code_attempts where actor = 'user:' || cst;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   perform public.admin_save_promotion(base || jsonb_build_object('name', 'Code 20', 'percent_off', 20, 'code', 'plmix20'));
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   v_json := public.quote_basket(v_items, array['PLMIX20'], null, true);
   if not (v_json ->> 'ok')::boolean or (v_json ->> 'goods_discount')::numeric < round(v_price * 2 * 0.20, 2) then
     raise exception 'FAIL PL11d: code + reward (%)', v_json;
@@ -318,13 +318,13 @@ begin
   insert into public.order_discounts (order_id, source, promotion_id, user_id, customer_email, label)
   values (v_order, 'promotion', v_p1, cst, 'promo.cst.test@example.invalid', 'Auto 5');
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   v_json := public.quote_basket(v_items);
   if (v_json ->> 'goods_discount')::numeric <> 0 or jsonb_array_length(v_json -> 'used_up') <> 1
      or (v_json #>> '{used_up,0,max_uses}')::int <> 1 then
     raise exception 'FAIL PL12a: used-up promotion for the account (%)', v_json;
   end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   v_json := public.quote_basket(v_items);
   if (v_json ->> 'goods_discount')::numeric <= 0 or jsonb_array_length(v_json -> 'used_up') <> 0 then
     raise exception 'FAIL PL12b: another customer lost the promotion (%)', v_json;
@@ -342,7 +342,7 @@ begin
   perform set_config('role', 'postgres', true);
   update public.orders set status = 'pending', payment_status = 'pending' where id = v_order;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', cst, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', cst, 'role', 'authenticated')::text, true);
   v_json := public.quote_basket(v_items);
   if (v_json ->> 'goods_discount')::numeric <> 0 or jsonb_array_length(v_json -> 'used_up') <> 0 then
     raise exception 'FAIL PL12e: a use held by an unpaid order (%)', v_json;

@@ -91,7 +91,7 @@ begin
   if v_state is distinct from '42501' then raise exception 'FAIL R2: visitor wrote a link (%)', v_state; end if;
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     insert into public.product_recommendations (product_id, recommended_product_id) values (p_heart, p_kit);
@@ -107,7 +107,7 @@ begin
   end if;
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.product_recommendations where product_id = p_heart;
   if v_cnt <> 6 then raise exception 'FAIL R2: read-only staff see % links, expected 6', v_cnt; end if;
   v_state := null;
@@ -117,7 +117,7 @@ begin
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL R2: read-only staff wrote a link (%)', v_state; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   insert into public.product_recommendations (product_id, recommended_product_id, position)
   values (p_heart, p_kit, 2) returning id into v_link;
   update public.product_recommendations set position = 3 where id = v_link;

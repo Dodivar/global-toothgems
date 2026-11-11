@@ -95,7 +95,7 @@ begin
 
   -- C2: no Studio access, no collection.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m3, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m3, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     insert into public.studio_collections (name) values ('Sans accès');
@@ -105,11 +105,11 @@ begin
   passed := passed || 'C2'::text;
 
   -- C3: with access, the owner organises their creations.
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
   insert into public.creations (name, scene_data) values ('Création de m2', v_scene) returning id into c2a;
   insert into public.studio_collections (name) values ('Mariages') returning id into k2;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   insert into public.creations (name, scene_data) values ('Création A', v_scene) returning id into c1a;
   insert into public.creations (name, scene_data) values ('Création B', v_scene) returning id into c1b;
   insert into public.studio_collections (name, color) values ('Mariages', 'fuchsia') returning id into k1;
@@ -179,7 +179,7 @@ begin
   passed := passed || 'C3'::text;
 
   -- C4: another member is refused, reading and writing.
-  perform set_config('request.jwt.claims', json_build_object('sub', m2, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m2, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_collections where user_id = m1;
   if v_cnt <> 0 then raise exception 'FAIL C4: another member reads % collection(s)', v_cnt; end if;
   select count(*) into v_cnt from public.studio_collection_creations where user_id = m1;
@@ -225,7 +225,7 @@ begin
 
   -- C5: deleting a collection keeps the creations; deleting a creation removes its memberships.
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   delete from public.studio_collections where id = k1b;
   select count(*) into v_cnt from public.creations where id in (c1a, c1b);
   if v_cnt <> 2 then raise exception 'FAIL C5: deleting a collection deleted creations'; end if;
@@ -247,7 +247,7 @@ begin
      set status = 'canceled', current_period_end = now() - interval '1 second'
    where user_id = m1;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_collections;
   if v_cnt <> 0 then raise exception 'FAIL C6: % collection(s) readable after access', v_cnt; end if;
   select count(*) into v_cnt from public.studio_collection_creations;
@@ -278,7 +278,7 @@ begin
      set status = 'active', current_period_end = now() + interval '1 month'
    where user_id = m1;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m1, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_collections;
   if v_cnt <> 2 then raise exception 'FAIL C6: folders not back with the plan (%)', v_cnt; end if;
   select count(*) into v_cnt from public.studio_collection_creations where collection_id = k1;
@@ -286,7 +286,7 @@ begin
   passed := passed || 'C6'::text;
 
   -- C7: active staff have access to organise their own work, not to read members'.
-  perform set_config('request.jwt.claims', json_build_object('sub', staff, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', staff, 'role', 'authenticated')::text, true);
   insert into public.studio_collections (name) values ('Équipe');
   select count(*) into v_cnt from public.studio_collections where user_id in (m1, m2);
   if v_cnt <> 0 then raise exception 'FAIL C7: staff read % member collection(s)', v_cnt; end if;
@@ -300,7 +300,7 @@ begin
   insert into public.studio_collection_creations (user_id, collection_id, creation_id) values (m_ess, k_ess, c_ess);
   perform set_config('role', 'authenticated', true);
   foreach r in array array[to_jsonb(m_trial), to_jsonb(m_ess)] loop
-    perform set_config('request.jwt.claims', json_build_object('sub', r #>> '{}', 'role', 'authenticated')::text, true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', r #>> '{}', 'role', 'authenticated')::text, true);
     v_state := null;
     begin
       insert into public.studio_collections (name) values ('Nouveau dossier');
@@ -308,7 +308,7 @@ begin
     end;
     if v_state is distinct from '42501' then raise exception 'FAIL C8: % created a folder (%)', r, v_state; end if;
   end loop;
-  perform set_config('request.jwt.claims', json_build_object('sub', m_ess, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_ess, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.studio_collections;
   if v_cnt <> 0 then raise exception 'FAIL C8: Essential reads % folder(s)', v_cnt; end if;
   select count(*) into v_cnt from public.studio_collection_creations;
@@ -321,7 +321,7 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL C8: Essential filed a creation (%)', v_state; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', m_atl, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', m_atl, 'role', 'authenticated')::text, true);
   insert into public.creations (name, scene_data) values ('Atelier', v_scene) returning id into c_ess;
   insert into public.studio_collections (name) values ('Atelier') returning id into k_ess;
   insert into public.studio_collection_creations (collection_id, creation_id) values (k_ess, c_ess);

@@ -73,7 +73,7 @@ begin
   -- C2 members: own order linked, fields validated, throttled
   -- ===========================================================================
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   v_ticket := public.submit_contact_request('Alice Test', ' ALICE7.test@example.invalid ', 'order', 'Changer mon adresse',
                 'Bonjour, puis-je changer l''adresse de livraison ?', lower(o_alice.order_number), 'en');
   select * into v_req from public.contact_requests where ticket_number = v_ticket;
@@ -111,7 +111,7 @@ begin
   -- ===========================================================================
   -- C3 attachments
   -- ===========================================================================
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   foreach v_txt in array array[alice::text || '/x.pdf', 'guest/ticket.pdf', bob::text || '/missing.jpg'] loop
     v_state := null;
     begin
@@ -174,21 +174,21 @@ begin
   -- C5 visibility and triage
   -- ===========================================================================
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.contact_requests;
   if v_cnt <> 3 then raise exception 'FAIL C5: alice sees % tickets', v_cnt; end if;
   update public.contact_requests set status = 'closed';
   get diagnostics v_cnt = row_count;
   if v_cnt <> 0 then raise exception 'FAIL C5: customer changed a ticket'; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.contact_requests where email like '%7%';
   if v_cnt < 6 then raise exception 'FAIL C5: read-only staff sees % tickets', v_cnt; end if;
   update public.contact_requests set status = 'open' where user_id = alice;
   get diagnostics v_cnt = row_count;
   if v_cnt <> 0 then raise exception 'FAIL C5: read-only staff triaged'; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   select * into v_req from public.contact_requests where user_id = alice and category = 'privacy';
   update public.contact_requests set status = 'open', assigned_to = vwr where id = v_req.id returning * into v_req;
   if v_req.first_response_at is null or v_req.assigned_to <> vwr then raise exception 'FAIL C5: triage %', row_to_json(v_req); end if;
@@ -207,7 +207,7 @@ begin
   insert into public.contact_request_notes (request_id, author_id, body) values (v_req.id, adm, 'Export envoyé.');
   select author_id::text into v_txt from public.contact_request_notes where request_id = v_req.id;
   if v_txt <> mgr::text then raise exception 'FAIL C5: note author forged'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.contact_request_notes;
   if v_cnt <> 0 then raise exception 'FAIL C5: customer reads internal notes'; end if;
   execute 'reset role';
@@ -219,7 +219,7 @@ begin
   -- N1 newsletter: server-only subscribe, double opt-in, unsubscribe
   -- ===========================================================================
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     perform public.newsletter_subscribe('x7@example.invalid', 'fr', 'footer', '2026-09');
@@ -287,7 +287,7 @@ begin
   end if;
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   insert into public.consent_records (user_id, purpose, granted, policy_version, source)
   values (alice, 'marketing_email', false, '2026-09', 'account');
   select status into v_txt from public.newsletter_subscriptions where user_id = alice;
@@ -301,7 +301,7 @@ begin
   end;
   if v_state is distinct from '42501' then raise exception 'FAIL N2: token readable (%)', v_state; end if;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', bob, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', bob, 'role', 'authenticated')::text, true);
   insert into public.consent_records (user_id, purpose, granted, policy_version, source)
   values (bob, 'marketing_email', true, '2026-09', 'account');
   execute 'reset role';
@@ -326,7 +326,7 @@ begin
   -- ===========================================================================
   select id into v_tpl from public.email_templates where key = 'order_confirmation';
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   v_state := null;
   begin
     insert into public.email_template_translations (template_id, locale, subject, body)
@@ -354,11 +354,11 @@ begin
     if v_state not in ('42501', '23514') or v_state is null then raise exception 'FAIL E1: accepted % (%)', v_txt, v_state; end if;
   end loop;
 
-  perform set_config('request.jwt.claims', json_build_object('sub', vwr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', vwr, 'role', 'authenticated')::text, true);
   update public.email_templates set is_active = false;
   get diagnostics v_cnt = row_count;
   if v_cnt <> 0 then raise exception 'FAIL E1: read-only staff edited templates'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', alice, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', alice, 'role', 'authenticated')::text, true);
   select count(*) into v_cnt from public.email_templates;
   if v_cnt <> 0 then raise exception 'FAIL E1: customer reads templates'; end if;
 
@@ -374,7 +374,7 @@ begin
   -- P1 content pages
   -- ===========================================================================
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   insert into public.content_pages (slug, kind, title, body) values ('guide-entretien', 'guide', 'Guide d''entretien',
     'Pendant les 24 premières heures, évitez les boissons très chaudes.') returning id into v_page;
   insert into public.content_page_translations (page_id, locale, slug, title, body, status)
@@ -397,7 +397,7 @@ begin
   if v_cnt <> 0 then raise exception 'FAIL P1: draft page public'; end if;
 
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.content_pages set status = 'published' where id = v_page returning published_at into v_ts;
   if v_ts is null then raise exception 'FAIL P1: publication not dated'; end if;
   perform set_config('role', 'anon', true);
@@ -412,11 +412,11 @@ begin
   select maintenance_enabled into v_bool from public.store_settings;
   if v_bool is distinct from false then raise exception 'FAIL S1: visitors cannot read the maintenance flag'; end if;
   perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims', json_build_object('sub', mgr, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
   update public.store_settings set maintenance_enabled = true;
   get diagnostics v_cnt = row_count;
   if v_cnt <> 0 then raise exception 'FAIL S1: manager switched maintenance'; end if;
-  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', adm, 'role', 'authenticated')::text, true);
   update public.store_settings set maintenance_enabled = true, maintenance_started_at = '2000-01-01'
   returning maintenance_started_at into v_ts;
   if v_ts < now() - interval '1 minute' then raise exception 'FAIL S1: start time not stamped (%)', v_ts; end if;

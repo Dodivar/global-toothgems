@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { pick } from "../../data/types";
 import { useFormat } from "../../lib/format";
-import type { ProductOffer } from "../../lib/storefrontOffers";
+import { promotionBadgeShown, type ProductOffer } from "../../lib/storefrontOffers";
 
 /** The wording of a promotion's badge ("−20 %", "2 achetés, 1 offert"…): `promo.discount.badge.<type>`. */
 export function useOfferLabel() {
@@ -30,7 +30,8 @@ const pill =
 export function OfferBadges({ offer, className }: { offer: ProductOffer | null | undefined; className?: string }) {
   const { i18n } = useTranslation();
   const label = useOfferLabel();
-  if (!offer || (!offer.campaign && !offer.promotion)) return null;
+  const promotion = offer?.promotion ?? null;
+  if (!offer || (!offer.campaign && !promotionBadgeShown(promotion))) return null;
   return (
     <span className={clsx("flex flex-col items-start gap-1", className)}>
       {offer.campaign && (
@@ -39,7 +40,7 @@ export function OfferBadges({ offer, className }: { offer: ProductOffer | null |
           {pick(offer.campaign.title, i18n.language)}
         </span>
       )}
-      {offer.promotion && <span className={clsx(pill, "bg-[var(--accent-highlight)] text-[var(--gt-white)]")}>{label(offer.promotion)}</span>}
+      {promotion && promotionBadgeShown(promotion) && <span className={clsx(pill, "bg-[var(--accent-highlight)] text-[var(--gt-white)]")}>{label(promotion)}</span>}
     </span>
   );
 }

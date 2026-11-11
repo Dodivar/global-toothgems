@@ -175,7 +175,10 @@ describe("helpers", () => {
   it("names what went wrong from the database's codes", () => {
     expect(loungeFailure({ code: "PT429" })).toBe("rateLimited");
     expect(loungeFailure({ code: "42501" })).toBe("forbidden");
-    expect(loungeFailure({ code: "22023" })).toBe("failed");
+    expect(loungeFailure({ code: "42501", message: "lounge: muted" })).toBe("muted");
+    expect(loungeFailure({ code: "23505" })).toBe("duplicate");
+    expect(loungeFailure({ code: "22023" })).toBe("invalid");
+    expect(loungeFailure({ code: "XX000" })).toBe("failed");
     expect(loungeFailure(null)).toBe("failed");
   });
 });

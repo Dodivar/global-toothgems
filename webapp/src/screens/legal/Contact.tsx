@@ -33,7 +33,7 @@ import { addressLines, hasOpeningHours, hasVisibleContact, hoursSummary, support
 import { sendContactMessage, type ContactError } from "../../lib/contact/api";
 import { ACCEPTED_ATTACHMENTS, attachmentProblem, MAX_ATTACHMENTS, mergeAttachments } from "../../lib/contact/attachments";
 
-const CATEGORIES: ContactCategory[] = ["order", "delivery", "returns", "product", "training", "technical", "privacy", "professional", "other"];
+const CATEGORIES: ContactCategory[] = ["order", "delivery", "returns", "product", "training", "technical", "privacy", "professional", "illegal_content", "other"];
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -284,6 +284,10 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                 </div>
                 {values.category === "privacy" && (
                   <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("legal.contact.privacyHint")}</p>
+                )}
+                {/* A notice of unlawful content (DSA art. 16): what the team needs to act on it. */}
+                {values.category === "illegal_content" && (
+                  <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("legal.contact.illegalContentHint")}</p>
                 )}
               </fieldset>
 
