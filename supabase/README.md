@@ -2039,18 +2039,20 @@ The owner asked an agent to settle the pending "to confirm" points. Outcome:
 
 - **Decided:** every agent's choice or reading marked "to confirm" below is kept as implemented (marked "decided
   2026-11-11"), unless it appears in one of the lists that follow. Nothing was changed in the code by this review.
-  Also decided: guest orders earn no loyalty stamp (decision 76, the cart invites signing in); no purchased gift card
-  refund, public balance check or cards in the member area at launch (decisions 57, 58; a refund made in the Stripe
-  dashboard is still recorded); no staff deletion screen (suspension instead) and no single "owner" role; the contact
-  form's captcha will be Cloudflare Turnstile, already used by Auth and the newsletter (not built yet: honeypot + IP
-  limit meanwhile); subscriptions without an immediate-access request on file (decision 94 (a)) exist only in test
+  Also decided: guest orders earn no loyalty stamp (decision 76, the cart invites signing in); the member's loyalty
+  card is shown from the first sign-in, empty at 0 stamps (already the case); no staff deletion screen (suspension
+  instead) and no single "owner" role; the contact form's visitors pass Cloudflare Turnstile (built 2026-11-11, below);
+  purchased course access has no end date — "lifetime access" on the course pages, "sans limite de durée / with no
+  time limit" in the terms of sale (version `2026-11-12`), the terms of use and the FAQ (owner, 2026-11-11, decision
+  72); the seller's and publisher's telephone numbers are filled in Settings › Store (owner, 2026-11-11); subscriptions without an immediate-access request on file (decision 94 (a)) exist only in test
   mode, nothing to decide.
+- **Left pending by the owner (2026-11-11):** a public gift card balance check, gift cards in the member area and the
+  refund of a purchased card (decisions 57, 58: not built; a refund made in the Stripe dashboard is still recorded);
+  the consumer mediator of the seller and of the publisher (decisions 126, 135, "later": a legal launch blocker, still
+  shown as "to supply").
 - **Open questions to the owner** (business facts only they hold):
-  1. Course access duration: the course page says "24 months", entitlements have no end date (decision 72).
-  2. The consumer mediator the seller (and the publisher, for the Studio) joins, and both telephone numbers
-     (decisions 126, 135): legal launch blockers, shown as "to supply".
-  3. Supplier evidence for the "sans plomb" / "hypoallergénique" product claims (decision 116), else remove them.
-  4. Final Studio prices before the live Prices are created (decision 94).
+  1. Supplier evidence for the "sans plomb" / "hypoallergénique" product claims (decision 116), else remove them.
+  2. Final Studio prices before the live Prices are created (decision 94).
 - **For the accountant** (before launch): VAT franchise eligibility and threshold monitoring for the seller and the
   publisher (114, 135 (a)); EU distance-selling / OSS for goods, courses and Studio subscriptions (5, 68, 115 (d), 126);
   the configured VAT rates, kept for when the franchise ends (5, 68); gift cards as multi-purpose vouchers, no VAT at
@@ -2129,10 +2131,14 @@ The owner asked an agent to settle the pending "to confirm" points. Outcome:
 24. **Internal promotion/campaign names** are hidden from visitors (column grants) but readable by signed-in customers
     for *running automatic* promotions (same trade-off as decision 7). Do not put confidential text in them.
 25. **Contact form goes through the Edge Function `submit-contact-request`** (service role for visitors; the Next.js server
-    must not hold it). Captcha provider still to choose; honeypot + IP limit meanwhile (2026-10-08). The database also
+    must not hold it). Honeypot + IP limit (2026-10-08), Turnstile since 2026-11-11 (below). The database also
     throttles per e-mail/account. `submit_contact_request`, `newsletter_confirm`, `newsletter_unsubscribe` are
     `SECURITY DEFINER` and reachable from the API on purpose (accepted advisor warnings): each validates its input
     and only acts on the caller's own data or on a bearer token.
+    Since 2026-11-11 a visitor (no member session) also sends a Cloudflare Turnstile token (`captcha`), checked by
+    the function after the IP throttle and before any file is stored (`captcha_required` / `captcha_failed`); a signed-in
+    member skips it; without `TURNSTILE_SECRET_KEY` (shared with `newsletter-subscribe` and `order-withdrawal`) nothing
+    changes.
 26. **Retention of tickets, attachments and unsubscribed addresses** is not automated: how long to keep them is a
     legal/business decision (e.g. tickets 3 years after closing). The list keeps unsubscribed addresses so they are
     never mailed again.
@@ -2304,7 +2310,7 @@ The owner asked an agent to settle the pending "to confirm" points. Outcome:
 71. **Courses earn no loyalty stamp and get no shop discount** (agent, 2026-10-02; decided 2026-11-11): the loyalty stamp basis
     joins products, and shop promotions, codes and the loyalty reward are computed on shop lines only (owner's
     decision that shop promotions do not apply to courses). Courses do not count for free-delivery thresholds.
-72. **Purchased course access has no end date** (agent, 2026-10-02 — **open question to the owner**, see "Review of 2026-11-11"): the course page's price note says
+72. **Purchased course access has no end date** (agent, 2026-10-02; **confirmed by the owner 2026-11-11**: lifetime access, the "24 months" mention removed everywhere): the course page's price note says
     "accès 24 mois / 24-month access", but `purchase` entitlements are created without `expires_at` (the more
     generous reading, reversible). Either set `expires_at = now() + 24 months` in
     `private.apply_order_course_transitions()` or change the page's wording.

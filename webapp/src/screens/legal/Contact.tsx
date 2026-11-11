@@ -31,6 +31,8 @@ import type { StoreDetails } from "../../data/adminSettings";
 import { countryName } from "../../lib/countryName";
 import { addressLines, hasOpeningHours, hasVisibleContact, hoursSummary, supportMessageIn } from "../../lib/storeDetails";
 import { sendContactMessage, type ContactError } from "../../lib/contact/api";
+import { useAuth } from "../../lib/auth";
+import { isCaptchaConfigured, useTurnstile } from "../../lib/captcha/turnstile";
 import { ACCEPTED_ATTACHMENTS, attachmentProblem, MAX_ATTACHMENTS, mergeAttachments } from "../../lib/contact/attachments";
 
 const CATEGORIES: ContactCategory[] = ["order", "delivery", "returns", "product", "training", "technical", "privacy", "professional", "illegal_content", "other"];
@@ -96,6 +98,11 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  // Visitors pass Cloudflare Turnstile (loaded once they start typing); a member's session is enough.
+  const { signedIn } = useAuth();
+  const captchaNeeded = isCaptchaConfigured && !signedIn;
+  const [engaged, setEngaged] = useState(false);
+  const { attach: attachCaptcha, token: captchaToken, reset: resetCaptcha, failed: captchaFailed } = useTurnstile(engaged && captchaNeeded, i18n.language?.startsWith("en") ? "en" : "fr");
   const formRef = useRef<HTMLFormElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const successHeading = useRef<HTMLHeadingElement>(null);
@@ -114,6 +121,7 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
   };
 
   const update = <K extends keyof Values>(key: K, value: Values[K]) => {
+    setEngaged(true);
     const next = { ...values, [key]: value };
     setValues(next);
     if (submitted) setErrors(validate(next, files));
@@ -128,7 +136,7 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
     });
   };
 
-  const onSubmit = (event: FormEvent) => {
+  const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSubmitted(true);
     const found = validate(values, files);
@@ -141,6 +149,16 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
     }
     setSending(true);
     setSendError(null);
+    setEngaged(true);
+    let token: string | null = null;
+    if (captchaNeeded) {
+      token = await captchaToken();
+      if (!token) {
+        setSending(false);
+        setSendError(captchaFailed ? "captcha_failed" : "captcha_required");
+        return;
+      }
+    }
     void sendContactMessage({
       name: values.name,
       email: values.email,
@@ -150,8 +168,10 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
       orderReference: values.order,
       locale: i18n.language.startsWith("fr") ? "fr" : "en",
       files,
+      captcha: token,
     }).then((result) => {
       setSending(false);
+      resetCaptcha();
       if (!result.ok) {
         setSendError(result.error);
         return;
@@ -438,6 +458,8 @@ export function Contact({ store = null }: { store?: StoreDetails | null }) {
                   </Link>
                 </p>
               </div>
+
+              {captchaNeeded && <div ref={attachCaptcha} className="empty:hidden" />}
 
               {sendError && (
                 <Notice tone="error" live="alert" title={t("legal.contact.errors.sendTitle")}>

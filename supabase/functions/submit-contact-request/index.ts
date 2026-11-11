@@ -1,6 +1,7 @@
 import { callerClient, requireEnv, serviceClient } from "../_shared/clients.ts";
 import { emailDepsFromEnv, sendTemplatedEmail } from "../_shared/email/mod.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
+import { verifyTurnstile } from "../newsletter-subscribe/turnstile.ts";
 import { handleContact, type ContactDeps } from "./handler.ts";
 
 /*
@@ -11,9 +12,13 @@ import { handleContact, type ContactDeps } from "./handler.ts";
 const supabase = serviceClient();
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 const BUCKET = "contact-attachments";
+/** Shared with newsletter-subscribe and order-withdrawal; without it visitors are not asked for a captcha. */
+const turnstileSecret = Deno.env.get("TURNSTILE_SECRET_KEY")?.trim() || null;
 
 const deps: ContactDeps = {
   origins,
+  captchaConfigured: turnstileSecret !== null,
+  verifyCaptcha: (token, remoteIp) => verifyTurnstile(turnstileSecret ?? "", token, remoteIp),
 
   async userFromToken(token) {
     const { data, error } = await supabase.auth.getUser(token);

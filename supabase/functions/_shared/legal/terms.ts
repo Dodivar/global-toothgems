@@ -12,7 +12,7 @@ import { l, type LegalDocument } from "./types.ts";
  * any change to the text below**: `termsDocument.test.ts` fails while the
  * text's fingerprint and this version disagree.
  */
-export const TERMS_OF_SALE_VERSION = "2026-11-11";
+export const TERMS_OF_SALE_VERSION = "2026-11-12";
 
 /**
  * Terms of sale ("conditions générales de vente").
@@ -700,9 +700,9 @@ export const TERMS: LegalDocument = {
           kind: "p",
           text: lp(
             (p) =>
-              `L’achat d’une formation vous donne un droit d’accès personnel et non transférable, pendant ${p.courseAccess}. Les vidéos, supports et questionnaires ne peuvent être copiés, partagés ou revendus. L’attestation délivrée à la fin d’une formation atteste que vous l’avez suivie et validée ; ce n’est ni un diplôme ni une certification professionnelle reconnue par l’État.`,
+              `L’achat d’une formation vous donne un droit d’accès personnel et non transférable, ${p.courseAccess}. Les vidéos, supports et questionnaires ne peuvent être copiés, partagés ou revendus. L’attestation délivrée à la fin d’une formation atteste que vous l’avez suivie et validée ; ce n’est ni un diplôme ni une certification professionnelle reconnue par l’État.`,
             (p) =>
-              `Buying a course gives you a personal, non-transferable right of access, for ${p.courseAccess}. Videos, materials and quizzes may not be copied, shared or resold. The certificate issued at the end of a course attests that you followed and passed it; it is neither a diploma nor a state-recognised professional certification.`,
+              `Buying a course gives you a personal, non-transferable right of access, ${p.courseAccess}. Videos, materials and quizzes may not be copied, shared or resold. The certificate issued at the end of a course attests that you followed and passed it; it is neither a diploma nor a state-recognised professional certification.`,
           ),
         },
         {

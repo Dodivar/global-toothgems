@@ -18,11 +18,15 @@ interface ContactMessage {
   orderReference: string;
   locale: "fr" | "en";
   files: File[];
+  /** A visitor's Cloudflare Turnstile token (members are known by their session). */
+  captcha?: string | null;
 }
 
 /** Codes the function answers with, plus the client's own. Each has a message under `legal.contact.errors.send`. */
 export const CONTACT_ERRORS = [
   "rate_limited",
+  "captcha_required",
+  "captcha_failed",
   "file_type",
   "too_many_files",
   "files_too_large",
@@ -47,6 +51,7 @@ function contactFormData(message: ContactMessage): FormData {
   data.set("message", message.message.trim());
   data.set("order_reference", message.orderReference.trim());
   data.set("locale", message.locale);
+  if (message.captcha) data.set("captcha", message.captcha);
   for (const file of message.files) data.append("files", file);
   return data;
 }

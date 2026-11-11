@@ -817,7 +817,7 @@
     "metaDiplomaLabel": "À la clé",
     "metaModules": "{{count}} modules",
     "metaDiploma": "Diplôme inclus",
-    "priceNote": "Paiement unique · accès 24 mois",
+    "priceNote": "Paiement unique · accès à vie",
     "ctaStart": "Commencer cette formation",
     "ctaResume": "Reprendre la formation",
     "ctaReview": "Revoir la formation",
@@ -926,7 +926,7 @@
   "lesson": {
     "eyebrow": "Formation en cours",
     "progressLabel": "{{done}} leçons sur {{total}}",
-    "remainingVideo": "Il reste {{minutes}} min de vidéo · accès 24 mois",
+    "remainingVideo": "Il reste {{minutes}} min de vidéo · accès à vie",
     "certificateTitle": "Attestation",
     "certificateBody": "Délivrée après les 9 leçons, le quiz de chaque module et trois poses envoyées en revue de cas.",
     "certificateLink": "Voir mes attestations",
@@ -4778,6 +4778,8 @@
         "fileType": "Seuls les fichiers JPG, PNG et PDF sont acceptés.",
         "send": {
           "rate_limited": "Vous avez envoyé plusieurs messages à la suite. Patientez quelques minutes avant de réessayer.",
+          "captcha_required": "La vérification anti-robot est en cours… Réessayez dans un instant ; vos informations restent dans ce formulaire.",
+          "captcha_failed": "La vérification anti-robot n’a pas abouti. Rechargez la page puis réessayez ; si un bloqueur de publicités est actif, autorisez challenges.cloudflare.com.",
           "file_type": "Une pièce jointe n’a pas été reconnue : seuls les fichiers JPG, PNG et PDF sont acceptés.",
           "too_many_files": "Vous pouvez joindre 5 fichiers au maximum.",
           "files_too_large": "Vos pièces jointes dépassent 20 Mo au total.",

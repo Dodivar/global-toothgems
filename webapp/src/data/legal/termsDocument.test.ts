@@ -64,8 +64,8 @@ describe("terms of sale version", () => {
     // a PDF whose version no longer identifies its text.
     const fingerprint = createHash("sha256").update(JSON.stringify(TERMS)).digest("hex");
     expect({ version: TERMS_OF_SALE_VERSION, fingerprint }).toEqual({
-      version: "2026-11-11",
-      fingerprint: "9a565725d57a8524b4dd4d51d2e66e8e6657ffa4c0f7b11042749c99eb68eaef",
+      version: "2026-11-12",
+      fingerprint: "34b9f3045a8e7a2250d569d2dd0e1b072afe607944719477d6feda4e4583e9a4",
     });
   });
 
@@ -82,14 +82,14 @@ describe("terms of sale PDF", () => {
       expect(new TextDecoder().decode(bytes.subarray(0, 5))).toBe("%PDF-");
       expect(new TextDecoder("latin1").decode(bytes)).toContain(lang === "fr" ? "/Lang <FEFF00660072>" : "/Lang <FEFF0065006E>");
     }
-    expect(termsOfSaleFileName(T.fr)).toBe("conditions-generales-de-vente-2026-11-11.pdf");
-    expect(termsOfSaleFileName(T.en)).toBe("terms-of-sale-2026-11-11.pdf");
+    expect(termsOfSaleFileName(T.fr)).toBe("conditions-generales-de-vente-2026-11-12.pdf");
+    expect(termsOfSaleFileName(T.en)).toBe("terms-of-sale-2026-11-12.pdf");
   });
 
   it("prints the version, the reference, every numbered clause and the seller filled from the store", () => {
     const text = drawnText("fr", "Commande GT-2026-000123");
     expect(text).toContain("CONDITIONS GÉNÉRALES DE VENTE");
-    expect(text).toContain("11 novembre 2026");
+    expect(text).toContain("12 novembre 2026");
     expect(text).toContain("Commande GT-2026-000123");
     TERMS.sections.forEach((section, i) => expect(text).toContain(`${i + 1}. ${section.title.fr}`));
     expect(text).toContain("PIMP TON SMILE — Ada Test, Entrepreneur individuel (EI)");
@@ -97,7 +97,7 @@ describe("terms of sale PDF", () => {
 
     const english = drawnText("en");
     expect(english).toContain("TERMS OF SALE");
-    expect(english).toContain("11 November 2026");
+    expect(english).toContain("12 November 2026");
     expect(english).toContain(`1. ${TERMS.sections[0].title.en}`);
     expect(english).not.toContain("Conditions générales");
   });
