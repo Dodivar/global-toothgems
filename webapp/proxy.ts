@@ -30,6 +30,11 @@ export async function proxy(request: NextRequest) {
   const saved = request.cookies.get(LANGUAGE_KEY)?.value;
   const acceptLanguage = request.headers.get("accept-language");
 
+  // Pages answer at their address without a trailing slash (Next.js's own
+  // redirect is off for PostHog's `/ingest/…/`, see `next.config.ts`).
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return NextResponse.redirect(new URL(`${pathname.replace(/\/+$/, "") || "/"}${search}`, request.url), 308);
+  }
   if (pathname === "/") {
     const home = new URL(`/${negotiateLocale(saved, acceptLanguage)}${search}`, request.url);
     const response = NextResponse.redirect(home, 307);
@@ -73,7 +78,8 @@ const NOT_FOUND_PATH = "/_introuvable";
 export const config = {
   matcher: [
     // Pages only: not the build output, the image optimizer, files from public/ or bundled assets,
-    // nor the Academy's public course covers (`app/media/formations`, read with the publishable key).
-    "/((?!_next/static|_next/image|videos/|media/formations/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|glb|mp4|webm|txt|xml|json|webmanifest)$).*)",
+    // nor the Academy's public course covers (`app/media/formations`, read with the publishable key),
+    // nor PostHog's requests (`/ingest`, rewritten to PostHog in `next.config.ts`).
+    "/((?!_next/static|_next/image|videos/|media/formations/|ingest/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|glb|mp4|webm|txt|xml|json|webmanifest)$).*)",
   ],
 };

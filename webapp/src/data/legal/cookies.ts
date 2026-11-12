@@ -7,7 +7,7 @@ import { l, type LegalDocument } from "./types";
  * Mirrors what the site really does: PostHog only after the analytics choice
  * (`lib/cookieConsent.tsx`), OpenFreeMap tiles for the Glowbook maps, Stripe
  * on the payment page. Every name and duration in the inventory was checked
- * against the code on 2026-11-08 (`lib/cookieConsent.tsx`, `i18n/preference.ts`,
+ * against the code on 2026-11-08, session replay and the account-id-only identity on 2026-11-12 (`lib/posthogConfig.ts`, `lib/cookieConsent.tsx`, `i18n/preference.ts`,
  * `lib/cartStorage.ts`, `@supabase/ssr` defaults, `instrumentation-client.ts`).
  * Update it — and `updated` — when a cookie, a provider or a category changes.
  */
@@ -20,7 +20,7 @@ export const COOKIE_POLICY: LegalDocument = {
     "Ce que sont les cookies, à quoi ils servent sur Global Toothgems, et comment accepter, refuser ou changer d’avis à tout moment.",
     "What cookies are, what they are used for on Global Toothgems, and how to accept, refuse or change your mind at any time.",
   ),
-  updated: "2026-11-08",
+  updated: "2026-11-12",
   contactCategory: "privacy",
   lead: [{ kind: "widget", widget: "cookieChoices" }],
   sections: [
@@ -109,15 +109,22 @@ export const COOKIE_POLICY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Avec votre accord seulement, nous utilisons PostHog (serveurs situés dans l’Union européenne) pour savoir quelles pages sont consultées, où la navigation se complique, quelles fonctions sont utilisées (panier, paiement, Studio 3D) et quelles erreurs surviennent. Tant que vous n’avez pas accepté cette catégorie, aucune donnée n’est envoyée à PostHog.",
-            "Only with your agreement, we use PostHog (servers located in the European Union) to know which pages are visited, where navigation gets difficult, which features are used (cart, payment, 3D Studio) and which errors occur. Until you accept this category, no data is sent to PostHog.",
+            "Avec votre accord seulement, nous utilisons PostHog (serveurs situés dans l’Union européenne) pour savoir quelles pages sont consultées, où la navigation se complique, quelles fonctions sont utilisées (panier, paiement, Studio 3D, Academy) et quelles erreurs surviennent. Tant que vous n’avez pas accepté cette catégorie, aucune donnée vous concernant n’est envoyée à PostHog : seules les erreurs techniques de nos serveurs y sont signalées, sans cookie, adresse IP ni identifiant de visiteur.",
+            "Only with your agreement, we use PostHog (servers located in the European Union) to know which pages are visited, where navigation gets difficult, which features are used (cart, payment, 3D Studio, Academy) and which errors occur. Until you accept this category, no data about you is sent to PostHog: only our servers’ technical errors are reported there, without any cookie, IP address or visitor identifier.",
           ),
         },
         {
           kind: "p",
           text: l(
-            "Une fois votre accord donné, PostHog enregistre un identifiant dans votre navigateur. Si vous êtes connecté, il est rattaché à votre compte, avec votre adresse e-mail et votre nom. Ces données servent uniquement à notre propre analyse et ne sont ni vendues ni utilisées pour de la publicité. Si vous retirez votre accord, la collecte s’arrête et cet identifiant est effacé de votre navigateur (voir plus bas).",
-            "Once you agree, PostHog stores an identifier in your browser. If you are signed in, it is linked to your account, with your e-mail address and name. This data is used only for our own analysis and is neither sold nor used for advertising. If you withdraw your agreement, collection stops and that identifier is erased from your browser (see below).",
+            "Une fois votre accord donné, PostHog enregistre un identifiant dans votre navigateur. Si vous êtes connecté, il est rattaché au numéro interne de votre compte, sans votre adresse e-mail ni votre nom. Les codes et jetons présents dans les adresses des pages (connexion, liens envoyés par e-mail) sont masqués avant l’envoi. Ces données servent uniquement à notre propre analyse et ne sont ni vendues ni utilisées pour de la publicité. Si vous retirez votre accord, la collecte s’arrête et cet identifiant est effacé de votre navigateur (voir plus bas).",
+            "Once you agree, PostHog stores an identifier in your browser. If you are signed in, it is linked to your account’s internal number, without your e-mail address or name. Codes and tokens in page addresses (sign-in, links sent by e-mail) are masked before sending. This data is used only for our own analysis and is neither sold nor used for advertising. If you withdraw your agreement, collection stops and that identifier is erased from your browser (see below).",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Avec ce même accord, PostHog enregistre aussi le déroulé de certaines visites (pages, clics, défilement), pour revoir où un parcours se bloque : seulement sur les pages publiques du site (boutique, Academy, Glowbook…), dans le Studio 3D et sur les pages de cours. Tout ce que vous saisissez (adresse, e-mail, mot de passe, recherche) est masqué, la carte bancaire est saisie chez Stripe et n’est jamais visible, et rien n’est enregistré dans votre espace membre, à la connexion ni sur la page de rétractation. Ces enregistrements sont conservés par PostHog au plus 30 jours, et plus aucun n’est fait une fois votre accord retiré.",
+            "With the same agreement, PostHog also records how some visits unfold (pages, clicks, scrolling), so we can see where a journey gets stuck: only on the site’s public pages (shop, Academy, Glowbook…), in the 3D Studio and on the course pages. Everything you type (address, e-mail, password, search) is masked, your card is entered at Stripe and never visible, and nothing is recorded in your member space, when signing in or on the withdrawal page. PostHog keeps these recordings for at most 30 days, and none are made once you withdraw your agreement.",
           ),
         },
       ],
