@@ -3,6 +3,9 @@ import { emailDepsFromEnv, sendTemplatedEmail } from "../_shared/email/mod.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { handleSubscribe, type SubscribeDeps } from "./handler.ts";
 import { verifyTurnstile } from "../_shared/turnstile.ts";
+import { functionLogger } from "../_shared/log.ts";
+
+const log = functionLogger("newsletter-subscribe");
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): visitors call it with the publishable
@@ -62,7 +65,7 @@ const deps: SubscribeDeps = {
   },
 
   sendEmail: (request) => sendTemplatedEmail(emailDepsFromEnv(), request),
-  log: (message, detail) => console.error(`[newsletter-subscribe] ${message}`, detail ?? ""),
+  log: log,
 };
 
 Deno.serve((req) => handleSubscribe(req, deps));

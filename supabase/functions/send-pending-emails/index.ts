@@ -6,6 +6,7 @@ import { supabaseTermsProvider } from "../_shared/email/termsPdf.ts";
 import { sendOrderWithdrawalEmails, supabaseWithdrawalSource } from "../_shared/email/withdrawalEmails.ts";
 import { sendLoungeModerationEmails, supabaseModerationMailSource } from "../_shared/email/loungeModerationEmails.ts";
 import { handleSendPendingEmails } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): called by pg_cron
@@ -14,7 +15,7 @@ import { handleSendPendingEmails } from "./handler.ts";
  * confirmations (course enrolment, Studio subscription) the terms of sale.
  */
 
-const log = (message: string, detail?: unknown) => console.error(`[send-pending-emails] ${message}`, detail ?? "");
+const log = functionLogger("send-pending-emails");
 
 Deno.serve((req) =>
   handleSendPendingEmails(req, {

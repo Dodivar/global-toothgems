@@ -6,6 +6,7 @@ import { supabaseInvoiceSource } from "../_shared/email/invoicePdf.ts";
 import { withdrawFromStudio } from "../_shared/studioWithdrawal.ts";
 import { liveWithdrawalDeps } from "../_shared/studioWithdrawalLive.ts";
 import { handleStudioWithdraw } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): the member's token
@@ -16,7 +17,7 @@ const supabase = serviceClient();
 // The Studio's Stripe account: the publisher's (DoDigital, decision 135), `STRIPE_*`.
 const stripe = stripeClient("studio");
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
-const log = (message: string, detail?: unknown) => console.error(`[studio-withdraw] ${message}`, detail ?? "");
+const log = functionLogger("studio-withdraw");
 
 // The acknowledgement goes out at once; the send-pending-emails sweep catches a failure.
 const acknowledge = async () => {
