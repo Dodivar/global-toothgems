@@ -2,7 +2,7 @@ import { requireEnv, serviceClient } from "../_shared/clients.ts";
 import { emailDepsFromEnv, sendTemplatedEmail } from "../_shared/email/mod.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { handleSubscribe, type SubscribeDeps } from "./handler.ts";
-import { verifyTurnstile } from "./turnstile.ts";
+import { verifyTurnstile } from "../_shared/turnstile.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): visitors call it with the publishable

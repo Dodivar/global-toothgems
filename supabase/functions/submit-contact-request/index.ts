@@ -1,7 +1,7 @@
 import { callerClient, requireEnv, serviceClient } from "../_shared/clients.ts";
 import { emailDepsFromEnv, sendTemplatedEmail } from "../_shared/email/mod.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
-import { verifyTurnstile } from "../newsletter-subscribe/turnstile.ts";
+import { verifyTurnstile } from "../_shared/turnstile.ts";
 import { handleContact, type ContactDeps } from "./handler.ts";
 
 /*

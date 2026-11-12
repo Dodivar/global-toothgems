@@ -1,4 +1,4 @@
-import { corsHeaders, json, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
+import { clientAddress, corsHeaders, json, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
 import { hashAddress, isValidAddress, type SendRequest, type SendResult } from "../_shared/email/send.ts";
 import type { EmailContent } from "../_shared/email/render.ts";
 
@@ -91,10 +91,6 @@ function parseBody(raw: unknown): (Subscription & { honeypot: boolean; captcha: 
   if (!POLICY_VERSION.test(policyVersion)) return null;
   return { email, locale, source: source as Source, policyVersion, honeypot, captcha: captcha || null };
 }
-
-/** Only the headers the platform sets itself: `x-forwarded-for` can be written by the caller. */
-const clientAddress = (req: Request): string | null =>
-  req.headers.get("sb-forwarded-for")?.trim() || req.headers.get("cf-connecting-ip")?.trim() || null;
 
 const BUTTON = { fr: "Confirmer mon inscription", en: "Confirm my subscription" } as const;
 

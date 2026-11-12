@@ -1,4 +1,4 @@
-import { callerJwt, corsHeaders, json, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
+import { callerJwt, clientAddress, corsHeaders, json, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
 import { hashAddress, isValidAddress } from "../_shared/email/send.ts";
 
 /**
@@ -85,10 +85,6 @@ export const DECLARE_REFUSALS = [
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const str = (body: Record<string, unknown>, key: string) => (typeof body[key] === "string" ? (body[key] as string).trim() : "");
-
-/** Only the headers the platform sets itself: `x-forwarded-for` can be written by the caller. */
-const clientAddress = (req: Request): string | null =>
-  req.headers.get("sb-forwarded-for")?.trim() || req.headers.get("cf-connecting-ip")?.trim() || null;
 
 /** A database refusal as a short code and status. */
 export function declareRefusal(error: DbError): { code: string; status: number } {

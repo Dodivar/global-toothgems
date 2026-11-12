@@ -6,7 +6,7 @@ import {
   supabaseWithdrawalSource,
   withdrawalLinkContent,
 } from "../_shared/email/withdrawalEmails.ts";
-import { verifyTurnstile } from "../newsletter-subscribe/turnstile.ts";
+import { verifyTurnstile } from "../_shared/turnstile.ts";
 import { handleOrderWithdrawal, type LinkResult, type OrderWithdrawalDeps } from "./handler.ts";
 
 /*

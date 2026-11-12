@@ -87,3 +87,10 @@ export function callerJwt(req: Request): string | null {
   const token = bearer(req);
   return token && looksLikeJwt(token) ? token : null;
 }
+
+/**
+ * The caller's IP address for rate limits, read only from the headers the
+ * platform sets itself: `x-forwarded-for` can be written by the caller.
+ */
+export const clientAddress = (req: Request): string | null =>
+  req.headers.get("sb-forwarded-for")?.trim() || req.headers.get("cf-connecting-ip")?.trim() || null;

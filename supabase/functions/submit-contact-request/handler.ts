@@ -1,4 +1,4 @@
-import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
+import { clientAddress, corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { hashAddress, isValidAddress, type SendRequest, type SendResult } from "../_shared/email/send.ts";
 
 /**
@@ -130,10 +130,6 @@ function parseFields(form: FormData): ContactSubmission | null {
   if (order.length > 40) return null;
   return { name, email, category: category as Category, subject, message, orderReference: order || null, locale };
 }
-
-/** Only the headers the platform sets itself: `x-forwarded-for` can be written by the caller. */
-const clientAddress = (req: Request): string | null =>
-  req.headers.get("sb-forwarded-for")?.trim() || req.headers.get("cf-connecting-ip")?.trim() || null;
 
 /** A file name safe to show in an e-mail: no path, no control characters, bounded. */
 function displayName(original: string, ext: string, index: number): string {
