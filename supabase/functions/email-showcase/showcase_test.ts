@@ -50,7 +50,7 @@ Deno.test("every contract confirmation shows its terms PDF and names its version
   const order = byKey.get("order_confirmation")!;
   assert(order.attachments?.some((a) => a.filename === TERMS_FILE));
   const orderContent = typeof order.content === "function" ? order.content("fr") : order.content;
-  assertEquals(orderContent?.footerNote, "Conditions générales de vente jointes à cet e-mail (PDF) : version du 11 novembre 2026.");
+  assertEquals(orderContent?.footerNote, "Conditions générales de vente jointes à cet e-mail (PDF) : version du 12 novembre 2026.");
   // The Studio is sold by the publisher, under its own terms.
   const studio = byKey.get("studio_subscription_confirmation")!;
   assert(studio.attachments?.some((a) => a.filename === STUDIO_TERMS_FILE));
