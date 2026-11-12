@@ -1,6 +1,7 @@
 import { requireEnv, serviceClient } from "../_shared/clients.ts";
 import { handleSyncNewsletterContacts, type PendingContact, type SyncStore, syncNewsletterContacts } from "./handler.ts";
 import { resendContactsApi } from "./resendContacts.ts";
+import { functionLogger } from "../_shared/log.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): called by pg_cron with the shared
@@ -8,7 +9,7 @@ import { resendContactsApi } from "./resendContacts.ts";
  * key); a sending-only key is answered 401/403 and the run stops, saying so.
  */
 
-const log = (message: string, detail?: unknown) => console.error(`[sync-newsletter-contacts] ${message}`, detail ?? "");
+const log = functionLogger("sync-newsletter-contacts");
 
 function supabaseSyncStore(): SyncStore {
   const db = serviceClient();

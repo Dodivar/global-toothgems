@@ -6,6 +6,7 @@ import { DEFAULT_CHECK_MODEL, PHOTO_CHECK_PROMPT, PHOTO_CHECK_SCHEMA } from "./p
 import { TEETH_PROMPT, TEETH_SCHEMA, teethReadings } from "./teeth.ts";
 import { designGems, gemListText } from "./gems.ts";
 import { TRY_ON_SYSTEM_PROMPT } from "./systemPrompt.ts";
+import { functionLogger } from "../_shared/log.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): the status call is
@@ -37,7 +38,7 @@ const checkModel = Deno.env.get("TRY_ON_CHECK_MODEL")?.trim() || DEFAULT_CHECK_M
 const checkConfig = config && /^[\w.-]{3,80}$/.test(checkModel) ? { ...config, model: checkModel } : null;
 const teethModel = Deno.env.get("TRY_ON_TEETH_MODEL")?.trim() || checkModel;
 const teethConfig = config && /^[\w.-]{3,80}$/.test(teethModel) ? { ...config, model: teethModel } : null;
-const log = (message: string, detail?: unknown) => console.error(`[studio-try-on] ${message}`, detail ?? "");
+const log = functionLogger("studio-try-on");
 // Why the AI is not connected, if it is not: secret names and shapes only, never values.
 const problem = configProblem((name) => Deno.env.get(name));
 if (problem) log("AI not connected", problem);

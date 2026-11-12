@@ -1,5 +1,5 @@
 import { parseCheckoutInput, parseClientSecret, type CheckoutInput, type CheckoutLocale } from "../_shared/checkoutInput.ts";
-import { corsHeaders, json, readJson, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
+import { callerJwt, corsHeaders, json, readJson, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
 import { toMinorUnits } from "../_shared/money.ts";
 import { checkoutErrorCode, checkoutErrorStatus, type DbError } from "../_shared/orderErrors.ts";
 import { TERMS_OF_SALE_VERSION } from "../_shared/legal/terms.ts";
@@ -167,15 +167,6 @@ const CONFIRMATION_PATHS: Record<CheckoutLocale, string> = {
 export const returnUrl = (origin: string, locale: CheckoutLocale) =>
   `${origin}${CONFIRMATION_PATHS[locale]}?session_id={CHECKOUT_SESSION_ID}`;
 
-function bearer(req: Request): string | null {
-  const header = req.headers.get("authorization") ?? "";
-  const match = /^Bearer\s+(\S+)$/i.exec(header);
-  return match ? match[1] : null;
-}
-
-// A user access token is a JWT; the publishable key (`sb_publishable_…`) is not.
-const looksLikeJwt = (token: string) => /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token);
-
 export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<Response> {
   const requestOrigin = req.headers.get("origin");
   const cors = corsHeaders(deps.origins, requestOrigin);
@@ -207,9 +198,9 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
     return fail("server_error");
   }
 
-  const token = bearer(req);
+  const token = callerJwt(req);
   let userId: string | null = null;
-  if (token && looksLikeJwt(token)) {
+  if (token) {
     userId = await deps.userFromToken(token);
     // A token that is present but no longer valid is refused rather than
     // silently turned into a guest order the customer would not find.

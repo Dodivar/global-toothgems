@@ -228,9 +228,9 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
         ref={curriculumRef}
         tabIndex={-1}
         aria-labelledby="training-curriculum"
-        className="scroll-mt-6 bg-[var(--surface-page)] px-[clamp(14px,4vw,48px)] py-[clamp(56px,7vw,var(--section-y))]"
+        className="scroll-mt-6 bg-[var(--surface-page)] px-[clamp(16px,4vw,72px)] py-[clamp(56px,7vw,var(--section-y))]"
       >
-        <div className="mx-auto grid max-w-[var(--max-width-content)] gap-[clamp(20px,3vw,32px)]">
+        <div className="mx-auto grid max-w-[1760px] gap-[clamp(20px,3vw,32px)]">
           <SectionIntro
             id="training-curriculum"
             eyebrow={t("training.curriculumEyebrow")}

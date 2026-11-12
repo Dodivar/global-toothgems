@@ -3,6 +3,7 @@ import {
   archiveFileName,
   archiveFiles,
   hasPasswordSignIn,
+  reauthMethodOf,
   readBlockers,
   readDeleteAnswer,
   readExportAnswer,
@@ -87,5 +88,15 @@ describe("hasPasswordSignIn", () => {
     expect(hasPasswordSignIn(["email", "google"])).toBe(true);
     expect(hasPasswordSignIn(["google"])).toBe(false);
     expect(hasPasswordSignIn(undefined)).toBe(false);
+  });
+});
+
+describe("reauthMethodOf", () => {
+  it("prefers the password, else the provider the account has", () => {
+    expect(reauthMethodOf(["email", "apple"])).toBe("password");
+    expect(reauthMethodOf(["apple"])).toBe("apple");
+    expect(reauthMethodOf(["google"])).toBe("google");
+    expect(reauthMethodOf(["google", "apple"])).toBe("google");
+    expect(reauthMethodOf(undefined)).toBe("google");
   });
 });

@@ -6,6 +6,7 @@ import { isValidAddress } from "../_shared/email/send.ts";
 import { hasInternalSecret } from "../_shared/internalAuth.ts";
 import { json, readJson } from "../_shared/http.ts";
 import { buildShowcase, type Sample, withDocuments } from "./showcase.ts";
+import { functionLogger } from "../_shared/log.ts";
 
 /*
  * POST /functions/v1/email-showcase  { "to": "<address>", "only_documents"?: true }
@@ -18,7 +19,7 @@ import { buildShowcase, type Sample, withDocuments } from "./showcase.ts";
  * a credit note or the terms of sale (decision 130). Answer: the status of each sample, no content.
  */
 
-const log = (message: string, detail?: unknown) => console.error(`[email-showcase] ${message}`, detail ?? "");
+const log = functionLogger("email-showcase");
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Same columns as private.invoice_seller(). */

@@ -428,8 +428,9 @@ the password goes through Supabase Auth (`lib/accountCredentials.ts`); the data
 export (`my_personal_data()`) and the account deletion (Edge Function
 `delete-account`) go through `lib/accountPrivacy.ts`, its answers read by the pure
 `lib/accountPrivacyMapping.ts` (decision 125). The demo panel of that page only
-exists in mock mode. Google sign-in goes through Supabase Auth (`signInWithGoogle`, terms
-dialog first). The registration journey itself has no simulated service any
+exists in mock mode. Google and Apple sign-in go through Supabase Auth (`signInWithGoogle`,
+`signInWithApple`, terms dialog first; Apple shown only once enabled on the project, `lib/authProviders.ts`), and
+the button of the method used last carries a "Last used" badge (`lib/lastSignInMethod.ts`, decision 138). The registration journey itself has no simulated service any
 more: without Supabase the mock `signUp` only answers "confirmation sent", which
 is enough for the smoke tests.
 

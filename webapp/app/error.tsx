@@ -1,5 +1,6 @@
 "use client";
 
+import { useCaptureRenderError } from "../src/lib/useCaptureRenderError";
 import { PublicChrome } from "../src/zones/public";
 import { ServerError } from "../src/screens/ServerError";
 import { BrowserOnly } from "../src/zones/BrowserOnly";
@@ -9,7 +10,8 @@ import { BrowserOnly } from "../src/zones/BrowserOnly";
  * Studio) that failed while rendering: the server-error screen, in the
  * storefront's chrome.
  */
-export default function Error() {
+export default function Error({ error }: { error: Error & { digest?: string }; reset: () => void }) {
+  useCaptureRenderError(error, "app");
   return (
     <PublicChrome>
       <BrowserOnly>

@@ -2,6 +2,9 @@ import { lazyStripeClient, serviceClient, stripeCryptoProvider, stripeWebhookEnd
 import { notifyOrderPaid, notifyRefundConfirmed } from "../_shared/email/notify.ts";
 import { DbCallError, handleWebhook, type VerifiedEvent, type WebhookDeps } from "./handler.ts";
 import { invoiceLineFacts, type StudioInvoiceLine } from "./subscriptions.ts";
+import { functionLogger } from "../_shared/log.ts";
+
+const log = functionLogger("stripe-webhook");
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): Stripe does not
@@ -104,7 +107,7 @@ const deps: WebhookDeps = {
     if (error) throw dbError(error);
   },
 
-  orderPaid: (orderId) => notifyOrderPaid(orderId, (message, detail) => console.error(`[stripe-webhook] ${message}`, detail ?? "")),
+  orderPaid: (orderId) => notifyOrderPaid(orderId, log),
 
   async closeCheckoutPayment(checkoutId, status, reason) {
     const { error } = await supabase
@@ -224,9 +227,9 @@ const deps: WebhookDeps = {
     },
   },
 
-  refundConfirmed: () => notifyRefundConfirmed((message, detail) => console.error(`[stripe-webhook] ${message}`, detail ?? "")),
+  refundConfirmed: () => notifyRefundConfirmed(log),
 
-  log: (message, detail) => console.error(`[stripe-webhook] ${message}`, detail ?? ""),
+  log: log,
 };
 
 Deno.serve((req) => handleWebhook(req, deps));

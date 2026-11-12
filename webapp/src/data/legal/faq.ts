@@ -322,9 +322,9 @@ export const FAQ: FaqCategory[] = [
         answer: [
           lp(
             (p) =>
-              `Après l’achat, la formation apparaît dans votre espace <<Mon compte|/compte>>. Vous suivez les leçons vidéo à votre rythme, dans l’ordre du programme présenté sur l’<<Academy|/academy>>. Durée d’accès : ${p.courseAccess}.`,
+              `Après l’achat, la formation apparaît dans votre espace <<Mon compte|/compte>>. Vous suivez les leçons vidéo à votre rythme, dans l’ordre du programme présenté sur l’<<Academy|/academy>>. L’accès est ${p.courseAccess} : la formation reste dans votre compte, sans date de fin.`,
             (p) =>
-              `After purchase, the course appears in <<My account|/compte>>. You follow the video lessons at your own pace, in the programme order shown on the <<Academy|/academy>>. Access duration: ${p.courseAccess}.`,
+              `After purchase, the course appears in <<My account|/compte>>. You follow the video lessons at your own pace, in the programme order shown on the <<Academy|/academy>>. Access comes ${p.courseAccess}: the course stays in your account, with no end date.`,
           ),
         ],
       },

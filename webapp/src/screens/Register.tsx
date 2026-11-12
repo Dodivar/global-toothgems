@@ -9,7 +9,9 @@ import { Badge } from "../components/ui/Badge";
 import { StepProgress } from "../components/register/StepProgress";
 import { ContextSummary } from "../components/register/ContextSummary";
 import { AuthCard, AuthLayout } from "../components/auth/AuthScene";
-import { GoogleTermsDialog } from "../components/register/GoogleTermsDialog";
+import { ProviderTermsDialog } from "../components/register/ProviderTermsDialog";
+import { useAppleSignInEnabled, type OAuthProvider } from "../lib/authProviders";
+import { useLastSignInMethod } from "../lib/lastSignInMethod";
 import { LegalDialog, type LegalDoc } from "../components/register/LegalDialog";
 import { CheckInbox } from "../components/register/CheckInbox";
 import { WelcomeScreen, type WelcomeAction } from "../components/register/WelcomeScreen";
@@ -58,7 +60,9 @@ export function Register() {
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
-  const { signedIn, restoring, signUp, signInWithGoogle, signInWithGoogleToken, signOut, email: sessionEmail } = useAuth();
+  const { signedIn, restoring, signUp, signInWithGoogle, signInWithApple, signInWithGoogleToken, signOut, email: sessionEmail } = useAuth();
+  const appleEnabled = useAppleSignInEnabled();
+  const lastMethod = useLastSignInMethod();
   const { showToast } = useToast();
 
   const routeState = location.state as { from?: string; course?: string } | null;
@@ -79,8 +83,8 @@ export function Register() {
 
   const [emailTaken, setEmailTaken] = useState(false);
 
-  /** The terms are accepted in this dialog before the browser leaves for Google. */
-  const [googleTermsOpen, setGoogleTermsOpen] = useState(false);
+  /** The terms are accepted in this dialog before the browser leaves for Google or Apple. */
+  const [termsProvider, setTermsProvider] = useState<OAuthProvider | null>(null);
   const [legalDoc, setLegalDoc] = useState<LegalDoc | null>(null);
   const [creating, setCreating] = useState(false);
   const [failure, setFailure] = useState<CreateFailure>(null);
@@ -249,8 +253,8 @@ export function Register() {
         ? "/panier"
         : returnPath ?? "/compte";
 
-  /** Google creates the account or signs the member in, then returns to the page the visitor was heading to. */
-  const openGoogle = () => setGoogleTermsOpen(true);
+  /** Google or Apple creates the account or signs the member in, then returns to the page the visitor was heading to. */
+  const openProvider = (provider: OAuthProvider) => setTermsProvider(provider);
 
   const restart = () => {
     setPhase("form");
@@ -391,7 +395,9 @@ export function Register() {
                               headingRef={headingRef}
                               touched={(name) => touched.has(name)}
                               emailTaken={emailTaken}
-                              onGoogle={openGoogle}
+                              onGoogle={() => openProvider("google")}
+                              onApple={appleEnabled ? () => openProvider("apple") : undefined}
+                              lastMethod={lastMethod}
                               signInState={signInState}
                               onForgotPassword={() => navigate(FORGOT_PATH, { state: { email: data.email.trim() } })}
                             />
@@ -484,14 +490,20 @@ export function Register() {
         </div>
       </AuthLayout>
 
-      {googleTermsOpen && (
-        <GoogleTermsDialog
-          onClose={() => setGoogleTermsOpen(false)}
+      {termsProvider && (
+        <ProviderTermsDialog
+          provider={termsProvider}
+          onClose={() => setTermsProvider(null)}
           onAccept={async () => {
-            const result = await signInWithGoogle(afterConfirmation, { termsAccepted: true });
+            const apple = termsProvider === "apple";
+            const result = await (apple ? signInWithApple : signInWithGoogle)(afterConfirmation, { termsAccepted: true });
             if (result === "unavailable") {
-              setGoogleTermsOpen(false);
-              showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
+              setTermsProvider(null);
+              showToast(
+                t(apple ? "authAlt.appleErrorTitle" : "authAlt.googleErrorTitle"),
+                t(apple ? "authAlt.appleErrorBody" : "authAlt.googleErrorBody"),
+                "error",
+              );
               return false;
             }
             return true;
@@ -499,7 +511,7 @@ export function Register() {
           onToken={async (token, nonce) => {
             const result = await signInWithGoogleToken(token, nonce, { termsAccepted: true });
             if (result === "unavailable") {
-              setGoogleTermsOpen(false);
+              setTermsProvider(null);
               showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
               return false;
             }

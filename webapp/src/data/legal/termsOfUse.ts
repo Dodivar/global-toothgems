@@ -260,8 +260,8 @@ export const TERMS_OF_USE: LegalDocument = {
           kind: "callout",
           tone: "policy",
           text: l(
-            "Sauf mention contraire sur la page de la formation, l’accès dure 24 mois à compter de l’achat. L’attestation délivrée à la fin d’une formation atteste que vous l’avez suivie et validée ; ce n’est ni un diplôme ni une certification professionnelle reconnue par l’État, et elle ne vaut pas autorisation d’exercer.",
-            "Unless the course page says otherwise, access lasts 24 months from purchase. The certificate issued at the end of a course attests that you followed and passed it; it is neither a diploma nor a state-recognised professional certification, and it is not a licence to practise.",
+            "Une formation achetée reste accessible sans limite de durée. L’attestation délivrée à la fin d’une formation atteste que vous l’avez suivie et validée ; ce n’est ni un diplôme ni une certification professionnelle reconnue par l’État, et elle ne vaut pas autorisation d’exercer.",
+            "A purchased course stays accessible with no time limit. The certificate issued at the end of a course attests that you followed and passed it; it is neither a diploma nor a state-recognised professional certification, and it is not a licence to practise.",
           ),
         },
       ],

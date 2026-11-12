@@ -5,6 +5,9 @@ import { notifyOrderPaid } from "../_shared/email/notify.ts";
 import { toDecimalString } from "../_shared/money.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { handleCheckout, releasePaymentStep, type CheckoutDeps, type ReleaseDeps } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
+
+const log = functionLogger("create-checkout-session");
 
 const supabase = serviceClient();
 // The shop's Stripe account (the seller's, decision 135): created on first use, so a
@@ -127,7 +130,7 @@ const deps: CheckoutDeps = {
 
   releasePaymentStep: (sessionId, clientSecret) => releasePaymentStep(sessionId, clientSecret, releaseDeps),
 
-  orderPaid: (orderId) => notifyOrderPaid(orderId, (message, detail) => console.error(`[create-checkout-session] ${message}`, detail ?? "")),
+  orderPaid: (orderId) => notifyOrderPaid(orderId, log),
 
   async createStripeSession(params, idempotencyKey) {
     const metadata = { order_id: params.orderId, order_number: params.orderNumber };
@@ -175,7 +178,7 @@ const deps: CheckoutDeps = {
   },
 
   now: () => Date.now(),
-  log: (message, detail) => console.error(`[create-checkout-session] ${message}`, detail ?? ""),
+  log: log,
 };
 
 Deno.serve((req) => handleCheckout(req, deps));

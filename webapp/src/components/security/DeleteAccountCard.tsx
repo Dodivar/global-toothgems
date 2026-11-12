@@ -10,8 +10,9 @@ import { Notice } from "./Notice";
 import { useAuth } from "../../lib/auth";
 import { deleteAccount, deletionPhraseMatches, type ServiceOutcome } from "../../lib/accountSecurity";
 import { verifyCurrentPassword } from "../../lib/accountCredentials";
-import { accountHasPassword, deleteOwnAccount, fetchErasureBlockers } from "../../lib/accountPrivacy";
-import type { ErasureBlocker } from "../../lib/accountPrivacyMapping";
+import { accountReauthMethod, deleteOwnAccount, fetchErasureBlockers } from "../../lib/accountPrivacy";
+import { forgetSignInMethod } from "../../lib/lastSignInMethod";
+import type { ErasureBlocker, ReauthMethod } from "../../lib/accountPrivacyMapping";
 import { useAccountSecurity } from "../../lib/securityState";
 
 type Phase =
@@ -31,7 +32,7 @@ const BLOCKER_LINKS: Partial<Record<ErasureBlocker, string>> = {
   studio_withdrawal: "/compte/studio",
 };
 
-/** Where Google sends the member back after signing in again. */
+/** Where Google or Apple sends the member back after signing in again. */
 const RETURN_PATH = "/compte/securite#security-delete";
 
 /**
@@ -52,7 +53,7 @@ const RETURN_PATH = "/compte/securite#security-delete";
 export function DeleteAccountCard({ outcome }: { outcome: ServiceOutcome }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { realAuth, email, signOut, signInWithGoogle } = useAuth();
+  const { realAuth, email, signOut, signInWithGoogle, signInWithApple } = useAuth();
   const { resetAll } = useAccountSecurity();
 
   const [open, setOpen] = useState(false);
@@ -60,7 +61,8 @@ export function DeleteAccountCard({ outcome }: { outcome: ServiceOutcome }) {
   const [typed, setTyped] = useState("");
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [withPassword, setWithPassword] = useState(true);
+  const [reauth, setReauth] = useState<ReauthMethod>("password");
+  const withPassword = reauth === "password";
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const phrase = t("security.delete.phrase");
@@ -75,13 +77,13 @@ export function DeleteAccountCard({ outcome }: { outcome: ServiceOutcome }) {
     setOpen(true);
     if (!realAuth) return setPhase({ kind: "confirm" });
     setPhase({ kind: "checking" });
-    const [blockers, hasPassword] = await Promise.all([fetchErasureBlockers(), accountHasPassword()]);
-    setWithPassword(hasPassword);
+    const [blockers, method] = await Promise.all([fetchErasureBlockers(), accountReauthMethod()]);
+    setReauth(method);
     if (blockers === null) return setPhase({ kind: "failed" });
     setPhase(blockers.length > 0 ? { kind: "blocked", blockers } : { kind: "confirm" });
   };
 
-  // Google sends the member back here after a fresh sign-in: reopen the dialog.
+  // Google or Apple sends the member back here after a fresh sign-in: reopen the dialog.
   useEffect(() => {
     if (realAuth && window.location.hash === "#security-delete") void openDialog();
     // Once, on arrival.
@@ -134,7 +136,11 @@ export function DeleteAccountCard({ outcome }: { outcome: ServiceOutcome }) {
       setPhase({ kind: "deleting" });
     }
     const answer = await deleteOwnAccount();
-    if (answer.kind === "deleted") return setPhase({ kind: "deleted" });
+    if (answer.kind === "deleted") {
+      // The account is gone: so is the "Last used" note about how it signed in.
+      forgetSignInMethod();
+      return setPhase({ kind: "deleted" });
+    }
     if (answer.kind === "blocked") return setPhase({ kind: "blocked", blockers: answer.blockers });
     if (answer.kind === "reauthenticate") return setPhase({ kind: "reauthenticate" });
     setPhase({ kind: "failed" });
@@ -253,7 +259,15 @@ export function DeleteAccountCard({ outcome }: { outcome: ServiceOutcome }) {
 
             {phase.kind === "reauthenticate" && (
               <Notice tone="warning" live="alert" title={t("security.delete.reauthTitle")}>
-                <p>{t(withPassword ? "security.delete.reauthPasswordBody" : "security.delete.reauthGoogleBody")}</p>
+                <p>
+                  {t(
+                    withPassword
+                      ? "security.delete.reauthPasswordBody"
+                      : reauth === "apple"
+                        ? "security.delete.reauthAppleBody"
+                        : "security.delete.reauthGoogleBody",
+                  )}
+                </p>
               </Notice>
             )}
 
@@ -279,10 +293,18 @@ export function DeleteAccountCard({ outcome }: { outcome: ServiceOutcome }) {
 
             {realAuth && !withPassword && (
               <div className="grid gap-2">
-                <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("security.delete.googleHint")}</p>
+                <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
+                  {t(reauth === "apple" ? "security.delete.appleHint" : "security.delete.googleHint")}
+                </p>
                 <div>
-                  <Button variant="ghost" size="sm" iconLeft={LogIn} disabled={busy} onClick={() => void signInWithGoogle(RETURN_PATH)}>
-                    {t("security.delete.googleAgain")}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    iconLeft={LogIn}
+                    disabled={busy}
+                    onClick={() => void (reauth === "apple" ? signInWithApple : signInWithGoogle)(RETURN_PATH)}
+                  >
+                    {t(reauth === "apple" ? "security.delete.appleAgain" : "security.delete.googleAgain")}
                   </Button>
                 </div>
               </div>

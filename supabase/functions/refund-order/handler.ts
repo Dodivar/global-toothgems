@@ -1,4 +1,4 @@
-import { corsHeaders, json, readJson, type SiteOrigins } from "../_shared/http.ts";
+import { callerJwt, corsHeaders, json, readJson, type SiteOrigins } from "../_shared/http.ts";
 import { parseRefundInput, type CancelInput, type RefundReason, type RequestInput } from "./input.ts";
 
 /**
@@ -110,13 +110,6 @@ const STATUS: Record<RefundErrorCode, number> = {
 
 const MAX_BODY_BYTES = 8 * 1024;
 
-function bearer(req: Request): string | null {
-  const match = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") ?? "");
-  return match ? match[1] : null;
-}
-
-const looksLikeJwt = (token: string) => /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token);
-
 /** Stripe's `reason` knows three values; the others stay in our own table. */
 export function stripeReason(reason: RefundReason): "duplicate" | "fraudulent" | "requested_by_customer" | undefined {
   return reason === "duplicate" || reason === "fraudulent" || reason === "requested_by_customer" ? reason : undefined;
@@ -144,8 +137,8 @@ export async function handleRefundOrder(req: Request, deps: RefundDeps): Promise
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ error: "invalid_request" }, 405, { ...cors, Allow: "POST, OPTIONS" });
 
-  const token = bearer(req);
-  if (!token || !looksLikeJwt(token)) return fail("unauthorized");
+  const token = callerJwt(req);
+  if (!token) return fail("unauthorized");
   let caller: Caller | null;
   try {
     caller = await deps.caller(token);

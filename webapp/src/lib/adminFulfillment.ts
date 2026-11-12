@@ -1,4 +1,4 @@
-import { FunctionsHttpError } from "@supabase/supabase-js";
+import { functionErrorCode, readFunctionFailure } from "./supabase/functionError";
 import { requireSupabase } from "./supabase/client";
 
 /**
@@ -152,14 +152,8 @@ export interface RefundInput {
 async function callRefundFunction(body: Record<string, unknown>): Promise<FulfillmentResult> {
   const { error } = await requireSupabase().functions.invoke("refund-order", { body });
   if (!error) return OK;
-  if (error instanceof FunctionsHttpError) {
-    try {
-      const answer = (await (error.context as Response).json()) as { error?: unknown };
-      return fail(reasonOfFunctionError(answer.error));
-    } catch {
-      return fail("unavailable");
-    }
-  }
+  const failure = await readFunctionFailure(error);
+  if (failure.kind === "http" && failure.body !== undefined) return fail(reasonOfFunctionError(functionErrorCode(failure.body)));
   return fail("unavailable");
 }
 

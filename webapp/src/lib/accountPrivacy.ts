@@ -1,16 +1,17 @@
 "use client";
 
-import { FunctionsHttpError } from "@supabase/supabase-js";
+import { readFunctionFailure } from "./supabase/functionError";
 import { supabase } from "./supabase/client";
 import {
   archiveFiles,
-  hasPasswordSignIn,
+  reauthMethodOf,
   readBlockers,
   readDeleteAnswer,
   readExportAnswer,
   withFileLinks,
   type DeleteAnswer,
   type ErasureBlocker,
+  type ReauthMethod,
   type ExportAnswer,
 } from "./accountPrivacyMapping";
 
@@ -59,24 +60,18 @@ export async function fetchErasureBlockers(): Promise<ErasureBlocker[] | null> {
   return error ? null : readBlockers(data);
 }
 
-/** Whether the signed-in account has a password (else it confirms by signing in again with Google). */
-export async function accountHasPassword(): Promise<boolean> {
-  if (!supabase) return true;
+/** How the signed-in account confirms: its password, else a fresh sign-in with Google or Apple. */
+export async function accountReauthMethod(): Promise<ReauthMethod> {
+  if (!supabase) return "password";
   const { data } = await supabase.auth.getUser();
-  return hasPasswordSignIn(data.user?.app_metadata?.providers);
+  return reauthMethodOf(data.user?.app_metadata?.providers);
 }
 
 export async function deleteOwnAccount(): Promise<DeleteAnswer> {
   if (!supabase) return { kind: "error" };
   const { data, error } = await supabase.functions.invoke("delete-account", { body: { confirm: true } });
   if (!error) return readDeleteAnswer(200, data);
-  if (error instanceof FunctionsHttpError) {
-    const response = error.context as Response;
-    try {
-      return readDeleteAnswer(response.status, await response.json());
-    } catch {
-      return { kind: "error" };
-    }
-  }
+  const failure = await readFunctionFailure(error);
+  if (failure.kind === "http" && failure.body !== undefined) return readDeleteAnswer(failure.status, failure.body);
   return { kind: "error" };
 }

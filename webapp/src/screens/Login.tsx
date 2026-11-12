@@ -8,7 +8,10 @@ import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { GoogleIdentityButton } from "../components/auth/GoogleIdentityButton";
 import { isGoogleIdentityConfigured } from "../lib/googleIdentity";
-import { AuthCard, AuthField, AuthLayout, GoogleButton } from "../components/auth/AuthScene";
+import { AppleButton, AuthCard, AuthField, AuthLayout, GoogleButton } from "../components/auth/AuthScene";
+import { LastUsedFrame } from "../components/auth/LastUsedFrame";
+import { useAppleSignInEnabled } from "../lib/authProviders";
+import { useLastSignInMethod } from "../lib/lastSignInMethod";
 import { useAuth, type ResendResult, type SignInResult } from "../lib/auth";
 import { confirmationRedirect } from "../lib/authRedirect";
 import { returnPathFrom } from "../lib/authRoutes";
@@ -38,7 +41,9 @@ export function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signedIn, restoring, realAuth, email: sessionEmail, signInWithPassword, signInWithGoogle, signInWithGoogleToken, resendConfirmation, signOut } = useAuth();
+  const { signedIn, restoring, realAuth, email: sessionEmail, signInWithPassword, signInWithGoogle, signInWithApple, signInWithGoogleToken, resendConfirmation, signOut } = useAuth();
+  const appleEnabled = useAppleSignInEnabled();
+  const lastMethod = useLastSignInMethod();
   const { openCourse } = useProgress();
   const { showToast } = useToast();
 
@@ -114,6 +119,16 @@ export function Login() {
     if (result === "unavailable") {
       setBusy(false);
       showToast(t("authAlt.googleErrorTitle"), t("authAlt.googleErrorBody"), "error");
+    }
+  };
+
+  /** Apple leaves for the provider and comes back signed in, like the Google redirect. */
+  const continueWithApple = async () => {
+    setBusy(true);
+    const result = await signInWithApple(target);
+    if (result === "unavailable") {
+      setBusy(false);
+      showToast(t("authAlt.appleErrorTitle"), t("authAlt.appleErrorBody"), "error");
     }
   };
 
@@ -293,17 +308,35 @@ export function Login() {
                   <span className="h-px flex-1 bg-[var(--border-subtle)]" />
                 </div>
 
-                {nativeGoogle ? (
-                  <GoogleIdentityButton
-                    onUnavailable={() => setNativeGoogleFailed(true)}
-                    onCredential={(token, nonce) => void continueWithGoogleToken(token, nonce)}
-                  />
-                ) : (
-                  <GoogleButton
-                    label={t("authAlt.google")}
-                    disabled={busy}
-                    onClick={() => void continueWithGoogle()}
-                  />
+                <LastUsedFrame active={lastMethod === "google"}>
+                  {(describedBy) =>
+                    nativeGoogle ? (
+                      <GoogleIdentityButton
+                        onUnavailable={() => setNativeGoogleFailed(true)}
+                        onCredential={(token, nonce) => void continueWithGoogleToken(token, nonce)}
+                      />
+                    ) : (
+                      <GoogleButton
+                        label={t("authAlt.google")}
+                        disabled={busy}
+                        describedBy={describedBy}
+                        onClick={() => void continueWithGoogle()}
+                      />
+                    )
+                  }
+                </LastUsedFrame>
+
+                {appleEnabled && (
+                  <LastUsedFrame active={lastMethod === "apple"}>
+                    {(describedBy) => (
+                      <AppleButton
+                        label={t("authAlt.apple")}
+                        disabled={busy}
+                        describedBy={describedBy}
+                        onClick={() => void continueWithApple()}
+                      />
+                    )}
+                  </LastUsedFrame>
                 )}
               </>
             )}

@@ -1,0 +1,266 @@
+{
+ "photo": "P2",
+ "photoFile": "IMG_8347.jpeg",
+ "scene": "S4",
+ "sceneName": "Essai 4 — Zones difficiles (prémolaires, collets, bords)",
+ "started": "2026-11-05T11:17:13.534Z",
+ "calls": [
+  {
+   "response": {
+    "at": 1945,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 1945,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 7999,
+    "status": 200,
+    "body": {
+     "ok": true,
+     "crop": {
+      "x": 81,
+      "y": 705,
+      "width": 1345,
+      "height": 576,
+      "photo_width": 1536,
+      "photo_height": 2048
+     },
+     "teeth": [
+      {
+       "fdi": "11",
+       "x": 656,
+       "y": 158,
+       "width": 131,
+       "height": 185
+      },
+      {
+       "fdi": "12",
+       "x": 554,
+       "y": 158,
+       "width": 102,
+       "height": 179
+      },
+      {
+       "fdi": "13",
+       "x": 464,
+       "y": 164,
+       "width": 94,
+       "height": 173
+      },
+      {
+       "fdi": "14",
+       "x": 383,
+       "y": 176,
+       "width": 81,
+       "height": 161
+      },
+      {
+       "fdi": "15",
+       "x": 316,
+       "y": 187,
+       "width": 67,
+       "height": 144
+      },
+      {
+       "fdi": "21",
+       "x": 787,
+       "y": 158,
+       "width": 121,
+       "height": 179
+      },
+      {
+       "fdi": "22",
+       "x": 908,
+       "y": 158,
+       "width": 107,
+       "height": 173
+      },
+      {
+       "fdi": "23",
+       "x": 1015,
+       "y": 158,
+       "width": 81,
+       "height": 167
+      },
+      {
+       "fdi": "24",
+       "x": 1096,
+       "y": 164,
+       "width": 67,
+       "height": 150
+      },
+      {
+       "fdi": "31",
+       "x": 652,
+       "y": 320,
+       "width": 81,
+       "height": 98
+      },
+      {
+       "fdi": "32",
+       "x": 572,
+       "y": 320,
+       "width": 80,
+       "height": 98
+      },
+      {
+       "fdi": "33",
+       "x": 491,
+       "y": 320,
+       "width": 81,
+       "height": 92
+      },
+      {
+       "fdi": "34",
+       "x": 424,
+       "y": 320,
+       "width": 67,
+       "height": 80
+      },
+      {
+       "fdi": "41",
+       "x": 733,
+       "y": 320,
+       "width": 81,
+       "height": 98
+      },
+      {
+       "fdi": "42",
+       "x": 814,
+       "y": 320,
+       "width": 80,
+       "height": 92
+      },
+      {
+       "fdi": "43",
+       "x": 894,
+       "y": 314,
+       "width": 68,
+       "height": 86
+      },
+      {
+       "fdi": "44",
+       "x": 962,
+       "y": 308,
+       "width": 67,
+       "height": 75
+      }
+     ],
+     "centrals": {
+      "x": 552,
+      "y": 157,
+      "width": 264,
+      "height": 252
+     },
+     "teeth_readings": {
+      "asked": 1,
+      "answered": 1,
+      "kept": 1
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 33178,
+    "status": 200,
+    "body": {
+     "ok": true,
+     "image": "<image/png>",
+     "crop": {
+      "x": 81,
+      "y": 705,
+      "width": 1345,
+      "height": 576,
+      "photo_width": 1536,
+      "photo_height": 2048
+     }
+    }
+   }
+  }
+ ],
+ "creationTitle": "Essai 4 — Zones difficiles (prémolaires, collets, bords)",
+ "clicked": 2113,
+ "placement": {
+  "audience": "artist",
+  "source": "own",
+  "teeth_found": 15,
+  "teeth_kept": 14,
+  "teeth_set_aside": 1,
+  "centrals_box": true,
+  "confidence": 0.76,
+  "reliable": true,
+  "issues": [
+   "outliers",
+   "design_teeth_missing"
+  ],
+  "rms": 0.196,
+  "lower_offset_mm": -0.57,
+  "renumbered_upper": 0,
+  "renumbered_lower": 0,
+  "midline_error": 0.097,
+  "gems_placed": 11,
+  "gems_hidden": 1,
+  "gems_on_fitted_teeth": 2,
+  "gems_skipped": 0,
+  "marks": 8,
+  "left_out": 3,
+  "arbiter": "applied",
+  "arbiter_triggered": true,
+  "arbiter_gap_found": true,
+  "arbiter_teeth_offset": 1.05,
+  "arbiter_centrals_offset": 0.23,
+  "arbiter_corrections": [
+   "shifted"
+  ],
+  "arbiter_snapped": 0,
+  "arbiter_segmented_upper": 7,
+  "arbiter_segmented_lower": 6,
+  "arbiter_would_be_reliable": null,
+  "arbiter_would_midline_error": null,
+  "outcome": "render"
+ },
+ "result": {
+  "audience": "artist",
+  "source": "own",
+  "outcome": "ok",
+  "masked": true,
+  "gems_checked": 8,
+  "gems_drawn": 8,
+  "gems_missing": 0,
+  "gems_drifted": 0,
+  "gems_resized": 1,
+  "gems_reseated": 0,
+  "drift_mean": 0.14,
+  "drift_max": 0.34,
+  "size_mean": 0.87,
+  "size_max": 1.01
+ },
+ "ended": 33723,
+ "outcome": "result",
+ "report": "",
+ "notes": [
+  "3 gemmes de la création n’ont pas été posées : l’endroit des dents où elles vont n’est pas visible sur cette photo (caché par une lèvre ou par d’autres dents)."
+ ],
+ "total": 33848
+}

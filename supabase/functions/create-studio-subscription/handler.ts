@@ -1,7 +1,5 @@
-import { corsHeaders, json, readJson, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
+import { callerJwt, corsHeaders, json, readJson, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
 import {
-  bearer,
-  looksLikeJwt,
   parseStudioCheckoutRequest,
   STUDIO_METADATA_KIND,
   studioReturnUrl,
@@ -137,8 +135,8 @@ export async function handleStudioCheckout(req: Request, deps: StudioCheckoutDep
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ error: "invalid_request" }, 405, { ...cors, Allow: "POST, OPTIONS" });
 
-  const token = bearer(req);
-  if (!token || !looksLikeJwt(token)) return fail("sign_in_required");
+  const token = callerJwt(req);
+  if (!token) return fail("sign_in_required");
 
   const parsed = parseStudioCheckoutRequest(await readJson(req, MAX_BODY_BYTES));
   if (!parsed.ok) return fail("invalid_request", { field: parsed.field });

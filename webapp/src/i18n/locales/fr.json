@@ -502,6 +502,9 @@
     "dialogTitle": "Avant de continuer avec Google",
     "dialogBody": "Un compte sera créé avec votre adresse Google, ou retrouvé s’il existe déjà.",
     "googleCta": "J’accepte et je continue avec Google",
+    "appleDialogTitle": "Avant de continuer avec Apple",
+    "appleDialogBody": "Un compte sera créé avec votre identifiant Apple, ou retrouvé s’il existe déjà. Si vous choisissez de masquer votre adresse, Apple nous transmet une adresse relais qui vous fait suivre nos e-mails.",
+    "appleCta": "J’accepte et je continue avec Apple",
     "checkoutCta": "J’accepte et je règle ma commande"
   },
   "authAlt": {
@@ -512,6 +515,10 @@
     "google": "Continuer avec Google",
     "googleErrorTitle": "Connexion Google impossible",
     "googleErrorBody": "Nous n’avons pas pu joindre Google. Réessayez dans un instant ou utilisez votre e-mail.",
+    "apple": "Continuer avec Apple",
+    "appleErrorTitle": "Connexion Apple impossible",
+    "appleErrorBody": "Nous n’avons pas pu joindre Apple. Réessayez dans un instant ou utilisez votre e-mail.",
+    "lastUsed": "Dernière utilisée",
     "switchToSignUpPrompt": "Pas encore de compte ?",
     "errorEmail": "Indiquez une adresse e-mail valide."
   },
@@ -719,6 +726,9 @@
     "google": {
       "cta": "Continuer avec Google"
     },
+    "apple": {
+      "cta": "Continuer avec Apple"
+    },
     "legal": {
       "summaryNote": "L’essentiel, en langage clair. Le texte juridique complet sera publié avec le site.",
       "back": "Revenir à mon inscription",
@@ -817,7 +827,7 @@
     "metaDiplomaLabel": "À la clé",
     "metaModules": "{{count}} modules",
     "metaDiploma": "Diplôme inclus",
-    "priceNote": "Paiement unique · accès 24 mois",
+    "priceNote": "Paiement unique · accès à vie",
     "ctaStart": "Commencer cette formation",
     "ctaResume": "Reprendre la formation",
     "ctaReview": "Revoir la formation",
@@ -926,7 +936,7 @@
   "lesson": {
     "eyebrow": "Formation en cours",
     "progressLabel": "{{done}} leçons sur {{total}}",
-    "remainingVideo": "Il reste {{minutes}} min de vidéo · accès 24 mois",
+    "remainingVideo": "Il reste {{minutes}} min de vidéo · accès à vie",
     "certificateTitle": "Attestation",
     "certificateBody": "Délivrée après les 9 leçons, le quiz de chaque module et trois poses envoyées en revue de cas.",
     "certificateLink": "Voir mes attestations",
@@ -4595,6 +4605,9 @@
       "passwordLabel": "Votre mot de passe",
       "googleHint": "Pour confirmer qu’il s’agit bien de vous, reconnectez-vous avec Google si votre dernière connexion date de plus de 10 minutes.",
       "googleAgain": "Me reconnecter avec Google",
+      "appleHint": "Pour confirmer qu’il s’agit bien de vous, reconnectez-vous avec Apple si votre dernière connexion date de plus de 10 minutes.",
+      "appleAgain": "Me reconnecter avec Apple",
+      "reauthAppleBody": "Votre dernière connexion date de plus de 10 minutes. Reconnectez-vous avec Apple, puis confirmez à nouveau.",
       "reauthTitle": "Reconnectez-vous pour confirmer",
       "reauthPasswordBody": "Votre connexion est trop ancienne pour supprimer le compte. Saisissez à nouveau votre mot de passe et réessayez.",
       "reauthGoogleBody": "Votre dernière connexion date de plus de 10 minutes. Reconnectez-vous avec Google, puis confirmez à nouveau."
@@ -4670,7 +4683,7 @@
     },
     "cookies": {
       "bannerTitle": "Vos cookies, votre choix",
-      "bannerBody": "Certains cookies sont indispensables au fonctionnement du site (connexion, panier, paiement) et ne peuvent pas être désactivés. Avec votre accord seulement, nous mesurons l’audience du site avec PostHog, hébergé dans l’Union européenne, pour l’améliorer. Aucun cookie publicitaire. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
+      "bannerBody": "Certains cookies sont indispensables au fonctionnement du site (connexion, panier, paiement) et ne peuvent pas être désactivés. Avec votre accord seulement, nous mesurons l’audience du site avec PostHog, hébergé dans l’Union européenne, et revoyons certaines visites des pages publiques, du Studio et des cours (vos saisies masquées) pour l’améliorer. Aucun cookie publicitaire. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
       "policyLink": "Lire la politique cookies",
       "rejectNonEssential": "Refuser les non essentiels",
       "acceptAll": "Tout accepter",
@@ -4691,7 +4704,7 @@
         },
         "analytics": {
           "title": "Mesure d’audience",
-          "body": "Nous aident à comprendre l’utilisation du site et à corriger ses erreurs.",
+          "body": "Nous aident à comprendre l’utilisation du site et à corriger ses erreurs, y compris en revoyant certaines visites des pages publiques, du Studio et des cours, vos saisies masquées.",
           "providers": "PostHog (serveurs dans l’Union européenne)"
         }
       },
@@ -4778,6 +4791,8 @@
         "fileType": "Seuls les fichiers JPG, PNG et PDF sont acceptés.",
         "send": {
           "rate_limited": "Vous avez envoyé plusieurs messages à la suite. Patientez quelques minutes avant de réessayer.",
+          "captcha_required": "La vérification anti-robot est en cours… Réessayez dans un instant ; vos informations restent dans ce formulaire.",
+          "captcha_failed": "La vérification anti-robot n’a pas abouti. Rechargez la page puis réessayez ; si un bloqueur de publicités est actif, autorisez challenges.cloudflare.com.",
           "file_type": "Une pièce jointe n’a pas été reconnue : seuls les fichiers JPG, PNG et PDF sont acceptés.",
           "too_many_files": "Vous pouvez joindre 5 fichiers au maximum.",
           "files_too_large": "Vos pièces jointes dépassent 20 Mo au total.",

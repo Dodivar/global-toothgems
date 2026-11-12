@@ -8,7 +8,8 @@ for (const template of AUTH_TEMPLATES) {
     assertStringIncludes(rendered, "{{ .RedirectTo }}&amp;token_hash={{ .TokenHash }}");
     assertStringIncludes(rendered, "{{ .Email }}");
     assertEquals(rendered.includes("@@"), false);
-    const committed = await Deno.readTextFile(new URL(`../../../templates/${template.file}`, import.meta.url));
+    // A Windows checkout (core.autocrlf) turns the committed file's line ends into CRLF.
+    const committed = (await Deno.readTextFile(new URL(`../../../templates/${template.file}`, import.meta.url))).replace(/\r\n/g, "\n");
     assertEquals(committed, rendered, "run: node --experimental-strip-types supabase/functions/_shared/email/authTemplates.ts");
   });
 }

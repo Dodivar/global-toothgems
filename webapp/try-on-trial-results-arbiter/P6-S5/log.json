@@ -1,0 +1,282 @@
+{
+ "photo": "P6",
+ "photoFile": "IMG_8405.jpeg",
+ "scene": "S5",
+ "sceneName": "Essai 5 — Formes, matières et rotations (haut et bas)",
+ "started": "2026-11-05T11:41:44.595Z",
+ "calls": [
+  {
+   "response": {
+    "at": 1864,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 1865,
+    "status": 200,
+    "body": {
+     "available": true,
+     "daily_limit": 10,
+     "quota": {
+      "unlimited": true
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 14803,
+    "status": 200,
+    "body": {
+     "ok": true,
+     "crop": {
+      "x": 339,
+      "y": 784,
+      "width": 885,
+      "height": 664,
+      "photo_width": 1536,
+      "photo_height": 2048
+     },
+     "teeth": [
+      {
+       "fdi": "11",
+       "x": 385,
+       "y": 209,
+       "width": 62,
+       "height": 140
+      },
+      {
+       "fdi": "21",
+       "x": 447,
+       "y": 209,
+       "width": 62,
+       "height": 140
+      },
+      {
+       "fdi": "12",
+       "x": 332,
+       "y": 216,
+       "width": 53,
+       "height": 126
+      },
+      {
+       "fdi": "22",
+       "x": 509,
+       "y": 216,
+       "width": 53,
+       "height": 133
+      },
+      {
+       "fdi": "13",
+       "x": 288,
+       "y": 222,
+       "width": 44,
+       "height": 120
+      },
+      {
+       "fdi": "23",
+       "x": 562,
+       "y": 222,
+       "width": 53,
+       "height": 127
+      },
+      {
+       "fdi": "14",
+       "x": 243,
+       "y": 229,
+       "width": 45,
+       "height": 113
+      },
+      {
+       "fdi": "24",
+       "x": 615,
+       "y": 229,
+       "width": 44,
+       "height": 120
+      },
+      {
+       "fdi": "15",
+       "x": 208,
+       "y": 236,
+       "width": 35,
+       "height": 99
+      },
+      {
+       "fdi": "25",
+       "x": 659,
+       "y": 236,
+       "width": 45,
+       "height": 106
+      },
+      {
+       "fdi": "16",
+       "x": 181,
+       "y": 242,
+       "width": 27,
+       "height": 87
+      },
+      {
+       "fdi": "26",
+       "x": 704,
+       "y": 242,
+       "width": 35,
+       "height": 100
+      },
+      {
+       "fdi": "41",
+       "x": 385,
+       "y": 342,
+       "width": 44,
+       "height": 106
+      },
+      {
+       "fdi": "31",
+       "x": 429,
+       "y": 342,
+       "width": 44,
+       "height": 106
+      },
+      {
+       "fdi": "42",
+       "x": 341,
+       "y": 342,
+       "width": 44,
+       "height": 106
+      },
+      {
+       "fdi": "32",
+       "x": 473,
+       "y": 342,
+       "width": 45,
+       "height": 106
+      },
+      {
+       "fdi": "43",
+       "x": 296,
+       "y": 342,
+       "width": 45,
+       "height": 106
+      },
+      {
+       "fdi": "33",
+       "x": 518,
+       "y": 342,
+       "width": 44,
+       "height": 106
+      },
+      {
+       "fdi": "44",
+       "x": 252,
+       "y": 342,
+       "width": 44,
+       "height": 106
+      },
+      {
+       "fdi": "34",
+       "x": 562,
+       "y": 342,
+       "width": 44,
+       "height": 106
+      }
+     ],
+     "centrals": {
+      "x": 329,
+      "y": 189,
+      "width": 215,
+      "height": 205
+     },
+     "teeth_readings": {
+      "asked": 1,
+      "answered": 1,
+      "kept": 1
+     }
+    }
+   }
+  },
+  {
+   "response": {
+    "at": 42013,
+    "status": 200,
+    "body": {
+     "ok": true,
+     "image": "<image/png>",
+     "crop": {
+      "x": 339,
+      "y": 784,
+      "width": 885,
+      "height": 664,
+      "photo_width": 1536,
+      "photo_height": 2048
+     }
+    }
+   }
+  }
+ ],
+ "creationTitle": "Essai 5 — Formes, matières et rotations (haut et bas)",
+ "clicked": 2074,
+ "placement": {
+  "audience": "artist",
+  "source": "own",
+  "teeth_found": 20,
+  "teeth_kept": 16,
+  "teeth_set_aside": 4,
+  "centrals_box": true,
+  "confidence": 0.74,
+  "reliable": true,
+  "issues": [
+   "outliers"
+  ],
+  "rms": 0.307,
+  "lower_offset_mm": -0.64,
+  "renumbered_upper": 0,
+  "renumbered_lower": 0,
+  "midline_error": 0.092,
+  "gems_placed": 10,
+  "gems_hidden": 0,
+  "gems_on_fitted_teeth": 0,
+  "gems_skipped": 0,
+  "marks": 10,
+  "left_out": 0,
+  "arbiter": "applied",
+  "arbiter_triggered": false,
+  "arbiter_gap_found": false,
+  "arbiter_teeth_offset": null,
+  "arbiter_centrals_offset": null,
+  "arbiter_corrections": [],
+  "arbiter_snapped": 0,
+  "arbiter_segmented_upper": 0,
+  "arbiter_segmented_lower": 0,
+  "arbiter_would_be_reliable": null,
+  "arbiter_would_midline_error": null,
+  "outcome": "render"
+ },
+ "result": {
+  "audience": "artist",
+  "source": "own",
+  "outcome": "ok",
+  "masked": true,
+  "gems_checked": 10,
+  "gems_drawn": 9,
+  "gems_missing": 1,
+  "gems_drifted": 7,
+  "gems_resized": 4,
+  "gems_reseated": 7,
+  "drift_mean": 1,
+  "drift_max": 2.34,
+  "size_mean": 1.21,
+  "size_max": 1.54
+ },
+ "ended": 42809,
+ "outcome": "result",
+ "report": "",
+ "notes": [],
+ "total": 42940
+}

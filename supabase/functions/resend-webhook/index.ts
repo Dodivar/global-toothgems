@@ -1,12 +1,13 @@
 import { serviceClient } from "../_shared/clients.ts";
 import { type AppliedEvent, type CardStatus, type DeliveryStatus, handleResendWebhook } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): Resend calls it with
  * a Svix signature, see handler.ts.
  */
 
-const log = (message: string, detail?: unknown) => console.error(`[resend-webhook] ${message}`, detail ?? "");
+const log = functionLogger("resend-webhook");
 
 type ApplyRow = {
   matched: boolean;

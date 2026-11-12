@@ -72,3 +72,25 @@ export async function readJson(req: Request, maxBytes: number): Promise<unknown 
     return null;
   }
 }
+
+/** The token of an `Authorization: Bearer …` header, or null. */
+export function bearer(req: Request): string | null {
+  const match = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") ?? "");
+  return match ? match[1] : null;
+}
+
+/** A user access token is a JWT; the publishable key (`sb_publishable_…`) is not. */
+export const looksLikeJwt = (token: string): boolean => /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token);
+
+/** The caller's access token when the request carries one shaped like a JWT, else null (guest, publishable key). */
+export function callerJwt(req: Request): string | null {
+  const token = bearer(req);
+  return token && looksLikeJwt(token) ? token : null;
+}
+
+/**
+ * The caller's IP address for rate limits, read only from the headers the
+ * platform sets itself: `x-forwarded-for` can be written by the caller.
+ */
+export const clientAddress = (req: Request): string | null =>
+  req.headers.get("sb-forwarded-for")?.trim() || req.headers.get("cf-connecting-ip")?.trim() || null;

@@ -1,4 +1,4 @@
-import { FunctionsHttpError } from "@supabase/supabase-js";
+import { functionErrorCode, oneOf, readFunctionFailure } from "../supabase/functionError";
 import { isSupabaseConfigured } from "../supabase/env";
 import { requireSupabase } from "../supabase/client";
 
@@ -18,11 +18,15 @@ interface ContactMessage {
   orderReference: string;
   locale: "fr" | "en";
   files: File[];
+  /** A visitor's Cloudflare Turnstile token (members are known by their session). */
+  captcha?: string | null;
 }
 
 /** Codes the function answers with, plus the client's own. Each has a message under `legal.contact.errors.send`. */
 export const CONTACT_ERRORS = [
   "rate_limited",
+  "captcha_required",
+  "captcha_failed",
   "file_type",
   "too_many_files",
   "files_too_large",
@@ -35,8 +39,7 @@ export type ContactError = (typeof CONTACT_ERRORS)[number];
 
 type ContactResult = { ok: true; ticketNumber: string | null } | { ok: false; error: ContactError };
 
-const asError = (value: unknown): ContactError =>
-  (CONTACT_ERRORS as readonly unknown[]).includes(value) ? (value as ContactError) : "server_error";
+const asError = (value: unknown): ContactError => oneOf(CONTACT_ERRORS, value, "server_error");
 
 function contactFormData(message: ContactMessage): FormData {
   const data = new FormData();
@@ -47,6 +50,7 @@ function contactFormData(message: ContactMessage): FormData {
   data.set("message", message.message.trim());
   data.set("order_reference", message.orderReference.trim());
   data.set("locale", message.locale);
+  if (message.captcha) data.set("captcha", message.captcha);
   for (const file of message.files) data.append("files", file);
   return data;
 }
@@ -59,14 +63,9 @@ export async function sendContactMessage(message: ContactMessage): Promise<Conta
     const ticket = (data as { ticket_number?: unknown } | null)?.ticket_number;
     return { ok: true, ticketNumber: typeof ticket === "string" ? ticket : null };
   }
-  if (error instanceof FunctionsHttpError) {
-    const response = error.context as Response;
-    if (response.status === 404) return { ok: false, error: "unavailable" };
-    try {
-      return { ok: false, error: asError(((await response.json()) as { error?: unknown }).error) };
-    } catch {
-      return { ok: false, error: "server_error" };
-    }
-  }
-  return { ok: false, error: "network" };
+  const failure = await readFunctionFailure(error);
+  if (failure.kind === "network") return { ok: false, error: "network" };
+  if (failure.status === 404) return { ok: false, error: "unavailable" };
+  if (failure.body === undefined) return { ok: false, error: "server_error" };
+  return { ok: false, error: asError(functionErrorCode(failure.body)) };
 }

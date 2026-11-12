@@ -37,10 +37,10 @@ Deno.test("terms of sale: the PDF carries the reference it was given and the sel
 
 Deno.test("terms of sale: the footer names the version, attached or reproduced, in the e-mail's language", () => {
   const attached = termsOfSaleForEmail(LEGAL_STORE, "fr", "x");
-  assertEquals(termsFooterNote(attached, "fr"), "Conditions générales de vente jointes à cet e-mail (PDF) : version du 11 novembre 2026.");
-  assertEquals(termsFooterNote(attached, "en"), "Terms of sale attached to this email (PDF): version of 11 November 2026.");
+  assertEquals(termsFooterNote(attached, "fr"), "Conditions générales de vente jointes à cet e-mail (PDF) : version du 12 novembre 2026.");
+  assertEquals(termsFooterNote(attached, "en"), "Terms of sale attached to this email (PDF): version of 12 November 2026.");
   const inline = termsOfSaleForEmail(LEGAL_STORE, "fr", "x", { render: failingRender });
-  assertEquals(termsFooterNote(inline, "fr"), "Conditions générales de vente reproduites dans cet e-mail : version du 11 novembre 2026.");
+  assertEquals(termsFooterNote(inline, "fr"), "Conditions générales de vente reproduites dans cet e-mail : version du 12 novembre 2026.");
 });
 
 Deno.test("terms of sale: when the PDF fails, the e-mail blocks hold every clause, and the failure is logged", () => {

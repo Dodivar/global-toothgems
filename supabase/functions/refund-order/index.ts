@@ -2,6 +2,9 @@ import { callerClient, lazyStripeClient, requireEnv, serviceClient } from "../_s
 import { readSiteOrigins } from "../_shared/http.ts";
 import { toDecimalString } from "../_shared/money.ts";
 import { handleRefundOrder, stripeReason, type RefundDeps, type RefundRow } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
+
+const log = functionLogger("refund-order");
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml), like invite-staff-member:
@@ -125,7 +128,7 @@ const deps: RefundDeps = {
     return error ? { code: error.code === "PGRST116" ? "42501" : error.code, message: error.message } : null;
   },
 
-  log: (message, detail) => console.error(`[refund-order] ${message}`, detail ?? ""),
+  log: log,
 };
 
 Deno.serve((req) => handleRefundOrder(req, deps));

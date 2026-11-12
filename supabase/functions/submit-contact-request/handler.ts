@@ -1,4 +1,4 @@
-import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
+import { clientAddress, corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { hashAddress, isValidAddress, type SendRequest, type SendResult } from "../_shared/email/send.ts";
 
 /**
@@ -13,14 +13,17 @@ import { hashAddress, isValidAddress, type SendRequest, type SendResult } from "
  *     5. e-mails the customer an acknowledgement and the support inbox the message with its files
  *
  * Why a function and not a Next.js route: visitors cannot call the RPC and the Next.js server
- * must not hold the service-role key (AGENTS.md §4). No captcha yet — a provider is still to be
- * chosen; the honeypot field `website` and the two throttles stand in until then.
+ * must not hold the service-role key (AGENTS.md §4). A visitor (no member session) also passes
+ * Cloudflare Turnstile once TURNSTILE_SECRET_KEY is set (field `captcha`, checked after the IP
+ * throttle and before anything is stored); the honeypot field `website` and the two throttles
+ * stay on top. A signed-in member is known by their verified token and skips the captcha.
  *
  * Both e-mails are best effort: the ticket is the record, so a provider outage never fails the
  * form. The answer is `{ status: "sent", ticket_number }` or `{ error }` with a short code.
  */
 
 export const MAX_FILES = 5;
+const MAX_CAPTCHA = 2048;
 export const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
 /** Fields and multipart framing on top of the files. */
 const MAX_REQUEST_BYTES = MAX_TOTAL_BYTES + 512 * 1024;
@@ -79,6 +82,9 @@ export type DbError = { code?: string; message?: string };
 
 export interface ContactDeps {
   origins: SiteOrigins;
+  /** True once TURNSTILE_SECRET_KEY is set: visitors must then send a passing `captcha` token. */
+  captchaConfigured: boolean;
+  verifyCaptcha(token: string, remoteIp: string | null): Promise<boolean>;
   /** The user id behind a Supabase access token, or null (a visitor's publishable key is not one). */
   userFromToken(token: string): Promise<string | null>;
   /** False when this caller address has used up its attempts. */
@@ -125,10 +131,6 @@ function parseFields(form: FormData): ContactSubmission | null {
   return { name, email, category: category as Category, subject, message, orderReference: order || null, locale };
 }
 
-/** Only the headers the platform sets itself: `x-forwarded-for` can be written by the caller. */
-const clientAddress = (req: Request): string | null =>
-  req.headers.get("sb-forwarded-for")?.trim() || req.headers.get("cf-connecting-ip")?.trim() || null;
-
 /** A file name safe to show in an e-mail: no path, no control characters, bounded. */
 function displayName(original: string, ext: string, index: number): string {
   const base = original.replace(/^.*[\\/]/, "").replace(/[^\p{L}\p{N} ._()-]/gu, "").trim().slice(0, 80);
@@ -174,6 +176,20 @@ export async function handleContact(req: Request, deps: ContactDeps): Promise<Re
 
   const ip = clientAddress(req);
   if (ip && !(await deps.ipAllowed(await hashAddress(ip)))) return reply({ error: "rate_limited" }, 429);
+
+  if (deps.captchaConfigured && !userId) {
+    const captcha = text(form, "captcha");
+    if (!captcha) return reply({ error: "captcha_required" }, 400);
+    if (captcha.length > MAX_CAPTCHA) return reply({ error: "invalid_request" }, 400);
+    let passed: boolean;
+    try {
+      passed = await deps.verifyCaptcha(captcha, ip);
+    } catch (error) {
+      deps.log("submit-contact-request: captcha check failed", error instanceof Error ? error.message : error);
+      return reply({ error: "server_error" }, 502);
+    }
+    if (!passed) return reply({ error: "captcha_failed" }, 400);
+  }
 
   const folder = userId ?? "guest";
   const paths: string[] = [];

@@ -2,6 +2,7 @@ import { callerClient, requireEnv, serviceClient } from "../_shared/clients.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { emailDepsFromEnv, sendTemplatedEmail } from "../_shared/email/mod.ts";
 import { type EraseResult, handleDeleteAccount, type Recipient } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): the member's token
@@ -10,7 +11,7 @@ import { type EraseResult, handleDeleteAccount, type Recipient } from "./handler
 
 const supabase = serviceClient();
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
-const log = (message: string, detail?: unknown) => console.error(`[delete-account] ${message}`, detail ?? "");
+const log = functionLogger("delete-account");
 
 /** "6 novembre 2026" / "6 November 2026", Paris time. */
 function erasureDate(date: Date, locale: string): string {

@@ -1,5 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import posthog from "posthog-js";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { useHydrated } from "./useHydrated";
 
 /**
@@ -99,18 +98,9 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
   const record = chosen === undefined ? stored : chosen;
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // PostHog starts opted out (`instrumentation-client.ts`): it captures only
-  // while the analytics category is accepted.
-  const analyticsAccepted = record?.analytics === true;
-  useEffect(() => {
-    try {
-      if (!posthog.__loaded) return;
-      if (analyticsAccepted) posthog.opt_in_capturing();
-      else posthog.opt_out_capturing();
-    } catch {
-      /* analytics must never break the site */
-    }
-  }, [analyticsAccepted]);
+  // PostHog starts opted out (`instrumentation-client.ts`); `PostHogSession`
+  // (`lib/posthogSession.tsx`, under this provider in `AppProviders`) opts in only while the analytics
+  // category is accepted, and decides session replay.
 
   const save = useCallback((choices: ConsentChoices) => {
     const next = { ...choices, decidedAt: new Date().toISOString() };

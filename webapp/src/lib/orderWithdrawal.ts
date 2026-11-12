@@ -1,6 +1,6 @@
 "use client";
 
-import { FunctionsHttpError } from "@supabase/supabase-js";
+import { functionErrorCode, readFunctionFailure } from "./supabase/functionError";
 import { supabase } from "./supabase/client";
 import {
   type DeclareError,
@@ -30,14 +30,8 @@ import {
 export const withdrawalAvailable = (): boolean => supabase !== null;
 
 async function functionError(error: unknown): Promise<DeclareError> {
-  if (error instanceof FunctionsHttpError) {
-    try {
-      const body = (await (error.context as Response).json()) as { error?: unknown };
-      return readDeclareError(body.error);
-    } catch {
-      return "unavailable";
-    }
-  }
+  const failure = await readFunctionFailure(error);
+  if (failure.kind === "http" && failure.body !== undefined) return readDeclareError(functionErrorCode(failure.body));
   return "unavailable";
 }
 

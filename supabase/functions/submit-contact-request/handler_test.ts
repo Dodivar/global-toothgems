@@ -14,6 +14,8 @@ function makeDeps(overrides: Partial<ContactDeps> = {}) {
   const logs: unknown[] = [];
   const deps: ContactDeps = {
     origins: { site: SITE, allowed: new Set([SITE]) },
+    captchaConfigured: false,
+    verifyCaptcha: () => Promise.resolve(true),
     userFromToken: (token) => Promise.resolve(token === "member-token" ? "user-1" : null),
     ipAllowed: () => Promise.resolve(true),
     upload: (path) => {
@@ -153,4 +155,43 @@ Deno.test("without a support address the ticket is still created", async () => {
   const { deps, sent } = makeDeps({ supportEmail: () => Promise.resolve(null) });
   assertEquals((await handleContact(post(form()), deps)).status, 200);
   assertEquals(sent.map((s) => s.templateKey), ["contact_acknowledgement"]);
+});
+
+Deno.test("with Turnstile configured a visitor needs a passing token, before anything is stored", async () => {
+  const checked: (string | null)[][] = [];
+  const captcha = (passes: boolean) =>
+    makeDeps({
+      captchaConfigured: true,
+      verifyCaptcha: (token, ip) => {
+        checked.push([token, ip]);
+        return Promise.resolve(passes && token === "good-token");
+      },
+    });
+
+  const missing = captcha(true);
+  const res1 = await handleContact(post(form({}, [file(PDF_HEAD, "a.pdf")])), missing.deps);
+  assertEquals(res1.status, 400);
+  assertObjectMatch(await res1.json(), { error: "captcha_required" });
+  assertEquals(missing.uploaded.length + missing.submitted.length, 0);
+
+  const failed = captcha(true);
+  const res2 = await handleContact(post(form({ captcha: "bad-token" }), { "sb-forwarded-for": "203.0.113.9" }), failed.deps);
+  assertObjectMatch(await res2.json(), { error: "captcha_failed" });
+  assertEquals(failed.submitted.length, 0);
+  assertEquals(checked.at(-1), ["bad-token", "203.0.113.9"]);
+
+  const ok = captcha(true);
+  assertEquals((await handleContact(post(form({ captcha: "good-token" })), ok.deps)).status, 200);
+  assertEquals(ok.submitted.length, 1);
+});
+
+Deno.test("a signed-in member skips the captcha; a Turnstile outage is a server error", async () => {
+  const member = makeDeps({ captchaConfigured: true, verifyCaptcha: () => Promise.resolve(false) });
+  const res = await handleContact(post(form(), { Authorization: "Bearer member-token" }), member.deps);
+  assertEquals(res.status, 200);
+
+  const down = makeDeps({ captchaConfigured: true, verifyCaptcha: () => Promise.reject(new Error("timeout")) });
+  const res2 = await handleContact(post(form({ captcha: "t" })), down.deps);
+  assertEquals(res2.status, 502);
+  assertEquals(down.submitted.length, 0);
 });

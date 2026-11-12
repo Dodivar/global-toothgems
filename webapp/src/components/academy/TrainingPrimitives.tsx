@@ -49,13 +49,13 @@ export function Section({
       id={id}
       aria-labelledby={labelledBy}
       className={clsx(
-        "px-[clamp(14px,4vw,48px)] py-[clamp(56px,7vw,var(--section-y))]",
+        "px-[clamp(16px,4vw,72px)] py-[clamp(56px,7vw,var(--section-y))]",
         sectionTone[tone],
         tone === "ink" && "text-[var(--gt-ink-300)]",
         className,
       )}
     >
-      <div ref={ref} className="gt-reveal mx-auto grid max-w-[var(--max-width-content)] gap-[clamp(28px,4vw,56px)]">
+      <div ref={ref} className="gt-reveal mx-auto grid max-w-[1760px] gap-[clamp(28px,4vw,56px)]">
         {children}
       </div>
     </section>

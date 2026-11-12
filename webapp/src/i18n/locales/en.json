@@ -502,6 +502,9 @@
     "dialogTitle": "Before continuing with Google",
     "dialogBody": "An account will be created with your Google address, or found if you already have one.",
     "googleCta": "I accept and continue with Google",
+    "appleDialogTitle": "Before continuing with Apple",
+    "appleDialogBody": "An account will be created with your Apple ID, or found if you already have one. If you choose to hide your address, Apple gives us a relay address that forwards our emails to you.",
+    "appleCta": "I accept and continue with Apple",
     "checkoutCta": "I accept and pay for my order"
   },
   "authAlt": {
@@ -512,6 +515,10 @@
     "google": "Continue with Google",
     "googleErrorTitle": "Google sign-in unavailable",
     "googleErrorBody": "We could not reach Google. Try again in a moment or use your email.",
+    "apple": "Continue with Apple",
+    "appleErrorTitle": "Apple sign-in unavailable",
+    "appleErrorBody": "We could not reach Apple. Try again in a moment or use your email.",
+    "lastUsed": "Last used",
     "switchToSignUpPrompt": "No account yet?",
     "errorEmail": "Enter a valid email address."
   },
@@ -719,6 +726,9 @@
     "google": {
       "cta": "Continue with Google"
     },
+    "apple": {
+      "cta": "Continue with Apple"
+    },
     "legal": {
       "summaryNote": "Key points, in plain language. The full legal text will be published with the live site.",
       "back": "Back to my account",
@@ -817,7 +827,7 @@
     "metaDiplomaLabel": "You earn",
     "metaModules": "{{count}} modules",
     "metaDiploma": "Diploma included",
-    "priceNote": "One-off payment · 24-month access",
+    "priceNote": "One-off payment · lifetime access",
     "ctaStart": "Start this training",
     "ctaResume": "Resume this training",
     "ctaReview": "Revisit this training",
@@ -926,7 +936,7 @@
   "lesson": {
     "eyebrow": "Course in progress",
     "progressLabel": "{{done}} of {{total}} lessons",
-    "remainingVideo": "{{minutes}} min of video left · 24-month access",
+    "remainingVideo": "{{minutes}} min of video left · lifetime access",
     "certificateTitle": "Certificate",
     "certificateBody": "Awarded after all 9 lessons, each module's quiz, and three case-review submissions.",
     "certificateLink": "View my certificates",
@@ -4595,6 +4605,9 @@
       "passwordLabel": "Your password",
       "googleHint": "To confirm it is really you, sign in again with Google if your last sign-in was more than 10 minutes ago.",
       "googleAgain": "Sign in again with Google",
+      "appleHint": "To confirm it is really you, sign in again with Apple if your last sign-in was more than 10 minutes ago.",
+      "appleAgain": "Sign in again with Apple",
+      "reauthAppleBody": "Your last sign-in was more than 10 minutes ago. Sign in again with Apple, then confirm again.",
       "reauthTitle": "Sign in again to confirm",
       "reauthPasswordBody": "Your sign-in is too old to delete the account. Type your password again and retry.",
       "reauthGoogleBody": "Your last sign-in was more than 10 minutes ago. Sign in again with Google, then confirm again."
@@ -4670,7 +4683,7 @@
     },
     "cookies": {
       "bannerTitle": "Your cookies, your choice",
-      "bannerBody": "Some cookies are essential for the site to work (sign-in, cart, payment) and cannot be switched off. Only with your agreement, we measure the site’s audience with PostHog, hosted in the European Union, to improve it. No advertising cookies. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
+      "bannerBody": "Some cookies are essential for the site to work (sign-in, cart, payment) and cannot be switched off. Only with your agreement, we measure the site’s audience with PostHog, hosted in the European Union, and replay some visits to the public pages, the Studio and the courses (what you type is masked) to improve it. No advertising cookies. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
       "policyLink": "Read our cookie policy",
       "rejectNonEssential": "Reject non-essential",
       "acceptAll": "Accept all",
@@ -4691,7 +4704,7 @@
         },
         "analytics": {
           "title": "Analytics",
-          "body": "Help us understand how the site is used and fix its errors.",
+          "body": "Help us understand how the site is used and fix its errors, including by replaying some visits to the public pages, the Studio and the courses, with what you type masked.",
           "providers": "PostHog (servers in the European Union)"
         }
       },
@@ -4778,6 +4791,8 @@
         "fileType": "Only JPG, PNG and PDF files are accepted.",
         "send": {
           "rate_limited": "You have sent several messages in a row. Please wait a few minutes before trying again.",
+          "captcha_required": "The anti-robot check is still running… Try again in a moment; your details stay in this form.",
+          "captcha_failed": "The anti-robot check did not succeed. Reload the page and try again; if an ad blocker is active, allow challenges.cloudflare.com.",
           "file_type": "An attachment was not recognised: only JPG, PNG and PDF files are accepted.",
           "too_many_files": "You can attach up to 5 files.",
           "files_too_large": "Your attachments are over 20 MB in total.",

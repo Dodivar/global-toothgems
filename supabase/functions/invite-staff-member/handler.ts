@@ -1,4 +1,4 @@
-import { corsHeaders, json, readJson, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
+import { callerJwt, corsHeaders, json, readJson, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
 import { parseStaffInviteInput, type InviteInput, type MemberActionInput, type StaffRole, type StaffTeam } from "./input.ts";
 
 /**
@@ -132,13 +132,6 @@ export function invitationRedirect(origin: string): string {
   return url.toString();
 }
 
-function bearer(req: Request): string | null {
-  const match = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") ?? "");
-  return match ? match[1] : null;
-}
-
-const looksLikeJwt = (token: string) => /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token);
-
 /** A refusal from RLS or a guard trigger (or an UPDATE that matched no row). */
 function refusal(error: DbError): InviteErrorCode | null {
   if (error.code === "42501") return /rank|above your own/.test(error.message ?? "") ? "rank_forbidden" : "forbidden";
@@ -159,8 +152,8 @@ export async function handleStaffInvite(req: Request, deps: InviteDeps): Promise
 
   // Authentication and authorization first: an unauthorized caller learns
   // nothing, not even whether their request was well formed.
-  const token = bearer(req);
-  if (!token || !looksLikeJwt(token)) return fail("unauthorized");
+  const token = callerJwt(req);
+  if (!token) return fail("unauthorized");
   let caller: Caller | null;
   try {
     caller = await deps.caller(token);
