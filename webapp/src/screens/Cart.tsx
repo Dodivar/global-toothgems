@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../lib/navigation";
 import { ArrowRight, CheckCircle2, CircleAlert, CreditCard, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShieldCheck, ShoppingBag, Tag, Trash2, Truck, UserRound } from "lucide-react";
@@ -41,6 +40,7 @@ import { basketLineStruck } from "../lib/storefrontOffers";
 import { guestQuoteEmail, isLineDiscount, lineDiscount, quoteItems } from "../lib/checkout/basketQuote";
 import { useBasketQuote } from "../lib/checkout/useBasketQuote";
 import { giftCardPayable, refusedGiftCodes } from "../lib/checkout/giftCardQuote";
+import { newlyAccepted, trackShop, trackShopOnce } from "../lib/shopAnalytics";
 import { useGiftCardQuote } from "../lib/checkout/useGiftCardQuote";
 import type { GiftCardDesign } from "../lib/giftCards/giftCardMapping";
 import {
@@ -295,6 +295,7 @@ export function Cart() {
   // went through becomes the reference for the next refusal.
   useEffect(() => {
     if (quoteState.status === "ready") {
+      for (const code of newlyAccepted(verifiedCodes.current, promoCodes)) trackShop("promo_code_applied", { code });
       verifiedCodes.current = promoCodes;
       return;
     }
@@ -302,9 +303,11 @@ export function Cart() {
     if (quoteState.error === "too_many_attempts") {
       setPromoCodes(verifiedCodes.current);
       setPromoRefusal("too_many_attempts");
+      trackShop("promo_code_rejected", { reason: "too_many_attempts" });
     } else if (quoteState.error === "promotion_code_invalid" && promoCodes.length > 0) {
       const kept = promoCodes.filter((code) => verifiedCodes.current.includes(code));
       setPromoRefusal(kept.length < promoCodes.length ? "invalid" : "dropped");
+      trackShop("promo_code_rejected", { reason: kept.length < promoCodes.length ? "invalid" : "dropped" });
       // Nothing new to blame: the basket changed under a code that used to apply, so all codes go.
       setPromoCodes(kept.length < promoCodes.length ? kept : []);
       if (kept.length === promoCodes.length) verifiedCodes.current = [];
@@ -314,10 +317,24 @@ export function Cart() {
     }
   }, [quoteState, promoCodes, wantsReward]);
   // A code the database refuses is taken out at once, and said so (the same words for every refusal).
+  // Analytics count the codes only, never the codes themselves (bearer credentials).
+  const acceptedGiftCount = useRef(0);
   useEffect(() => {
-    if (giftQuoteState.status !== "ready" || giftQuoteState.quote.refused.length === 0) return;
+    if (giftCodes.length === 0) {
+      acceptedGiftCount.current = 0;
+      return;
+    }
+    if (giftQuoteState.status === "error" && giftQuoteState.error === "too_many_attempts") {
+      trackShop("gift_card_code_rejected", { reason: "too_many_attempts" });
+      return;
+    }
+    if (giftQuoteState.status !== "ready") return;
     const refused = refusedGiftCodes(giftCodes, giftQuoteState.quote.refused);
+    const accepted = giftCodes.length - refused.length;
+    if (accepted > acceptedGiftCount.current) trackShop("gift_card_code_applied", { gift_card_count: accepted });
+    acceptedGiftCount.current = accepted;
     if (refused.length === 0) return;
+    trackShop("gift_card_code_rejected", { reason: "refused", refused_count: refused.length });
     setGiftCodes((codes) => codes.filter((code) => !refused.includes(code)));
     setGiftRefused(true);
   }, [giftQuoteState, giftCodes]);
@@ -344,7 +361,7 @@ export function Cart() {
     }
     if (!live) {
       // Mock mode: records the cart as a demo order, as the prototype did.
-      posthog.capture("checkout_started", {
+      trackShop("checkout_started", {
         item_count: lines.reduce((count, line) => count + line.qty, 0),
         cart_subtotal: subtotal,
         shipping_amount: shipping,
@@ -361,10 +378,11 @@ export function Cart() {
     const built = buildCheckoutRequest(lines, form, shipped ? rateId : null, locale, giftCodes, rewardOn, promoCodes, courseWaiver);
     if (!built) {
       setCheckoutError("unavailable");
+      trackShop("checkout_failed", { reason: "unavailable" });
       return;
     }
     const request = previousStep.current ? { ...built, previous_client_secret: previousStep.current } : built;
-    posthog.capture("checkout_started", {
+    trackShop("checkout_started", {
       item_count: lines.reduce((count, line) => count + line.qty, 0),
       cart_subtotal: subtotal,
       shipping_amount: shipping,
@@ -372,6 +390,9 @@ export function Cart() {
       currency,
       contains_course: courseInBasket,
       checkout_mode: "stripe",
+      promo_code_count: promoCodes.length,
+      gift_card_count: giftCodes.length,
+      loyalty_reward: rewardOn,
     });
     setSubmitting(true);
     if (offerSaveAddress && saveAddress) {
@@ -395,13 +416,21 @@ export function Cart() {
       // by confirming it here: the verified webhook marks the order paid.
       paymentBasket.current = basketKey(lines);
       setPayment(result.payment);
-      posthog.capture("payment_step_opened", { amount_due: result.payment.amountDue, currency: result.payment.currency });
+      trackShop("payment_step_opened", { amount_due: result.payment.amountDue, currency: result.payment.currency });
       return;
     }
     if (result.kind === "paid") {
       // Entirely covered by gift cards: create_order() recorded the payment itself
       // (and granted the courses it held).
       setReference(result.orderNumber);
+      trackShopOnce(`order:${result.orderNumber}`, "order_completed", {
+        paid_with: "gift_card",
+        item_count: lines.reduce((count, line) => count + line.qty, 0),
+        contains_course: courseInBasket,
+        promo_code_count: promoCodes.length,
+        gift_card_count: giftCodes.length,
+        loyalty_reward: rewardOn,
+      });
       if (courseInBasket) {
         setBoughtCourse(true);
         reloadCourses();
@@ -414,6 +443,7 @@ export function Cart() {
       return;
     }
     setCheckoutError(result.error);
+    trackShop("checkout_failed", { reason: result.error });
   };
 
   // Back to the details: the reserved order is closed (stock and gift cards released).

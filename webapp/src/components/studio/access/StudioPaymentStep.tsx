@@ -131,6 +131,18 @@ export default function StudioPaymentStep({ query, payment, locale, recordConsen
             locale={locale}
             payLabel={t("studio.access.payment.pay", { amount })}
             beforeConfirm={beforeConfirm}
+            onFailure={(failure) =>
+              trackStudio("studio_checkout_failed", {
+                plan_id: plan,
+                interval,
+                price_minor: payment.amountMinor,
+                currency: payment.currency,
+                surface,
+                reason: `payment_${failure.stage}`,
+                error_code: failure.code,
+                decline_code: failure.declineCode,
+              })
+            }
             onPaid={onPaid}
             onRestart={onRestart}
             footer={
