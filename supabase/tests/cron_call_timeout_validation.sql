@@ -1,5 +1,5 @@
 -- =============================================================================
--- Validation: migration 20261112180000_cron_call_timeout
+-- Validation: migration 20261112224251_cron_call_timeout
 --   * private.call_email_function() waits 60 s (timeout_milliseconds 60000);
 --   * it still refuses an unknown function and knows the four sweeps;
 --   * nobody but the server can call it.
