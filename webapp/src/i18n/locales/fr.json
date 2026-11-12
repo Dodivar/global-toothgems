@@ -4683,7 +4683,7 @@
     },
     "cookies": {
       "bannerTitle": "Vos cookies, votre choix",
-      "bannerBody": "Certains cookies sont indispensables au fonctionnement du site (connexion, panier, paiement) et ne peuvent pas être désactivés. Avec votre accord seulement, nous mesurons l’audience du site avec PostHog, hébergé dans l’Union européenne, pour l’améliorer. Aucun cookie publicitaire. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
+      "bannerBody": "Certains cookies sont indispensables au fonctionnement du site (connexion, panier, paiement) et ne peuvent pas être désactivés. Avec votre accord seulement, nous mesurons l’audience du site avec PostHog, hébergé dans l’Union européenne, et revoyons certaines visites des pages publiques, du Studio et des cours (vos saisies masquées) pour l’améliorer. Aucun cookie publicitaire. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
       "policyLink": "Lire la politique cookies",
       "rejectNonEssential": "Refuser les non essentiels",
       "acceptAll": "Tout accepter",
@@ -4704,7 +4704,7 @@
         },
         "analytics": {
           "title": "Mesure d’audience",
-          "body": "Nous aident à comprendre l’utilisation du site et à corriger ses erreurs.",
+          "body": "Nous aident à comprendre l’utilisation du site et à corriger ses erreurs, y compris en revoyant certaines visites des pages publiques, du Studio et des cours, vos saisies masquées.",
           "providers": "PostHog (serveurs dans l’Union européenne)"
         }
       },

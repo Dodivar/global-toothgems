@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 /**
  * Synchronizes the persisted browser analytics identity with the account
- * session. It intentionally runs at the auth boundary rather than at event
+ * session (the account id, nothing else). It intentionally runs at the auth boundary rather than at event
  * call sites, so automatic exception capture inherits the same identity.
  */
 function PostHogIdentity() {
@@ -234,11 +234,10 @@ function PostHogIdentity() {
     // users' anonymous histories.
     if (identifiedUserId.current) posthog.reset();
 
-    const name = `${profile.firstName} ${profile.lastName}`.trim();
-    posthog.identify(userId, {
-      ...(profile.email ? { email: profile.email } : {}),
-      ...(name ? { name } : {}),
-    });
+    // The account id only — no e-mail, no name (data minimisation, decided
+    // 2026-11-12): analyses group by account, and a person found in PostHog is
+    // matched to a member through the back office, never the other way round.
+    posthog.identify(userId);
     identifiedUserId.current = userId;
   }, [profile, userId]);
 

@@ -19,6 +19,7 @@ import { CommunityProvider } from "./lib/community";
 import { ToastProvider } from "./lib/toast";
 import { SecurityProvider } from "./lib/securityState";
 import { CookieConsentProvider } from "./lib/cookieConsent";
+import { PostHogSession } from "./lib/posthogSession";
 import { PromotionsProvider } from "./lib/adminPromotions";
 import { ReviewsProvider } from "./lib/reviews";
 import { FavoritesProvider } from "./lib/favorites";
@@ -92,6 +93,8 @@ export function AppProviders({
                     screen asks for them, and refusals are reported through the toasts. */}
                 <PromotionsProvider>
                 <CookieConsentProvider>
+                {/* PostHog follows the cookie choice and the page (consent, replay zones). */}
+                <PostHogSession />
                 {/* Customer reviews and their moderation. Inside the toasts and
                     under the account, orders and progress it checks eligibility
                     against; above both the storefront and the back office, so a

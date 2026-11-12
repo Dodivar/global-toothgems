@@ -63,6 +63,20 @@ test("old addresses are moved permanently, query included", async ({ request }) 
   }
 });
 
+test("a page asked with a trailing slash is moved to its address without it, query included", async ({ request }) => {
+  // Next.js's own redirect is off (`skipTrailingSlashRedirect`, for PostHog's `/ingest/…/`): the proxy does it.
+  for (const [from, to] of [
+    ["/fr/boutique/", "/fr/boutique"],
+    ["/en/help/?q=x", "/en/help?q=x"],
+    ["/compte/", "/compte"],
+  ]) {
+    const response = await request.get(from, { maxRedirects: 0 });
+    expect(response.status(), from).toBe(308);
+    const location = new URL(response.headers()["location"], "http://localhost");
+    expect(location.pathname + location.search, from).toBe(to);
+  }
+});
+
 test("the server answers 404 for addresses without a page", async ({ request }) => {
   for (const path of ["/fr/nimporte-quoi", "/en/boutique", "/fr/compte", "/nimporte-quoi", "/fr/boutique/n-existe-pas", "/en/shop/n-existe-pas", "/fr/academy/formation/n-existe-pas"]) {
     expect((await request.get(path)).status(), path).toBe(404);

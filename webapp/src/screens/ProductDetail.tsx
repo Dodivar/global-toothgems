@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
+import { trackShop } from "../lib/shopAnalytics";
 import { Link, useNavigate, useParams } from "../lib/navigation";
 import { BellRing, CheckCircle2, Image as ImageIcon, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { Badge } from "../components/ui/Badge";
@@ -215,7 +215,7 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
       currency: product.currency ?? "EUR",
       qty,
     });
-    posthog.capture("product_added_to_cart", {
+    trackShop("product_added_to_cart", {
       product_id: product.id,
       variant_id: variant?.id,
       quantity: qty,

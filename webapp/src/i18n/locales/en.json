@@ -4683,7 +4683,7 @@
     },
     "cookies": {
       "bannerTitle": "Your cookies, your choice",
-      "bannerBody": "Some cookies are essential for the site to work (sign-in, cart, payment) and cannot be switched off. Only with your agreement, we measure the site’s audience with PostHog, hosted in the European Union, to improve it. No advertising cookies. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
+      "bannerBody": "Some cookies are essential for the site to work (sign-in, cart, payment) and cannot be switched off. Only with your agreement, we measure the site’s audience with PostHog, hosted in the European Union, and replay some visits to the public pages, the Studio and the courses (what you type is masked) to improve it. No advertising cookies. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
       "policyLink": "Read our cookie policy",
       "rejectNonEssential": "Reject non-essential",
       "acceptAll": "Accept all",
@@ -4704,7 +4704,7 @@
         },
         "analytics": {
           "title": "Analytics",
-          "body": "Help us understand how the site is used and fix its errors.",
+          "body": "Help us understand how the site is used and fix its errors, including by replaying some visits to the public pages, the Studio and the courses, with what you type masked.",
           "providers": "PostHog (servers in the European Union)"
         }
       },
