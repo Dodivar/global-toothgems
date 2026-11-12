@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { trackAcademy } from "../lib/academyAnalytics";
 import { useNavigate } from "../lib/navigation";
 import {
   BookOpen,
@@ -130,6 +131,7 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
           unitPrice: course.currentPrice.minor,
           currency: course.currentPrice.currency,
         });
+        trackAcademy("academy_course_added_to_cart", { course_id: course.id, price_minor: course.currentPrice.minor, currency: course.currentPrice.currency });
         navigate("/panier");
       }
       return;

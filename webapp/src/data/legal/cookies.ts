@@ -251,6 +251,12 @@ export const COOKIE_POLICY: LegalDocument = {
               category: l("Mesure d’audience — seulement avec votre accord, évite de compter deux fois une commande", "Analytics — only with your agreement, avoids counting an order twice"),
               duration: l("Fermeture de l’onglet", "Until the tab is closed"),
             },
+            {
+              name: l("gt-academy-evt:… (stockage de session)", "gt-academy-evt:… (session storage)"),
+              provider: l("Global Toothgems", "Global Toothgems"),
+              category: l("Mesure d’audience — seulement avec votre accord, évite de compter deux fois une étape de formation", "Analytics — only with your agreement, avoids counting a course step twice"),
+              duration: l("Fermeture de l’onglet", "Until the tab is closed"),
+            },
           ],
         },
       ],

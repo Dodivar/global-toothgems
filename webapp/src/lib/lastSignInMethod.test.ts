@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { identitiesInclude, isSignInMethod, PENDING_SIGN_IN_TTL_MS, readPendingNote } from "./lastSignInMethod";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { identitiesInclude, isSignInMethod, PENDING_SIGN_IN_TTL_MS, readPendingNote, readSignInMethod, settlePendingSignIn } from "./lastSignInMethod";
 import { enabledProvidersFrom } from "./authProviders";
 
 describe("readPendingNote", () => {
@@ -46,5 +46,35 @@ describe("enabledProvidersFrom", () => {
     expect(enabledProvidersFrom(null).size).toBe(0);
     expect(enabledProvidersFrom({ external: { apple: "true" } }).size).toBe(0);
     expect(enabledProvidersFrom("oops").size).toBe(0);
+  });
+});
+
+describe("settlePendingSignIn", () => {
+  const now = 1_000_000_000_000;
+  const withStorage = (entries: Record<string, string>) => {
+    const store = new Map(Object.entries(entries));
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => void store.set(k, v),
+        removeItem: (k: string) => void store.delete(k),
+      },
+    });
+    return store;
+  };
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("returns the provider the session confirms, and remembers it", () => {
+    const store = withStorage({ "gt-pending-sign-in": `apple:${now - 1000}` });
+    expect(settlePendingSignIn([{ provider: "apple" }], now)).toBe("apple");
+    expect(readSignInMethod()).toBe("apple");
+    expect(store.has("gt-pending-sign-in")).toBe(false);
+  });
+
+  it("returns null when the session does not hold that provider, or without a note", () => {
+    withStorage({ "gt-pending-sign-in": `google:${now - 1000}` });
+    expect(settlePendingSignIn([{ provider: "email" }], now)).toBeNull();
+    withStorage({});
+    expect(settlePendingSignIn([{ provider: "google" }], now)).toBeNull();
   });
 });

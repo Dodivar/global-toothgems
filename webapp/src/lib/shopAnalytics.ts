@@ -1,4 +1,4 @@
-import posthog from "posthog-js";
+import { captureEvent, captureOnce, type AnalyticsProps } from "./analyticsCore";
 
 /**
  * The shop's checkout funnel, sent to PostHog (`instrumentation-client.ts`):
@@ -34,24 +34,9 @@ export type ShopEvent =
   | "gift_card_code_rejected"
   | "review_submitted";
 
-type Props = Record<string, string | number | boolean | null | undefined>;
-
-function enabled(): boolean {
-  try {
-    return posthog.__loaded === true && posthog.has_opted_in_capturing();
-  } catch {
-    return false;
-  }
-}
-
-/** Sends one event, if allowed. Never throws. */
-export function trackShop(event: ShopEvent, props: Props = {}) {
-  if (!enabled()) return;
-  try {
-    posthog.capture(event, props);
-  } catch {
-    /* analytics must never break the shop */
-  }
+/** Sends one event, if allowed (consent, `analyticsCore.ts`). Never throws. */
+export function trackShop(event: ShopEvent, props: AnalyticsProps = {}) {
+  captureEvent(event, props);
 }
 
 /**
@@ -59,19 +44,8 @@ export function trackShop(event: ShopEvent, props: Props = {}) {
  * confirmation page must not count the order twice). Session storage
  * `gt-shop-evt:<key>`, written only with consent, listed in the cookie policy.
  */
-const seenInPage = new Set<string>();
-export function trackShopOnce(key: string, event: ShopEvent, props: Props = {}) {
-  if (!enabled()) return;
-  const full = `gt-shop-evt:${key}`;
-  if (seenInPage.has(full)) return;
-  seenInPage.add(full);
-  try {
-    if (window.sessionStorage.getItem(full)) return;
-    window.sessionStorage.setItem(full, "1");
-  } catch {
-    /* blocked storage: the in-page guard above still holds */
-  }
-  trackShop(event, props);
+export function trackShopOnce(key: string, event: ShopEvent, props: AnalyticsProps = {}) {
+  captureOnce(`gt-shop-evt:${key}`, event, props);
 }
 
 /** Why a payment did not go through, as `StripePaymentForm` reports it. */
