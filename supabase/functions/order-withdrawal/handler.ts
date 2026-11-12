@@ -1,4 +1,4 @@
-import { corsHeaders, json, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
+import { callerJwt, clientAddress, corsHeaders, json, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
 import { hashAddress, isValidAddress } from "../_shared/email/send.ts";
 
 /**
@@ -85,13 +85,6 @@ export const DECLARE_REFUSALS = [
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const str = (body: Record<string, unknown>, key: string) => (typeof body[key] === "string" ? (body[key] as string).trim() : "");
-
-/** Only the headers the platform sets itself: `x-forwarded-for` can be written by the caller. */
-const clientAddress = (req: Request): string | null =>
-  req.headers.get("sb-forwarded-for")?.trim() || req.headers.get("cf-connecting-ip")?.trim() || null;
-
-const bearer = (req: Request) => /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") ?? "")?.[1] ?? null;
-const looksLikeJwt = (token: string) => /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token);
 
 /** A database refusal as a short code and status. */
 export function declareRefusal(error: DbError): { code: string; status: number } {
@@ -249,8 +242,8 @@ async function declare(req: Request, body: Record<string, unknown>, deps: OrderW
     if (!id) return reply({ error: "link_invalid" }, 404);
     orderId = id;
   } else {
-    const jwt = bearer(req);
-    if (!jwt || !looksLikeJwt(jwt)) return reply({ error: "sign_in_required" }, 401);
+    const jwt = callerJwt(req);
+    if (!jwt) return reply({ error: "sign_in_required" }, 401);
     if (typeof body.order_id !== "string" || !UUID_RE.test(body.order_id)) return reply({ error: "invalid_request" }, 400);
     userId = await deps.userFromToken(jwt);
     if (!userId) return reply({ error: "session_expired" }, 401);

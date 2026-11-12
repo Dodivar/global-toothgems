@@ -1,6 +1,9 @@
 import { callerClient, requireEnv, serviceClient } from "../_shared/clients.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
 import { handleStaffInvite, type Account, type DbError, type InviteDeps } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
+
+const log = functionLogger("invite-staff-member");
 
 const service = serviceClient();
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
@@ -127,7 +130,7 @@ const deps: InviteDeps = {
     if (error) throw new Error(error.message);
   },
 
-  log: (message, detail) => console.error(`[invite-staff-member] ${message}`, detail ?? ""),
+  log: log,
 };
 
 Deno.serve((req) => handleStaffInvite(req, deps));

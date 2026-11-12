@@ -9,6 +9,9 @@ import {
 } from "../_shared/studioBilling.ts";
 import { STUDIO_TERMS_VERSION } from "../_shared/legal/studioTerms.ts";
 import { handleStudioCheckout, type StudioCheckoutDeps } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
+
+const log = functionLogger("create-studio-subscription");
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml), like
@@ -167,7 +170,7 @@ const deps: StudioCheckoutDeps = {
   },
 
   now: () => Date.now(),
-  log: (message, detail) => console.error(`[create-studio-subscription] ${message}`, detail ?? ""),
+  log: log,
 };
 
 Deno.serve((req) => handleStudioCheckout(req, deps));

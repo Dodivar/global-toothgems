@@ -1,8 +1,11 @@
 import { callerClient, requireEnv, serviceClient } from "../_shared/clients.ts";
 import { emailDepsFromEnv, sendTemplatedEmail } from "../_shared/email/mod.ts";
 import { readSiteOrigins } from "../_shared/http.ts";
-import { verifyTurnstile } from "../newsletter-subscribe/turnstile.ts";
+import { verifyTurnstile } from "../_shared/turnstile.ts";
 import { handleContact, type ContactDeps } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
+
+const log = functionLogger("submit-contact-request");
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): visitors call it with the publishable
@@ -63,7 +66,7 @@ const deps: ContactDeps = {
   },
 
   sendEmail: (request) => sendTemplatedEmail(emailDepsFromEnv(), request),
-  log: (message, detail) => console.error(`[submit-contact-request] ${message}`, detail ?? ""),
+  log: log,
 };
 
 Deno.serve((req) => handleContact(req, deps));

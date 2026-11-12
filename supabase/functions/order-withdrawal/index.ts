@@ -6,8 +6,9 @@ import {
   supabaseWithdrawalSource,
   withdrawalLinkContent,
 } from "../_shared/email/withdrawalEmails.ts";
-import { verifyTurnstile } from "../newsletter-subscribe/turnstile.ts";
+import { verifyTurnstile } from "../_shared/turnstile.ts";
 import { handleOrderWithdrawal, type LinkResult, type OrderWithdrawalDeps } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): guests call it with the
@@ -20,7 +21,7 @@ import { handleOrderWithdrawal, type LinkResult, type OrderWithdrawalDeps } from
 const supabase = serviceClient();
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 const turnstileSecret = Deno.env.get("TURNSTILE_SECRET_KEY")?.trim() || null;
-const log = (message: string, detail?: unknown) => console.error(`[order-withdrawal] ${message}`, detail ?? "");
+const log = functionLogger("order-withdrawal");
 
 const deps: OrderWithdrawalDeps = {
   origins,

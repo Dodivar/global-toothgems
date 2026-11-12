@@ -5,14 +5,14 @@ import {
   type PurgeStore,
   type QueuedFile,
 } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): called by pg_cron with the shared
  * secret, see handler.ts.
  */
 
-const log = (message: string, detail?: unknown) =>
-  console.error(`[purge-storage-objects] ${message}`, detail ?? "");
+const log = functionLogger("purge-storage-objects");
 
 Deno.serve((req) =>
   handlePurgeStorageObjects(req, {

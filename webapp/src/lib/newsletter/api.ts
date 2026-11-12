@@ -1,4 +1,4 @@
-import { FunctionsHttpError } from "@supabase/supabase-js";
+import { functionErrorCode, oneOf, readFunctionFailure } from "../supabase/functionError";
 import { isSupabaseConfigured } from "../supabase/env";
 import { requireSupabase } from "../supabase/client";
 import { LEGAL_POLICY_VERSION } from "../registration";
@@ -27,8 +27,7 @@ export const NEWSLETTER_ERRORS = [
 ] as const;
 export type NewsletterError = (typeof NEWSLETTER_ERRORS)[number];
 
-const asError = (value: unknown): NewsletterError =>
-  (NEWSLETTER_ERRORS as readonly unknown[]).includes(value) ? (value as NewsletterError) : "server_error";
+const asError = (value: unknown): NewsletterError => oneOf(NEWSLETTER_ERRORS, value, "server_error");
 
 export interface NewsletterSignup {
   email: string;
@@ -69,16 +68,11 @@ export async function subscribeToNewsletter(
     },
   });
   if (!error) return { ok: true, outcome: (data as { status?: unknown } | null)?.status === "subscribed" ? "subscribed" : "sent" };
-  if (error instanceof FunctionsHttpError) {
-    const response = error.context as Response;
-    if (response.status === 404) return { ok: false, error: "unavailable" };
-    try {
-      return { ok: false, error: asError(((await response.json()) as { error?: unknown }).error) };
-    } catch {
-      return { ok: false, error: "server_error" };
-    }
-  }
-  return { ok: false, error: "network" };
+  const failure = await readFunctionFailure(error);
+  if (failure.kind === "network") return { ok: false, error: "network" };
+  if (failure.status === 404) return { ok: false, error: "unavailable" };
+  if (failure.body === undefined) return { ok: false, error: "server_error" };
+  return { ok: false, error: asError(functionErrorCode(failure.body)) };
 }
 
 /** The shape of the token the confirmation e-mail carries (48 hex characters). */

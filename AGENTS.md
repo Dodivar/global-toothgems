@@ -39,6 +39,7 @@ Read only what the task needs (`guidelines/` below = `global-toothgems-llm-guide
 | Academy, courses, progress, quizzes | `guidelines/05-learning-platform-rules.md` |
 | Auth, roles, RLS, uploads, personal data | `guidelines/06-security-privacy.md`, `supabase/README.md` (Security, roles) |
 | Tests and checks, CI | `guidelines/07-testing-and-quality.md`, `docs/testing.md` |
+| Production operations, release order, load and monitoring | `docs/production-readiness.md` |
 | Translations, copy, SEO | `guidelines/08-content-and-localization.md` |
 | Schema, migrations, RPC, Storage, Edge Functions | `guidelines/09-supabase-workflow.md`, `supabase/README.md` (Migrations, Data model, Deliberate decisions) |
 | Pro artist module (showroom, booking with deposit, client file) — **study only, nothing decided** | `docs/pro-artist-erp-study.md` |

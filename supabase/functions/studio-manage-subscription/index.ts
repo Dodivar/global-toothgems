@@ -4,6 +4,7 @@ import { readSiteOrigins } from "../_shared/http.ts";
 import { STUDIO_METADATA_KIND, type StudioInterval, type StudioPlan } from "../_shared/studioBilling.ts";
 import { STUDIO_CARD_METADATA_KIND } from "../_shared/studioManage.ts";
 import { type ChargeOutcome, handleStudioManage, type ManagedContext, type StudioManageDeps } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): the member's token
@@ -14,7 +15,7 @@ const supabase = serviceClient();
 // The Studio's Stripe account: the publisher's (DoDigital, decision 135), `STRIPE_*`.
 const stripe = stripeClient("studio");
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
-const log = (message: string, detail?: unknown) => console.error(`[studio-manage-subscription] ${message}`, detail ?? "");
+const log = functionLogger("studio-manage-subscription");
 
 const RUNNING = ["active", "trialing", "past_due", "unpaid"];
 

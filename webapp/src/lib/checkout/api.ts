@@ -1,4 +1,4 @@
-import { FunctionsHttpError } from "@supabase/supabase-js";
+import { oneOf, readFunctionFailure } from "../supabase/functionError";
 import { requireSupabase } from "../supabase/client";
 import type { CheckoutItem } from "./cartLines";
 import { readQuote, type QuoteItem, type QuoteResult } from "./basketQuote";
@@ -89,8 +89,7 @@ type CheckoutResult =
   | { kind: "paid"; orderNumber: string }
   | { kind: "error"; error: CheckoutError };
 
-const asError = (value: unknown): CheckoutError =>
-  (CHECKOUT_ERRORS as readonly unknown[]).includes(value) ? (value as CheckoutError) : "server_error";
+const asError = (value: unknown): CheckoutError => oneOf(CHECKOUT_ERRORS, value, "server_error");
 
 /** A Checkout Session client secret (`cs_test_…_secret_…`), as the function returns it. */
 export const isClientSecret = (value: unknown): value is string =>
@@ -136,17 +135,12 @@ export function readCheckoutAnswer(data: unknown): CheckoutResult {
 export async function startCheckout(request: CheckoutRequest): Promise<CheckoutResult> {
   const { data, error } = await requireSupabase().functions.invoke("create-checkout-session", { body: request });
   if (!error) return readCheckoutAnswer(data);
-  if (error instanceof FunctionsHttpError) {
-    const response = error.context as Response;
-    // The function is not deployed (yet): payment is not available, nothing was created.
-    if (response.status === 404) return { kind: "error", error: "payment_unavailable" };
-    try {
-      return readCheckoutAnswer(await response.json());
-    } catch {
-      return { kind: "error", error: "server_error" };
-    }
-  }
-  return { kind: "error", error: "network" };
+  const failure = await readFunctionFailure(error);
+  if (failure.kind === "network") return { kind: "error", error: "network" };
+  // The function is not deployed (yet): payment is not available, nothing was created.
+  if (failure.status === 404) return { kind: "error", error: "payment_unavailable" };
+  if (failure.body === undefined) return { kind: "error", error: "server_error" };
+  return readCheckoutAnswer(failure.body);
 }
 
 /**

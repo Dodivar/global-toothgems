@@ -6,6 +6,9 @@ import { HANDLED_REFUND_EVENTS } from "../stripe-webhook/handler.ts";
 import { withdrawFromStudio } from "../_shared/studioWithdrawal.ts";
 import { liveWithdrawalDeps } from "../_shared/studioWithdrawalLive.ts";
 import { handleSetup, type SetupDeps } from "./handler.ts";
+import { functionLogger } from "../_shared/log.ts";
+
+const log = functionLogger("studio-billing-setup");
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml). Internal only: the
@@ -196,7 +199,7 @@ const deps: SetupDeps = {
     return { endpoint: updated.id, events: updated.enabled_events };
   },
 
-  log: (message, detail) => console.error(`[studio-billing-setup] ${message}`, detail ?? ""),
+  log: log,
 };
 
 Deno.serve((req) => handleSetup(req, deps));
