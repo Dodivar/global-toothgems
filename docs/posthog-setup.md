@@ -2,6 +2,8 @@
 
 What has to be switched on or created **in the PostHog app** (EU cloud, `eu.posthog.com`) for the code of 2026-11-12 to give its full value. Nothing here is done by code. Menu names follow the PostHog app as of 2026-11; if one moved, the setting keeps the same name (use the app's search).
 
+**State on 2026-11-12 (set up by an agent through the PostHog MCP server, owner's go-ahead):** session replay on with 30-day retention and IP anonymisation (already on); the internal users filter holds the cohort 261336, the team's e-mails (`is not` — it was `exact`, which kept only the team), `is_staff is not true` and `app_environment is not development/preview`, applied by default to new insights; the 39 custom events declared in Data management with French descriptions and tags; the dashboard **"Santé production"** (id 1110971, pinned) with the 13 insights of section 2 and the alert signals; the alerts of section 3 by e-mail to the owner — "no paid order in 24 h" created **disabled**, to switch on at launch; the `$exception` alert is replaced by the existing error-tracking destination (a GitHub issue per new issue). Not done: removing `email` / `name` from persons identified before 2026-11-12.
+
 Event lists: `docs/shop-analytics.md`, `docs/academy-analytics.md`, `docs/studio-trial-analytics.md`. Code: `webapp/src/lib/posthog*.ts`, `analyticsCore.ts`.
 
 ## 1. Project settings (once, ~10 min)
