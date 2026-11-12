@@ -1,6 +1,6 @@
 "use client";
 
-import { FunctionsHttpError } from "@supabase/supabase-js";
+import { readFunctionFailure } from "./supabase/functionError";
 import { supabase } from "./supabase/client";
 import {
   archiveFiles,
@@ -71,13 +71,7 @@ export async function deleteOwnAccount(): Promise<DeleteAnswer> {
   if (!supabase) return { kind: "error" };
   const { data, error } = await supabase.functions.invoke("delete-account", { body: { confirm: true } });
   if (!error) return readDeleteAnswer(200, data);
-  if (error instanceof FunctionsHttpError) {
-    const response = error.context as Response;
-    try {
-      return readDeleteAnswer(response.status, await response.json());
-    } catch {
-      return { kind: "error" };
-    }
-  }
+  const failure = await readFunctionFailure(error);
+  if (failure.kind === "http" && failure.body !== undefined) return readDeleteAnswer(failure.status, failure.body);
   return { kind: "error" };
 }

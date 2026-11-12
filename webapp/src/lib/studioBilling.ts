@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FunctionsHttpError } from "@supabase/supabase-js";
+import { readFunctionFailure } from "./supabase/functionError";
 import { isSupabaseConfigured, supabase } from "./supabase/client";
 import {
   mapPlanPriceRows,
@@ -68,16 +68,10 @@ async function invoke<T>(name: string, body: Record<string, string | number | bo
   if (!supabase) return missing;
   const { data, error } = await supabase.functions.invoke(name, { body });
   if (!error) return read(data);
-  if (error instanceof FunctionsHttpError) {
-    const response = error.context as Response;
-    if (response.status === 404 && name === "create-studio-subscription") return missing;
-    try {
-      return read(await response.json());
-    } catch {
-      return missing;
-    }
-  }
-  return offline;
+  const failure = await readFunctionFailure(error);
+  if (failure.kind === "network") return offline;
+  if (failure.status === 404 && name === "create-studio-subscription") return missing;
+  return failure.body === undefined ? missing : read(failure.body);
 }
 
 /** Opens a payment step for this plan and interval: the Payment Element is mounted from its client secret. */

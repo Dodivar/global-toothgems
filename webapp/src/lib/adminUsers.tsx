@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { FunctionsHttpError } from "@supabase/supabase-js";
+import { functionErrorCode, readFunctionFailure } from "./supabase/functionError";
 import type { AdminUser, PermissionMatrix, UserRole } from "../data/adminUsers";
 import {
   editPatches,
@@ -113,14 +113,8 @@ async function readTeam(signal: AbortSignal): Promise<Snapshot> {
 async function callInviteFunction(body: Record<string, unknown>): Promise<{ status?: string; error?: UserWriteError }> {
   const { data, error } = await requireSupabase().functions.invoke("invite-staff-member", { body });
   if (!error) return { status: (data as { status?: string } | null)?.status };
-  if (error instanceof FunctionsHttpError) {
-    try {
-      const answer = (await (error.context as Response).json()) as { error?: unknown };
-      return { error: functionErrorOf(answer.error) };
-    } catch {
-      return { error: "unavailable" };
-    }
-  }
+  const failure = await readFunctionFailure(error);
+  if (failure.kind === "http" && failure.body !== undefined) return { error: functionErrorOf(functionErrorCode(failure.body)) };
   return { error: "unavailable" };
 }
 

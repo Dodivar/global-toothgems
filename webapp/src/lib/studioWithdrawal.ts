@@ -1,6 +1,6 @@
 "use client";
 
-import { FunctionsHttpError } from "@supabase/supabase-js";
+import { readFunctionFailure } from "./supabase/functionError";
 import { supabase } from "./supabase/client";
 import { readWithdrawalQuote, readWithdrawAnswer, type WithdrawAnswer, type WithdrawalQuote } from "./studioWithdrawalMapping";
 
@@ -22,13 +22,7 @@ export async function withdrawFromStudio(): Promise<WithdrawAnswer> {
   if (!supabase) return { kind: "error" };
   const { data, error } = await supabase.functions.invoke("studio-withdraw", { body: {} });
   if (!error) return readWithdrawAnswer(200, data);
-  if (error instanceof FunctionsHttpError) {
-    const response = error.context as Response;
-    try {
-      return readWithdrawAnswer(response.status, await response.json());
-    } catch {
-      return { kind: "error" };
-    }
-  }
+  const failure = await readFunctionFailure(error);
+  if (failure.kind === "http" && failure.body !== undefined) return readWithdrawAnswer(failure.status, failure.body);
   return { kind: "error" };
 }
