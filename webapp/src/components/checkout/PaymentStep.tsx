@@ -1,10 +1,10 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import posthog from "posthog-js";
 import type { StripeCheckoutContact } from "@stripe/stripe-js";
 import { Link, useNavigate } from "../../lib/navigation";
 import type { PaymentStep as PaymentStepData } from "../../lib/checkout/api";
+import { trackShop } from "../../lib/shopAnalytics";
 import { StripePaymentForm } from "./StripePaymentForm";
 
 /**
@@ -39,7 +39,16 @@ export default function PaymentStep({ payment, locale, billing, amountLabel, onR
       locale={locale}
       payLabel={t("checkout.payment.pay", { amount: amountLabel })}
       billing={billing}
-      onSubmit={() => posthog.capture("payment_submitted", { amount_due: payment.amountDue, currency: payment.currency })}
+      onSubmit={() => trackShop("payment_submitted", { amount_due: payment.amountDue, currency: payment.currency })}
+      onFailure={(failure) =>
+        trackShop("payment_failed", {
+          stage: failure.stage,
+          error_code: failure.code,
+          decline_code: failure.declineCode,
+          amount_due: payment.amountDue,
+          currency: payment.currency,
+        })
+      }
       // Paid without leaving the page (cards, wallets): the confirmation page reads the
       // order's state, which only the verified webhook turns into "paid".
       onPaid={(sessionId) => navigate(`/panier/confirmation?session_id=${encodeURIComponent(sessionId)}`, { replace: true })}

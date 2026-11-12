@@ -14,6 +14,7 @@ import { isSupabaseConfigured } from "../lib/supabase/client";
 import { useHydrated } from "../lib/useHydrated";
 import { useLoyalty } from "../lib/loyalty";
 import { useOrders } from "../lib/orders";
+import { trackShop, trackShopOnce } from "../lib/shopAnalytics";
 
 /**
  * Where Stripe sends the customer back (`/fr/panier/confirmation?session_id=cs_…`).
@@ -66,12 +67,24 @@ export function CheckoutReturn() {
         .then((status) => {
           if (!active) return;
           if (status && status.state !== "pending") {
-            setView({ kind: "done", status, course: hasCourse(linesRef.current) });
+            const basket = linesRef.current;
+            setView({ kind: "done", status, course: hasCourse(basket) });
+            // Once per order and tab: a reload of this page does not count it again.
+            if (status.state === "paid") {
+              trackShopOnce(`order:${status.orderNumber}`, "order_completed", {
+                paid_with: "card",
+                item_count: basket.reduce((count, line) => count + line.qty, 0),
+                contains_course: hasCourse(basket),
+              });
+            } else {
+              trackShopOnce(`order-unpaid:${status.orderNumber}`, "payment_failed", { stage: "return", order_state: status.state });
+            }
             return;
           }
           polls += 1;
           if (polls >= POLL_LIMIT) {
             setView({ kind: "slow" });
+            trackShop("payment_confirmation_slow", { polls });
             return;
           }
           timer = window.setTimeout(check, POLL_MS);

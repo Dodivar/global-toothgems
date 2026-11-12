@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
+import { trackShop } from "../../lib/shopAnalytics";
 import { useNavigate } from "../../lib/navigation";
 import { ChevronDown, ImagePlus, Info, MessageSquareHeart, Sparkles, X } from "lucide-react";
 import clsx from "clsx";
@@ -170,7 +170,7 @@ function FormDialogBody({ target, onClose, closeLabel }: { target: FormTarget; o
         : Promise.reject(new Error("reviews: not eligible"));
     sent.then(
       () => {
-        posthog.capture("review_submitted", {
+        trackShop("review_submitted", {
           subject_kind: target.subject.kind,
           is_edit: Boolean(editing),
           rating: input.rating,
