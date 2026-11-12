@@ -120,10 +120,3 @@ export function parseStudioCheckoutRequest(body: unknown): Parsed<StudioCheckout
  */
 export const BLOCKING_STATUSES = ["active", "trialing", "past_due", "unpaid", "paused", "incomplete"] as const;
 
-export function bearer(req: Request): string | null {
-  const match = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") ?? "");
-  return match ? match[1] : null;
-}
-
-/** A user access token is a JWT; the publishable key (`sb_publishable_…`) is not. */
-export const looksLikeJwt = (token: string) => /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token);

@@ -1,5 +1,4 @@
-import { corsHeaders, json, readJson, type SiteOrigins } from "../_shared/http.ts";
-import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
+import { callerJwt, corsHeaders, json, readJson, type SiteOrigins } from "../_shared/http.ts";
 
 /**
  * POST /functions/v1/delete-account   {"confirm": true}  (the member's token)
@@ -106,8 +105,8 @@ export async function handleDeleteAccount(req: Request, deps: DeleteAccountDeps)
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ error: "invalid_request" }, 405, { ...cors, Allow: "POST, OPTIONS" });
 
-  const token = bearer(req);
-  if (!token || !looksLikeJwt(token)) return json({ error: "sign_in_required" }, 401, cors);
+  const token = callerJwt(req);
+  if (!token) return json({ error: "sign_in_required" }, 401, cors);
   if (!isConfirmation(await readJson(req, MAX_BODY_BYTES))) return json({ error: "invalid_request" }, 400, cors);
 
   let member: Member | null;

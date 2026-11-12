@@ -1,5 +1,4 @@
-import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
-import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
+import { callerJwt, corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import { nearestAspectRatio, type GenerateOutcome, type InlineImage } from "./gemini.ts";
 import { boxInCrop, cropJpeg, mouthCrop, type CropRect } from "./crop.ts";
 import { imageSize, judgeReadings, PHOTO_READINGS } from "./photoCheck.ts";
@@ -208,8 +207,8 @@ export async function handleStudioTryOn(req: Request, deps: StudioTryOnDeps): Pr
   // Nothing is read, stored or counted while the provider is not connected.
   if (!deps.available) return json({ ok: false, code: "not_available" }, 503, cors);
 
-  const token = bearer(req);
-  if (!token || !looksLikeJwt(token)) return json({ ok: false, code: "sign_in_required" }, 401, cors);
+  const token = callerJwt(req);
+  if (!token) return json({ ok: false, code: "sign_in_required" }, 401, cors);
   if (Number(req.headers.get("content-length") ?? "0") > BODY_MAX_BYTES) return json({ ok: false, code: "invalid_request" }, 413, cors);
 
   let form: FormData;
@@ -293,8 +292,8 @@ async function remainingChecks(deps: StudioTryOnDeps, userId: string): Promise<n
  * status itself never fails on it. Display only: a render counts again.
  */
 async function quotaFor(req: Request, deps: StudioTryOnDeps): Promise<Record<string, unknown> | null> {
-  const token = bearer(req);
-  if (!token || !looksLikeJwt(token)) return null;
+  const token = callerJwt(req);
+  if (!token) return null;
   try {
     const userId = await deps.userFromToken(token);
     if (!userId) return null;

@@ -1,5 +1,5 @@
-import { corsHeaders, json, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
-import { accountStudioUrl, bearer, looksLikeJwt, type StudioInterval, type StudioLocale, type StudioPlan } from "../_shared/studioBilling.ts";
+import { callerJwt, corsHeaders, json, returnOrigin, type SiteOrigins } from "../_shared/http.ts";
+import { accountStudioUrl, type StudioInterval, type StudioLocale, type StudioPlan } from "../_shared/studioBilling.ts";
 import {
   cancelRefusal,
   changeRefusal,
@@ -126,8 +126,8 @@ export async function handleStudioManage(req: Request, deps: StudioManageDeps): 
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ error: "invalid_request" }, 405, { ...cors, Allow: "POST, OPTIONS" });
 
-  const token = bearer(req);
-  if (!token || !looksLikeJwt(token)) return json({ error: "sign_in_required" }, 401, cors);
+  const token = callerJwt(req);
+  if (!token) return json({ error: "sign_in_required" }, 401, cors);
   const parsed = parseStudioManageRequest(await readBody(req));
   if (!parsed.ok) return json({ error: "invalid_request", field: parsed.field }, 400, cors);
   const request = parsed.value;

@@ -1,5 +1,4 @@
-import { corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
-import { bearer, looksLikeJwt } from "../_shared/studioBilling.ts";
+import { callerJwt, corsHeaders, json, type SiteOrigins } from "../_shared/http.ts";
 import type { WithdrawalOutcome } from "../_shared/studioWithdrawal.ts";
 
 /**
@@ -41,8 +40,8 @@ export async function handleStudioWithdraw(req: Request, deps: StudioWithdrawDep
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json({ error: "invalid_request" }, 405, { ...cors, Allow: "POST, OPTIONS" });
 
-  const token = bearer(req);
-  if (!token || !looksLikeJwt(token)) return json({ error: "sign_in_required" }, 401, cors);
+  const token = callerJwt(req);
+  if (!token) return json({ error: "sign_in_required" }, 401, cors);
   if (!(await emptyBody(req))) return json({ error: "invalid_request" }, 400, cors);
 
   let userId: string | null;
