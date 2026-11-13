@@ -526,6 +526,12 @@
     "appleCta": "J’accepte et je continue avec Apple",
     "checkoutCta": "J’accepte et je règle ma commande"
   },
+  "authSwitch": {
+    "label": "Connexion ou création de compte",
+    "signIn": "Se connecter",
+    "signUp": "Créer un compte",
+    "oneAccount": "Un seul compte pour la boutique, l’Academy et le Studio 3D"
+  },
   "authAlt": {
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",

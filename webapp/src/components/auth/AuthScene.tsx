@@ -4,6 +4,7 @@ import { Link } from "../../lib/navigation";
 import { CircleAlert } from "lucide-react";
 import { ShapeGlyph, GLYPH_PATHS } from "../ui/ShapeGlyph";
 import { photo } from "../../lib/images";
+import { AUTH_PHOTO } from "./authPhoto";
 import { AppleMark } from "./AppleMark";
 
 /**
@@ -15,8 +16,8 @@ import { AppleMark } from "./AppleMark";
  *
  * Colour is rationed on purpose: pastel blue carries the whole surface, emerald
  * appears on exactly one control (the primary submit), and fuchsia is reduced to
- * two small sparkle marks. One large light initial in the brand sans is the
- * only decoration, never a label, an instruction or legal copy.
+ * small sparkle marks. A few white gem cuts set in the crown's corner are the
+ * card's only decoration, never a label, an instruction or legal copy.
  */
 
 /** Shared page gutter, matched to the rest of the site. */
@@ -33,7 +34,7 @@ const BENEFITS = [
 ] as const;
 
 /** Four-point mark. Decorative only — every instance is hidden from assistive tech. */
-function Sparkle({ size = 16, className = "", color = "currentColor" }: { size?: number; className?: string; color?: string }) {
+export function Sparkle({ size = 16, className = "", color = "currentColor" }: { size?: number; className?: string; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" className={className}>
       <path
@@ -46,23 +47,24 @@ function Sparkle({ size = 16, className = "", color = "currentColor" }: { size?:
 
 /**
  * The page's field: a flat pastel plane with one oversized brand cut drawn into
- * it. It is the catalogue's own `round` glyph, scaled up until the facet lines
- * read as architecture rather than as an icon.
+ * it. It is the catalogue's own `star-flower` glyph, scaled up until the petals
+ * read as architecture rather than as an icon, and turned a little, as a stone
+ * is set by hand rather than squared to the page.
  */
 function FacetField() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gt-blue-50)]" />
       {/* Centred roughly on the card, so the card's own body masks the middle and
-          only the facet rays come out around it — the stone in its setting. */}
+          only the petals come out around it — the stone in its setting. */}
       <svg
         viewBox="0 0 32 32"
         fill="none"
-        className="absolute -right-[22%] -top-[26%] h-[86vw] max-h-[840px] w-[86vw] max-w-[840px] text-[var(--gt-blue-300)] lg:-right-[10%] lg:-top-[20%]"
+        className="absolute -right-[24%] -top-[22%] h-[90vw] max-h-[900px] w-[90vw] max-w-[900px] rotate-[14deg] text-[var(--gt-blue-300)] lg:-right-[12%] lg:-top-[16%]"
         style={{ opacity: 0.85 }}
       >
-        <path d={GLYPH_PATHS.round.outline} stroke="currentColor" strokeWidth={0.06} fill="none" />
-        <path d={GLYPH_PATHS.round.facets} stroke="currentColor" strokeWidth={0.045} fill="none" />
+        <path d={GLYPH_PATHS["star-flower"].outline} stroke="currentColor" strokeWidth={0.06} strokeLinejoin="round" fill="none" />
+        <path d={GLYPH_PATHS["star-flower"].facets} stroke="currentColor" strokeWidth={0.045} strokeLinecap="round" fill="none" />
       </svg>
       {/* Fuchsia, once, small: the whole budget for the accent on this surface. */}
       <Sparkle size={20} color="var(--gt-fuchsia-300)" className="absolute left-[6%] top-[22%] hidden lg:block" />
@@ -71,8 +73,76 @@ function FacetField() {
   );
 }
 
+/** One white cut, outline and facets, for the crown's corner. */
+function CrownCut({ shape, size, className }: { shape: keyof typeof GLYPH_PATHS; size: number; className: string }) {
+  const { outline, facets } = GLYPH_PATHS[shape];
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false" className={`absolute ${className}`}>
+      <path d={outline} fill="white" fillOpacity={0.35} stroke="white" strokeWidth={1.1} strokeLinejoin="round" />
+      <path d={facets} stroke="white" strokeWidth={0.7} strokeOpacity={0.8} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /**
- * The card shell: crown, decorative initial, then whatever it holds.
+ * The crown's ornament: three of the catalogue's own cuts set in the corner,
+ * the way gems are placed on a tooth — one hero stone and two accents.
+ */
+function CrownGems() {
+  return (
+    <span aria-hidden="true" className="pointer-events-none absolute -right-3 -top-4 h-[96px] w-[118px] select-none">
+      <CrownCut shape="star-flower" size={76} className="right-0 top-0 rotate-[14deg]" />
+      <CrownCut shape="round" size={22} className="bottom-4 left-7" />
+      <CrownCut shape="navette" size={18} className="left-1 top-6 -rotate-[24deg]" />
+    </span>
+  );
+}
+
+/**
+ * The crown of the sign-in card: what the account covers, then a two-way switch
+ * between signing in and creating an account. The current side is plain text
+ * marked `aria-current`; the other is a link carrying the page's history state,
+ * so a visitor sent by a course, the cart or the Studio still finishes that
+ * errand whichever side they choose.
+ */
+export function AuthModeSwitch({ current, state }: { current: "signIn" | "signUp"; state?: unknown }) {
+  const { t } = useTranslation();
+  const sides = [
+    { key: "signIn", to: "/connexion", label: t("authSwitch.signIn") },
+    { key: "signUp", to: "/inscription", label: t("authSwitch.signUp") },
+  ] as const;
+  const pill =
+    "flex min-h-11 items-center justify-center whitespace-nowrap rounded-[var(--radius-control)] px-2 text-center text-[length:var(--text-caption)] font-semibold sm:px-3 sm:text-[length:var(--text-body-sm)]";
+  return (
+    <>
+      <p className="m-0 flex items-center gap-2 text-balance pr-20 text-[length:var(--text-caption)] font-semibold text-[var(--gt-blue-700)]">
+        <Sparkle size={12} color="var(--gt-fuchsia-400)" className="flex-none" />
+        {t("authSwitch.oneAccount")}
+      </p>
+      <nav aria-label={t("authSwitch.label")} className="grid grid-cols-2 gap-1 rounded-[var(--radius-control)] bg-white/55 p-1">
+        {sides.map((side) =>
+          side.key === current ? (
+            <span key={side.key} aria-current="page" className={`${pill} bg-[var(--surface-card)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]`}>
+              {side.label}
+            </span>
+          ) : (
+            <Link
+              key={side.key}
+              to={side.to}
+              state={state}
+              className={`${pill} text-[var(--gt-blue-700)] transition-colors duration-[var(--duration-fast)] hover:bg-white/70 hover:text-[var(--text-primary)]`}
+            >
+              {side.label}
+            </Link>
+          ),
+        )}
+      </nav>
+    </>
+  );
+}
+
+/**
+ * The card shell: crown, its gem ornament, then whatever it holds.
  *
  * `overflow-clip` rather than `overflow-hidden`: clipping keeps the rounded
  * corners without making the card a scroll container, so a sticky action bar
@@ -85,14 +155,7 @@ export function AuthCard({ children, crown, label }: { children: ReactNode; crow
       className="min-w-0 overflow-clip rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
     >
       <div className="relative overflow-hidden bg-[var(--gt-blue-200)] px-[clamp(20px,4vw,32px)] py-6">
-        {/* The one decorative moment on the page: a large light initial in
-            the brand sans. Hidden from readers. */}
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-5 right-4 select-none text-[128px] font-[var(--weight-light)] leading-none text-white/70"
-        >
-          G
-        </span>
+        <CrownGems />
         <div className="relative grid gap-4">{crown}</div>
       </div>
       <div className="px-5 py-6 sm:px-8 sm:py-8">{children}</div>
@@ -105,7 +168,7 @@ export function AuthCard({ children, crown, label }: { children: ReactNode; crow
  * and the reminder that the shop never asks for one. Entirely non-interactive
  * apart from that last link, so the tab order stays in the form.
  */
-function EditorialColumn({ image = "mouth-02.jpg" }: { image?: string }) {
+function EditorialColumn({ image = AUTH_PHOTO }: { image?: string }) {
   const { t } = useTranslation();
   return (
     <div className="grid w-full gap-[clamp(24px,3vw,40px)]">
@@ -117,7 +180,9 @@ function EditorialColumn({ image = "mouth-02.jpg" }: { image?: string }) {
           className="absolute -left-3 -top-3 h-full w-full rounded-[var(--radius-2xl)] border border-[var(--gt-blue-400)] sm:-left-4 sm:-top-4"
         />
         <div className="gt-sparkle relative aspect-[16/11] w-full overflow-hidden rounded-[var(--radius-2xl)] lg:aspect-[5/6]">
-          <img src={photo(image)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+          {/* Fetched at once and first: on a wide screen it is the largest thing
+              in view, so a lazy load left an empty frame for a moment. */}
+          <img src={photo(image)} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
         </div>
       </figure>
 

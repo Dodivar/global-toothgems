@@ -25,22 +25,22 @@ describe("shapeName", () => {
 });
 
 describe("shapesInCatalog", () => {
-  it("pictures a cut with its Aquamarine gem, not another colour", () => {
-    const [group] = shapesInCatalog([gem({ color: "crystal", image: "/clear.jpg" }), gem({ color: "aquamarine", image: "/aqua.jpg" })]);
-    expect(group).toEqual({ shape: "flower", count: 2, image: "/aqua.jpg" });
+  it("pictures a cut with its plain Crystal gem, not the Crystal AB", () => {
+    const [group] = shapesInCatalog([gem({ color: "crystal-ab", image: "/ab.jpg" }), gem({ image: "/clear.jpg" })]);
+    expect(group).toEqual({ shape: "flower", count: 2, image: "/clear.jpg" });
   });
 
-  it("recognises an Aquamarine gem without a colour by its name", () => {
+  it("recognises a plain Crystal gem without a colour by its name", () => {
     const [group] = shapesInCatalog([
+      gem({ color: undefined, name: { fr: "Diamond Shape - Crystal AB", en: "Diamond Shape - Crystal AB" }, image: "/ab.jpg" }),
+      gem({ color: undefined, name: { fr: "Diamond Shape - Crystal Shimmer", en: "Diamond Shape - Crystal Shimmer" }, image: "/shimmer.jpg" }),
       gem({ color: undefined, name: { fr: "Diamond Shape - Crystal", en: "Diamond Shape - Crystal" }, image: "/clear.jpg" }),
-      gem({ color: undefined, name: { fr: "Diamond Shape - Aquamarine Shimmer", en: "Diamond Shape - Aquamarine Shimmer" }, image: "/shimmer.jpg" }),
-      gem({ color: undefined, name: { fr: "Diamond Shape - Aigue-marine", en: "Diamond Shape - Aquamarine" }, image: "/aqua.jpg" }),
     ]);
-    expect(group.image).toBe("/aqua.jpg");
+    expect(group.image).toBe("/clear.jpg");
   });
 
-  it("leaves the picture out when the cut has no Aquamarine gem", () => {
-    const [group] = shapesInCatalog([gem({ color: "crystal" })]);
+  it("leaves the picture out when the cut has no plain Crystal gem", () => {
+    const [group] = shapesInCatalog([gem({ color: "crystal-ab" })]);
     expect(group.image).toBeUndefined();
   });
 });

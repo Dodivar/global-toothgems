@@ -526,6 +526,12 @@
     "appleCta": "I accept and continue with Apple",
     "checkoutCta": "I accept and pay for my order"
   },
+  "authSwitch": {
+    "label": "Sign in or create an account",
+    "signIn": "Sign in",
+    "signUp": "Create an account",
+    "oneAccount": "One account for the shop, the Academy and the 3D Studio"
+  },
   "authAlt": {
     "showPassword": "Show password",
     "hidePassword": "Hide password",
