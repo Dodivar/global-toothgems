@@ -4723,6 +4723,7 @@
     "cookies": {
       "bannerTitle": "Your cookies, your choice",
       "bannerBody": "Some cookies are essential for the site to work (sign-in, cart, payment) and cannot be switched off. Only with your agreement, we measure the site’s audience with PostHog, hosted in the European Union, and replay some visits to the public pages, the Studio and the courses (what you type is masked) to improve it. No advertising cookies. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
+      "bannerBodyAdvertising": "Some cookies are essential for the site to work (sign-in, cart, payment) and cannot be switched off. Only with your agreement, we measure the site’s audience with PostHog, hosted in the European Union, and replay some visits to the public pages, the Studio and the courses (what you type is masked) to improve it; and, if you accept advertising, the Meta pixel (Facebook, Instagram) measures the visits and purchases that come from our ads and lets us show you our products on those networks. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
       "policyLink": "Read our cookie policy",
       "rejectNonEssential": "Reject non-essential",
       "acceptAll": "Accept all",
@@ -4745,6 +4746,11 @@
           "title": "Analytics",
           "body": "Help us understand how the site is used and fix its errors, including by replaying some visits to the public pages, the Studio and the courses, with what you type masked.",
           "providers": "PostHog (servers in the European Union)"
+        },
+        "advertising": {
+          "title": "Advertising",
+          "body": "The Meta pixel measures the visits and purchases that come from our ads on Facebook and Instagram, and lets us show you there the products you looked at. Only on the shop’s pages, without your name or e-mail.",
+          "providers": "Meta Platforms Ireland (data may be transferred to the United States)"
         }
       },
       "currentTitle": "Your current choices",

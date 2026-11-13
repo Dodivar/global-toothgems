@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { trackShop } from "../lib/shopAnalytics";
+import { pixelContentId, trackPixel } from "../lib/metaPixel";
 import { Link, useNavigate, useParams } from "../lib/navigation";
 import { BellRing, CheckCircle2, Image as ImageIcon, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { Badge } from "../components/ui/Badge";
@@ -165,6 +166,21 @@ function ProductView({ product, faq, initialVariantId }: { product: Product; faq
   const setQty = (next: number | ((q: number) => number)) =>
     setQtyCursor({ id: product.id, qty: typeof next === "function" ? next(qty) : next });
 
+  // Meta Pixel (advertising consent only): the product viewed, with the feeds' id of the option shown.
+  const viewedId = pixelContentId({ variantId: variant?.id, dbProductId: product.dbId });
+  const viewedPrice = useRef({ minor: toMinorUnits(shown.price), currency: product.currency ?? "EUR" });
+  useEffect(() => {
+    if (!viewedId) return;
+    trackPixel("ViewContent", {
+      content_type: "product",
+      content_ids: [viewedId],
+      value: viewedPrice.current.minor / 100,
+      currency: viewedPrice.current.currency,
+    });
+    // Once per product page shown, not on each option picked.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
+
   // The mobile buy bar only appears once the real CTA has scrolled away, so it
   // never duplicates a button that is already on screen.
   useEffect(() => {
@@ -227,6 +243,17 @@ function ProductView({ product, faq, initialVariantId }: { product: Product; faq
       qty: pack ? 1 : qty,
       ...(pack ? { pack } : {}),
     });
+    const addedId = pixelContentId({ variantId: variant?.id, dbProductId: product.dbId });
+    if (addedId) {
+      const addedQty = pack ? 1 : qty;
+      trackPixel("AddToCart", {
+        content_type: "product",
+        content_ids: [addedId],
+        contents: [{ id: addedId, quantity: addedQty }],
+        value: (toMinorUnits(shown.price) * addedQty) / 100,
+        currency: product.currency ?? "EUR",
+      });
+    }
     trackShop("product_added_to_cart", {
       product_id: product.id,
       variant_id: variant?.id,

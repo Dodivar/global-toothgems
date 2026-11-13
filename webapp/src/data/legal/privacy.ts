@@ -1,5 +1,6 @@
 import { LEGAL_PATHS } from "./routes";
 import { DRAFT_DATE, l, type LegalDocument } from "./types";
+import { ADVERTISING_ENABLED } from "../../lib/metaPixelConfig";
 
 /**
  * Privacy policy, written for a GDPR-conscious European shop.
@@ -10,6 +11,10 @@ import { DRAFT_DATE, l, type LegalDocument } from "./types";
  * customers contract with — filled in from the store's details by
  * `storeFill.ts` (`[[!Responsable du traitement]]`). Who the controller is
  * remains the owner's (or a lawyer's) call, decision 121.
+ *
+ * Meta (advertising pixel, 2026-11-13) is named only once the pixel is
+ * configured (`ADVERTISING_ENABLED`, `lib/metaPixelConfig.ts`); wording to be
+ * reviewed by a lawyer (supabase/README.md, review of 2026-11-11).
  */
 
 const PART = {
@@ -320,6 +325,18 @@ export const PRIVACY: LegalDocument = {
             },
             { role: l("E-mails de service et newsletter", "Service emails and newsletter"), provider: l("Resend (Plus Five Five, Inc.)", "Resend (Plus Five Five, Inc.)"), location: US_DPF },
             { role: l("Mesure d’audience, avec votre accord", "Audience measurement, with your consent"), provider: l("PostHog Inc.", "PostHog Inc."), location: l("Union européenne (Francfort)", "European Union (Frankfurt)") },
+            ...(ADVERTISING_ENABLED
+              ? [
+                  {
+                    role: l(
+                      "Mesure des publicités Facebook et Instagram (pixel Meta), avec votre accord — responsable conjoint pour la collecte",
+                      "Measuring Facebook and Instagram ads (Meta pixel), with your consent — joint controller for the collection",
+                    ),
+                    provider: l("Meta Platforms Ireland Ltd", "Meta Platforms Ireland Ltd"),
+                    location: US_DPF,
+                  },
+                ]
+              : []),
             { role: l("Livraison", "Delivery"), provider: l("La Poste (Colissimo), Chronopost, GLS", "La Poste (Colissimo), Chronopost, GLS"), location: l("France et pays de destination", "France and the destination country") },
             { role: l("Connexion avec Google", "Sign-in with Google"), provider: l("Google Ireland Ltd / Google LLC", "Google Ireland Ltd / Google LLC"), location: US_DPF },
             { role: l("Connexion avec Apple", "Sign-in with Apple"), provider: l("Apple Distribution International Ltd / Apple Inc.", "Apple Distribution International Ltd / Apple Inc."), location: US_DPF },
@@ -366,6 +383,17 @@ export const PRIVACY: LegalDocument = {
             },
             { purpose: l("Envoyer la newsletter et des e-mails marketing", "Send the newsletter and marketing emails"), basis: l("Consentement", "Consent") },
             { purpose: l("Mesure d’audience et cookies non essentiels", "Audience measurement and non-essential cookies"), basis: l("Consentement", "Consent") },
+            ...(ADVERTISING_ENABLED
+              ? [
+                  {
+                    purpose: l(
+                      "Mesurer nos publicités Facebook et Instagram et y montrer nos produits (pixel Meta, pages de la boutique, sans nom ni e-mail)",
+                      "Measure our Facebook and Instagram ads and show our products there (Meta pixel, shop pages, no name or e-mail)",
+                    ),
+                    basis: l("Consentement (catégorie « Publicité »)", "Consent (“Advertising” category)"),
+                  },
+                ]
+              : []),
           ],
         },
       ],
@@ -441,7 +469,12 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
+          text: ADVERTISING_ENABLED
+            ? l(
+                "Notre base de données est hébergée dans l’Union européenne. Certains prestataires (Vercel, Resend, Google, Apple) et Meta, si vous acceptez la publicité, sont établis aux États-Unis ou y transfèrent des données : ces transferts reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework) lorsque le destinataire y adhère, et à défaut sur les clauses contractuelles types de la Commission européenne. Les transferts vers le Royaume-Uni reposent sur une décision d’adéquation.",
+                "Our database is hosted in the European Union. Some providers (Vercel, Resend, Google, Apple) and Meta, if you accept advertising, are established in the United States or transfer data there: these transfers rely on the EU–US Data Privacy Framework where the recipient has joined it, and otherwise on the European Commission’s standard contractual clauses. Transfers to the United Kingdom rely on an adequacy decision.",
+              )
+            : l(
             "Notre base de données est hébergée dans l’Union européenne. Certains prestataires (Vercel, Resend, Google, Apple) sont établis aux États-Unis et peuvent y traiter des données : ces transferts reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework) lorsque le prestataire y adhère, et à défaut sur les clauses contractuelles types de la Commission européenne. Les transferts vers le Royaume-Uni reposent sur une décision d’adéquation.",
             "Our database is hosted in the European Union. Some providers (Vercel, Resend, Google, Apple) are established in the United States and may process data there: these transfers rely on the EU–US Data Privacy Framework where the provider has joined it, and otherwise on the European Commission’s standard contractual clauses. Transfers to the United Kingdom rely on an adequacy decision.",
           ),

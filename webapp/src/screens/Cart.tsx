@@ -41,6 +41,7 @@ import { guestQuoteEmail, isLineDiscount, lineDiscount, quoteItems } from "../li
 import { useBasketQuote } from "../lib/checkout/useBasketQuote";
 import { giftCardPayable, refusedGiftCodes } from "../lib/checkout/giftCardQuote";
 import { newlyAccepted, trackShop, trackShopOnce } from "../lib/shopAnalytics";
+import { pixelBasket, trackPixel, trackPixelOnce } from "../lib/metaPixel";
 import { useGiftCardQuote } from "../lib/checkout/useGiftCardQuote";
 import type { GiftCardDesign } from "../lib/giftCards/giftCardMapping";
 import {
@@ -385,6 +386,7 @@ export function Cart() {
       return;
     }
     const request = previousStep.current ? { ...built, previous_client_secret: previousStep.current } : built;
+    trackPixel("InitiateCheckout", pixelBasket(lines));
     trackShop("checkout_started", {
       item_count: lines.reduce((count, line) => count + line.qty, 0),
       cart_subtotal: subtotal,
@@ -426,6 +428,7 @@ export function Cart() {
       // Entirely covered by gift cards: create_order() recorded the payment itself
       // (and granted the courses it held).
       setReference(result.orderNumber);
+      trackPixelOnce(`order:${result.orderNumber}`, "Purchase", pixelBasket(lines), result.orderNumber);
       trackShopOnce(`order:${result.orderNumber}`, "order_completed", {
         paid_with: "gift_card",
         item_count: lines.reduce((count, line) => count + line.qty, 0),

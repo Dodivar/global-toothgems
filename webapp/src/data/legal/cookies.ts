@@ -1,5 +1,6 @@
 import { LEGAL_PATHS } from "./routes";
-import { l, type LegalDocument } from "./types";
+import { l, type LegalDocument, type LegalSection } from "./types";
+import { ADVERTISING_ENABLED } from "../../lib/metaPixelConfig";
 
 /**
  * Cookie policy.
@@ -10,7 +11,41 @@ import { l, type LegalDocument } from "./types";
  * against the code on 2026-11-08, session replay and the account-id-only identity on 2026-11-12 (`lib/posthogConfig.ts`, `lib/cookieConsent.tsx`, `i18n/preference.ts`,
  * `lib/cartStorage.ts`, `@supabase/ssr` defaults, `instrumentation-client.ts`).
  * Update it — and `updated` — when a cookie, a provider or a category changes.
+ *
+ * The advertising category (Meta Pixel, 2026-11-13) is described only once
+ * the pixel is configured (`ADVERTISING_ENABLED`, `lib/metaPixelConfig.ts`):
+ * until then the policy keeps saying no advertising tracker is used, which is
+ * then true. Wording to be reviewed by a lawyer (supabase/README.md, review of 2026-11-11).
  */
+
+const ADVERTISING_SECTION: LegalSection = {
+  id: "advertising",
+  title: l("Publicité (pixel Meta)", "Advertising (Meta pixel)"),
+  blocks: [
+    {
+      kind: "p",
+      text: l(
+        "Avec votre accord seulement, distinct de celui de la mesure d’audience, nous utilisons le pixel de Meta Platforms Ireland Ltd (Facebook, Instagram) sur les pages de la boutique. Il nous sert à mesurer les visites et les achats venus de nos publicités sur ces réseaux, et à y montrer aux visiteurs les produits qu’ils ont consultés. Tant que vous n’avez pas accepté cette catégorie, le pixel n’est pas chargé et rien n’est envoyé à Meta.",
+        "Only with your agreement, separate from the analytics one, we use the pixel of Meta Platforms Ireland Ltd (Facebook, Instagram) on the shop’s pages. We use it to measure the visits and purchases that come from our ads on those networks, and to show visitors there the products they looked at. Until you accept this category, the pixel is not loaded and nothing is sent to Meta.",
+      ),
+    },
+    {
+      kind: "p",
+      text: l(
+        "Une fois votre accord donné, Meta reçoit l’adresse de la page, votre adresse IP, les informations de votre navigateur, un identifiant déposé dans votre navigateur (cookies _fbp et, si vous arrivez d’une publicité, _fbc) et nos événements : page vue, produit consulté, ajout au panier, début de paiement et achat, avec les références et prix des produits et le numéro de commande. Nous ne lui transmettons ni votre nom, ni votre adresse e-mail, ni votre téléphone. Le pixel n’est jamais chargé dans votre espace membre, à la connexion, dans le Studio 3D, sur les pages de cours ni sur la page de rétractation.",
+        "Once you agree, Meta receives the page address, your IP address, your browser information, an identifier stored in your browser (the _fbp cookie and, if you come from an ad, _fbc) and our events: page viewed, product viewed, added to cart, checkout started and purchase, with the products’ references and prices and the order number. We pass on neither your name, nor your e-mail address, nor your phone number. The pixel is never loaded in your member space, when signing in, in the 3D Studio, on course pages or on the withdrawal page.",
+      ),
+    },
+    {
+      kind: "p",
+      text: l(
+        "Pour la collecte par le pixel et sa transmission, Meta et nous sommes responsables conjoints du traitement ; Meta traite ensuite ces données pour ses propres finalités comme responsable de traitement, selon sa politique de confidentialité, et peut les transférer aux États-Unis (cadre de protection des données UE–États-Unis). Si vous retirez votre accord, le pixel est désactivé aussitôt et ses cookies sont effacés de votre navigateur.",
+        "For the collection by the pixel and its transmission, Meta and we are joint controllers; Meta then processes this data for its own purposes as a controller, under its own privacy policy, and may transfer it to the United States (EU–US Data Privacy Framework). If you withdraw your agreement, the pixel is switched off at once and its cookies are erased from your browser.",
+      ),
+    },
+  ],
+};
+
 export const COOKIE_POLICY: LegalDocument = {
   id: "cookies",
   path: LEGAL_PATHS.cookies,
@@ -20,7 +55,7 @@ export const COOKIE_POLICY: LegalDocument = {
     "Ce que sont les cookies, à quoi ils servent sur Global Toothgems, et comment accepter, refuser ou changer d’avis à tout moment.",
     "What cookies are, what they are used for on Global Toothgems, and how to accept, refuse or change your mind at any time.",
   ),
-  updated: "2026-11-12",
+  updated: ADVERTISING_ENABLED ? "2026-11-13" : "2026-11-12",
   contactCategory: "privacy",
   lead: [{ kind: "widget", widget: "cookieChoices" }],
   sections: [
@@ -71,11 +106,29 @@ export const COOKIE_POLICY: LegalDocument = {
               used: l("Oui", "Yes"),
               consent: l("Refusée par défaut, à accepter", "Off by default, you opt in"),
             },
+            ...(ADVERTISING_ENABLED
+              ? [
+                  {
+                    category: l("Publicité", "Advertising"),
+                    purpose: l(
+                      "Mesurer les visites et achats venus de nos publicités Facebook et Instagram, et y montrer nos produits (pixel Meta)",
+                      "Measure the visits and purchases that come from our Facebook and Instagram ads, and show our products there (Meta pixel)",
+                    ),
+                    used: l("Oui, sur les pages de la boutique", "Yes, on the shop’s pages"),
+                    consent: l("Refusée par défaut, à accepter", "Off by default, you opt in"),
+                  },
+                ]
+              : []),
           ],
         },
         {
           kind: "p",
-          text: l(
+          text: ADVERTISING_ENABLED
+            ? l(
+                "En dehors du pixel Meta décrit plus bas, et seulement avec votre accord, nous n’utilisons **aucun autre cookie publicitaire, de ciblage ou de réseau social** (pas de pixel TikTok ni de balise Google Ads). Les liens de nos campagnes peuvent porter des paramètres d’adresse (utm, identifiant de clic) : ils servent à afficher la page de présentation du Studio 3D sans le menu de la boutique, et ne sont transmis à Meta qu’avec votre accord pour la publicité.",
+                "Apart from the Meta pixel described below, and only with your agreement, we use **no other advertising, targeting or social-network cookies** (no TikTok pixel or Google Ads tag). Links in our campaigns may carry address parameters (utm, click identifier): they are used to show the 3D Studio presentation page without the shop menu, and are passed to Meta only with your agreement to advertising.",
+              )
+            : l(
             "Nous n’utilisons **aucun cookie publicitaire, de ciblage ou de réseau social** (pas de pixel Meta, TikTok ou Google Ads). Les liens de nos campagnes peuvent porter des paramètres d’adresse (utm, identifiant de clic) : ils servent seulement à afficher la page de présentation du Studio 3D sans le menu de la boutique, ne sont transmis à aucun tiers et ne sont comptés dans la mesure d’audience qu’avec votre accord.",
             "We use **no advertising, targeting or social-network cookies** (no Meta, TikTok or Google Ads pixel). Links in our campaigns may carry address parameters (utm, click identifier): they are only used to show the 3D Studio presentation page without the shop menu, are passed to no third party, and are counted in audience measurement only with your agreement.",
           ),
@@ -129,6 +182,7 @@ export const COOKIE_POLICY: LegalDocument = {
         },
       ],
     },
+    ...(ADVERTISING_ENABLED ? [ADVERTISING_SECTION] : []),
     {
       id: "third-party",
       title: l("Services tiers", "Third-party services"),
@@ -239,6 +293,25 @@ export const COOKIE_POLICY: LegalDocument = {
               category: l("Mesure d’audience — seulement avec votre accord", "Analytics — only with your agreement"),
               duration: l("1 an, effacé si vous retirez votre accord", "1 year, erased if you withdraw your agreement"),
             },
+            ...(ADVERTISING_ENABLED
+              ? [
+                  {
+                    name: l("_fbp, _fbc (cookies)", "_fbp, _fbc (cookies)"),
+                    provider: l("Meta", "Meta"),
+                    category: l("Publicité — seulement avec votre accord", "Advertising — only with your agreement"),
+                    duration: l("90 jours, effacés si vous retirez votre accord", "90 days, erased if you withdraw your agreement"),
+                  },
+                  {
+                    name: l("gt-pixel-evt:… (stockage de session)", "gt-pixel-evt:… (session storage)"),
+                    provider: l("Global Toothgems", "Global Toothgems"),
+                    category: l(
+                      "Publicité — seulement avec votre accord, évite de signaler deux fois un achat à Meta",
+                      "Advertising — only with your agreement, avoids reporting a purchase to Meta twice",
+                    ),
+                    duration: l("Fermeture de l’onglet", "Until the tab is closed"),
+                  },
+                ]
+              : []),
             {
               name: l("gt-studio-evt:… (stockage local et de session)", "gt-studio-evt:… (local and session storage)"),
               provider: l("Global Toothgems", "Global Toothgems"),
@@ -268,7 +341,12 @@ export const COOKIE_POLICY: LegalDocument = {
         {
           kind: "callout",
           tone: "instruction",
-          text: l(
+          text: ADVERTISING_ENABLED
+            ? l(
+                "Cliquez sur « Paramètres cookies » en bas de chaque page, ou utilisez le bouton « Modifier mes choix » en haut de cette page. Vous pouvez y activer ou désactiver séparément la mesure d’audience et la publicité, les deux catégories optionnelles du site.",
+                "Click “Cookie settings” at the bottom of any page, or use the “Change my choices” button at the top of this page. There you can switch audience measurement and advertising, the site’s two optional categories, on or off separately.",
+              )
+            : l(
             "Cliquez sur « Paramètres cookies » en bas de chaque page, ou utilisez le bouton « Modifier mes choix » en haut de cette page. Vous pouvez y activer ou désactiver la mesure d’audience, seule catégorie optionnelle du site.",
             "Click “Cookie settings” at the bottom of any page, or use the “Change my choices” button at the top of this page. There you can switch audience measurement, the site’s only optional category, on or off.",
           ),
@@ -281,7 +359,12 @@ export const COOKIE_POLICY: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
+          text: ADVERTISING_ENABLED
+            ? l(
+                "Vous pouvez retirer votre consentement à tout moment, aussi simplement que vous l’avez donné, depuis les mêmes paramètres. Le retrait vaut pour l’avenir : la mesure d’audience s’arrête aussitôt et l’identifiant PostHog est effacé de votre navigateur ; le pixel Meta est désactivé et ses cookies effacés. Vous pouvez aussi supprimer depuis votre navigateur les cookies déjà déposés.",
+                "You can withdraw consent at any time, as easily as you gave it, from the same settings. Withdrawal applies from then on: audience measurement stops at once and the PostHog identifier is erased from your browser; the Meta pixel is switched off and its cookies erased. You can also delete cookies already set from your browser.",
+              )
+            : l(
             "Vous pouvez retirer votre consentement à tout moment, aussi simplement que vous l’avez donné, depuis les mêmes paramètres. Le retrait vaut pour l’avenir : la mesure d’audience s’arrête aussitôt et l’identifiant PostHog est effacé de votre navigateur. Vous pouvez aussi supprimer depuis votre navigateur les cookies déjà déposés.",
             "You can withdraw consent at any time, as easily as you gave it, from the same settings. Withdrawal applies from then on: audience measurement stops at once and the PostHog identifier is erased from your browser. You can also delete cookies already set from your browser.",
           ),

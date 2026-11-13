@@ -28,7 +28,9 @@ export function CookieSettingsDialog() {
 function CookieSettingsPanel() {
   const { t } = useTranslation();
   const { record, closeSettings, save, acceptAll, rejectAll } = useCookieConsent();
-  const [draft, setDraft] = useState<ConsentChoices>(() => (record ? { analytics: record.analytics } : NO_OPTIONAL_CONSENT));
+  const [draft, setDraft] = useState<ConsentChoices>(() =>
+    record ? { analytics: record.analytics, advertising: record.advertising } : NO_OPTIONAL_CONSENT,
+  );
 
   return (
     <Dialog
