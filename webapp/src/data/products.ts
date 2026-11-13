@@ -289,7 +289,7 @@ export const PRODUCTS: Product[] = [
       { src: img("img-04.jpg"), alt: { fr: "Aurora Heart de face", en: "Aurora Heart, front view" } },
       { src: img("img-07.jpg"), alt: { fr: "Gem de profil", en: "Gem, side view" } },
       { src: img("img-11.jpg"), alt: { fr: "Assortiment de gems", en: "Assortment of gems" } },
-      { src: img("mouth-02.jpg"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
+      { src: img("mouth-02.webp"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
     ],
   },
   {
@@ -520,7 +520,7 @@ export const PRODUCTS: Product[] = [
       { src: img("img-02.jpg"), alt: { fr: "Étoile Or, vue de face", en: "Gold Star, front view" } },
       { src: img("img-07.jpg"), alt: { fr: "Détail de la monture", en: "Setting detail" } },
       { src: img("img-13.jpg"), alt: { fr: "Assortiment de formes", en: "Shape assortment" } },
-      { src: img("mouth-02.jpg"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
+      { src: img("mouth-02.webp"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
     ],
   },
   {

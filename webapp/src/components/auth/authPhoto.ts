@@ -2,7 +2,7 @@ import { preload } from "react-dom";
 import { photo } from "../../lib/images";
 
 /** The photograph of the authentication pages' editorial column. */
-export const AUTH_PHOTO = "mouth-02.jpg";
+export const AUTH_PHOTO = "mouth-02.webp";
 
 /**
  * Asks the browser for the photograph with the page's HTML. The sign-in and
