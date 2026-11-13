@@ -123,7 +123,7 @@
     "titleProduct": "What artists say about it",
     "titleCourse": "What students say",
     "leadProduct": "Every review comes from a verified order and is read by our team before it’s published — positive or not.",
-    "leadCourse": "Written by artists who took this training, from halfway through or once they’d finished it.",
+    "leadCourse": "Written by artists who finished this training.",
     "summaryLabel": "Rating summary",
     "howItWorks": "Reviews are checked by our team for respect and relevance, never for their rating. We publish critical reviews too.",
     "featured": "Most helpful review",
@@ -173,7 +173,7 @@
   "empty": {
     "firstTitle": "Be the first to share your experience.",
     "firstBody": "Nobody has reviewed {{name}} yet. If you’ve used it, your words will help other artists choose.",
-    "firstBodyCourse": "No student has reviewed {{name}} yet. Once you’re halfway through, your experience can guide the next artist.",
+    "firstBodyCourse": "No student has reviewed {{name}} yet. Once you’ve finished it, your experience can guide the next artist.",
     "noPhotos": "No customer photos yet.",
     "noMatch": "No review matches this filter yet.",
     "showAll": "Show all reviews"
@@ -189,9 +189,9 @@
     "signedOutCourse": "Following this training?",
     "signIn": "Sign in to review",
     "verifiedOnly": "Only customers with a matching order can review, so every review here is a real experience.",
-    "verifiedOnlyCourse": "Only students enrolled in this training, halfway through or once finished, can review it, so every review here is a real experience.",
+    "verifiedOnlyCourse": "Only students who finished this training can review it, so every review here is a real experience.",
     "awaitingShipment": "You can review this product once order {{ref}} has shipped.",
-    "needsProgress": "Reviews open at {{threshold}}% of the training, so they speak from real experience. You’re at {{pct}}%.",
+    "needsCompletion": "Reviews open once you’ve finished the training, so they speak for the whole experience. You’re at {{pct}}%.",
     "progressLabel": "Training progress",
     "notCustomer": "Reviews come only from customers who bought this product.",
     "notStudent": "Reviews come only from students enrolled in this training."
@@ -267,7 +267,6 @@
     "contextDelivered": "Delivered on {{date}}",
     "contextShipped": "On its way to you",
     "contextCompleted": "Training completed",
-    "contextProgress": "You’re {{pct}}% through",
     "starsLabel": "Rate {{name}}",
     "rateAs_one": "Rate {{count}} star",
     "rateAs_other": "Rate {{count}} stars",

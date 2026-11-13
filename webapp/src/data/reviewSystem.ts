@@ -75,8 +75,6 @@ export const TITLE_MAX = 80;
 export const BODY_MIN = 30;
 export const BODY_MAX = 2000;
 export const RESPONSE_MAX = 1000;
-/** Share of a course's lessons a student must have validated before reviewing it. */
-export const COURSE_REVIEW_THRESHOLD = 50;
 
 export interface ReviewPhoto {
   src: string;

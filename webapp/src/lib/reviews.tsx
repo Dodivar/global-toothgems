@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  COURSE_REVIEW_THRESHOLD,
   DEMO_CUSTOMER,
   REVIEW_NOW,
   SEED_REVIEWS,
@@ -436,12 +435,12 @@ type Eligibility =
   | { state: "signedOut" }
   | { state: "notPurchased" }
   | { state: "awaitingShipment"; orderRef: string }
-  | { state: "needsProgress"; pct: number }
+  | { state: "needsCompletion"; pct: number }
   | { state: "eligible"; orderRef: string; progressPct?: number; context: RequestContext; date?: string }
   | { state: "reviewed"; review: CustomerReview };
 
 /** Why a review request is being shown — it decides the request's wording. */
-export type RequestContext = "delivered" | "shipped" | "completed" | "progress";
+export type RequestContext = "delivered" | "shipped" | "completed";
 
 /**
  * Whether the signed-in account may review `subject`, and why not otherwise.
@@ -451,9 +450,9 @@ export type RequestContext = "delivered" | "shipped" | "completed" | "progress";
  * - Products: the product is on one of the account's orders that has left the
  *   workshop (shipped or delivered). Cancelled orders never count.
  * - Courses: the account holds the course (bought, granted or opened by a
- *   pack) and has validated at least `COURSE_REVIEW_THRESHOLD` % of it, or
- *   completed it, so the review speaks from real experience of the teaching
- *   (decision 141; the database applies the same rule on insert).
+ *   pack — all verified alike) and has completed it, so the review speaks for
+ *   the whole training (decision 141, owner; the database applies the same
+ *   rule on insert).
  * - One review per product or course: once written, the answer is "reviewed"
  *   and the way forward is editing it.
  *
@@ -489,7 +488,7 @@ export function useReviewEligibility() {
 
       const progress = progressFor(subject.id);
       if (!progress.enrolled) return { state: "notPurchased" };
-      if (!progress.completed && progress.pct < COURSE_REVIEW_THRESHOLD) return { state: "needsProgress", pct: progress.pct };
+      if (!progress.completed) return { state: "needsCompletion", pct: progress.pct };
       const order = orders.find((o) => isActiveOrder(o) && o.lines.some((l) => l.courseId === subject.id));
       return {
         state: "eligible",
@@ -497,7 +496,7 @@ export function useReviewEligibility() {
         // enrolment; its reference stands in for the order's.
         orderRef: order?.reference ?? `ENR-${subject.id.toUpperCase()}`,
         progressPct: progress.pct,
-        context: progress.completed ? "completed" : "progress",
+        context: "completed",
         date: progress.completedOn ?? undefined,
       };
     },

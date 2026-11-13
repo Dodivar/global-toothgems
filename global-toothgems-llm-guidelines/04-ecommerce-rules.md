@@ -75,7 +75,7 @@ Language, country, currency, tax jurisdiction and shipping zone are separate dim
 
 ## Reviews
 
-Verified-purchase only (database finds the shipped/delivered order), moderation lifecycle, customer text never edited or translated by staff, photos in the private `review-photos` bucket, reports never delete. Course reviews use the same table with `course_id` (holders of the course who have done half of it, decision 141 — see `05-learning-platform-rules.md`).
+Verified-purchase only (database finds the shipped/delivered order), moderation lifecycle, customer text never edited or translated by staff, photos in the private `review-photos` bucket, reports never delete. Course reviews use the same table with `course_id` (holders of the course who have completed it, decision 141 — see `05-learning-platform-rules.md`).
 
 ## Newsletter and consent
 

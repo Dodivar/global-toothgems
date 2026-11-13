@@ -123,7 +123,7 @@
     "titleProduct": "Ce qu’en disent les artistes",
     "titleCourse": "Ce qu’en disent les élèves",
     "leadProduct": "Chaque avis provient d’une commande vérifiée et est relu par notre équipe avant publication — qu’il soit positif ou non.",
-    "leadCourse": "Écrits par des artistes qui ont suivi cette formation, à mi-parcours ou une fois terminée.",
+    "leadCourse": "Écrits par des artistes qui ont terminé cette formation.",
     "summaryLabel": "Synthèse des notes",
     "howItWorks": "Notre équipe relit les avis pour leur respect et leur pertinence, jamais pour leur note. Nous publions aussi les avis critiques.",
     "featured": "Avis le plus utile",
@@ -173,7 +173,7 @@
   "empty": {
     "firstTitle": "Soyez la première à partager votre expérience.",
     "firstBody": "Personne n’a encore donné son avis sur {{name}}. Si vous l’avez utilisé, vos mots aideront d’autres artistes à choisir.",
-    "firstBodyCourse": "Aucune élève n’a encore évalué {{name}}. À mi-parcours, votre expérience pourra guider la prochaine artiste.",
+    "firstBodyCourse": "Aucune élève n’a encore évalué {{name}}. Une fois la formation terminée, votre expérience pourra guider la prochaine artiste.",
     "noPhotos": "Pas encore de photos clientes.",
     "noMatch": "Aucun avis ne correspond encore à ce filtre.",
     "showAll": "Voir tous les avis"
@@ -189,9 +189,9 @@
     "signedOutCourse": "Vous suivez cette formation ?",
     "signIn": "Se connecter pour donner son avis",
     "verifiedOnly": "Seules les clientes ayant une commande correspondante peuvent donner leur avis : chaque avis ici est une vraie expérience.",
-    "verifiedOnlyCourse": "Seules les élèves inscrites à cette formation, à mi-parcours ou une fois terminée, peuvent donner leur avis : chaque avis ici est une vraie expérience.",
+    "verifiedOnlyCourse": "Seules les élèves ayant terminé cette formation peuvent donner leur avis : chaque avis ici est une vraie expérience.",
     "awaitingShipment": "Vous pourrez évaluer ce produit dès l’expédition de la commande {{ref}}.",
-    "needsProgress": "Les avis s’ouvrent à {{threshold}} % de la formation, pour parler d’expérience. Vous en êtes à {{pct}} %.",
+    "needsCompletion": "Les avis s’ouvrent une fois la formation terminée, pour parler de toute l’expérience. Vous en êtes à {{pct}} %.",
     "progressLabel": "Progression dans la formation",
     "notCustomer": "Les avis proviennent uniquement de clientes ayant acheté ce produit.",
     "notStudent": "Les avis proviennent uniquement d’élèves inscrites à cette formation."
@@ -267,7 +267,6 @@
     "contextDelivered": "Livré le {{date}}",
     "contextShipped": "En route vers vous",
     "contextCompleted": "Formation terminée",
-    "contextProgress": "Vous en êtes à {{pct}} %",
     "starsLabel": "Noter {{name}}",
     "rateAs_one": "Donner {{count}} étoile",
     "rateAs_other": "Donner {{count}} étoiles",

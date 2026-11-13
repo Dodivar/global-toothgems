@@ -1,15 +1,17 @@
 -- =============================================================================
--- Course reviews validation suite (migration `20261113111154_course_reviews`, decision 141).
+-- Course reviews validation suite (migrations `20261113111154_course_reviews` and
+-- `20261113140000_course_reviews_after_completion`, decision 141).
 -- =============================================================================
 -- Requires all migrations. ONE transaction, ALWAYS rolled back by raising
 -- `ALL COURSE REVIEW TESTS PASSED` (or `FAIL: ...`).
--- Covers: a non-holder refused, a holder below half of the path refused, a
--- holder at half accepted (system fields forced, verified, no order for a
--- grant), one review per learner and course, course tags only, draft course
+-- Covers: a non-holder refused, a holder who has not completed the course
+-- refused (even at 75 %), a holder who completed it accepted (system fields
+-- forced, verified, no order for a grant), one review per learner and course, course tags only, draft course
 -- refused, revoked access refused, visitors see published reviews only and
 -- the stats view counts them (product stats untouched), another member can
 -- neither edit nor delete, an author edit goes back to moderation, reports
--- and helpful votes by other members, moderators cannot rewrite the text.
+-- and helpful votes by other members, moderators cannot rewrite the text, a
+-- review stays published after the access is revoked.
 -- =============================================================================
 
 do $$
@@ -70,21 +72,25 @@ begin
   end;
   passed := passed || 'R1'::text;
 
-  -- R2: a holder below half of the path is refused ------------------------------------
+  -- R2: a holder who has not completed the course is refused, even at 75 % ----------
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal1', 'sub', lrn, 'role', 'authenticated')::text, true);
-  perform public.complete_course_step(s1);                 -- 1 of 4 = 25 %
+  perform public.complete_course_step(s1);
+  perform public.complete_course_step(s2);
+  perform public.complete_course_step(s3);                 -- 3 of 4 = 75 %
   begin
     insert into public.reviews (course_id, user_id, author_name, rating, title, body, language)
     values (c1, lrn, 'X', 5, 'Top', body30, 'fr');
-    raise exception 'FAIL R2: reviewed at 25 %%';
+    raise exception 'FAIL R2: reviewed before completing the course';
   exception when insufficient_privilege then
     get stacked diagnostics v_txt = message_text;
-    if v_txt not like '%half%' then raise exception 'FAIL R2: wrong refusal (%)', v_txt; end if;
+    if v_txt not like '%complete the course%' then raise exception 'FAIL R2: wrong refusal (%)', v_txt; end if;
   end;
   passed := passed || 'R2'::text;
 
-  -- R3: at half the path the review is accepted, system fields forced ----------------
-  perform public.complete_course_step(s2);                 -- 2 of 4 = 50 %
+  -- R3: once the course is completed the review is accepted, system fields forced ----
+  perform public.complete_course_step(s4);                 -- 4 of 4: completed
+  select count(*) into v_cnt from public.course_completions where user_id = lrn and course_id = c1;
+  if v_cnt <> 1 then raise exception 'FAIL R3: the course was not completed (setup)'; end if;
   insert into public.reviews (course_id, user_id, author_name, rating, title, body, language, tags,
                               status, helpful_count, published_at, response_body)
   values (c1, lrn, 'Fake Name', 4, '  Très claire  ', body30, 'fr', array['clear', 'beginner'],
@@ -131,7 +137,7 @@ begin
   end;
   passed := passed || 'R6'::text;
 
-  -- R7: revoked access is refused even past half the path ----------------------------
+  -- R7: revoked access is refused --------------------------------------------------
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal1', 'sub', rev, 'role', 'authenticated')::text, true);
   perform public.complete_course_step(s1);
   perform public.complete_course_step(s2);
@@ -199,6 +205,20 @@ begin
   select helpful_count into v_cnt from public.reviews where id = rid;
   if v_cnt <> 1 then raise exception 'FAIL R11: helpful count %', v_cnt; end if;
   passed := passed || 'R11'::text;
+
+  -- R13: a published review stays after the learner's access is revoked --------------
+  perform set_config('role', 'postgres', true);
+  select id into ent from public.course_entitlements where user_id = lrn and course_id = c1 and revoked_at is null;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', mgr, 'role', 'authenticated')::text, true);
+  perform public.admin_revoke_course_entitlement(ent);
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
+  select count(*) into v_cnt from public.reviews where id = rid and status = 'published';
+  if v_cnt <> 1 then raise exception 'FAIL R13: the review left the page after the revocation'; end if;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal1', 'sub', lrn, 'role', 'authenticated')::text, true);
+  passed := passed || 'R13'::text;
 
   -- R12: the author edits (back to moderation), then deletes -------------------------
   update public.reviews set rating = 5, tags = array['skills'] where id = rid;

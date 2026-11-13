@@ -71,8 +71,8 @@ The document (decided by the owner, 2026-10-07): issued by "Global Toothgems Aca
 ## Learner reviews
 
 - Course reviews live in `reviews` (`course_id`, exclusive with `product_id`) with the product reviews' lifecycle, moderation (`moderate_reviews`, `/admin/avis`), reports and votes — never a parallel table (decision 141).
-- Who may write: an active account holding an **active** entitlement to the published course (any source) that has validated **at least 50 %** of the path or completed it. The database decides (`private.course_review_refusal()`); the browser only mirrors it (`COURSE_REVIEW_THRESHOLD`, `useReviewEligibility()`) — change both together, with the same rounding as `lib/learning/path.ts`.
-- One review per learner and course; the author edits (back to moderation) or deletes it. Revoked access keeps an existing review.
+- Who may write (owner, 2026-11-13): an active account holding an **active** entitlement to the published course — bought, granted by hand or opened by a pack, all shown as "Verified student" — that has **completed** the course (`course_completions`). The database decides (`private.course_review_refusal()`); the browser only mirrors it (`useReviewEligibility()`). No partial-progress threshold.
+- One review per learner and course; the author edits (back to moderation) or deletes it. A refund or revocation keeps an existing review online (owner, 2026-11-13).
 - Public figures come from published reviews only (`course_review_stats`): no rating, count or `aggregateRating` without one.
 
 ## Community
