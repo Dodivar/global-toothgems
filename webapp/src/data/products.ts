@@ -185,6 +185,22 @@ export interface ProductOption {
   values: ProductOptionValue[];
 }
 
+/**
+ * What buying one unit of a product also opens (a pack, `product_inclusions`,
+ * decision 139): an Academy course, or months of a 3D Studio plan. Granted by
+ * the database once the order is paid; such a product is sold to an account,
+ * one per line.
+ */
+export type ProductInclusion =
+  | { kind: "course"; courseId: string; title: Localized; slugs: { fr: string; en?: string } }
+  | { kind: "studio"; plan: "essential" | "artist" | "atelier"; months: number };
+
+/** The cart's mark for a pack line (`CartLine.pack`), or undefined for an ordinary product. */
+export function packLine(product: Pick<Product, "inclusions">): { course: boolean } | undefined {
+  if (!product.inclusions?.length) return undefined;
+  return { course: product.inclusions.some((inclusion) => inclusion.kind === "course") };
+}
+
 /** The five characteristics a product may list, in display order. */
 export const SPEC_KEYS = ["material", "center", "back", "packaging", "wear"] as const;
 export type SpecKey = (typeof SPEC_KEYS)[number];
@@ -240,6 +256,8 @@ export interface Product {
   /** Options the variants combine (colour × plug…), in display order; absent = a flat list. */
   options?: ProductOption[];
   isFeatured?: boolean;
+  /** Database products only: the access the product opens once paid (a pack). */
+  inclusions?: ProductInclusion[];
 }
 
 const img = photo;
@@ -544,24 +562,23 @@ export function relatedProducts(product: Product, list: Product[] = PRODUCTS): P
 export interface ShapeGroup {
   shape: GemShape;
   count: number;
-  /** Picture of the cut: its plain Crystal gem's photo, when the group has one. */
+  /** Picture of the cut: its Aquamarine gem's photo, when the group has one. */
   image?: string;
 }
 
 /** Colour whose photo stands for a cut on the shape tiles. */
-const SHAPE_PICTURE_COLOR = "crystal";
+const SHAPE_PICTURE_COLOR = "aquamarine";
 
 /**
- * The plain Crystal gem's photo: clear, without the Crystal AB's iridescent
- * reflections, so the tile shows the cut itself (decided by the owner,
- * 2026-11-03; Crystal AB from 2026-10-29). A gem whose colour was not set yet
- * is recognised by a name ending in "Crystal" ("Diamond Shape - Crystal",
- * never "Crystal AB" or "Crystal Shimmer").
+ * The Aquamarine gem's photo: its light blue shows the cut's facets better than
+ * the clear Crystal (owner's request, 2026-11-13; plain Crystal from 2026-11-03,
+ * Crystal AB before). A gem whose colour was not set yet is recognised by a
+ * name ending in "Aquamarine" / "Aigue-marine" ("Diamond Shape - Aquamarine").
  */
 function shapePicture(gems: Product[]): string | undefined {
-  const isPlainCrystal = (p: Product) =>
-    p.color === SHAPE_PICTURE_COLOR || (!p.color && [p.name.fr, p.name.en].some((name) => /\bcrystal\s*$/i.test(name)));
-  return gems.find((p) => p.image && isPlainCrystal(p))?.image;
+  const isAquamarine = (p: Product) =>
+    p.color === SHAPE_PICTURE_COLOR || (!p.color && [p.name.fr, p.name.en].some((name) => /\b(aquamarine|aigue-marine)\s*$/i.test(name)));
+  return gems.find((p) => p.image && isAquamarine(p))?.image;
 }
 
 /**

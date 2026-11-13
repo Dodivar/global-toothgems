@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Product inclusions validation suite (migration 20261108170000_product_inclusions)
 -- =============================================================================
--- Proves, as the roles that really call it (decision 129):
+-- Proves, as the roles that really call it (decision 139):
 --
 --   P1  a visitor, a customer and a `viewer` cannot set what a product grants
 --       (42501); a manager can; invalid inclusions are refused;

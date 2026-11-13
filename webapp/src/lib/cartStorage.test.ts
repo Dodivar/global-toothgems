@@ -86,3 +86,12 @@ describe("stored course lines", () => {
     }
   });
 });
+
+describe("pack lines (decision 139)", () => {
+  it("keeps a stored pack line of one unit, refuses a malformed one", () => {
+    const pack = { ...line, id: "pack::", qty: 1, pack: { course: true } };
+    expect(parseStoredCart(JSON.stringify([pack]))).toEqual([pack]);
+    expect(parseStoredCart(JSON.stringify([{ ...pack, qty: 2 }]))).toBeNull();
+    expect(parseStoredCart(JSON.stringify([{ ...pack, pack: { course: "yes" } }]))).toBeNull();
+  });
+});

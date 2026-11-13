@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateStock, localize, mapGemColor, mapProduct, mapTaxonomy, type ProductRow, type VariantRow } from "./mapping";
+import { aggregateStock, localize, mapGemColor, mapInclusions, mapProduct, mapTaxonomy, type ProductRow, type VariantRow } from "./mapping";
 import { MULTICOLOR_SWATCH, colorSwatchFill, colorsInCatalog, type GemColorDef } from "../../data/products";
 
 const url = (path: string) => `https://cdn.test/${path}`;
@@ -364,5 +364,43 @@ describe("variant options", () => {
       url,
     );
     expect(partial.options).toBeUndefined();
+  });
+});
+
+describe("mapInclusions (packs, decision 139)", () => {
+  it("lists the course and the Studio months in order, leaving out what the visitor cannot read", () => {
+    expect(
+      mapInclusions([
+        { kind: "studio", studio_plan: "artist", studio_months: 3, position: 1, course: null },
+        {
+          kind: "course",
+          studio_plan: null,
+          studio_months: null,
+          position: 0,
+          course: {
+            id: "c1",
+            slug: "masterclass",
+            title: "Masterclass",
+            course_translations: [{ locale: "en", status: "published", title: "Masterclass EN", slug: "masterclass-en" }],
+          },
+        },
+        // An unpublished course comes back as null; an unknown plan is ignored.
+        { kind: "course", studio_plan: null, studio_months: null, position: 2, course: null },
+        { kind: "studio", studio_plan: "gold", studio_months: 3, position: 3, course: null },
+      ]),
+    ).toEqual([
+      { kind: "course", courseId: "c1", title: { fr: "Masterclass", en: "Masterclass EN" }, slugs: { fr: "masterclass", en: "masterclass-en" } },
+      { kind: "studio", plan: "artist", months: 3 },
+    ]);
+  });
+
+  it("puts them on the product only when there are some", () => {
+    expect(mapProduct(row(), undefined, url).inclusions).toBeUndefined();
+    const pack = mapProduct(
+      row({ product_inclusions: [{ kind: "studio", studio_plan: "artist", studio_months: 3, position: 0, course: null }] }),
+      undefined,
+      url,
+    );
+    expect(pack.inclusions).toEqual([{ kind: "studio", plan: "artist", months: 3 }]);
   });
 });

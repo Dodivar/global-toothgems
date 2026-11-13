@@ -1,5 +1,6 @@
 "use client";
 
+import { Infinity as InfinityIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SelectorPage, SelectorTile } from "../components/shop/SelectorPage";
 import { ShapeGlyph } from "../components/ui/ShapeGlyph";
@@ -15,7 +16,7 @@ import { isShapeFirstFamily, shapeHref } from "../lib/shopUrl";
  *  the whole range at once before narrowing the collection. With `?famille=`
  *  (Swarovski) it is the step before that family's products: only its cuts,
  *  each leading to the shop already filtered on family and cut. A cut is shown
- *  by its plain Crystal gem's photo when there is one, else by its line drawing. */
+ *  by its Aquamarine gem's photo when there is one, else by its line drawing. */
 export function Shapes() {
   const { t, i18n } = useTranslation();
   const { products } = useCatalog();
@@ -36,7 +37,7 @@ export function Shapes() {
         <SelectorTile
           to={shopHref(GEMS_CATEGORY, family)}
           ariaLabel={t("shapesPage.allAria", { family: familyName(family) })}
-          media={<span className="text-3xl" aria-hidden="true">∞</span>}
+          media={<InfinityIcon size={58} strokeWidth={2.5} aria-hidden="true" />}
           label={t("shapesPage.all")}
           count={t("home.shapeCount", { count: scoped.length })}
         />

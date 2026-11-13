@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:mock": "node scripts/dev.mjs --mock",
-    "build": "next build",
+    "build": "next build && node scripts/posthog-sourcemaps.mjs",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "lint": "oxlint",

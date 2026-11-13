@@ -256,6 +256,22 @@
         "too_many_requests": "Trop de demandes en peu de temps. Réessayez dans un moment.",
         "network": "La demande n'a pas pu être envoyée. Vérifiez votre connexion et réessayez."
       }
+    },
+    "pack": {
+      "title": "Inclus dans le pack",
+      "articles": "Les articles du kit, livrés chez vous.",
+      "course": "Formation {{title}}",
+      "courseHint": "Ouverte sur votre compte dès que le paiement est confirmé.",
+      "courseLink": "Voir le programme de la formation",
+      "studio_one": "Studio 3D {{plan}} pendant {{count}} mois",
+      "studio_other": "Studio 3D {{plan}} pendant {{count}} mois",
+      "studioHint": "Ouvert dès que le paiement est confirmé, sans abonnement : rien ne se renouvelle tout seul.",
+      "account": "Un compte est nécessaire : la formation et le Studio s’ouvrent sur le compte qui passe la commande. Un pack par commande, non proposé en cadeau.",
+      "plan": {
+        "essential": "Essential",
+        "artist": "Artist",
+        "atelier": "Atelier"
+      }
     }
   },
   "cart": {
@@ -390,6 +406,9 @@
       "consentTitle": "Accès immédiat à la formation",
       "consentLabel": "Je demande l’accès immédiat à la formation et je renonce expressément à mon droit de rétractation : je reconnais le perdre dès que je commence à suivre la formation.",
       "consentHint": "Tant qu’aucune leçon n’est ouverte, vous gardez 14 jours pour vous rétracter."
+    },
+    "pack": {
+      "line": "1 pack par commande · formation et Studio ouverts sur votre compte"
     },
     "noShipping": "Rien à expédier : les cartes cadeaux sont envoyées par e-mail et les formations s’ouvrent dans votre espace membre.",
     "recap": {
@@ -1280,7 +1299,8 @@
       "favoritesLowStock_other": "{{count}} bientôt épuisés",
       "favoritesCta": "Voir mes favoris",
       "discoverEyebrow": "Academy",
-      "discoverTitle": "Se former avec Global Toothgems"
+      "discoverTitle": "Se former avec Global Toothgems",
+      "studioGrantUntil": "Offert par votre pack jusqu’au {{date}}."
     }
   },
   "footer": {
@@ -4263,6 +4283,25 @@
       "capacityUntracked": "Aucun produit du kit n’a de stock suivi : le kit reste disponible tant qu’aucun n’est marqué en rupture.",
       "stockNotice": "Le stock de ce kit est calculé à partir de ses produits (voir « Contenu du kit ») : réapprovisionnez les produits, le kit suit automatiquement.",
       "thresholdHint": "En dessous de ce nombre de kits réalisables, le kit apparaît en stock bas."
+    },
+    "inclusions": {
+      "title": "Accès inclus",
+      "body": "Ce qu’ouvre une unité de ce produit, en plus de ses articles : une formation de l’Academy et des mois de Studio 3D. Le produit devient un pack : vendu à un compte, un par commande, avec la renonciation au droit de rétractation quand il ouvre une formation.",
+      "courseToggle": "Ouvre une formation",
+      "courseHint": "L’accès est donné au paiement confirmé. Un client qui suit déjà la formation garde son accès et paie le même prix.",
+      "courseLabel": "Formation ouverte",
+      "courseDraft": "{{title}} (non publiée : le pack ne peut pas être vendu)",
+      "courseUnknown": "Formation introuvable",
+      "studioToggle": "Ouvre le Studio 3D",
+      "studioHint": "Commence au paiement confirmé, sans abonnement. Avec un abonnement en cours, la formule la plus avantageuse s’applique ; un second pack ajoute ses mois à la suite.",
+      "planLabel": "Formule",
+      "monthsLabel": "Durée en mois (1 à {{max}})",
+      "rules": "Les accès sont donnés quand la commande est payée et retirés par un remboursement total ; un remboursement partiel les laisse. Une commande déjà passée garde ce qu’elle contenait.",
+      "unavailable": "Les accès inclus se règlent sur la base de données réelle.",
+      "loadError": "Impossible de lire les formations pour le moment.",
+      "errorCourse": "Choisissez la formation ouverte.",
+      "errorTwice": "Une formation ou un accès Studio ne peut figurer qu’une fois.",
+      "errorMonths": "La durée du Studio va de 1 à {{max}} mois."
     }
   },
   "community": {

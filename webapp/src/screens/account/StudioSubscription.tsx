@@ -100,12 +100,19 @@ function SubscriptionPanel({ info }: { info: StudioAccessInfo }) {
   // A member with a Stripe subscription, live or not, manages it below.
   const hasBilling = info.subscriptionPlan !== null;
   const stateLabel = pastDue ? t("studio.account.state.pastDue") : t(`studio.account.state.${info.state}`);
+  // Studio access bought with a pack (decision 139); beside a subscription the better plan applies.
+  const grantPlan = info.grantPlan ? t(`studio.plans.items.${info.grantPlan}.name`) : "";
+  const grantBeside = info.grantActive && info.state !== "granted"
+    ? t("studio.account.grantBeside", { plan: grantPlan, date: date(info.grantEndsAt) })
+    : null;
 
   let note: string | null = null;
   if (pastDue) note = t("studio.account.pastDue");
   else if (live && info.subscriptionCancelAtPeriodEnd) note = t("studio.account.endsOn", { date: date(info.subscriptionPeriodEnd) });
   else if (live) note = t("studio.account.renews", { date: date(info.subscriptionPeriodEnd) });
   else if (info.state === "trial_active") note = t("studio.account.trialUntil", { date: date(info.trialExpiresAt) });
+  else if (info.state === "granted") note = t("studio.account.grantUntil", { plan: grantPlan, date: date(info.grantEndsAt) });
+  else if (info.state === "grant_ended") note = t("studio.account.grantEnded", { date: date(info.grantEndsAt) });
   else if (info.state === "staff") note = t("studio.account.staffNote");
   else if (info.state !== "subscription_pending") note = t("studio.account.noPlan");
 
@@ -120,6 +127,9 @@ function SubscriptionPanel({ info }: { info: StudioAccessInfo }) {
         </Row>
         {live && info.subscriptionPlan && (
           <Row label={t("studio.account.planLabel")}>{t(`studio.plans.items.${info.subscriptionPlan}.name`)}</Row>
+        )}
+        {info.state === "granted" && info.grantPlan && (
+          <Row label={t("studio.account.planLabel")}>{grantPlan}</Row>
         )}
         {live && info.subscriptionInterval && (
           <Row label={t("studio.account.billingLabel")}>{t(`studio.account.interval.${info.subscriptionInterval}`)}</Row>
@@ -139,6 +149,7 @@ function SubscriptionPanel({ info }: { info: StudioAccessInfo }) {
           {note}
         </p>
       )}
+      {grantBeside && <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{grantBeside}</p>}
 
       <div className="flex flex-wrap items-center gap-3">
         {live || info.state === "trial_active" || info.state === "staff" ? (

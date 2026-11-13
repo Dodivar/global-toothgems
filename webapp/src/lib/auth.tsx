@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import posthog from "posthog-js";
+import { trackAuth } from "./authAnalytics";
 import { Navigate, useLocation } from "./navigation";
 import type { User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, sessionReady, supabase } from "./supabase/client";
@@ -333,7 +334,9 @@ async function signInWithRedirect(
     provider,
     options: { redirectTo: authConfirmUrl(landing, window.location.origin) },
   });
-  return error ? "unavailable" : "redirecting";
+  const outcome = error ? "unavailable" : "redirecting";
+  trackAuth("auth_oauth_started", { method: provider, outcome });
+  return outcome;
 }
 
 function SupabaseAuthProvider({ children }: { children: ReactNode }) {
@@ -353,7 +356,10 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       return loaded;
     }
     // Back from Google or Apple: the "Last used" badge follows the provider.
-    if (loaded) settlePendingSignIn(user!.identities);
+    if (loaded) {
+      const provider = settlePendingSignIn(user!.identities);
+      if (provider) trackAuth("auth_sign_in", { method: provider, outcome: "accepted" });
+    }
     let accepted = loaded ? await loadTermsAccepted(user!.id) : null;
     // Back from Google or Apple after accepting in the registration dialog: that
     // acceptance is recorded now that the account exists.
@@ -393,6 +399,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithPassword = useCallback(
     async (email: string, password: string): Promise<SignInResult> => {
+      const outcome = await (async (): Promise<SignInResult> => {
       if (!supabase) return "unavailable";
       const captchaToken = await authCaptchaToken();
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password, options: { captchaToken } });
@@ -411,12 +418,16 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       }
       rememberSignInMethod("email");
       return "accepted";
+      })();
+      trackAuth("auth_sign_in", { method: "email", outcome });
+      return outcome;
     },
     [applyUser],
   );
 
   const signUp = useCallback(
     async (data: RegistrationData, locale: string, redirectTo: string, origin?: SignupOrigin): Promise<SignUpResult> => {
+      const outcome = await (async (): Promise<SignUpResult> => {
       if (!supabase) return "server";
       const captchaToken = await authCaptchaToken();
       const { data: result, error } = await supabase.auth.signUp({
@@ -446,6 +457,9 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         return "signedIn";
       }
       return "confirmationSent";
+      })();
+      trackAuth("auth_sign_up", { method: "email", outcome, origin: origin ?? null });
+      return outcome;
     },
     [applyUser],
   );
@@ -457,8 +471,9 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       email: email.trim(),
       options: { emailRedirectTo: redirectTo, captchaToken: await authCaptchaToken() },
     });
-    if (!error) return "sent";
-    return isAuthRateLimit(error) ? "rateLimited" : "failed";
+    const outcome: ResendResult = !error ? "sent" : isAuthRateLimit(error) ? "rateLimited" : "failed";
+    trackAuth("auth_confirmation_resent", { outcome });
+    return outcome;
   }, []);
 
   const acceptTerms = useCallback(

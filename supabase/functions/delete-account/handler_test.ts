@@ -20,6 +20,7 @@ interface Options {
   files?: { bucket: string; name: string }[];
   failRemove?: boolean;
   failConfirm?: boolean;
+  failAnalytics?: boolean;
 }
 
 function fake(options: Options = {}) {
@@ -41,6 +42,10 @@ function fake(options: Options = {}) {
     confirm: (id, r) => {
       calls.push(`confirm ${id} ${r.email}`);
       return options.failConfirm ? Promise.reject(new Error("resend down")) : Promise.resolve();
+    },
+    forgetAnalytics: (id) => {
+      calls.push(`forget analytics ${id}`);
+      return options.failAnalytics ? Promise.reject(new Error("posthog down")) : Promise.resolve();
     },
     now: () => NOW,
     log: () => {},
@@ -71,6 +76,7 @@ Deno.test("a recently signed-in member deletes their account: files, then the er
     "remove studio-thumbnails 50",
     "remove avatars 1",
     "erase user-1",
+    "forget analytics user-1",
     "confirm user-1 member@example.com",
   ]);
 });
@@ -119,6 +125,12 @@ Deno.test("a Storage failure leaves the account in place (500, calling again res
 Deno.test("the account is gone even when the confirmation e-mail fails", async () => {
   const { deps } = fake({ failConfirm: true });
   assertEquals((await handleDeleteAccount(post(CONFIRM), deps)).status, 200);
+});
+
+Deno.test("the account is gone and the e-mail sent even when PostHog refuses the deletion", async () => {
+  const { deps, calls } = fake({ failAnalytics: true });
+  assertEquals((await handleDeleteAccount(post(CONFIRM), deps)).status, 200);
+  assertEquals(calls, ["erase user-1", "forget analytics user-1", "confirm user-1 member@example.com"]);
 });
 
 Deno.test("an account already erased answers deleted without an e-mail", async () => {
