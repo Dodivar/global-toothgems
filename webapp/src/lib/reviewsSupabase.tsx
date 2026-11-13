@@ -16,9 +16,11 @@ import { ReviewsContext, useLocalReviewState, type ReviewDemoMode, type ReviewsC
  * Row Level Security decides what each reader gets: visitors the published
  * reviews (public columns only), a customer also their own reviews, votes and
  * reports, the team everything. The database enforces the rules as well —
- * a review can only be written by a customer whose order containing the
- * product has shipped, a customer edit goes back to moderation, staff never
- * change the text — so this file only sends intents and re-reads the result.
+ * a product review can only be written by a customer whose order containing
+ * it has shipped, a course review by a learner holding the course who has
+ * done at least half of it, a customer edit goes back to moderation, staff
+ * never change the text — so this file only sends intents and re-reads the
+ * result.
  *
  * Team actions update the list at once, then write; a refused write shows a
  * toast and re-reads the database, so the screen never keeps a change the
@@ -30,6 +32,7 @@ const PUBLIC_COLUMNS = `
   id, is_verified, author_name, rating, title, body, language, tags, status, helpful_count,
   response_body, response_at, published_at, edited_at,
   product:products ( slug ),
+  course:courses ( slug ),
   review_photos ( storage_path, alt_text, position )
 `;
 
@@ -168,16 +171,20 @@ export function SupabaseReviewsProvider({ children, myName }: { children: ReactN
   const submitReview = useCallback<ReviewsContextValue["submitReview"]>(
     async (subject: ReviewSubject, input: ReviewInput) => {
       if (!userId) throw new Error("reviews: signed out");
-      if (subject.kind !== "product") throw new Error("reviews: course reviews are not stored yet");
       const db = requireSupabase();
-      const product = await db.from("products").select("id").eq("slug", subject.id).maybeSingle();
-      if (product.error || !product.data) throw product.error ?? new Error("reviews: unknown product");
+      // The subject's row id from its slug (a course by its French slug).
+      const target =
+        subject.kind === "product"
+          ? await db.from("products").select("id").eq("slug", subject.id).maybeSingle()
+          : await db.from("courses").select("id").eq("slug", subject.id).maybeSingle();
+      if (target.error || !target.data) throw target.error ?? new Error(`reviews: unknown ${subject.kind}`);
 
-      // The database fills the order, the author's signature and the status.
+      // The database checks the right to review (received order, or course held
+      // and half done), fills the order, the author's signature and the status.
       const inserted = await db
         .from("reviews")
         .insert({
-          product_id: product.data.id,
+          ...(subject.kind === "product" ? { product_id: target.data.id } : { course_id: target.data.id }),
           user_id: userId,
           author_name: myName,
           rating: input.rating,

@@ -1,6 +1,6 @@
 import { requireSupabase, type TypedSupabaseClient } from "../supabase/client";
 import type { PublicCourse } from "./publicCourse";
-import { mapPublicCourses, type CoursePriceRow, type PublicCourseRow } from "./publicCourseMapping";
+import { mapPublicCourses, type CoursePriceRow, type CourseReviewStatsRow, type PublicCourseRow } from "./publicCourseMapping";
 import type { PriceReferenceRow } from "../storefrontOffers";
 
 /**
@@ -34,18 +34,24 @@ export async function fetchPublicCourses(signal?: AbortSignal, db: TypedSupabase
   let prices = db.from("course_current_prices").select("course_id, current_price, promotion_ends_at");
   // The struck-out price, only from the database's reference (decision 129, Omnibus).
   let references = db.rpc("storefront_price_references");
+  // Published learner reviews (decision 141).
+  let stats = db.from("course_review_stats").select("course_id, average_rating, review_count");
   if (signal) {
     courses = courses.abortSignal(signal);
     prices = prices.abortSignal(signal);
     references = references.abortSignal(signal);
+    stats = stats.abortSignal(signal);
   }
-  const [courseResult, priceResult, referenceResult] = await Promise.all([courses, prices, references]);
+  const [courseResult, priceResult, referenceResult, statsResult] = await Promise.all([courses, prices, references, stats]);
   if (courseResult.error) throw courseResult.error;
   if (priceResult.error) throw priceResult.error;
   if (referenceResult.error) throw referenceResult.error;
+  // Ratings are secondary: failing figures must not take the Academy down (no rating is shown then).
+  if (statsResult.error) console.warn("[academy] review stats unavailable", statsResult.error.message);
   return mapPublicCourses(
     (courseResult.data ?? []) as unknown as PublicCourseRow[],
     (priceResult.data ?? []) as CoursePriceRow[],
     ((referenceResult.data ?? []) as PriceReferenceRow[]).filter((r) => r.course_id !== null),
+    (statsResult.data ?? []) as CourseReviewStatsRow[],
   );
 }

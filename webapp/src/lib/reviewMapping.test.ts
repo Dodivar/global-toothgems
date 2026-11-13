@@ -54,6 +54,16 @@ describe("mapReview for a visitor", () => {
   it("skips a review whose product is not visible", () => {
     expect(mapReview({ ...publicRow, product: null }, visitor)).toBeNull();
   });
+
+  it("maps a course review to its course, keyed by French slug", () => {
+    const review = mapReview({ ...publicRow, product: null, course: { slug: "fondation" }, tags: ["clear"] }, visitor)!;
+    expect(review.subject).toEqual({ kind: "course", id: "fondation" });
+    expect(review.orderRef).toBe("");
+  });
+
+  it("skips a course review whose course is not visible", () => {
+    expect(mapReview({ ...publicRow, product: null, course: null }, visitor)).toBeNull();
+  });
 });
 
 describe("mapReview for the team", () => {

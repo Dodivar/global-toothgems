@@ -71,7 +71,7 @@ export function WriteReviewPanel({ subject }: { subject: ReviewSubject }) {
           <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
             {t(course ? "reviews.cta.signedOutCourse" : "reviews.cta.signedOutProduct")}
           </strong>
-          {note(<ShieldCheck size={14} />, t("reviews.cta.verifiedOnly"))}
+          {note(<ShieldCheck size={14} />, t(course ? "reviews.cta.verifiedOnlyCourse" : "reviews.cta.verifiedOnly"))}
           <Button variant="outline" size="sm" onClick={() => navigate("/connexion", { state: { from: location.pathname } })}>
             {t("reviews.cta.signIn")}
           </Button>
