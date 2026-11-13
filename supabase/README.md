@@ -2041,8 +2041,12 @@ then set `status = 'processed'` (or `failed` + `error`). Events in `failed` need
   before this (invited staff, seeded members) are asked once too. Not decided: what happens to a Google account
   that declines (today: sign out, the account stays). Google accounts whose address already exists as an e-mail/password account are linked automatically by Supabase (same
   verified address).
-- Authentication → Sign In / Providers → Apple (**Continue with Apple**, coded 2026-11-11, decision 138; **off until
-  the owner switches it on**): the webapp calls `supabase.auth.signInWithOAuth({ provider: "apple", redirectTo:
+- Authentication → Sign In / Providers → Apple (**Continue with Apple**, coded 2026-11-11, decision 138; **postponed
+  by the owner on 2026-11-13** — the Apple Developer Program costs $99 a year, not a priority before launch: the code
+  stays, switched off by `APPLE_SIGN_IN_ENABLED = false` in `webapp/src/lib/authProviders.ts`, which hides every Apple
+  button and makes `signInWithApple` refuse; Google stays the only provider). When it comes back: set the switch to
+  true, restore Apple in the privacy policy (data received, relay address, recipient "Apple Distribution
+  International Ltd / Apple Inc.", see commit `4ff79f1d`) and the cookie row's wording, then follow the steps below. The webapp calls `supabase.auth.signInWithOAuth({ provider: "apple", redirectTo:
   …/auth/confirm?next=… })` (`signInWithApple` in `lib/auth.tsx`, same terms dialog on `/inscription`, same terms note,
   same re-authentication before an account deletion for an Apple-only account). The button appears only once the
   project's public Auth settings (`GET /auth/v1/settings`, publishable key) report `external.apple = true`
@@ -2095,7 +2099,8 @@ The owner asked an agent to settle the pending "to confirm" points. Outcome:
 - **Left pending by the owner (2026-11-11):** a public gift card balance check, gift cards in the member area and the
   refund of a purchased card (decisions 57, 58: not built; a refund made in the Stripe dashboard is still recorded);
   the consumer mediator of the seller and of the publisher (decisions 126, 135, "later": a legal launch blocker, still
-  shown as "to supply").
+  shown as "to supply"). Since 2026-11-13: **Sign in with Apple** (decision 138: coded, hidden by
+  `APPLE_SIGN_IN_ENABLED = false`; not a priority, the Apple Developer Program costs $99 a year).
 - **Open questions to the owner** (business facts only they hold):
   1. Supplier evidence for the "sans plomb" / "hypoallergénique" product claims (decision 116), else remove them.
   2. Final Studio prices before the live Prices are created (decision 94).
@@ -2876,7 +2881,15 @@ The owner asked an agent to settle the pending "to confirm" points. Outcome:
     top plans, which is not wired yet; (f) a deleted Glowbook leaves its video files in the member's folder
     (no page uses them; the member's next recording cleans them).
 139. **Packs: a product that also opens a course and months of the 3D Studio** (owner's request, 2026-11-08: "the professional kit with the course on sale and three months of the 3D Studio in one promotional pack; stock is the kit's"). Migrations `20261108170000_product_inclusions` and `20261108171000_pro_master_pack`, see *Packs: included access*. Owner's choices the same day: Studio plan **Artist**; the 3 months **start at the purchase** (the payment); a buyer who **already holds the course** pays the full pack (no reduction, no second entitlement); with a Studio subscription **the better plan wins**; a member who got the offered access **no longer opens the 48-hour trial**; withdrawal by a **partial refund** decided by the team (a partial refund keeps the access, a full refund revokes both); **one payment**, the price split between kit, course and Studio comes later; **no gift**. Price of the GLOBAL™ PRO MASTER PACK: (340.00 + 590.00) × 0.9 = 837.00 EUR, no compare-at price (a struck-through reference would claim a reduction the new product never had); the description states "kit and course bought separately: 930 €" as a fact and the Artist plan's value at its monthly price (3 × 19.90 €). Created as a **draft**; the kit's contents are still `[A COMPLÉTER]` in its description. The cart and `create-checkout-session` ask the course waiver of decision 128 for a pack that opens a course (**deployed 2026-11-13** from the pinned commit `84b72c5`, after the branch `claude/nifty-hawking-7klamc` was merged into `dev` that day — numbered 129 on that branch, renumbered 139; anonymous empty call answered 400 right after; the pack can be published). **Safe readings chosen by the agent, to confirm:** (a) a second pack adds its months after the first instead of running beside it; (b) a revoked (refunded) grant does not block the trial; (c) an included course that is unpublished makes the pack unsellable; (d) the pack's picture is the professional kit's storage object until a pack visual is uploaded — deleting that picture from the kit removes it from the pack too; (e) the withdrawal rule and the waiver wording for a mixed pack (goods + course + Studio), and the VAT split if the franchise ends, are for the lawyer and the accountant.
-138. **Sign in with Apple, and the "Last used" badge** (owner's request, 2026-11-11). No schema change. **Apple:**
+138. **Sign in with Apple, and the "Last used" badge** (owner's request, 2026-11-11). No schema change. **Apple
+postponed on 2026-11-13** (owner: "not a priority, the Apple Developer Program costs $99 a year; stay on Google
+only, hide the Apple sign-in, keep the code"): `APPLE_SIGN_IN_ENABLED = false` (`lib/authProviders.ts`) hides the
+buttons on `/connexion` and `/inscription` without even asking Supabase, `signInWithApple` answers `unavailable`,
+and the privacy policy and cookie list no longer name Apple. The code was reviewed before being parked: no secret in
+the browser (the Apple secret lives only in Supabase), the redirect's landing goes through `isSafeNext`, the
+"Last used" note holds a validated method name only, and the pending note cannot confirm a later unrelated sign-in
+(removed on every settle and on every successful sign-in). Points (a)–(c) below wait for Apple's return; the badge
+stays live for Google. **Apple:**
 the redirect flow (`signInWithOAuth({ provider: "apple" })`) beside Google on `/connexion` and `/inscription` (terms
 dialog first, generalised as `components/register/ProviderTermsDialog.tsx`), a black button per Apple's guidelines
 (`AppleButton`, `AppleMark`); shown only when the project's Auth settings say Apple is on (`lib/authProviders.ts`),
