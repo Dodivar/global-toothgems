@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { AdminButton } from "./AdminButton";
 import { AdminSelect, type AdminOption } from "./AdminSelect";
 import { BundleEditor } from "./BundleEditor";
+import { InclusionsEditor } from "./InclusionsEditor";
 import { ColorPicker } from "./ColorPicker";
 import { CustomVariantsEditor } from "./CustomVariantsEditor";
 import { MoneyInput, NumberInput } from "./AdminNumberInputs";
@@ -19,6 +20,7 @@ import { CONTENT_LANGS, type ContentLang } from "../../lib/localized";
 import { useFormat } from "../../lib/format";
 import { useAdminCatalog } from "../../lib/adminCatalog";
 import { bundleError } from "../../lib/productBundles";
+import { inclusionError } from "../../lib/productInclusions";
 import {
   ADMIN_SPEC_KEYS,
   offeredGemVariants,
@@ -65,7 +67,7 @@ interface ProductFormProps {
 
 type FieldKey =
   | "name" | "sku" | "price" | "stock" | "lowStockThreshold" | "category" | "family" | "options"
-  | "variants" | "bundle";
+  | "variants" | "bundle" | "inclusions";
 
 /** Same rule as the `products.sku` column: upper-case letters, digits and hyphens. */
 const SKU_PATTERN = /^[A-Z0-9][A-Z0-9-]{1,63}$/;
@@ -414,6 +416,14 @@ export function ProductForm({
             />
           </Section>
 
+          <Section title={t("admin.inclusions.title")} description={t("admin.inclusions.body")}>
+            <InclusionsEditor
+              inclusions={draft.inclusions}
+              error={showError("inclusions")}
+              onChange={(inclusions) => set("inclusions", inclusions)}
+            />
+          </Section>
+
           <Section title={t("admin.form.inventoryTitle")} description={t("admin.form.inventoryBody")}>
             {isKit ? (
               <>
@@ -743,6 +753,8 @@ function validate(
   const productStock = !gemOn && customVariants.length === 0;
   const bundle = bundleError(draft.bundle, t);
   if (bundle) errors.bundle = bundle;
+  const inclusions = inclusionError(draft, t);
+  if (inclusions) errors.inclusions = inclusions;
   if (kit) {
     if (!Number.isInteger(draft.lowStockThreshold) || draft.lowStockThreshold < 0) {
       errors.lowStockThreshold = t("admin.form.errors.thresholdInvalid");

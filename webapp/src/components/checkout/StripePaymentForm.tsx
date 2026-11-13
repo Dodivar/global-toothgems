@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { CheckoutProvider, PaymentElement, useCheckout } from "@stripe/react-stripe-js/checkout";
 import type { StripeCheckoutContact } from "@stripe/stripe-js";
 import { CircleAlert, Clock, Lock, RotateCcw } from "lucide-react";
 import { Button } from "../ui/Button";
 import { loadStripeFor, STRIPE_FONTS, stripeAppearance } from "../../lib/checkout/stripe";
+import type { PaymentFailure } from "../../lib/shopAnalytics";
 
 /**
  * The site's payment form: Stripe's Payment Element mounted from a Checkout
@@ -41,6 +42,8 @@ interface StripePaymentFormProps {
   beforeConfirm?: () => Promise<boolean>;
   /** Pay was pressed and will be confirmed (analytics). */
   onSubmit?: () => void;
+  /** The payment did not go through, or the form could not be used (analytics). */
+  onFailure?: (failure: PaymentFailure) => void;
   /** Paid without leaving the page (cards, wallets). */
   onPaid: (sessionId: string) => void;
   /** Opens a fresh payment step (the session expired, or the form could not load). */
@@ -72,7 +75,7 @@ export function StripePaymentForm(props: StripePaymentFormProps) {
 /** One minute of margin: a payment started at the last second would be refused by Stripe. */
 const EXPIRY_MARGIN_MS = 60_000;
 
-function PaymentForm({ expiresAt, payLabel, billing, beforeConfirm, onSubmit, onPaid, onRestart, children, footer }: StripePaymentFormProps) {
+function PaymentForm({ expiresAt, payLabel, billing, beforeConfirm, onSubmit, onFailure, onPaid, onRestart, children, footer }: StripePaymentFormProps) {
   const { t } = useTranslation();
   const state = useCheckout();
   const [ready, setReady] = useState(false);
@@ -85,6 +88,20 @@ function PaymentForm({ expiresAt, payLabel, billing, beforeConfirm, onSubmit, on
     const timer = window.setTimeout(() => setExpired(true), left);
     return () => window.clearTimeout(timer);
   }, [expiresAt]);
+
+  // Reported once each: the step timed out, or Stripe's form could not load.
+  const loadFailed = state.type === "error";
+  const timedOut = expired && !paying;
+  const failureRef = useRef(onFailure);
+  useEffect(() => {
+    failureRef.current = onFailure;
+  }, [onFailure]);
+  useEffect(() => {
+    if (timedOut) failureRef.current?.({ stage: "expired", code: null, declineCode: null });
+  }, [timedOut]);
+  useEffect(() => {
+    if (loadFailed) failureRef.current?.({ stage: "load", code: null, declineCode: null });
+  }, [loadFailed]);
 
   if (expired && !paying) {
     return (
@@ -125,6 +142,11 @@ function PaymentForm({ expiresAt, payLabel, billing, beforeConfirm, onSubmit, on
     if (result.type === "error") {
       // Stripe's buyer-facing message (card declined, authentication failed…), in the page's language.
       setError(result.error.message || t("checkout.payment.failed"));
+      onFailure?.({
+        stage: "confirm",
+        code: result.error.code,
+        declineCode: result.error.code === "paymentFailed" ? result.error.paymentFailed.declineCode : null,
+      });
       setPaying(false);
       return;
     }

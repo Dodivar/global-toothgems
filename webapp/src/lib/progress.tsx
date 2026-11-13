@@ -7,6 +7,7 @@ import { useAuth } from "./auth";
 import { FIXTURE_LEVELS } from "./academy/fixtures";
 import { isSupabaseConfigured, supabase } from "./supabase/client";
 import { useTrainingMedia } from "./trainingMedia";
+import { trackAcademy, trackAcademyOnce } from "./academyAnalytics";
 import { useVisibleInterval } from "./useVisibleInterval";
 import { localGrader, type QuizGrader } from "./learning/grading";
 import * as api from "./learning/learnerApi";
@@ -384,6 +385,8 @@ function useLiveLearning(): ProgressContextValue {
   const visitNode = useCallback(
     (courseId: string, key: string) => {
       setActiveCourseId(courseId);
+      const held = heldRef.current.find((c) => c.card.id === courseId);
+      if (held?.training) trackLessonOpened(courseId, key, held);
       replace(courseId, (course) =>
         course.record.lastKey === key ? course : { ...course, record: { ...course.record, lastKey: key } },
       );
@@ -399,6 +402,7 @@ function useLiveLearning(): ProgressContextValue {
       try {
         const progress = await api.completeStep(supabase, key);
         replace(courseId, (current) => withProgress(current, progress));
+        trackProgressChange("academy_step_completed", courseId, key, course, withProgress(course, progress));
         return true;
       } catch (error) {
         console.error("[learning] step not recorded", error);
@@ -418,8 +422,19 @@ function useLiveLearning(): ProgressContextValue {
       return {
         check: async (questionId, answerId) => toCorrection(await api.answerQuestion(db, moduleId, questionId, answerId)),
         submit: async (chosen) => {
+          // The course as it stands now (an earlier attempt may have changed it since this grader was made).
+          const before = heldRef.current.find((c) => c.card.id === courseId);
           const result = await api.submitQuiz(db, moduleId, chosen);
           replace(courseId, (current) => withProgress(current, result.progress));
+          if (before) {
+            trackProgressChange("academy_quiz_submitted", courseId, key, before, withProgress(before, result.progress), {
+              score: result.score,
+              passed: result.passed,
+              correct: result.correct,
+              total: result.total,
+              passing_score: result.passing_score,
+            });
+          }
           return toGradedAttempt(result);
         },
       };
@@ -466,6 +481,55 @@ function useLiveLearning(): ProgressContextValue {
 }
 
 /* -------------------------------------------------------------------------- */
+
+// Learning analytics (`academyAnalytics.ts`): sent once the server answered,
+// from the course as it was and as it is now.
+
+function nodeProps(training: TrainingCourse, key: string) {
+  const path = buildPath(training);
+  const index = path.findIndex((n) => n.key === key);
+  const node = index >= 0 ? path[index] : undefined;
+  return {
+    step_kind: node?.kind ?? null,
+    module_index: node?.moduleIndex ?? null,
+    index_in_module: node?.indexInModule ?? null,
+    path_index: index >= 0 ? index : null,
+    path_length: path.length,
+  };
+}
+
+function trackLessonOpened(courseId: string, key: string, course: HeldCourse) {
+  const training = course.training!;
+  const progress = progressOf(training, course.record, course.certificateCode);
+  if (progress.doneCount === 0) trackAcademyOnce(`started:${courseId}`, "academy_course_started", { course_id: courseId });
+  trackAcademyOnce(`lesson:${courseId}:${key}`, "academy_lesson_opened", {
+    course_id: courseId,
+    course_pct: progress.pct,
+    ...nodeProps(training, key),
+  });
+}
+
+function trackProgressChange(
+  event: "academy_step_completed" | "academy_quiz_submitted",
+  courseId: string,
+  key: string,
+  before: HeldCourse,
+  after: HeldCourse,
+  extra: Record<string, string | number | boolean | null> = {},
+) {
+  const training = after.training;
+  if (!training) return;
+  const was = progressOf(training, before.record, before.certificateCode);
+  const now = progressOf(training, after.record, after.certificateCode);
+  trackAcademy(event, { course_id: courseId, course_pct: now.pct, done_count: now.doneCount, total: now.total, ...nodeProps(training, key), ...extra });
+  if (now.completed && !was.completed) {
+    trackAcademyOnce(`completed:${courseId}`, "academy_course_completed", {
+      course_id: courseId,
+      certificate: now.certificateCode !== null,
+      quiz_average: now.quizAverage,
+    });
+  }
+}
 
 // Decided from the configuration, the same on the server and in the browser,
 // so the hook below is always the same one.

@@ -57,6 +57,8 @@ export interface DeleteAccountDeps {
   removeFiles(bucket: string, names: string[]): Promise<void>;
   erase(userId: string): Promise<EraseResult>;
   confirm(userId: string, recipient: Recipient, erasedAt: Date): Promise<void>;
+  /** Deletes the account's analytics person (PostHog), its events and recordings. Best effort. */
+  forgetAnalytics(userId: string): Promise<void>;
   now(): Date;
   log(message: string, detail?: unknown): void;
 }
@@ -140,6 +142,14 @@ export async function handleDeleteAccount(req: Request, deps: DeleteAccountDeps)
     const result = await deps.erase(member.id);
     if (result.status === "blocked") return json({ error: "blocked", blockers: result.blockers }, 409, cors);
 
+    if (result.status === "erased") {
+      try {
+        await deps.forgetAnalytics(member.id);
+      } catch (error) {
+        // The account is gone either way; a PostHog failure is logged and handled by hand.
+        deps.log("analytics deletion failed", error instanceof Error ? error.message : error);
+      }
+    }
     if (result.status === "erased" && recipient) {
       try {
         await deps.confirm(member.id, recipient, deps.now());

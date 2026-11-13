@@ -3,6 +3,7 @@ import { readSiteOrigins } from "../_shared/http.ts";
 import { emailDepsFromEnv, sendTemplatedEmail } from "../_shared/email/mod.ts";
 import { type EraseResult, handleDeleteAccount, type Recipient } from "./handler.ts";
 import { functionLogger } from "../_shared/log.ts";
+import { deletePostHogPerson, postHogPersonsConfig } from "../_shared/posthogPersons.ts";
 
 /*
  * Deployed with verify_jwt = false (supabase/config.toml): the member's token
@@ -12,6 +13,7 @@ import { functionLogger } from "../_shared/log.ts";
 const supabase = serviceClient();
 const origins = readSiteOrigins(requireEnv("SITE_URL"), Deno.env.get("ALLOWED_RETURN_ORIGINS"));
 const log = functionLogger("delete-account");
+const posthogPersons = postHogPersonsConfig((name) => Deno.env.get(name));
 
 /** "6 novembre 2026" / "6 November 2026", Paris time. */
 function erasureDate(date: Date, locale: string): string {
@@ -64,6 +66,13 @@ Deno.serve((req) =>
         eventKey: `account_deleted:${userId}`,
       });
       if (result.status !== "sent" && result.status !== "duplicate") log("confirmation not sent", result);
+    },
+    async forgetAnalytics(userId) {
+      if (!posthogPersons) {
+        log("analytics deletion skipped: POSTHOG_PERSON_DELETE_API_KEY not set");
+        return;
+      }
+      await deletePostHogPerson(posthogPersons, userId);
     },
     now: () => new Date(),
     log,

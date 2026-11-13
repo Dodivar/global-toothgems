@@ -1,3 +1,4 @@
+import { trackAcademy } from "../academyAnalytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CertificateContent } from "./layout";
 import { certificateFileName } from "./share";
@@ -83,6 +84,7 @@ export function useCertificateExport(content: CertificateContent) {
         const blob = format === "pdf" ? await render.certificatePdf(current) : await pngOf(current);
         render.saveFile(blob, certificateFileName(current.courseTitle, current.reference, format));
         set(format, "done");
+        trackAcademy("academy_certificate_downloaded", { format });
         return true;
       } catch {
         set(format, "error");
@@ -105,6 +107,7 @@ export function useCertificateExport(content: CertificateContent) {
         const file = new File([blob], certificateFileName(current.courseTitle, current.reference, "png"), { type: "image/png" });
         await navigator.share({ files: [file], text: caption, title: current.courseTitle });
         set("share", "done");
+        trackAcademy("academy_certificate_shared", { outcome: "shared" });
         return "shared";
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
@@ -112,6 +115,7 @@ export function useCertificateExport(content: CertificateContent) {
           return "cancelled";
         }
         set("share", "error");
+        trackAcademy("academy_certificate_shared", { outcome: "failed" });
         return "failed";
       }
     },

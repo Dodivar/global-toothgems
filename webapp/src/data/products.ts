@@ -185,6 +185,22 @@ export interface ProductOption {
   values: ProductOptionValue[];
 }
 
+/**
+ * What buying one unit of a product also opens (a pack, `product_inclusions`,
+ * decision 139): an Academy course, or months of a 3D Studio plan. Granted by
+ * the database once the order is paid; such a product is sold to an account,
+ * one per line.
+ */
+export type ProductInclusion =
+  | { kind: "course"; courseId: string; title: Localized; slugs: { fr: string; en?: string } }
+  | { kind: "studio"; plan: "essential" | "artist" | "atelier"; months: number };
+
+/** The cart's mark for a pack line (`CartLine.pack`), or undefined for an ordinary product. */
+export function packLine(product: Pick<Product, "inclusions">): { course: boolean } | undefined {
+  if (!product.inclusions?.length) return undefined;
+  return { course: product.inclusions.some((inclusion) => inclusion.kind === "course") };
+}
+
 /** The five characteristics a product may list, in display order. */
 export const SPEC_KEYS = ["material", "center", "back", "packaging", "wear"] as const;
 export type SpecKey = (typeof SPEC_KEYS)[number];
@@ -240,6 +256,8 @@ export interface Product {
   /** Options the variants combine (colour × plug…), in display order; absent = a flat list. */
   options?: ProductOption[];
   isFeatured?: boolean;
+  /** Database products only: the access the product opens once paid (a pack). */
+  inclusions?: ProductInclusion[];
 }
 
 const img = photo;

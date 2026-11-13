@@ -1,0 +1,61 @@
+# PostHog project setup (owner checklist)
+
+What has to be switched on or created **in the PostHog app** (EU cloud, `eu.posthog.com`) for the code of 2026-11-12 to give its full value. Nothing here is done by code. Menu names follow the PostHog app as of 2026-11; if one moved, the setting keeps the same name (use the app's search).
+
+**State on 2026-11-12 (set up by an agent through the PostHog MCP server, owner's go-ahead):** session replay on with 30-day retention and IP anonymisation (already on); the internal users filter holds the cohort 261336, the team's e-mails (`is not` — it was `exact`, which kept only the team), `is_staff is not true` and `app_environment is not development/preview`, applied by default to new insights; the 39 custom events declared in Data management with French descriptions and tags; the dashboard **"Santé production"** (id 1110971, pinned) with the 13 insights of section 2 and the alert signals; the alerts of section 3 by e-mail to the owner — "no paid order in 24 h" created **disabled**, to switch on at launch; the `$exception` alert is replaced by the existing error-tracking destination (a GitHub issue per new issue). Not done: removing `email` / `name` from persons identified before 2026-11-12.
+
+Event lists: `docs/shop-analytics.md`, `docs/academy-analytics.md`, `docs/studio-trial-analytics.md`. Code: `webapp/src/lib/posthog*.ts`, `analyticsCore.ts`.
+
+## 1. Project settings (once, ~10 min)
+
+| Where | What | Why |
+| --- | --- | --- |
+| Settings › Project › Session replay | **Record user sessions: on.** Leave canvas capture off. Leave "Mask all inputs" on (the code forces it anyway). | The code starts recordings only with consent and only on the zones of `replayAllowed()`; without this switch nothing is recorded. |
+| Settings › Organization › Billing (or Session replay) | Check the replay **retention**. | The cookie policy says recordings are kept at most 30 days. If the plan keeps them longer, lower it or have the policy changed. |
+| Settings › Project › Product analytics › "Filter out internal and test users" | Add two filters: event property `is_staff` **is not** `true`; event property `app_environment` **equals** `production`. Then tick "Filter out internal and test users" by default on new insights. | Removes the team's visits and the preview / local deployments from every chart. |
+| Settings › Project › Error tracking (Alerting) | An alert by e-mail on **new issues**. | A new production error reaches you without opening PostHog. |
+| Settings › Project › Web analytics | Nothing to change; the built-in dashboard already reads the UTM tags of the ad links. | Ad and social traffic per campaign. |
+| People › Persons (optional) | Persons identified before 2026-11-12 still carry `email` / `name`: delete those two properties on the persons that have them, or leave them. | The code no longer sends them; data minimisation. |
+
+## 2. Dashboard "Production health"
+
+Dashboards › New dashboard › "Production health". Add these insights (each: New insight, then "Add to dashboard"), all with internal users filtered out:
+
+1. **Shop funnel** — Funnel, conversion window 1 day: `product_added_to_cart` → `checkout_started` → `payment_step_opened` → `payment_submitted` → `order_completed`.
+2. **Orders per day** — Trends, `order_completed`, total count, daily, breakdown `paid_with`.
+3. **Payment failures** — Trends, `payment_failed`, breakdown `stage`; a second one filtered on `stage = confirm`, breakdown `decline_code`.
+4. **Checkout errors** — Trends, `checkout_failed`, breakdown `reason`.
+5. **Sign-in health** — Trends, `auth_sign_in`, breakdown `outcome`.
+6. **Errors** — Trends, `$exception`, daily (or pin the Error tracking list).
+7. **Learning funnel** — Funnel, window 30 days: `academy_course_started` → `academy_step_completed` → `academy_course_completed`, breakdown `course_id`.
+8. **Studio trial funnel** — as in `docs/studio-trial-analytics.md`: `studio_trial_started` → `studio_first_design_saved` → `studio_subscription_plans_viewed` → `studio_subscription_completed`.
+
+## 3. Alerts (on saved Trends insights: the bell icon › New alert, by e-mail)
+
+| Insight | Condition | Means |
+| --- | --- | --- |
+| `order_completed`, daily | below 1 over the last day (once sales have started) | checkout, Stripe or the webhook may be down |
+| `payment_failed` where `stage = load`, hourly | above 3 | the Stripe form does not load |
+| `payment_confirmation_slow`, hourly | above 0 | the webhook is late or failing |
+| `auth_sign_in` where `outcome = captcha`, hourly | above 5 | Turnstile refuses real people |
+| `auth_sign_up` where `outcome = emailSend`, daily | above 0 | the confirmation e-mail does not leave |
+| `$exception`, hourly | well above the usual level | a release broke something |
+
+## 4. Habits
+
+- **Replays from a funnel**: in a funnel, click the drop between two steps › "Watch recordings" to see what people did there.
+- **Annotations**: Product analytics › Annotations › add one at each production release ("Release 2026-11-20 — new cart"), so a curve change can be tied to it.
+- **Surveys** (later): a one-question survey at the end of the Studio trial or after a certificate; the cookie policy would need one more sentence first.
+- **Consent sample**: PostHog only sees visitors who accepted analytics. Use it for rates and friction; the money of record is `/admin/statistiques` and Stripe.
+
+## 5. Personal API keys (built 2026-11-13)
+
+Two keys, created by the owner on 2026-11-13, each with the fewest scopes:
+
+| Key | Scopes | Access | Stored as |
+| --- | --- | --- | --- |
+| Vercel – source maps | Error tracking: Write, Organization: Read | organization DoDigital (Organization: Read is refused on project-scoped keys) | Vercel build variable `POSTHOG_PERSONAL_API_KEY`, Production only, sensitive |
+| Supabase – account deletion | Person: Write | project Global Toothgems | Edge Function secret `POSTHOG_PERSON_DELETE_API_KEY` |
+
+- **Source maps**: `npm run build` = `next build` then `webapp/scripts/posthog-sourcemaps.mjs`. On a Vercel production build holding the key, `next.config.ts` turns on `productionBrowserSourceMaps`, the script runs the PostHog CLI (pinned `@posthog/cli`, fetched with npx, not a dependency — installs elsewhere never download its binary), which stamps the chunks, uploads the maps and deletes them; a failed upload deletes the maps itself and warns without failing the deployment. Nothing happens locally, in CI or on previews. Check after the first production deployment: the Vercel build log shows `[sourcemaps] uploaded to PostHog`, and a new error's stack trace in PostHog points at `src/…` files.
+- **Person deletion**: `delete-account` asks PostHog to delete the person behind the account id, with its events and recordings (`_shared/posthogPersons.ts`, `bulk_delete`), after the erasure and before the confirmation e-mail; a PostHog failure is logged (`analytics deletion failed`) and does not stop the erasure. Without the secret the step is skipped and logged.

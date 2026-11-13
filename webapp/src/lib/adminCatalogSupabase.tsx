@@ -5,6 +5,7 @@ import type {
   ActivityKind,
   AdminGemColor,
   AdminProduct,
+  AdminInclusion,
   BundleComponent,
   Category,
   GemColorDraft,
@@ -50,6 +51,7 @@ import {
   type AdminCatalogValue,
 } from "./adminCatalogContext";
 import { BUNDLE_SELECT, bundlePayload, isBundle, kitsContaining, rowsToBundles, sameBundle, type BundleRow } from "./productBundles";
+import { INCLUSION_SELECT, inclusionsPayload, rowsToInclusions, sameInclusions, type InclusionRow } from "./productInclusions";
 
 /**
  * Admin catalogue backed by Supabase.
@@ -135,23 +137,28 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         [productRes, categoryRes] = await Promise.all([loadProducts(ADMIN_PRODUCT_SELECT_BASE), loadCategories(ADMIN_CATEGORY_SELECT_BASE)]);
         productSelect.current = ADMIN_PRODUCT_SELECT_BASE;
       }
-      const [recommendationRes, colorRes, bundleRes] = await Promise.all([
+      const [recommendationRes, colorRes, bundleRes, inclusionRes] = await Promise.all([
         client.from("product_recommendations").select("product_id, recommended_product_id, kind, position"),
         client.from("gem_colors").select(ADMIN_GEM_COLOR_SELECT).order("position"),
         client.from("product_bundle_items").select(BUNDLE_SELECT),
+        client.from("product_inclusions").select(INCLUSION_SELECT),
       ]);
       if (cancelled) return;
       // A database without `…_product_bundles` has no kits: the catalogue still loads.
       if (bundleRes.error) console.warn("Admin catalogue: kits unavailable", bundleRes.error);
       bundlesSupported.current = !bundleRes.error;
       const bundles = rowsToBundles((bundleRes.data ?? []) as BundleRow[]);
-      const error = productRes.error ?? categoryRes.error ?? recommendationRes.error ?? colorRes.error;
+      // Packs (decision 139): a read failure is a load failure — saving would wipe what a pack grants.
+      const inclusions = rowsToInclusions((inclusionRes.data ?? []) as InclusionRow[]);
+      const error = inclusionRes.error ?? productRes.error ?? categoryRes.error ?? recommendationRes.error ?? colorRes.error;
       if (error) {
         console.error("Admin catalogue load failed", error);
         setLoadError(catalogErrorKind(error));
       } else {
         setProducts(
-          (productRes.data as unknown as ProductRow[]).map((row) => withBundle(rowToProduct(row, publicUrl), bundles)),
+          (productRes.data as unknown as ProductRow[]).map((row) =>
+            withInclusions(withBundle(rowToProduct(row, publicUrl), bundles), inclusions),
+          ),
         );
         setCategories((categoryRes.data as unknown as CategoryRow[]).map(rowToCategory));
         setRecommendations((recommendationRes.data as RecommendationRow[]).map(rowToRecommendation));
@@ -215,7 +222,7 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
     async (id: string): Promise<AdminProduct> => {
       const select = productSelect.current;
       const kitIds = kitsContaining(id, productsRef.current).map((kit) => kit.id);
-      const [fresh, kits, bundleRes] = await Promise.all([
+      const [fresh, kits, bundleRes, inclusionRes] = await Promise.all([
         client.from("products").select(select).eq("id", id).single(),
         kitIds.length > 0
           ? client.from("products").select(select).in("id", kitIds)
@@ -223,12 +230,22 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         bundlesSupported.current
           ? client.from("product_bundle_items").select(BUNDLE_SELECT).in("bundle_product_id", [id, ...kitIds])
           : Promise.resolve({ data: [] as unknown[], error: null }),
+        client.from("product_inclusions").select(INCLUSION_SELECT).eq("product_id", id),
       ]);
       if (fresh.error) return fail(fresh.error);
+      if (inclusionRes.error) return fail(inclusionRes.error);
       const bundles = rowsToBundles((bundleRes.data ?? []) as BundleRow[]);
-      const saved = withBundle(rowToProduct(fresh.data as unknown as ProductRow, publicUrl), bundles);
+      const inclusions = rowsToInclusions((inclusionRes.data ?? []) as InclusionRow[]);
+      const saved = withInclusions(withBundle(rowToProduct(fresh.data as unknown as ProductRow, publicUrl), bundles), inclusions);
       const kitRows = kits.error ? [] : ((kits.data ?? []) as unknown as ProductRow[]);
-      const freshKits = new Map(kitRows.map((row) => [row.id, withBundle(rowToProduct(row, publicUrl), bundles)]));
+      const kept = (kitId: string) => productsRef.current.find((p) => p.id === kitId)?.inclusions;
+      const freshKits = new Map(
+        kitRows.map((row) => {
+          const kit = withBundle(rowToProduct(row, publicUrl), bundles);
+          const kitInclusions = kept(row.id);
+          return [row.id, kitInclusions ? { ...kit, inclusions: kitInclusions } : kit];
+        }),
+      );
       setProducts((prev) => [
         saved,
         ...prev.filter((p) => p.id !== saved.id).map((p) => freshKits.get(p.id) ?? p),
@@ -294,6 +311,18 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
         if (bundleError) {
           await refresh(result.id).catch(() => undefined);
           return fail(bundleError);
+        }
+      }
+
+      // What the product grants (decision 139), only when it changed.
+      if (!sameInclusions(product.inclusions, before?.inclusions)) {
+        const { error: inclusionError } = await client.rpc("admin_save_product_inclusions", {
+          p_product_id: result.id,
+          p_inclusions: inclusionsPayload(product.inclusions),
+        });
+        if (inclusionError) {
+          await refresh(result.id).catch(() => undefined);
+          return fail(inclusionError);
         }
       }
 
@@ -609,6 +638,12 @@ export function SupabaseAdminCatalogProvider({ children, actor }: { children: Re
   );
 
   return <AdminCatalogContext.Provider value={value}>{children}</AdminCatalogContext.Provider>;
+}
+
+/** The product with what it grants, when it is a pack (decision 139). */
+function withInclusions(product: AdminProduct, inclusions: Map<string, AdminInclusion[]>): AdminProduct {
+  const list = inclusions.get(product.id);
+  return list ? { ...product, inclusions: list } : product;
 }
 
 /** The product with its kit composition, when it is a kit. */

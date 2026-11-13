@@ -3,6 +3,7 @@ import { RESET_PATH } from "./accountSecurity";
 import { authConfirmUrl } from "./authRoutes";
 import { isAuthRateLimit } from "./supabase/authErrors";
 import { authCaptchaToken } from "./captcha/authCaptcha";
+import { trackAuth } from "./authAnalytics";
 
 /**
  * Password recovery through Supabase Auth, used by `/mot-de-passe-oublie` and
@@ -24,8 +25,9 @@ export async function sendPasswordReset(email: string): Promise<RecoveryRequestR
     redirectTo: authConfirmUrl(RESET_PATH, window.location.origin),
     captchaToken: await authCaptchaToken(),
   });
-  if (!error) return "sent";
-  return isAuthRateLimit(error) ? "rateLimited" : "failed";
+  const outcome: RecoveryRequestResult = !error ? "sent" : isAuthRateLimit(error) ? "rateLimited" : "failed";
+  trackAuth("auth_password_reset_requested", { outcome });
+  return outcome;
 }
 
 /** Sets the new password for the session opened by the recovery link, then closes it. */

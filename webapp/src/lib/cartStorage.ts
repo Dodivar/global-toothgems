@@ -59,6 +59,13 @@ function parseLine(value: unknown): CartLine | null {
     // A course line is exactly what the course page writes: one seat, no product.
     if (!isText(courseId) || qty !== 1 || giftCard || dbProductId !== undefined || variantId !== undefined) return null;
   }
+  let pack: { course: boolean } | undefined;
+  if (line.pack !== undefined) {
+    const raw = line.pack as Record<string, unknown> | null;
+    // A pack line is one unit of a catalogue product.
+    if (typeof raw !== "object" || raw === null || typeof raw.course !== "boolean" || qty !== 1 || giftCard || courseId !== undefined) return null;
+    pack = { course: raw.course };
+  }
   return {
     id,
     productId,
@@ -72,6 +79,7 @@ function parseLine(value: unknown): CartLine | null {
     ...(variant === undefined ? {} : { variant: variant as string }),
     ...(giftCard ? { giftCard } : {}),
     ...(courseId === undefined ? {} : { courseId: courseId as string }),
+    ...(pack ? { pack } : {}),
   };
 }
 

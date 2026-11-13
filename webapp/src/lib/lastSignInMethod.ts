@@ -78,18 +78,21 @@ export function notePendingSignIn(provider: OAuthProvider, now: number = Date.no
  * Called with the user of a newly opened session: a fresh note whose provider
  * is among the session's identities becomes the last method. The note is
  * removed either way, so it cannot be confirmed by a later, unrelated session.
+ * Returns the provider confirmed (analytics: a sign-in back from Google or Apple), else null.
  */
-export function settlePendingSignIn(identities: readonly { provider?: string }[] | undefined, now: number = Date.now()): void {
+export function settlePendingSignIn(identities: readonly { provider?: string }[] | undefined, now: number = Date.now()): OAuthProvider | null {
   const store = storage();
-  if (!store) return;
+  if (!store) return null;
   let provider: OAuthProvider | null = null;
   try {
     provider = readPendingNote(store.getItem(PENDING_KEY), now);
     store.removeItem(PENDING_KEY);
   } catch {
-    return;
+    return null;
   }
-  if (provider && identitiesInclude(identities, provider)) rememberSignInMethod(provider);
+  if (!provider || !identitiesInclude(identities, provider)) return null;
+  rememberSignInMethod(provider);
+  return provider;
 }
 
 export function readSignInMethod(): SignInMethod | null {
