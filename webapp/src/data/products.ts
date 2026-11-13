@@ -562,18 +562,19 @@ export function relatedProducts(product: Product, list: Product[] = PRODUCTS): P
 export interface ShapeGroup {
   shape: GemShape;
   count: number;
-  /** Picture of the cut: its Aquamarine gem's photo, when the group has one. */
+  /** Picture of the cut: its plain Crystal gem's photo, when the group has one. */
   image?: string;
 }
 
 /** Colour whose photo stands for a cut on the shape tiles. */
-const SHAPE_PICTURE_COLOR = "aquamarine";
+const SHAPE_PICTURE_COLOR = "crystal";
 
 /**
- * The Aquamarine gem's photo: its light blue shows the cut's facets better than
- * the clear Crystal (owner's request, 2026-11-13; plain Crystal from 2026-11-03,
- * Crystal AB before). A gem whose colour was not set yet is recognised by a
- * name ending in "Aquamarine" / "Aigue-marine" ("Diamond Shape - Aquamarine").
+ * The plain Crystal gem's photo: clear, without the Crystal AB's iridescent
+ * reflections, so the tile shows the cut itself (decided by the owner,
+ * 2026-11-03; Crystal AB from 2026-10-29). A gem whose colour was not set yet
+ * is recognised by a name ending in "Crystal" ("Diamond Shape - Crystal",
+ * never "Crystal AB" or "Crystal Shimmer").
  */
 function shapePicture(gems: Product[]): string | undefined {
   const isPlainCrystal = (p: Product) =>
