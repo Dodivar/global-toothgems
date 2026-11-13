@@ -27,7 +27,7 @@ const STUDIO_TERMS_FILE = `conditions-abonnement-studio-3d-${STUDIO_TERMS_VERSIO
 Deno.test("one sample per database template and per Auth template, all to the owner", () => {
   const samples = buildShowcase(ctx);
   const templates = samples.flatMap((s) => (s.kind === "template" ? [s.request.templateKey] : []));
-  assertEquals(new Set(templates).size, 15);
+  assertEquals(new Set(templates).size, 18);
   assertEquals(samples.filter((s) => s.kind === "rendered").length, 2);
   for (const s of samples) {
     if (s.kind === "template") {

@@ -13,7 +13,8 @@ import type { SweepReport } from "../_shared/email/events.ts";
  * confirmed after its acknowledgement, and the shop withdrawal acknowledgements
  * (decision 131) the order-withdrawal function could not send at once, and
  * the Members' Lounge moderation e-mails (decision 132): statements of reasons,
- * report outcomes and complaint answers.
+ * report outcomes and complaint answers, and the automatic reminders
+ * (decision 141): abandoned cart, review request, loyalty reward waiting.
  * Called by pg_cron every 5 minutes.
  *
  * Deployed with verify_jwt = false (supabase/config.toml): the caller is the

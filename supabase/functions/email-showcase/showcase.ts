@@ -20,6 +20,7 @@ import { attachDocument } from "../_shared/email/invoicePdf.ts";
 import { orderConfirmationContent, refundContent, shippingContent, type OrderSnapshot } from "../_shared/email/orderContent.ts";
 import type { SendRequest } from "../_shared/email/send.ts";
 import { backInStockContent, stockDigestContent, type StockDigestItem } from "../_shared/email/stockContent.ts";
+import { abandonedCartContent, loyaltyRewardContent, reminderUnsubscribeUrl, reviewRequestContent } from "../_shared/email/reminderEmails.ts";
 import {
   studioDocumentContent,
   studioPlanName,
@@ -286,6 +287,47 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
             ctx.siteUrl,
             ctx.mediaBaseUrl,
           ),
+      },
+    },
+    {
+      kind: "template",
+      label: "Relance panier abandonné (avec consentement marketing)",
+      request: {
+        ...base, templateKey: "abandoned_cart", eventKey: key("abandoned_cart"),
+        variables: { first_name: "Camille" },
+        content: (locale) =>
+          abandonedCartContent(
+            { items: [{ name: ctx.product.name, variant: null, slug: ctx.product.slug, imagePath: ctx.product.imagePath }] },
+            locale,
+            ctx.siteUrl,
+            ctx.mediaBaseUrl,
+            reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),
+          ),
+      },
+    },
+    {
+      kind: "template",
+      label: "Demande d'avis après livraison",
+      request: {
+        ...base, templateKey: "review_request", eventKey: key("review_request"),
+        variables: { first_name: "Camille", order_number: ORDER.orderNumber },
+        content: (locale) =>
+          reviewRequestContent(
+            { items: [{ name: ctx.product.name, slug: ctx.product.slug, imagePath: ctx.product.imagePath }] },
+            locale,
+            ctx.siteUrl,
+            ctx.mediaBaseUrl,
+            reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),
+          ),
+      },
+    },
+    {
+      kind: "template",
+      label: "Récompense fidélité non utilisée",
+      request: {
+        ...base, templateKey: "loyalty_reward", eventKey: key("loyalty_reward"),
+        variables: { first_name: "Camille", reward_percent: "10" },
+        content: (locale) => loyaltyRewardContent(locale, ctx.siteUrl, reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE")),
       },
     },
     {

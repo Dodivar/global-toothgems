@@ -5137,6 +5137,25 @@
       "home": "Back to the home page"
     }
   },
+  "reminders": {
+    "unsubscribe": {
+      "eyebrow": "E-mail reminders",
+      "title": "Stop our automatic reminders",
+      "body": "These are the cart reminders, the review requests after delivery and the loyalty reward reminders. Your order e-mails (confirmation, shipping, invoices) will keep arriving.",
+      "action": "Stop these reminders",
+      "stopping": "Saving…",
+      "doneTitle": "Done",
+      "doneBody": "You will no longer get automatic reminders at this address. E-mails about your orders will keep arriving.",
+      "invalidTitle": "This link does not work",
+      "invalidBody": "It is incomplete or matches no address. Use the link in the latest e-mail you received, or contact us.",
+      "errorTitle": "We could not save your choice",
+      "errorBody": "A technical problem stopped us. Please try again in a moment.",
+      "unavailableTitle": "Service unavailable",
+      "unavailableBody": "This setting is not available right now. Contact us to stop our reminders.",
+      "retry": "Try again",
+      "home": "Back to the home page"
+    }
+  },
   "withdrawal": {
     "title": "Right of withdrawal",
     "cta": "Withdraw from the contract here",

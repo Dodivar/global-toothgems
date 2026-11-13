@@ -5,6 +5,7 @@ import { supabaseInvoiceSource } from "../_shared/email/invoicePdf.ts";
 import { supabaseTermsProvider } from "../_shared/email/termsPdf.ts";
 import { sendOrderWithdrawalEmails, supabaseWithdrawalSource } from "../_shared/email/withdrawalEmails.ts";
 import { sendLoungeModerationEmails, supabaseModerationMailSource } from "../_shared/email/loungeModerationEmails.ts";
+import { sendReminderEmails, supabaseReminderSource } from "../_shared/email/reminderEmails.ts";
 import { handleSendPendingEmails } from "./handler.ts";
 import { functionLogger } from "../_shared/log.ts";
 
@@ -24,13 +25,14 @@ Deno.serve((req) =>
       const db = serviceClient();
       const documents = supabaseInvoiceSource(db);
       const deps = emailDepsFromEnv();
+      const mediaBaseUrl = `${Deno.env.get("SUPABASE_URL") ?? ""}/storage/v1/object/public/product-media`;
       const report = await sendPendingEmails(deps, supabasePendingSource(db), {
         limit,
         log,
         invoices: documents,
         studioDocuments: documents,
         terms: supabaseTermsProvider(db, log),
-        mediaBaseUrl: `${Deno.env.get("SUPABASE_URL") ?? ""}/storage/v1/object/public/product-media`,
+        mediaBaseUrl,
       });
       // Shop withdrawal acknowledgements that order-withdrawal could not send at once (decision 131).
       let orderWithdrawal;
@@ -48,7 +50,9 @@ Deno.serve((req) =>
         log("lounge moderation sweep failed", error instanceof Error ? error.message : error);
         loungeModeration = { examined: 0, sent: 0, skipped: 0, failed: 1 };
       }
-      return { ...report, orderWithdrawal, loungeModeration };
+      // Automatic reminders (decision 141): abandoned cart, review request, loyalty reward. Each never throws.
+      const reminders = await sendReminderEmails(deps, supabaseReminderSource(db), { limit, log, mediaBaseUrl });
+      return { ...report, orderWithdrawal, loungeModeration, ...reminders };
     },
     log,
   })

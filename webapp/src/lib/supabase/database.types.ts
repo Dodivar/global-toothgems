@@ -2635,6 +2635,30 @@ export type Database = {
           },
         ]
       }
+      email_reminder_preferences: {
+        Row: {
+          created_at: string
+          opted_out_at: string | null
+          recipient_hash: string
+          unsubscribe_token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          opted_out_at?: string | null
+          recipient_hash: string
+          unsubscribe_token?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          opted_out_at?: string | null
+          recipient_hash?: string
+          unsubscribe_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_template_translations: {
         Row: {
           body: string
@@ -11325,6 +11349,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      email_reminder_token: { Args: { p_email: string }; Returns: string }
       email_template_for: {
         Args: { p_key: string; p_locale: string }
         Returns: {
@@ -11636,6 +11661,17 @@ export type Database = {
         Args: { p_token: string }
         Returns: Json
       }
+      pending_abandoned_cart_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          first_name: string
+          items: Json
+          locale: string
+          order_id: string
+          order_number: string
+        }[]
+      }
       pending_back_in_stock_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -11670,6 +11706,17 @@ export type Database = {
           kind: string
           locale: string
           payload: Json
+        }[]
+      }
+      pending_loyalty_reward_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          card_id: string
+          email: string
+          first_name: string
+          locale: string
+          reward_percent: number
+          user_id: string
         }[]
       }
       pending_newsletter_contacts: {
@@ -11710,6 +11757,17 @@ export type Database = {
           order_id: string
           order_number: string
           refund_id: string
+        }[]
+      }
+      pending_review_request_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          first_name: string
+          items: Json
+          locale: string
+          order_id: string
+          order_number: string
         }[]
       }
       pending_shipping_emails: {
@@ -12537,6 +12595,10 @@ export type Database = {
           checkout_session_ids: string[]
           order_id: string
         }[]
+      }
+      unsubscribe_email_reminders: {
+        Args: { p_token: string }
+        Returns: boolean
       }
       vat_included: {
         Args: { p_amount: number; p_rate_bp: number }

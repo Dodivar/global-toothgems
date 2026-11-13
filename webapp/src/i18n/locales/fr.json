@@ -5137,6 +5137,25 @@
       "home": "Retour à l’accueil"
     }
   },
+  "reminders": {
+    "unsubscribe": {
+      "eyebrow": "Rappels par e-mail",
+      "title": "Ne plus recevoir nos rappels automatiques",
+      "body": "Il s’agit des rappels de panier, des demandes d’avis après livraison et des rappels de récompense fidélité. Vos e-mails de commande (confirmation, expédition, factures) continueront d’arriver.",
+      "action": "Ne plus recevoir ces rappels",
+      "stopping": "Enregistrement…",
+      "doneTitle": "C’est noté",
+      "doneBody": "Vous ne recevrez plus de rappels automatiques à cette adresse. Les e-mails liés à vos commandes, eux, continueront d’arriver.",
+      "invalidTitle": "Ce lien ne fonctionne pas",
+      "invalidBody": "Il est incomplet ou ne correspond à aucune adresse. Utilisez le lien du dernier e-mail reçu, ou contactez-nous.",
+      "errorTitle": "L’enregistrement n’a pas pu aboutir",
+      "errorBody": "Un problème technique nous en a empêchés. Réessayez dans un moment.",
+      "unavailableTitle": "Service indisponible",
+      "unavailableBody": "Ce réglage n’est pas disponible pour le moment. Contactez-nous pour ne plus recevoir nos rappels.",
+      "retry": "Réessayer",
+      "home": "Retour à l’accueil"
+    }
+  },
   "withdrawal": {
     "title": "Droit de rétractation",
     "cta": "Se rétracter du contrat ici",
