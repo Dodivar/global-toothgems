@@ -16,7 +16,7 @@ import { isShapeFirstFamily, shapeHref } from "../lib/shopUrl";
  *  the whole range at once before narrowing the collection. With `?famille=`
  *  (Swarovski) it is the step before that family's products: only its cuts,
  *  each leading to the shop already filtered on family and cut. A cut is shown
- *  by its Aquamarine gem's photo when there is one, else by its line drawing. */
+ *  by its plain Crystal gem's photo when there is one, else by its line drawing. */
 export function Shapes() {
   const { t, i18n } = useTranslation();
   const { products } = useCatalog();
