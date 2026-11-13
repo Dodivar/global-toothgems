@@ -5,18 +5,19 @@ import { loadLegalStore } from "../_shared/email/termsPdf.ts";
 import { isValidAddress } from "../_shared/email/send.ts";
 import { hasInternalSecret } from "../_shared/internalAuth.ts";
 import { json, readJson } from "../_shared/http.ts";
-import { buildShowcase, type Sample, withDocuments } from "./showcase.ts";
+import { buildShowcase, onlyTemplates, type Sample, withDocuments } from "./showcase.ts";
 import { functionLogger } from "../_shared/log.ts";
 
 /*
- * POST /functions/v1/email-showcase  { "to": "<address>", "only_documents"?: true }
+ * POST /functions/v1/email-showcase  { "to": "<address>", "only_documents"?: true, "only"?: ["<template key>", …] }
  *
  * Sends one sample of every e-mail the site sends to one address, so the
  * owner sees them all (see showcase.ts). Deployed with verify_jwt = false
  * (supabase/config.toml): the caller is the database or the team, with the
  * shared secret EMAIL_INTERNAL_SECRET in `x-internal-secret`, like the other
  * e-mail jobs. `only_documents` keeps the samples carrying a PDF: an invoice,
- * a credit note or the terms of sale (decision 130). Answer: the status of each sample, no content.
+ * a credit note or the terms of sale (decision 130); `only` keeps the samples of those database templates
+ * (e.g. ["abandoned_cart", "review_request", "loyalty_reward"]). Answer: the status of each sample, no content.
  */
 
 const log = functionLogger("email-showcase");
@@ -48,6 +49,10 @@ Deno.serve(async (req) => {
   const to = body && typeof body === "object" ? (body as { to?: unknown }).to : undefined;
   if (typeof to !== "string" || !isValidAddress(to.trim())) return json({ error: "invalid_recipient" }, 400);
   const onlyDocuments = (body as { only_documents?: unknown }).only_documents === true;
+  const only = (body as { only?: unknown }).only;
+  if (only !== undefined && (!Array.isArray(only) || only.length === 0 || only.length > 30 || !only.every((k) => typeof k === "string"))) {
+    return json({ error: "invalid_only" }, 400);
+  }
 
   try {
     const deps = emailDepsFromEnv();
@@ -62,7 +67,8 @@ Deno.serve(async (req) => {
       product: { name: "Kit d’Application Premium", slug: "kit-application-premium", imagePath: "products/kit-application-premium/01.jpg" },
     });
 
-    const samples = onlyDocuments ? withDocuments(all) : all;
+    const filtered = only ? onlyTemplates(all, only as string[]) : all;
+    const samples = onlyDocuments ? withDocuments(filtered) : filtered;
     const results: { label: string; status: string; error?: string }[] = [];
     for (const sample of samples) {
       try {
