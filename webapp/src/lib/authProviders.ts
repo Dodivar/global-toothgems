@@ -14,6 +14,15 @@ import { isSupabaseConfigured, supabasePublishableKey, supabaseUrl } from "./sup
  * answer: it has been live since 2026-10-04.
  */
 
+/**
+ * Sign in with Apple is postponed (owner, 2026-11-13: the Apple Developer
+ * Program costs $99 a year, not worth it before launch). While false, no Apple
+ * button is shown and `signInWithApple` refuses, whatever Supabase says; the
+ * code stays ready (decision 138). Set to true once the owner has an Apple
+ * Developer account and has switched Apple on in Supabase Auth.
+ */
+export const APPLE_SIGN_IN_ENABLED = false;
+
 export type OAuthProvider = "google" | "apple";
 
 /** Reads `external` from the settings answer; anything unexpected means "off". */
@@ -42,10 +51,15 @@ function loadEnabledProviders(): Promise<Set<OAuthProvider>> {
   return pending;
 }
 
-/** True once the project says Apple sign-in is on (false on the server, while loading, and in mock mode). */
+/**
+ * True once the project says Apple sign-in is on (false on the server, while
+ * loading, in mock mode, and always while `APPLE_SIGN_IN_ENABLED` is false —
+ * then nothing is fetched).
+ */
 export function useAppleSignInEnabled(): boolean {
   const [enabled, setEnabled] = useState(false);
   useEffect(() => {
+    if (!APPLE_SIGN_IN_ENABLED) return;
     let active = true;
     void loadEnabledProviders().then((providers) => {
       if (active) setEnabled(providers.has("apple"));
