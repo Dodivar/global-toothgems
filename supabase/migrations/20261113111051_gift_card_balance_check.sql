@@ -16,9 +16,9 @@
 -- Anti-enumeration: an unknown code, a card waiting for its payment ('pending'), a card whose
 -- order was never paid ('void') and a card not yet delivered (scheduled `deliver_at`) all give
 -- the same `{ok: true, found: false}`; nobody legitimately holds those codes yet. Each of these
--- refusals is counted in `gift_card_code_attempts`, the same per-caller counter as the cart's
--- quote_gift_cards() (10 per 10 minutes): a member cannot double their guesses by alternating
--- between the cart and this check. Visitors are keyed by a SHA-256 hash of their address
+-- refusals is counted in `gift_card_code_attempts` (10 per 10 minutes). A member's key is the same as in
+-- the cart's quote_gift_cards() ('user:<id>'), so they cannot double their guesses by alternating
+-- between the cart and this check; visitors are keyed by address hash here, raw address there. Visitors are keyed by a SHA-256 hash of their address
 -- ('iph:<hash>'), never the address itself. The codes' ~60 random bits already make blind
 -- guessing impractical; the throttle and the captcha keep it that way.
 --
