@@ -1,3 +1,4 @@
+import { parsePath, type PublicRouteId } from "./localeRoutes";
 import { isSupabaseConfigured } from "./supabase/env";
 
 /**
@@ -19,16 +20,29 @@ export const META_PIXEL_ID = /^\d{5,20}$/.test(raw) ? raw : "";
 export const ADVERTISING_ENABLED = META_PIXEL_ID !== "" && isSupabaseConfigured;
 
 /**
- * Pages the pixel may see: the public storefront only (`/fr/…`, `/en/…`),
- * never the member space, the back office, sign-in, the Studio workspace or
- * the learner pages, and never the guest withdrawal page (its e-mailed link
- * leads to an order's lines and e-mail address). An allow-list, like
- * `replayAllowed()` (`posthogConfig.ts`).
+ * The pages the pixel may see: the shop's own pages only, as the cookie
+ * policy says — home, catalogue, product pages, shapes, colours, cart and its
+ * confirmation, gift cards, the loyalty programme. An allow-list of public
+ * route ids, so a new page is not tracked until someone decides it should be.
+ * Never the 3D Studio's pages (sold by the publisher, another seller,
+ * decision 135), the Glowbook (artists' pages), the Academy, help, legal and
+ * contact pages, the guest withdrawal page (its e-mailed link leads to an
+ * order's lines and e-mail), nor anything outside `/fr` and `/en` (member
+ * space, back office, sign-in, Studio workspace, learner pages).
  */
-const PIXEL_EXCLUDED_PUBLIC = ["/fr/retours-remboursements/retractation", "/en/returns/withdrawal"];
+const PIXEL_ROUTES: ReadonlySet<PublicRouteId> = new Set<PublicRouteId>([
+  "home",
+  "shop",
+  "product",
+  "shapes",
+  "colours",
+  "cart",
+  "checkoutReturn",
+  "giftCard",
+  "loyalty",
+]);
 
 export function pixelAllowedPath(pathname: string): boolean {
-  const path = pathname.split(/[?#]/)[0] ?? "";
-  if (PIXEL_EXCLUDED_PUBLIC.some((excluded) => path === excluded || path.startsWith(`${excluded}/`))) return false;
-  return /^\/(fr|en)(\/|$)/.test(path);
+  const route = parsePath(pathname.split(/[?#]/)[0] ?? "").route;
+  return route !== null && PIXEL_ROUTES.has(route.id);
 }

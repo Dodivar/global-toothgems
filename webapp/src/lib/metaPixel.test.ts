@@ -57,4 +57,27 @@ describe("pixelAllowedPath", () => {
     expect(pixelAllowedPath("/en/returns/withdrawal")).toBe(false);
     expect(pixelAllowedPath("/french")).toBe(false);
   });
+
+  it("allows the shop's pages only, not the Studio, Glowbook, Academy, help or legal pages", () => {
+    for (const path of ["/fr", "/en/shop", "/fr/formes", "/en/colours", "/en/cart", "/fr/carte-cadeau", "/en/loyalty"]) {
+      expect(pixelAllowedPath(path)).toBe(true);
+    }
+    for (const path of [
+      "/fr/studio-3d",
+      "/en/3d-studio/subscribe",
+      "/fr/glowbook",
+      "/en/glowbook/some-artist",
+      "/fr/academy",
+      "/en/academy/course/masterclass",
+      "/fr/aide/faq",
+      "/en/contact",
+      "/fr/cookies",
+      "/en/terms-of-sale",
+      "/fr/livraison",
+      "/en/returns",
+      "/fr/inconnu",
+    ]) {
+      expect(pixelAllowedPath(path)).toBe(false);
+    }
+  });
 });

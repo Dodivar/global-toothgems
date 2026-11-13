@@ -4739,6 +4739,7 @@
       "customize": "Customize",
       "save": "Save my choices",
       "settingsTitle": "Cookie settings",
+      "settingsBodyAdvertising": "Choose separately whether you accept audience measurement and advertising. Each stays off until you switch it on. No other advertising or social-network cookies are used.",
       "settingsBody": "Choose whether you accept audience measurement. It stays off until you switch it on. We use no advertising or social-network cookies.",
       "settingsFoot": "Your choice is kept for 6 months; you can change it at any time.",
       "settingsLink": "Cookie settings",

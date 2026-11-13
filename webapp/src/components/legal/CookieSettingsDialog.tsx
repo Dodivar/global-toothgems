@@ -7,6 +7,7 @@ import { Button } from "../ui/Button";
 import { ToggleSwitch } from "../admin/ToggleSwitch";
 import { NO_OPTIONAL_CONSENT, OPTIONAL_CATEGORIES, useCookieConsent, type ConsentChoices } from "../../lib/cookieConsent";
 import { LEGAL_PATHS } from "../../data/legal/routes";
+import { ADVERTISING_ENABLED } from "../../lib/metaPixelConfig";
 
 /**
  * Cookie preferences, one switch per optional category, each with the
@@ -37,7 +38,7 @@ function CookieSettingsPanel() {
       open
       onClose={closeSettings}
       title={t("legal.cookies.settingsTitle")}
-      description={t("legal.cookies.settingsBody")}
+      description={t(ADVERTISING_ENABLED ? "legal.cookies.settingsBodyAdvertising" : "legal.cookies.settingsBody")}
       icon={<Cookie size={17} />}
       closeLabel={t("common.close")}
       footer={

@@ -544,7 +544,12 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
+          text: ADVERTISING_ENABLED
+            ? l(
+                "Nous ne prenons aucune décision produisant des effets juridiques à votre égard sur la seule base d’un traitement automatisé. Nous ne faisons pas nous-mêmes de profilage publicitaire ; si vous acceptez la catégorie « Publicité », Meta peut utiliser les événements du pixel (produits consultés, achats) pour vous montrer nos publicités sur Facebook et Instagram (voir la <<politique cookies|/cookies>>). Notre prestataire de paiement analyse automatiquement chaque transaction pour détecter la fraude et peut refuser un paiement à risque : dans ce cas, contactez-nous pour qu’une personne examine la situation.",
+                "We make no decision with legal effects on you based solely on automated processing. We do no advertising profiling ourselves; if you accept the “Advertising” category, Meta may use the pixel’s events (products viewed, purchases) to show you our ads on Facebook and Instagram (see the <<cookie policy|/cookies>>). Our payment provider automatically analyses each transaction to detect fraud and may decline a risky payment: if that happens, contact us so that a person can look into it.",
+              )
+            : l(
             "Nous ne prenons aucune décision produisant des effets juridiques à votre égard sur la seule base d’un traitement automatisé, et ne faisons pas de profilage publicitaire. Notre prestataire de paiement analyse automatiquement chaque transaction pour détecter la fraude et peut refuser un paiement à risque : dans ce cas, contactez-nous pour qu’une personne examine la situation.",
             "We make no decision with legal effects on you based solely on automated processing, and do no advertising profiling. Our payment provider automatically analyses each transaction to detect fraud and may decline a risky payment: if that happens, contact us so that a person can look into it.",
           ),

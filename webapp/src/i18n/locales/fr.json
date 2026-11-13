@@ -4739,6 +4739,7 @@
       "customize": "Personnaliser",
       "save": "Enregistrer mes choix",
       "settingsTitle": "Paramètres cookies",
+      "settingsBodyAdvertising": "Choisissez séparément si vous acceptez la mesure d’audience et la publicité. Chacune reste désactivée tant que vous ne l’activez pas. Aucun autre cookie publicitaire ni de réseau social n’est utilisé.",
       "settingsBody": "Choisissez si vous acceptez la mesure d’audience. Elle reste désactivée tant que vous ne l’activez pas. Nous n’utilisons aucun cookie publicitaire ni de réseau social.",
       "settingsFoot": "Votre choix est conservé 6 mois ; vous pouvez le modifier à tout moment.",
       "settingsLink": "Paramètres cookies",

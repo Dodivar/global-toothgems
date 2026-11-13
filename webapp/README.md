@@ -737,9 +737,11 @@ publication.
   records the visitor's choice in localStorage (`gt-cookie-consent`) and gates
   PostHog: it captures and stores nothing (`opt_out_persistence_by_default` in
   `instrumentation-client.ts`) until the analytics category is accepted, and
-  withdrawing erases its identifier. Analytics is the only optional category
-  (the site has no preference, advertising or social-network tracker; add a
-  category only with the tracker it gates). It starts off, "Reject" is as
+  withdrawing erases its identifier. Analytics is always offered; advertising
+  (the Meta Pixel, `lib/metaPixel.tsx`, decision 143) only once
+  `NEXT_PUBLIC_META_PIXEL_ID` is set (`lib/metaPixelConfig.ts`); the site has no
+  preference or social-network tracker (add a category only with the tracker it
+  gates). It starts off, "Reject" is as
   prominent as "Accept", a choice stands 6 months (CNIL recommendation) and the
   dialog can be reopened from "Cookie settings" in the footer. The inventory in
   `data/legal/cookies.ts` lists every cookie and browser storage the site writes:

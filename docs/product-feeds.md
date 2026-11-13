@@ -10,7 +10,7 @@ What the site provides, and what the owner sets up in Google and Meta. Decided b
 | French feed | `https://<domain>/feeds/google-fr.xml` | Items link to `/fr/boutique/<slug>` |
 | English feed | `https://<domain>/feeds/google-en.xml` | Items link to `/en/shop/<slug>` |
 | Product structured data | every product page (`<script type="application/ld+json">`) | `Product` with one `Offer`, or `ProductGroup` with one `Offer` per variant |
-| Meta Pixel | storefront pages, only with the "Advertising" cookie consent | `NEXT_PUBLIC_META_PIXEL_ID` on Vercel |
+| Meta Pixel | the shop's pages, only with the "Advertising" cookie consent | `NEXT_PUBLIC_META_PIXEL_ID` on Vercel |
 
 - **One item per variant**, its id = the variant's row id (the product's row id when it has no variants). The same
   id goes in the Pixel's `content_ids`, so Meta can match ads, events and catalogue.
@@ -92,6 +92,8 @@ No Instagram Shop, no Conversions API.
    - redeploy;
    - only then does the cookie banner offer "Advertising" and the cookie and privacy policies describe the pixel.
      Without the variable, nothing changes.
+   - in the same change, a developer bumps `LEGAL_POLICY_VERSION` (`webapp/src/lib/registration.ts`): the privacy
+     policy accepted at sign-up then names Meta.
 6. Link the pixel to the catalogue (Commerce Manager › the catalogue › Events) so ViewContent / AddToCart / Purchase
    events match its items.
 
@@ -103,7 +105,9 @@ No Instagram Shop, no Conversions API.
   - Visitors who chose before the category existed are not asked again until their choice expires (6 months). Until
     then the pixel stays off for them.
 - `webapp/src/lib/metaPixel.tsx`:
-  - loads `fbevents.js` only after consent and only on `/fr/…` and `/en/…` pages, never on the guest withdrawal page;
+  - loads `fbevents.js` only after consent and only on the shop's pages (home, catalogue, products, shapes, colours,
+    cart and confirmation, gift cards, loyalty; `PIXEL_ROUTES` in `lib/metaPixelConfig.ts`), never on the 3D Studio,
+    Glowbook, Academy, help, legal or withdrawal pages, nor in the member space or back office;
   - no automatic events (`autoConfig` off), no history tracking of its own, no user data;
   - leaving the storefront or withdrawing consent revokes the pixel (`fbq('consent','revoke')`); withdrawing also
     erases `_fbp` / `_fbc`.

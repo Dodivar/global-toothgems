@@ -146,10 +146,12 @@ const sentInPage = new Set<string>();
 /**
  * `trackPixel` at most once per key in this tab (a reload of the confirmation
  * page does not count an order twice). Its own guard: the analytics one
- * (`analyticsCore.ts`) stands only with the analytics consent.
+ * (`analyticsCore.ts`) stands only with the analytics consent. Only once the
+ * pixel is granted (a purchase is always reported after the consent was
+ * read): nothing is written to the browser without the advertising consent.
  */
 export function trackPixelOnce(key: string, event: PixelEvent, params: PixelParams, eventId?: string) {
-  if (!ADVERTISING_ENABLED || typeof window === "undefined" || sentInPage.has(key)) return;
+  if (!granted || typeof window === "undefined" || sentInPage.has(key)) return;
   sentInPage.add(key);
   try {
     const storageKey = `gt-pixel-evt:${key}`;
