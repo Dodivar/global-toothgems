@@ -845,6 +845,8 @@
   "training": {
     "eyebrow": "Certified training",
     "heroScript": "Academy",
+    "ratingLink_one": "{{rating}} out of 5 · {{count}} student review",
+    "ratingLink_other": "{{rating}} out of 5 · {{count}} student reviews",
     "metaLevel": "Level",
     "metaModulesLabel": "Curriculum",
     "metaLessonsLabel": "Lessons",

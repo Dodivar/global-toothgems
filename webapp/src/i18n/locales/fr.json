@@ -845,6 +845,8 @@
   "training": {
     "eyebrow": "Formation certifiante",
     "heroScript": "Académie",
+    "ratingLink_one": "{{rating}} sur 5 · {{count}} avis d’élève",
+    "ratingLink_other": "{{rating}} sur 5 · {{count}} avis d’élèves",
     "metaLevel": "Niveau",
     "metaModulesLabel": "Programme",
     "metaLessonsLabel": "Leçons",

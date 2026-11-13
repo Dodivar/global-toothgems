@@ -189,6 +189,7 @@
     "signedOutCourse": "Following this training?",
     "signIn": "Sign in to review",
     "verifiedOnly": "Only customers with a matching order can review, so every review here is a real experience.",
+    "verifiedOnlyCourse": "Only students enrolled in this training, halfway through or once finished, can review it, so every review here is a real experience.",
     "awaitingShipment": "You can review this product once order {{ref}} has shipped.",
     "needsProgress": "Reviews open at {{threshold}}% of the training, so they speak from real experience. You’re at {{pct}}%.",
     "progressLabel": "Training progress",

@@ -1,7 +1,7 @@
 import { indexPriceReferences, type PriceReference, type PriceReferenceRow } from "../storefrontOffers";
 import type { Localized } from "../../data/types";
 import { toMinorUnits } from "../catalog/money";
-import { COURSE_CATEGORIES, COURSE_LEVELS, type CourseCategory, type CourseLevel, type PublicCourse, type PublicModule, previewStepTitle } from "./publicCourse";
+import { COURSE_CATEGORIES, COURSE_LEVELS, type CourseCategory, type CourseLevel, type CourseRating, type PublicCourse, type PublicModule, previewStepTitle } from "./publicCourse";
 
 /**
  * Rows of the published Academy (`lib/academy/api.ts`) → `PublicCourse`.
@@ -136,7 +136,25 @@ function mapModule(row: NonNullable<PublicCourseRow["course_modules"]>[number], 
  * `reference`: the course's `storefront_price_references()` row (decision 129, Omnibus). The struck-out price is its
  * reference price, only when the database says the price now is a reduction from it — never the list price.
  */
-export function mapPublicCourse(row: PublicCourseRow, price: CoursePriceRow | undefined, reference: PriceReference | null = null): PublicCourse {
+/** A `course_review_stats` row (published reviews only). */
+export interface CourseReviewStatsRow {
+  course_id: string | null;
+  average_rating: number | null;
+  review_count: number | null;
+}
+
+/** The rating a course shows: only with at least one published review and a readable average. */
+export function courseRating(stats: CourseReviewStatsRow | undefined): CourseRating | null {
+  if (!stats || !stats.review_count || stats.review_count < 1 || stats.average_rating == null) return null;
+  return { average: Number(stats.average_rating), count: stats.review_count };
+}
+
+export function mapPublicCourse(
+  row: PublicCourseRow,
+  price: CoursePriceRow | undefined,
+  reference: PriceReference | null = null,
+  stats?: CourseReviewStatsRow,
+): PublicCourse {
   const t = english(row.course_translations);
   const listPrice = toMinorUnits(row.price);
   // Without its current price (a view row RLS hides at the same time as the
@@ -173,13 +191,20 @@ export function mapPublicCourse(row: PublicCourseRow, price: CoursePriceRow | un
           alt: optional(cover.alt_text, english(cover.training_media_translations)?.alt_text),
         }
       : null,
+    rating: courseRating(stats),
     modules: byPosition(row.course_modules).map(mapModule),
     enrolment: "sale",
   };
 }
 
-export function mapPublicCourses(rows: PublicCourseRow[], prices: CoursePriceRow[], references: readonly PriceReferenceRow[] = []): PublicCourse[] {
+export function mapPublicCourses(
+  rows: PublicCourseRow[],
+  prices: CoursePriceRow[],
+  references: readonly PriceReferenceRow[] = [],
+  stats: readonly CourseReviewStatsRow[] = [],
+): PublicCourse[] {
   const byCourse = new Map(prices.map((price) => [price.course_id, price]));
   const index = indexPriceReferences(references);
-  return rows.map((row) => mapPublicCourse(row, byCourse.get(row.id), index.course(row.id)));
+  const ratings = new Map(stats.filter((s) => s.course_id).map((s) => [s.course_id as string, s]));
+  return rows.map((row) => mapPublicCourse(row, byCourse.get(row.id), index.course(row.id), ratings.get(row.id)));
 }
