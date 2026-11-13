@@ -12,7 +12,7 @@ import { REMINDER_TOKEN_RE, stopEmailReminders, type StopRemindersResult } from 
 type Phase = "ready" | "stopping" | StopRemindersResult;
 
 /**
- * Where the reminder e-mails' "stop these reminders" link lands (decision 141):
+ * Where the reminder e-mails' "stop these reminders" link lands (decision 142):
  * `/rappels/desinscription?token=…`. Nothing happens on the visit itself — mail scanners
  * open links — only when the visitor presses the button.
  */

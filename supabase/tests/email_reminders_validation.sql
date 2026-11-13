@@ -1,5 +1,5 @@
 -- =============================================================================
--- Reminder e-mails validation suite (migration 20261113111250_email_reminders, decision 141)
+-- Reminder e-mails validation suite (migration 20261113111250_email_reminders, decision 142)
 -- =============================================================================
 -- Proves:
 --

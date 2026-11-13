@@ -1,5 +1,5 @@
 /**
- * Automatic reminder e-mails (decision 141), swept by `send-pending-emails`:
+ * Automatic reminder e-mails (decision 142), swept by `send-pending-emails`:
  *
  *   abandoned_cart   abandoned_cart:<order id>   a payment abandoned 3 hours ago, only
  *                                                with marketing consent (SQL decides)

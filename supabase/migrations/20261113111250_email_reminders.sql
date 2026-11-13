@@ -1,4 +1,4 @@
--- Automatic reminder e-mails (decision 141): abandoned cart, review request
+-- Automatic reminder e-mails (decision 142): abandoned cart, review request
 -- after delivery, unused loyalty reward. Three new e-mails on the existing
 -- pipeline (email_log claim, pending_* functions, send-pending-emails swept by
 -- pg_cron every 5 minutes, templates in email_templates).
@@ -19,7 +19,7 @@
 -- (email_reminder_preferences). Never twice: the email_log event key, plus a
 -- per-address cap (30 days for carts and reviews, 60 for the loyalty reward).
 --
--- Consent (decision 141 (a), to confirm with a lawyer — supabase/README.md,
+-- Consent (decision 142 (a), to confirm with a lawyer — supabase/README.md,
 -- "Review of 2026-11-11"): the abandoned cart reminder is treated as
 -- commercial prospection, so it goes only to an address that gave marketing
 -- consent — a member with profiles.marketing_opt_in, or an address subscribed
@@ -169,7 +169,7 @@ grant execute on function public.unsubscribe_email_reminders(text) to anon, auth
 --   * it was cancelled because the payment was abandoned: `expired` (Stripe
 --     session or reservation ran out) or `payment_step_left` — never
 --     `checkout_failed` (our failure), `free_order`, `payment_failed`
---     (a declined payment: decision 141 (c)) or a staff cancellation;
+--     (a declined payment: decision 142 (c)) or a staff cancellation;
 --   * between abandoned_cart_delay_hours and 48 hours ago (no backlog);
 --   * it is the customer's latest order: no later order of any status for the
 --     same address or account (a later paid order, or one being paid, means
@@ -377,17 +377,17 @@ grant execute on function public.pending_loyalty_reward_emails(integer) to servi
 -- ---------------------------------------------------------------------------
 insert into public.email_templates (key, name, description, subject, preheader, body, variables, translation_priority) values
   ('abandoned_cart', 'Abandoned cart reminder',
-   'Sent once, 3 hours after a payment was abandoned, to a customer who gave marketing consent (decision 141)',
+   'Sent once, 3 hours after a payment was abandoned, to a customer who gave marketing consent (decision 142)',
    'Votre sélection vous attend', 'Les articles de votre panier sont toujours sur la boutique.',
    E'Bonjour {{first_name}},\n\nVous avez commencé une commande sur Global Toothgems sans la finaliser : aucun paiement n''a été pris et rien ne vous sera facturé.\n\nVos articles sont toujours sur la boutique, mais nous ne pouvons pas les réserver. Si vous le souhaitez, retrouvez-les ci-dessous.\n\nUne question sur un produit ou sur le paiement ? Répondez simplement à cet e-mail.',
    array['first_name'], 'normal'),
   ('review_request', 'Review request after delivery',
-   'Sent once per delivered order, a few days after the last parcel arrived, for the products not reviewed yet (decision 141)',
+   'Sent once per delivered order, a few days after the last parcel arrived, for the products not reviewed yet (decision 142)',
    'Votre avis sur votre commande {{order_number}}', 'Quelques mots suffisent et aident les autres clientes.',
    E'Bonjour {{first_name}},\n\nVotre commande {{order_number}} vous est parvenue il y a quelques jours : nous espérons qu''elle vous plaît.\n\nVotre avis compte beaucoup, pour nous comme pour les autres clientes et artistes. Quelques mots et une note suffisent ; vous pouvez aussi ajouter des photos.\n\nLes avis sont publiés après une vérification de notre équipe. Ils reflètent l''expérience de clientes ayant réellement acheté le produit.',
    array['first_name', 'order_number'], 'normal'),
   ('loyalty_reward', 'Loyalty reward waiting',
-   'Sent once when a member''s full loyalty card has waited a week without its reward being used (decision 141)',
+   'Sent once when a member''s full loyalty card has waited a week without its reward being used (decision 142)',
    'Votre récompense de -{{reward_percent}} % vous attend', 'Votre carte de fidélité est complète.',
    E'Bonjour {{first_name}},\n\nVotre carte de fidélité Global Toothgems est complète depuis quelques jours : une réduction de {{reward_percent}} % vous attend sur votre prochaine commande.\n\nPour l''utiliser, connectez-vous et cochez la récompense dans votre panier, avant le paiement. Elle s''applique aux articles de la boutique.\n\nMerci pour votre fidélité !',
    array['first_name', 'reward_percent'], 'normal');

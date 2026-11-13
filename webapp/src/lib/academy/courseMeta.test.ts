@@ -22,6 +22,7 @@ const course: PublicCourse = {
   referencePrice: null,
   promotionEndsAt: null,
   cover: { src: "/media/formations/abc?v=1", alt: null },
+  rating: null,
   modules: [],
   enrolment: "sale",
 };
@@ -55,5 +56,12 @@ describe("course head", () => {
       provider: { "@type": "Organization", name: "Global Toothgems" },
     });
     expect(data).not.toHaveProperty("offers");
+    expect(data).not.toHaveProperty("aggregateRating");
+  });
+
+  it("rates the course only from its published reviews", () => {
+    const data = courseJsonLd({ ...course, rating: { average: 4.7, count: 3 } }, "fr", new URL("https://example.test"));
+    expect(data.aggregateRating).toEqual({ "@type": "AggregateRating", ratingValue: 4.7, reviewCount: 3 });
+    expect(courseJsonLd({ ...course, rating: { average: 5, count: 0 } }, "fr", new URL("https://example.test"))).not.toHaveProperty("aggregateRating");
   });
 });

@@ -189,6 +189,7 @@
     "signedOutCourse": "Vous suivez cette formation ?",
     "signIn": "Se connecter pour donner son avis",
     "verifiedOnly": "Seules les clientes ayant une commande correspondante peuvent donner leur avis : chaque avis ici est une vraie expérience.",
+    "verifiedOnlyCourse": "Seules les élèves inscrites à cette formation, à mi-parcours ou une fois terminée, peuvent donner leur avis : chaque avis ici est une vraie expérience.",
     "awaitingShipment": "Vous pourrez évaluer ce produit dès l’expédition de la commande {{ref}}.",
     "needsProgress": "Les avis s’ouvrent à {{threshold}} % de la formation, pour parler d’expérience. Vous en êtes à {{pct}} %.",
     "progressLabel": "Progression dans la formation",

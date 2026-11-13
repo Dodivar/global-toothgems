@@ -8277,6 +8277,7 @@ export type Database = {
           author_name: string
           body: string
           changes_request: string | null
+          course_id: string | null
           created_at: string
           edited_at: string | null
           helpful_count: number
@@ -8303,6 +8304,7 @@ export type Database = {
           author_name: string
           body: string
           changes_request?: string | null
+          course_id?: string | null
           created_at?: string
           edited_at?: string | null
           helpful_count?: number
@@ -8329,6 +8331,7 @@ export type Database = {
           author_name?: string
           body?: string
           changes_request?: string | null
+          course_id?: string | null
           created_at?: string
           edited_at?: string | null
           helpful_count?: number
@@ -8352,6 +8355,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reviews_language_fkey"
             columns: ["language"]
@@ -10487,6 +10504,34 @@ export type Database = {
           promotion_id: string | null
         }
         Relationships: []
+      }
+      course_review_stats: {
+        Row: {
+          average_rating: number | null
+          course_id: string | null
+          five_star: number | null
+          four_star: number | null
+          one_star: number | null
+          review_count: number | null
+          three_star: number | null
+          two_star: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_segment_overview: {
         Row: {

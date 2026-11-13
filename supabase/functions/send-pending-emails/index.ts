@@ -50,7 +50,7 @@ Deno.serve((req) =>
         log("lounge moderation sweep failed", error instanceof Error ? error.message : error);
         loungeModeration = { examined: 0, sent: 0, skipped: 0, failed: 1 };
       }
-      // Automatic reminders (decision 141): abandoned cart, review request, loyalty reward. Each never throws.
+      // Automatic reminders (decision 142): abandoned cart, review request, loyalty reward. Each never throws.
       const reminders = await sendReminderEmails(deps, supabaseReminderSource(db), { limit, log, mediaBaseUrl });
       return { ...report, orderWithdrawal, loungeModeration, ...reminders };
     },

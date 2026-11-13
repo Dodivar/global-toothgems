@@ -2,7 +2,7 @@ import { isSupabaseConfigured } from "./supabase/env";
 import { requireSupabase } from "./supabase/client";
 
 /**
- * The single persistence boundary of the reminder e-mails' opt-out (decision 141): the
+ * The single persistence boundary of the reminder e-mails' opt-out (decision 142): the
  * abandoned cart, review request and loyalty reward e-mails carry
  * `/rappels/desinscription?token=…`; clicking the page's button calls
  * `unsubscribe_email_reminders(token)`, open to visitors. One switch per address, for all

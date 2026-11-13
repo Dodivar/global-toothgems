@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import { Award, Check, Clock, GraduationCap, Layers, ListVideo, Lock, PlayCircle, SignalHigh } from "lucide-react";
 import { Badge } from "../ui/Badge";
+import { Stars } from "../reviews/Stars";
 import { Button } from "../ui/Button";
 import { ProgressBar } from "../ui/ProgressBar";
 import { MetaPill } from "./TrainingPrimitives";
@@ -103,6 +104,16 @@ export function TrainingHero({
             <h1 className="max-w-[16ch] text-[length:var(--text-display-2)] font-[var(--weight-black)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)]">
               {title}
             </h1>
+            {/* Published learner reviews only (decision 141), from the server's read of the course: same markup once hydrated. */}
+            {course.rating && (
+              <a
+                href="#avis"
+                className="inline-flex w-fit items-center gap-2 rounded-[var(--radius-xs)] text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] underline decoration-1 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--focus-ring)]"
+              >
+                <Stars rating={course.rating.average} size={16} />
+                {t("training.ratingLink", { rating: course.rating.average.toFixed(1), count: course.rating.count })}
+              </a>
+            )}
             {course.summary && (
               <p className="m-0 max-w-[var(--max-width-prose)] text-[length:var(--text-body-lg)] text-[var(--text-body)]">
                 {pick(course.summary, lang)}
