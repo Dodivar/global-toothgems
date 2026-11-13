@@ -526,6 +526,12 @@
     "appleCta": "J’accepte et je continue avec Apple",
     "checkoutCta": "J’accepte et je règle ma commande"
   },
+  "authSwitch": {
+    "label": "Connexion ou création de compte",
+    "signIn": "Se connecter",
+    "signUp": "Créer un compte",
+    "oneAccount": "Un seul compte pour la boutique, l’Academy et le Studio 3D"
+  },
   "authAlt": {
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
@@ -839,6 +845,8 @@
   "training": {
     "eyebrow": "Formation certifiante",
     "heroScript": "Académie",
+    "ratingLink_one": "{{rating}} sur 5 · {{count}} avis d’élève",
+    "ratingLink_other": "{{rating}} sur 5 · {{count}} avis d’élèves",
     "metaLevel": "Niveau",
     "metaModulesLabel": "Programme",
     "metaLessonsLabel": "Leçons",
@@ -5140,6 +5148,25 @@
       "unavailableBody": "La newsletter n’est pas disponible pour le moment.",
       "retry": "Réessayer",
       "shop": "Découvrir la boutique",
+      "home": "Retour à l’accueil"
+    }
+  },
+  "reminders": {
+    "unsubscribe": {
+      "eyebrow": "Rappels par e-mail",
+      "title": "Ne plus recevoir nos rappels automatiques",
+      "body": "Il s’agit des rappels de panier, des demandes d’avis après une livraison ou une formation terminée, et des rappels de récompense fidélité. Vos e-mails de commande (confirmation, expédition, factures) continueront d’arriver.",
+      "action": "Ne plus recevoir ces rappels",
+      "stopping": "Enregistrement…",
+      "doneTitle": "C’est noté",
+      "doneBody": "Vous ne recevrez plus de rappels automatiques à cette adresse. Les e-mails liés à vos commandes, eux, continueront d’arriver.",
+      "invalidTitle": "Ce lien ne fonctionne pas",
+      "invalidBody": "Il est incomplet ou ne correspond à aucune adresse. Utilisez le lien du dernier e-mail reçu, ou contactez-nous.",
+      "errorTitle": "L’enregistrement n’a pas pu aboutir",
+      "errorBody": "Un problème technique nous en a empêchés. Réessayez dans un moment.",
+      "unavailableTitle": "Service indisponible",
+      "unavailableBody": "Ce réglage n’est pas disponible pour le moment. Contactez-nous pour ne plus recevoir nos rappels.",
+      "retry": "Réessayer",
       "home": "Retour à l’accueil"
     }
   },

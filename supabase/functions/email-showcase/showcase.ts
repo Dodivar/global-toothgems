@@ -21,6 +21,13 @@ import { orderConfirmationContent, refundContent, shippingContent, type OrderSna
 import type { SendRequest } from "../_shared/email/send.ts";
 import { backInStockContent, stockDigestContent, type StockDigestItem } from "../_shared/email/stockContent.ts";
 import {
+  abandonedCartContent,
+  courseReviewRequestContent,
+  loyaltyRewardContent,
+  reminderUnsubscribeUrl,
+  reviewRequestContent,
+} from "../_shared/email/reminderEmails.ts";
+import {
   studioDocumentContent,
   studioPlanName,
   studioSubscriptionContent,
@@ -43,6 +50,8 @@ export interface ShowcaseContext {
   legalStore: LegalStoreDetails | null;
   /** A real product, so the back-in-stock card shows its picture and links to its page. */
   product: { name: string; slug: string; imagePath: string | null };
+  /** A real published course, so the course review request shows its cover and links to its page (else a placeholder). */
+  course?: { title: string; slug: string; coverPath: string | null };
 }
 
 /** A sample sent through `sendTemplatedEmail` (database template). */
@@ -290,6 +299,66 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
     },
     {
       kind: "template",
+      label: "Relance panier abandonné (avec consentement marketing)",
+      request: {
+        ...base, templateKey: "abandoned_cart", eventKey: key("abandoned_cart"),
+        variables: { first_name: "Camille" },
+        content: (locale) =>
+          abandonedCartContent(
+            { items: [{ name: ctx.product.name, variant: null, slug: ctx.product.slug, imagePath: ctx.product.imagePath }] },
+            locale,
+            ctx.siteUrl,
+            ctx.mediaBaseUrl,
+            reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),
+          ),
+      },
+    },
+    {
+      kind: "template",
+      label: "Demande d'avis après livraison",
+      request: {
+        ...base, templateKey: "review_request", eventKey: key("review_request"),
+        variables: { first_name: "Camille", order_number: ORDER.orderNumber },
+        content: (locale) =>
+          reviewRequestContent(
+            { items: [{ name: ctx.product.name, slug: ctx.product.slug, imagePath: ctx.product.imagePath }] },
+            locale,
+            ctx.siteUrl,
+            ctx.mediaBaseUrl,
+            reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),
+          ),
+      },
+    },
+    {
+      kind: "template",
+      label: "Récompense fidélité non utilisée",
+      request: {
+        ...base, templateKey: "loyalty_reward", eventKey: key("loyalty_reward"),
+        variables: { first_name: "Camille", reward_percent: "10" },
+        content: (locale) => loyaltyRewardContent(locale, ctx.siteUrl, reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE")),
+      },
+    },
+    {
+      kind: "template",
+      label: "Demande d'avis après une formation terminée",
+      request: {
+        ...base, templateKey: "course_review_request", eventKey: key("course_review_request"),
+        variables: { first_name: "Camille", course_name: ctx.course?.title ?? "Initiation Tooth Gems" },
+        content: (locale) =>
+          courseReviewRequestContent(
+            {
+              courseTitle: ctx.course?.title ?? "Initiation Tooth Gems",
+              courseSlug: ctx.course?.slug ?? "initiation-tooth-gems",
+              coverPath: ctx.course?.coverPath ?? null,
+            },
+            locale,
+            ctx.siteUrl,
+            reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),
+          ),
+      },
+    },
+    {
+      kind: "template",
       label: "Accusé de réception du formulaire de contact (client)",
       request: {
         ...base, templateKey: "contact_acknowledgement", eventKey: key("contact_acknowledgement"),
@@ -405,6 +474,11 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
     });
   }
   return samples;
+}
+
+/** The samples of these database templates only (e.g. the three reminders); unknown keys are ignored. */
+export function onlyTemplates(samples: Sample[], keys: readonly string[]): Sample[] {
+  return samples.filter((s) => s.kind === "template" && keys.includes(s.request.templateKey));
 }
 
 /** The samples that carry a document (invoice, credit note or terms of sale as a PDF). */

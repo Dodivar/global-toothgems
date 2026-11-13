@@ -48,9 +48,7 @@ export function ReviewRequestCard({
       ? t("reviews.request.contextDelivered", { date: formatDate(request.date) })
       : request.context === "shipped"
         ? t("reviews.request.contextShipped")
-        : request.context === "completed"
-          ? t("reviews.request.contextCompleted")
-          : t("reviews.request.contextProgress", { pct: request.progressPct ?? 0 });
+        : t("reviews.request.contextCompleted");
 
   const stars = (
     <div role="group" aria-label={t("reviews.request.starsLabel", { name })} className="flex items-center gap-0.5" onMouseLeave={() => setHover(0)}>

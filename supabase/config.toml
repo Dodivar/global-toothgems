@@ -69,6 +69,10 @@ verify_jwt = false
 [functions.newsletter-subscribe]
 verify_jwt = false
 
+# Visitors' gift card balance check (decision 140): honeypot, address limit and captcha in the function.
+[functions.gift-card-balance]
+verify_jwt = false
+
 [functions.sync-newsletter-contacts]
 verify_jwt = false
 

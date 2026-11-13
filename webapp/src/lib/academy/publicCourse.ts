@@ -58,6 +58,11 @@ export interface PublicModule {
   check: { title: Localized; passingScore: number } | null;
 }
 
+export interface CourseRating {
+  average: number;
+  count: number;
+}
+
 export interface PublicCourse extends SluggedProduct {
   /** French slug: the course's key in internal paths and reviews. */
   id: string;
@@ -86,6 +91,11 @@ export interface PublicCourse extends SluggedProduct {
   /** End of the running promotion, null when open-ended or none. */
   promotionEndsAt: string | null;
   cover: { src: string; alt: Localized | null } | null;
+  /**
+   * Published learner reviews (`course_review_stats`, decision 141): average out of 5 and count. Null when the
+   * course has none (or the figures could not be read) — then no rating is shown nor put in structured data.
+   */
+  rating: CourseRating | null;
   modules: PublicModule[];
   /**
    * What the sales page can do about it. `demo`: the prototype's enrolment

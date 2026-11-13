@@ -2635,6 +2635,30 @@ export type Database = {
           },
         ]
       }
+      email_reminder_preferences: {
+        Row: {
+          created_at: string
+          opted_out_at: string | null
+          recipient_hash: string
+          unsubscribe_token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          opted_out_at?: string | null
+          recipient_hash: string
+          unsubscribe_token?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          opted_out_at?: string | null
+          recipient_hash?: string
+          unsubscribe_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_template_translations: {
         Row: {
           body: string
@@ -8253,6 +8277,7 @@ export type Database = {
           author_name: string
           body: string
           changes_request: string | null
+          course_id: string | null
           created_at: string
           edited_at: string | null
           helpful_count: number
@@ -8279,6 +8304,7 @@ export type Database = {
           author_name: string
           body: string
           changes_request?: string | null
+          course_id?: string | null
           created_at?: string
           edited_at?: string | null
           helpful_count?: number
@@ -8305,6 +8331,7 @@ export type Database = {
           author_name?: string
           body?: string
           changes_request?: string | null
+          course_id?: string | null
           created_at?: string
           edited_at?: string | null
           helpful_count?: number
@@ -8328,6 +8355,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reviews_language_fkey"
             columns: ["language"]
@@ -10464,6 +10505,34 @@ export type Database = {
         }
         Relationships: []
       }
+      course_review_stats: {
+        Row: {
+          average_rating: number | null
+          course_id: string | null
+          five_star: number | null
+          four_star: number | null
+          one_star: number | null
+          review_count: number | null
+          three_star: number | null
+          two_star: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_segment_overview: {
         Row: {
           customer_tag: string | null
@@ -11122,6 +11191,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      check_gift_card_balance: { Args: { p_code: string }; Returns: Json }
+      check_gift_card_balance_for_visitor: {
+        Args: { p_code: string; p_ip_hash: string }
+        Returns: Json
+      }
       checkout_session_status: {
         Args: { p_session_id: string }
         Returns: {
@@ -11325,6 +11399,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      email_reminder_token: { Args: { p_email: string }; Returns: string }
       email_template_for: {
         Args: { p_key: string; p_locale: string }
         Returns: {
@@ -11371,6 +11446,10 @@ export type Database = {
           expires_at: string
           redeemable: boolean
         }[]
+      }
+      gift_card_balance_ip_allowed: {
+        Args: { p_ip_hash: string }
+        Returns: boolean
       }
       gift_card_code_for_delivery: {
         Args: { p_gift_card_id: string }
@@ -11636,6 +11715,17 @@ export type Database = {
         Args: { p_token: string }
         Returns: Json
       }
+      pending_abandoned_cart_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          first_name: string
+          items: Json
+          locale: string
+          order_id: string
+          order_number: string
+        }[]
+      }
       pending_back_in_stock_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -11662,6 +11752,20 @@ export type Database = {
           order_number: string
         }[]
       }
+      pending_course_review_request_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          completion_id: string
+          course_id: string
+          course_slug: string
+          course_title: string
+          cover_media_id: string
+          cover_updated_at: string
+          email: string
+          first_name: string
+          locale: string
+        }[]
+      }
       pending_lounge_moderation_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -11670,6 +11774,17 @@ export type Database = {
           kind: string
           locale: string
           payload: Json
+        }[]
+      }
+      pending_loyalty_reward_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          card_id: string
+          email: string
+          first_name: string
+          locale: string
+          reward_percent: number
+          user_id: string
         }[]
       }
       pending_newsletter_contacts: {
@@ -11710,6 +11825,17 @@ export type Database = {
           order_id: string
           order_number: string
           refund_id: string
+        }[]
+      }
+      pending_review_request_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          first_name: string
+          items: Json
+          locale: string
+          order_id: string
+          order_number: string
         }[]
       }
       pending_shipping_emails: {
@@ -12537,6 +12663,10 @@ export type Database = {
           checkout_session_ids: string[]
           order_id: string
         }[]
+      }
+      unsubscribe_email_reminders: {
+        Args: { p_token: string }
+        Returns: boolean
       }
       vat_included: {
         Args: { p_amount: number; p_rate_bp: number }
