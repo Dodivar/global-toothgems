@@ -11122,6 +11122,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      check_gift_card_balance: { Args: { p_code: string }; Returns: Json }
+      check_gift_card_balance_for_visitor: {
+        Args: { p_code: string; p_ip_hash: string }
+        Returns: Json
+      }
       checkout_session_status: {
         Args: { p_session_id: string }
         Returns: {
@@ -11371,6 +11376,10 @@ export type Database = {
           expires_at: string
           redeemable: boolean
         }[]
+      }
+      gift_card_balance_ip_allowed: {
+        Args: { p_ip_hash: string }
+        Returns: boolean
       }
       gift_card_code_for_delivery: {
         Args: { p_gift_card_id: string }
