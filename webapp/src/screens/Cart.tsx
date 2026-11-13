@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "../lib/navigation";
-import { ArrowRight, CheckCircle2, CircleAlert, CreditCard, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShieldCheck, ShoppingBag, Tag, Trash2, Truck, UserRound } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleAlert, CreditCard, Gift, GraduationCap, Lock, LogIn, Mail, Minus, Plus, ShieldCheck, ShoppingBag, Sparkles, Tag, Trash2, Truck, UserRound } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { DELIVERY_COUNTRIES, countryLabelKey } from "../data/countries";
@@ -30,7 +30,7 @@ import { TermsNotice } from "../components/auth/TermsNotice";
 import { fetchShippingRates, releasePaymentStep, startCheckout, type CheckoutError, type PaymentStep } from "../lib/checkout/api";
 import { PaymentView } from "../components/checkout/PaymentView";
 import { buildCheckoutRequest, EMPTY_CHECKOUT_FORM, invalidFields, type CheckoutForm } from "../lib/checkout/checkoutForm";
-import { hasCourse, needsShipping, shippableSubtotal } from "../lib/checkout/cartLines";
+import { hasCourse, needsAccount, needsShipping, opensCourse, shippableSubtotal } from "../lib/checkout/cartLines";
 import { GiftCardVisual } from "../components/promotions/Visuals";
 import { GiftCardCodes } from "../components/shop/GiftCardCodes";
 import { PromotionCodes } from "../components/shop/PromotionCodes";
@@ -154,13 +154,16 @@ export function Cart() {
   // Gift cards are sent by e-mail: a basket of gift cards only has no delivery to choose.
   const shipped = needsShipping(lines);
   const goods = shippableSubtotal(lines);
-  // A course opens on an account: the basket waits while the visitor signs in.
+  // A course line (no delivery of its own); a pack opens one too (decision 139).
   const courseInBasket = hasCourse(lines);
-  const accountMissing = live && courseInBasket && !signedIn;
+  const courseOpened = opensCourse(lines);
+  // A course or a pack opens on an account: the basket waits while the visitor signs in.
+  const accountNeeded = needsAccount(lines);
+  const accountMissing = live && accountNeeded && !signedIn;
   // The waiver of the right of withdrawal a course is sold with (L221-28 13°); the function refuses a course without it.
   const [courseWaiver, setCourseWaiver] = useState(false);
   const courseWaiverRef = useRef<HTMLInputElement>(null);
-  const courseWaiverMissing = courseInBasket && !courseWaiver;
+  const courseWaiverMissing = courseOpened && !courseWaiver;
 
   // The saved profile fills the form once it is loaded, never over what the customer typed.
   const [prefilled, setPrefilled] = useState(false);
@@ -367,7 +370,7 @@ export function Cart() {
         shipping_amount: shipping,
         total_amount: total,
         currency,
-        contains_course: courseInBasket,
+        contains_course: courseOpened,
         checkout_mode: "mock",
       });
       setReference(placeOrder(lines, toMajorUnits(shipping)));
@@ -388,7 +391,7 @@ export function Cart() {
       shipping_amount: shipping,
       total_amount: total,
       currency,
-      contains_course: courseInBasket,
+      contains_course: courseOpened,
       checkout_mode: "stripe",
       promo_code_count: promoCodes.length,
       gift_card_count: giftCodes.length,
@@ -426,12 +429,12 @@ export function Cart() {
       trackShopOnce(`order:${result.orderNumber}`, "order_completed", {
         paid_with: "gift_card",
         item_count: lines.reduce((count, line) => count + line.qty, 0),
-        contains_course: courseInBasket,
+        contains_course: courseOpened,
         promo_code_count: promoCodes.length,
         gift_card_count: giftCodes.length,
         loyalty_reward: rewardOn,
       });
-      if (courseInBasket) {
+      if (courseOpened) {
         setBoughtCourse(true);
         reloadCourses();
       }
@@ -690,6 +693,11 @@ export function Cart() {
                       <GraduationCap size={13} aria-hidden="true" />
                       {t("checkout.course.line")}
                     </span>
+                  ) : line.pack ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                      <Sparkles size={13} aria-hidden="true" />
+                      {t("checkout.pack.line")}
+                    </span>
                   ) : (
                     <div className="flex items-center gap-1 rounded-[var(--radius-control)] border border-[var(--border-default)]">
                       <IconButton icon={Minus} label={t("cart.decrease")} variant="ghost" size="sm" disabled={submitting} onClick={() => updateQty(line.id, Math.max(1, line.qty - 1))} />
@@ -751,7 +759,7 @@ export function Cart() {
               </div>
             </section>
           )}
-          {!signedIn && !courseInBasket && (
+          {!signedIn && !accountNeeded && (
             <Link
               to="/inscription?contexte=achat"
               className="group flex items-center gap-4 rounded-[var(--radius-card)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash-strong)] p-4 transition-colors hover:border-[var(--gt-blue-400)]"
@@ -852,7 +860,7 @@ export function Cart() {
           </section>
           )}
 
-          {courseInBasket && (
+          {courseOpened && (
             <section className="grid gap-3 rounded-[var(--radius-card)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[var(--space-6)]">
               <h2 className="flex items-center gap-2 text-[length:var(--text-h3)]">
                 <GraduationCap size={18} aria-hidden="true" className="flex-none" />

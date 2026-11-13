@@ -50,6 +50,7 @@ function StudioTileCard({ info }: { info: StudioAccessInfo }) {
   else if (subscribed && info.subscriptionCancelAtPeriodEnd) note = t("account.dashboard.studioEnds", { date: date(info.subscriptionPeriodEnd) });
   else if (subscribed) note = t("account.dashboard.studioRenews", { date: date(info.subscriptionPeriodEnd) });
   else if (info.state === "trial_active") note = t("account.dashboard.studioTrialUntil", { date: date(info.trialExpiresAt) });
+  else if (info.state === "granted") note = t("account.dashboard.studioGrantUntil", { date: date(info.grantEndsAt) });
 
   const used = info.usage.creations;
   const limit = info.limits.creations;

@@ -74,6 +74,17 @@ const deps: CheckoutDeps = {
     if (error) throw new Error(error.message);
   },
 
+  async productsGrantCourse(productIds) {
+    const { data, error } = await supabase
+      .from("product_inclusions")
+      .select("product_id")
+      .in("product_id", productIds)
+      .eq("kind", "course")
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return data.length > 0;
+  },
+
   async createOrder(input, userId, reservationMinutes) {
     const { data, error } = await supabase.rpc("create_order", {
       p_user_id: userId,

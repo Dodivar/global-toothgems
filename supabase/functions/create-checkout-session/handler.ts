@@ -119,6 +119,12 @@ export interface CheckoutDeps {
    * the right of withdrawal (`consent_records`, `_shared/courseConsent.ts`). Throws on failure.
    */
   recordCourseConsent(userId: string): Promise<void>;
+  /**
+   * Whether one of these products also grants an Academy course (a pack,
+   * `product_inclusions`, decision 139): its line is sold like a course — to an
+   * account, with the same waiver. Absent: no product grants one.
+   */
+  productsGrantCourse?(productIds: string[]): Promise<boolean>;
   createOrder(input: CheckoutInput, userId: string | null, reservationMinutes: number): Promise<
     { order: OrderRow; error?: undefined } | { order?: undefined; error: DbError }
   >;
@@ -220,7 +226,16 @@ export async function handleCheckout(req: Request, deps: CheckoutDeps): Promise<
 
   // A course is sold to an account, and only with the waiver of the right of withdrawal
   // the buyer ticked (L221-28 13°): nothing is reserved without it.
-  const sellsCourses = input.course_ids.length > 0;
+  let sellsCourses = input.course_ids.length > 0;
+  // A pack that opens a course (decision 139) needs the same account and waiver.
+  if (!sellsCourses && deps.productsGrantCourse && input.items.length > 0) {
+    try {
+      sellsCourses = await deps.productsGrantCourse([...new Set(input.items.map((item) => item.product_id))]);
+    } catch (error) {
+      deps.log("product inclusions unreadable", error instanceof Error ? error.message : error);
+      return fail("server_error");
+    }
+  }
   if (sellsCourses && !userId) return fail("account_required");
   if (sellsCourses && !input.course_immediate_access) return fail("course_consent_required");
 
