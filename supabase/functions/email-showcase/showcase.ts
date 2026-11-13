@@ -449,6 +449,11 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
   return samples;
 }
 
+/** The samples of these database templates only (e.g. the three reminders); unknown keys are ignored. */
+export function onlyTemplates(samples: Sample[], keys: readonly string[]): Sample[] {
+  return samples.filter((s) => s.kind === "template" && keys.includes(s.request.templateKey));
+}
+
 /** The samples that carry a document (invoice, credit note or terms of sale as a PDF). */
 export function withDocuments(samples: Sample[]): Sample[] {
   return samples.filter((s) => s.kind === "template" && (s.request.attachments?.length ?? 0) > 0);
