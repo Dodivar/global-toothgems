@@ -50,6 +50,8 @@ export interface ShowcaseContext {
   legalStore: LegalStoreDetails | null;
   /** A real product, so the back-in-stock card shows its picture and links to its page. */
   product: { name: string; slug: string; imagePath: string | null };
+  /** A real published course, so the course review request shows its cover and links to its page (else a placeholder). */
+  course?: { title: string; slug: string; coverPath: string | null };
 }
 
 /** A sample sent through `sendTemplatedEmail` (database template). */
@@ -341,10 +343,14 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
       label: "Demande d'avis après une formation terminée",
       request: {
         ...base, templateKey: "course_review_request", eventKey: key("course_review_request"),
-        variables: { first_name: "Camille", course_name: "Initiation Tooth Gems" },
+        variables: { first_name: "Camille", course_name: ctx.course?.title ?? "Initiation Tooth Gems" },
         content: (locale) =>
           courseReviewRequestContent(
-            { courseTitle: "Initiation Tooth Gems", courseSlug: "initiation-tooth-gems", coverPath: null },
+            {
+              courseTitle: ctx.course?.title ?? "Initiation Tooth Gems",
+              courseSlug: ctx.course?.slug ?? "initiation-tooth-gems",
+              coverPath: ctx.course?.coverPath ?? null,
+            },
             locale,
             ctx.siteUrl,
             reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),

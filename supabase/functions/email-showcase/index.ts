@@ -7,6 +7,7 @@ import { hasInternalSecret } from "../_shared/internalAuth.ts";
 import { json, readJson } from "../_shared/http.ts";
 import { buildShowcase, onlyTemplates, type Sample, withDocuments } from "./showcase.ts";
 import { functionLogger } from "../_shared/log.ts";
+import { coverPath } from "../_shared/email/reminderEmails.ts";
 
 /*
  * POST /functions/v1/email-showcase  { "to": "<address>", "only_documents"?: true, "only"?: ["<template key>", …] }
@@ -42,6 +43,20 @@ async function currentSeller(): Promise<Record<string, unknown>> {
   };
 }
 
+/** The oldest published course (French title and slug: the samples are French), or undefined. */
+async function sampleCourse(): Promise<{ title: string; slug: string; coverPath: string | null } | undefined> {
+  const { data } = await serviceClient()
+    .from("courses")
+    .select("title, slug, cover:training_media!courses_cover_media_id_fkey ( id, updated_at )")
+    .eq("status", "published")
+    .order("published_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return undefined;
+  const row = data as unknown as { title: string; slug: string; cover: { id: string; updated_at: string } | null };
+  return { title: row.title, slug: row.slug, coverPath: coverPath(row.cover?.id ?? null, row.cover?.updated_at ?? null) };
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   if (!(await hasInternalSecret(req, Deno.env.get("EMAIL_INTERNAL_SECRET")))) return json({ error: "unauthorized" }, 401);
@@ -65,6 +80,7 @@ Deno.serve(async (req) => {
       seller: await currentSeller(),
       legalStore: await loadLegalStore(serviceClient()),
       product: { name: "Kit d’Application Premium", slug: "kit-application-premium", imagePath: "products/kit-application-premium/01.jpg" },
+      course: await sampleCourse(),
     });
 
     const filtered = only ? onlyTemplates(all, only as string[]) : all;
