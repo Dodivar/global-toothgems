@@ -101,21 +101,6 @@ export function Loyalty() {
         )}
       </section>
 
-      {/* Gift card balance (decision 140): checked by code, never a list of cards. */}
-      <section id="cartes-cadeaux" aria-labelledby="account-gift-cards-title" className="grid scroll-mt-20 gap-4">
-        <div className="grid gap-2">
-          <span className="gt-eyebrow flex items-center gap-2">
-            <Gift size={13} aria-hidden="true" />
-            {t("promo.balance.eyebrow")}
-          </span>
-          <h2 id="account-gift-cards-title" className="text-[length:var(--text-h3)]">{t("promo.balance.accountTitle")}</h2>
-          <p className="m-0 max-w-[60ch] text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("promo.balance.accountIntro")}</p>
-        </div>
-        <div className="max-w-[640px] rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5">
-          <GiftCardBalanceCheck headingLevel={3} />
-        </div>
-      </section>
-
       <section className="grid gap-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="grid gap-2">
@@ -131,6 +116,21 @@ export function Loyalty() {
           </Link>
         </div>
         <LoyaltySteps />
+      </section>
+
+      {/* Gift card balance (decision 140): checked by code, never a list of cards. */}
+      <section id="cartes-cadeaux" aria-labelledby="account-gift-cards-title" className="grid scroll-mt-20 gap-4">
+        <div className="grid gap-2">
+          <span className="gt-eyebrow flex items-center gap-2">
+            <Gift size={13} aria-hidden="true" />
+            {t("promo.balance.eyebrow")}
+          </span>
+          <h2 id="account-gift-cards-title" className="text-[length:var(--text-h3)]">{t("promo.balance.accountTitle")}</h2>
+          <p className="m-0 max-w-[60ch] text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("promo.balance.accountIntro")}</p>
+        </div>
+        <div className="max-w-[640px] rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5">
+          <GiftCardBalanceCheck headingLevel={3} />
+        </div>
       </section>
     </>
   );

@@ -125,8 +125,8 @@ begin
   r := public.check_gift_card_balance(k_can);
   if r -> 'card' ->> 'status' <> 'cancelled' or (r -> 'card' ->> 'balance')::numeric <> 0 then raise exception 'FAIL GB3 cancelled: %', r; end if;
   perform set_config('role', 'postgres', true);
-  if exists (select 1 from public.gift_card_code_attempts where actor = 'user:' || alice) then
-    raise exception 'FAIL GB3: real codes counted as refusals';
+  if (select count(*) from public.gift_card_code_attempts where actor = 'user:' || alice) <> 3 then
+    raise exception 'FAIL GB3: spent / expired / cancelled codes must count as refusals, like the cart';
   end if;
   perform set_config('role', 'authenticated', true);
 
@@ -141,13 +141,13 @@ begin
     if r <> ref then raise exception 'FAIL GB4 % answered %', k_later, r; end if;
   end loop;
   perform set_config('role', 'postgres', true);
-  if (select count(*) from public.gift_card_code_attempts where actor = 'user:' || alice) <> 5 then
+  if (select count(*) from public.gift_card_code_attempts where actor = 'user:' || alice) <> 8 then
     raise exception 'FAIL GB4: refusals not counted';
   end if;
   perform set_config('role', 'authenticated', true);
 
-  -- GB6: 4 more refusals here, 1 through the cart's quote (shared counter) → limit reached
-  for i in 1..4 loop
+  -- GB6: 1 more refusal here (9), 1 through the cart's quote (10, shared counter) → limit reached
+  for i in 1..1 loop
     r := public.check_gift_card_balance('GT-ZZZZ-ZZZZ-ZZZ' || i + 1);
     if r <> ref then raise exception 'FAIL GB6 early throttle at %: %', i, r; end if;
   end loop;
