@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase } from "../supabase/client";
+import { isSupabaseConfigured, supabase } from "../supabase/client";
 import { functionErrorCode, readFunctionFailure } from "../supabase/functionError";
 import { type BalanceOutcome, normaliseBalanceCode, readMemberAnswer, readVisitorAnswer, readVisitorError } from "./balanceMapping";
 
@@ -14,7 +14,8 @@ import { type BalanceOutcome, normaliseBalanceCode, readMemberAnswer, readVisito
  * Without Supabase (mock mode) nothing is checked: there is no simulated balance.
  */
 
-export const balanceCheckAvailable = (): boolean => supabase !== null;
+/** From the build's variables, not the browser client (null on the server): the same on both sides of hydration. */
+export const balanceCheckAvailable = (): boolean => isSupabaseConfigured;
 
 export async function checkBalanceAsMember(rawCode: string): Promise<BalanceOutcome> {
   const code = normaliseBalanceCode(rawCode);
