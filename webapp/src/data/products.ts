@@ -147,12 +147,24 @@ export function colorSwatchFill(color: Pick<GemColorDef, "hex" | "isMulticolor">
 }
 
 /** A purchasable option of a catalogue product (colour, size, box quantity…). */
+/**
+ * The database's stock status of a product or variant, as it is
+ * (`inventory_items.stock_status`): `stock` folds it into a badge, where a
+ * preorder reads as in stock; structured data and product feeds need it raw.
+ */
+export type StockStatus = "in_stock" | "low_stock" | "out_of_stock" | "preorder";
+
 export interface ProductVariant {
   id: string;
   name: Localized;
   /** Display price in major units; the server recomputes every price at checkout. */
   price: number;
   stock?: "low" | "out";
+  /** Raw stock status (database products only). */
+  availability?: StockStatus;
+  /** The catalogue's reference and shipping weight, when set (database products only). */
+  sku?: string;
+  weightGrams?: number;
   /** Gem options (`lib/gemOptions.ts`): stones per pack, and size (SS gauge or millimetres). */
   pack?: number;
   size?: GemSize;
@@ -228,6 +240,16 @@ export interface Product {
   rating: number;
   reviewCount: number;
   stock?: "low" | "out";
+  /**
+   * Raw stock status (database products only): the product's own for a
+   * product without variants, else the best of its variants (`aggregateAvailability`).
+   */
+  availability?: StockStatus;
+  /** The catalogue's reference and shipping weight, when set (database products only). */
+  sku?: string;
+  weightGrams?: number;
+  /** `physical` or `digital` (database products only). */
+  productType?: "physical" | "digital";
   image: string;
   /**
    * Category slug (`gems`, `materiel`…, the `categorie` URL value; see

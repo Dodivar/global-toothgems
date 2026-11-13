@@ -8,6 +8,7 @@ import {
   type GemShape,
   type Product,
   type ProductVariant,
+  type StockStatus,
 } from "../../data/products";
 import type { ShopCategoryDef } from "../../data/taxonomy";
 import type { Localized } from "../../data/types";
@@ -54,6 +55,9 @@ export interface VariantRow {
   price: number | null;
   is_active: boolean;
   position: number;
+  /** Absent on queries that predate them. */
+  sku?: string | null;
+  weight_grams?: number | null;
   product_variant_translations: (TranslationRow & { name: string })[];
   inventory_items: InventoryRow[];
   /** The value this variant has on each option (`…_product_variant_options`). */
@@ -108,6 +112,10 @@ export interface ProductRow extends SpecColumns {
   currency: string;
   is_featured: boolean;
   metadata: Json;
+  /** Absent on queries that predate them. */
+  sku?: string | null;
+  weight_grams?: number | null;
+  product_type?: string | null;
   category: CategoryRow | null;
   /** Absent when the query predates `…_category_families` (see `api.ts`). */
   family?: { slug: string } | null;
@@ -231,6 +239,30 @@ function stockBadge(status: string | null | undefined): "low" | "out" | undefine
   return undefined;
 }
 
+const STOCK_STATUSES: readonly StockStatus[] = ["in_stock", "low_stock", "out_of_stock", "preorder"];
+
+/** The database's stock status as it is, or undefined when unknown. */
+export function stockStatus(status: string | null | undefined): StockStatus | undefined {
+  return (STOCK_STATUSES as readonly (string | null | undefined)[]).includes(status) ? (status as StockStatus) : undefined;
+}
+
+/**
+ * Raw availability of a product with variants, like `aggregateStock`: the
+ * best of its variants (in stock, then preorder, then low, then out).
+ */
+export function aggregateAvailability(statuses: (string | null | undefined)[]): StockStatus | undefined {
+  const known = statuses.map(stockStatus).filter((s): s is StockStatus => s !== undefined);
+  for (const status of ["in_stock", "preorder", "low_stock", "out_of_stock"] as const) {
+    if (known.includes(status)) return status;
+  }
+  return undefined;
+}
+
+/** A positive whole weight in grams, else undefined. */
+function grams(value: number | null | undefined): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
 /**
  * Availability of a product with variants: the best of its variants, so a
  * product is only "out" when every option is.
@@ -304,6 +336,8 @@ function mapVariant(
   const price = displayPrice(row.price ?? productPrice);
   const gem = parseGemAttributes(row.attributes);
   const swatch = swatchOf(row.attributes);
+  const availability = stockStatus(row.inventory_items[0]?.stock_status);
+  const weightGrams = grams(row.weight_grams);
   return {
     id: row.id,
     name: localize(row.name, row.product_variant_translations, (t) => t.name),
@@ -313,6 +347,9 @@ function mapVariant(
     ...(optionValues ? { optionValues } : {}),
     price,
     stock: stockBadge(row.inventory_items[0]?.stock_status),
+    ...(availability ? { availability } : {}),
+    ...(row.sku ? { sku: row.sku } : {}),
+    ...(weightGrams ? { weightGrams } : {}),
   };
 }
 
@@ -381,6 +418,11 @@ export function mapProduct(
   const stock = variants.length > 0
     ? aggregateStock(row.product_variants.filter((v) => v.is_active).map((v) => v.inventory_items[0]?.stock_status))
     : stockBadge(row.inventory_items[0]?.stock_status);
+  const availability = variants.length > 0
+    ? aggregateAvailability(row.product_variants.filter((v) => v.is_active).map((v) => v.inventory_items[0]?.stock_status))
+    : stockStatus(row.inventory_items[0]?.stock_status);
+  const weightGrams = grams(row.weight_grams);
+  const productType = row.product_type === "physical" || row.product_type === "digital" ? row.product_type : undefined;
 
   const price = displayPrice(row.price);
 
@@ -407,6 +449,10 @@ export function mapProduct(
     rating: stats?.average_rating ?? 0,
     reviewCount: stats?.review_count ?? 0,
     stock,
+    ...(availability ? { availability } : {}),
+    ...(row.sku ? { sku: row.sku } : {}),
+    ...(weightGrams ? { weightGrams } : {}),
+    ...(productType ? { productType } : {}),
     image: images[0]?.src ?? "",
     cat: row.category?.slug ?? null,
     family: row.family?.slug ?? null,

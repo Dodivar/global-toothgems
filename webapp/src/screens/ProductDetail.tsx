@@ -50,7 +50,12 @@ const SIZES = ["1,8 mm", "2,0 mm", "2,5 mm"];
  * rendering it, so the page never flashes another product while loading and
  * an unknown slug is a real 404 rather than a stand-in product.
  */
-export function ProductDetail({ faq = [] }: { faq?: ProductFaqEntry[] }) {
+/**
+ * `initialVariantId`: the variant the address names (`?variant=<id>`, read by
+ * the server page), so a link from a product feed opens on that variant's
+ * price and stock; else the first variant in stock.
+ */
+export function ProductDetail({ faq = [], initialVariantId }: { faq?: ProductFaqEntry[]; initialVariantId?: string }) {
   const { id } = useParams();
   const { status, findProduct } = useCatalog();
 
@@ -66,7 +71,7 @@ export function ProductDetail({ faq = [] }: { faq?: ProductFaqEntry[] }) {
   }
   const product = findProduct(id ?? "");
   if (!product) return <NotFound />;
-  return <ProductView key={product.id} product={product} faq={faq} />;
+  return <ProductView key={product.id} product={product} faq={faq} initialVariantId={initialVariantId} />;
 }
 
 function ProductSkeleton() {
@@ -85,7 +90,7 @@ function ProductSkeleton() {
   );
 }
 
-function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[] }) {
+function ProductView({ product, faq, initialVariantId }: { product: Product; faq: ProductFaqEntry[]; initialVariantId?: string }) {
   const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -103,7 +108,9 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
   const gemPicker = isGemOptionSet(variants);
   // Variants combining options (colour × plug…) get one row per option.
   const optionPicker = !gemPicker && hasOptionPicker(product.options, variants);
-  const [variantId, setVariantId] = useState(() => (variants.find((v) => v.stock !== "out") ?? variants[0])?.id);
+  const [variantId, setVariantId] = useState(
+    () => (variants.find((v) => v.id === initialVariantId) ?? variants.find((v) => v.stock !== "out") ?? variants[0])?.id,
+  );
   const variant = variants.find((v) => v.id === variantId);
   // Colour variants read as colours: the legend says so once every one has a dot.
   const colorVariants = variants.length > 0 && variants.every((v) => v.swatch);
