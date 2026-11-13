@@ -15,6 +15,7 @@ import { useHydrated } from "../lib/useHydrated";
 import { useLoyalty } from "../lib/loyalty";
 import { useOrders } from "../lib/orders";
 import { trackShop, trackShopOnce } from "../lib/shopAnalytics";
+import { pixelBasket, trackPixelOnce } from "../lib/metaPixel";
 
 /**
  * Where Stripe sends the customer back (`/fr/panier/confirmation?session_id=cs_…`).
@@ -71,6 +72,8 @@ export function CheckoutReturn() {
             setView({ kind: "done", status, course: hasCourse(basket) });
             // Once per order and tab: a reload of this page does not count it again.
             if (status.state === "paid") {
+              // The basket still holds the order's lines here (emptied below).
+              trackPixelOnce(`order:${status.orderNumber}`, "Purchase", pixelBasket(basket), status.orderNumber);
               trackShopOnce(`order:${status.orderNumber}`, "order_completed", {
                 paid_with: "card",
                 item_count: basket.reduce((count, line) => count + line.qty, 0),

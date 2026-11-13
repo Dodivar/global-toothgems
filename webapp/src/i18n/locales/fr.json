@@ -4731,6 +4731,7 @@
     "cookies": {
       "bannerTitle": "Vos cookies, votre choix",
       "bannerBody": "Certains cookies sont indispensables au fonctionnement du site (connexion, panier, paiement) et ne peuvent pas être désactivés. Avec votre accord seulement, nous mesurons l’audience du site avec PostHog, hébergé dans l’Union européenne, et revoyons certaines visites des pages publiques, du Studio et des cours (vos saisies masquées) pour l’améliorer. Aucun cookie publicitaire. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
+      "bannerBodyAdvertising": "Certains cookies sont indispensables au fonctionnement du site (connexion, panier, paiement) et ne peuvent pas être désactivés. Avec votre accord seulement, nous mesurons l’audience du site avec PostHog, hébergé dans l’Union européenne, et revoyons certaines visites des pages publiques, du Studio et des cours (vos saisies masquées) pour l’améliorer ; et, si vous acceptez la publicité, le pixel Meta (Facebook, Instagram) mesure les visites et les achats venus de nos publicités et nous permet de vous montrer nos produits sur ces réseaux. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
       "policyLink": "Lire la politique cookies",
       "rejectNonEssential": "Refuser les non essentiels",
       "acceptAll": "Tout accepter",
@@ -4738,6 +4739,7 @@
       "customize": "Personnaliser",
       "save": "Enregistrer mes choix",
       "settingsTitle": "Paramètres cookies",
+      "settingsBodyAdvertising": "Choisissez séparément si vous acceptez la mesure d’audience et la publicité. Chacune reste désactivée tant que vous ne l’activez pas. Aucun autre cookie publicitaire ni de réseau social n’est utilisé.",
       "settingsBody": "Choisissez si vous acceptez la mesure d’audience. Elle reste désactivée tant que vous ne l’activez pas. Nous n’utilisons aucun cookie publicitaire ni de réseau social.",
       "settingsFoot": "Votre choix est conservé 6 mois ; vous pouvez le modifier à tout moment.",
       "settingsLink": "Paramètres cookies",
@@ -4753,6 +4755,11 @@
           "title": "Mesure d’audience",
           "body": "Nous aident à comprendre l’utilisation du site et à corriger ses erreurs, y compris en revoyant certaines visites des pages publiques, du Studio et des cours, vos saisies masquées.",
           "providers": "PostHog (serveurs dans l’Union européenne)"
+        },
+        "advertising": {
+          "title": "Publicité",
+          "body": "Le pixel Meta mesure les visites et les achats venus de nos publicités sur Facebook et Instagram, et nous permet de vous y montrer les produits que vous avez consultés. Seulement sur les pages de la boutique, sans votre nom ni votre e-mail.",
+          "providers": "Meta Platforms Ireland (données pouvant être transférées aux États-Unis)"
         }
       },
       "currentTitle": "Vos choix actuels",

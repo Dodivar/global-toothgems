@@ -1,5 +1,6 @@
 import { LEGAL_PATHS } from "./routes";
 import { DRAFT_DATE, l, type LegalDocument } from "./types";
+import { ADVERTISING_ENABLED } from "../../lib/metaPixelConfig";
 
 /**
  * Privacy policy, written for a GDPR-conscious European shop.
@@ -10,6 +11,10 @@ import { DRAFT_DATE, l, type LegalDocument } from "./types";
  * customers contract with — filled in from the store's details by
  * `storeFill.ts` (`[[!Responsable du traitement]]`). Who the controller is
  * remains the owner's (or a lawyer's) call, decision 121.
+ *
+ * Meta (advertising pixel, 2026-11-13) is named only once the pixel is
+ * configured (`ADVERTISING_ENABLED`, `lib/metaPixelConfig.ts`); wording to be
+ * reviewed by a lawyer (supabase/README.md, review of 2026-11-11).
  */
 
 const PART = {
@@ -313,6 +318,18 @@ export const PRIVACY: LegalDocument = {
             },
             { role: l("E-mails de service et newsletter", "Service emails and newsletter"), provider: l("Resend (Plus Five Five, Inc.)", "Resend (Plus Five Five, Inc.)"), location: US_DPF },
             { role: l("Mesure d’audience, avec votre accord", "Audience measurement, with your consent"), provider: l("PostHog Inc.", "PostHog Inc."), location: l("Union européenne (Francfort)", "European Union (Frankfurt)") },
+            ...(ADVERTISING_ENABLED
+              ? [
+                  {
+                    role: l(
+                      "Mesure des publicités Facebook et Instagram (pixel Meta), avec votre accord — responsable conjoint pour la collecte",
+                      "Measuring Facebook and Instagram ads (Meta pixel), with your consent — joint controller for the collection",
+                    ),
+                    provider: l("Meta Platforms Ireland Ltd", "Meta Platforms Ireland Ltd"),
+                    location: US_DPF,
+                  },
+                ]
+              : []),
             { role: l("Livraison", "Delivery"), provider: l("La Poste (Colissimo), Chronopost, GLS", "La Poste (Colissimo), Chronopost, GLS"), location: l("France et pays de destination", "France and the destination country") },
             { role: l("Connexion avec Google", "Sign-in with Google"), provider: l("Google Ireland Ltd / Google LLC", "Google Ireland Ltd / Google LLC"), location: US_DPF },
             { role: l("Essai d’une création sur un sourire (IA)", "Trying a creation on a smile (AI)"), provider: l("Google (API Gemini)", "Google (Gemini API)"), location: US_DPF },
@@ -358,6 +375,17 @@ export const PRIVACY: LegalDocument = {
             },
             { purpose: l("Envoyer la newsletter et des e-mails marketing", "Send the newsletter and marketing emails"), basis: l("Consentement", "Consent") },
             { purpose: l("Mesure d’audience et cookies non essentiels", "Audience measurement and non-essential cookies"), basis: l("Consentement", "Consent") },
+            ...(ADVERTISING_ENABLED
+              ? [
+                  {
+                    purpose: l(
+                      "Mesurer nos publicités Facebook et Instagram et y montrer nos produits (pixel Meta, pages de la boutique, sans nom ni e-mail)",
+                      "Measure our Facebook and Instagram ads and show our products there (Meta pixel, shop pages, no name or e-mail)",
+                    ),
+                    basis: l("Consentement (catégorie « Publicité »)", "Consent (“Advertising” category)"),
+                  },
+                ]
+              : []),
           ],
         },
       ],
@@ -433,7 +461,12 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
+          text: ADVERTISING_ENABLED
+            ? l(
+                "Notre base de données est hébergée dans l’Union européenne. Certains prestataires (Vercel, Resend, Google) et Meta, si vous acceptez la publicité, sont établis aux États-Unis ou y transfèrent des données : ces transferts reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework) lorsque le destinataire y adhère, et à défaut sur les clauses contractuelles types de la Commission européenne. Les transferts vers le Royaume-Uni reposent sur une décision d’adéquation.",
+                "Our database is hosted in the European Union. Some providers (Vercel, Resend, Google) and Meta, if you accept advertising, are established in the United States or transfer data there: these transfers rely on the EU–US Data Privacy Framework where the recipient has joined it, and otherwise on the European Commission’s standard contractual clauses. Transfers to the United Kingdom rely on an adequacy decision.",
+              )
+            : l(
             "Notre base de données est hébergée dans l’Union européenne. Certains prestataires (Vercel, Resend, Google) sont établis aux États-Unis et peuvent y traiter des données : ces transferts reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework) lorsque le prestataire y adhère, et à défaut sur les clauses contractuelles types de la Commission européenne. Les transferts vers le Royaume-Uni reposent sur une décision d’adéquation.",
             "Our database is hosted in the European Union. Some providers (Vercel, Resend, Google) are established in the United States and may process data there: these transfers rely on the EU–US Data Privacy Framework where the provider has joined it, and otherwise on the European Commission’s standard contractual clauses. Transfers to the United Kingdom rely on an adequacy decision.",
           ),
@@ -511,7 +544,12 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
+          text: ADVERTISING_ENABLED
+            ? l(
+                "Nous ne prenons aucune décision produisant des effets juridiques à votre égard sur la seule base d’un traitement automatisé. Nous ne faisons pas nous-mêmes de profilage publicitaire ; si vous acceptez la catégorie « Publicité », Meta peut utiliser les événements du pixel (produits consultés, achats) pour vous montrer nos publicités sur Facebook et Instagram (voir la <<politique cookies|/cookies>>). Notre prestataire de paiement analyse automatiquement chaque transaction pour détecter la fraude et peut refuser un paiement à risque : dans ce cas, contactez-nous pour qu’une personne examine la situation.",
+                "We make no decision with legal effects on you based solely on automated processing. We do no advertising profiling ourselves; if you accept the “Advertising” category, Meta may use the pixel’s events (products viewed, purchases) to show you our ads on Facebook and Instagram (see the <<cookie policy|/cookies>>). Our payment provider automatically analyses each transaction to detect fraud and may decline a risky payment: if that happens, contact us so that a person can look into it.",
+              )
+            : l(
             "Nous ne prenons aucune décision produisant des effets juridiques à votre égard sur la seule base d’un traitement automatisé, et ne faisons pas de profilage publicitaire. Notre prestataire de paiement analyse automatiquement chaque transaction pour détecter la fraude et peut refuser un paiement à risque : dans ce cas, contactez-nous pour qu’une personne examine la situation.",
             "We make no decision with legal effects on you based solely on automated processing, and do no advertising profiling. Our payment provider automatically analyses each transaction to detect fraud and may decline a risky payment: if that happens, contact us so that a person can look into it.",
           ),
