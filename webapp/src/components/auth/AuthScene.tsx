@@ -4,6 +4,7 @@ import { Link } from "../../lib/navigation";
 import { CircleAlert } from "lucide-react";
 import { ShapeGlyph, GLYPH_PATHS } from "../ui/ShapeGlyph";
 import { photo } from "../../lib/images";
+import { AUTH_PHOTO } from "./authPhoto";
 import { AppleMark } from "./AppleMark";
 
 /**
@@ -167,7 +168,7 @@ export function AuthCard({ children, crown, label }: { children: ReactNode; crow
  * and the reminder that the shop never asks for one. Entirely non-interactive
  * apart from that last link, so the tab order stays in the form.
  */
-function EditorialColumn({ image = "mouth-02.jpg" }: { image?: string }) {
+function EditorialColumn({ image = AUTH_PHOTO }: { image?: string }) {
   const { t } = useTranslation();
   return (
     <div className="grid w-full gap-[clamp(24px,3vw,40px)]">
@@ -179,7 +180,9 @@ function EditorialColumn({ image = "mouth-02.jpg" }: { image?: string }) {
           className="absolute -left-3 -top-3 h-full w-full rounded-[var(--radius-2xl)] border border-[var(--gt-blue-400)] sm:-left-4 sm:-top-4"
         />
         <div className="gt-sparkle relative aspect-[16/11] w-full overflow-hidden rounded-[var(--radius-2xl)] lg:aspect-[5/6]">
-          <img src={photo(image)} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+          {/* Fetched at once and first: on a wide screen it is the largest thing
+              in view, so a lazy load left an empty frame for a moment. */}
+          <img src={photo(image)} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
         </div>
       </figure>
 
