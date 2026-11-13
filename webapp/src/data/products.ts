@@ -576,9 +576,9 @@ const SHAPE_PICTURE_COLOR = "aquamarine";
  * name ending in "Aquamarine" / "Aigue-marine" ("Diamond Shape - Aquamarine").
  */
 function shapePicture(gems: Product[]): string | undefined {
-  const isPlainCrystal = (p: Product) =>
-    p.color === SHAPE_PICTURE_COLOR || (!p.color && [p.name.fr, p.name.en].some((name) => /\bcrystal\s*$/i.test(name)));
-  return gems.find((p) => p.image && isPlainCrystal(p))?.image;
+  const isAquamarine = (p: Product) =>
+    p.color === SHAPE_PICTURE_COLOR || (!p.color && [p.name.fr, p.name.en].some((name) => /\b(aquamarine|aigue-marine)\s*$/i.test(name)));
+  return gems.find((p) => p.image && isAquamarine(p))?.image;
 }
 
 /**
