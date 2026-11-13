@@ -183,6 +183,10 @@ describe("course lines in the checkout request", () => {
   it("sends the ticked course waiver, and only for a basket holding a course", () => {
     expect(buildCheckoutRequest([course], form, null, "fr", [], false, [], true)?.course_immediate_access).toBe(true);
     expect(buildCheckoutRequest([line], form, "rate", "fr", [], false, [], true)).not.toHaveProperty("course_immediate_access");
+    // A pack that opens a course carries the same waiver (decision 139).
+    const pack = { ...line, id: "pack::", qty: 1, pack: { course: true } };
+    expect(buildCheckoutRequest([pack], form, "rate", "fr", [], false, [], true)?.course_immediate_access).toBe(true);
+    expect(buildCheckoutRequest([{ ...pack, pack: { course: false } }], form, "rate", "fr", [], false, [], true)).not.toHaveProperty("course_immediate_access");
   });
 
   it("knows the course refusals", () => {

@@ -85,7 +85,8 @@
       "kept_other": "Your {{count}} saved designs are kept in your account. They will be waiting for you in the Studio once a plan is active.",
       "keptNone": "Anything you saved stays in your account and will be waiting for you once a plan is active.",
       "plansTitle": "Choose your plan",
-      "pricesNote": "Cancel at any time from your account: the subscription ends at the close of the paid period."
+      "pricesNote": "Cancel at any time from your account: the subscription ends at the close of the paid period.",
+      "grantEndedTitle": "The Studio access included with your pack is over"
     },
     "error": {
       "title": "We couldn’t check your Studio access",
@@ -655,7 +656,9 @@
       "subscription_ended": "Subscription ended",
       "subscription_pending": "Being activated",
       "not_started": "No subscription",
-      "staff": "Team access"
+      "staff": "Team access",
+      "granted": "Included with your pack",
+      "grant_ended": "Included access over"
     },
     "renews": "Next renewal on {{date}}.",
     "endsOn": "Cancelled: you keep access until {{date}}, then the subscription ends.",
@@ -829,7 +832,10 @@
       "posts": "Social posts",
       "templates": "Global Toothgems templates",
       "collections": "Folders for your creations"
-    }
+    },
+    "grantUntil": "Your pack gives you the Studio {{plan}} until {{date}}, with no subscription: nothing renews on its own. Your creations then stay in your account.",
+    "grantEnded": "The Studio included with your pack ended on {{date}}. Your creations stay in your account: choose a plan to carry on.",
+    "grantBeside": "Your pack also gives you the Studio {{plan}} until {{date}}: the better plan applies."
   },
   "tryOn": {
     "action": "Try on a smile",

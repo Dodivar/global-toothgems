@@ -13,7 +13,8 @@ import { ProductCard } from "../components/ui/ProductCard";
 import { FavoriteButton } from "../components/favorites/FavoriteButton";
 import { RichText } from "../components/ui/RichText";
 import { ReviewsSection, useSubjectReviews } from "../components/reviews/ReviewsSection";
-import { relatedProducts, type Product, type ProductFaqEntry, type SpecKey } from "../data/products";
+import { packLine, relatedProducts, type Product, type ProductFaqEntry, type SpecKey } from "../data/products";
+import { PackInclusions } from "../components/shop/PackInclusions";
 import { pick } from "../data/types";
 import { useFormat } from "../lib/format";
 import { useCart } from "../lib/cart";
@@ -201,6 +202,9 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
 
   const variantLabel = variant ? pick(variant.name, lang) : legacyOptions ? `${shadeLabel(shade)} · ${size}` : undefined;
 
+  // A pack opens access on an account: one per order (decision 139).
+  const pack = packLine(product);
+
   const addToCart = () => {
     addLine({
       productId: product.id,
@@ -213,7 +217,8 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
       // Indicative only: the checkout recomputes every price server-side.
       unitPrice: toMinorUnits(unitPrice),
       currency: product.currency ?? "EUR",
-      qty,
+      qty: pack ? 1 : qty,
+      ...(pack ? { pack } : {}),
     });
     trackShop("product_added_to_cart", {
       product_id: product.id,
@@ -472,11 +477,13 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
               </div>
             ) : (
               <div ref={buyRef} className="flex flex-wrap items-center gap-3">
+                {!pack && (
                 <div className="flex items-center gap-1 rounded-[var(--radius-control)] border border-[var(--border-default)]">
                   <IconButton icon={Minus} label={t("product.decreaseQty")} variant="ghost" size="sm" disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))} />
                   <span className="w-8 text-center text-sm font-semibold" aria-live="polite">{qty}</span>
                   <IconButton icon={Plus} label={t("product.increaseQty")} variant="ghost" size="sm" onClick={() => setQty((q) => q + 1)} />
                 </div>
+                )}
                 {/* Quantity and favourite side by side; on phones the button takes the full width under them. */}
                 <span className="ml-auto flex sm:ml-0">
                   <FavoriteButton product={product} />
@@ -486,6 +493,8 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
                 </Button>
               </div>
             )}
+
+            {product.inclusions && <PackInclusions inclusions={product.inclusions} />}
 
             <RichText source={description} className="text-[length:var(--text-body-md)] text-[var(--text-body)]" />
 
@@ -586,7 +595,7 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
             <div className="grid min-w-0 flex-1 gap-0.5">
               <span className="truncate text-xs text-[var(--text-muted)]">{name}</span>
               <strong className="text-sm text-[var(--text-primary)]">
-                {restockAlert ? t("product.stockOut") : formatPrice(unitPrice * qty)}
+                {restockAlert ? t("product.stockOut") : formatPrice(unitPrice * (pack ? 1 : qty))}
               </strong>
             </div>
             {restockAlert ? (

@@ -22,6 +22,10 @@ export type StudioAccessKind =
   | "subscribed"
   | "subscription_pending"
   | "subscription_ended"
+  /** Studio access bought with a pack runs (decision 139), no Stripe subscription active. */
+  | "granted"
+  /** The last access held was a pack's, now over: the plans are offered, not a trial. */
+  | "grant_ended"
   | "staff";
 
 export interface StudioAccessInfo {
@@ -37,6 +41,15 @@ export interface StudioAccessInfo {
   subscriptionPeriodEnd: number | null;
   subscriptionInterval: "month" | "year" | null;
   subscriptionCancelAtPeriodEnd: boolean;
+  /**
+   * Studio access bought with a pack (decision 139): its plan and dates — the
+   * running one, else the last one — and whether one runs now (it may run
+   * beside a subscription; the better plan is `tier`).
+   */
+  grantPlan: StudioTier | null;
+  grantStartsAt: number | null;
+  grantEndsAt: number | null;
+  grantActive: boolean;
   /**
    * What the member's plan includes (decision 113, migration
    * `20261026170231_studio_plan_entitlements`): the tier (a trial counts as
@@ -64,6 +77,8 @@ const KINDS: StudioAccessKind[] = [
   "subscribed",
   "subscription_pending",
   "subscription_ended",
+  "granted",
+  "grant_ended",
   "staff",
 ];
 
@@ -96,6 +111,10 @@ export function parseAccessRow(raw: unknown): StudioAccessInfo | null {
     subscriptionPeriodEnd: time(row.subscription_period_end),
     subscriptionInterval: row.subscription_interval === "month" || row.subscription_interval === "year" ? row.subscription_interval : null,
     subscriptionCancelAtPeriodEnd: row.subscription_cancel_at_period_end === true,
+    grantPlan: isStudioTier(row.grant_plan) ? row.grant_plan : null,
+    grantStartsAt: time(row.grant_starts_at),
+    grantEndsAt: time(row.grant_ends_at),
+    grantActive: row.grant_active === true,
     tier: isStudioTier(row.tier) ? row.tier : null,
     glowbook: row.glowbook === true,
     limits: { creations: count(record(row.limits).creations), gemGroups: count(record(row.limits).gem_groups) },
@@ -111,7 +130,7 @@ export function atLimit(info: Pick<StudioAccessInfo, "limits" | "usage">, kind: 
 
 /** May the Studio be used in this state (as far as the page is concerned)? */
 export function grantsAccess(state: StudioAccessKind): boolean {
-  return state === "trial_active" || state === "subscribed" || state === "staff";
+  return state === "trial_active" || state === "subscribed" || state === "granted" || state === "staff";
 }
 
 /**

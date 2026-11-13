@@ -170,6 +170,15 @@ export interface VariantOption {
   values: VariantOptionValue[];
 }
 
+/**
+ * What one unit of a product also opens (a pack, decision 139): an Academy
+ * course, or N months of a 3D Studio plan. Saved by
+ * `admin_save_product_inclusions()`, granted by the database once paid.
+ */
+export type AdminInclusion =
+  | { kind: "course"; courseId: string }
+  | { kind: "studio"; plan: "essential" | "artist" | "atelier"; months: number };
+
 /** One component of a kit: a product, or one active variant of it, and how many one kit holds. */
 export interface BundleComponent {
   productId: string;
@@ -247,6 +256,8 @@ export interface AdminProduct {
    * filled. A kit has no variants and its own count is never written.
    */
   bundle?: BundleComponent[];
+  /** What one unit also opens (decision 139); undefined or empty = nothing. Database products only. */
+  inclusions?: AdminInclusion[];
   /**
    * Options the custom variants combine (colour × plug…), in display order.
    * Empty or undefined = the variants are a plain list.

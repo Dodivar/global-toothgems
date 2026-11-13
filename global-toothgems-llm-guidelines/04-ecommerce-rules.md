@@ -17,7 +17,7 @@ The commerce schema is largely built. Before writing commerce code, read the mat
 
 The client is never authoritative for price, discount, tax, shipping, stock, payment status or order status. Prices shown in the browser are indicative; `create_order()` recomputes everything.
 
-The catalogue represents physical products, digital products, gift cards and variants (JSONB `attributes`, e.g. gem pack × stone size). Courses are not products (owner, 2026-10-01): they are sold as course lines of the same order (`order_items.course_id`, one seat, account required), and the paid order grants a `course_entitlements` row (`supabase/README.md` → *Academy course sales*). Subscriptions are not modelled yet.
+The catalogue represents physical products, digital products, gift cards and variants (JSONB `attributes`, e.g. gem pack × stone size). Courses are not products (owner, 2026-10-01): they are sold as course lines of the same order (`order_items.course_id`, one seat, account required), and the paid order grants a `course_entitlements` row (`supabase/README.md` → *Academy course sales*). A **pack** is still a product: a kit (decision 117) whose `product_inclusions` also open a course and/or months of a 3D Studio plan once paid (decision 139, *Packs: included access*) — sold to an account, one per line, with the course waiver when it opens a course; the grants are the database's, never the browser's. Studio subscriptions are Stripe subscriptions mirrored by the webhook (decision 94), outside the shop's orders.
 
 ## Cart
 

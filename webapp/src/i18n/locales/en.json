@@ -256,6 +256,22 @@
         "too_many_requests": "Too many requests in a short time. Please try again later.",
         "network": "The request could not be sent. Check your connection and try again."
       }
+    },
+    "pack": {
+      "title": "Included in the pack",
+      "articles": "The kit's articles, delivered to you.",
+      "course": "{{title}} course",
+      "courseHint": "Opens on your account as soon as the payment is confirmed.",
+      "courseLink": "See the course programme",
+      "studio_one": "3D Studio {{plan}} for {{count}} month",
+      "studio_other": "3D Studio {{plan}} for {{count}} months",
+      "studioHint": "Opens as soon as the payment is confirmed, with no subscription: nothing renews on its own.",
+      "account": "An account is required: the course and the Studio open on the account that places the order. One pack per order, not offered as a gift.",
+      "plan": {
+        "essential": "Essential",
+        "artist": "Artist",
+        "atelier": "Atelier"
+      }
     }
   },
   "cart": {
@@ -390,6 +406,9 @@
       "consentTitle": "Immediate access to the course",
       "consentLabel": "I ask for immediate access to the course and I expressly waive my right of withdrawal: I acknowledge that I lose it as soon as I start following the course.",
       "consentHint": "As long as no lesson has been opened, you keep 14 days to withdraw."
+    },
+    "pack": {
+      "line": "1 pack per order · course and Studio open on your account"
     },
     "noShipping": "Nothing to ship: gift cards are sent by email and courses open in your member space.",
     "recap": {
@@ -1280,7 +1299,8 @@
       "favoritesLowStock_other": "{{count}} almost gone",
       "favoritesCta": "See my favourites",
       "discoverEyebrow": "Academy",
-      "discoverTitle": "Train with Global Toothgems"
+      "discoverTitle": "Train with Global Toothgems",
+      "studioGrantUntil": "Included with your pack until {{date}}."
     }
   },
   "footer": {
@@ -4263,6 +4283,25 @@
       "capacityUntracked": "No product in the kit has tracked stock: the kit stays available while none is marked out of stock.",
       "stockNotice": "This kit’s stock is calculated from its products (see “Kit contents”): restock the products and the kit follows automatically.",
       "thresholdHint": "Below this number of kits available, the kit shows as low stock."
+    },
+    "inclusions": {
+      "title": "Included access",
+      "body": "What one unit of this product opens besides its articles: an Academy course and months of the 3D Studio. The product becomes a pack: sold to an account, one per order, with the waiver of the right of withdrawal when it opens a course.",
+      "courseToggle": "Opens a course",
+      "courseHint": "Access is given once the payment is confirmed. A customer who already follows the course keeps their access and pays the same price.",
+      "courseLabel": "Course opened",
+      "courseDraft": "{{title}} (not published: the pack cannot be sold)",
+      "courseUnknown": "Course not found",
+      "studioToggle": "Opens the 3D Studio",
+      "studioHint": "Starts once the payment is confirmed, with no subscription. With a running subscription the better plan applies; a second pack adds its months after the first.",
+      "planLabel": "Plan",
+      "monthsLabel": "Length in months (1 to {{max}})",
+      "rules": "Access is given when the order is paid and taken back by a full refund; a partial refund leaves it. An order already placed keeps what it contained.",
+      "unavailable": "Included access is set on the real database.",
+      "loadError": "The courses cannot be read right now.",
+      "errorCourse": "Choose the course opened.",
+      "errorTwice": "A course or a Studio access can be listed only once.",
+      "errorMonths": "The Studio length is 1 to {{max}} months."
     }
   },
   "community": {

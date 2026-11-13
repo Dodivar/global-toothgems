@@ -31,6 +31,24 @@ describe("parseAccessRow", () => {
     expect(info.firstCreationAt).toBeNull();
   });
 
+  it("reads the access a pack opened (decision 139)", () => {
+    const info = parseAccessRow({
+      ...row,
+      state: "granted",
+      grant_plan: "artist",
+      grant_starts_at: "2026-11-08T10:00:00.000Z",
+      grant_ends_at: "2027-02-08T10:00:00.000Z",
+      grant_active: true,
+    })!;
+    expect(info.state).toBe("granted");
+    expect(info.grantPlan).toBe("artist");
+    expect(info.grantActive).toBe(true);
+    expect(info.grantEndsAt).toBe(Date.parse("2027-02-08T10:00:00.000Z"));
+    const none = parseAccessRow(row)!;
+    expect([none.grantPlan, none.grantEndsAt, none.grantActive]).toEqual([null, null, false]);
+    expect(parseAccessRow({ ...row, state: "grant_ended", grant_plan: "gold" })!.grantPlan).toBeNull();
+  });
+
   it("refuses anything that is not a known state with a server time", () => {
     expect(parseAccessRow(null)).toBeNull();
     expect(parseAccessRow([row])).toBeNull();
@@ -67,11 +85,12 @@ describe("parseAccessRow", () => {
 });
 
 describe("grantsAccess", () => {
-  it("opens the Studio for an active trial, a subscription and staff only", () => {
+  it("opens the Studio for an active trial, a subscription, a pack's access and staff only", () => {
     expect(grantsAccess("trial_active")).toBe(true);
     expect(grantsAccess("subscribed")).toBe(true);
+    expect(grantsAccess("granted")).toBe(true);
     expect(grantsAccess("staff")).toBe(true);
-    for (const state of ["not_started", "trial_expired", "subscription_pending", "subscription_ended"] as const) {
+    for (const state of ["not_started", "trial_expired", "subscription_pending", "subscription_ended", "grant_ended"] as const) {
       expect(grantsAccess(state)).toBe(false);
     }
   });

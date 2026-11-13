@@ -43,6 +43,13 @@ export interface CartLine {
    * the database once the order is paid.
    */
   courseId?: string;
+  /**
+   * Present on a pack line (a product that also opens access, decision 139):
+   * one unit per line, sold to a signed-in account; `course` when it opens an
+   * Academy course, so the course waiver box is asked too. The database
+   * enforces both; this only steers the cart.
+   */
+  pack?: { course: boolean };
 }
 
 /** Same bounds as the checkout (create_order accepts 1–1000 per line). */
@@ -54,10 +61,11 @@ export const lineKey = (line: Pick<CartLine, "productId" | "variantId" | "varian
 export function addToLines(lines: CartLine[], line: Omit<CartLine, "id">): CartLine[] {
   const id = lineKey(line);
   const existing = lines.find((l) => l.id === id);
+  const max = line.pack ? 1 : MAX_LINE_QTY;
   if (existing) {
-    return lines.map((l) => (l.id === id ? { ...l, qty: Math.min(MAX_LINE_QTY, l.qty + line.qty) } : l));
+    return lines.map((l) => (l.id === id ? { ...l, qty: Math.min(max, l.qty + line.qty) } : l));
   }
-  return [...lines, { ...line, id, qty: Math.min(MAX_LINE_QTY, line.qty) }];
+  return [...lines, { ...line, id, qty: Math.min(max, line.qty) }];
 }
 
 /** How many units an addition really put on its line: merging is capped at `MAX_LINE_QTY`. */
@@ -75,8 +83,8 @@ export function undoAddition(lines: CartLine[], id: string, added: number): Cart
   });
 }
 
-/** Gift cards and courses are bought one per line. */
-const singleUnit = (line: CartLine) => Boolean(line.giftCard || line.courseId);
+/** Gift cards, courses and packs are bought one per line. */
+export const singleUnit = (line: CartLine) => Boolean(line.giftCard || line.courseId || line.pack);
 
 export function setLineQty(lines: CartLine[], id: string, qty: number): CartLine[] {
   if (qty <= 0) return lines.filter((l) => l.id !== id);
@@ -98,6 +106,12 @@ export function addCourseToLines(lines: CartLine[], line: Omit<CartLine, "id" | 
 }
 
 export const hasCourse = (lines: CartLine[]) => lines.some((l) => l.courseId);
+
+/** Something in the basket opens access on an account: a course or a pack (decision 139). */
+export const needsAccount = (lines: CartLine[]) => lines.some((l) => l.courseId || l.pack);
+
+/** Something in the basket opens a course: the waiver of the right of withdrawal is asked (decision 128). */
+export const opensCourse = (lines: CartLine[]) => lines.some((l) => l.courseId || l.pack?.course);
 
 /** Whether something in the basket is shipped (gift cards are sent by e-mail, courses open online). */
 export const needsShipping = (lines: CartLine[]) => lines.some((l) => !l.giftCard && !l.courseId);
