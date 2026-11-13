@@ -48,7 +48,14 @@ Dashboards › New dashboard › "Production health". Add these insights (each: 
 - **Surveys** (later): a one-question survey at the end of the Studio trial or after a certificate; the cookie policy would need one more sentence first.
 - **Consent sample**: PostHog only sees visitors who accepted analytics. Use it for rates and friction; the money of record is `/admin/statistiques` and Stripe.
 
-## 5. Still pending in code (owner's call)
+## 5. Personal API keys (built 2026-11-13)
 
-- **Source maps** (readable stack traces): needs a PostHog personal API key with error-tracking write scope, set on Vercel as a build variable, and the `@posthog/nextjs-config` package (it downloads the PostHog CLI at install). Ask an agent once the key exists.
-- **Person deletion on account erasure** (decision 125 (f)): the `delete-account` function could delete the PostHog person with the same kind of key; today it is done by hand on request.
+Two keys, created by the owner on 2026-11-13, each with the fewest scopes:
+
+| Key | Scopes | Access | Stored as |
+| --- | --- | --- | --- |
+| Vercel – source maps | Error tracking: Write, Organization: Read | organization DoDigital (Organization: Read is refused on project-scoped keys) | Vercel build variable `POSTHOG_PERSONAL_API_KEY`, Production only, sensitive |
+| Supabase – account deletion | Person: Write | project Global Toothgems | Edge Function secret `POSTHOG_PERSON_DELETE_API_KEY` |
+
+- **Source maps**: `npm run build` = `next build` then `webapp/scripts/posthog-sourcemaps.mjs`. On a Vercel production build holding the key, `next.config.ts` turns on `productionBrowserSourceMaps`, the script runs the PostHog CLI (pinned `@posthog/cli`, fetched with npx, not a dependency — installs elsewhere never download its binary), which stamps the chunks, uploads the maps and deletes them; a failed upload deletes the maps itself and warns without failing the deployment. Nothing happens locally, in CI or on previews. Check after the first production deployment: the Vercel build log shows `[sourcemaps] uploaded to PostHog`, and a new error's stack trace in PostHog points at `src/…` files.
+- **Person deletion**: `delete-account` asks PostHog to delete the person behind the account id, with its events and recordings (`_shared/posthogPersons.ts`, `bulk_delete`), after the erasure and before the confirmation e-mail; a PostHog failure is logged (`analytics deletion failed`) and does not stop the erasure. Without the secret the step is skipped and logged.

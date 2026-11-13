@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { POSTHOG_PROXY_PATH, posthogCloudHosts } from "./src/lib/posthogConfig";
 import { assertProductionConfig } from "./src/lib/supabase/productionGuard";
+import { sourcemapUploadConfig } from "./scripts/posthog-sourcemaps.mjs";
 
 // A production deployment never falls back to the mock data (AGENTS.md §4):
 // without the Supabase variables the app would serve demo products, a demo
@@ -26,6 +27,10 @@ const nextConfig: NextConfig = {
   // redirect them. The pages keep their slash-less address: `proxy.ts` does
   // that redirect itself (308), as Next.js did.
   skipTrailingSlashRedirect: true,
+  // Browser source maps only for a Vercel production build that uploads them
+  // to PostHog error tracking; `scripts/posthog-sourcemaps.mjs` (run by
+  // `npm run build`) uploads then deletes them, so none is ever served.
+  productionBrowserSourceMaps: sourcemapUploadConfig(process.env) !== null,
   // PostHog through our own domain (`instrumentation-client.ts`): ad blockers
   // cut requests to posthog.com, not to the site itself. Only for PostHog Cloud.
   async rewrites() {
