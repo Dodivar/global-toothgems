@@ -5149,7 +5149,7 @@
     "unsubscribe": {
       "eyebrow": "E-mail reminders",
       "title": "Stop our automatic reminders",
-      "body": "These are the cart reminders, the review requests after delivery and the loyalty reward reminders. Your order e-mails (confirmation, shipping, invoices) will keep arriving.",
+      "body": "These are the cart reminders, the review requests after a delivery or a finished training, and the loyalty reward reminders. Your order e-mails (confirmation, shipping, invoices) will keep arriving.",
       "action": "Stop these reminders",
       "stopping": "Saving…",
       "doneTitle": "Done",

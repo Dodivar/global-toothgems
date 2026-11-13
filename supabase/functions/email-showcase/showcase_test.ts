@@ -27,7 +27,7 @@ const STUDIO_TERMS_FILE = `conditions-abonnement-studio-3d-${STUDIO_TERMS_VERSIO
 Deno.test("one sample per database template and per Auth template, all to the owner", () => {
   const samples = buildShowcase(ctx);
   const templates = samples.flatMap((s) => (s.kind === "template" ? [s.request.templateKey] : []));
-  assertEquals(new Set(templates).size, 18);
+  assertEquals(new Set(templates).size, 19);
   assertEquals(samples.filter((s) => s.kind === "rendered").length, 2);
   for (const s of samples) {
     if (s.kind === "template") {
@@ -75,9 +75,9 @@ Deno.test("only_documents keeps the samples with a PDF: invoices, credit notes, 
   assert(kept.every((s) => s.kind === "template" && (s.request.attachments?.length ?? 0) >= 1));
 });
 
-Deno.test("only keeps the samples of the templates asked for: the three reminders carry their opt-out link", () => {
-  const kept = onlyTemplates(buildShowcase(ctx), ["abandoned_cart", "review_request", "loyalty_reward", "nope"]);
-  assertEquals(kept.map((s) => (s.kind === "template" ? s.request.templateKey : "")), ["abandoned_cart", "review_request", "loyalty_reward"]);
+Deno.test("only keeps the samples of the templates asked for: the four reminders carry their opt-out link", () => {
+  const kept = onlyTemplates(buildShowcase(ctx), ["abandoned_cart", "review_request", "loyalty_reward", "course_review_request", "nope"]);
+  assertEquals(kept.map((s) => (s.kind === "template" ? s.request.templateKey : "")), ["abandoned_cart", "review_request", "loyalty_reward", "course_review_request"]);
   for (const s of kept) {
     if (s.kind !== "template") continue;
     const content = typeof s.request.content === "function" ? s.request.content("fr") : s.request.content;

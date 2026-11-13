@@ -20,7 +20,13 @@ import { attachDocument } from "../_shared/email/invoicePdf.ts";
 import { orderConfirmationContent, refundContent, shippingContent, type OrderSnapshot } from "../_shared/email/orderContent.ts";
 import type { SendRequest } from "../_shared/email/send.ts";
 import { backInStockContent, stockDigestContent, type StockDigestItem } from "../_shared/email/stockContent.ts";
-import { abandonedCartContent, loyaltyRewardContent, reminderUnsubscribeUrl, reviewRequestContent } from "../_shared/email/reminderEmails.ts";
+import {
+  abandonedCartContent,
+  courseReviewRequestContent,
+  loyaltyRewardContent,
+  reminderUnsubscribeUrl,
+  reviewRequestContent,
+} from "../_shared/email/reminderEmails.ts";
 import {
   studioDocumentContent,
   studioPlanName,
@@ -328,6 +334,21 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
         ...base, templateKey: "loyalty_reward", eventKey: key("loyalty_reward"),
         variables: { first_name: "Camille", reward_percent: "10" },
         content: (locale) => loyaltyRewardContent(locale, ctx.siteUrl, reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE")),
+      },
+    },
+    {
+      kind: "template",
+      label: "Demande d'avis après une formation terminée",
+      request: {
+        ...base, templateKey: "course_review_request", eventKey: key("course_review_request"),
+        variables: { first_name: "Camille", course_name: "Initiation Tooth Gems" },
+        content: (locale) =>
+          courseReviewRequestContent(
+            { courseTitle: "Initiation Tooth Gems", courseSlug: "initiation-tooth-gems", coverPath: null },
+            locale,
+            ctx.siteUrl,
+            reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),
+          ),
       },
     },
     {

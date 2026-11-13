@@ -5149,7 +5149,7 @@
     "unsubscribe": {
       "eyebrow": "Rappels par e-mail",
       "title": "Ne plus recevoir nos rappels automatiques",
-      "body": "Il s’agit des rappels de panier, des demandes d’avis après livraison et des rappels de récompense fidélité. Vos e-mails de commande (confirmation, expédition, factures) continueront d’arriver.",
+      "body": "Il s’agit des rappels de panier, des demandes d’avis après une livraison ou une formation terminée, et des rappels de récompense fidélité. Vos e-mails de commande (confirmation, expédition, factures) continueront d’arriver.",
       "action": "Ne plus recevoir ces rappels",
       "stopping": "Enregistrement…",
       "doneTitle": "C’est noté",

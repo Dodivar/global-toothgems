@@ -11752,6 +11752,20 @@ export type Database = {
           order_number: string
         }[]
       }
+      pending_course_review_request_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          completion_id: string
+          course_id: string
+          course_slug: string
+          course_title: string
+          cover_media_id: string
+          cover_updated_at: string
+          email: string
+          first_name: string
+          locale: string
+        }[]
+      }
       pending_lounge_moderation_emails: {
         Args: { p_limit?: number }
         Returns: {

@@ -3,8 +3,12 @@ import { renderEmail } from "./render.ts";
 import {
   abandonedCartContent,
   cartUrl,
+  courseReviewRequestContent,
+  coursePageUrl,
+  coverPath,
   loyaltyRewardContent,
   type PendingAbandonedCart,
+  type PendingCourseReviewRequest,
   type PendingLoyaltyReward,
   type PendingReviewRequest,
   reminderUnsubscribeUrl,
@@ -32,6 +36,16 @@ const CART: PendingAbandonedCart = {
 };
 const REVIEW: PendingReviewRequest = { ...CART, orderId: "o-2", locale: "en", items: [{ name: "Gem", slug: "gem", imagePath: null }] };
 const REWARD: PendingLoyaltyReward = { cardId: "c-1", userId: "u-1", email: "lea@example.com", locale: "fr", firstName: "Léa", rewardPercent: 10 };
+const COURSE: PendingCourseReviewRequest = {
+  completionId: "cc-1",
+  courseId: "co-1",
+  email: "lea@example.com",
+  locale: "fr",
+  firstName: "Léa",
+  courseTitle: "Masterclass",
+  courseSlug: "masterclass",
+  coverPath: "/media/formations/m-1?v=1",
+};
 
 const template = (key: string, variables: string[]) => ({
   key,
@@ -77,6 +91,25 @@ Deno.test("loyalty reward: the cart where the reward is ticked, and the card", (
   assert(content.blocks?.some((b) => b.text.includes(`${SITE}/compte/fidelite`)));
 });
 
+Deno.test("course review request: the course page's reviews in the e-mail's language, with its cover", () => {
+  assertEquals(coursePageUrl(SITE, "fr", "masterclass"), `${SITE}/fr/academy/formation/masterclass`);
+  assertEquals(coursePageUrl(SITE, "en", "master class"), `${SITE}/en/academy/course/master%20class`);
+  const content = courseReviewRequestContent(COURSE, "fr", SITE, UNSUB);
+  assertEquals(content.primaryAction?.url, `${SITE}/fr/academy/formation/masterclass#avis`);
+  const rendered = renderEmail(template("course_review_request", ["first_name", "course_name"]), { first_name: "Léa", course_name: "Masterclass" }, LAYOUT, content);
+  assertStringIncludes(rendered.html, `${SITE}/media/formations/m-1?v=1`);
+  assertStringIncludes(rendered.text, UNSUB);
+  // Without a cover (or an https site) the course is a plain link.
+  const plain = courseReviewRequestContent({ ...COURSE, coverPath: null }, "en", SITE, UNSUB);
+  assert(plain.blocks?.some((b) => b.text.includes(`${SITE}/en/academy/course/masterclass#avis`)));
+});
+
+Deno.test("course cover path matches the public pages' route", () => {
+  assertEquals(coverPath("m-1", "2026-11-13T10:00:00Z"), `/media/formations/m-1?v=${Date.parse("2026-11-13T10:00:00Z")}`);
+  assertEquals(coverPath("m-1", null), "/media/formations/m-1");
+  assertEquals(coverPath(null, null), null);
+});
+
 function harness(overrides: Partial<ReminderSource> = {}) {
   const claimed: string[] = [];
   const sent: { to: string; headers: Record<string, string> }[] = [];
@@ -88,6 +121,8 @@ function harness(overrides: Partial<ReminderSource> = {}) {
           ? template(key, ["first_name", "reward_percent"])
           : key === "review_request"
           ? template(key, ["first_name", "order_number"])
+          : key === "course_review_request"
+          ? template(key, ["first_name", "course_name"])
           : template(key, ["first_name"]),
       ),
     claim: (entry) => {
@@ -117,6 +152,7 @@ function harness(overrides: Partial<ReminderSource> = {}) {
     abandonedCarts: () => Promise.resolve([CART]),
     reviewRequests: () => Promise.resolve([REVIEW]),
     loyaltyRewards: () => Promise.resolve([REWARD]),
+    courseReviewRequests: () => Promise.resolve([COURSE]),
     unsubscribeToken: (email) => {
       tokens.push(email);
       return Promise.resolve("c".repeat(48));
@@ -132,15 +168,16 @@ Deno.test("the sweep sends each reminder once, keyed per event, with List-Unsubs
   assertEquals(report.abandonedCart, { examined: 1, sent: 1, skipped: 0, failed: 0 });
   assertEquals(report.reviewRequest.sent, 1);
   assertEquals(report.loyaltyReward.sent, 1);
-  assertEquals(h.claimed, ["abandoned_cart:o-1", "review_request:o-2", "loyalty_reward:c-1"]);
-  assertEquals(h.tokens.length, 3);
+  assertEquals(report.courseReviewRequest.sent, 1);
+  assertEquals(h.claimed, ["abandoned_cart:o-1", "review_request:o-2", "loyalty_reward:c-1", "course_review_request:cc-1"]);
+  assertEquals(h.tokens.length, 4);
   for (const mail of h.sent) {
     assertEquals(mail.headers["List-Unsubscribe"], `<${SITE}/rappels/desinscription?token=${"c".repeat(48)}>`);
   }
   // A second run finds the events already claimed: nothing more goes out.
   const again = await sendReminderEmails(h.deps, h.source, { mediaBaseUrl: MEDIA });
   assertEquals(again.abandonedCart, { examined: 1, sent: 0, skipped: 1, failed: 0 });
-  assertEquals(h.sent.length, 3);
+  assertEquals(h.sent.length, 4);
 });
 
 Deno.test("no token means no e-mail; one failing sweep does not stop the others", async () => {
@@ -153,6 +190,7 @@ Deno.test("no token means no e-mail; one failing sweep does not stop the others"
   assertEquals(report.abandonedCart, { examined: 1, sent: 0, skipped: 0, failed: 1 });
   assertEquals(report.reviewRequest, { examined: 0, sent: 0, skipped: 0, failed: 1 });
   assertEquals(report.loyaltyReward.failed, 1);
+  assertEquals(report.courseReviewRequest.failed, 1);
   assertEquals(h.sent.length, 0);
   assert(logs.some((m) => m.includes("review request sweep failed")));
 });
