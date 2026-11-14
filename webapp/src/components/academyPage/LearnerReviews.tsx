@@ -17,8 +17,8 @@ const LIMIT = 3;
  * Social proof: the newest published reviews of the courses on the
  * catalogue, from the review store (moderated reviews only). Nothing is
  * written for the page: with no published course review the section is not
- * rendered at all. Course reviews are not stored in the database yet, so
- * on a live project it stays out of the page until they are.
+ * rendered at all. Course reviews are written by learners holding the course
+ * and moderated in the back office (decision 141).
  */
 export function LearnerReviews({ courses, lang }: { courses: PublicCourse[]; lang: string }) {
   const { reviews, loading } = useReviews();

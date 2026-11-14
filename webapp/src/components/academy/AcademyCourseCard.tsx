@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, Clock, GraduationCap, ListVideo } from "lucide-react";
 import clsx from "clsx";
 import { Badge, type BadgeTone } from "../ui/Badge";
+import { Stars } from "../reviews/Stars";
 import { Link } from "../../lib/navigation";
 import { pick } from "../../data/types";
 import { courseHref } from "../../lib/academyUrl";
@@ -109,6 +110,15 @@ export function AcademyCourseCard({
             {title}
           </Link>
         </Heading>
+        {/* Published learner reviews only (decision 141), read with the course on the server: no rating, no line. */}
+        {course.rating && (
+          <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+            <Stars rating={course.rating.average} size={12} />
+            <span aria-label={t("product.ratingAria", { rating: course.rating.average.toFixed(1), count: course.rating.count })}>
+              {course.rating.average.toFixed(1)} ({course.rating.count})
+            </span>
+          </span>
+        )}
         {course.summary && (
           <p className={clsx("m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]", clampSummary && "line-clamp-2")}>
             {pick(course.summary, lang)}

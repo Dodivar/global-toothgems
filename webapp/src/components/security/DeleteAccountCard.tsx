@@ -30,6 +30,7 @@ const CONSEQUENCES = ["access", "courses", "studio", "community", "loyalty", "ne
 const BLOCKER_LINKS: Partial<Record<ErasureBlocker, string>> = {
   studio_subscription: "/compte/studio",
   studio_withdrawal: "/compte/studio",
+  glowbook_bookings: "/compte/rendez-vous",
 };
 
 /** Where Google or Apple sends the member back after signing in again. */

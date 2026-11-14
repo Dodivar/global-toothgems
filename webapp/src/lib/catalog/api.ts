@@ -21,11 +21,12 @@ import {
  */
 const productSelect = (options: boolean) => `
   id, slug, name, short_description, description, meta_title, meta_description, price, currency, is_featured, metadata,
+  sku, weight_grams, product_type,
   spec_material, spec_center, spec_back, spec_packaging, spec_wear,
   category:categories ( slug, name, category_translations ( locale, name, status ) ),
   product_translations ( locale, name, slug, short_description, description, meta_title, meta_description, status,
     spec_material, spec_center, spec_back, spec_packaging, spec_wear ),
-  product_variants ( id, name, attributes, price, is_active, position,
+  product_variants ( id, name, attributes, price, is_active, position, sku, weight_grams,
     product_variant_translations ( locale, name, status ),${options ? "\n    product_variant_option_values ( option_id, value_id )," : ""}
     inventory_items ( stock_status ) ),${
       options
@@ -218,4 +219,17 @@ export async function fetchProductFaq(db: TypedSupabaseClient, productId: string
   const { data, error } = await db.rpc("product_faq", { p_product_id: productId, p_locale: locale });
   if (error) throw error;
   return (data ?? []).map((row) => ({ id: row.item_id, question: row.question, answer: row.answer }));
+}
+
+/**
+ * The components of every active kit (decision 117), as `[kit id, component
+ * product ids]` pairs: for the product feeds, which leave out a kit holding an
+ * excluded product. RLS shows the contents of active kits only.
+ */
+export async function fetchBundleComponents(db: TypedSupabaseClient): Promise<[string, string[]][]> {
+  const { data, error } = await db.from("product_bundle_items").select("bundle_product_id, component_product_id");
+  if (error) throw error;
+  const kits = new Map<string, string[]>();
+  for (const row of data ?? []) kits.set(row.bundle_product_id, [...(kits.get(row.bundle_product_id) ?? []), row.component_product_id]);
+  return [...kits];
 }

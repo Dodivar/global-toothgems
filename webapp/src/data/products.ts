@@ -147,12 +147,24 @@ export function colorSwatchFill(color: Pick<GemColorDef, "hex" | "isMulticolor">
 }
 
 /** A purchasable option of a catalogue product (colour, size, box quantity…). */
+/**
+ * The database's stock status of a product or variant, as it is
+ * (`inventory_items.stock_status`): `stock` folds it into a badge, where a
+ * preorder reads as in stock; structured data and product feeds need it raw.
+ */
+export type StockStatus = "in_stock" | "low_stock" | "out_of_stock" | "preorder";
+
 export interface ProductVariant {
   id: string;
   name: Localized;
   /** Display price in major units; the server recomputes every price at checkout. */
   price: number;
   stock?: "low" | "out";
+  /** Raw stock status (database products only). */
+  availability?: StockStatus;
+  /** The catalogue's reference and shipping weight, when set (database products only). */
+  sku?: string;
+  weightGrams?: number;
   /** Gem options (`lib/gemOptions.ts`): stones per pack, and size (SS gauge or millimetres). */
   pack?: number;
   size?: GemSize;
@@ -228,6 +240,16 @@ export interface Product {
   rating: number;
   reviewCount: number;
   stock?: "low" | "out";
+  /**
+   * Raw stock status (database products only): the product's own for a
+   * product without variants, else the best of its variants (`aggregateAvailability`).
+   */
+  availability?: StockStatus;
+  /** The catalogue's reference and shipping weight, when set (database products only). */
+  sku?: string;
+  weightGrams?: number;
+  /** `physical` or `digital` (database products only). */
+  productType?: "physical" | "digital";
   image: string;
   /**
    * Category slug (`gems`, `materiel`…, the `categorie` URL value; see
@@ -289,7 +311,7 @@ export const PRODUCTS: Product[] = [
       { src: img("img-04.jpg"), alt: { fr: "Aurora Heart de face", en: "Aurora Heart, front view" } },
       { src: img("img-07.jpg"), alt: { fr: "Gem de profil", en: "Gem, side view" } },
       { src: img("img-11.jpg"), alt: { fr: "Assortiment de gems", en: "Assortment of gems" } },
-      { src: img("mouth-02.jpg"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
+      { src: img("mouth-02.webp"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
     ],
   },
   {
@@ -520,7 +542,7 @@ export const PRODUCTS: Product[] = [
       { src: img("img-02.jpg"), alt: { fr: "Étoile Or, vue de face", en: "Gold Star, front view" } },
       { src: img("img-07.jpg"), alt: { fr: "Détail de la monture", en: "Setting detail" } },
       { src: img("img-13.jpg"), alt: { fr: "Assortiment de formes", en: "Shape assortment" } },
-      { src: img("mouth-02.jpg"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
+      { src: img("mouth-02.webp"), alt: { fr: "Gem posée sur dent", en: "Gem applied on a tooth" } },
     ],
   },
   {
@@ -562,23 +584,24 @@ export function relatedProducts(product: Product, list: Product[] = PRODUCTS): P
 export interface ShapeGroup {
   shape: GemShape;
   count: number;
-  /** Picture of the cut: its Aquamarine gem's photo, when the group has one. */
+  /** Picture of the cut: its plain Crystal gem's photo, when the group has one. */
   image?: string;
 }
 
 /** Colour whose photo stands for a cut on the shape tiles. */
-const SHAPE_PICTURE_COLOR = "aquamarine";
+const SHAPE_PICTURE_COLOR = "crystal";
 
 /**
- * The Aquamarine gem's photo: its light blue shows the cut's facets better than
- * the clear Crystal (owner's request, 2026-11-13; plain Crystal from 2026-11-03,
- * Crystal AB before). A gem whose colour was not set yet is recognised by a
- * name ending in "Aquamarine" / "Aigue-marine" ("Diamond Shape - Aquamarine").
+ * The plain Crystal gem's photo: clear, without the Crystal AB's iridescent
+ * reflections, so the tile shows the cut itself (decided by the owner,
+ * 2026-11-03; Crystal AB from 2026-10-29). A gem whose colour was not set yet
+ * is recognised by a name ending in "Crystal" ("Diamond Shape - Crystal",
+ * never "Crystal AB" or "Crystal Shimmer").
  */
 function shapePicture(gems: Product[]): string | undefined {
-  const isAquamarine = (p: Product) =>
-    p.color === SHAPE_PICTURE_COLOR || (!p.color && [p.name.fr, p.name.en].some((name) => /\b(aquamarine|aigue-marine)\s*$/i.test(name)));
-  return gems.find((p) => p.image && isAquamarine(p))?.image;
+  const isPlainCrystal = (p: Product) =>
+    p.color === SHAPE_PICTURE_COLOR || (!p.color && [p.name.fr, p.name.en].some((name) => /\bcrystal\s*$/i.test(name)));
+  return gems.find((p) => p.image && isPlainCrystal(p))?.image;
 }
 
 /**

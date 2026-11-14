@@ -5,6 +5,7 @@ import { Cookie, SlidersHorizontal } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useCookieConsent } from "../../lib/cookieConsent";
 import { LEGAL_PATHS } from "../../data/legal/routes";
+import { ADVERTISING_ENABLED } from "../../lib/metaPixelConfig";
 
 /**
  * First-visit cookie banner.
@@ -45,7 +46,7 @@ export function CookieBanner() {
               {t("legal.cookies.bannerTitle")}
             </h2>
             <p id={bodyId} className="m-0 text-[length:var(--text-caption)] leading-[1.6] text-[var(--text-body)] sm:text-[length:var(--text-body-sm)]">
-              {t("legal.cookies.bannerBody")}{" "}
+              {t(ADVERTISING_ENABLED ? "legal.cookies.bannerBodyAdvertising" : "legal.cookies.bannerBody")}{" "}
               <Link to={LEGAL_PATHS.cookies} className="gt-legal-link">
                 {t("legal.cookies.policyLink")}
               </Link>

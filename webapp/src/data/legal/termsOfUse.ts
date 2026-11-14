@@ -293,6 +293,20 @@ export const TERMS_OF_USE: LegalDocument = {
             "The Studio editor is available with an account: a free 48-hour trial, once per account, then a subscription (Essential, Artist or Atelier). What each plan allows is set out on the 3D Studio page; the subscription is sold by the website publisher, and its payment, cancellation and withdrawal terms are in the <<3D Studio subscription terms|/conditions-abonnement-studio>>. Creations published on a Glowbook page are reviewed by our team before they become publicly visible.",
           ),
         },
+        {
+          kind: "p",
+          text: l(
+            "Réservation depuis un Glowbook. Lorsqu’un artiste ouvre son agenda, un membre connecté avec une adresse e-mail confirmée peut y réserver un créneau d’une heure, pour une création de la page ou une création personnalisée qu’il décrit. Le créneau est bloqué dès la réservation ; l’artiste peut l’annuler en indiquant une raison, qui est transmise au client. Aucun paiement n’a lieu sur le site : la prestation, son prix et ses conditions sont convenus directement entre le client et l’artiste, qui en est seul responsable.",
+            "Booking from a Glowbook. When an artist opens their calendar, a signed-in member with a confirmed e-mail address can book a one-hour slot there, for a design from the page or a custom design they describe. The slot is blocked as soon as it is booked; the artist can cancel it, giving a reason that is passed on to the client. No payment takes place on the site: the service, its price and its terms are agreed directly between the client and the artist, who alone is responsible for it.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Le client peut annuler librement jusqu’à 24 heures avant le rendez-vous ; plus tard, l’annulation est notée comme tardive. Après le rendez-vous, l’artiste peut noter une absence. Deux absences ou annulations tardives en 12 mois ferment les réservations au client sur tous les Glowbooks pendant 3 mois. Pour éviter les abus, un membre a au plus un rendez-vous à venir par artiste et trois en tout, et cinq réservations par jour ; un artiste peut refuser les réservations d’un client.",
+            "The client can cancel freely until 24 hours before the appointment; later, the cancellation is recorded as late. After the appointment, the artist can record a no-show. Two no-shows or late cancellations within 12 months close bookings to the client on every Glowbook for 3 months. To prevent abuse, a member has at most one upcoming appointment per artist and three in all, and five bookings a day; an artist can refuse bookings from a client.",
+          ),
+        },
       ],
     },
     {

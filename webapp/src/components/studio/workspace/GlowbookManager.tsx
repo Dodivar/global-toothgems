@@ -1,10 +1,11 @@
-import { useId, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useId, useState, type FormEvent, type KeyboardEvent } from "react";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import {
   ArrowDown,
   ArrowRight,
   ArrowUp,
+  CalendarCheck,
   Check,
   CircleAlert,
   Clock3,
@@ -47,6 +48,7 @@ import { useToast } from "../../../lib/toast";
 import { CreationThumb } from "./CreationCard";
 import { LibrarySkeleton } from "./CreationLibrary";
 import { GlowbookLookEditor } from "./GlowbookLookEditor";
+import { GlowbookAgenda } from "./GlowbookAgenda";
 import { GlowbookSections } from "./GlowbookSections";
 import { GlowbookBadgeCard, GlowbookQrCard } from "./GlowbookShare";
 import { ModerationBadge } from "./GlowbookStatus";
@@ -106,9 +108,9 @@ export function GlowbookManager() {
 
 /* -------------------------------------------------------------- dashboard */
 
-type Tab = GlowbookPanel | "share";
-const TABS: readonly Tab[] = ["creations", "look", "profile", "share"];
-const TAB_ICON: Record<Tab, typeof Check> = { creations: LayoutGrid, look: Palette, profile: UserRound, share: QrCode };
+type Tab = GlowbookPanel | "share" | "agenda";
+const TABS: readonly Tab[] = ["creations", "look", "profile", "agenda", "share"];
+const TAB_ICON: Record<Tab, typeof Check> = { creations: LayoutGrid, look: Palette, profile: UserRound, agenda: CalendarCheck, share: QrCode };
 
 /**
  * The artist's control panel. On top, always in view: who the page is, its
@@ -124,6 +126,10 @@ function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
   const ws = useWorkspace();
   const baseId = useId();
   const [tab, setTab] = useState<Tab>("creations");
+  // The booking e-mails link to the calendar (?tab=agenda, decision 144); read once hydrated.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "agenda") setTab("agenda");
+  }, []);
   // The profile form starts afresh after a save or a cancel; it takes the focus when asked for.
   const [form, setForm] = useState({ key: 0, focus: false });
   // A creation deleted elsewhere has left the page too (cascade): never count it,
@@ -213,6 +219,7 @@ function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
               </div>
             </div>
           )}
+          {tab === "agenda" && <GlowbookAgenda glowbook={glowbook} />}
           {tab === "share" && (
             <div className="grid gap-6 lg:grid-cols-2 lg:items-start [&>*]:min-w-0">
               <GlowbookQr glowbook={glowbook} />

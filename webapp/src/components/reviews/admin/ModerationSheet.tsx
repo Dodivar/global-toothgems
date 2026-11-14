@@ -86,7 +86,7 @@ function HeaderBadges({ review }: { review: CustomerReview }) {
   return (
     <div className="flex flex-wrap items-center gap-2" aria-live="polite">
       <ReviewStatusBadge status={review.status} size="md" />
-      {review.orderRef ? <VerifiedBadge review={review} size="md" /> : <UnverifiedBadge size="md" />}
+      {review.orderRef !== null ? <VerifiedBadge review={review} size="md" /> : <UnverifiedBadge size="md" />}
       {isEditedPending(review) && <EditedBadge size="md" />}
       {reports > 0 && <ReportedBadge count={reports} size="md" />}
     </div>
@@ -258,8 +258,8 @@ function SheetContent({ review, onAction }: { review: CustomerReview; onAction: 
                 label={t("reviews.admin.sheet.verification")}
                 value={
                   <span className="inline-flex items-center gap-1.5">
-                    {review.orderRef ? <ShieldCheck size={14} aria-hidden="true" className="text-[var(--status-success-fg)]" /> : <XCircle size={14} aria-hidden="true" className="text-[var(--text-muted)]" />}
-                    {review.orderRef
+                    {review.orderRef !== null ? <ShieldCheck size={14} aria-hidden="true" className="text-[var(--status-success-fg)]" /> : <XCircle size={14} aria-hidden="true" className="text-[var(--text-muted)]" />}
+                    {review.orderRef !== null
                       ? t(review.subject.kind === "course" ? "reviews.verified.student" : "reviews.verified.purchase")
                       : t("reviews.admin.sheet.noOrder")}
                   </span>

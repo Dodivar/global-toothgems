@@ -1123,5 +1123,44 @@
     "struckLabel": "Prix de référence :",
     "hint": "Prix barré : le prix le plus bas pratiqué au cours des 30 jours précédant la réduction.",
     "note": "Prix le plus bas des 30 jours précédant la réduction : {{price}}"
+  },
+  "balance": {
+    "eyebrow": "Déjà une carte ?",
+    "title": "Consulter le solde d’une carte cadeau",
+    "intro": "Saisissez le code reçu par e-mail pour voir ce qu’il reste sur la carte et jusqu’à quand elle est valable.",
+    "accountTitle": "Mes cartes cadeaux",
+    "accountIntro": "Une carte reçue ou entamée ? Saisissez son code pour voir ce qu’il reste dessus. Le code n’est jamais enregistré sur votre compte.",
+    "codeLabel": "Code de la carte",
+    "codeHint": "Format GT-XXXX-XXXX-XXXX, tirets facultatifs. Il figure dans l’e-mail de la carte.",
+    "submit": "Voir le solde",
+    "checking": "Vérification…",
+    "again": "Vérifier une autre carte",
+    "resultLabel": "Carte se terminant par {{last4}}",
+    "available": "Solde disponible",
+    "status": {
+      "active": "Utilisable",
+      "used_up": "Entièrement utilisée",
+      "expired": "Expirée",
+      "cancelled": "Annulée"
+    },
+    "statusBody": {
+      "active": "Ce montant est déduit de vos prochaines commandes : saisissez le code dans le panier.",
+      "used_up": "Il ne reste plus rien sur cette carte.",
+      "expired": "Cette carte n’est plus utilisable depuis sa date d’expiration.",
+      "cancelled": "Cette carte a été annulée. Contactez-nous si vous pensez qu’il s’agit d’une erreur."
+    },
+    "validUntil": "Valable jusqu’au {{date}}",
+    "expiredOn": "Expirée le {{date}}",
+    "noExpiry": "Sans date d’expiration",
+    "errors": {
+      "invalid": "Ce code n’a pas le bon format. Vérifiez-le dans l’e-mail de la carte (GT-XXXX-XXXX-XXXX).",
+      "not_found": "Aucune carte utilisable ne correspond à ce code. Vérifiez chaque caractère ; une carte qui vient d’être offerte peut ne pas encore être livrée.",
+      "rate_limited": "Trop de tentatives. Réessayez dans quelques minutes.",
+      "captcha_required": "La vérification anti-robot n’a pas abouti. Réessayez.",
+      "captcha_failed": "La vérification anti-robot n’a pas abouti. Réessayez.",
+      "unavailable": "La vérification est indisponible pour le moment. Réessayez plus tard."
+    },
+    "unavailable": "La consultation du solde n’est pas disponible pour le moment.",
+    "privacy": "Le code sert uniquement à cette vérification : il n’est ni conservé ni affiché en entier."
   }
 }

@@ -26,6 +26,8 @@ interface GlowbookIdentityProps {
   preview?: boolean;
   /** Course titles behind the "certified artist" badge (decision 102); none: no badge. */
   certifiedTitles?: readonly string[];
+  /** The Glowbook calendar is open (decision 144): the booking button opens it and replaces the external link. */
+  onBook?: () => void;
 }
 
 /** The id of the profile section, the target of the bar's "Profile" link. */
@@ -61,7 +63,7 @@ export function GlowbookAvatar({ name, url, className }: { name: string; url: st
  * own width, not the viewport's, so the Studio's preview column draws it as a
  * phone would.
  */
-export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview = false, certifiedTitles = [] }: GlowbookIdentityProps) {
+export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview = false, certifiedTitles = [], onBook }: GlowbookIdentityProps) {
   const { t } = useTranslation();
   const l = look ?? DEFAULT_LOOK;
   const certified = certifiedTitles.length > 0;
@@ -88,7 +90,13 @@ export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview =
             )}
           </p>
         </div>
-        {l.bookingUrl &&
+        {onBook && !preview && (
+          <button type="button" onClick={onBook} aria-label={t("studio.glowbook.public.book")} className={bookingClass}>
+            <CalendarCheck size={14} aria-hidden="true" />
+            <span className="hidden whitespace-nowrap @[640px]:inline">{t("studio.glowbook.public.book")}</span>
+          </button>
+        )}
+        {!onBook && l.bookingUrl &&
           (preview ? (
             <span className={bookingClass}>
               <CalendarCheck size={14} aria-hidden="true" />
@@ -123,11 +131,11 @@ export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview =
 }
 
 /** The full profile, at the bottom of the page: picture, name, city, badge, bio and every link. */
-export function GlowbookProfile({ displayName, handle, bio, instagram, look, avatarUrl, preview = false, certifiedTitles = [] }: GlowbookIdentityProps) {
+export function GlowbookProfile({ displayName, handle, bio, instagram, look, avatarUrl, preview = false, certifiedTitles = [], onBook }: GlowbookIdentityProps) {
   const { t } = useTranslation();
   const l = look ?? DEFAULT_LOOK;
   const links: { key: string; href: string; label: string; icon: ReactNode; primary?: boolean }[] = [];
-  if (l.bookingUrl) links.push({ key: "booking", href: l.bookingUrl, label: t("studio.glowbook.public.booking"), icon: <CalendarCheck size={14} />, primary: true });
+  if (l.bookingUrl && !onBook) links.push({ key: "booking", href: l.bookingUrl, label: t("studio.glowbook.public.booking"), icon: <CalendarCheck size={14} />, primary: true });
   if (instagram) links.push({ key: "instagram", href: instagramUrl(instagram), label: t("studio.glowbook.public.instagram", { account: instagram }), icon: <AtSign size={14} /> });
   if (l.tiktok) links.push({ key: "tiktok", href: tiktokUrl(l.tiktok), label: t("studio.glowbook.public.tiktok", { account: l.tiktok }), icon: <Music2 size={14} /> });
   if (l.websiteUrl) links.push({ key: "website", href: l.websiteUrl, label: t("studio.glowbook.public.website"), icon: <Globe size={14} /> });
@@ -161,6 +169,12 @@ export function GlowbookProfile({ displayName, handle, bio, instagram, look, ava
           )}
         </p>
         <GlowbookBadge titles={certifiedTitles} />
+        {onBook && !preview && (
+          <button type="button" onClick={onBook} className={clsx(pill, "mt-1 bg-[var(--gb-accent)] text-[var(--gb-on-accent)]")}>
+            <CalendarCheck size={14} aria-hidden="true" />
+            {t("studio.glowbook.public.book")}
+          </button>
+        )}
         {bio && <p className="m-0 max-w-[56ch] whitespace-pre-line text-[length:var(--text-body)] leading-relaxed">{bio}</p>}
         {links.length > 0 && (
           <ul className="m-0 mt-1 flex list-none flex-wrap justify-center gap-2 p-0">

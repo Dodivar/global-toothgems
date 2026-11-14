@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateStock, localize, mapGemColor, mapInclusions, mapProduct, mapTaxonomy, type ProductRow, type VariantRow } from "./mapping";
+import { aggregateAvailability, aggregateStock, localize, mapGemColor, mapInclusions, mapProduct, mapTaxonomy, type ProductRow, type VariantRow } from "./mapping";
 import { MULTICOLOR_SWATCH, colorSwatchFill, colorsInCatalog, type GemColorDef } from "../../data/products";
 
 const url = (path: string) => `https://cdn.test/${path}`;
@@ -90,6 +90,33 @@ describe("aggregateStock", () => {
     expect(aggregateStock(["out_of_stock", "out_of_stock"])).toBe("out");
     expect(aggregateStock(["preorder"])).toBeUndefined();
     expect(aggregateStock([])).toBeUndefined();
+  });
+});
+
+describe("raw availability, reference and weight", () => {
+  it("keeps the database's stock status, preorder included", () => {
+    expect(aggregateAvailability(["out_of_stock", "preorder"])).toBe("preorder");
+    expect(aggregateAvailability(["low_stock", "in_stock"])).toBe("in_stock");
+    expect(aggregateAvailability(["whatever", null])).toBeUndefined();
+    const p = mapProduct(
+      row({
+        sku: "GEM-STAR",
+        weight_grams: 3,
+        product_type: "physical",
+        inventory_items: [{ stock_status: "preorder" }],
+        product_variants: [
+          variant({ id: "a", sku: "GEM-STAR-SS5", weight_grams: 2, inventory_items: [{ stock_status: "preorder" }] }),
+          variant({ id: "b", position: 1, weight_grams: 0, inventory_items: [{ stock_status: "out_of_stock" }] }),
+        ],
+      }),
+      undefined,
+      url,
+    );
+    expect(p).toMatchObject({ sku: "GEM-STAR", weightGrams: 3, productType: "physical", availability: "preorder", stock: undefined });
+    expect(p.variants?.[0]).toMatchObject({ sku: "GEM-STAR-SS5", weightGrams: 2, availability: "preorder" });
+    expect(p.variants?.[1]).toMatchObject({ availability: "out_of_stock", stock: "out" });
+    expect(p.variants?.[1]).not.toHaveProperty("weightGrams");
+    expect(p.variants?.[1]).not.toHaveProperty("sku");
   });
 });
 

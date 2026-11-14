@@ -1,4 +1,5 @@
-import { requireSupabase } from "./supabase/client";
+import { requireSupabase, type TypedSupabaseClient } from "./supabase/client";
+import type { PriceCutPromotionRow, PriceCutSources } from "./catalog/productOffers";
 import type { OfferCampaignRow, OfferPromotionRow, OfferSources, PriceReferenceRow } from "./storefrontOffers";
 
 /**
@@ -43,5 +44,29 @@ export async function fetchOfferSources(): Promise<OfferSources> {
       id: c.id,
       product_ids: ((c as unknown as { collection_products: { product_id: string }[] }).collection_products ?? []).map((p) => p.product_id),
     })),
+  };
+}
+
+const PRICE_CUT_PROMOTIONS = `
+  id, type, currency, percent_off, max_discount_amount, applies_to, customer_eligibility, min_subtotal_amount,
+  min_quantity, starts_at, ends_at, promotion_products ( product_id, role )
+`;
+
+/**
+ * What the server needs to price items like the shop window (structured data,
+ * product feeds; `lib/catalog/productOffers.ts`): the database's price now and
+ * reference price of every item with a cut running, and the running automatic
+ * promotions for the end of each cut. `db` acts as an anonymous visitor.
+ */
+export async function fetchPriceCutSources(db: TypedSupabaseClient): Promise<PriceCutSources> {
+  const [references, promotions] = await Promise.all([
+    db.rpc("storefront_price_references"),
+    db.from("promotions").select(PRICE_CUT_PROMOTIONS).limit(200),
+  ]);
+  if (references.error) throw new Error(references.error.message);
+  if (promotions.error) throw new Error(promotions.error.message);
+  return {
+    references: (references.data ?? []) as PriceReferenceRow[],
+    promotions: (promotions.data ?? []) as unknown as PriceCutPromotionRow[],
   };
 }

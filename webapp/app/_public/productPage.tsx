@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { jsonLdScript, productAddresses, productJsonLd, productMetaDescription, productTitle } from "../../src/lib/catalog/productMeta";
 import { productSlug } from "../../src/lib/catalog/productSlugs";
-import { findProductFaq, findPublicProduct } from "../../src/lib/catalog/serverCatalog";
+import { VARIANT_PARAM } from "../../src/lib/catalog/productOffers";
+import { findProductFaq, findPublicProduct, loadPriceBook } from "../../src/lib/catalog/serverCatalog";
 import { localizedPath, type Locale } from "../../src/lib/localeRoutes";
 import { siteUrl } from "../../src/lib/siteUrl";
 import { ProductDetail } from "../../src/screens/ProductDetail";
@@ -18,7 +19,9 @@ import { searchOf } from "./search";
  *   slug or its row id to its address in this language, query kept;
  * - gives the page its title, description, hreflang to the other language's
  *   slug, Open Graph image and structured data (schema.org Product);
- * - reads the product's FAQ in this language (`product_faq()`).
+ * - reads the product's FAQ in this language (`product_faq()`);
+ * - opens on the variant `?variant=<id>` names (the address product feeds and
+ *   structured data give each variant), else the first one in stock.
  * The page itself is `ProductDetail`, rendered on the server and hydrated in
  * the browser.
  */
@@ -52,11 +55,13 @@ export async function productMetadata(props: ProductPageProps, locale: Locale): 
 
 export async function ProductPage({ props, locale }: { props: ProductPageProps; locale: Locale }) {
   const { product } = await productFor(props, locale);
-  const faq = await findProductFaq(product.dbId, locale);
+  const [faq, prices, search] = await Promise.all([findProductFaq(product.dbId, locale), loadPriceBook(), props.searchParams]);
+  const requested = search[VARIANT_PARAM];
+  const initialVariantId = typeof requested === "string" && product.variants?.some((v) => v.id === requested) ? requested : undefined;
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd(product, locale, siteUrl())) }} />
-      <ProductDetail faq={faq} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd(product, locale, siteUrl(), prices)) }} />
+      <ProductDetail faq={faq} initialVariantId={initialVariantId} />
     </>
   );
 }

@@ -226,7 +226,7 @@ export function blockCount(module: Module): number {
 /** Prototype media library (mock mode only), so image blocks have something real to show. */
 export const MEDIA_LIBRARY: { id: string; src: string; label: Localized }[] = [
   { id: "med-01", src: img("mouth-01.jpg"), label: L("Sourire terminé, gem centrale", "Finished smile, centre gem") },
-  { id: "med-02", src: img("mouth-02.jpg"), label: L("Composition multi-gems", "Multi-gem composition") },
+  { id: "med-02", src: img("mouth-02.webp"), label: L("Composition multi-gems", "Multi-gem composition") },
   { id: "med-03", src: img("mouth-03.jpg"), label: L("Gem sur dent latérale", "Gem on a lateral tooth") },
   { id: "med-04", src: img("mouth-04.jpg"), label: L("Contrôle après polymérisation", "Post-cure inspection") },
   { id: "med-05", src: img("mouth-05.jpg"), label: L("Résultat après une semaine", "Result after one week") },

@@ -41,6 +41,7 @@ describe("replayAllowed", () => {
       "/reinitialiser-mot-de-passe",
       "/auth/confirm",
       "/newsletter/confirmer",
+      "/rappels/desinscription",
       "/fr/retours-remboursements/retractation",
       "/en/returns/withdrawal",
       "/en/returns/withdrawal?x=1",

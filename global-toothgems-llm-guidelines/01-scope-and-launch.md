@@ -51,6 +51,7 @@ Catalogue, variants and gem options, categories/families, gem colours, recommend
 - Advanced quizzes (tooth identification interactions, branching), graduate-only areas, social certificate verification.
 - Multi-currency price lists, B2B VAT reverse charge, OSS reporting.
 - Instructor marketplace, multi-role training marketplace.
+- The pro artist module beyond what is built (`docs/pro-artist-erp-study.md`): deposit and Stripe Connect, client file, multi-seat. The Glowbook booking calendar without payment was built by the owner's choice on 2026-11-14 (decision 144), knowingly ahead of the study's advised order; it is not launch-blocking and can be switched off (`private.glowbook_booking_switch`).
 
 ## Scope rule
 

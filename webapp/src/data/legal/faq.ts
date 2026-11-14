@@ -256,6 +256,20 @@ export const FAQ: FaqCategory[] = [
         ],
       },
       {
+        id: "gift-card-balance",
+        question: l("Comment connaître le solde de ma carte cadeau ?", "How do I check my gift card balance?"),
+        answer: [
+          l(
+            "Connectez-vous à votre compte et ouvrez la page Fidélité de votre espace membre : saisissez le code de la carte (GT-XXXX-XXXX-XXXX) pour voir ce qu’il reste dessus et sa date d’expiration. Vous pouvez aussi le faire sans compte depuis la page Carte cadeau.",
+            "Sign in to your account and open the Loyalty page of your member area: enter the card code (GT-XXXX-XXXX-XXXX) to see what is left on it and its expiry date. You can also do it without an account from the Gift card page.",
+          ),
+          l(
+            "Le code n’est jamais enregistré sur votre compte. Par sécurité, le nombre de vérifications est limité : après plusieurs codes refusés, patientez quelques minutes avant de réessayer.",
+            "The code is never saved to your account. For security, the number of checks is limited: after several refused codes, wait a few minutes before trying again.",
+          ),
+        ],
+      },
+      {
         id: "secure",
         question: l("Le paiement est-il sécurisé ?", "Is payment secure?"),
         answer: [

@@ -388,7 +388,7 @@ const EN_CHANNELS: ChatChannel[] = [
   ], 3),
 
   channel("en", "inspiration", [
-    msg("en-i-1", "sarah", 2 * D + 30, say`Chrome heart + tiny opal on the lateral. Wanted it to read as one shape from across the room.`, { attachments: [image("mouth-02.jpg", "Chrome heart and small opal on an upper lateral incisor")], reactions: { fire: 14, heart: 9, sparkles: 4 }, mine: ["fire"] }),
+    msg("en-i-1", "sarah", 2 * D + 30, say`Chrome heart + tiny opal on the lateral. Wanted it to read as one shape from across the room.`, { attachments: [image("mouth-02.webp", "Chrome heart and small opal on an upper lateral incisor")], reactions: { fire: 14, heart: 9, sparkles: 4 }, mine: ["fire"] }),
     msg("en-i-2", "emma", 2 * D + 10, say`The negative space between them is so good. Sold.`, { replyToId: "en-i-1", reactions: { heart: 2 } }),
     msg("en-i-3", "jonas", D + 4 * H, say`Constellation on the canine — three crystals, three sizes. Client brought a sketch of Orion 🌌`, { attachments: [image("mouth-04.jpg", "Three crystals of different sizes set as a small constellation on a canine")], reactions: { sparkles: 18, heart: 7, gem: 5 } }),
     msg("en-i-4", "olivia", D + 3 * H, say`This is exactly the kind of thing I want to do. How do you plan the spacing?`, { replyToId: "en-i-3" }),

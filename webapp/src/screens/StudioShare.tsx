@@ -23,6 +23,7 @@ import { piecesKey } from "../lib/studioWorkspace/scene";
 import { supabase } from "../lib/supabase/client";
 import { decodeSharedDesign, type SharedDesign } from "../lib/studioWorkspace/share";
 import { fetchGlowbookCreation, fetchSharedCreation } from "../lib/studioWorkspace/supabaseRepository";
+import { BookThisDesign } from "../components/glowbook/BookThisDesign";
 
 const TryOnDialog = lazy(() => import("../components/studio/tryOn/TryOnDialog").then((m) => ({ default: m.TryOnDialog })));
 
@@ -124,7 +125,7 @@ export function StudioShare() {
           </span>
         </div>
       ) : design ? (
-        <SharedDesignView design={design} name={name} author={author} tryOn={tryOn} />
+        <SharedDesignView design={design} name={name} author={author} tryOn={tryOn} itemId={handle && item ? item : null} />
       ) : (
         <InvalidLink
           stored={stored}
@@ -172,7 +173,20 @@ function InvalidLink({
   );
 }
 
-function SharedDesignView({ design, name, author, tryOn }: { design: SharedDesign; name: string; author: GlowbookAuthor | null; tryOn: TryOn }) {
+function SharedDesignView({
+  design,
+  name,
+  author,
+  tryOn,
+  itemId,
+}: {
+  design: SharedDesign;
+  name: string;
+  author: GlowbookAuthor | null;
+  tryOn: TryOn;
+  /** The Glowbook creation shown, when it comes from a Glowbook (decision 144: "Book this design"). */
+  itemId: string | null;
+}) {
   const { t, i18n } = useTranslation();
   const { signedIn, restoring } = useAuth();
   const { showToast } = useToast();
@@ -234,6 +248,10 @@ function SharedDesignView({ design, name, author, tryOn }: { design: SharedDesig
             <Sparkles size={13} aria-hidden="true" className="text-[var(--gt-blue-600)]" />
             {t("studio.workspace.share.view.backToGlowbook", { name: author.displayName || `@${author.handle}` })}
           </Link>
+        )}
+
+        {author && itemId && (
+          <BookThisDesign handle={author.handle} itemId={itemId} designName={name} artistName={author.displayName || `@${author.handle}`} />
         )}
 
         {tryOn && design.scene.pieces.length > 0 && (

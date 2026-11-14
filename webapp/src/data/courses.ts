@@ -51,7 +51,7 @@ export const COURSES: Course[] = [
     lessonCount: 9,
     duration: "1 h 30",
     price: 279,
-    image: img("mouth-02.jpg"),
+    image: img("mouth-02.webp"),
     copy: {
       fr: "Compositions multi-gems, dents latérales, cas difficiles et corrections.",
       en: "Multi-gem compositions, lateral teeth, difficult cases and corrections.",

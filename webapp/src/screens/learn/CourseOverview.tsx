@@ -49,7 +49,7 @@ export function CourseOverview() {
   const navigate = useNavigate();
   const { access, training, record, summary, progress } = useLearnerCourse(courseId);
   const mediaUrl = useCourseMediaUrl();
-  // Halfway through (or finished), the course can be reviewed: asked once,
+  // Once the course is finished it can be reviewed (decision 141): asked once,
   // quietly, beside the progress rather than inside a lesson.
   const reviewRequest = useReviewRequests().find((r) => r.subject.kind === "course" && r.subject.id === courseId);
 

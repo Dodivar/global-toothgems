@@ -68,6 +68,13 @@ A certificate shown as real must be a durable record (recipient, course, issue d
 
 The document (decided by the owner, 2026-10-07): issued by "Global Toothgems Academy" with no hand-drawn signature, and carries the Global Toothgems logo (the header's black wordmark). The holder's name is the profile's first and last name at display time, never the e-mail fallback: a certificate cannot be downloaded or shared until both are filled in, and the member is asked for them in place (decided by the owner, 2026-10-07). It is drawn once (`webapp/src/lib/certificate/layout.ts`) and rendered both on screen (SVG) and as the member's file (canvas → A4 PDF or PNG, in the browser, no dependency), so what is downloaded is what was shown. **No public certificate page**: sharing is the certificate's image plus an editable caption to copy, through the device share sheet or a download; no list of networks and no LinkedIn form (owner's choice 2026-11-06, as in the Studio): the member posts from their own app; nothing of ours exposes the holder. The completion screen celebrates (once, still under reduced motion) and offers download and share in place. Graduate-only areas stay post-launch (`01`).
 
+## Learner reviews
+
+- Course reviews live in `reviews` (`course_id`, exclusive with `product_id`) with the product reviews' lifecycle, moderation (`moderate_reviews`, `/admin/avis`), reports and votes — never a parallel table (decision 141).
+- Who may write (owner, 2026-11-13): an active account holding an **active** entitlement to the published course — bought, granted by hand or opened by a pack, all shown as "Verified student" — that has **completed** the course (`course_completions`). The database decides (`private.course_review_refusal()`); the browser only mirrors it (`useReviewEligibility()`). No partial-progress threshold.
+- One review per learner and course; the author edits (back to moderation) or deletes it. A refund or revocation keeps an existing review online (owner, 2026-11-13).
+- Public figures come from published reviews only (`course_review_stats`): no rating, count or `aggregateRating` without one.
+
 ## Community
 
 The Members' Lounge is unlocked by an active course entitlement (or being active staff), checked server-side by `private.lounge_can_enter()` on every read and write (see `supabase/README.md`, *Members' Lounge*).

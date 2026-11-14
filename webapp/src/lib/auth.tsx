@@ -9,7 +9,7 @@ import { LEGAL_POLICY_VERSION, registrationMetadata, type RegistrationData, type
 import { authConfirmUrl, isSafeNext } from "./authRoutes";
 import { rememberGoogleTerms, takeGoogleTerms } from "./googleTerms";
 import { notePendingSignIn, rememberSignInMethod, settlePendingSignIn } from "./lastSignInMethod";
-import type { OAuthProvider } from "./authProviders";
+import { APPLE_SIGN_IN_ENABLED, type OAuthProvider } from "./authProviders";
 import { TermsGate } from "../components/auth/TermsGate";
 import { useHydrated } from "./useHydrated";
 import { isAuthCaptchaRefusal, isAuthRateLimit } from "./supabase/authErrors";
@@ -327,6 +327,8 @@ async function signInWithRedirect(
   options?: { termsAccepted?: boolean },
 ): Promise<GoogleSignInResult> {
   if (!supabase) return "unavailable";
+  // Apple is postponed (decision 138): refused even if a screen asked for it.
+  if (provider === "apple" && !APPLE_SIGN_IN_ENABLED) return "unavailable";
   if (options?.termsAccepted) rememberGoogleTerms();
   const landing = next && isSafeNext(next) ? next : "/compte";
   notePendingSignIn(provider);

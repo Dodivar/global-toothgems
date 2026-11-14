@@ -32,6 +32,8 @@ project_id = "global-toothgems"
 #   with the publishable key (not a JWT); a member's token is verified inside the function
 #   (auth.getUser). Honeypot, a per-address throttle, the per-order throttle of
 #   request_order_withdrawal_link() and Turnstile (when TURNSTILE_SECRET_KEY is set) guard the link.
+# - glowbook-booking: Glowbook bookings (decision 144); the member's token is verified inside the
+#   function (auth.getUser), then IP limit and Turnstile (when TURNSTILE_SECRET_KEY is set).
 # - resend-webhook: Resend sends no Supabase token; the Svix signature
 #   (RESEND_WEBHOOK_SECRET, five-minute tolerance) is the authentication.
 [functions.create-checkout-session]
@@ -69,6 +71,10 @@ verify_jwt = false
 [functions.newsletter-subscribe]
 verify_jwt = false
 
+# Visitors' gift card balance check (decision 140): honeypot, address limit and captcha in the function.
+[functions.gift-card-balance]
+verify_jwt = false
+
 [functions.sync-newsletter-contacts]
 verify_jwt = false
 
@@ -96,6 +102,17 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.order-withdrawal]
+verify_jwt = false
+
+[functions.glowbook-booking]
+verify_jwt = false
+
+# Glowbook calendar feed (decision 144, lot 2): calendar apps send no token; the secret in the address authenticates.
+[functions.glowbook-calendar-feed]
+verify_jwt = false
+
+# Glowbook calendar import (decision 144, lot 3): called by pg_cron with EMAIL_INTERNAL_SECRET.
+[functions.glowbook-calendar-import]
 verify_jwt = false
 
 # Staff rights need a second factor (migration staff_mfa_required): the local

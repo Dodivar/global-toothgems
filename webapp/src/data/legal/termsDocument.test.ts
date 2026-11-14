@@ -140,8 +140,8 @@ describe("3D Studio subscription terms version", () => {
   it("changes with the text (bump STUDIO_TERMS_VERSION, then record the new fingerprint here)", () => {
     const fingerprint = createHash("sha256").update(JSON.stringify(STUDIO_TERMS)).digest("hex");
     expect({ version: STUDIO_TERMS_VERSION, fingerprint }).toEqual({
-      version: "2026-11-11",
-      fingerprint: "088c05d04fb616ecb2ede40508e2ba7631452ad1dfd3af58cde64a798371f1aa",
+      version: "2026-11-14",
+      fingerprint: "a7b129b8e3d1e9aa6dd5c78bdea879163afd71dbe7e981dac7e28de6575cc462",
     });
   });
 
@@ -152,8 +152,8 @@ describe("3D Studio subscription terms version", () => {
 
 describe("3D Studio subscription terms PDF", () => {
   it("is named after its own version", () => {
-    expect(contractTermsFileName("studio", T.fr)).toBe("conditions-abonnement-studio-3d-2026-11-11.pdf");
-    expect(contractTermsFileName("studio", T.en)).toBe("3d-studio-subscription-terms-2026-11-11.pdf");
+    expect(contractTermsFileName("studio", T.fr)).toBe("conditions-abonnement-studio-3d-2026-11-14.pdf");
+    expect(contractTermsFileName("studio", T.en)).toBe("3d-studio-subscription-terms-2026-11-14.pdf");
   });
 
   it("names the publisher as the seller, never the shop's seller", () => {

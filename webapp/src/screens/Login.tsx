@@ -8,7 +8,7 @@ import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { GoogleIdentityButton } from "../components/auth/GoogleIdentityButton";
 import { isGoogleIdentityConfigured } from "../lib/googleIdentity";
-import { AppleButton, AuthCard, AuthField, AuthLayout, GoogleButton } from "../components/auth/AuthScene";
+import { AppleButton, AuthCard, AuthField, AuthLayout, AuthModeSwitch, GoogleButton } from "../components/auth/AuthScene";
 import { LastUsedFrame } from "../components/auth/LastUsedFrame";
 import { useAppleSignInEnabled } from "../lib/authProviders";
 import { useLastSignInMethod } from "../lib/lastSignInMethod";
@@ -153,12 +153,12 @@ export function Login() {
   };
 
   if (restoring) {
-    return <AuthLayout><div aria-busy="true" className="min-h-[420px]" /></AuthLayout>;
+    return <AuthLayout wide><div aria-busy="true" className="min-h-[420px]" /></AuthLayout>;
   }
 
   if (signedIn) {
     return (
-      <AuthLayout>
+      <AuthLayout wide>
         <AuthCard
           crown={
             <>
@@ -192,8 +192,8 @@ export function Login() {
   }
 
   return (
-    <AuthLayout>
-      <AuthCard crown={<span className="gt-eyebrow text-[var(--gt-blue-700)]">{t("auth.eyebrow")}</span>}>
+    <AuthLayout wide>
+      <AuthCard crown={<AuthModeSwitch current="signIn" state={routeState ?? undefined} />}>
         <div className="grid gap-5">
           <div className="grid gap-2">
             <h1 className="text-[clamp(26px,3.4vw,34px)]">{t("auth.signInTitle")}</h1>

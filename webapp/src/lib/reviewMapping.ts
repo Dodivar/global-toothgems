@@ -8,6 +8,7 @@ import {
   type ReviewPhoto,
   type ReviewReport,
   type ReviewStatus,
+  type ReviewSubject,
   type ReviewTag,
 } from "../data/reviewSystem";
 
@@ -66,7 +67,9 @@ export interface ReviewRow {
   response_at: string | null;
   published_at: string | null;
   edited_at: string | null;
+  /** Embedded subject: one of the two is set (`reviews_one_subject`); null when the reader may not see it. */
   product: { slug: string } | null;
+  course?: { slug: string } | null;
   review_photos: ReviewPhotoRow[];
   /* Signed-in readers only. */
   user_id?: string;
@@ -156,9 +159,17 @@ interface ReviewMappingContext {
   photoUrl: (storagePath: string) => string | undefined;
 }
 
-/** Null for a review whose product the reader cannot see (e.g. archived). */
+/** The product or course reviewed, keyed by slug (a course by its French slug), or null when hidden from the reader. */
+function subjectOf(row: ReviewRow): ReviewSubject | null {
+  if (row.product) return { kind: "product", id: row.product.slug };
+  if (row.course) return { kind: "course", id: row.course.slug };
+  return null;
+}
+
+/** Null for a review whose product or course the reader cannot see (e.g. archived product). */
 export function mapReview(row: ReviewRow, ctx: ReviewMappingContext): CustomerReview | null {
-  if (!row.product) return null;
+  const subject = subjectOf(row);
+  if (!subject) return null;
   const customer = customerOf(row);
   const author = privacyName(customer.firstName, customer.lastName);
   const responder = personName(row.responder) ?? SHOP_NAME;
@@ -175,7 +186,7 @@ export function mapReview(row: ReviewRow, ctx: ReviewMappingContext): CustomerRe
 
   return {
     id: row.id,
-    subject: { kind: "product", id: row.product.slug },
+    subject,
     customer,
     mine: ctx.userId !== null && row.user_id === ctx.userId,
     // The order number when the reader may see it; a verified review whose

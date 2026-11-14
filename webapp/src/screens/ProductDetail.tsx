@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { trackShop } from "../lib/shopAnalytics";
+import { pixelContentId, trackPixel } from "../lib/metaPixel";
 import { Link, useNavigate, useParams } from "../lib/navigation";
 import { BellRing, CheckCircle2, Image as ImageIcon, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { Badge } from "../components/ui/Badge";
@@ -50,7 +51,12 @@ const SIZES = ["1,8 mm", "2,0 mm", "2,5 mm"];
  * rendering it, so the page never flashes another product while loading and
  * an unknown slug is a real 404 rather than a stand-in product.
  */
-export function ProductDetail({ faq = [] }: { faq?: ProductFaqEntry[] }) {
+/**
+ * `initialVariantId`: the variant the address names (`?variant=<id>`, read by
+ * the server page), so a link from a product feed opens on that variant's
+ * price and stock; else the first variant in stock.
+ */
+export function ProductDetail({ faq = [], initialVariantId }: { faq?: ProductFaqEntry[]; initialVariantId?: string }) {
   const { id } = useParams();
   const { status, findProduct } = useCatalog();
 
@@ -66,7 +72,7 @@ export function ProductDetail({ faq = [] }: { faq?: ProductFaqEntry[] }) {
   }
   const product = findProduct(id ?? "");
   if (!product) return <NotFound />;
-  return <ProductView key={product.id} product={product} faq={faq} />;
+  return <ProductView key={product.id} product={product} faq={faq} initialVariantId={initialVariantId} />;
 }
 
 function ProductSkeleton() {
@@ -85,7 +91,7 @@ function ProductSkeleton() {
   );
 }
 
-function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[] }) {
+function ProductView({ product, faq, initialVariantId }: { product: Product; faq: ProductFaqEntry[]; initialVariantId?: string }) {
   const { formatPrice } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -103,7 +109,9 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
   const gemPicker = isGemOptionSet(variants);
   // Variants combining options (colour × plug…) get one row per option.
   const optionPicker = !gemPicker && hasOptionPicker(product.options, variants);
-  const [variantId, setVariantId] = useState(() => (variants.find((v) => v.stock !== "out") ?? variants[0])?.id);
+  const [variantId, setVariantId] = useState(
+    () => (variants.find((v) => v.id === initialVariantId) ?? variants.find((v) => v.stock !== "out") ?? variants[0])?.id,
+  );
   const variant = variants.find((v) => v.id === variantId);
   // Colour variants read as colours: the legend says so once every one has a dot.
   const colorVariants = variants.length > 0 && variants.every((v) => v.swatch);
@@ -157,6 +165,21 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
   };
   const setQty = (next: number | ((q: number) => number)) =>
     setQtyCursor({ id: product.id, qty: typeof next === "function" ? next(qty) : next });
+
+  // Meta Pixel (advertising consent only): the product viewed, with the feeds' id of the option shown.
+  const viewedId = pixelContentId({ variantId: variant?.id, dbProductId: product.dbId });
+  const viewedPrice = useRef({ minor: toMinorUnits(shown.price), currency: product.currency ?? "EUR" });
+  useEffect(() => {
+    if (!viewedId) return;
+    trackPixel("ViewContent", {
+      content_type: "product",
+      content_ids: [viewedId],
+      value: viewedPrice.current.minor / 100,
+      currency: viewedPrice.current.currency,
+    });
+    // Once per product page shown, not on each option picked.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
 
   // The mobile buy bar only appears once the real CTA has scrolled away, so it
   // never duplicates a button that is already on screen.
@@ -220,6 +243,17 @@ function ProductView({ product, faq }: { product: Product; faq: ProductFaqEntry[
       qty: pack ? 1 : qty,
       ...(pack ? { pack } : {}),
     });
+    const addedId = pixelContentId({ variantId: variant?.id, dbProductId: product.dbId });
+    if (addedId) {
+      const addedQty = pack ? 1 : qty;
+      trackPixel("AddToCart", {
+        content_type: "product",
+        content_ids: [addedId],
+        contents: [{ id: addedId, quantity: addedQty }],
+        value: (toMinorUnits(shown.price) * addedQty) / 100,
+        currency: product.currency ?? "EUR",
+      });
+    }
     trackShop("product_added_to_cart", {
       product_id: product.id,
       variant_id: variant?.id,

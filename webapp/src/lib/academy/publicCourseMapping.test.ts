@@ -163,6 +163,15 @@ describe("mapPublicCourse", () => {
     expect(otherCurrency.referencePrice).toBeNull();
   });
 
+  it("rates a course only from its published reviews", () => {
+    const id = row().id;
+    const [rated] = mapPublicCourses([row()], [], [], [{ course_id: id, average_rating: 4.5, review_count: 2 }]);
+    expect(rated.rating).toEqual({ average: 4.5, count: 2 });
+    const [unrated] = mapPublicCourses([row()], [], [], [{ course_id: "another", average_rating: 5, review_count: 9 }]);
+    expect(unrated.rating).toBeNull();
+    expect(mapPublicCourse(row(), undefined).rating).toBeNull();
+  });
+
   it("falls back to the list price without a current price, never below it", () => {
     const course = mapPublicCourse(row(), undefined);
     expect(course.currentPrice.minor).toBe(34900);

@@ -5,18 +5,20 @@ import { loadLegalStore } from "../_shared/email/termsPdf.ts";
 import { isValidAddress } from "../_shared/email/send.ts";
 import { hasInternalSecret } from "../_shared/internalAuth.ts";
 import { json, readJson } from "../_shared/http.ts";
-import { buildShowcase, type Sample, withDocuments } from "./showcase.ts";
+import { buildShowcase, onlyTemplates, type Sample, withDocuments } from "./showcase.ts";
 import { functionLogger } from "../_shared/log.ts";
+import { coverPath } from "../_shared/email/reminderEmails.ts";
 
 /*
- * POST /functions/v1/email-showcase  { "to": "<address>", "only_documents"?: true }
+ * POST /functions/v1/email-showcase  { "to": "<address>", "only_documents"?: true, "only"?: ["<template key>", …] }
  *
  * Sends one sample of every e-mail the site sends to one address, so the
  * owner sees them all (see showcase.ts). Deployed with verify_jwt = false
  * (supabase/config.toml): the caller is the database or the team, with the
  * shared secret EMAIL_INTERNAL_SECRET in `x-internal-secret`, like the other
  * e-mail jobs. `only_documents` keeps the samples carrying a PDF: an invoice,
- * a credit note or the terms of sale (decision 130). Answer: the status of each sample, no content.
+ * a credit note or the terms of sale (decision 130); `only` keeps the samples of those database templates
+ * (e.g. ["abandoned_cart", "review_request", "loyalty_reward"]). Answer: the status of each sample, no content.
  */
 
 const log = functionLogger("email-showcase");
@@ -41,6 +43,20 @@ async function currentSeller(): Promise<Record<string, unknown>> {
   };
 }
 
+/** The oldest published course (French title and slug: the samples are French), or undefined. */
+async function sampleCourse(): Promise<{ title: string; slug: string; coverPath: string | null } | undefined> {
+  const { data } = await serviceClient()
+    .from("courses")
+    .select("title, slug, cover:training_media!courses_cover_media_id_fkey ( id, updated_at )")
+    .eq("status", "published")
+    .order("published_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return undefined;
+  const row = data as unknown as { title: string; slug: string; cover: { id: string; updated_at: string } | null };
+  return { title: row.title, slug: row.slug, coverPath: coverPath(row.cover?.id ?? null, row.cover?.updated_at ?? null) };
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   if (!(await hasInternalSecret(req, Deno.env.get("EMAIL_INTERNAL_SECRET")))) return json({ error: "unauthorized" }, 401);
@@ -48,6 +64,10 @@ Deno.serve(async (req) => {
   const to = body && typeof body === "object" ? (body as { to?: unknown }).to : undefined;
   if (typeof to !== "string" || !isValidAddress(to.trim())) return json({ error: "invalid_recipient" }, 400);
   const onlyDocuments = (body as { only_documents?: unknown }).only_documents === true;
+  const only = (body as { only?: unknown }).only;
+  if (only !== undefined && (!Array.isArray(only) || only.length === 0 || only.length > 30 || !only.every((k) => typeof k === "string"))) {
+    return json({ error: "invalid_only" }, 400);
+  }
 
   try {
     const deps = emailDepsFromEnv();
@@ -60,9 +80,11 @@ Deno.serve(async (req) => {
       seller: await currentSeller(),
       legalStore: await loadLegalStore(serviceClient()),
       product: { name: "Kit d’Application Premium", slug: "kit-application-premium", imagePath: "products/kit-application-premium/01.jpg" },
+      course: await sampleCourse(),
     });
 
-    const samples = onlyDocuments ? withDocuments(all) : all;
+    const filtered = only ? onlyTemplates(all, only as string[]) : all;
+    const samples = onlyDocuments ? withDocuments(filtered) : filtered;
     const results: { label: string; status: string; error?: string }[] = [];
     for (const sample of samples) {
       try {

@@ -5,9 +5,11 @@ import { PRODUCTS, type Product, type ProductFaqEntry } from "../../data/product
 import { isSupabaseConfigured } from "../supabase/env";
 import { createPublicServerSupabase } from "../supabase/publicServer";
 import type { PublicRouteId } from "../localeRoutes";
-import { fetchCatalog, fetchGemColors, fetchProductByKey, fetchProductFaq, fetchProductSlugs, fetchTaxonomy } from "./api";
+import { fetchBundleComponents, fetchCatalog, fetchGemColors, fetchProductByKey, fetchProductFaq, fetchProductSlugs, fetchTaxonomy } from "./api";
 import type { CatalogSeed } from "./CatalogProvider";
 import { findProductByKey, type SluggedProduct } from "./productSlugs";
+import { buildPriceBook, NO_PRICE_CUTS, type PriceBook } from "./productOffers";
+import { fetchPriceCutSources } from "../storefrontOffersApi";
 
 /*
  * The catalogue as the server reads it for public pages: from Supabase with
@@ -40,6 +42,8 @@ const readProductSlugs = cached("product-slugs", () => fetchProductSlugs(createP
 const readProducts = cached("products", () => fetchCatalog(undefined, createPublicServerSupabase()));
 const readColors = cached("colours", () => fetchGemColors(undefined, createPublicServerSupabase()));
 const readTaxonomy = cached("taxonomy", () => fetchTaxonomy(undefined, createPublicServerSupabase()));
+const readPriceCuts = cached("price-cuts", () => fetchPriceCutSources(createPublicServerSupabase()));
+const readBundles = cached("bundles", () => fetchBundleComponents(createPublicServerSupabase()));
 
 /** The product a URL key names (any language's slug, or its row id); null when the shop does not sell it. */
 export const findPublicProduct = cache(async (key: string): Promise<Product | null> => {
@@ -90,3 +94,33 @@ export const loadCatalogSeed = cache(async (route: PublicRouteId): Promise<Catal
   };
   return { products: value(products, "products"), colors: value(colors, "colours"), taxonomy: value(taxonomy, "taxonomy") };
 });
+
+/**
+ * The price book of the shop window (`lib/catalog/productOffers.ts`), read
+ * with the publishable key: the price each item's page shows now. Mock mode
+ * and a failed read give list prices (the browser applies the cuts it reads
+ * itself; a failure is logged, never fatal to a page).
+ */
+export const loadPriceBook = cache(async (): Promise<PriceBook> => {
+  if (!isSupabaseConfigured) return NO_PRICE_CUTS;
+  try {
+    return buildPriceBook(await readPriceCuts());
+  } catch (error) {
+    console.warn("[catalog] price cuts unavailable", error);
+    return NO_PRICE_CUTS;
+  }
+});
+
+/** Every public product, for the product feeds; the fixtures are never a feed (empty in mock mode). */
+export async function listFeedCatalog(): Promise<{
+  products: Product[];
+  taxonomy: Awaited<ReturnType<typeof readTaxonomy>>;
+  colors: Awaited<ReturnType<typeof readColors>>;
+  bundles: Map<string, string[]>;
+  prices: PriceBook;
+} | null> {
+  if (!isSupabaseConfigured) return null;
+  // Prices are part of the feed's truth: a failed read fails the feed (no list price during a sale).
+  const [products, taxonomy, colors, bundles, cuts] = await Promise.all([readProducts(), readTaxonomy(), readColors(), readBundles(), readPriceCuts()]);
+  return { products, taxonomy, colors, bundles: new Map(bundles), prices: buildPriceBook(cuts) };
+}

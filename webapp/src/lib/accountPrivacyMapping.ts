@@ -6,7 +6,7 @@
  */
 
 /** Why an erasure cannot happen now; each one tells the member how to lift it. */
-export const ERASURE_BLOCKERS = ["staff", "studio_subscription", "studio_withdrawal", "order_payment_pending"] as const;
+export const ERASURE_BLOCKERS = ["staff", "studio_subscription", "studio_withdrawal", "order_payment_pending", "glowbook_bookings"] as const;
 export type ErasureBlocker = (typeof ERASURE_BLOCKERS)[number];
 
 export type ExportAnswer =

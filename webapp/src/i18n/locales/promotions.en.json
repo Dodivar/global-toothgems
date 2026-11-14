@@ -1115,5 +1115,44 @@
     "struckLabel": "Reference price:",
     "hint": "Struck-out price: the lowest price charged in the 30 days before the reduction.",
     "note": "Lowest price in the 30 days before the reduction: {{price}}"
+  },
+  "balance": {
+    "eyebrow": "Already have a card?",
+    "title": "Check a gift card balance",
+    "intro": "Enter the code you received by e-mail to see what is left on the card and how long it is valid.",
+    "accountTitle": "My gift cards",
+    "accountIntro": "Received a card or already used part of it? Enter its code to see what is left. The code is never saved to your account.",
+    "codeLabel": "Card code",
+    "codeHint": "Format GT-XXXX-XXXX-XXXX, dashes optional. You will find it in the card's e-mail.",
+    "submit": "Check balance",
+    "checking": "Checking…",
+    "again": "Check another card",
+    "resultLabel": "Card ending in {{last4}}",
+    "available": "Available balance",
+    "status": {
+      "active": "Usable",
+      "used_up": "Fully used",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "statusBody": {
+      "active": "This amount comes off your next orders: enter the code in your cart.",
+      "used_up": "Nothing is left on this card.",
+      "expired": "This card can no longer be used since its expiry date.",
+      "cancelled": "This card has been cancelled. Contact us if you think this is a mistake."
+    },
+    "validUntil": "Valid until {{date}}",
+    "expiredOn": "Expired on {{date}}",
+    "noExpiry": "No expiry date",
+    "errors": {
+      "invalid": "This code is not in the right format. Check it in the card's e-mail (GT-XXXX-XXXX-XXXX).",
+      "not_found": "No usable card matches this code. Check each character; a card that has just been given may not be delivered yet.",
+      "rate_limited": "Too many attempts. Try again in a few minutes.",
+      "captcha_required": "The anti-robot check did not go through. Try again.",
+      "captcha_failed": "The anti-robot check did not go through. Try again.",
+      "unavailable": "The check is unavailable right now. Try again later."
+    },
+    "unavailable": "Balance checks are not available right now.",
+    "privacy": "The code is used for this check only: it is neither kept nor shown in full."
   }
 }

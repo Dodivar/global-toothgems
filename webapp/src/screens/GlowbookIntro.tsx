@@ -42,7 +42,7 @@ const BENEFITS = [
 const STEPS = ["plan", "page", "share"] as const;
 
 /** Site photos standing for creations in the preview; decorative. */
-const PREVIEW_SPOTLIGHT = "mouth-02.jpg";
+const PREVIEW_SPOTLIGHT = "mouth-02.webp";
 const PREVIEW_TILES = ["mouth-01.jpg", "mouth-03.jpg", "mouth-04.jpg"] as const;
 
 export function GlowbookIntro() {

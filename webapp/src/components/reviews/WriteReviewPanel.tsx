@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "../../lib/navigation";
 import { Lock, PenLine, ShieldCheck, Truck } from "lucide-react";
 import { Button } from "../ui/Button";
 import { ReviewStatusBadge } from "./ReviewBadges";
-import { COURSE_REVIEW_THRESHOLD, type ReviewSubject } from "../../data/reviewSystem";
+import type { ReviewSubject } from "../../data/reviewSystem";
 import { useReviewEligibility, useReviews } from "../../lib/reviews";
 
 /**
@@ -71,7 +71,7 @@ export function WriteReviewPanel({ subject }: { subject: ReviewSubject }) {
           <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">
             {t(course ? "reviews.cta.signedOutCourse" : "reviews.cta.signedOutProduct")}
           </strong>
-          {note(<ShieldCheck size={14} />, t("reviews.cta.verifiedOnly"))}
+          {note(<ShieldCheck size={14} />, t(course ? "reviews.cta.verifiedOnlyCourse" : "reviews.cta.verifiedOnly"))}
           <Button variant="outline" size="sm" onClick={() => navigate("/connexion", { state: { from: location.pathname } })}>
             {t("reviews.cta.signIn")}
           </Button>
@@ -79,10 +79,10 @@ export function WriteReviewPanel({ subject }: { subject: ReviewSubject }) {
       );
     case "awaitingShipment":
       return shell(note(<Truck size={14} />, t("reviews.cta.awaitingShipment", { ref: e.orderRef })));
-    case "needsProgress":
+    case "needsCompletion":
       return shell(
         <>
-          {note(<Lock size={14} />, t("reviews.cta.needsProgress", { threshold: COURSE_REVIEW_THRESHOLD, pct: e.pct }))}
+          {note(<Lock size={14} />, t("reviews.cta.needsCompletion", { pct: e.pct }))}
           <div
             role="progressbar"
             aria-label={t("reviews.cta.progressLabel")}
@@ -92,7 +92,6 @@ export function WriteReviewPanel({ subject }: { subject: ReviewSubject }) {
             className="relative h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]"
           >
             <span className="block h-full rounded-full bg-[var(--gt-emerald-400)]" style={{ width: `${e.pct}%` }} />
-            <span aria-hidden="true" className="absolute inset-y-0 w-px bg-[var(--gt-ink-900)]" style={{ left: `${COURSE_REVIEW_THRESHOLD}%` }} />
           </div>
         </>,
       );

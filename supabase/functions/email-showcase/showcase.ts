@@ -21,6 +21,13 @@ import { orderConfirmationContent, refundContent, shippingContent, type OrderSna
 import type { SendRequest } from "../_shared/email/send.ts";
 import { backInStockContent, stockDigestContent, type StockDigestItem } from "../_shared/email/stockContent.ts";
 import {
+  abandonedCartContent,
+  courseReviewRequestContent,
+  loyaltyRewardContent,
+  reminderUnsubscribeUrl,
+  reviewRequestContent,
+} from "../_shared/email/reminderEmails.ts";
+import {
   studioDocumentContent,
   studioPlanName,
   studioSubscriptionContent,
@@ -30,6 +37,14 @@ import { type InvoiceRow, type Json, mapInvoice } from "../_shared/documents/inv
 import type { LegalStoreDetails } from "../_shared/legal/storeFill.ts";
 import { orderReference, studioReference, studioTermsForEmail, termsOfSaleForEmail, type TermsForEmail, withTerms } from "../_shared/email/termsPdf.ts";
 import type { EmailContent } from "../_shared/email/render.ts";
+import {
+  bookingAttachment,
+  bookingContent,
+  bookingVariables,
+  BOOKING_TEMPLATES,
+  type BookingMailKind,
+  type PendingBookingMail,
+} from "../_shared/email/glowbookBookingEmails.ts";
 
 export interface ShowcaseContext {
   to: string;
@@ -43,6 +58,8 @@ export interface ShowcaseContext {
   legalStore: LegalStoreDetails | null;
   /** A real product, so the back-in-stock card shows its picture and links to its page. */
   product: { name: string; slug: string; imagePath: string | null };
+  /** A real published course, so the course review request shows its cover and links to its page (else a placeholder). */
+  course?: { title: string; slug: string; coverPath: string | null };
 }
 
 /** A sample sent through `sendTemplatedEmail` (database template). */
@@ -290,6 +307,66 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
     },
     {
       kind: "template",
+      label: "Relance panier abandonné (avec consentement marketing)",
+      request: {
+        ...base, templateKey: "abandoned_cart", eventKey: key("abandoned_cart"),
+        variables: { first_name: "Camille" },
+        content: (locale) =>
+          abandonedCartContent(
+            { items: [{ name: ctx.product.name, variant: null, slug: ctx.product.slug, imagePath: ctx.product.imagePath }] },
+            locale,
+            ctx.siteUrl,
+            ctx.mediaBaseUrl,
+            reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),
+          ),
+      },
+    },
+    {
+      kind: "template",
+      label: "Demande d'avis après livraison",
+      request: {
+        ...base, templateKey: "review_request", eventKey: key("review_request"),
+        variables: { first_name: "Camille", order_number: ORDER.orderNumber },
+        content: (locale) =>
+          reviewRequestContent(
+            { items: [{ name: ctx.product.name, slug: ctx.product.slug, imagePath: ctx.product.imagePath }] },
+            locale,
+            ctx.siteUrl,
+            ctx.mediaBaseUrl,
+            reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),
+          ),
+      },
+    },
+    {
+      kind: "template",
+      label: "Récompense fidélité non utilisée",
+      request: {
+        ...base, templateKey: "loyalty_reward", eventKey: key("loyalty_reward"),
+        variables: { first_name: "Camille", reward_percent: "10" },
+        content: (locale) => loyaltyRewardContent(locale, ctx.siteUrl, reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE")),
+      },
+    },
+    {
+      kind: "template",
+      label: "Demande d'avis après une formation terminée",
+      request: {
+        ...base, templateKey: "course_review_request", eventKey: key("course_review_request"),
+        variables: { first_name: "Camille", course_name: ctx.course?.title ?? "Initiation Tooth Gems" },
+        content: (locale) =>
+          courseReviewRequestContent(
+            {
+              courseTitle: ctx.course?.title ?? "Initiation Tooth Gems",
+              courseSlug: ctx.course?.slug ?? "initiation-tooth-gems",
+              coverPath: ctx.course?.coverPath ?? null,
+            },
+            locale,
+            ctx.siteUrl,
+            reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),
+          ),
+      },
+    },
+    {
+      kind: "template",
       label: "Accusé de réception du formulaire de contact (client)",
       request: {
         ...base, templateKey: "contact_acknowledgement", eventKey: key("contact_acknowledgement"),
@@ -394,6 +471,36 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
     },
   ];
 
+  // Glowbook bookings (decision 144): one sample per e-mail, a sample appointment.
+  const booking: PendingBookingMail = {
+    kind: "new", eventKey: "", bookingId: "EXEMPLE", email: ctx.to, locale: LOCALE, replyTo: null,
+    artistName: "Léa Gems", artistHandle: "lea.gems", clientName: "Camille Martin", clientEmail: "camille@example.com",
+    clientPhone: "+33 6 12 34 56 78", clientErased: false, startsAt: "2026-11-20T13:00:00Z", endsAt: "2026-11-20T14:00:00Z",
+    timezone: "Europe/Paris", designKind: "custom", creationName: null,
+    comment: "Une petite étoile dorée sur l’incisive latérale gauche.", cancelReason: "Je serai en formation ce jour-là, désolée !",
+    lateCancel: false,
+  };
+  const bookingLabels: Record<BookingMailKind, string> = {
+    new: "Glowbook : nouveau rendez-vous (artiste, + agenda .ics)",
+    confirmed: "Glowbook : rendez-vous confirmé (client, + agenda .ics)",
+    cancel_client: "Glowbook : annulé par le client (artiste)",
+    cancel_artist: "Glowbook : annulé par l’artiste (client)",
+    reminder: "Glowbook : rappel la veille (client)",
+  };
+  for (const kind of Object.keys(BOOKING_TEMPLATES) as BookingMailKind[]) {
+    const mail = { ...booking, kind };
+    samples.push({
+      kind: "template",
+      label: bookingLabels[kind],
+      request: {
+        ...base, templateKey: BOOKING_TEMPLATES[kind], eventKey: key(BOOKING_TEMPLATES[kind]),
+        variables: bookingVariables(mail, LOCALE),
+        ...(kind === "new" || kind === "confirmed" ? { attachments: [bookingAttachment(mail, ctx.siteUrl)] } : {}),
+        content: (locale) => bookingContent(mail, locale, ctx.siteUrl),
+      },
+    });
+  }
+
   for (const template of AUTH_TEMPLATES) {
     const html = fillAuthTemplate(renderAuthTemplate(template), ctx.siteUrl);
     samples.push({
@@ -407,7 +514,12 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
   return samples;
 }
 
+/** The samples of these database templates only (e.g. the three reminders); unknown keys are ignored. */
+export function onlyTemplates(samples: Sample[], keys: readonly string[]): Sample[] {
+  return samples.filter((s) => s.kind === "template" && keys.includes(s.request.templateKey));
+}
+
 /** The samples that carry a document (invoice, credit note or terms of sale as a PDF). */
 export function withDocuments(samples: Sample[]): Sample[] {
-  return samples.filter((s) => s.kind === "template" && (s.request.attachments?.length ?? 0) > 0);
+  return samples.filter((s) => s.kind === "template" && (s.request.attachments ?? []).some((a) => a.filename.endsWith(".pdf")));
 }

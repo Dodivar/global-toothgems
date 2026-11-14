@@ -151,6 +151,7 @@
     "view3d": "Voir en 3D",
     "open3d": "Voir « {{name}} » en 3D",
     "booking": "Prendre rendez-vous",
+    "book": "Réserver",
     "website": "Site web",
     "tiktok": "@{{account}} sur TikTok",
     "avatarAlt": "Photo de profil de {{name}}",
@@ -427,6 +428,7 @@
       "creations": "Créations",
       "look": "Apparence",
       "profile": "Profil",
+      "agenda": "Agenda",
       "share": "Partager"
     },
     "deleteHint": "Votre page disparaît et toutes vos créations en sont retirées. Vos créations restent dans Mes créations."

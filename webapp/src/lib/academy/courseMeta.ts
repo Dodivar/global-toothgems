@@ -50,5 +50,9 @@ export function courseJsonLd(course: PublicCourse, locale: Locale, base: URL): R
     provider: { "@type": "Organization", name: SITE_NAME, url: absolute("/") },
     ...(course.cover ? { image: [absolute(course.cover.src)] } : {}),
     ...(timeRequired ? { timeRequired } : {}),
+    // Only from published learner reviews (decision 141); none, no rating.
+    ...(course.rating && course.rating.count > 0
+      ? { aggregateRating: { "@type": "AggregateRating", ratingValue: course.rating.average, reviewCount: course.rating.count } }
+      : {}),
   };
 }

@@ -8,7 +8,7 @@ import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { StepProgress } from "../components/register/StepProgress";
 import { ContextSummary } from "../components/register/ContextSummary";
-import { AuthCard, AuthLayout } from "../components/auth/AuthScene";
+import { AuthCard, AuthLayout, AuthModeSwitch } from "../components/auth/AuthScene";
 import { ProviderTermsDialog } from "../components/register/ProviderTermsDialog";
 import { useAppleSignInEnabled, type OAuthProvider } from "../lib/authProviders";
 import { useLastSignInMethod } from "../lib/lastSignInMethod";
@@ -300,9 +300,18 @@ export function Register() {
       ? t("register.actions.create")
       : t("register.actions.continue");
 
+  // While the form is open, the crown offers the same sign in / sign up switch
+  // as the sign-in page; once the account exists (verify, welcome) or for a
+  // visitor already signed in, switching sides means nothing, so the eyebrow
+  // comes back.
+  const showSwitch = phase === "form" && !signedInOnArrival;
   const crown = (
     <>
-      <span className="gt-eyebrow text-[var(--gt-blue-700)]">{t("register.eyebrow")}</span>
+      {showSwitch ? (
+        <AuthModeSwitch current="signUp" state={signInState} />
+      ) : (
+        <span className="gt-eyebrow text-[var(--gt-blue-700)]">{t("register.eyebrow")}</span>
+      )}
       {signedInOnArrival && phase === "form" ? (
         <Badge tone="success" icon={BadgeCheck} className="justify-self-start">
           {t("auth.signedInBadge")}
