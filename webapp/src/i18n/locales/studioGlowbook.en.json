@@ -151,6 +151,7 @@
     "view3d": "View in 3D",
     "open3d": "View “{{name}}” in 3D",
     "booking": "Book an appointment",
+    "book": "Book",
     "website": "Website",
     "tiktok": "@{{account}} on TikTok",
     "avatarAlt": "{{name}}’s profile picture",
@@ -427,6 +428,7 @@
       "creations": "Creations",
       "look": "Look",
       "profile": "Profile",
+      "agenda": "Calendar",
       "share": "Share"
     },
     "deleteHint": "Your page goes away and every creation is taken off it. Your creations stay in My creations."

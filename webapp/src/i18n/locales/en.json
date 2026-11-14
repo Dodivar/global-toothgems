@@ -4640,6 +4640,11 @@
           "body": "Your refund is being processed. Come back once it is confirmed.",
           "link": "View my subscription"
         },
+        "glowbook_bookings": {
+          "title": "Appointments to come",
+          "body": "Clients have booked on your Glowbook: cancel those appointments first (they will be told), then delete your account.",
+          "link": "See my appointments"
+        },
         "order_payment_pending": {
           "title": "Payment under way",
           "body": "An order is waiting for its payment to finish. Try again in a few minutes."

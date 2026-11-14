@@ -1,0 +1,160 @@
+"use client";
+
+import { supabase } from "./supabase/client";
+import { functionErrorCode, readFunctionFailure } from "./supabase/functionError";
+import {
+  type ArtistCalendar,
+  type BookingError,
+  type BookingInfo,
+  type BookingRule,
+  type BookingSettings,
+  type ClientBooking,
+  databaseCode,
+  readArtistCalendar,
+  readBookingError,
+  readBookingInfo,
+  readMyBookings,
+  readSlots,
+  type SlotList,
+} from "./glowbookBookingMapping";
+
+/**
+ * The persistence boundary of the Glowbook bookings (decision 144).
+ *
+ *   anyone:  glowbook_booking_info / glowbook_booking_slots (free hours only)
+ *   member:  the Edge Function `glowbook-booking` (their JWT + Turnstile) books;
+ *            my_glowbook_bookings, glowbook_cancel_booking
+ *   artist:  glowbook_artist_calendar, glowbook_save_booking_settings,
+ *            glowbook_set_calendar_hours, glowbook_cancel_booking (reason),
+ *            glowbook_mark_booking, glowbook_block_client / glowbook_unblock_client
+ *
+ * Without Supabase (mock mode) nothing is offered: there is no simulated booking.
+ */
+
+export const bookingAvailable = (): boolean => supabase !== null;
+
+/** Before the migration reaches a project the functions do not exist: offer nothing. */
+const missing = (code: string | undefined) => code === "PGRST202" || code === "42883";
+
+export async function fetchBookingInfo(handle: string): Promise<BookingInfo | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("glowbook_booking_info", { p_handle: handle });
+  if (error) {
+    if (missing(error.code)) return null;
+    throw new Error("glowbook_booking_info unavailable");
+  }
+  return readBookingInfo(data);
+}
+
+export async function fetchSlots(handle: string, from?: string, to?: string): Promise<SlotList | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("glowbook_booking_slots", { p_handle: handle, p_from: from ?? null, p_to: to ?? null } as never);
+  if (error) {
+    if (missing(error.code)) return null;
+    throw new Error("glowbook_booking_slots unavailable");
+  }
+  return readSlots(data);
+}
+
+export interface BookingRequest {
+  handle: string;
+  startsAt: string;
+  itemId: string | null;
+  name: string;
+  phone: string;
+  comment: string;
+  locale: "fr" | "en";
+  captcha: string | null;
+}
+
+export type BookAnswer = { kind: "booked"; id: string; startsAt: string; timezone: string } | { kind: "error"; error: BookingError };
+
+export async function bookSlot(request: BookingRequest): Promise<BookAnswer> {
+  if (!supabase) return { kind: "error", error: "unavailable" };
+  const { data, error } = await supabase.functions.invoke("glowbook-booking", {
+    body: {
+      handle: request.handle,
+      starts_at: request.startsAt,
+      item_id: request.itemId,
+      name: request.name.trim(),
+      phone: request.phone.trim(),
+      comment: request.comment.trim(),
+      locale: request.locale,
+      ...(request.captcha ? { captcha: request.captcha } : {}),
+    },
+  });
+  if (error) {
+    const failure = await readFunctionFailure(error);
+    return { kind: "error", error: failure.kind === "http" ? readBookingError(functionErrorCode(failure.body)) : "unavailable" };
+  }
+  const row = (data as { booking?: { id?: unknown; starts_at?: unknown; timezone?: unknown } } | null)?.booking;
+  if (!row || typeof row.id !== "string") return { kind: "error", error: "unavailable" };
+  return { kind: "booked", id: row.id, startsAt: String(row.starts_at), timezone: String(row.timezone) };
+}
+
+export async function fetchMyBookings(): Promise<{ bannedUntil: string | null; bookings: ClientBooking[] } | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("my_glowbook_bookings");
+  if (error) {
+    if (missing(error.code)) return null;
+    throw new Error("my_glowbook_bookings unavailable");
+  }
+  return readMyBookings(data);
+}
+
+export type ActionResult = { ok: true } | { ok: false; code: string };
+
+const fail = (message: string | undefined): ActionResult => ({ ok: false, code: databaseCode(message) ?? "unavailable" });
+
+/** The client cancels (no reason), or the artist cancels (reason required). */
+export async function cancelBooking(id: string, reason?: string): Promise<ActionResult> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { error } = await supabase.rpc("glowbook_cancel_booking", { p_id: id, p_reason: reason ?? null } as never);
+  return error ? fail(error.message) : { ok: true };
+}
+
+export async function fetchArtistCalendar(from: string, to: string): Promise<ArtistCalendar | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("glowbook_artist_calendar", { p_from: from, p_to: to });
+  if (error) {
+    if (missing(error.code)) return null;
+    throw new Error("glowbook_artist_calendar unavailable");
+  }
+  return readArtistCalendar(data);
+}
+
+export async function saveBookingSettings(settings: BookingSettings, rules: readonly BookingRule[]): Promise<ActionResult> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { error } = await supabase.rpc("glowbook_save_booking_settings", {
+    p_enabled: settings.enabled,
+    p_timezone: settings.timezone,
+    p_min_notice_hours: settings.minNoticeHours,
+    p_horizon_days: settings.horizonDays,
+    p_rules: rules.map((r) => ({ weekday: r.weekday, start_hour: r.startHour, end_hour: r.endHour })),
+  });
+  return error ? fail(error.message) : { ok: true };
+}
+
+export async function setCalendarHours(starts: readonly string[], state: "blocked" | "open" | "default"): Promise<ActionResult> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { error } = await supabase.rpc("glowbook_set_calendar_hours", { p_starts: [...starts], p_state: state });
+  return error ? fail(error.message) : { ok: true };
+}
+
+export async function markBooking(id: string, outcome: "honoured" | "no_show"): Promise<ActionResult> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { error } = await supabase.rpc("glowbook_mark_booking", { p_id: id, p_outcome: outcome });
+  return error ? fail(error.message) : { ok: true };
+}
+
+export async function blockClient(bookingId: string): Promise<ActionResult> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { error } = await supabase.rpc("glowbook_block_client", { p_booking_id: bookingId });
+  return error ? fail(error.message) : { ok: true };
+}
+
+export async function unblockClient(blockId: string): Promise<ActionResult> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { error } = await supabase.rpc("glowbook_unblock_client", { p_block_id: blockId });
+  return error ? fail(error.message) : { ok: true };
+}

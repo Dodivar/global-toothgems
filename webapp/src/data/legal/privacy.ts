@@ -234,6 +234,13 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
+            "Quand vous réservez un rendez-vous sur le Glowbook d’un artiste, votre nom, votre adresse e-mail, votre téléphone, la création choisie et votre message sont transmis à cet artiste, qui en est responsable pour vous recevoir et vous contacter ; l’éditeur du site les héberge pour son compte. Le personnel ne les consulte pas. Ils sont conservés 12 mois après la date du rendez-vous puis effacés ; si vous supprimez votre compte, vos rendez-vous à venir sont annulés et vos coordonnées retirées.",
+            "When you book an appointment on an artist’s Glowbook, your name, e-mail address, phone number, the chosen design and your message are passed on to that artist, who is responsible for them in order to see and contact you; the website publisher hosts them on the artist’s behalf. Staff do not look at them. They are kept for 12 months after the appointment date, then erased; if you delete your account, your upcoming appointments are cancelled and your details removed.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
             "Pour l’essai d’une création sur un sourire, la photo que vous choisissez est envoyée à Google (service Gemini) pour vérifier qu’elle convient et générer l’image. Nous ne conservons ni la photo ni l’image : elles restent sur votre appareil pendant 24 heures au plus, pour que vous puissiez retrouver le résultat. N’envoyez que la photo d’une personne qui a donné son accord.",
             "For trying a creation on a smile, the photo you choose is sent to Google (Gemini service) to check it is suitable and generate the image. We keep neither the photo nor the image: they stay on your device for 24 hours at most, so you can find the result again. Only send a photo of someone who has agreed to it.",
           ),
@@ -364,6 +371,7 @@ export const PRIVACY: LegalDocument = {
             { purpose: l("Traiter, livrer et facturer vos commandes", "Process, deliver and invoice orders"), basis: l("Exécution du contrat", "Performance of a contract") },
             { purpose: l("Donner accès aux formations, suivre la progression, délivrer les attestations", "Provide training, track progress, issue certificates"), basis: l("Exécution du contrat", "Performance of a contract") },
             { purpose: l("Fournir le Studio 3D, les liens de partage et la page Glowbook", "Provide the 3D Studio, share links and the Glowbook page"), basis: l("Exécution du contrat", "Performance of a contract") },
+            { purpose: l("Réserver un rendez-vous avec un artiste et le lui transmettre", "Book an appointment with an artist and pass it on to them"), basis: l("Mesures précontractuelles à votre demande", "Pre-contractual steps at your request") },
             { purpose: l("Essai d’une création sur un sourire", "Trying a creation on a smile"), basis: l("Consentement (donné à chaque envoi de photo)", "Consent (given each time a photo is sent)") },
             { purpose: l("Conserver les factures et pièces comptables", "Keep invoices and accounting records"), basis: l("Obligation légale", "Legal obligation") },
             { purpose: l("Répondre à vos demandes", "Answer your requests"), basis: l("Intérêt légitime ou mesures précontractuelles", "Legitimate interest or pre-contractual steps") },

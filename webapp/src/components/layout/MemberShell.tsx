@@ -4,6 +4,7 @@ import { LanguageMenu } from "./LanguageMenu";
 import { Link, NavLink, useLocation, useNavigate } from "../../lib/navigation";
 import {
   Award,
+  CalendarCheck,
   Cookie,
   CreditCard,
   LayoutDashboard,
@@ -125,6 +126,8 @@ const GROUPS: SectionGroup[] = [
       { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package, activity: "orders" },
       { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles, activity: "loyalty" },
       { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText, activity: "reviews" },
+      // Glowbook appointments (decision 144): those booked on artists' pages, and an artist's own.
+      { to: "/compte/rendez-vous", labelKey: "booking.mine.nav", icon: CalendarCheck },
     ],
   },
   {

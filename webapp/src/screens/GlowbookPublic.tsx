@@ -6,6 +6,7 @@ import { ArrowRight, Box, Gem, Star } from "lucide-react";
 import clsx from "clsx";
 import { GlowbookProfile, GlowbookTopBar } from "../components/glowbook/GlowbookIdentity";
 import { GlowbookPlaceSection } from "../components/glowbook/GlowbookPlaceSection";
+import { BookingDialog } from "../components/glowbook/BookingDialog";
 import { SpotlightVideo } from "../components/glowbook/SpotlightVideo";
 import { glowbookThemeStyle } from "../components/glowbook/theme";
 import { DEFAULT_LOOK } from "../lib/studioWorkspace/glowbookLook";
@@ -37,6 +38,9 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
   const { t, i18n } = useTranslation();
   const look = glowbook.look;
   const [filter, setFilter] = useState<SectionFilter>("all");
+  // The calendar (decision 144): open only when the server said the page takes bookings now.
+  const [booking, setBooking] = useState(false);
+  const onBook = glowbook.booking ? () => setBooking(true) : undefined;
   const { featured, others, filter: active } = visibleCreations(glowbook.items, glowbook.sections, look?.featuredItemId ?? null, filter);
   const large = look?.layout === "large";
   const titles = glowbook.certification ? certifiedTitles(glowbook.certification, i18n.language) : [];
@@ -48,6 +52,7 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
     look: { ...(look ?? DEFAULT_LOOK), location: glowbook.location },
     avatarUrl: glowbook.avatarUrl,
     certifiedTitles: titles,
+    onBook,
   };
 
   return (
@@ -155,6 +160,16 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
           </div>
         </div>
       </section>
+
+      {glowbook.booking && (
+        <BookingDialog
+          open={booking}
+          onClose={() => setBooking(false)}
+          handle={glowbook.handle}
+          artistName={glowbook.displayName}
+          items={glowbook.items.map((i) => ({ id: i.id, name: i.name }))}
+        />
+      )}
     </div>
   );
 }

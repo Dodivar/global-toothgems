@@ -27,7 +27,7 @@ const STUDIO_TERMS_FILE = `conditions-abonnement-studio-3d-${STUDIO_TERMS_VERSIO
 Deno.test("one sample per database template and per Auth template, all to the owner", () => {
   const samples = buildShowcase(ctx);
   const templates = samples.flatMap((s) => (s.kind === "template" ? [s.request.templateKey] : []));
-  assertEquals(new Set(templates).size, 19);
+  assertEquals(new Set(templates).size, 24);
   assertEquals(samples.filter((s) => s.kind === "rendered").length, 2);
   for (const s of samples) {
     if (s.kind === "template") {
@@ -38,7 +38,7 @@ Deno.test("one sample per database template and per Auth template, all to the ow
 });
 
 Deno.test("the documents are real PDFs with sample numbers", () => {
-  const withPdf = buildShowcase(ctx).flatMap((s) => (s.kind === "template" ? s.request.attachments ?? [] : []));
+  const withPdf = buildShowcase(ctx).flatMap((s) => (s.kind === "template" ? s.request.attachments ?? [] : [])).filter((a) => a.filename.endsWith(".pdf"));
   const invoices = withPdf.filter((a) => a.filename !== TERMS_FILE && a.filename !== STUDIO_TERMS_FILE);
   assertEquals(invoices.length, 4);
   for (const a of invoices) assert(a.filename.includes("EXEMPLE"), a.filename);
@@ -56,7 +56,7 @@ Deno.test("every contract confirmation shows its terms PDF and names its version
   assert(studio.attachments?.some((a) => a.filename === STUDIO_TERMS_FILE));
   assert(!studio.attachments?.some((a) => a.filename === TERMS_FILE));
   const studioContent = typeof studio.content === "function" ? studio.content("fr") : studio.content;
-  assertEquals(studioContent?.footerNote, "Conditions générales d’abonnement au Studio 3D jointes à cet e-mail (PDF) : version du 11 novembre 2026.");
+  assertEquals(studioContent?.footerNote, "Conditions générales d’abonnement au Studio 3D jointes à cet e-mail (PDF) : version du 14 novembre 2026.");
   for (const key of ["order_refunded", "course_enrolment"]) assert(!byKey.get(key)!.attachments?.some((a) => a.filename === TERMS_FILE), key);
 });
 
@@ -83,4 +83,13 @@ Deno.test("only keeps the samples of the templates asked for: the four reminders
     const content = typeof s.request.content === "function" ? s.request.content("fr") : s.request.content;
     assertEquals(content?.unsubscribeUrl, "https://globaltoothgems.com/rappels/desinscription?token=EXEMPLE");
   }
+});
+
+Deno.test("the Glowbook booking samples: five e-mails, a calendar file on the booking and the confirmation (decision 144)", () => {
+  const byKey = new Map(buildShowcase(ctx).flatMap((s) => (s.kind === "template" ? [[s.request.templateKey, s.request] as const] : [])));
+  for (const key of ["glowbook_booking_new", "glowbook_booking_confirmed", "glowbook_booking_cancel_client", "glowbook_booking_cancel_artist", "glowbook_booking_reminder"]) {
+    assert(byKey.has(key), key);
+  }
+  assertEquals(byKey.get("glowbook_booking_new")!.attachments?.map((a) => a.filename), ["rendez-vous.ics"]);
+  assertEquals(byKey.get("glowbook_booking_reminder")!.attachments, undefined);
 });

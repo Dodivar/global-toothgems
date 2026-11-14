@@ -4640,6 +4640,11 @@
           "body": "Votre remboursement est en cours de traitement. Revenez dès qu’il est confirmé.",
           "link": "Voir mon abonnement"
         },
+        "glowbook_bookings": {
+          "title": "Rendez-vous à venir",
+          "body": "Des clients ont réservé sur votre Glowbook : annulez d’abord ces rendez-vous (ils seront prévenus), puis supprimez votre compte.",
+          "link": "Voir mes rendez-vous"
+        },
         "order_payment_pending": {
           "title": "Paiement en cours",
           "body": "Une commande attend la fin de son paiement. Réessayez dans quelques minutes."
