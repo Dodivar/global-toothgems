@@ -7,7 +7,7 @@ import { CalendarCheck, ChevronLeft, ChevronRight, CircleAlert, Plus, RotateCw, 
 import { Button } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
 import { ArtistBookingCard } from "../../glowbook/ArtistBookingCard";
-import { bookingAvailable, fetchArtistCalendar, saveBookingSettings, setCalendarHours, unblockClient } from "../../../lib/glowbookBooking";
+import { bookingAvailable, fetchArtistAppointments, fetchArtistCalendar, saveBookingSettings, setCalendarHours, unblockClient } from "../../../lib/glowbookBooking";
 import {
   addDays,
   type ArtistCalendar,
@@ -21,7 +21,6 @@ import {
   localDay,
   NOTICE_CHOICES,
   rulesToWeek,
-  splitBookings,
   TIMEZONE_CHOICES,
   toggleTarget,
   validateWeek,
@@ -69,6 +68,7 @@ export function GlowbookAgenda({ glowbook }: { glowbook: Glowbook }) {
   const [week, setWeek] = useState<string | null>(null);
   const [calendar, setCalendar] = useState<ArtistCalendar | null>(null);
   const [upcoming, setUpcoming] = useState<ArtistCalendar["bookings"]>([]);
+  const [toMark, setToMark] = useState<ArtistCalendar["bookings"]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error" | "unavailable">(bookingAvailable() ? "loading" : "unavailable");
   const [settings, setSettings] = useState<BookingSettings>(DEFAULT_SETTINGS);
   const [hours, setHours] = useState<WeekHours>(defaultWeek());
@@ -87,13 +87,14 @@ export function GlowbookAgenda({ glowbook }: { glowbook: Glowbook }) {
     async (keepForm: boolean) => {
       if (!week || !today || !bookingAvailable()) return;
       try {
-        const [weekly, coming] = await Promise.all([fetchArtistCalendar(week, addDays(week, 6)), fetchArtistCalendar(today, addDays(today, 62))]);
+        const [weekly, around] = await Promise.all([fetchArtistCalendar(week, addDays(week, 6)), fetchArtistAppointments(today)]);
         if (!weekly) {
           setState("unavailable");
           return;
         }
         setCalendar(weekly);
-        setUpcoming(coming ? splitBookings(coming.bookings, new Date()).upcoming : []);
+        setUpcoming(around?.upcoming ?? []);
+        setToMark(around?.toMark ?? []);
         if (!keepForm) {
           setSettings(weekly.settings ?? DEFAULT_SETTINGS);
           setHours(weekly.settings ? rulesToWeek(weekly.rules) : defaultWeek());
@@ -402,6 +403,20 @@ export function GlowbookAgenda({ glowbook }: { glowbook: Glowbook }) {
           </ul>
         </section>
       </div>
+
+      {toMark.length > 0 && (
+        <section aria-labelledby={`${ids.horizon}-mark`} className={card}>
+          <h2 id={`${ids.horizon}-mark`} className={cardTitle}>{t("booking.agenda.toMark", { count: toMark.length })}</h2>
+          <p className={small}>{t("booking.agenda.toMarkHint")}</p>
+          <ul className="m-0 grid list-none gap-3 p-0 lg:grid-cols-2">
+            {toMark.map((b) => (
+              <li key={b.id}>
+                <ArtistBookingCard booking={b} onChanged={() => void load(true)} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section aria-labelledby={`${ids.horizon}-coming`} className={card}>
         <h2 id={`${ids.horizon}-coming`} className={cardTitle}>{t("booking.agenda.upcoming", { count: upcoming.length })}</h2>

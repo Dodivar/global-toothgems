@@ -133,7 +133,7 @@
     "noneUpcoming": "No upcoming appointment. Book from an artist's Glowbook.",
     "past": "Past and cancelled",
     "received": "Appointments booked on my Glowbook",
-    "receivedHint": "The appointments clients booked in your calendar, over the coming weeks.",
+    "receivedHint": "The appointments clients booked in your calendar: those to come and the past ones whose outcome is still to record.",
     "cancelTitle": "Cancel this appointment?",
     "cancelFree": "The artist is told and the slot is free again.",
     "cancelLate": "The appointment is less than 24 hours away: the cancellation will be recorded as late. Two no-shows or late cancellations within 12 months close bookings for 3 months.",
@@ -196,9 +196,12 @@
     "upcoming_one": "{{count}} upcoming appointment",
     "upcoming_other": "{{count}} upcoming appointments",
     "noneUpcoming": "No upcoming appointment.",
-    "pastHint": "After the hour, record whether the client came: two no-shows or late cancellations within 12 months close their bookings for 3 months. Past appointments stay in “My appointments”.",
+    "pastHint": "After the hour, the appointment moves to “Past appointments to record”: say whether the client came.",
     "blocks": "Clients you no longer accept",
-    "unblock": "Accept again"
+    "unblock": "Accept again",
+    "toMark_one": "{{count}} past appointment to record",
+    "toMark_other": "{{count}} past appointments to record",
+    "toMarkHint": "Did the client come? Record it within 60 days: two no-shows or late cancellations within 12 months close their bookings for 3 months."
   },
   "weekdays": {
     "1": "Monday",

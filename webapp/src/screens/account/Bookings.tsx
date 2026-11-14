@@ -9,9 +9,8 @@ import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Dialog } from "../../components/ui/Dialog";
 import { STATUS_TONE } from "../../components/glowbook/bookingStatus";
-import { bookingAvailable, cancelBooking, fetchArtistCalendar, fetchMyBookings } from "../../lib/glowbookBooking";
+import { bookingAvailable, cancelBooking, fetchArtistAppointments, fetchMyBookings } from "../../lib/glowbookBooking";
 import {
-  addDays,
   type ArtistBooking,
   type ClientBooking,
   clientCancellation,
@@ -53,14 +52,14 @@ export function Bookings() {
     setState("loading");
     try {
       const today = localDay(new Date().toISOString(), "Europe/Paris");
-      const [own, calendar] = await Promise.all([fetchMyBookings(), fetchArtistCalendar(addDays(today, -1), addDays(today, 61))]);
+      const [own, around] = await Promise.all([fetchMyBookings(), fetchArtistAppointments(today)]);
       if (!own) {
         setState("unavailable");
         return;
       }
       setMine(own.bookings);
       setBannedUntil(own.bannedUntil);
-      setReceived((calendar?.bookings ?? []).filter((b) => b.status === "booked" || new Date(b.startsAt).getTime() > Date.now() - 7 * 86400 * 1000));
+      setReceived([...(around?.toMark ?? []), ...(around?.upcoming ?? [])]);
       setNow(new Date());
       setState("ready");
     } catch {

@@ -133,7 +133,7 @@
     "noneUpcoming": "Aucun rendez-vous à venir. Réservez depuis le Glowbook d’un artiste.",
     "past": "Passés et annulés",
     "received": "Rendez-vous reçus sur mon Glowbook",
-    "receivedHint": "Les rendez-vous que des clients ont réservés dans votre agenda, sur les prochaines semaines.",
+    "receivedHint": "Les rendez-vous que des clients ont réservés dans votre agenda : ceux à venir et ceux passés dont il reste à noter si le client est venu.",
     "cancelTitle": "Annuler ce rendez-vous ?",
     "cancelFree": "L’artiste est prévenu et le créneau redevient libre.",
     "cancelLate": "Le rendez-vous est dans moins de 24 heures : l’annulation sera notée comme tardive. Deux absences ou annulations tardives en 12 mois ferment les réservations pendant 3 mois.",
@@ -196,9 +196,12 @@
     "upcoming_one": "{{count}} rendez-vous à venir",
     "upcoming_other": "{{count}} rendez-vous à venir",
     "noneUpcoming": "Aucun rendez-vous à venir.",
-    "pastHint": "Après l’heure, notez si le client est venu : deux absences ou annulations tardives en 12 mois lui ferment les réservations pendant 3 mois. Les rendez-vous passés restent dans « Mes rendez-vous ».",
+    "pastHint": "Après l’heure, le rendez-vous passe dans « Rendez-vous passés à noter » : indiquez si le client est venu.",
     "blocks": "Clients que vous n’acceptez plus",
-    "unblock": "Accepter de nouveau"
+    "unblock": "Accepter de nouveau",
+    "toMark_one": "{{count}} rendez-vous passé à noter",
+    "toMark_other": "{{count}} rendez-vous passés à noter",
+    "toMarkHint": "Le client est-il venu ? Notez-le dans les 60 jours : deux absences ou annulations tardives en 12 mois lui ferment les réservations pendant 3 mois."
   },
   "weekdays": {
     "1": "Lundi",

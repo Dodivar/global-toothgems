@@ -337,7 +337,7 @@ export const RESEND_COOLDOWN = 30;
  * accept. Stored with every consent record, so it must change whenever the
  * legal texts do. The database writes no consent row without it.
  */
-export const LEGAL_POLICY_VERSION = "2026-10-04";
+export const LEGAL_POLICY_VERSION = "2026-11-14";
 
 /**
  * Metadata sent with `supabase.auth.signUp`. The keys are the ones the

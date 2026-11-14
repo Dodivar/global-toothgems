@@ -3,6 +3,7 @@
 import { supabase } from "./supabase/client";
 import { functionErrorCode, readFunctionFailure } from "./supabase/functionError";
 import {
+  addDays,
   type ArtistCalendar,
   type BookingError,
   type BookingInfo,
@@ -157,4 +158,23 @@ export async function unblockClient(blockId: string): Promise<ActionResult> {
   if (!supabase) return { ok: false, code: "unavailable" };
   const { error } = await supabase.rpc("glowbook_unblock_client", { p_block_id: blockId });
   return error ? fail(error.message) : { ok: true };
+}
+
+/**
+ * The artist's appointments around today: those to come (62 days) and the past
+ * ones still waiting for an outcome (honoured / no-show can be recorded up to 60
+ * days after the hour). Two reads, since one calendar read spans 62 days at most.
+ */
+export async function fetchArtistAppointments(today: string): Promise<{ upcoming: ArtistCalendar["bookings"]; toMark: ArtistCalendar["bookings"] } | null> {
+  const [past, coming] = await Promise.all([fetchArtistCalendar(addDays(today, -60), today), fetchArtistCalendar(today, addDays(today, 61))]);
+  if (!past || !coming) return null;
+  const now = Date.now();
+  const all = new Map([...past.bookings, ...coming.bookings].map((b) => [b.id, b]));
+  const list = [...all.values()];
+  return {
+    upcoming: list.filter((b) => b.status === "booked" && new Date(b.startsAt).getTime() > now).sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+    toMark: list
+      .filter((b) => b.status === "booked" && !b.clientErased && new Date(b.startsAt).getTime() <= now && new Date(b.startsAt).getTime() > now - 60 * 86400 * 1000)
+      .sort((a, b) => b.startsAt.localeCompare(a.startsAt)),
+  };
 }
