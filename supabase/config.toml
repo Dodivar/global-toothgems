@@ -111,6 +111,10 @@ verify_jwt = false
 [functions.glowbook-calendar-feed]
 verify_jwt = false
 
+# Glowbook calendar import (decision 144, lot 3): called by pg_cron with EMAIL_INTERNAL_SECRET.
+[functions.glowbook-calendar-import]
+verify_jwt = false
+
 # Staff rights need a second factor (migration staff_mfa_required): the local
 # stack offers TOTP like the hosted project, for the live E2E suite.
 [auth.mfa.totp]
