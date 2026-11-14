@@ -1,17 +1,18 @@
-import type { Product } from "../../data/products";
+import type { Product, StockStatus } from "../../data/products";
 import { pick } from "../../data/types";
 import { localizedPath, type Locale } from "../localeRoutes";
 import { SITE_NAME } from "../pageMeta";
 import { parseRichText, type RichInline } from "../richText";
-import { toMinorUnits } from "./money";
+import { decimalText, NO_PRICE_CUTS, productItemOffers, variantPath, type ItemOffer, type PriceBook } from "./productOffers";
 import { productSlug } from "./productSlugs";
 
 /**
  * What the server says about a product page (docs/migration-nextjs.md, phase
  * 3.2): its title, description, addresses in both languages and its
- * structured data (schema.org `Product`). Only what the page itself shows:
- * the product's name, description (or the line the page shows without one),
- * photos, price and availability. Pure, unit-tested.
+ * structured data (schema.org `Product` / `ProductGroup`). Only what the page
+ * itself shows: the product's name, description (or the line the page shows
+ * without one), photos, prices and availability of each variant, plus the
+ * brand and the catalogue's reference. Pure, unit-tested.
  */
 
 /** Search engines show about this many characters of a description. */
@@ -75,43 +76,94 @@ export function productDescription(product: Product, locale: Locale): string {
   return truncate(text || `${name} — ${pick(product.subtitle, locale)}.`);
 }
 
-/** Exact decimal string of a display price ("49.00"), through minor units. */
-function priceText(price: number): string {
-  const minor = toMinorUnits(price);
-  return `${Math.trunc(minor / 100)}.${String(minor % 100).padStart(2, "0")}`;
-}
+/** Brand of every product (owner's decision, 2026-11-13: the shop's own name, no manufacturer codes). */
+export const PRODUCT_BRAND = SITE_NAME;
 
-const AVAILABILITY = {
-  out: "https://schema.org/OutOfStock",
-  low: "https://schema.org/LimitedAvailability",
-  in: "https://schema.org/InStock",
-} as const;
+const AVAILABILITY: Record<StockStatus, string> = {
+  in_stock: "https://schema.org/InStock",
+  low_stock: "https://schema.org/LimitedAvailability",
+  out_of_stock: "https://schema.org/OutOfStock",
+  preorder: "https://schema.org/PreOrder",
+};
 
-/** schema.org `Product` for the page, with absolute URLs. */
-export function productJsonLd(product: Product, locale: Locale, base: URL): Record<string, unknown> {
+/**
+ * schema.org structured data for the page, with absolute URLs. Prices are the
+ * page's own (`productItemOffers`: the database's price now while a cut runs,
+ * a struck-out price only when it says `reduced`). A product with several
+ * variants is a `ProductGroup` whose variants each carry their own `Offer`
+ * (price, stock, address opening the page on that variant); a product with
+ * one item is a `Product` with one `Offer`.
+ */
+export function productJsonLd(product: Product, locale: Locale, base: URL, book: PriceBook = NO_PRICE_CUTS): Record<string, unknown> {
   const absolute = (path: string) => new URL(path, base).toString();
-  const url = absolute(productAddresses(product)[locale]);
+  const path = productAddresses(product)[locale];
+  const url = absolute(path);
   const images = (product.gallery?.map((g) => g.src) ?? [product.image]).filter(Boolean).map(absolute);
-  const currency = product.currency ?? "EUR";
-  const prices = product.variants?.length ? product.variants.map((v) => v.price) : [product.price];
-  const low = Math.min(...prices);
-  const high = Math.max(...prices);
-  const availability = AVAILABILITY[product.stock ?? "in"];
+  const name = pick(product.name, locale);
+  const items = productItemOffers(product, book);
+  const brand = { "@type": "Brand", name: PRODUCT_BRAND };
+  const rating =
+    product.reviewCount > 0
+      ? { aggregateRating: { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.reviewCount } }
+      : {};
+
+  const offer = (item: ItemOffer) => ({
+    "@type": "Offer",
+    url: absolute(variantPath(path, product, item)),
+    price: decimalText(item.priceCents),
+    priceCurrency: item.currency,
+    availability: AVAILABILITY[item.availability],
+    itemCondition: "https://schema.org/NewCondition",
+    ...(item.saleEndsAt ? { priceValidUntil: item.saleEndsAt.slice(0, 10) } : {}),
+    ...(item.struckCents !== null
+      ? {
+          priceSpecification: {
+            "@type": "UnitPriceSpecification",
+            priceType: "https://schema.org/StrikethroughPrice",
+            price: decimalText(item.struckCents),
+            priceCurrency: item.currency,
+          },
+        }
+      : {}),
+  });
+
+  if (items.length === 1) {
+    const [item] = items;
+    const sku = item.variant?.sku ?? product.sku;
+    return {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name,
+      description: productDescription(product, locale),
+      ...(images.length > 0 ? { image: images } : {}),
+      url,
+      brand,
+      ...(sku ? { sku } : {}),
+      offers: offer(item),
+      ...rating,
+    };
+  }
 
   return {
     "@context": "https://schema.org",
-    "@type": "Product",
-    name: pick(product.name, locale),
+    "@type": "ProductGroup",
+    name,
     description: productDescription(product, locale),
     ...(images.length > 0 ? { image: images } : {}),
     url,
-    offers:
-      low === high
-        ? { "@type": "Offer", price: priceText(low), priceCurrency: currency, availability, url }
-        : { "@type": "AggregateOffer", lowPrice: priceText(low), highPrice: priceText(high), offerCount: prices.length, priceCurrency: currency, availability, url },
-    ...(product.reviewCount > 0
-      ? { aggregateRating: { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.reviewCount } }
-      : {}),
+    brand,
+    productGroupID: product.dbId ?? product.id,
+    hasVariant: items.map((item) => {
+      const image = item.variant?.image ? absolute(item.variant.image) : images[0];
+      return {
+        "@type": "Product",
+        name: item.variant ? `${name} – ${pick(item.variant.name, locale)}` : name,
+        ...(item.variant?.sku ? { sku: item.variant.sku } : {}),
+        ...(image ? { image } : {}),
+        offers: offer(item),
+      };
+    }),
+    ...rating,
   };
 }
 

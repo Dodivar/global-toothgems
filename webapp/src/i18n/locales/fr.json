@@ -526,6 +526,12 @@
     "appleCta": "J’accepte et je continue avec Apple",
     "checkoutCta": "J’accepte et je règle ma commande"
   },
+  "authSwitch": {
+    "label": "Connexion ou création de compte",
+    "signIn": "Se connecter",
+    "signUp": "Créer un compte",
+    "oneAccount": "Un seul compte pour la boutique, l’Academy et le Studio 3D"
+  },
   "authAlt": {
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
@@ -839,6 +845,8 @@
   "training": {
     "eyebrow": "Formation certifiante",
     "heroScript": "Académie",
+    "ratingLink_one": "{{rating}} sur 5 · {{count}} avis d’élève",
+    "ratingLink_other": "{{rating}} sur 5 · {{count}} avis d’élèves",
     "metaLevel": "Niveau",
     "metaModulesLabel": "Programme",
     "metaLessonsLabel": "Leçons",
@@ -4632,6 +4640,11 @@
           "body": "Votre remboursement est en cours de traitement. Revenez dès qu’il est confirmé.",
           "link": "Voir mon abonnement"
         },
+        "glowbook_bookings": {
+          "title": "Rendez-vous à venir",
+          "body": "Des clients ont réservé sur votre Glowbook : annulez d’abord ces rendez-vous (ils seront prévenus), puis supprimez votre compte.",
+          "link": "Voir mes rendez-vous"
+        },
         "order_payment_pending": {
           "title": "Paiement en cours",
           "body": "Une commande attend la fin de son paiement. Réessayez dans quelques minutes."
@@ -4723,6 +4736,7 @@
     "cookies": {
       "bannerTitle": "Vos cookies, votre choix",
       "bannerBody": "Certains cookies sont indispensables au fonctionnement du site (connexion, panier, paiement) et ne peuvent pas être désactivés. Avec votre accord seulement, nous mesurons l’audience du site avec PostHog, hébergé dans l’Union européenne, et revoyons certaines visites des pages publiques, du Studio et des cours (vos saisies masquées) pour l’améliorer. Aucun cookie publicitaire. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
+      "bannerBodyAdvertising": "Certains cookies sont indispensables au fonctionnement du site (connexion, panier, paiement) et ne peuvent pas être désactivés. Avec votre accord seulement, nous mesurons l’audience du site avec PostHog, hébergé dans l’Union européenne, et revoyons certaines visites des pages publiques, du Studio et des cours (vos saisies masquées) pour l’améliorer ; et, si vous acceptez la publicité, le pixel Meta (Facebook, Instagram) mesure les visites et les achats venus de nos publicités et nous permet de vous montrer nos produits sur ces réseaux. Vous pouvez changer d’avis à tout moment via « Paramètres cookies » en bas de page.",
       "policyLink": "Lire la politique cookies",
       "rejectNonEssential": "Refuser les non essentiels",
       "acceptAll": "Tout accepter",
@@ -4730,6 +4744,7 @@
       "customize": "Personnaliser",
       "save": "Enregistrer mes choix",
       "settingsTitle": "Paramètres cookies",
+      "settingsBodyAdvertising": "Choisissez séparément si vous acceptez la mesure d’audience et la publicité. Chacune reste désactivée tant que vous ne l’activez pas. Aucun autre cookie publicitaire ni de réseau social n’est utilisé.",
       "settingsBody": "Choisissez si vous acceptez la mesure d’audience. Elle reste désactivée tant que vous ne l’activez pas. Nous n’utilisons aucun cookie publicitaire ni de réseau social.",
       "settingsFoot": "Votre choix est conservé 6 mois ; vous pouvez le modifier à tout moment.",
       "settingsLink": "Paramètres cookies",
@@ -4745,6 +4760,11 @@
           "title": "Mesure d’audience",
           "body": "Nous aident à comprendre l’utilisation du site et à corriger ses erreurs, y compris en revoyant certaines visites des pages publiques, du Studio et des cours, vos saisies masquées.",
           "providers": "PostHog (serveurs dans l’Union européenne)"
+        },
+        "advertising": {
+          "title": "Publicité",
+          "body": "Le pixel Meta mesure les visites et les achats venus de nos publicités sur Facebook et Instagram, et nous permet de vous y montrer les produits que vous avez consultés. Seulement sur les pages de la boutique, sans votre nom ni votre e-mail.",
+          "providers": "Meta Platforms Ireland (données pouvant être transférées aux États-Unis)"
         }
       },
       "currentTitle": "Vos choix actuels",
@@ -5134,6 +5154,25 @@
       "unavailableBody": "La newsletter n’est pas disponible pour le moment.",
       "retry": "Réessayer",
       "shop": "Découvrir la boutique",
+      "home": "Retour à l’accueil"
+    }
+  },
+  "reminders": {
+    "unsubscribe": {
+      "eyebrow": "Rappels par e-mail",
+      "title": "Ne plus recevoir nos rappels automatiques",
+      "body": "Il s’agit des rappels de panier, des demandes d’avis après une livraison ou une formation terminée, et des rappels de récompense fidélité. Vos e-mails de commande (confirmation, expédition, factures) continueront d’arriver.",
+      "action": "Ne plus recevoir ces rappels",
+      "stopping": "Enregistrement…",
+      "doneTitle": "C’est noté",
+      "doneBody": "Vous ne recevrez plus de rappels automatiques à cette adresse. Les e-mails liés à vos commandes, eux, continueront d’arriver.",
+      "invalidTitle": "Ce lien ne fonctionne pas",
+      "invalidBody": "Il est incomplet ou ne correspond à aucune adresse. Utilisez le lien du dernier e-mail reçu, ou contactez-nous.",
+      "errorTitle": "L’enregistrement n’a pas pu aboutir",
+      "errorBody": "Un problème technique nous en a empêchés. Réessayez dans un moment.",
+      "unavailableTitle": "Service indisponible",
+      "unavailableBody": "Ce réglage n’est pas disponible pour le moment. Contactez-nous pour ne plus recevoir nos rappels.",
+      "retry": "Réessayer",
       "home": "Retour à l’accueil"
     }
   },

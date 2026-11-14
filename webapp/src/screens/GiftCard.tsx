@@ -29,6 +29,7 @@ import type { GiftCardProductText } from "../lib/giftCards/api";
 import { isAllowedAmount, parseAmountInput, type FieldMode, type GiftCardConfig, type GiftCardDesign } from "../lib/giftCards/giftCardMapping";
 import { useMoney, usePromoDates } from "../components/promotions/PromoBadges";
 import { GiftCardVisual } from "../components/promotions/Visuals";
+import { GiftCardBalanceCheck } from "../components/giftCards/GiftCardBalanceCheck";
 
 /**
  * The gift card, as a customer buys it.
@@ -171,6 +172,20 @@ export function GiftCard() {
               )}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Balance check (decision 140): for whoever already holds a card. */}
+      <section id="solde" aria-labelledby="gc-balance-title" className="scroll-mt-20 border-t border-[var(--border-subtle)] bg-[var(--surface-brand-wash-strong)] px-[var(--gutter-page)] py-[var(--section-y-sm)] lg:px-[var(--gutter-page-lg)]">
+        <div className="mx-auto grid max-w-[var(--max-width-content)] items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid content-start gap-3">
+            <p className="gt-eyebrow m-0">{t("promo.balance.eyebrow")}</p>
+            <h2 id="gc-balance-title" className="text-[length:var(--text-h3)]">{t("promo.balance.title")}</h2>
+            <p className="m-0 max-w-[48ch] text-[var(--text-body)]">{t("promo.balance.intro")}</p>
+          </div>
+          <div className="rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--gt-white)] p-5 sm:p-6">
+            <GiftCardBalanceCheck headingLevel={3} />
+          </div>
         </div>
       </section>
 

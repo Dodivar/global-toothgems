@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  COURSE_REVIEW_THRESHOLD,
   DEMO_CUSTOMER,
   REVIEW_NOW,
   SEED_REVIEWS,
@@ -12,10 +11,10 @@ import {
   type ReviewSubject,
 } from "../data/reviewSystem";
 import { isActiveOrder } from "../data/orders";
-import { getCourse } from "../data/courses";
 import { pick } from "../data/types";
 import { useAuth, type Profile } from "./auth";
 import { useCatalog } from "./catalog/CatalogProvider";
+import { useAcademy } from "./academy/AcademyProvider";
 import { useOrders } from "./orders";
 import { useProgress } from "./progress";
 import { isSupabaseConfigured } from "./supabase/client";
@@ -397,27 +396,29 @@ export function useReviewAuthor() {
 }
 
 /**
- * Display name and photo of a product or a course, from the catalogue the
- * shop shows (database or fixtures). A product that left the shop falls back
- * to its slug and no photo.
+ * Display name and photo of a product or a course, from the catalogue and the
+ * Academy the shop shows (database, or fixtures in mock mode). A product that
+ * left the shop or a course no longer published falls back to its slug and no
+ * photo.
  */
 export function useReviewSubjects() {
   const { findProduct } = useCatalog();
+  const { findCourse } = useAcademy();
   const subjectName = useCallback(
     (subject: ReviewSubject, lang: string): string => {
       if (subject.kind === "product") {
         const p = findProduct(subject.id);
         return p ? pick(p.name, lang) : subject.id;
       }
-      const c = getCourse(subject.id);
+      const c = findCourse(subject.id);
       return c ? pick(c.title, lang) : subject.id;
     },
-    [findProduct],
+    [findProduct, findCourse],
   );
   const subjectImage = useCallback(
     (subject: ReviewSubject): string | undefined =>
-      subject.kind === "product" ? findProduct(subject.id)?.image || undefined : getCourse(subject.id)?.image,
-    [findProduct],
+      subject.kind === "product" ? findProduct(subject.id)?.image || undefined : findCourse(subject.id)?.cover?.src,
+    [findProduct, findCourse],
   );
   return { subjectName, subjectImage };
 }
@@ -434,12 +435,12 @@ type Eligibility =
   | { state: "signedOut" }
   | { state: "notPurchased" }
   | { state: "awaitingShipment"; orderRef: string }
-  | { state: "needsProgress"; pct: number }
+  | { state: "needsCompletion"; pct: number }
   | { state: "eligible"; orderRef: string; progressPct?: number; context: RequestContext; date?: string }
   | { state: "reviewed"; review: CustomerReview };
 
 /** Why a review request is being shown — it decides the request's wording. */
-export type RequestContext = "delivered" | "shipped" | "completed" | "progress";
+export type RequestContext = "delivered" | "shipped" | "completed";
 
 /**
  * Whether the signed-in account may review `subject`, and why not otherwise.
@@ -448,10 +449,10 @@ export type RequestContext = "delivered" | "shipped" | "completed" | "progress";
  *
  * - Products: the product is on one of the account's orders that has left the
  *   workshop (shipped or delivered). Cancelled orders never count.
- * - Courses: the course is on the account and at least
- *   `COURSE_REVIEW_THRESHOLD` % of it has been validated, so the review speaks
- *   from real experience of the teaching. Course reviews are not stored in the
- *   database yet, so with Supabase they are not offered.
+ * - Courses: the account holds the course (bought, granted or opened by a
+ *   pack — all verified alike) and has completed it, so the review speaks for
+ *   the whole training (decision 141, owner; the database applies the same
+ *   rule on insert).
  * - One review per product or course: once written, the answer is "reviewed"
  *   and the way forward is editing it.
  *
@@ -485,18 +486,17 @@ export function useReviewEligibility() {
         return { state: "notPurchased" };
       }
 
-      if (isSupabaseConfigured) return { state: "notPurchased" };
       const progress = progressFor(subject.id);
       if (!progress.enrolled) return { state: "notPurchased" };
-      if (!progress.completed && progress.pct < COURSE_REVIEW_THRESHOLD) return { state: "needsProgress", pct: progress.pct };
+      if (!progress.completed) return { state: "needsCompletion", pct: progress.pct };
       const order = orders.find((o) => isActiveOrder(o) && o.lines.some((l) => l.courseId === subject.id));
       return {
         state: "eligible",
-        // A course opened without an order in this prototype is still an
+        // A course opened without an order (granted by hand) is still an
         // enrolment; its reference stands in for the order's.
         orderRef: order?.reference ?? `ENR-${subject.id.toUpperCase()}`,
         progressPct: progress.pct,
-        context: progress.completed ? "completed" : "progress",
+        context: "completed",
         date: progress.completedOn ?? undefined,
       };
     },

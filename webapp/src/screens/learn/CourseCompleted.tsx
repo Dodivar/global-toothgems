@@ -16,6 +16,8 @@ import { CertificateNameForm } from "../../components/certificate/CertificateNam
 import { pick, type Localized } from "../../data/types";
 import { learnHref, lessonHref } from "../../lib/academyUrl";
 import { useAuth } from "../../lib/auth";
+import { useReviewRequests } from "../../lib/reviews";
+import { ReviewRequestCard } from "../../components/reviews/ReviewRequestCard";
 import { certificateHolder } from "../../lib/certificate/holder";
 import { useCertificateExport } from "../../lib/certificate/useCertificateExport";
 import { useFormat } from "../../lib/format";
@@ -112,6 +114,8 @@ function CompletionMoment({
   const { showToast } = useToast();
   const { displayName, profile } = useAuth();
   const [sharing, setSharing] = useState(false);
+  // The finished course, not yet reviewed: asked here, while the experience is fresh (decision 141).
+  const reviewRequest = useReviewRequests().find((r) => r.subject.kind === "course" && r.subject.id === courseId);
   // The certificate's wording of the course when there is one, so the page and the document agree.
   const courseTitle = pick(card?.title ?? title, lang);
   const firstName = profile?.firstName?.trim() || displayName.split(" ")[0] || "";
@@ -257,6 +261,8 @@ function CompletionMoment({
       {/* The figures that earned it, then the way on. */}
       <section aria-label={t("certificate.statsLabel")} className="gt-cert-seq mx-auto grid max-w-[1120px] grid-cols-[minmax(0,1fr)] gap-8 px-4 pb-[clamp(40px,7vw,88px)]" style={seq(5)}>
         <AchievementStats stats={figures} />
+
+        {reviewRequest && <ReviewRequestCard request={reviewRequest} />}
 
         <div className="flex flex-col items-center justify-between gap-4 rounded-[var(--radius-card)] bg-[var(--surface-inverse)] px-[clamp(20px,4vw,40px)] py-6 text-center text-[var(--text-inverse)] sm:flex-row sm:text-left">
           <div className="grid gap-1">

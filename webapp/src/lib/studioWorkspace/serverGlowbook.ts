@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from "../supabase/env";
 import { createPublicServerSupabase } from "../supabase/publicServer";
 import { BUCKETS } from "../supabase/storage";
 import { toPublicGlowbook, type PublicGlowbook, type PublicGlowbookItem } from "./glowbook";
+import { readBookingInfo, type BookingInfo } from "../glowbookBookingMapping";
 
 /**
  * An artist's Glowbook as the server reads it for its public page (decision
@@ -28,6 +29,8 @@ export interface PublicGlowbookPage extends Omit<PublicGlowbook, "items"> {
   avatarUrl: string | null;
   /** The spotlight's turning video (decision 103), signed; null for none. */
   spotlightVideoUrl: string | null;
+  /** The artist's calendar when it takes bookings now (decision 144); null: no booking button (the external link, if any). */
+  booking: BookingInfo | null;
 }
 
 export const findPublicGlowbook = cache(async (handle: string): Promise<PublicGlowbookPage | null> => {
@@ -61,11 +64,14 @@ export const findPublicGlowbook = cache(async (handle: string): Promise<PublicGl
     const { data: signed } = await client.storage.from(BUCKETS.glowbookVideos).createSignedUrl(glowbook.spotlightVideo.path, RENDER_URL_TTL_SECONDS);
     spotlightVideoUrl = signed?.signedUrl ?? null;
   }
+  // Bookable now? A failure only hides the button: the page itself still shows.
+  const { data: bookingData } = await client.rpc("glowbook_booking_info", { p_handle: key });
   const signedMedia = (path: string | null | undefined) => (path ? (mediaUrls.get(path) ?? null) : null);
   return {
     ...glowbook,
     avatarUrl: signedMedia(glowbook.look?.avatarPath),
     spotlightVideoUrl,
+    booking: readBookingInfo(bookingData),
     items: glowbook.items.map((i) => ({ ...i, imageUrl: i.thumbnailPath ? (urls.get(i.thumbnailPath) ?? null) : null })),
   };
 });

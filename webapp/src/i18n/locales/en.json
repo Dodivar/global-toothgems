@@ -526,6 +526,12 @@
     "appleCta": "I accept and continue with Apple",
     "checkoutCta": "I accept and pay for my order"
   },
+  "authSwitch": {
+    "label": "Sign in or create an account",
+    "signIn": "Sign in",
+    "signUp": "Create an account",
+    "oneAccount": "One account for the shop, the Academy and the 3D Studio"
+  },
   "authAlt": {
     "showPassword": "Show password",
     "hidePassword": "Hide password",
@@ -839,6 +845,8 @@
   "training": {
     "eyebrow": "Certified training",
     "heroScript": "Academy",
+    "ratingLink_one": "{{rating}} out of 5 · {{count}} student review",
+    "ratingLink_other": "{{rating}} out of 5 · {{count}} student reviews",
     "metaLevel": "Level",
     "metaModulesLabel": "Curriculum",
     "metaLessonsLabel": "Lessons",
@@ -4632,6 +4640,11 @@
           "body": "Your refund is being processed. Come back once it is confirmed.",
           "link": "View my subscription"
         },
+        "glowbook_bookings": {
+          "title": "Appointments to come",
+          "body": "Clients have booked on your Glowbook: cancel those appointments first (they will be told), then delete your account.",
+          "link": "See my appointments"
+        },
         "order_payment_pending": {
           "title": "Payment under way",
           "body": "An order is waiting for its payment to finish. Try again in a few minutes."
@@ -4723,6 +4736,7 @@
     "cookies": {
       "bannerTitle": "Your cookies, your choice",
       "bannerBody": "Some cookies are essential for the site to work (sign-in, cart, payment) and cannot be switched off. Only with your agreement, we measure the site’s audience with PostHog, hosted in the European Union, and replay some visits to the public pages, the Studio and the courses (what you type is masked) to improve it. No advertising cookies. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
+      "bannerBodyAdvertising": "Some cookies are essential for the site to work (sign-in, cart, payment) and cannot be switched off. Only with your agreement, we measure the site’s audience with PostHog, hosted in the European Union, and replay some visits to the public pages, the Studio and the courses (what you type is masked) to improve it; and, if you accept advertising, the Meta pixel (Facebook, Instagram) measures the visits and purchases that come from our ads and lets us show you our products on those networks. You can change your mind at any time via “Cookie settings” at the bottom of every page.",
       "policyLink": "Read our cookie policy",
       "rejectNonEssential": "Reject non-essential",
       "acceptAll": "Accept all",
@@ -4730,6 +4744,7 @@
       "customize": "Customize",
       "save": "Save my choices",
       "settingsTitle": "Cookie settings",
+      "settingsBodyAdvertising": "Choose separately whether you accept audience measurement and advertising. Each stays off until you switch it on. No other advertising or social-network cookies are used.",
       "settingsBody": "Choose whether you accept audience measurement. It stays off until you switch it on. We use no advertising or social-network cookies.",
       "settingsFoot": "Your choice is kept for 6 months; you can change it at any time.",
       "settingsLink": "Cookie settings",
@@ -4745,6 +4760,11 @@
           "title": "Analytics",
           "body": "Help us understand how the site is used and fix its errors, including by replaying some visits to the public pages, the Studio and the courses, with what you type masked.",
           "providers": "PostHog (servers in the European Union)"
+        },
+        "advertising": {
+          "title": "Advertising",
+          "body": "The Meta pixel measures the visits and purchases that come from our ads on Facebook and Instagram, and lets us show you there the products you looked at. Only on the shop’s pages, without your name or e-mail.",
+          "providers": "Meta Platforms Ireland (data may be transferred to the United States)"
         }
       },
       "currentTitle": "Your current choices",
@@ -5134,6 +5154,25 @@
       "unavailableBody": "The newsletter is not available at the moment.",
       "retry": "Try again",
       "shop": "Visit the shop",
+      "home": "Back to the home page"
+    }
+  },
+  "reminders": {
+    "unsubscribe": {
+      "eyebrow": "E-mail reminders",
+      "title": "Stop our automatic reminders",
+      "body": "These are the cart reminders, the review requests after a delivery or a finished training, and the loyalty reward reminders. Your order e-mails (confirmation, shipping, invoices) will keep arriving.",
+      "action": "Stop these reminders",
+      "stopping": "Saving…",
+      "doneTitle": "Done",
+      "doneBody": "You will no longer get automatic reminders at this address. E-mails about your orders will keep arriving.",
+      "invalidTitle": "This link does not work",
+      "invalidBody": "It is incomplete or matches no address. Use the link in the latest e-mail you received, or contact us.",
+      "errorTitle": "We could not save your choice",
+      "errorBody": "A technical problem stopped us. Please try again in a moment.",
+      "unavailableTitle": "Service unavailable",
+      "unavailableBody": "This setting is not available right now. Contact us to stop our reminders.",
+      "retry": "Try again",
       "home": "Back to the home page"
     }
   },

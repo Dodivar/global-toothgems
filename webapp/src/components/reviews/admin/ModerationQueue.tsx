@@ -235,7 +235,7 @@ export function ModerationQueue({ onOpen }: { onOpen: (id: string) => void }) {
                           </button>
                         </td>
                         <td className="px-4 py-3">
-                          {r.orderRef ? (
+                          {r.orderRef !== null ? (
                             <span className="inline-flex items-center gap-1 text-[var(--status-success-fg)]"><ShieldCheck size={13} aria-hidden="true" />{t("reviews.admin.queue.verified")}</span>
                           ) : (
                             <span className="text-[var(--text-muted)]">{t("reviews.admin.queue.unverified")}</span>
@@ -277,7 +277,7 @@ export function ModerationQueue({ onOpen }: { onOpen: (id: string) => void }) {
                         <Stars rating={r.rating} size={12} />
                       </span>
                       <span className="truncate text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">“{r.title}”</span>
-                      <span className="truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">{subjectName(r.subject, lang)}{r.orderRef ? ` · ${t("reviews.admin.queue.verified")}` : ""}</span>
+                      <span className="truncate text-[length:var(--text-caption)] text-[var(--text-muted)]">{subjectName(r.subject, lang)}{r.orderRef !== null ? ` · ${t("reviews.admin.queue.verified")}` : ""}</span>
                       <span className="flex flex-wrap gap-1">
                         <ReviewStatusBadge status={r.status} />
                         {isEditedPending(r) && <EditedBadge />}

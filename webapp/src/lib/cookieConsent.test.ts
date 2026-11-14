@@ -6,12 +6,18 @@ const NOW = Date.parse("2026-11-08T12:00:00Z");
 describe("parseConsentRecord", () => {
   it("reads a recent choice", () => {
     const raw = JSON.stringify({ analytics: true, decidedAt: "2026-11-01T00:00:00Z" });
-    expect(parseConsentRecord(raw, NOW)).toEqual({ analytics: true, decidedAt: "2026-11-01T00:00:00Z" });
+    expect(parseConsentRecord(raw, NOW)).toEqual({ analytics: true, advertising: false, decidedAt: "2026-11-01T00:00:00Z" });
   });
 
   it("keeps only the analytics value of a record written with the former categories", () => {
     const raw = JSON.stringify({ preferences: true, analytics: false, marketing: true, decidedAt: "2026-10-01T00:00:00Z" });
-    expect(parseConsentRecord(raw, NOW)).toEqual({ analytics: false, decidedAt: "2026-10-01T00:00:00Z" });
+    // The former `marketing` value never counts as advertising consent.
+    expect(parseConsentRecord(raw, NOW)).toEqual({ analytics: false, advertising: false, decidedAt: "2026-10-01T00:00:00Z" });
+  });
+
+  it("reads the advertising choice", () => {
+    const raw = JSON.stringify({ analytics: false, advertising: true, decidedAt: "2026-11-01T00:00:00Z" });
+    expect(parseConsentRecord(raw, NOW)).toEqual({ analytics: false, advertising: true, decidedAt: "2026-11-01T00:00:00Z" });
   });
 
   it("treats anything but true as refused", () => {

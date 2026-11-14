@@ -10,7 +10,7 @@ import { l, type LegalDocument } from "./types";
  * `termsDocument.test.ts` fails while the text's fingerprint and this version
  * disagree.
  */
-export const STUDIO_TERMS_VERSION = "2026-11-11";
+export const STUDIO_TERMS_VERSION = "2026-11-14";
 
 /**
  * Terms of the 3D Studio subscription ("conditions générales d'abonnement au
@@ -318,6 +318,13 @@ export const STUDIO_TERMS: LegalDocument = {
           text: l(
             "L’abonnement est personnel : il est rattaché à votre compte et ne peut être partagé. Les règles d’utilisation du Studio, des liens de partage et du Glowbook, ainsi que la modération des contenus publiés, sont décrites dans les <<conditions générales d’utilisation|/conditions-generales-utilisation>>. Vous restez titulaire des droits sur vos créations.",
             "The subscription is personal: it is tied to your account and cannot be shared. The rules for using the Studio, share links and the Glowbook, and the moderation of published content, are set out in the <<terms of use|/conditions-generales-utilisation>>. You keep the rights to your creations.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Agenda du Glowbook (forfait Atelier). Si vous ouvrez les réservations, vous êtes responsable des données de vos clients que vous recevez (nom, e-mail, téléphone, message) et vous les utilisez seulement pour leurs rendez-vous. L’éditeur les traite pour votre compte, comme sous-traitant : il les héberge, vous les présente et envoie les e-mails de réservation, de rappel et d’annulation, sans autre usage ; il les protège, n’en donne l’accès à son personnel qu’en cas de besoin technique ou de signalement, vous aide à répondre aux demandes de vos clients et les efface 12 mois après la date du rendez-vous, ou plus tôt si vous supprimez le rendez-vous, l’agenda ou votre compte. Ses prestataires techniques sont listés dans la politique de confidentialité.",
+            "Glowbook calendar (Atelier plan). If you open bookings, you are responsible for the data of your clients that you receive (name, e-mail, phone, message) and you use it only for their appointments. The publisher processes it on your behalf, as a processor: it hosts it, shows it to you and sends the booking, reminder and cancellation e-mails, for no other purpose; it protects it, gives its staff access only when needed for technical reasons or a report, helps you answer your clients’ requests and erases it 12 months after the appointment date, or sooner if you delete the appointment, the calendar or your account. Its technical providers are listed in the privacy policy.",
           ),
         },
         {

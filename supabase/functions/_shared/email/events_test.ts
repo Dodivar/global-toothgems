@@ -401,7 +401,7 @@ Deno.test("studio subscription: the Studio subscription terms (the publisher's) 
   assertEquals(provider.asked, [{ locale: "en", reference: "3D Studio subscription — Artist" }]);
   const [mail] = seen.requests as { attachments?: { filename: string }[]; text: string }[];
   assertEquals(mail.attachments?.map((a) => a.filename), [`3d-studio-subscription-terms-${STUDIO_TERMS_VERSION}.pdf`]);
-  assert(mail.text.includes("3D Studio subscription terms attached to this email (PDF): version of 11 November 2026."));
+  assert(mail.text.includes("3D Studio subscription terms attached to this email (PDF): version of 14 November 2026."));
 });
 
 Deno.test("studio invoice: a renewal is mailed once with its invoice; no document yet means no e-mail", async () => {

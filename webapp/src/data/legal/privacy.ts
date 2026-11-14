@@ -1,5 +1,6 @@
 import { LEGAL_PATHS } from "./routes";
 import { DRAFT_DATE, l, type LegalDocument } from "./types";
+import { ADVERTISING_ENABLED } from "../../lib/metaPixelConfig";
 
 /**
  * Privacy policy, written for a GDPR-conscious European shop.
@@ -10,6 +11,10 @@ import { DRAFT_DATE, l, type LegalDocument } from "./types";
  * customers contract with — filled in from the store's details by
  * `storeFill.ts` (`[[!Responsable du traitement]]`). Who the controller is
  * remains the owner's (or a lawyer's) call, decision 121.
+ *
+ * Meta (advertising pixel, 2026-11-13) is named only once the pixel is
+ * configured (`ADVERTISING_ENABLED`, `lib/metaPixelConfig.ts`); wording to be
+ * reviewed by a lawyer (supabase/README.md, review of 2026-11-11).
  */
 
 const PART = {
@@ -98,7 +103,7 @@ export const PRIVACY: LegalDocument = {
             {
               context: l("Compte", "Account"),
               data: l("Nom, e-mail, mot de passe (chiffré), profil choisi, préférences, photo de profil", "Name, email, password (hashed), chosen profile, preferences, profile picture"),
-              source: l("Vous, Google ou Apple si vous vous connectez avec l’un d’eux", "You, Google or Apple if you sign in with one of them"),
+              source: l("Vous, Google si vous vous connectez avec Google", "You, Google if you sign in with Google"),
             },
             {
               context: l("Commandes et facturation", "Orders and billing"),
@@ -184,13 +189,6 @@ export const PRIVACY: LegalDocument = {
             "If you sign in with your Google account, we only receive your name, email address and, where available, your profile picture.",
           ),
         },
-        {
-          kind: "p",
-          text: l(
-            "Si vous vous connectez avec votre identifiant Apple, nous recevons uniquement un identifiant attribué par Apple et une adresse e-mail : la vôtre, ou une adresse relais créée par Apple si vous choisissez de masquer la vôtre. Nos e-mails envoyés à cette adresse relais vous sont transmis par Apple.",
-            "If you sign in with your Apple ID, we only receive an identifier assigned by Apple and an email address: yours, or a relay address created by Apple if you choose to hide yours. Our emails sent to that relay address are forwarded to you by Apple.",
-          ),
-        },
       ],
     },
     {
@@ -231,6 +229,13 @@ export const PRIVACY: LegalDocument = {
           text: l(
             "Vos créations sont enregistrées sur votre compte. Une page Glowbook et les créations que vous y ajoutez sont publiques une fois approuvées par notre équipe ; si vous indiquez un lieu d’exercice, seule une zone approximative (environ 1 km) ou l’adresse publique de votre salon est affichée, jamais une adresse personnelle.",
             "Your creations are saved to your account. A Glowbook page and the creations you add to it are public once approved by our team; if you give a place of work, only an approximate area (about 1 km) or your salon’s public address is shown, never a home address.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
+            "Quand vous réservez un rendez-vous sur le Glowbook d’un artiste, votre nom, votre adresse e-mail, votre téléphone, la création choisie et votre message sont transmis à cet artiste, qui en est responsable pour vous recevoir et vous contacter ; l’éditeur du site les héberge pour son compte. Le personnel ne les consulte pas. Ils sont conservés 12 mois après la date du rendez-vous puis effacés ; si vous supprimez votre compte, vos rendez-vous à venir sont annulés et vos coordonnées retirées.",
+            "When you book an appointment on an artist’s Glowbook, your name, e-mail address, phone number, the chosen design and your message are passed on to that artist, who is responsible for them in order to see and contact you; the website publisher hosts them on the artist’s behalf. Staff do not look at them. They are kept for 12 months after the appointment date, then erased; if you delete your account, your upcoming appointments are cancelled and your details removed.",
           ),
         },
         {
@@ -320,9 +325,20 @@ export const PRIVACY: LegalDocument = {
             },
             { role: l("E-mails de service et newsletter", "Service emails and newsletter"), provider: l("Resend (Plus Five Five, Inc.)", "Resend (Plus Five Five, Inc.)"), location: US_DPF },
             { role: l("Mesure d’audience, avec votre accord", "Audience measurement, with your consent"), provider: l("PostHog Inc.", "PostHog Inc."), location: l("Union européenne (Francfort)", "European Union (Frankfurt)") },
+            ...(ADVERTISING_ENABLED
+              ? [
+                  {
+                    role: l(
+                      "Mesure des publicités Facebook et Instagram (pixel Meta), avec votre accord — responsable conjoint pour la collecte",
+                      "Measuring Facebook and Instagram ads (Meta pixel), with your consent — joint controller for the collection",
+                    ),
+                    provider: l("Meta Platforms Ireland Ltd", "Meta Platforms Ireland Ltd"),
+                    location: US_DPF,
+                  },
+                ]
+              : []),
             { role: l("Livraison", "Delivery"), provider: l("La Poste (Colissimo), Chronopost, GLS", "La Poste (Colissimo), Chronopost, GLS"), location: l("France et pays de destination", "France and the destination country") },
             { role: l("Connexion avec Google", "Sign-in with Google"), provider: l("Google Ireland Ltd / Google LLC", "Google Ireland Ltd / Google LLC"), location: US_DPF },
-            { role: l("Connexion avec Apple", "Sign-in with Apple"), provider: l("Apple Distribution International Ltd / Apple Inc.", "Apple Distribution International Ltd / Apple Inc."), location: US_DPF },
             { role: l("Essai d’une création sur un sourire (IA)", "Trying a creation on a smile (AI)"), provider: l("Google (API Gemini)", "Google (Gemini API)"), location: US_DPF },
             {
               role: l("Cartes des pages Glowbook (chargées quand vous les faites défiler)", "Glowbook page maps (loaded as you scroll to them)"),
@@ -355,6 +371,7 @@ export const PRIVACY: LegalDocument = {
             { purpose: l("Traiter, livrer et facturer vos commandes", "Process, deliver and invoice orders"), basis: l("Exécution du contrat", "Performance of a contract") },
             { purpose: l("Donner accès aux formations, suivre la progression, délivrer les attestations", "Provide training, track progress, issue certificates"), basis: l("Exécution du contrat", "Performance of a contract") },
             { purpose: l("Fournir le Studio 3D, les liens de partage et la page Glowbook", "Provide the 3D Studio, share links and the Glowbook page"), basis: l("Exécution du contrat", "Performance of a contract") },
+            { purpose: l("Réserver un rendez-vous avec un artiste et le lui transmettre", "Book an appointment with an artist and pass it on to them"), basis: l("Mesures précontractuelles à votre demande", "Pre-contractual steps at your request") },
             { purpose: l("Essai d’une création sur un sourire", "Trying a creation on a smile"), basis: l("Consentement (donné à chaque envoi de photo)", "Consent (given each time a photo is sent)") },
             { purpose: l("Conserver les factures et pièces comptables", "Keep invoices and accounting records"), basis: l("Obligation légale", "Legal obligation") },
             { purpose: l("Répondre à vos demandes", "Answer your requests"), basis: l("Intérêt légitime ou mesures précontractuelles", "Legitimate interest or pre-contractual steps") },
@@ -366,6 +383,17 @@ export const PRIVACY: LegalDocument = {
             },
             { purpose: l("Envoyer la newsletter et des e-mails marketing", "Send the newsletter and marketing emails"), basis: l("Consentement", "Consent") },
             { purpose: l("Mesure d’audience et cookies non essentiels", "Audience measurement and non-essential cookies"), basis: l("Consentement", "Consent") },
+            ...(ADVERTISING_ENABLED
+              ? [
+                  {
+                    purpose: l(
+                      "Mesurer nos publicités Facebook et Instagram et y montrer nos produits (pixel Meta, pages de la boutique, sans nom ni e-mail)",
+                      "Measure our Facebook and Instagram ads and show our products there (Meta pixel, shop pages, no name or e-mail)",
+                    ),
+                    basis: l("Consentement (catégorie « Publicité »)", "Consent (“Advertising” category)"),
+                  },
+                ]
+              : []),
           ],
         },
       ],
@@ -441,9 +469,14 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
-            "Notre base de données est hébergée dans l’Union européenne. Certains prestataires (Vercel, Resend, Google, Apple) sont établis aux États-Unis et peuvent y traiter des données : ces transferts reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework) lorsque le prestataire y adhère, et à défaut sur les clauses contractuelles types de la Commission européenne. Les transferts vers le Royaume-Uni reposent sur une décision d’adéquation.",
-            "Our database is hosted in the European Union. Some providers (Vercel, Resend, Google, Apple) are established in the United States and may process data there: these transfers rely on the EU–US Data Privacy Framework where the provider has joined it, and otherwise on the European Commission’s standard contractual clauses. Transfers to the United Kingdom rely on an adequacy decision.",
+          text: ADVERTISING_ENABLED
+            ? l(
+                "Notre base de données est hébergée dans l’Union européenne. Certains prestataires (Vercel, Resend, Google) et Meta, si vous acceptez la publicité, sont établis aux États-Unis ou y transfèrent des données : ces transferts reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework) lorsque le destinataire y adhère, et à défaut sur les clauses contractuelles types de la Commission européenne. Les transferts vers le Royaume-Uni reposent sur une décision d’adéquation.",
+                "Our database is hosted in the European Union. Some providers (Vercel, Resend, Google) and Meta, if you accept advertising, are established in the United States or transfer data there: these transfers rely on the EU–US Data Privacy Framework where the recipient has joined it, and otherwise on the European Commission’s standard contractual clauses. Transfers to the United Kingdom rely on an adequacy decision.",
+              )
+            : l(
+            "Notre base de données est hébergée dans l’Union européenne. Certains prestataires (Vercel, Resend, Google) sont établis aux États-Unis et peuvent y traiter des données : ces transferts reposent sur le cadre de protection des données UE–États-Unis (Data Privacy Framework) lorsque le prestataire y adhère, et à défaut sur les clauses contractuelles types de la Commission européenne. Les transferts vers le Royaume-Uni reposent sur une décision d’adéquation.",
+            "Our database is hosted in the European Union. Some providers (Vercel, Resend, Google) are established in the United States and may process data there: these transfers rely on the EU–US Data Privacy Framework where the provider has joined it, and otherwise on the European Commission’s standard contractual clauses. Transfers to the United Kingdom rely on an adequacy decision.",
           ),
         },
       ],
@@ -519,7 +552,12 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         {
           kind: "p",
-          text: l(
+          text: ADVERTISING_ENABLED
+            ? l(
+                "Nous ne prenons aucune décision produisant des effets juridiques à votre égard sur la seule base d’un traitement automatisé. Nous ne faisons pas nous-mêmes de profilage publicitaire ; si vous acceptez la catégorie « Publicité », Meta peut utiliser les événements du pixel (produits consultés, achats) pour vous montrer nos publicités sur Facebook et Instagram (voir la <<politique cookies|/cookies>>). Notre prestataire de paiement analyse automatiquement chaque transaction pour détecter la fraude et peut refuser un paiement à risque : dans ce cas, contactez-nous pour qu’une personne examine la situation.",
+                "We make no decision with legal effects on you based solely on automated processing. We do no advertising profiling ourselves; if you accept the “Advertising” category, Meta may use the pixel’s events (products viewed, purchases) to show you our ads on Facebook and Instagram (see the <<cookie policy|/cookies>>). Our payment provider automatically analyses each transaction to detect fraud and may decline a risky payment: if that happens, contact us so that a person can look into it.",
+              )
+            : l(
             "Nous ne prenons aucune décision produisant des effets juridiques à votre égard sur la seule base d’un traitement automatisé, et ne faisons pas de profilage publicitaire. Notre prestataire de paiement analyse automatiquement chaque transaction pour détecter la fraude et peut refuser un paiement à risque : dans ce cas, contactez-nous pour qu’une personne examine la situation.",
             "We make no decision with legal effects on you based solely on automated processing, and do no advertising profiling. Our payment provider automatically analyses each transaction to detect fraud and may decline a risky payment: if that happens, contact us so that a person can look into it.",
           ),

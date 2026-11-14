@@ -2635,6 +2635,30 @@ export type Database = {
           },
         ]
       }
+      email_reminder_preferences: {
+        Row: {
+          created_at: string
+          opted_out_at: string | null
+          recipient_hash: string
+          unsubscribe_token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          opted_out_at?: string | null
+          recipient_hash: string
+          unsubscribe_token?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          opted_out_at?: string | null
+          recipient_hash?: string
+          unsubscribe_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_template_translations: {
         Row: {
           body: string
@@ -3474,6 +3498,290 @@ export type Database = {
           {
             foreignKeyName: "gift_cards_purchaser_user_id_fkey"
             columns: ["purchaser_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glowbook_availability_rules: {
+        Row: {
+          created_at: string
+          end_hour: number
+          id: string
+          start_hour: number
+          user_id: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          end_hour: number
+          id?: string
+          start_hour: number
+          user_id: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          end_hour?: number
+          id?: string
+          start_hour?: number
+          user_id?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowbook_availability_rules_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcases"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      glowbook_booking_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          feed_created_at: string | null
+          feed_token_hash: string | null
+          horizon_days: number
+          import_checked_at: string | null
+          import_error: string | null
+          import_status: string | null
+          import_url: string | null
+          min_notice_hours: number
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          feed_created_at?: string | null
+          feed_token_hash?: string | null
+          horizon_days?: number
+          import_checked_at?: string | null
+          import_error?: string | null
+          import_status?: string | null
+          import_url?: string | null
+          min_notice_hours?: number
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          feed_created_at?: string | null
+          feed_token_hash?: string | null
+          horizon_days?: number
+          import_checked_at?: string | null
+          import_error?: string | null
+          import_status?: string | null
+          import_url?: string | null
+          min_notice_hours?: number
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowbook_booking_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "studio_showcases"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      glowbook_bookings: {
+        Row: {
+          artist_id: string
+          cancel_reason: string | null
+          cancelled_at: string | null
+          client_email: string | null
+          client_erased: boolean
+          client_id: string | null
+          client_name: string | null
+          client_phone: string | null
+          comment: string | null
+          created_at: string
+          creation_name: string | null
+          design_kind: string
+          id: string
+          late_cancel: boolean
+          locale: string
+          marked_at: string | null
+          showcase_item_id: string | null
+          starts_at: string
+          status: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          artist_id: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          client_email?: string | null
+          client_erased?: boolean
+          client_id?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          comment?: string | null
+          created_at?: string
+          creation_name?: string | null
+          design_kind: string
+          id?: string
+          late_cancel?: boolean
+          locale?: string
+          marked_at?: string | null
+          showcase_item_id?: string | null
+          starts_at: string
+          status?: string
+          timezone: string
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          client_email?: string | null
+          client_erased?: boolean
+          client_id?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          comment?: string | null
+          created_at?: string
+          creation_name?: string | null
+          design_kind?: string
+          id?: string
+          late_cancel?: boolean
+          locale?: string
+          marked_at?: string | null
+          showcase_item_id?: string | null
+          starts_at?: string
+          status?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowbook_bookings_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "glowbook_bookings_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "glowbook_bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "glowbook_bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "glowbook_bookings_showcase_item_id_fkey"
+            columns: ["showcase_item_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcase_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glowbook_calendar_overrides: {
+        Row: {
+          created_at: string
+          kind: string
+          source: string
+          starts_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          kind: string
+          source?: string
+          starts_at: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          kind?: string
+          source?: string
+          starts_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowbook_calendar_overrides_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcases"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      glowbook_client_blocks: {
+        Row: {
+          artist_id: string
+          client_id: string
+          client_name: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          artist_id: string
+          client_id: string
+          client_name: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          artist_id?: string
+          client_id?: string
+          client_name?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowbook_client_blocks_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "glowbook_client_blocks_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "glowbook_client_blocks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "glowbook_client_blocks_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -5460,6 +5768,13 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "order_withdrawal_links_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
         ]
       }
       order_withdrawals: {
@@ -5525,6 +5840,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "order_withdrawals_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "order_withdrawals_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "order_withdrawals_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -5532,15 +5861,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "order_withdrawals_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
+            referencedColumns: ["order_id"]
+          },
+          {
             foreignKeyName: "order_withdrawals_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedRelation: "loyalty_overview"
+            referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "order_withdrawals_handled_by_fkey"
-            columns: ["handled_by"]
+            foreignKeyName: "order_withdrawals_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -8253,6 +8589,7 @@ export type Database = {
           author_name: string
           body: string
           changes_request: string | null
+          course_id: string | null
           created_at: string
           edited_at: string | null
           helpful_count: number
@@ -8279,6 +8616,7 @@ export type Database = {
           author_name: string
           body: string
           changes_request?: string | null
+          course_id?: string | null
           created_at?: string
           edited_at?: string | null
           helpful_count?: number
@@ -8305,6 +8643,7 @@ export type Database = {
           author_name?: string
           body?: string
           changes_request?: string | null
+          course_id?: string | null
           created_at?: string
           edited_at?: string | null
           helpful_count?: number
@@ -8328,6 +8667,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reviews_language_fkey"
             columns: ["language"]
@@ -9695,6 +10048,7 @@ export type Database = {
           display_name: string
           featured_item_id: string | null
           handle: string
+          in_directory: boolean
           instagram: string | null
           layout: string
           location: string | null
@@ -9733,6 +10087,7 @@ export type Database = {
           display_name: string
           featured_item_id?: string | null
           handle: string
+          in_directory?: boolean
           instagram?: string | null
           layout?: string
           location?: string | null
@@ -9771,6 +10126,7 @@ export type Database = {
           display_name?: string
           featured_item_id?: string | null
           handle?: string
+          in_directory?: boolean
           instagram?: string | null
           layout?: string
           location?: string | null
@@ -10464,6 +10820,34 @@ export type Database = {
         }
         Relationships: []
       }
+      course_review_stats: {
+        Row: {
+          average_rating: number | null
+          course_id: string | null
+          five_star: number | null
+          four_star: number | null
+          one_star: number | null
+          review_count: number | null
+          three_star: number | null
+          two_star: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "course_current_prices"
+            referencedColumns: ["course_id"]
+          },
+          {
+            foreignKeyName: "reviews_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_segment_overview: {
         Row: {
           customer_tag: string | null
@@ -11122,6 +11506,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      check_gift_card_balance: { Args: { p_code: string }; Returns: Json }
+      check_gift_card_balance_for_visitor: {
+        Args: { p_code: string; p_ip_hash: string }
+        Returns: Json
+      }
       checkout_session_status: {
         Args: { p_session_id: string }
         Returns: {
@@ -11325,6 +11714,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      email_reminder_token: { Args: { p_email: string }; Returns: string }
       email_template_for: {
         Args: { p_key: string; p_locale: string }
         Returns: {
@@ -11372,9 +11762,105 @@ export type Database = {
           redeemable: boolean
         }[]
       }
+      gift_card_balance_ip_allowed: {
+        Args: { p_ip_hash: string }
+        Returns: boolean
+      }
       gift_card_code_for_delivery: {
         Args: { p_gift_card_id: string }
         Returns: string
+      }
+      glowbook_apply_calendar_import: {
+        Args: {
+          p_error: string
+          p_hours: string[]
+          p_url: string
+          p_user: string
+        }
+        Returns: number
+      }
+      glowbook_artist_calendar: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
+      glowbook_block_client: {
+        Args: { p_booking_id: string }
+        Returns: undefined
+      }
+      glowbook_book_slot: {
+        Args: {
+          p_client: string
+          p_comment: string
+          p_handle: string
+          p_item_id: string
+          p_locale: string
+          p_name: string
+          p_phone: string
+          p_starts_at: string
+        }
+        Returns: Json
+      }
+      glowbook_booking_info: { Args: { p_handle: string }; Returns: Json }
+      glowbook_booking_ip_allowed: {
+        Args: { p_ip_hash: string }
+        Returns: boolean
+      }
+      glowbook_booking_slots: {
+        Args: { p_from: string; p_handle: string; p_to: string }
+        Returns: Json
+      }
+      glowbook_calendar_feed: { Args: { p_token: string }; Returns: Json }
+      glowbook_calendar_feed_ip_allowed: {
+        Args: { p_ip_hash: string }
+        Returns: boolean
+      }
+      glowbook_calendar_feed_state: { Args: never; Returns: Json }
+      glowbook_calendar_import_state: { Args: never; Returns: Json }
+      glowbook_calendar_import_targets: {
+        Args: { p_limit?: number }
+        Returns: {
+          horizon_days: number
+          timezone: string
+          url: string
+          user_id: string
+        }[]
+      }
+      glowbook_cancel_booking: {
+        Args: { p_id: string; p_reason?: string }
+        Returns: Json
+      }
+      glowbook_create_calendar_feed: { Args: never; Returns: string }
+      glowbook_directory: { Args: never; Returns: Json }
+      glowbook_disable_calendar_feed: { Args: never; Returns: undefined }
+      glowbook_imported_hours: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
+      glowbook_mark_booking: {
+        Args: { p_id: string; p_outcome: string }
+        Returns: undefined
+      }
+      glowbook_save_booking_settings: {
+        Args: {
+          p_enabled: boolean
+          p_horizon_days: number
+          p_min_notice_hours: number
+          p_rules: Json
+          p_timezone: string
+        }
+        Returns: undefined
+      }
+      glowbook_set_calendar_hours: {
+        Args: { p_starts: string[]; p_state: string }
+        Returns: number
+      }
+      glowbook_set_calendar_import: {
+        Args: { p_url: string }
+        Returns: undefined
+      }
+      glowbook_unblock_client: {
+        Args: { p_block_id: string }
+        Returns: undefined
       }
       issue_gift_card: {
         Args: {
@@ -11446,7 +11932,10 @@ export type Database = {
       }
       lounge_moderation_history: { Args: { p_limit?: number }; Returns: Json }
       lounge_moderation_queue: { Args: { p_status?: string }; Returns: Json }
-      lounge_moderation_stats: { Args: { p_from: string; p_to: string }; Returns: Json }
+      lounge_moderation_stats: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       lounge_my_moderation: { Args: never; Returns: Json }
       lounge_overview: { Args: never; Returns: Json }
       lounge_post_message: {
@@ -11473,7 +11962,10 @@ export type Database = {
         }
         Returns: Json
       }
-      lounge_set_blocked: { Args: { p_blocked: boolean; p_member_id: string }; Returns: undefined }
+      lounge_set_blocked: {
+        Args: { p_blocked: boolean; p_member_id: string }
+        Returns: undefined
+      }
       lounge_set_muted: {
         Args: {
           p_channel_id: string
@@ -11482,7 +11974,10 @@ export type Database = {
         }
         Returns: undefined
       }
-      lounge_submit_appeal: { Args: { p_body: string; p_decision_id: string }; Returns: Json }
+      lounge_submit_appeal: {
+        Args: { p_body: string; p_decision_id: string }
+        Returns: Json
+      }
       lounge_toggle_reaction: {
         Args: { p_message_id: string; p_reaction: string }
         Returns: boolean
@@ -11596,6 +12091,7 @@ export type Database = {
         }
       }
       my_account_erasure_blockers: { Args: never; Returns: string[] }
+      my_glowbook_bookings: { Args: never; Returns: Json }
       my_permissions: { Args: never; Returns: string[] }
       my_personal_data: { Args: never; Returns: Json }
       newsletter_confirm: { Args: { p_token: string }; Returns: boolean }
@@ -11628,13 +12124,21 @@ export type Database = {
         Args: { p_ip_hash: string }
         Returns: boolean
       }
-      order_withdrawal_options: {
-        Args: { p_order_id: string }
-        Returns: Json
-      }
+      order_withdrawal_options: { Args: { p_order_id: string }; Returns: Json }
       order_withdrawal_options_by_token: {
         Args: { p_token: string }
         Returns: Json
+      }
+      pending_abandoned_cart_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          first_name: string
+          items: Json
+          locale: string
+          order_id: string
+          order_number: string
+        }[]
       }
       pending_back_in_stock_emails: {
         Args: { p_limit?: number }
@@ -11662,6 +12166,45 @@ export type Database = {
           order_number: string
         }[]
       }
+      pending_course_review_request_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          completion_id: string
+          course_id: string
+          course_slug: string
+          course_title: string
+          cover_media_id: string
+          cover_updated_at: string
+          email: string
+          first_name: string
+          locale: string
+        }[]
+      }
+      pending_glowbook_booking_emails: {
+        Args: { p_limit?: number; p_only?: string }
+        Returns: {
+          artist_handle: string
+          artist_name: string
+          booking_id: string
+          cancel_reason: string
+          client_email: string
+          client_erased: boolean
+          client_name: string
+          client_phone: string
+          comment: string
+          creation_name: string
+          design_kind: string
+          email: string
+          ends_at: string
+          event_key: string
+          kind: string
+          late_cancel: boolean
+          locale: string
+          reply_to: string
+          starts_at: string
+          timezone: string
+        }[]
+      }
       pending_lounge_moderation_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -11670,6 +12213,17 @@ export type Database = {
           kind: string
           locale: string
           payload: Json
+        }[]
+      }
+      pending_loyalty_reward_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          card_id: string
+          email: string
+          first_name: string
+          locale: string
+          reward_percent: number
+          user_id: string
         }[]
       }
       pending_newsletter_contacts: {
@@ -11710,6 +12264,17 @@ export type Database = {
           order_id: string
           order_number: string
           refund_id: string
+        }[]
+      }
+      pending_review_request_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          email: string
+          first_name: string
+          items: Json
+          locale: string
+          order_id: string
+          order_number: string
         }[]
       }
       pending_shipping_emails: {
@@ -12210,6 +12775,7 @@ export type Database = {
           display_name: string
           featured_item_id: string | null
           handle: string
+          in_directory: boolean
           instagram: string | null
           layout: string
           location: string | null
@@ -12257,6 +12823,7 @@ export type Database = {
           display_name: string
           featured_item_id: string | null
           handle: string
+          in_directory: boolean
           instagram: string | null
           layout: string
           location: string | null
@@ -12322,6 +12889,55 @@ export type Database = {
           display_name: string
           featured_item_id: string | null
           handle: string
+          in_directory: boolean
+          instagram: string | null
+          layout: string
+          location: string | null
+          pending_changes: Json | null
+          place_label: string | null
+          place_lat: number | null
+          place_lng: number | null
+          place_mode: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          show_certification: boolean
+          spotlight_video_at: string | null
+          spotlight_video_item_id: string | null
+          spotlight_video_path: string | null
+          spotlight_video_scene_md5: string | null
+          spotlight_video_seconds: number | null
+          spotlight_video_type: string | null
+          status: string
+          submitted_at: string
+          tiktok: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      studio_set_showcase_directory: {
+        Args: { p_listed: boolean }
+        Returns: {
+          accent: string
+          avatar_path: string | null
+          background: string
+          banner_path: string | null
+          bio: string
+          booking_url: string | null
+          changes_review_note: string | null
+          changes_submitted_at: string | null
+          created_at: string
+          display_name: string
+          featured_item_id: string | null
+          handle: string
+          in_directory: boolean
           instagram: string | null
           layout: string
           location: string | null
@@ -12537,6 +13153,10 @@ export type Database = {
           checkout_session_ids: string[]
           order_id: string
         }[]
+      }
+      unsubscribe_email_reminders: {
+        Args: { p_token: string }
+        Returns: boolean
       }
       vat_included: {
         Args: { p_amount: number; p_rate_bp: number }
