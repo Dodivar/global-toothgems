@@ -33,6 +33,7 @@ import {
 import type { Glowbook } from "../../../lib/studioWorkspace/glowbook";
 import { useToast } from "../../../lib/toast";
 import { fieldClass, focusRing } from "./workspaceStyles";
+import { GlowbookCalendarFeed } from "./GlowbookCalendarFeed";
 
 const card = "grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--shadow-sm)] sm:p-6";
 const cardTitle = "m-0 inline-flex items-center gap-2 text-[16px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]";
@@ -433,6 +434,8 @@ export function GlowbookAgenda({ glowbook }: { glowbook: Glowbook }) {
         )}
         <p className={small}>{t("booking.agenda.pastHint")}</p>
       </section>
+
+      <GlowbookCalendarFeed />
 
       {(calendar?.blocks.length ?? 0) > 0 && (
         <section aria-labelledby={`${ids.horizon}-blocks`} className={card}>

@@ -211,5 +211,28 @@
     "5": "Friday",
     "6": "Saturday",
     "7": "Sunday"
+  },
+  "feed": {
+    "title": "Sync with my calendar",
+    "body": "A private link to add to Google Calendar, Apple Calendar or Outlook: your Glowbook appointments show there, updated automatically.",
+    "privacy": "Your calendar will receive your clients' names, phones, e-mails and messages. Keep this link to yourself: anyone who knows it sees your appointments.",
+    "create": "Create my calendar link",
+    "yourLink": "Your private link",
+    "copy": "Copy",
+    "copied": "Link copied",
+    "copyFailed": "Could not copy: select the link and copy it",
+    "onlyOnce": "This link is shown only once. If you lose it, create a new one.",
+    "howGoogle": "Google Calendar (on a computer): Other calendars › + › From URL, paste the link.",
+    "howApple": "Apple Calendar: File › New Calendar Subscription (on iPhone: Settings › Calendar › Accounts › Add Account › Other › Add Subscribed Calendar).",
+    "howOutlook": "Outlook: Add calendar › Subscribe from web, paste the link.",
+    "refresh": "Each app reads the link again on its own schedule: Google can take up to 24 hours. Cancellations disappear at the next read.",
+    "active": "A calendar link has been active since {{date}}. To see it again, create a new one: the old one will stop working.",
+    "rotate": "New link",
+    "rotateTitle": "Create a new link?",
+    "rotateBody": "The old link will stop working: replace it with the new one in your calendars.",
+    "disable": "Turn the link off",
+    "disableTitle": "Turn the calendar link off?",
+    "disableBody": "Your calendars will no longer receive your appointments. You can create a new link later.",
+    "disabled": "Calendar link turned off"
   }
 }

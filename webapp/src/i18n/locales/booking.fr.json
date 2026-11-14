@@ -211,5 +211,28 @@
     "5": "Vendredi",
     "6": "Samedi",
     "7": "Dimanche"
+  },
+  "feed": {
+    "title": "Synchroniser avec mon agenda",
+    "body": "Un lien privé à ajouter dans Google Agenda, Apple Calendrier ou Outlook : vos rendez-vous du Glowbook y apparaissent, mis à jour automatiquement.",
+    "privacy": "Votre agenda recevra le nom, le téléphone, l’e-mail et le message de vos clients. Gardez ce lien pour vous : quiconque le connaît voit vos rendez-vous.",
+    "create": "Créer mon lien d’agenda",
+    "yourLink": "Votre lien privé",
+    "copy": "Copier",
+    "copied": "Lien copié",
+    "copyFailed": "Copie impossible : sélectionnez le lien et copiez-le",
+    "onlyOnce": "Ce lien ne s’affiche qu’une fois. Si vous le perdez, créez-en un nouveau.",
+    "howGoogle": "Google Agenda (sur ordinateur) : Autres agendas › + › À partir de l’URL, collez le lien.",
+    "howApple": "Apple Calendrier : Fichier › Nouvel abonnement à un calendrier (sur iPhone : Réglages › Calendrier › Comptes › Ajouter un compte › Autre › Calendrier avec abonnement).",
+    "howOutlook": "Outlook : Ajouter un calendrier › S’abonner à partir du web, collez le lien.",
+    "refresh": "Chaque application relit le lien à son rythme : Google peut mettre jusqu’à 24 heures. Les annulations disparaissent à la relecture suivante.",
+    "active": "Un lien d’agenda est actif depuis le {{date}}. Pour l’afficher à nouveau, créez-en un nouveau : l’ancien cessera de fonctionner.",
+    "rotate": "Nouveau lien",
+    "rotateTitle": "Créer un nouveau lien ?",
+    "rotateBody": "L’ancien lien cessera de fonctionner : remplacez-le dans vos agendas par le nouveau.",
+    "disable": "Désactiver le lien",
+    "disableTitle": "Désactiver le lien d’agenda ?",
+    "disableBody": "Vos agendas ne recevront plus vos rendez-vous. Vous pourrez créer un nouveau lien plus tard.",
+    "disabled": "Lien d’agenda désactivé"
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "./supabase/client";
+import { supabaseUrl } from "./supabase/env";
 import { functionErrorCode, readFunctionFailure } from "./supabase/functionError";
 import {
   addDays,
@@ -177,4 +178,42 @@ export async function fetchArtistAppointments(today: string): Promise<{ upcoming
       .filter((b) => b.status === "booked" && !b.clientErased && new Date(b.startsAt).getTime() <= now && new Date(b.startsAt).getTime() > now - 60 * 86400 * 1000)
       .sort((a, b) => b.startsAt.localeCompare(a.startsAt)),
   };
+}
+
+/* ------------------------------------------------------------ calendar feed (lot 2) */
+
+export interface FeedState {
+  active: boolean;
+  createdAt: string | null;
+}
+
+/** Whether the artist has a private calendar link (never the secret: it is shown once, when created). */
+export async function fetchFeedState(): Promise<FeedState | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("glowbook_calendar_feed_state");
+  if (error) {
+    if (missing(error.code)) return null;
+    throw new Error("glowbook_calendar_feed_state unavailable");
+  }
+  const row = (data ?? null) as { active?: unknown; created_at?: unknown } | null;
+  return { active: row?.active === true, createdAt: typeof row?.created_at === "string" ? row.created_at : null };
+}
+
+/** A new private link; any older one stops working. */
+export async function createFeed(): Promise<{ ok: true; url: string } | { ok: false; code: string }> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { data, error } = await supabase.rpc("glowbook_create_calendar_feed");
+  if (error || typeof data !== "string") return { ok: false, code: databaseCode(error?.message) ?? "unavailable" };
+  return { ok: true, url: feedUrl(data) };
+}
+
+export async function disableFeed(): Promise<ActionResult> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { error } = await supabase.rpc("glowbook_disable_calendar_feed");
+  return error ? fail(error.message) : { ok: true };
+}
+
+/** The feed's https address (the Edge Function); calendar apps also take it as webcal://. */
+export function feedUrl(token: string): string {
+  return `${supabaseUrl.replace(/\/+$/, "")}/functions/v1/glowbook-calendar-feed?token=${token}`;
 }

@@ -19,6 +19,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { type Block, type DetailRow, details, notice } from "./components.ts";
 import { chromeLocale } from "./layout.ts";
+import { buildCalendar, type IcsEvent } from "../ics.ts";
 import type { EmailContent } from "./render.ts";
 import { type EmailDeps, sendTemplatedEmail, type SendResult } from "./send.ts";
 
@@ -137,60 +138,11 @@ export function bookingDate(iso: string, timezone: string, locale: string): stri
   return `${formatted} (${LABELS[lang].timeIn(city)})`;
 }
 
-const ICS_ESCAPE = /[\\;,\n]/g;
-const icsText = (value: string) => value.replace(/\r/g, "").replace(ICS_ESCAPE, (c) => (c === "\n" ? "\\n" : `\\${c}`));
-const icsTime = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-
-/** Folds a content line at 75 octets (RFC 5545 §3.1), never inside a UTF-8 character. */
-function fold(line: string): string {
-  const out: string[] = [];
-  let current = "";
-  let size = 0;
-  for (const char of line) {
-    const bytes = new TextEncoder().encode(char).length;
-    if (size + bytes > 75) {
-      out.push(current);
-      current = " ";
-      size = 1;
-    }
-    current += char;
-    size += bytes;
-  }
-  out.push(current);
-  return out.join("\r\n");
-}
-
-export interface CalendarEvent {
-  uid: string;
-  startsAt: string;
-  endsAt: string;
-  summary: string;
-  description: string;
-  url?: string;
-  stamp?: string;
-}
+export type CalendarEvent = IcsEvent;
 
 /** A one-event iCalendar file (times in UTC; every calendar shows them in its own zone). */
 export function buildIcs(event: CalendarEvent): string {
-  const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Global Toothgems//Glowbook//FR",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-    "BEGIN:VEVENT",
-    `UID:${event.uid}`,
-    `DTSTAMP:${icsTime(event.stamp ?? new Date().toISOString())}`,
-    `DTSTART:${icsTime(event.startsAt)}`,
-    `DTEND:${icsTime(event.endsAt)}`,
-    `SUMMARY:${icsText(event.summary)}`,
-    `DESCRIPTION:${icsText(event.description)}`,
-    ...(event.url ? [`URL:${event.url}`] : []),
-    "STATUS:CONFIRMED",
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ];
-  return lines.map(fold).join("\r\n") + "\r\n";
+  return buildCalendar([event], { now: event.stamp });
 }
 
 function base64Utf8(text: string): string {

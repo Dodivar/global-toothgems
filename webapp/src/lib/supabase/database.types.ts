@@ -3543,6 +3543,8 @@ export type Database = {
         Row: {
           created_at: string
           enabled: boolean
+          feed_created_at: string | null
+          feed_token_hash: string | null
           horizon_days: number
           min_notice_hours: number
           timezone: string
@@ -3552,6 +3554,8 @@ export type Database = {
         Insert: {
           created_at?: string
           enabled?: boolean
+          feed_created_at?: string | null
+          feed_token_hash?: string | null
           horizon_days?: number
           min_notice_hours?: number
           timezone?: string
@@ -3561,6 +3565,8 @@ export type Database = {
         Update: {
           created_at?: string
           enabled?: boolean
+          feed_created_at?: string | null
+          feed_token_hash?: string | null
           horizon_days?: number
           min_notice_hours?: number
           timezone?: string
@@ -11779,10 +11785,18 @@ export type Database = {
         Args: { p_from: string; p_handle: string; p_to: string }
         Returns: Json
       }
+      glowbook_calendar_feed: { Args: { p_token: string }; Returns: Json }
+      glowbook_calendar_feed_ip_allowed: {
+        Args: { p_ip_hash: string }
+        Returns: boolean
+      }
+      glowbook_calendar_feed_state: { Args: never; Returns: Json }
       glowbook_cancel_booking: {
         Args: { p_id: string; p_reason?: string }
         Returns: Json
       }
+      glowbook_create_calendar_feed: { Args: never; Returns: string }
+      glowbook_disable_calendar_feed: { Args: never; Returns: undefined }
       glowbook_mark_booking: {
         Args: { p_id: string; p_outcome: string }
         Returns: undefined
