@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, CalendarCheck, CalendarDays, CalendarPlus, CalendarX2, MapPin, PlugZap, ShieldAlert, Sparkles } from "lucide-react";
+import { ArrowRight, Box, CalendarCheck, CalendarDays, CalendarPlus, CalendarX2, MapPin, MapPinned, PlugZap, ShieldAlert, Sparkles } from "lucide-react";
 import { SectionHeader } from "../../components/account/SectionHeader";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
@@ -22,7 +22,7 @@ import { AGENDA_PATH } from "../../lib/agendaRoutes";
 import { useToast } from "../../lib/toast";
 import { appointmentIcs, downloadIcs } from "../../lib/glowbookIcs";
 import { directionsLinks } from "../../lib/studioWorkspace/glowbookPlace";
-import { glowbookCreationPath } from "../../lib/studioUrl";
+import { ARTIST_DIRECTORY_PATH, glowbookCreationPath } from "../../lib/studioUrl";
 import { BUCKETS, signedUrls } from "../../lib/supabase/storage";
 
 const panel = "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[clamp(16px,3vw,24px)]";
@@ -32,7 +32,7 @@ type State = "loading" | "ready" | "error" | "unavailable";
 
 /**
  * `/compte/rendez-vous` (decision 144): the appointments the member booked on
- * artists' Glowbooks — to come (cancel: free until 24 hours before, "late"
+ * artists' Glowbooks — linked to the artist directory for the next one — to come (cancel: free until 24 hours before, "late"
  * afterwards) and past, a booking ban if two no-shows or late cancellations
  * led to one. An artist's own appointments are in their calendar
  * (`/compte/agenda`, decision 147): this page only points there. The client
@@ -188,6 +188,27 @@ export function Bookings() {
             </div>
           )}
         </>
+      )}
+
+      {/* The way to a new appointment: the member space has no storefront header
+          or footer, so the artist directory (decision 145) is linked here. */}
+      {state !== "loading" && (
+        <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-4">
+          <span aria-hidden="true" className="grid h-10 w-10 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--gt-ink-900)] text-[var(--gt-blue-200)]">
+            <MapPinned size={18} strokeWidth={1.75} />
+          </span>
+          <div className="grid min-w-[200px] flex-1 gap-0.5">
+            <p className="m-0 text-[length:var(--text-body-sm)] font-bold text-[var(--text-primary)]">{t("booking.mine.findArtistTitle")}</p>
+            <p className="m-0 text-[13px] text-[var(--text-muted)]">{t("booking.mine.findArtistBody")}</p>
+          </div>
+          <Link
+            to={ARTIST_DIRECTORY_PATH}
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[var(--gt-ink-900)] px-4 py-2 text-[length:var(--text-body-sm)] font-semibold text-[var(--gt-white)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          >
+            {t("booking.mine.findArtistLink")}
+            <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        </div>
       )}
 
       <Dialog

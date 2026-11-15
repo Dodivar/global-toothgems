@@ -44,7 +44,9 @@
     "viewAllStudio": "Découvrir le Studio 3D",
     "mySpace": "Mon espace",
     "studioArtists": "Trouver un artiste",
-    "studioArtistsSub": "Les artistes près de chez vous"
+    "studioArtistsSub": "Les artistes près de chez vous",
+    "studioAppointments": "Mes rendez-vous",
+    "studioAppointmentsSub": "Les rendez-vous pris chez un artiste"
   },
   "common": {
     "readMore": "En savoir plus",

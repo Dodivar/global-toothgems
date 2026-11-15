@@ -15,6 +15,7 @@ import { LoyaltyTile } from "../../components/account/dashboard/LoyaltyTile";
 import { WelcomeChecklist } from "../../components/account/dashboard/WelcomeChecklist";
 import { StudioTile } from "../../components/account/dashboard/StudioTile";
 import { AgendaTile } from "../../components/account/dashboard/AgendaTile";
+import { NextAppointmentTile } from "../../components/account/dashboard/NextAppointmentTile";
 import { CertificatesTile } from "../../components/account/dashboard/CertificatesTile";
 import { FavoritesTile } from "../../components/account/dashboard/FavoritesTile";
 import { useAuth } from "../../lib/auth";
@@ -133,7 +134,9 @@ function DashboardContent() {
           </h2>
         </div>
         <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 xl:grid-cols-3">
-          {/* The artist's calendar first: appointments are the most time-bound thing here. */}
+          {/* Appointments first: the most time-bound things here — the member's own
+              as a client (or a way to find an artist), then an artist's calendar. */}
+          <NextAppointmentTile />
           <AgendaTile />
           <LoyaltyTile />
           <StudioTile />

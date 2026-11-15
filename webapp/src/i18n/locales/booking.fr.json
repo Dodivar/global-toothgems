@@ -134,16 +134,19 @@
     "view3d": "Voir en 3D"
   },
   "mine": {
-    "eyebrow": "Glowbook",
+    "eyebrow": "Mon compte",
     "title": "Mes rendez-vous",
     "nav": "Mes rendez-vous",
-    "description": "Les rendez-vous réservés sur les Glowbooks des artistes. L’annulation est libre jusqu’à 24 heures avant.",
+    "description": "Les rendez-vous que vous avez pris auprès des artistes. L’annulation est libre jusqu’à 24 heures avant.",
+    "findArtistTitle": "Envie d’un nouveau rendez-vous ?",
+    "findArtistBody": "Trouvez un artiste tooth gems près de chez vous et réservez un créneau sur sa page.",
+    "findArtistLink": "Trouver un artiste près de chez moi",
     "unavailable": "Les rendez-vous ne sont pas disponibles pour le moment.",
     "loading": "Chargement des rendez-vous…",
     "error": "Les rendez-vous n’ont pas pu être chargés.",
     "banned": "Après deux absences ou annulations tardives en 12 mois, les réservations vous sont fermées jusqu’au {{date}}.",
     "upcoming": "À venir",
-    "noneUpcoming": "Aucun rendez-vous à venir. Réservez depuis le Glowbook d’un artiste.",
+    "noneUpcoming": "Aucun rendez-vous à venir. Réservez depuis la page d’un artiste.",
     "past": "Passés et annulés",
     "cancelTitle": "Annuler ce rendez-vous ?",
     "cancelFree": "L’artiste est prévenu et le créneau redevient libre.",
@@ -156,7 +159,7 @@
     "receivedMoved": "Les rendez-vous que des clients prennent sur votre Glowbook sont dans votre agenda.",
     "receivedLink": "Ouvrir mon agenda",
     "addToCalendar": "Ajouter à mon agenda",
-    "icsSummary": "Rendez-vous Glowbook avec {{name}}",
+    "icsSummary": "Rendez-vous tooth gems avec {{name}}",
     "icsDesign": "Création : {{design}}",
     "placeArea": "Le quartier de l’artiste : l’adresse exacte vous est donnée par l’artiste."
   },
@@ -357,5 +360,15 @@
     "closure": "Fermé du {{from}} au {{to}}",
     "closureDay": "Fermé le {{day}}",
     "cta": "Ouvrir mon agenda"
+  },
+  "clientDashboard": {
+    "eyebrow": "Prochain rendez-vous",
+    "with": "Avec {{name}}",
+    "others_one": "Et {{count}} autre rendez-vous à venir",
+    "others_other": "Et {{count}} autres rendez-vous à venir",
+    "cta": "Voir mes rendez-vous",
+    "none": "Aucun rendez-vous à venir",
+    "noneBody": "Trouvez un artiste tooth gems près de chez vous et réservez un créneau sur sa page.",
+    "findCta": "Trouver un artiste"
   }
 }

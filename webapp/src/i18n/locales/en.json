@@ -44,7 +44,9 @@
     "viewAllStudio": "Discover the 3D Studio",
     "mySpace": "My space",
     "studioArtists": "Find an artist",
-    "studioArtistsSub": "Artists near you"
+    "studioArtistsSub": "Artists near you",
+    "studioAppointments": "My appointments",
+    "studioAppointmentsSub": "The appointments you booked with an artist"
   },
   "common": {
     "readMore": "Learn more",
