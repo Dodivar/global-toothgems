@@ -26,7 +26,7 @@ const PUBLIC_ROUTES: { path: string; heading: RegExp }[] = [
   { path: "/fr/studio-3d/abonnement", heading: /Débloquez le Studio 3D/ },
   { path: "/fr/glowbook", heading: /Toutes vos créations, en un seul lien\./ },
   // The artist directory (decision 145): empty in mock mode, its empty state still renders.
-  { path: "/fr/artistes", heading: /Trouver une artiste tooth gems près de chez vous/ },
+  { path: "/fr/artistes", heading: /Trouver un artiste tooth gems près de chez vous/ },
   { path: "/studio-3d/partage", heading: /Ce lien ne contient pas de création lisible/ },
   { path: "/fr/academy", heading: /Apprenez\. Créez\. Maîtrisez votre art\./ },
   { path: "/fr/academy/formation/fondation", heading: /Fondation Tooth Gem/ },
