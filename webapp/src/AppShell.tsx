@@ -9,7 +9,7 @@ import { FocusBar, FocusFooter } from "./components/layout/FocusChrome";
 import { isCampaignVisit, isFocusPath, rememberFocusVisit, syncFocusAttribute } from "./lib/adFocus";
 import { isMemberSpacePath } from "./lib/memberSpace";
 import { isLessonPlayerPath } from "./lib/academyUrl";
-import { STUDIO_EDITOR_PATH, STUDIO_SHARE_PATH } from "./lib/studioUrl";
+import { STUDIO_EDITOR_PATH, STUDIO_GLOWBOOK_VIEW_PATH, STUDIO_SHARE_PATH } from "./lib/studioUrl";
 import { CookieBanner } from "./components/legal/CookieBanner";
 import { CookieSettingsDialog } from "./components/legal/CookieSettingsDialog";
 
@@ -79,6 +79,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   // The editor and its sections (`/studio-3d/atelier/mes-creations`…), and
   // the member space, which carries its own sidebar (see `MemberShell`), and
   // the lesson player, a distraction-free workspace with its own bar.
+  // An artist's creation in the read-only 3D viewer keeps the site header but
+  // leaves out the footer, so the 3D stage is the last thing on the page.
+  const glowbookViewer = pathname === STUDIO_GLOWBOOK_VIEW_PATH || pathname.startsWith(`${STUDIO_GLOWBOOK_VIEW_PATH}/`);
   const workspace = WORKSPACE_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`)) || isMemberSpacePath(pathname) || isLessonPlayerPath(pathname);
 
   return (
@@ -107,7 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main id="main" tabIndex={-1}>
         {children}
       </main>
-      {!bareChrome && !workspace && (
+      {!bareChrome && !workspace && !glowbookViewer && (
         <>
           <div className="gt-storefront-chrome contents">
             <Footer />

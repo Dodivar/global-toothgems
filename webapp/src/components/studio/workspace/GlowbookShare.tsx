@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BadgeCheck, FileDown, GraduationCap, ImageDown, Lock, QrCode } from "lucide-react";
+import { BadgeCheck, Check, FileDown, GraduationCap, ImageDown, Lock, MapPinned, QrCode } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { Link } from "../../../lib/navigation";
 import { useToast } from "../../../lib/toast";
@@ -10,6 +10,8 @@ import { certifiedTitles } from "../../../lib/studioWorkspace/glowbookSections";
 import type { Glowbook } from "../../../lib/studioWorkspace/glowbook";
 import { posterFileName, shortUrl } from "../../../lib/glowbookPoster/layout";
 import { qrMatrix, qrPath, QR_QUIET_ZONE } from "../../../lib/glowbookPoster/qr";
+import { citySlug } from "../../../lib/glowbookDirectory";
+import { ARTIST_DIRECTORY_PATH } from "../../../lib/studioUrl";
 
 const card = "grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--shadow-sm)] sm:p-6";
 const heading =
@@ -175,6 +177,76 @@ export function GlowbookBadgeCard({ glowbook }: { glowbook: Glowbook }) {
           {!glowbook.showCertification && <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.badge.hiddenNote")}</p>}
         </div>
       )}
+    </section>
+  );
+}
+
+/**
+ * "Find an artist" directory (decision 145): the artist's own switch, off by
+ * default (owner's decision, 2026-11-14) — the directory shows their place of
+ * work to people who never visited their page. Says what the directory shows
+ * and, while it is on, what is still missing before the page is listed (the
+ * database decides: approved page, a place, an approved creation, the plan).
+ */
+export function GlowbookDirectoryCard({ glowbook, hasApprovedCreation }: { glowbook: Glowbook; hasApprovedCreation: boolean }) {
+  const { t } = useTranslation();
+  const gb = useGlowbook();
+  const toggleId = useId();
+  const [busy, setBusy] = useState(false);
+  const missing = [
+    glowbook.status !== "approved" && "page",
+    !glowbook.look.place && "place",
+    !hasApprovedCreation && "creation",
+  ].filter((m): m is string => !!m);
+
+  return (
+    <section aria-labelledby="gt-glowbook-directory" className={card}>
+      <h2 id="gt-glowbook-directory" className={heading}>
+        <MapPinned size={18} aria-hidden="true" className="text-[var(--gt-blue-600)]" />
+        {t("studio.glowbook.directory.title")}
+      </h2>
+      <p className="m-0 text-[13px] leading-relaxed text-[var(--text-muted)]">{t("studio.glowbook.directory.body")}</p>
+      <label htmlFor={toggleId} className="inline-flex w-fit cursor-pointer items-center gap-2 text-[13px] font-semibold text-[var(--text-primary)]">
+        <input
+          id={toggleId}
+          type="checkbox"
+          checked={glowbook.inDirectory}
+          disabled={busy}
+          onChange={async (e) => {
+            setBusy(true);
+            await gb.setInDirectory(e.target.checked);
+            setBusy(false);
+          }}
+          className="h-4 w-4 accent-[var(--gt-ink-900)]"
+        />
+        {t("studio.glowbook.directory.toggle")}
+      </label>
+      {!glowbook.inDirectory ? (
+        <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.directory.off")}</p>
+      ) : missing.length ? (
+        <div className="grid gap-1 text-[12.5px] text-[var(--text-muted)]">
+          <p className="m-0 font-semibold text-[var(--text-primary)]">{t("studio.glowbook.directory.waiting")}</p>
+          <ul className="m-0 grid list-disc gap-0.5 pl-5">
+            {missing.map((m) => (
+              <li key={m}>{t(`studio.glowbook.directory.missing.${m}`)}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="m-0 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--status-success-fg,var(--text-primary))]">
+          <Check size={14} aria-hidden="true" />
+          {t("studio.glowbook.directory.listed")}
+        </p>
+      )}
+      {glowbook.inDirectory && !citySlug(glowbook.look.location) && (
+        <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.directory.city")}</p>
+      )}
+      <Link
+        to={ARTIST_DIRECTORY_PATH}
+        className="inline-flex w-fit items-center gap-2 text-[13px] font-bold text-[var(--text-link,var(--gt-blue-600))] underline decoration-1 underline-offset-2"
+      >
+        {t("studio.glowbook.directory.open")}
+      </Link>
     </section>
   );
 }

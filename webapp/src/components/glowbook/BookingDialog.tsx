@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { CalendarCheck, Check, ChevronLeft, ChevronRight, Gem, LogIn, UserPlus } from "lucide-react";
@@ -9,6 +9,7 @@ import { Dialog } from "../ui/Dialog";
 import { useAuth } from "../../lib/auth";
 import { isCaptchaConfigured, useTurnstile } from "../../lib/captcha/turnstile";
 import { bookSlot, fetchSlots } from "../../lib/glowbookBooking";
+import { bookingReturnPath } from "../../lib/glowbookBookingReturn";
 import {
   addDays,
   type BookingError,
@@ -33,8 +34,11 @@ import { Link, useNavigate } from "../../lib/navigation";
  * and leaves a phone number; the hour is locked at once and both sides get an
  * e-mail. Opened from a creation, the booking is for that creation (shown, not
  * changeable); opened from the page, it is a custom design the member
- * describes in the message. A visitor is asked to sign in first. The database decides what is free and refuses what
- * breaks a rule; this dialog only explains its answers.
+ * describes in the message. A visitor sees the same free hours (they are
+ * public) and is asked to sign in only to confirm; the address carries their
+ * hour through the sign-in screen, so the dialog opens again on it
+ * (`glowbookBookingReturn`). The database decides what is free and refuses
+ * what breaks a rule; this dialog only explains its answers.
  */
 
 export interface BookableItem {
@@ -49,20 +53,19 @@ interface BookingDialogProps {
   artistName: string;
   /** Opened from a creation's "Book this design": the booking is for it. */
   creation?: BookableItem | null;
+  /** Back from signing in: the hour chosen before, selected again if it is still free. */
+  initialSlot?: string | null;
 }
 
-const fieldBase =
-  "w-full border border-[var(--border-default)] bg-[var(--surface-card)] px-3.5 py-2.5 text-[length:var(--text-body-sm)] text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-subtle)] focus:border-[var(--focus-ring)] aria-[invalid=true]:border-[var(--status-error-fg)]";
-const field = clsx(fieldBase, "rounded-[var(--radius-control)]");
-/** A multi-line box keeps a card radius: a pill radius turns it into a bubble. */
-const textArea = clsx(fieldBase, "min-h-[112px] resize-y rounded-[var(--radius-md)] leading-relaxed");
+const field =
+  "w-full rounded-[var(--radius-control)] border border-[var(--border-default)] bg-[var(--surface-card)] px-3.5 py-2.5 text-[length:var(--text-body-sm)] text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-subtle)] focus:border-[var(--focus-ring)] aria-[invalid=true]:border-[var(--status-error-fg)]";
 const label = "text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]";
 
 const cellBase = "grid h-8 w-full place-items-center rounded-[6px] border";
 const CELL = {
-  free: "cursor-pointer border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] text-[var(--gt-blue-700)] hover:border-[var(--gt-blue-600)]",
+  free: "cursor-pointer border-[var(--gt-blue-400)] bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)] hover:border-[var(--gt-blue-700)] hover:bg-[var(--gt-blue-200)]",
   chosen: "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-white",
-  unavailable: "border-[var(--border-subtle)] bg-[var(--surface-page)]",
+  unavailable: "border-transparent bg-[var(--surface-sunken)] opacity-60",
 } as const;
 const navButton =
   "grid h-9 w-9 place-items-center rounded-[var(--radius-pill)] border border-[var(--border-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:opacity-40";
@@ -70,7 +73,7 @@ const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
 type Phase = { kind: "form" } | { kind: "sending" } | { kind: "done"; startsAt: string; timezone: string };
 
-export function BookingDialog({ open, onClose, handle, artistName, creation = null }: BookingDialogProps) {
+export function BookingDialog({ open, onClose, handle, artistName, creation = null, initialSlot = null }: BookingDialogProps) {
   const { t, i18n } = useTranslation();
   const lang = isLocale(i18n.language) ? i18n.language : "fr";
   const { signedIn, profile } = useAuth();
@@ -85,6 +88,7 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
   const [weekLoading, setWeekLoading] = useState(false);
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error" | "closed">("idle");
   const [slot, setSlot] = useState<string | null>(null);
+  const wantedSlot = useRef<string | null>(initialSlot);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [comment, setComment] = useState("");
@@ -94,18 +98,23 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
   const captchaNeeded = isCaptchaConfigured;
   const { attach: attachCaptcha, token: captchaToken, reset: resetCaptcha } = useTurnstile(open && signedIn && captchaNeeded, lang);
 
-  // A fresh form each time the dialog opens; the profile fills the name and phone.
+  // A fresh form each time the dialog opens (not when the profile reloads
+  // while it is open: that would wipe a choice).
   useEffect(() => {
     if (!open) return;
     setSlot(null);
+    wantedSlot.current = initialSlot;
     setError(null);
     setShowProblem(false);
     setPhase({ kind: "form" });
     setComment("");
-    if (profile) {
-      setName(`${profile.firstName} ${profile.lastName}`.trim());
-      setPhone(profile.phone ?? "");
-    }
+  }, [open, initialSlot]);
+
+  // The profile fills the name and phone, once it is there.
+  useEffect(() => {
+    if (!open || !profile) return;
+    setName(`${profile.firstName} ${profile.lastName}`.trim());
+    setPhone(profile.phone ?? "");
   }, [open, profile]);
 
   // First answer: the next two weeks (this week and the next are complete),
@@ -119,20 +128,26 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
         return;
       }
       const thisWeek = weekStart(next.from);
-      const first = [...next.slots].sort()[0];
+      // Back from signing in: the hour chosen before, if it is still free.
+      const wanted = wantedSlot.current ? Date.parse(wantedSlot.current) : NaN;
+      wantedSlot.current = null;
+      const kept = next.slots.find((s) => Date.parse(s) === wanted) ?? null;
+      const first = kept ?? [...next.slots].sort()[0];
       setCalendar({ timezone: next.timezone, today: next.from, lastDay: addDays(next.from, next.horizonDays) });
       setFree(next.slots);
       setLoadedWeeks(new Set([thisWeek, addDays(thisWeek, 7)]));
       setWeek(first ? weekStart(localDay(first, next.timezone)) : thisWeek);
+      if (kept) setSlot(kept);
       setLoadState("idle");
     } catch {
       setLoadState("error");
     }
   }, [handle]);
 
+  // Free hours are public: a visitor sees them before being asked to sign in.
   useEffect(() => {
-    if (open && signedIn) void load();
-  }, [open, signedIn, load]);
+    if (open) void load();
+  }, [open, load]);
 
   // Later weeks are asked for when the member reaches them.
   useEffect(() => {
@@ -169,7 +184,10 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
   const problem = validateDraft(draft);
 
   const goSignIn = (path: "/connexion" | "/inscription") => {
-    const from = typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/";
+    const from =
+      typeof window !== "undefined"
+        ? bookingReturnPath(window.location.pathname, window.location.search, { itemId: creation?.id ?? null, slot })
+        : "/";
     onClose();
     navigate(path, { state: { from, reason: "booking" } });
   };
@@ -196,31 +214,6 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
   };
 
   const title = t("booking.dialog.title", { name: artistName });
-
-  if (!signedIn) {
-    return (
-      <Dialog
-        open={open}
-        onClose={onClose}
-        title={title}
-        description={t("booking.gate.body", { name: artistName })}
-        icon={<CalendarCheck size={18} />}
-        closeLabel={t("booking.dialog.close")}
-        footer={
-          <>
-            <Button variant="primary" iconLeft={LogIn} onClick={() => goSignIn("/connexion")}>
-              {t("booking.gate.signIn")}
-            </Button>
-            <Button variant="outline" iconLeft={UserPlus} onClick={() => goSignIn("/inscription")}>
-              {t("booking.gate.register")}
-            </Button>
-          </>
-        }
-      >
-        <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("booking.gate.why")}</p>
-      </Dialog>
-    );
-  }
 
   if (phase.kind === "done") {
     return (
@@ -265,14 +258,25 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
       icon={<CalendarCheck size={18} />}
       closeLabel={t("booking.dialog.close")}
       footer={
-        <>
-          <Button variant="primary" type="submit" form={`${ids.problem}-form`} disabled={sending || loadState === "closed"} iconLeft={CalendarCheck}>
-            {sending ? t("booking.dialog.sending") : t("booking.dialog.confirm")}
-          </Button>
-          <Button variant="ghost" onClick={onClose}>
-            {t("booking.dialog.cancel")}
-          </Button>
-        </>
+        signedIn ? (
+          <>
+            <Button variant="primary" type="submit" form={`${ids.problem}-form`} disabled={sending || loadState === "closed"} iconLeft={CalendarCheck}>
+              {sending ? t("booking.dialog.sending") : t("booking.dialog.confirm")}
+            </Button>
+            <Button variant="ghost" onClick={onClose}>
+              {t("booking.dialog.cancel")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="primary" iconLeft={LogIn} disabled={loadState === "closed"} onClick={() => goSignIn("/connexion")}>
+              {t("booking.gate.signIn")}
+            </Button>
+            <Button variant="outline" iconLeft={UserPlus} disabled={loadState === "closed"} onClick={() => goSignIn("/inscription")}>
+              {t("booking.gate.register")}
+            </Button>
+          </>
+        )
       }
     >
       <form id={`${ids.problem}-form`} onSubmit={submit} noValidate className="grid gap-5">
@@ -327,11 +331,11 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
                 </p>
               ) : (
                 <div className="-mx-1 overflow-x-auto px-1">
-                  <table aria-describedby={ids.when} className="w-full min-w-[360px] table-fixed border-separate border-spacing-1 text-[11.5px]">
+                  <table aria-describedby={ids.when} className="w-full min-w-[300px] table-fixed border-separate border-spacing-[3px] text-[11px] sm:border-spacing-1 sm:text-[11.5px]">
                     <caption className="sr-only">{t("booking.when.title")}</caption>
                     <thead>
                       <tr>
-                        <th scope="col" className="w-11" />
+                        <th scope="col" className="w-9 sm:w-11" />
                         {grid.days.map((d) => {
                           const head = dayHeader(d, lang);
                           return (
@@ -377,7 +381,10 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
                                     chosen ? CELL.chosen : CELL.free,
                                   )}
                                 >
-                                  {chosen && <Check size={14} aria-hidden="true" />}
+                                  <span aria-hidden="true" className="inline-flex items-center gap-0.5 text-[9.5px] font-bold tabular-nums sm:text-[10.5px]">
+                                    {chosen && <Check size={12} className="hidden sm:block" />}
+                                    {hh(hour)}
+                                  </span>
                                 </button>
                               </td>
                             );
@@ -417,6 +424,14 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
           )}
         </fieldset>
 
+        {!signedIn && (
+          <div className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-3.5 py-3 text-[length:var(--text-body-sm)]">
+            <p className="m-0 font-semibold text-[var(--text-primary)]">{t("booking.gate.toConfirm", { name: artistName })}</p>
+            <p className="m-0 text-[var(--text-muted)]">{t("booking.gate.why")}</p>
+          </div>
+        )}
+        {signedIn && (
+          <>
         {/* Who */}
         <div className="grid gap-3 sm:grid-cols-2">
           <label htmlFor={ids.name} className="grid gap-1.5">
@@ -432,7 +447,7 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
           <span className={label}>{custom ? t("booking.fields.commentRequired") : t("booking.fields.comment")}</span>
           <textarea
             id={ids.comment}
-            className={textArea}
+            className={clsx(field, "min-h-[112px] resize-y leading-relaxed")}
             value={comment}
             maxLength={COMMENT_MAX}
             placeholder={t("booking.fields.commentPlaceholder")}
@@ -459,6 +474,8 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
             {t("booking.privacy")}
           </Link>
         </p>
+          </>
+        )}
       </form>
     </Dialog>
   );

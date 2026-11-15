@@ -8,7 +8,7 @@
     "cancel": "Annuler"
   },
   "gate": {
-    "body": "Pour réserver un créneau avec {{name}}, connectez-vous ou créez votre compte.",
+    "toConfirm": "Choisissez votre créneau, puis connectez-vous pour réserver chez {{name}} : votre choix vous attendra au retour.",
     "signIn": "Se connecter",
     "register": "Créer un compte",
     "why": "Un compte permet de retrouver et d’annuler vos rendez-vous, et protège les artistes des fausses réservations."

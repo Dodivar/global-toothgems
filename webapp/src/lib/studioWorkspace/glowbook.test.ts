@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   exposureOf,
   moveItem,
-  normalizeInstagram,
   suggestHandle,
   toPublicGlowbook,
   validateGlowbook,
@@ -13,7 +12,6 @@ const details = (over: Partial<Parameters<typeof validateGlowbook>[0]> = {}) => 
   handle: "lily.gems",
   displayName: "Lily Gems",
   bio: "",
-  instagram: "",
   ...over,
 });
 
@@ -28,9 +26,9 @@ const item = (creationId: string, position: number, status: GlowbookItem["status
 });
 
 describe("validateGlowbook (mirrors studio_save_showcase)", () => {
-  it("accepts a valid page, the handle in any case and the Instagram account with its @", () => {
+  it("accepts a valid page and the handle in any case", () => {
     expect(validateGlowbook(details())).toBeNull();
-    expect(validateGlowbook(details({ handle: " Lily_Gems ", instagram: "@lily.gems" }))).toBeNull();
+    expect(validateGlowbook(details({ handle: " Lily_Gems " }))).toBeNull();
   });
 
   it.each([
@@ -46,11 +44,10 @@ describe("validateGlowbook (mirrors studio_save_showcase)", () => {
     expect(validateGlowbook(details({ handle }))).toBe(problem);
   });
 
-  it("checks the name, the bio and the Instagram account", () => {
+  it("checks the name and the bio", () => {
     expect(validateGlowbook(details({ displayName: "  " }))).toBe("displayNameRequired");
     expect(validateGlowbook(details({ displayName: "x".repeat(61) }))).toBe("displayNameLength");
     expect(validateGlowbook(details({ bio: "x".repeat(301) }))).toBe("bioLength");
-    expect(validateGlowbook(details({ instagram: "not valid!" }))).toBe("instagramInvalid");
   });
 });
 
@@ -60,10 +57,6 @@ describe("suggestHandle", () => {
     expect(suggestHandle("  ✨ Lily  &  Co ✨ ")).toBe("lily-co");
     expect(validateGlowbook(details({ handle: suggestHandle("Lily Gems") }))).toBeNull();
   });
-});
-
-it("normalizeInstagram drops the @ and spaces", () => {
-  expect(normalizeInstagram(" @lily.gems ")).toBe("lily.gems");
 });
 
 describe("moveItem", () => {
@@ -96,7 +89,8 @@ describe("toPublicGlowbook", () => {
       handle: "lily.gems",
       display_name: "Lily",
       bio: "Hi",
-      instagram: null,
+      // Not sent any more nor stored (decision 146); an older answer carrying it is ignored.
+      instagram: "lily.gems",
       location: null,
       look: null,
       items: [{ id: "1", name: "Aurora", description: "", element_count: 3, thumbnail_path: "u/1.jpg", updated_at: "t" }, { name: "no id" }],
@@ -105,7 +99,6 @@ describe("toPublicGlowbook", () => {
       handle: "lily.gems",
       displayName: "Lily",
       bio: "Hi",
-      instagram: null,
       location: null,
       look: null,
       spotlightVideo: null,

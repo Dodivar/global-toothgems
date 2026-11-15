@@ -66,6 +66,7 @@ const SEARCHABLE_PAGES: readonly PublicRouteId[] = [
   "shapes",
   "colours",
   "studio",
+  "artists",
 ];
 
 /** Ignores case and accents, so "etoile" finds "Étoile" ("œ" does not decompose under NFD). */

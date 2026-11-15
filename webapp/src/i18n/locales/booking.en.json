@@ -8,7 +8,7 @@
     "cancel": "Cancel"
   },
   "gate": {
-    "body": "To book a slot with {{name}}, sign in or create your account.",
+    "toConfirm": "Pick your slot, then sign in to book with {{name}}: your choice will be waiting when you come back.",
     "signIn": "Sign in",
     "register": "Create an account",
     "why": "An account lets you find and cancel your appointments, and protects artists from fake bookings."

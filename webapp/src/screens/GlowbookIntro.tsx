@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
-import { ArrowDown, ArrowLeft, ArrowRight, Box, Info, Link2, MapPin, Palette, Rotate3d, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, Box, CalendarCheck, Info, Link2, MapPin, Palette, RefreshCw, Rotate3d, Sparkles } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { ACCOUNT_STUDIO_PATH } from "../components/studio/StudioPlans";
 import { STUDIO_PLANS } from "../data/studio";
@@ -11,7 +11,7 @@ import { photo } from "../lib/images";
 import { Link, useNavigate } from "../lib/navigation";
 import { StudioAccessProvider, useStudioAccess } from "../lib/studioAccess";
 import { lowestPlanWith } from "../lib/studioEntitlements";
-import { STUDIO_PATH, STUDIO_SUBSCRIBE_PATH, studioSectionPath } from "../lib/studioUrl";
+import { ARTIST_DIRECTORY_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_PATH, studioSectionPath } from "../lib/studioUrl";
 import { useHydrated } from "../lib/useHydrated";
 import { useReveal } from "../lib/useReveal";
 
@@ -35,6 +35,8 @@ const BENEFITS_ID = "gt-glowbook-intro-benefits";
 const BENEFITS = [
   { key: "link", icon: Link2 },
   { key: "creations", icon: Rotate3d },
+  { key: "booking", icon: CalendarCheck },
+  { key: "calendar", icon: RefreshCw },
   { key: "identity", icon: Palette },
   { key: "found", icon: MapPin },
 ] as const;
@@ -147,7 +149,7 @@ function GlowbookIntroContent() {
               {t("studio.glowbook.intro.benefits.title")}
             </h2>
           </div>
-          <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+          <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {BENEFITS.map(({ key, icon: Icon }) => (
               <li
                 key={key}
@@ -164,6 +166,14 @@ function GlowbookIntroContent() {
               </li>
             ))}
           </ul>
+          <Link
+            to={ARTIST_DIRECTORY_PATH}
+            className="inline-flex w-fit items-center gap-2 text-[length:var(--text-body-sm)] font-bold text-[var(--text-primary)] underline decoration-1 underline-offset-4 hover:text-[var(--gt-blue-700)]"
+          >
+            <MapPin size={16} aria-hidden="true" />
+            {t("studio.glowbook.intro.benefits.directoryLink")}
+            <ArrowRight size={15} aria-hidden="true" />
+          </Link>
         </div>
       </section>
 

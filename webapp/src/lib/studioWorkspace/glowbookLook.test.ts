@@ -6,7 +6,6 @@ import {
   DEFAULT_LOOK,
   lookFromColumns,
   lookPatch,
-  normalizeLink,
   pendingFromColumns,
   validateLook,
 } from "./glowbookLook";
@@ -31,15 +30,14 @@ describe("identity colours", () => {
 });
 
 describe("lookFromColumns / pendingFromColumns", () => {
-  it("reads a row, falling back on the defaults for unknown values", () => {
-    const look = lookFromColumns({ accent: "teal", background: "neon", layout: "large", location: "Lyon", avatar_path: "u/a.jpg", tiktok: "" });
+  it("reads a row, falling back on the defaults for unknown values and ignoring outside links (decision 146)", () => {
+    const look = lookFromColumns({ accent: "teal", background: "neon", layout: "large", location: "Lyon", avatar_path: "u/a.jpg", tiktok: "lily", booking_url: "https://x.example" });
     expect(look).toEqual({ ...DEFAULT_LOOK, accent: "teal", layout: "large", location: "Lyon", avatarPath: "u/a.jpg" });
     expect(lookFromColumns(null)).toEqual(DEFAULT_LOOK);
   });
-  it("reads what waits for a moderator, pictures and links only", () => {
-    expect(pendingFromColumns({ avatar_path: "u/b.jpg", booking_url: "https://x.example", accent: "gold" })).toEqual({
+  it("reads what waits for a moderator, pictures only", () => {
+    expect(pendingFromColumns({ avatar_path: "u/b.jpg", booking_url: "https://x.example", tiktok: "lily", accent: "gold" })).toEqual({
       avatarPath: "u/b.jpg",
-      bookingUrl: "https://x.example",
     });
     expect(pendingFromColumns(null)).toEqual({});
   });
@@ -48,25 +46,15 @@ describe("lookFromColumns / pendingFromColumns", () => {
 describe("lookPatch", () => {
   it("sends only what changed, in column names, null to remove", () => {
     const from = { ...DEFAULT_LOOK, avatarPath: "u/a.jpg" };
-    const to = { ...from, accent: "plum" as const, avatarPath: null, websiteUrl: "https://lily.example" };
-    expect(lookPatch(from, to)).toEqual({ accent: "plum", avatar_path: null, website_url: "https://lily.example" });
+    const to = { ...from, accent: "plum" as const, avatarPath: null };
+    expect(lookPatch(from, to)).toEqual({ accent: "plum", avatar_path: null });
     expect(lookPatch(from, from)).toEqual({});
   });
 });
 
-describe("links", () => {
-  it("adds https to a bare address and keeps other schemes for the check to refuse", () => {
-    expect(normalizeLink(" lily-gems.fr/rdv ")).toBe("https://lily-gems.fr/rdv");
-    expect(normalizeLink("https://planity.com/lily")).toBe("https://planity.com/lily");
-    expect(normalizeLink("http://lily.fr")).toBe("http://lily.fr");
-    expect(normalizeLink("javascript:alert(1)")).toBe("javascript:alert(1)");
-  });
-  it("validateLook refuses anything but https links and valid TikTok accounts", () => {
-    expect(validateLook({ ...DEFAULT_LOOK, bookingUrl: "https://planity.com/lily" })).toBeNull();
-    expect(validateLook({ ...DEFAULT_LOOK, bookingUrl: "http://planity.com" })).toBe("bookingUrl");
-    expect(validateLook({ ...DEFAULT_LOOK, websiteUrl: "javascript:alert(1)" })).toBe("websiteUrl");
-    expect(validateLook({ ...DEFAULT_LOOK, tiktok: "@lily.gems" })).toBeNull();
-    expect(validateLook({ ...DEFAULT_LOOK, tiktok: "lily gems" })).toBe("tiktok");
+describe("validateLook", () => {
+  it("checks the city's length", () => {
+    expect(validateLook(DEFAULT_LOOK)).toBeNull();
     expect(validateLook({ ...DEFAULT_LOOK, location: "x".repeat(61) })).toBe("locationLength");
   });
 });
