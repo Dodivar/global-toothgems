@@ -1,15 +1,15 @@
-import type { CSSProperties, InputHTMLAttributes, ReactNode } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import { CircleAlert } from "lucide-react";
-import { photo } from "../../lib/images";
 import { AppleMark } from "./AppleMark";
+import { GemBurst } from "./GemBurst";
 
 /**
  * The shared setting of the authentication pages — `/connexion`, `/inscription`
  * and the account-confirmation landing. The page sits on a flat pastel field;
- * beside the card, a burst of the shop's own gems (the home carousel's cut-outs)
- * flies out of the centre once and then drifts gently, above the three reasons
+ * beside the card, a burst of the shop's own gems (the home carousel's
+ * cut-outs, `GemBurst`) is set straight on that field, above the three reasons
  * to hold an account, set as cards.
  *
  * Colour is rationed on purpose: pastel blue carries the whole surface, emerald
@@ -22,40 +22,14 @@ import { AppleMark } from "./AppleMark";
 const AUTH_GUTTER = "px-[clamp(14px,4vw,48px)]";
 
 /**
- * The three reasons to hold an account, each with one shop gem as its mark: the
- * brand already owns a set of stones, so the page uses them instead of icons.
+ * The three reasons to hold an account, set as plain cards (the gems above them
+ * are the page's only illustration).
  */
 const BENEFITS = [
-  { gem: "gem-round-saphir.webp", titleKey: "auth.benefit1Title", bodyKey: "auth.benefit1Body" },
-  { gem: "gem-navette-bermuda-blue.webp", titleKey: "auth.benefit2Title", bodyKey: "auth.benefit2Body" },
-  { gem: "gem-gold-star.webp", titleKey: "auth.benefit3Title", bodyKey: "auth.benefit3Body" },
+  { titleKey: "auth.benefit1Title", bodyKey: "auth.benefit1Body" },
+  { titleKey: "auth.benefit2Title", bodyKey: "auth.benefit2Body" },
+  { titleKey: "auth.benefit3Title", bodyKey: "auth.benefit3Body" },
 ] as const;
-
-/**
- * The burst: shop gems thrown out from the centre of the panel. A fixed layout
- * (never random at render time, which would break hydration); `x`/`y` are the
- * piece's centre in % of the panel, `size` its width in % of the panel's width.
- */
-const BURST: { photo: string; x: number; y: number; size: number; rot: number }[] = [
-  { photo: "gem-heart-fuchsia.webp", x: 30, y: 34, size: 13, rot: 20 },
-  { photo: "gem-diamond-violet.webp", x: 70, y: 30, size: 13, rot: -25 },
-  { photo: "gem-rivoli-bermuda-blue.webp", x: 50, y: 50, size: 12, rot: -12 },
-  { photo: "gem-starflower-light-topaz.webp", x: 16, y: 62, size: 11, rot: 40 },
-  { photo: "gem-navette-emeraude.webp", x: 84, y: 64, size: 11, rot: 10 },
-  { photo: "gem-gold-star.webp", x: 36, y: 78, size: 10, rot: -30 },
-  { photo: "gem-heart-aquamarine.webp", x: 64, y: 78, size: 11, rot: 15 },
-  { photo: "gem-raindrop-heliotrope.webp", x: 91, y: 22, size: 8, rot: -10 },
-  { photo: "gem-baguette-peridot.webp", x: 9, y: 24, size: 9, rot: 25 },
-  { photo: "gem-rivoli-crystal-ab.webp", x: 21, y: 88, size: 8, rot: 60 },
-  { photo: "gem-square-aquamarine.webp", x: 78, y: 10, size: 8, rot: -40 },
-  { photo: "gem-round-saphir.webp", x: 46, y: 14, size: 9, rot: 30 },
-  { photo: "gem-gold-heart.webp", x: 91, y: 88, size: 7, rot: 5 },
-  { photo: "gem-heart-siam.webp", x: 22, y: 12, size: 9, rot: -18 },
-  { photo: "gem-round-emeraude.webp", x: 65, y: 55, size: 7, rot: 0 },
-  { photo: "gem-gold-lightning.webp", x: 35, y: 56, size: 7, rot: 18 },
-  { photo: "gem-starflower-amethyste.webp", x: 8, y: 44, size: 7, rot: -8 },
-  { photo: "gem-raindrop-light-siam.webp", x: 94, y: 46, size: 7, rot: 22 },
-];
 
 /** Four-point mark. Decorative only — every instance is hidden from assistive tech. */
 export function Sparkle({ size = 16, className = "", color = "currentColor" }: { size?: number; className?: string; color?: string }) {
@@ -144,50 +118,6 @@ export function AuthCard({ children, crown, label }: { children: ReactNode; crow
 }
 
 /**
- * The burst panel: each gem flies out from the centre once (`gt-auth-burst`,
- * staggered), then floats like the home carousel's stones. The fly-out is
- * measured in container units, so it starts from the panel's true centre at
- * any width. Purely decorative.
- */
-function GemBurst() {
-  return (
-    <div
-      aria-hidden="true"
-      className="gt-auth-burst-panel relative aspect-[16/9] w-full overflow-hidden rounded-[var(--radius-2xl)] bg-[var(--gt-blue-100)] lg:aspect-[5/4]"
-    >
-      <span className="absolute inset-[22%] rounded-full bg-white/70 blur-3xl" />
-      {BURST.map((g, i) => (
-        <span
-          key={g.photo}
-          className="gt-auth-burst absolute block aspect-square"
-          style={
-            {
-              left: `${g.x - g.size / 2}%`,
-              top: `calc(${g.y}% - ${g.size / 2}cqw)`,
-              width: `${g.size}%`,
-              "--burst-dx": `${50 - g.x}cqw`,
-              "--burst-dy": `${50 - g.y}cqh`,
-              animationDelay: `${i * 35}ms`,
-            } as CSSProperties
-          }
-        >
-          {/* Fitted in a square box: tall cuts (raindrops, navettes) keep the size of the round ones. */}
-          <img
-            src={photo(g.photo)}
-            alt=""
-            decoding="async"
-            className={`gt-alt-gem gt-alt-float block h-full w-full object-contain ${i % 2 === 1 ? "gt-alt-float--late" : ""}`}
-            style={{ rotate: `${g.rot}deg` }}
-          />
-        </span>
-      ))}
-      <Sparkle size={18} color="var(--gt-fuchsia-300)" className="gt-auth-twinkle absolute left-[57%] top-[40%]" />
-      <Sparkle size={12} color="white" className="gt-auth-twinkle gt-auth-twinkle--late absolute left-[43%] top-[66%]" />
-    </div>
-  );
-}
-
-/**
  * The editorial column: the gem burst, the three reasons to hold an account as
  * cards, and the reminder that the shop never asks for one. Entirely
  * non-interactive apart from that last link, so the tab order stays in the form.
@@ -196,7 +126,9 @@ function EditorialColumn() {
   const { t } = useTranslation();
   return (
     <div className="grid w-full gap-[clamp(20px,2.5vw,32px)]">
-      <GemBurst />
+      {/* Set straight on the field, no frame; left out on phones, where the
+          column sits under the form and the burst would only add scrolling. */}
+      <GemBurst className="hidden aspect-[16/10] sm:block lg:-mx-6 lg:-mt-6 lg:aspect-[1/1] lg:w-[calc(100%+3rem)]" />
 
       <div className="grid gap-4">
         <h2 className="flex items-center gap-2.5 text-[length:var(--text-h4)]">
@@ -204,14 +136,11 @@ function EditorialColumn() {
           {t("auth.benefitsTitle")}
         </h2>
         <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-          {BENEFITS.map(({ gem, titleKey, bodyKey }) => (
+          {BENEFITS.map(({ titleKey, bodyKey }) => (
             <li
               key={titleKey}
-              className="flex items-start gap-3.5 rounded-[var(--radius-xl)] border border-white bg-white/75 p-4 shadow-[var(--shadow-sm)] sm:flex-col lg:flex-row xl:flex-col"
+              className="rounded-[var(--radius-xl)] border border-white bg-white/75 p-4 shadow-[var(--shadow-sm)]"
             >
-              <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-[var(--gt-blue-100)]">
-                <img src={photo(gem)} alt="" decoding="async" className="gt-alt-gem h-7 w-7 object-contain" />
-              </span>
               <span className="grid gap-1">
                 <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">{t(titleKey)}</strong>
                 <span className="text-[length:var(--text-caption)] leading-snug text-[var(--text-muted)]">{t(bodyKey)}</span>
