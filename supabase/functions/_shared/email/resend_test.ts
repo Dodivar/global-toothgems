@@ -2,7 +2,7 @@ import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 import { type OutgoingEmail, ResendError, sendWithResend } from "./resend.ts";
 
 const mail: OutgoingEmail = {
-  from: "Global Tooth Gems <no-reply@globaltoothgems.com>",
+  from: "Global Toothgems <no-reply@globaltoothgems.com>",
   to: "camille@example.com",
   replyTo: "contact@globaltoothgems.com",
   subject: "Bonjour",

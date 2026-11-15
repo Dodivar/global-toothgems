@@ -2,20 +2,28 @@ import { describe, expect, it } from "vitest";
 import {
   addDays,
   clientCancellation,
+  bookingsOnDays,
+  cellName,
+  closureLength,
   databaseCode,
+  dayClosed,
+  dayHeader,
   defaultWeek,
   formatHour,
   groupSlotsByDay,
   hourState,
   localDay,
+  laterWindows,
   localHour,
   readArtistCalendar,
   readBookingError,
   readMyBookings,
   readSlots,
   rulesToWeek,
+  slotWeek,
   splitBookings,
   toggleTarget,
+  validateClosure,
   validateDraft,
   validateWeek,
   weekStart,
@@ -161,5 +169,141 @@ describe("hours closed by the other calendar", () => {
     expect(hourState(h, false, false, true)).toBe("busy");
     expect(hourState(h, false, false, false)).toBe("blocked");
     expect(toggleTarget("busy")).toBe("open");
+  });
+});
+
+describe("slotWeek", () => {
+  it("lays one week of free slots out by the artist's local day and hour", () => {
+    const week = slotWeek(
+      ["2026-11-20T09:00:00Z", "2026-11-20T13:00:00Z", "2026-11-17T16:00:00Z", "2026-11-23T09:00:00Z", "2026-11-22T23:30:00Z"],
+      "Europe/Paris",
+      "2026-11-16",
+    );
+    expect(week.days).toEqual(["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21", "2026-11-22"]);
+    // 10:00 to 17:00 Paris time; the Monday after (23rd, 00:30 Paris) is another week.
+    expect(week.hours).toEqual([10, 11, 12, 13, 14, 15, 16, 17]);
+    expect(week.free.get("2026-11-20|14")).toBe("2026-11-20T13:00:00Z");
+    expect(week.free.has("2026-11-20|11")).toBe(false);
+    expect(week.free.size).toBe(3);
+  });
+
+  it("has no rows for a week without a free slot", () => {
+    expect(slotWeek([], "Europe/Paris", "2026-11-16").hours).toEqual([]);
+  });
+
+  it("splits a day column's header", () => {
+    expect(dayHeader("2026-11-20", "fr")).toEqual({ weekday: "ven.", date: "20" });
+    expect(dayHeader("2026-11-20", "en")).toEqual({ weekday: "Fri", date: "20" });
+  });
+});
+
+describe("closures (decision 147)", () => {
+  const closures = [{ startsOn: "2026-12-20", endsOn: "2026-12-27" }];
+
+  it("reads the periods and the page state from the calendar answer", () => {
+    const c = readArtistCalendar({
+      page_status: "approved",
+      closures: [{ id: "c1", starts_on: "2026-12-20", ends_on: "2026-12-27", note: "Noël", bookings: 2 }, "junk"],
+    });
+    expect(c?.pageStatus).toBe("approved");
+    expect(c?.closures).toEqual([{ id: "c1", startsOn: "2026-12-20", endsOn: "2026-12-27", note: "Noël", bookings: 2 }]);
+    expect(readArtistCalendar({ page_status: "other" })?.pageStatus).toBeNull();
+    expect(readArtistCalendar({})?.closures).toEqual([]);
+  });
+
+  it("knows which days are closed, both ends included", () => {
+    expect(dayClosed("2026-12-19", closures)).toBe(false);
+    expect(dayClosed("2026-12-20", closures)).toBe(true);
+    expect(dayClosed("2026-12-27", closures)).toBe(true);
+    expect(dayClosed("2026-12-28", closures)).toBe(false);
+    expect(closureLength(closures[0])).toBe(8);
+  });
+
+  it("shows a closed day as a holiday, never actionable, an appointment still showing", () => {
+    const open = { startsAt: "", day: "", hour: 10, weekly: true, override: null };
+    expect(hourState(open, false, false, false, true)).toBe("holiday");
+    expect(hourState({ ...open, override: "open" as const }, false, false, false, true)).toBe("holiday");
+    expect(hourState(open, true, false, false, true)).toBe("booked");
+    expect(hourState(open, false, true, false, true)).toBe("past");
+    expect(toggleTarget("holiday")).toBeNull();
+  });
+
+  it("reads each booking's creation and the page's handle", () => {
+    const c = readArtistCalendar({
+      handle: "lea",
+      bookings: [
+        { id: "b1", starts_at: "s", ends_at: "e", status: "booked", item_id: "i1", thumbnail_path: "u/1.jpg", item_live: true },
+        { id: "b2", starts_at: "s", ends_at: "e", status: "booked" },
+      ],
+    });
+    expect(c?.handle).toBe("lea");
+    expect(c?.bookings.map((b) => [b.itemId, b.thumbnailPath, b.itemLive])).toEqual([["i1", "u/1.jpg", true], [null, null, false]]);
+  });
+
+  it("reads the creation and the place of a client's booking (decision 147 (d))", () => {
+    const { bookings } = readMyBookings({
+      bookings: [
+        {
+          id: "b1", starts_at: "s", ends_at: "e", status: "booked", artist_name: "Léa", artist_handle: "lea",
+          item_id: "i1", item_live: true, thumbnail_path: "u/1.jpg",
+          place: { mode: "exact", label: "12 rue de la Paix, Paris", lat: "48.8687", lng: 2.3314 },
+        },
+        { id: "b2", starts_at: "s", ends_at: "e", status: "booked", place: { mode: "area" } },
+      ],
+    });
+    expect(bookings[0]).toMatchObject({ itemId: "i1", itemLive: true, thumbnailPath: "u/1.jpg" });
+    expect(bookings[0].place).toEqual({ mode: "exact", label: "12 rue de la Paix, Paris", lat: 48.8687, lng: 2.3314 });
+    expect(bookings[1]).toMatchObject({ itemId: null, itemLive: false, thumbnailPath: null, place: null });
+  });
+
+  it("shortens a client's name for a week cell", () => {
+    expect(cellName("Camille Roussel")).toBe("Camille");
+    expect(cellName("Maximilienne Dupont")).toBe("Maximilie…");
+    expect(cellName(null)).toBe("");
+  });
+
+  it("counts the appointments a period would cancel, by the artist's local day", () => {
+    const upcoming = [
+      { startsAt: "2026-12-19T23:30:00Z" }, // 20 Dec, 00:30 in Paris
+      { startsAt: "2026-12-27T10:00:00Z" },
+      { startsAt: "2026-12-27T23:30:00Z" }, // 28 Dec in Paris
+    ];
+    expect(bookingsOnDays(upcoming, "Europe/Paris", "2026-12-20", "2026-12-27")).toBe(2);
+    expect(bookingsOnDays(upcoming, "Europe/Paris", "2027-01-01", "2027-01-02")).toBe(0);
+  });
+
+  it("checks a period like the database", () => {
+    const today = "2026-11-15";
+    const ok = { startsOn: "2026-12-20", endsOn: "2026-12-27", note: "" };
+    expect(validateClosure(ok, today)).toBeNull();
+    expect(validateClosure({ ...ok, startsOn: "" }, today)).toBe("dates");
+    expect(validateClosure({ ...ok, startsOn: "2026-11-14" }, today)).toBe("past");
+    expect(validateClosure({ ...ok, endsOn: "2026-12-19" }, today)).toBe("order");
+    expect(validateClosure({ ...ok, endsOn: "2027-11-17" }, today)).toBe("tooFar");
+    expect(validateClosure({ ...ok, note: "x".repeat(81) }, today)).toBe("note");
+    expect(validateClosure({ startsOn: today, endsOn: today, note: "  " }, today)).toBeNull();
+  });
+});
+
+describe("laterWindows (appointments beyond the first 62-day read)", () => {
+  const readTo = "2026-11-15";
+  it("asks for nothing when every appointment is inside the read", () => {
+    expect(laterWindows(readTo, [], "Europe/Paris")).toEqual([]);
+    expect(laterWindows(readTo, [{ startsAt: "2026-11-15T21:00:00Z" }], "Europe/Paris")).toEqual([]);
+  });
+
+  it("reads the local day after the read, in the artist's zone", () => {
+    // 23:30 UTC on the 15th is already the 16th in Paris.
+    expect(laterWindows(readTo, [{ startsAt: "2026-11-15T23:30:00Z" }], "Europe/Paris")).toEqual([{ from: "2026-11-16", to: "2027-01-16" }]);
+  });
+
+  it("covers a 180-day horizon in windows the database accepts (62 days at most)", () => {
+    const windows = laterWindows(readTo, [{ startsAt: "2026-12-01T10:00:00Z" }, { startsAt: "2027-04-20T10:00:00Z" }], "Europe/Paris");
+    expect(windows).toEqual([
+      { from: "2026-11-16", to: "2027-01-16" },
+      { from: "2027-01-17", to: "2027-03-19" },
+      { from: "2027-03-20", to: "2027-05-20" },
+    ]);
+    for (const w of windows) expect((Date.parse(w.to) - Date.parse(w.from)) / 86_400_000).toBeLessThanOrEqual(62);
   });
 });

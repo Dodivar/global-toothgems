@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import clsx from "clsx";
-import { ArrowRight, Check, ShoppingBag } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ShoppingBag } from "lucide-react";
 import { GemPhoto } from "./PieceIcon";
 import { useEditorLabels } from "./editorLabels";
 import type { PlacedJewelry } from "../../../data/studioEditor";
@@ -103,6 +103,42 @@ export function ShoppingList({ jewels, withCart = true }: { jewels: PlacedJewelr
 
       {withCart && <AddDesignToCart jewels={jewels} className="mt-3" />}
     </>
+  );
+}
+
+/**
+ * The shopping list folded by default (owner's request 2026-11-15): a toggle
+ * with the product count, the "Add to cart" button always in view. For the
+ * read-only viewers, where the design's gems are not to be listed at first sight.
+ */
+export function FoldedShoppingList({ jewels }: { jewels: PlacedJewelry[] }) {
+  const { t } = useEditorLabels();
+  const estimate = useCompositionEstimate(jewels);
+  const [open, setOpen] = useState(false);
+  const bodyId = useId();
+  if (!jewels.length) return <ShoppingList jewels={jewels} />;
+  return (
+    <div className="grid gap-3">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={() => setOpen((v) => !v)}
+        className={clsx(
+          "flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-2 text-left text-[12px] font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--gt-blue-50)]",
+          focusRing,
+        )}
+      >
+        <span>{t("studio.editor.shopping.buyProducts", { count: estimateItemCount(estimate.lines) })}</span>
+        <ChevronDown size={15} aria-hidden="true" className={clsx("flex-none transition-transform motion-reduce:transition-none", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div id={bodyId}>
+          <ShoppingList jewels={jewels} withCart={false} />
+        </div>
+      )}
+      <AddDesignToCart jewels={jewels} outNote={!open} />
+    </div>
   );
 }
 

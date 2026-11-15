@@ -45,6 +45,8 @@ const MEMBER_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/compte/securite", heading: /^Sécurité et confidentialité$/ },
   { path: "/compte/fidelite", heading: /^Ma carte de fidélité$/ },
   { path: "/compte/avis", heading: /^Mes avis$/ },
+  { path: "/compte/rendez-vous", heading: /^Mes rendez-vous$/ },
+  { path: "/compte/agenda", heading: /^Mon agenda$/ },
   { path: "/compte/moderation", heading: /^Modération des salons$/ },
   { path: "/compte/salons/en/discussion", heading: /^Salon des membres$/ },
 ];

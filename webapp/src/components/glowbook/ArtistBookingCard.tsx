@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Ban, CalendarX2, Check, Mail, Phone, Sparkles, UserX } from "lucide-react";
+import { Ban, Box, CalendarX2, Check, Mail, Phone, Sparkles, UserX } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { STATUS_TONE } from "./bookingStatus";
 import { Button } from "../ui/Button";
@@ -15,15 +15,27 @@ import { useToast } from "../../lib/toast";
  * One appointment as the artist sees it (decision 144): when, what the client
  * wants in their own words, how to reach them; cancel (with a reason the
  * client reads) before the hour, record the outcome after it, block the client.
- * Used by the Glowbook calendar and by the member's appointments page (so an
- * artist who left the Atelier plan still handles what was booked).
+ * Used by the artist's calendar (`/compte/agenda`: its lists and the
+ * appointment opened from the week; readable after the plan ends). With
+ * `creation`, the Glowbook creation asked for shows as a picture with a link
+ * to its 3D view (decision 147 (c)).
  */
-export function ArtistBookingCard({ booking, onChanged }: { booking: ArtistBooking; onChanged: () => void }) {
+export function ArtistBookingCard({
+  booking,
+  onChanged,
+  creation,
+}: {
+  booking: ArtistBooking;
+  onChanged: () => void;
+  /** The chosen creation's signed picture and public 3D view, when known. */
+  creation?: { imageUrl: string | null; viewUrl: string | null };
+}) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language?.startsWith("en") ? "en" : "fr";
   const { showToast } = useToast();
   const reasonId = useId();
   const [cancelling, setCancelling] = useState(false);
+  const [blocking, setBlocking] = useState(false);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const now = Date.now();
@@ -58,6 +70,27 @@ export function ArtistBookingCard({ booking, onChanged }: { booking: ArtistBooki
           {booking.status === "cancelled_client" && booking.lateCancel ? ` · ${t("booking.status.late")}` : ""}
         </Badge>
       </div>
+
+      {booking.designKind === "creation" && creation && (creation.imageUrl || creation.viewUrl) && (
+        <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] p-2">
+          {creation.imageUrl ? (
+            <img src={creation.imageUrl} alt="" className="h-16 w-16 flex-none rounded-[var(--radius-sm)] bg-[var(--surface-sunken)] object-cover" />
+          ) : (
+            <span aria-hidden="true" className="grid h-16 w-16 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--surface-sunken)] text-[var(--text-subtle)]">
+              <Box size={20} />
+            </span>
+          )}
+          <div className="grid min-w-0 gap-1">
+            <p className="m-0 truncate text-[13.5px] font-bold text-[var(--text-primary)]">{booking.creationName ?? "—"}</p>
+            {creation.viewUrl && (
+              <a href={creation.viewUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-fit items-center gap-1 text-[12.5px] font-semibold underline">
+                <Box size={13} aria-hidden="true" />
+                {t("booking.artist.view3d")}
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {booking.clientErased ? (
         <p className="m-0 text-[13px] text-[var(--text-muted)]">{t("booking.artist.clientErased")}</p>
@@ -121,11 +154,32 @@ export function ArtistBookingCard({ booking, onChanged }: { booking: ArtistBooki
         )}
         {!booking.clientErased && !booking.clientBlocked && (
           <Button size="sm" variant="ghost" iconLeft={Ban} disabled={busy}
-            onClick={() => run(() => blockClient(booking.id), t("booking.artist.blockedDone"))}>
+            onClick={() => setBlocking(true)}>
             {t("booking.artist.block")}
           </Button>
         )}
       </div>
+
+      <Dialog
+        open={blocking}
+        onClose={() => setBlocking(false)}
+        tone="danger"
+        title={t("booking.artist.blockTitle")}
+        description={t("booking.artist.blockBody", { name: booking.clientName })}
+        closeLabel={t("booking.dialog.close")}
+        footer={
+          <>
+            <Button variant="danger" disabled={busy}
+              onClick={async () => {
+                await run(() => blockClient(booking.id), t("booking.artist.blockedDone"));
+                setBlocking(false);
+              }}>
+              {t("booking.artist.blockConfirm")}
+            </Button>
+            <Button variant="ghost" onClick={() => setBlocking(false)}>{t("booking.dialog.cancel")}</Button>
+          </>
+        }
+      />
 
       <Dialog
         open={cancelling}

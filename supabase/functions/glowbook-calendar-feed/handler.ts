@@ -70,7 +70,7 @@ export function feedEvent(e: FeedEvent, siteUrl: string): IcsEvent {
     endsAt: e.endsAt,
     summary: `${cancelled ? "[Annulé] " : ""}Tooth gem — ${who}`,
     description: lines.join("\n"),
-    url: `${siteUrl.replace(/\/+$/, "")}/studio-3d/atelier/glowbook?tab=agenda`,
+    url: `${siteUrl.replace(/\/+$/, "")}/compte/agenda`,
     stamp: e.updatedAt,
     status: cancelled ? "CANCELLED" : "CONFIRMED",
     sequence: Math.floor(new Date(e.updatedAt).getTime() / 1000) % 2147483647,

@@ -1,6 +1,7 @@
-import { Box, Component, GraduationCap, House, Images, PencilRuler, Sparkles, Store, UserRound, type LucideIcon } from "lucide-react";
-import { GLOWBOOK_INTRO_PATH, STUDIO_EDITOR_PATH, studioSectionPath } from "../../lib/studioUrl";
+import { Box, CalendarDays, Component, GraduationCap, House, Images, MapPinned, PencilRuler, Sparkles, Store, UserRound, type LucideIcon } from "lucide-react";
+import { ARTIST_DIRECTORY_PATH, GLOWBOOK_INTRO_PATH, STUDIO_EDITOR_PATH, studioSectionPath } from "../../lib/studioUrl";
 import { MEMBER_SPACE_PATH } from "../../lib/memberSpace";
+import { AGENDA_PATH } from "../../lib/agendaRoutes";
 
 /**
  * The customer's destinations across the site, held once so the member-space
@@ -34,7 +35,7 @@ export const CLIENT_SPACES: Record<ClientSpaceId, ClientSpace> = {
 export const STUDIO_EXPLORE: ClientSpace[] = [CLIENT_SPACES.shop, CLIENT_SPACES.academy];
 
 interface StudioShortcut {
-  id: "workshop" | "creations" | "groups" | "glowbook";
+  id: "workshop" | "creations" | "groups" | "glowbook" | "agenda" | "artists";
   to: string;
   icon: LucideIcon;
   labelKey: string;
@@ -75,12 +76,15 @@ export const STUDIO_SHORTCUTS: StudioShortcut[] = [
 
 /**
  * The storefront header's Studio entries (panel and phone menu): the ways
- * into the workspace, then the Glowbook's presentation page — a public page
+ * into the workshop (the 3D Studio only: creations and Gem Groups live in the
+ * Studio's own rail), then the Glowbook's presentation page — a public page
  * open to everyone, which leads members whose plan includes the Glowbook to
- * theirs and the others to the plan.
+ * theirs and the others to the plan —, for those members only their
+ * calendar (decision 147; the header leaves it out for everyone else), and
+ * the public artist directory built from the Glowbooks (decision 145).
  */
 export const STUDIO_MENU: StudioShortcut[] = [
-  ...STUDIO_SHORTCUTS,
+  ...STUDIO_SHORTCUTS.filter((shortcut) => shortcut.id === "workshop"),
   {
     id: "glowbook",
     to: GLOWBOOK_INTRO_PATH,
@@ -88,5 +92,21 @@ export const STUDIO_MENU: StudioShortcut[] = [
     labelKey: "nav.studioGlowbook",
     descKey: "nav.studioGlowbookSub",
     shortKey: "glowbook",
+  },
+  {
+    id: "agenda",
+    to: AGENDA_PATH,
+    icon: CalendarDays,
+    labelKey: "nav.studioAgenda",
+    descKey: "nav.studioAgendaSub",
+    shortKey: "agenda",
+  },
+  {
+    id: "artists",
+    to: ARTIST_DIRECTORY_PATH,
+    icon: MapPinned,
+    labelKey: "nav.studioArtists",
+    descKey: "nav.studioArtistsSub",
+    shortKey: "artists",
   },
 ];

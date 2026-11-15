@@ -113,7 +113,7 @@
     "items": {
       "essential": "Pour imaginer vos premiers looks et les partager.",
       "artist": "Pour préparer chaque pose avec vos clientes, avec votre signature.",
-      "atelier": "Pour montrer votre travail au monde et le faire essayer à vos clientes."
+      "atelier": "Pour montrer votre travail au monde, attirer de nouvelles clientes et recevoir leurs rendez-vous en ligne."
     },
     "note": "Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée.",
     "perYear": "/ an",
@@ -140,7 +140,10 @@
       "posts": "Publications pour les réseaux : image HD et vidéo 360°",
       "ownLogo": "Publications signées de votre logo, ou sans filigrane",
       "transparentExport": "Captures PNG sans fond, prêtes à détourer",
-      "glowbook": "Votre Glowbook : la vitrine publique de vos créations, personnalisée, avec QR code et carte",
+      "glowbook": "Votre Glowbook : votre page publique d’artiste, personnalisée, avec QR code, carte et affiche",
+      "glowbookBooking": "Prise de rendez-vous en ligne depuis votre Glowbook : vos clientes réservent un créneau, avec confirmation et rappel par e-mail",
+      "glowbookCalendar": "Votre agenda de rendez-vous, synchronisé avec Google Agenda, Apple Calendrier ou Outlook",
+      "artistDirectory": "Une place dans l’annuaire « Trouver un artiste », pour que les clientes près de chez vous vous découvrent",
       "tryOn": "Essayage par IA : vos clientes voient vos créations sur leur propre sourire",
       "collections": "Des dossiers pour ranger vos créations",
       "postLayouts": "3 habillages premium pour vos publications : galerie, spotlight et bandeau"
@@ -170,7 +173,11 @@
       },
       {
         "question": "Quelle formule choisir ?",
-        "answer": "Essentiel pour imaginer vos premiers looks : 15 créations et 3 Gem Groups, toute la bibliothèque et les modèles Global Toothgems. Artiste pour travailler avec vos clientes : 150 créations, 30 Gem Groups, la vue de face, la fiche de placement et le partage par lien, des dossiers pour ranger vos créations et des publications pour les réseaux signées de votre logo. Atelier pour aller plus loin : créations et Gem Groups illimités, votre Glowbook public, l’essayage par IA, qui permet à vos clientes de voir vos créations sur leur propre sourire, et des mises en page pour vos publications."
+        "answer": "Essentiel pour imaginer vos premiers looks : 15 créations et 3 Gem Groups, toute la bibliothèque et les modèles Global Toothgems. Artiste pour travailler avec vos clientes : 150 créations, 30 Gem Groups, la vue de face, la fiche de placement et le partage par lien, des dossiers pour ranger vos créations et des publications pour les réseaux signées de votre logo. Atelier pour développer votre activité : créations et Gem Groups illimités, votre Glowbook public avec la prise de rendez-vous en ligne et un agenda synchronisé avec le vôtre, une place dans l’annuaire « Trouver un artiste », l’essayage par IA, qui permet à vos clientes de voir vos créations sur leur propre sourire, et des mises en page pour vos publications."
+      },
+      {
+        "question": "Qu’est-ce que le Glowbook, inclus dans la formule Atelier ?",
+        "answer": "Votre page publique d’artiste, à mettre dans votre bio Instagram : vos créations en 3D, votre salon ou votre secteur sur une carte, et un bouton pour prendre rendez-vous. Vous fixez vos horaires et vos clientes réservent un créneau d’une heure, avec confirmation et rappel par e-mail ; vos rendez-vous s’ajoutent à votre Google Agenda, Apple Calendrier ou Outlook, et les heures déjà prises dans cet agenda se ferment toutes seules. Si vous le souhaitez, votre page apparaît aussi dans l’annuaire « Trouver un artiste », où les clientes cherchent une artiste près de chez elles. Votre page et vos créations sont validées par notre équipe avant d’être publiques."
       },
       {
         "question": "Puis-je changer de formule plus tard ?",

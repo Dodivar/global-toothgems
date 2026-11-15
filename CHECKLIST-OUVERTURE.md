@@ -75,3 +75,17 @@ Une phrase par point. Coche au fur et à mesure (`- [x]`).
 - [ ] Appliquer la migration de double authentification de l'équipe une fois `dev` fusionné dans `main`, après que chaque membre a activé son application d'authentification sur `/admin` (décision 134).
 - [ ] Activer le captcha de Supabase Auth (Authentication › Attack Protection › Captcha : Cloudflare Turnstile, avec la clé secrète Turnstile du site), maintenant que le site envoie le jeton (décision 137).
 - [ ] Faire une commande test complète en mode live (produit, formation, carte cadeau) puis la rembourser.
+
+## 8. Flux produits et publicité (Google Merchant Center, catalogue et Pixel Meta)
+
+Détail des étapes dans `docs/product-feeds.md`. Les comptes Google et Meta doivent appartenir à **PIMP TON SMILE** (le vendeur), pas à une personne privée : les créer ou les faire créer par le gérant, avec les accès donnés à l'équipe technique.
+
+- [ ] Créer le compte Google Merchant Center de PIMP TON SMILE (nom de l'entreprise « Global Toothgems », adresse et contacts identiques aux mentions légales) et vérifier puis revendiquer le domaine (enregistrement DNS TXT via Search Console).
+- [ ] Dans Merchant Center, recréer les zones et tarifs de livraison de Paramètres › Livraison, le délai de préparation (1 à 3 jours ouvrés) et la politique de retour (14 jours, frais à la charge du client, exception hygiène), avec les liens vers `/fr/retours-remboursements` et `/en/returns`.
+- [ ] Ajouter les deux flux planifiés (quotidiens, en EUR) : `https://<domaine>/feeds/google-fr.xml` (français : France, Belgique, Luxembourg) et `https://<domaine>/feeds/google-en.xml` (anglais : les autres pays), puis lire l'onglet Diagnostics après la première récupération.
+- [ ] Créer le compte Meta Business (portefeuille) de PIMP TON SMILE, y vérifier le domaine (DNS TXT) et y créer le catalogue E-commerce alimenté par le flux `google-fr.xml` (récupération quotidienne).
+- [ ] Créer le Pixel Meta dans ce portefeuille, laisser **désactivées** la « Mise en correspondance avancée automatique » et le suivi automatique sans code, puis relier le Pixel au catalogue (Commerce Manager › Événements).
+- [ ] Renseigner `NEXT_PUBLIC_META_PIXEL_ID` (Production) sur Vercel puis redéployer ; en même temps, un développeur incrémente `LEGAL_POLICY_VERSION` (`webapp/src/lib/registration.ts`), car la politique de confidentialité doit alors nommer Meta.
+- [ ] Faire relire par un juriste le bandeau cookies (catégorie « Publicité »), la politique de cookies et la politique de confidentialité qui décrivent le Pixel ⚠️.
+- [ ] Tester le Pixel avec l'extension Meta Pixel Helper : rien ne part avant l'acceptation de la catégorie « Publicité » ; ViewContent, AddToCart, InitiateCheckout et Purchase arrivent ensuite dans Events Manager.
+- [ ] Allemand : ajouter plus tard un flux `google-de.xml`, une fois les traductions allemandes des produits et les pages `/de/…` disponibles.

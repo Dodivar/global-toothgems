@@ -14,6 +14,7 @@ import { ShipmentCard } from "../../components/account/dashboard/ShipmentCard";
 import { LoyaltyTile } from "../../components/account/dashboard/LoyaltyTile";
 import { WelcomeChecklist } from "../../components/account/dashboard/WelcomeChecklist";
 import { StudioTile } from "../../components/account/dashboard/StudioTile";
+import { AgendaTile } from "../../components/account/dashboard/AgendaTile";
 import { CertificatesTile } from "../../components/account/dashboard/CertificatesTile";
 import { FavoritesTile } from "../../components/account/dashboard/FavoritesTile";
 import { useAuth } from "../../lib/auth";
@@ -132,6 +133,8 @@ function DashboardContent() {
           </h2>
         </div>
         <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 xl:grid-cols-3">
+          {/* The artist's calendar first: appointments are the most time-bound thing here. */}
+          <AgendaTile />
           <LoyaltyTile />
           <StudioTile />
           <CertificatesTile earned={certificates} lang={lang} />

@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ArrowLeft, Component, Images, LayoutTemplate, LifeBuoy, PencilRuler, MessageSquareHeart, Sparkles, UserRound, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, CalendarDays, Component, Images, LayoutTemplate, LifeBuoy, PencilRuler, MessageSquareHeart, Sparkles, UserRound, X, type LucideIcon } from "lucide-react";
 import { Link, useLocation } from "../../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import monogram from "../../../assets/monogram-blue.png";
@@ -12,11 +12,17 @@ import { CollectionDot, useSortedCollections } from "./Collections";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { STUDIO_EXPLORE, type ClientSpace } from "../../layout/clientSpaces";
 import { focusRing } from "./workspaceStyles";
+import { AGENDA_PATH } from "../../../lib/agendaRoutes";
+import { useGlowbookPlan } from "../../../lib/studioAccess";
 
 interface NavItem {
   section: StudioSection | null;
   icon: LucideIcon;
   key: string;
+  /** A page outside the workspace (never current here), in place of a section. */
+  to?: string;
+  /** Listed only while the plan includes the Glowbook. */
+  glowbookPlan?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -25,8 +31,16 @@ const NAV: NavItem[] = [
   { section: "groups", icon: Component, key: "groups" },
   { section: "templates", icon: LayoutTemplate, key: "templates" },
   { section: "glowbook", icon: Sparkles, key: "glowbook" },
+  // The artist's calendar has its own page in the member space (decision 147).
+  { section: null, icon: CalendarDays, key: "agenda", to: AGENDA_PATH, glowbookPlan: true },
   { section: "help", icon: LifeBuoy, key: "help" },
 ];
+
+/** The rail's entries for this member: the calendar only while the plan includes the Glowbook. */
+function useNav(): NavItem[] {
+  const plan = useGlowbookPlan();
+  return NAV.filter((item) => !item.glowbookPlan || plan === true);
+}
 
 /**
  * The Studio workspace navigation.
@@ -66,6 +80,7 @@ function useCounts() {
 function RailContent({ section }: { section: StudioSection | null }) {
   const { t } = useTranslation();
   const counts = useCounts();
+  const nav = useNav();
   const { signedIn, initials } = useAuth();
   const { pathname } = useLocation();
 
@@ -109,13 +124,13 @@ function RailContent({ section }: { section: StudioSection | null }) {
         <span aria-hidden="true" className="my-2 h-px w-10 bg-[var(--border-subtle)]" />
       </div>
       <ul className="m-0 grid w-full list-none gap-1 px-2 p-0">
-        {NAV.map((item) => {
-          const active = item.section === section;
+        {nav.map((item) => {
+          const active = !item.to && item.section === section;
           const count = item.section === "creations" ? counts?.creations : item.section === "groups" ? counts?.groups : undefined;
           return (
             <li key={item.key}>
               <Link
-                to={studioSectionPath(item.section)}
+                to={item.to ?? studioSectionPath(item.section)}
                 aria-current={active ? "page" : undefined}
                 className={clsx(
                   "group/nav relative flex flex-col items-center gap-1 rounded-[var(--radius-md)] px-1 py-2 text-center transition-colors",
@@ -237,6 +252,7 @@ function DrawerCollections({ onNavigate }: { onNavigate: () => void }) {
 function Drawer({ section, onClose }: { section: StudioSection | null; onClose: () => void }) {
   const { t } = useTranslation();
   const counts = useCounts();
+  const nav = useNav();
   const ref = useFocusTrap<HTMLDivElement>(true, onClose);
   const { pathname } = useLocation();
   const { signedIn, displayName } = useAuth();
@@ -285,13 +301,13 @@ function Drawer({ section, onClose }: { section: StudioSection | null; onClose: 
             </Link>
           </li>
           <li aria-hidden="true" className="mx-3 my-1 h-px bg-[var(--border-subtle)]" />
-          {NAV.map((item) => {
-            const active = item.section === section;
+          {nav.map((item) => {
+            const active = !item.to && item.section === section;
             const count = item.section === "creations" ? counts?.creations : item.section === "groups" ? counts?.groups : undefined;
             return (
               <li key={item.key}>
                 <Link
-                  to={studioSectionPath(item.section)}
+                  to={item.to ?? studioSectionPath(item.section)}
                   onClick={onClose}
                   aria-current={active ? "page" : undefined}
                   className={clsx(

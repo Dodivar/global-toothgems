@@ -46,8 +46,8 @@ function harness(options: {
     deps: {
       store,
       resend: { apiKey: "re_test", fetch: fetchStub },
-      from: "Global Tooth Gems <no-reply@globaltoothgems.com>",
-      layout: { brandName: "Global Tooth Gems", siteUrl: "https://globaltoothgems.com" },
+      from: "Global Toothgems <no-reply@globaltoothgems.com>",
+      layout: { brandName: "Global Toothgems", siteUrl: "https://globaltoothgems.com" },
     },
   };
 }

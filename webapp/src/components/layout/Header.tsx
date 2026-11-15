@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Box, ChevronDown, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { ArrowRight, ChevronDown, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
 import { useAuth } from "../../lib/auth";
 import { useCart } from "../../lib/cart";
@@ -12,7 +12,7 @@ import { useGlowbookMenuTarget } from "./useGlowbookMenuTarget";
 import { LanguageMenu } from "./LanguageMenu";
 import { HeaderSearch } from "./HeaderSearch";
 import { CartAddedNotice } from "./CartAddedNotice";
-import { STUDIO_PATH } from "../../lib/studioUrl";
+import { GLOWBOOK_INTRO_PATH, STUDIO_PATH } from "../../lib/studioUrl";
 import logoWordmark from "../../assets/logo-wordmark.svg";
 
 type PanelKey = "shop" | "academy" | "studio" | null;
@@ -67,15 +67,19 @@ export function Header() {
   /* No "Home" entry: the logo is the way home, as on most shops, and the
      three pillars read better on their own (owner's call, 2026-11-02). */
   const glowbookTarget = useGlowbookMenuTarget(panel === "studio" || (menuOpen && menuTab === "studio"));
-  const studioMenu = STUDIO_MENU.map((entry) => (entry.id === "glowbook" ? { ...entry, to: glowbookTarget } : entry));
+  // The calendar is listed once the plan is known to include the Glowbook (its own page is then the target).
+  const ownGlowbook = glowbookTarget !== GLOWBOOK_INTRO_PATH;
+  const studioMenu = STUDIO_MENU.filter((entry) => entry.id !== "agenda" || ownGlowbook).map((entry) =>
+    entry.id === "glowbook" ? { ...entry, to: glowbookTarget } : entry,
+  );
 
-  const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string; withIcon?: boolean }[] = [
+  const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string }[] = [
     { id: "shop", label: t("nav.shop"), to: "/boutique", panel: "shop", panelLabel: t("nav.openPanelShop") },
     { id: "academy", label: t("nav.academy"), to: "/academy", panel: "academy", panelLabel: t("nav.openPanelAcademy") },
     /* Last, after the two pillars. The label leads to the Studio's
        presentation; its panel goes straight into the workspace (workshop,
        creations, Gem Groups). */
-    { id: "studio", label: t("nav.studio"), to: STUDIO_PATH, panel: "studio", panelLabel: t("nav.openPanelStudio"), withIcon: true },
+    { id: "studio", label: t("nav.atelier"), to: STUDIO_PATH, panel: "studio", panelLabel: t("nav.openPanelStudio") },
   ];
 
   const closeAll = () => {
@@ -213,7 +217,6 @@ export function Header() {
                       borderBottomColor: onRoute || expanded ? "var(--surface-brand)" : "transparent",
                     }}
                   >
-                    {link.withIcon && <Box size={14} strokeWidth={2} aria-hidden="true" />}
                     {link.label}
                   </Link>
                   {link.panel && (

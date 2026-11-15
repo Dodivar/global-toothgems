@@ -5,6 +5,8 @@
  * helpers only read its answers and lay them out in the right time zone.
  */
 
+import { placeFromJson, type GlowbookPlace } from "./studioWorkspace/glowbookPlace";
+
 export type BookingStatus = "booked" | "cancelled_client" | "cancelled_artist" | "honoured" | "no_show";
 export type DesignKind = "creation" | "custom";
 
@@ -34,6 +36,13 @@ export interface ClientBooking {
   cancelReason: string | null;
   artistName: string;
   artistHandle: string | null;
+  /** The Glowbook creation booked while its 3D view is public (decision 147 (d)), else null. */
+  itemId: string | null;
+  itemLive: boolean;
+  /** Its public picture (signed by the browser), while live. */
+  thumbnailPath: string | null;
+  /** Where the appointment takes place: a salon's address, or an area. */
+  place: GlowbookPlace | null;
 }
 
 export interface ArtistBooking {
@@ -53,6 +62,12 @@ export interface ArtistBooking {
   comment: string | null;
   cancelReason: string | null;
   createdAt: string;
+  /** The Glowbook creation chosen (null for a custom design or one since removed). */
+  itemId: string | null;
+  /** Its picture in the artist's private thumbnails (signed by the browser). */
+  thumbnailPath: string | null;
+  /** Page and creation approved: its public 3D view exists. */
+  itemLive: boolean;
 }
 
 export interface BookingRule {
@@ -76,7 +91,29 @@ export interface BookingSettings {
   horizonDays: number;
 }
 
+/**
+ * A period the artist's calendar is closed (decision 147): whole local days,
+ * both ends included, an optional private note, and how many appointments to
+ * come it covers — none in practice: closing days cancels the appointments
+ * booked on them (decision 147 (a)) and no booking lands there afterwards.
+ */
+export interface CalendarClosure {
+  id: string;
+  startsOn: string;
+  endsOn: string;
+  note: string | null;
+  bookings: number;
+}
+
+/** The Glowbook page's moderation state, or null when the member has no page yet. */
+export type PageStatus = "pending" | "approved" | "rejected" | null;
+
 export interface ArtistCalendar {
+  pageStatus: PageStatus;
+  /** The page's address (`/fr/glowbook/<handle>`), null without a page. */
+  handle: string | null;
+  /** Periods not ended yet, in date order. */
+  closures: CalendarClosure[];
   /** The platform-wide switch. */
   switchOn: boolean;
   /** Visitors can book now (switched on, page approved, plan active). */
@@ -140,6 +177,10 @@ export function readMyBookings(data: unknown): { bannedUntil: string | null; boo
       cancelReason: text(r.cancel_reason),
       artistName: text(r.artist_name) ?? "",
       artistHandle: text(r.artist_handle),
+      itemId: text(r.item_id),
+      itemLive: r.item_live === true,
+      thumbnailPath: text(r.thumbnail_path),
+      place: isRecord(r.place) ? placeFromJson({ place: r.place }) : null,
     })),
   };
 }
@@ -148,7 +189,17 @@ export function readArtistCalendar(data: unknown): ArtistCalendar | null {
   if (!isRecord(data)) return null;
   const list = (key: string) => (Array.isArray(data[key]) ? (data[key] as unknown[]).filter(isRecord) : []);
   const s = isRecord(data.settings) ? data.settings : null;
+  const page = data.page_status;
   return {
+    pageStatus: page === "pending" || page === "approved" || page === "rejected" ? page : null,
+    handle: text(data.handle),
+    closures: list("closures").map((c) => ({
+      id: String(c.id),
+      startsOn: String(c.starts_on),
+      endsOn: String(c.ends_on),
+      note: text(c.note),
+      bookings: num(c.bookings, 0),
+    })),
     switchOn: data.switch_on !== false,
     open: data.open === true,
     settings: s
@@ -184,6 +235,9 @@ export function readArtistCalendar(data: unknown): ArtistCalendar | null {
       comment: text(b.comment),
       cancelReason: text(b.cancel_reason),
       createdAt: String(b.created_at),
+      itemId: text(b.item_id),
+      thumbnailPath: text(b.thumbnail_path),
+      itemLive: b.item_live === true,
     })),
     upcoming: list("upcoming").map((u) => ({ id: String(u.id), startsAt: String(u.starts_at) })),
     blocks: list("blocks").map((b) => ({ id: String(b.id), clientName: text(b.client_name) ?? "—", createdAt: String(b.created_at) })),
@@ -273,6 +327,26 @@ export function addDays(day: string, n: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** One calendar read spans at most this many days after its first (glowbook_artist_calendar refuses more than 62). */
+export const CALENDAR_READ_SPAN = 61;
+
+/**
+ * The further calendar reads ([from, to], local days) that reach every
+ * appointment to come booked after `readTo`: the horizon goes up to 180 days,
+ * one read covers 62. None in the usual case (nothing booked that far).
+ */
+export function laterWindows(readTo: string, upcoming: readonly { startsAt: string }[], timezone: string): { from: string; to: string }[] {
+  const last = upcoming.reduce<string | null>((max, b) => {
+    const day = localDay(b.startsAt, timezone);
+    return max === null || day > max ? day : max;
+  }, null);
+  const windows: { from: string; to: string }[] = [];
+  for (let from = addDays(readTo, 1); last !== null && from <= last; from = addDays(from, CALENDAR_READ_SPAN + 1)) {
+    windows.push({ from, to: addDays(from, CALENDAR_READ_SPAN) });
+  }
+  return windows;
+}
+
 /** ISO weekday (1 = Monday) of a local day key. */
 export function isoWeekday(day: string): number {
   const d = new Date(`${day}T12:00:00Z`).getUTCDay();
@@ -329,12 +403,17 @@ export function validateWeek(week: WeekHours): WeekProblem {
 
 /* ------------------------------------------------------------ the artist's week view */
 
-export type HourState = "open" | "closed" | "blocked" | "busy" | "extra" | "booked" | "past";
+export type HourState = "open" | "closed" | "blocked" | "busy" | "extra" | "booked" | "past" | "holiday";
 
-/** What one hour of the week view shows. */
-export function hourState(hour: CalendarHour | undefined, booked: boolean, past: boolean, imported = false): HourState {
+/**
+ * What one hour of the week view shows. A day inside a closure (decision 147)
+ * is closed whatever its hours say — only an appointment already booked
+ * there still shows.
+ */
+export function hourState(hour: CalendarHour | undefined, booked: boolean, past: boolean, imported = false, closedDay = false): HourState {
   if (booked) return "booked";
   if (past) return "past";
+  if (closedDay) return "holiday";
   // Closed by the other calendar (lot 3): a click opens it by hand, which the import then respects.
   if (hour?.override === "blocked") return imported ? "busy" : "blocked";
   if (hour?.override === "open") return "extra";
@@ -355,6 +434,59 @@ export function toggleTarget(state: HourState): "blocked" | "open" | "default" |
     default:
       return null;
   }
+}
+
+/**
+ * The first name shown in a week-view cell: the first word of the name the
+ * client gave, cut to fit (the full name is in the appointment's panel).
+ */
+export function cellName(name: string | null, max = 10): string {
+  const first = (name ?? "").trim().split(/\s+/)[0] ?? "";
+  return first.length > max ? `${first.slice(0, max - 1)}…` : first;
+}
+
+/* ------------------------------------------------------------ closures (decision 147) */
+
+/** Whether a local day ("YYYY-MM-DD") falls inside one of the periods. */
+export function dayClosed(day: string, closures: readonly Pick<CalendarClosure, "startsOn" | "endsOn">[]): boolean {
+  return closures.some((c) => day >= c.startsOn && day <= c.endsOn);
+}
+
+export const CLOSURE_NOTE_MAX = 80;
+export const CLOSURES_MAX = 20;
+/** The database's limits: a start from today, an end within a year from today, a year long at most. */
+const CLOSURE_LAST_DAY = 366;
+const CLOSURE_LONGEST = 365;
+
+export type ClosureProblem = "dates" | "past" | "order" | "tooFar" | "note" | null;
+
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The same checks as glowbook_add_closure(), to say what is wrong before asking. */
+export function validateClosure(draft: { startsOn: string; endsOn: string; note: string }, today: string): ClosureProblem {
+  if (!DAY_RE.test(draft.startsOn) || !DAY_RE.test(draft.endsOn)) return "dates";
+  if (draft.startsOn < today) return "past";
+  if (draft.endsOn < draft.startsOn) return "order";
+  if (draft.endsOn > addDays(today, CLOSURE_LAST_DAY) || draft.endsOn > addDays(draft.startsOn, CLOSURE_LONGEST)) return "tooFar";
+  if (draft.note.trim().length > CLOSURE_NOTE_MAX) return "note";
+  return null;
+}
+
+/**
+ * The appointments to come on the local days of a period, which closing it
+ * cancels (decision 147 (a)): counted before asking, from the calendar's
+ * `upcoming` list (every appointment to come, whatever the range).
+ */
+export function bookingsOnDays(upcoming: readonly { startsAt: string }[], timezone: string, startsOn: string, endsOn: string): number {
+  return upcoming.filter((b) => {
+    const day = localDay(b.startsAt, timezone);
+    return day >= startsOn && day <= endsOn;
+  }).length;
+}
+
+/** Number of days in a period, both ends included. */
+export function closureLength(c: Pick<CalendarClosure, "startsOn" | "endsOn">): number {
+  return Math.round((Date.parse(`${c.endsOn}T00:00:00Z`) - Date.parse(`${c.startsOn}T00:00:00Z`)) / 86400000) + 1;
 }
 
 /* ------------------------------------------------------------ the booking form */
@@ -467,4 +599,36 @@ export function visibleHours(rules: readonly BookingRule[], hours: readonly Cale
     last = Math.max(last, h.hour + 1);
   }
   return Array.from({ length: Math.max(last - first, 1) }, (_, i) => first + i);
+}
+
+/** One week of free slots laid out like the artist's week view: 7 days × the hours that hold a slot. */
+export interface SlotWeek {
+  days: string[];
+  hours: number[];
+  /** `${day}|${hour}` → the slot's instant, for the free hours only. */
+  free: Map<string, string>;
+}
+
+export function slotWeek(slots: readonly string[], timezone: string, monday: string): SlotWeek {
+  const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  const free = new Map<string, string>();
+  let first = 24;
+  let last = -1;
+  for (const slot of slots) {
+    const day = localDay(slot, timezone);
+    if (day < days[0] || day > days[6]) continue;
+    const hour = localHour(slot, timezone);
+    free.set(`${day}|${hour}`, slot);
+    first = Math.min(first, hour);
+    last = Math.max(last, hour);
+  }
+  const hours = last < 0 ? [] : Array.from({ length: last - first + 1 }, (_, i) => first + i);
+  return { days, hours, free };
+}
+
+/** "ven." and "20" for a day column's header. */
+export function dayHeader(day: string, locale: string): { weekday: string; date: string } {
+  const date = new Date(`${day}T12:00:00Z`);
+  const weekday = new Intl.DateTimeFormat(intlLocale(locale), { timeZone: "UTC", weekday: "short" }).format(date);
+  return { weekday, date: String(date.getUTCDate()) };
 }

@@ -1,14 +1,14 @@
 {
   "dialog": {
     "title": "Prendre rendez-vous avec {{name}}",
-    "sub": "Choisissez votre création et un créneau d’une heure : il vous est réservé tout de suite.",
+    "sub": "Choisissez un créneau d’une heure : il vous est réservé tout de suite.",
     "close": "Fermer",
     "confirm": "Réserver ce créneau",
     "sending": "Réservation…",
     "cancel": "Annuler"
   },
   "gate": {
-    "body": "Pour réserver un créneau avec {{name}}, connectez-vous ou créez votre compte.",
+    "toConfirm": "Choisissez votre créneau, puis connectez-vous pour réserver chez {{name}} : votre choix vous attendra au retour.",
     "signIn": "Se connecter",
     "register": "Créer un compte",
     "why": "Un compte permet de retrouver et d’annuler vos rendez-vous, et protège les artistes des fausses réservations."
@@ -23,8 +23,7 @@
   "design": {
     "title": "Votre création",
     "custom": "Création personnalisée",
-    "hint": "Une création de la page, ou une création personnalisée que vous décrivez.",
-    "customHint": "Décrivez votre envie dans le message : forme, couleur, dent, inspiration…"
+    "chosenHint": "{{name}} recevra cette création avec votre demande."
   },
   "when": {
     "title": "Votre créneau",
@@ -33,11 +32,19 @@
     "retry": "Réessayer",
     "closed": "Cet agenda ne prend plus de réservation pour le moment.",
     "none": "Aucun créneau libre dans les prochains jours. Revenez bientôt.",
-    "days": "Jours avec des créneaux libres",
-    "more": "Jours suivants",
     "zone": "Heures de {{city}}.",
     "zoneOther": "Attention : heures de {{city}}, le fuseau de l’artiste.",
-    "duration": "Chaque rendez-vous dure 1 heure."
+    "duration": "Chaque rendez-vous dure 1 heure.",
+    "prevWeek": "Semaine précédente",
+    "nextWeek": "Semaine suivante",
+    "weekLoading": "Chargement de la semaine…",
+    "weekEmpty": "Aucun créneau libre cette semaine. Essayez la semaine suivante.",
+    "free": "Libre",
+    "unavailable": "Indisponible",
+    "chosen": "Votre choix",
+    "cell": "{{day}} à {{hour}}, libre",
+    "pick": "Choisissez une heure libre dans le calendrier.",
+    "picked": "Votre créneau : {{when}}"
   },
   "fields": {
     "name": "Prénom et nom",
@@ -45,14 +52,15 @@
     "comment": "Message à l’artiste (facultatif)",
     "commentRequired": "Décrivez votre envie",
     "commentPlaceholder": "Votre idée, vos questions, une inspiration…",
-    "noHealth": "N’indiquez pas d’information de santé"
+    "noHealth": "N’indiquez pas d’information de santé",
+    "customHint": "Décrivez votre envie : forme, couleur, dent, inspiration…"
   },
   "problem": {
     "slot": "Choisissez un créneau.",
     "design": "Choisissez une création ou « Création personnalisée ».",
     "name": "Indiquez votre prénom et votre nom.",
     "phone": "Indiquez un numéro de téléphone valide.",
-    "comment": "Décrivez votre création personnalisée.",
+    "comment": "Décrivez votre envie dans le message.",
     "commentLength": "Le message fait au plus 1000 caractères."
   },
   "error": {
@@ -100,7 +108,8 @@
       "not_found": "Ce rendez-vous est introuvable.",
       "not_allowed": "Cette action demande le forfait Atelier.",
       "invalid": "Valeurs refusées : vérifiez les heures.",
-      "unavailable": "Réessayez dans un instant."
+      "unavailable": "Réessayez dans un instant.",
+      "too_many_closures": "Vous avez déjà 20 périodes à venir : rouvrez-en une avant d’en ajouter."
     },
     "clientErased": "Le client a supprimé son compte : ses coordonnées ont été effacées.",
     "blocked": "Client bloqué",
@@ -114,11 +123,15 @@
     "markedNoShow": "Absence notée",
     "block": "Ne plus accepter ce client",
     "blockedDone": "Ce client ne pourra plus réserver chez vous",
+    "blockTitle": "Ne plus accepter ce client ?",
+    "blockBody": "{{name}} ne pourra plus prendre rendez-vous chez vous, ni depuis votre page Glowbook ni depuis vos créations 3D. Les rendez-vous déjà pris ne sont pas annulés. Vous pourrez l'accepter de nouveau à tout moment depuis « Mon agenda » › Synchronisation.",
+    "blockConfirm": "Ne plus accepter ce client",
     "cancelTitle": "Annuler ce rendez-vous ?",
     "cancelBody": "Votre client reçoit un e-mail avec la raison que vous indiquez. Le créneau redevient libre sur votre Glowbook.",
     "cancelConfirm": "Annuler et prévenir le client",
     "cancelled": "Rendez-vous annulé, le client est prévenu",
-    "reason": "Raison (lue par le client)"
+    "reason": "Raison (lue par le client)",
+    "view3d": "Voir en 3D"
   },
   "mine": {
     "eyebrow": "Glowbook",
@@ -132,8 +145,6 @@
     "upcoming": "À venir",
     "noneUpcoming": "Aucun rendez-vous à venir. Réservez depuis le Glowbook d’un artiste.",
     "past": "Passés et annulés",
-    "received": "Rendez-vous reçus sur mon Glowbook",
-    "receivedHint": "Les rendez-vous que des clients ont réservés dans votre agenda : ceux à venir et ceux passés dont il reste à noter si le client est venu.",
     "cancelTitle": "Annuler ce rendez-vous ?",
     "cancelFree": "L’artiste est prévenu et le créneau redevient libre.",
     "cancelLate": "Le rendez-vous est dans moins de 24 heures : l’annulation sera notée comme tardive. Deux absences ou annulations tardives en 12 mois ferment les réservations pendant 3 mois.",
@@ -141,7 +152,13 @@
     "keep": "Garder le rendez-vous",
     "cancelled": "Rendez-vous annulé, l’artiste est prévenu",
     "artistReason": "Raison de l’artiste : {{reason}}",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "receivedMoved": "Les rendez-vous que des clients prennent sur votre Glowbook sont dans votre agenda.",
+    "receivedLink": "Ouvrir mon agenda",
+    "addToCalendar": "Ajouter à mon agenda",
+    "icsSummary": "Rendez-vous Glowbook avec {{name}}",
+    "icsDesign": "Création : {{design}}",
+    "placeArea": "Le quartier de l’artiste : l’adresse exacte vous est donnée par l’artiste."
   },
   "agenda": {
     "saved": "Agenda enregistré",
@@ -192,7 +209,8 @@
       "booked": "réservé",
       "closed": "hors horaires",
       "past": "passé",
-      "busy": "pris ailleurs"
+      "busy": "pris ailleurs",
+      "holiday": "congés"
     },
     "upcoming_one": "{{count}} rendez-vous à venir",
     "upcoming_other": "{{count}} rendez-vous à venir",
@@ -202,7 +220,13 @@
     "unblock": "Accepter de nouveau",
     "toMark_one": "{{count}} rendez-vous passé à noter",
     "toMark_other": "{{count}} rendez-vous passés à noter",
-    "toMarkHint": "Le client est-il venu ? Notez-le dans les 60 jours : deux absences ou annulations tardives en 12 mois lui ferment les réservations pendant 3 mois."
+    "toMarkHint": "Le client est-il venu ? Notez-le dans les 60 jours : deux absences ou annulations tardives en 12 mois lui ferment les réservations pendant 3 mois.",
+    "prevDay": "Jour précédent",
+    "nextDay": "Jour suivant",
+    "dayClosed": "Journée fermée (congés).",
+    "closeThisDay": "Fermer cette journée",
+    "openHint": "Touchez un rendez-vous pour voir le client, la création demandée et son commentaire.",
+    "selected": "Rendez-vous"
   },
   "weekdays": {
     "1": "Lundi",
@@ -260,5 +284,78 @@
       "forbidden_host": "Ce lien n’est pas accepté : il doit être une adresse https publique.",
       "timeout": "Lecture impossible le {{date}} : l’agenda a mis trop de temps à répondre. Nouvel essai dans 15 minutes."
     }
+  },
+  "page": {
+    "eyebrow": "Atelier",
+    "title": "Mon agenda",
+    "description": "Vos rendez-vous, vos horaires et vos congés, au même endroit. Vos clients réservent depuis votre Glowbook.",
+    "tabsLabel": "Parties de l’agenda",
+    "tabs": {
+      "appointments": "Rendez-vous",
+      "week": "Semaine",
+      "hours": "Horaires",
+      "closures": "Congés",
+      "sync": "Synchronisation"
+    },
+    "glowbookLink": "Gérer mon Glowbook",
+    "lockedTitle": "L’agenda fait partie du forfait Atelier",
+    "lockedBody": "Avec le forfait Atelier, vos clients réservent un créneau depuis votre Glowbook, et vous gérez ici vos rendez-vous, vos horaires et vos congés.",
+    "lockedCta": "Découvrir le Glowbook",
+    "noPageTitle": "Créez d’abord votre Glowbook",
+    "noPageBody": "Les réservations se prennent depuis votre page Glowbook : créez-la, puis revenez ouvrir votre agenda.",
+    "noPageCta": "Créer mon Glowbook",
+    "planEnded": "Votre forfait ne comprend plus l’agenda : les réservations sont fermées. Vous gérez encore ici les rendez-vous déjà pris.",
+    "planEndedCta": "Voir mon abonnement"
+  },
+  "closures": {
+    "title": "Fermer des jours",
+    "hint": "Vacances, formation, salon fermé : fermez des journées entières d’un coup. Aucun créneau n’est proposé ces jours-là, même une heure ouverte à la main ou libre dans votre autre agenda.",
+    "from": "Du",
+    "to": "Au (inclus)",
+    "note": "Note pour vous (facultatif)",
+    "notePlaceholder": "Vacances, formation…",
+    "noteHint": "Jamais montrée à vos clients.",
+    "add": "Fermer ces jours",
+    "added": "Jours fermés",
+    "addedNone": "Aucun créneau ne sera proposé ces jours-là.",
+    "listTitle": "Périodes fermées",
+    "none": "Aucune période fermée à venir.",
+    "range": "Du {{from}} au {{to}}",
+    "oneDay": "Le {{day}}",
+    "days_one": "{{count}} jour",
+    "days_other": "{{count}} jours",
+    "current": "En cours",
+    "remove": "Rouvrir",
+    "removeLabel": "Rouvrir : {{period}}",
+    "removed": "Période rouverte",
+    "removeFailed": "La période n’a pas pu être rouverte.",
+    "max": "20 périodes à venir au plus.",
+    "problem": {
+      "dates": "Choisissez les deux dates.",
+      "past": "Une période commence aujourd’hui au plus tôt.",
+      "order": "La fin est le même jour que le début, ou après.",
+      "tooFar": "Une période dure un an au plus et finit dans l’année qui vient.",
+      "note": "La note fait 80 caractères au plus."
+    },
+    "cancelHint": "Les rendez-vous déjà pris ces jours-là sont annulés et chaque client est prévenu par e-mail (« L’artiste a fermé son agenda ce jour-là »). Votre note n’est pas envoyée.",
+    "addedCancelled_one": "{{count}} rendez-vous annulé : le client est prévenu par e-mail.",
+    "addedCancelled_other": "{{count}} rendez-vous annulés : les clients sont prévenus par e-mail.",
+    "confirmTitle_one": "Fermer ces jours et annuler {{count}} rendez-vous ?",
+    "confirmTitle_other": "Fermer ces jours et annuler {{count}} rendez-vous ?",
+    "confirmBody_one": "Un rendez-vous est déjà pris ces jours-là. Il sera annulé et le client prévenu par e-mail : « L’artiste a fermé son agenda ce jour-là ». Cette annulation ne peut pas être reprise.",
+    "confirmBody_other": "{{count}} rendez-vous sont déjà pris ces jours-là. Ils seront annulés et chaque client prévenu par e-mail : « L’artiste a fermé son agenda ce jour-là ». Ces annulations ne peuvent pas être reprises.",
+    "confirm": "Fermer et annuler",
+    "keepOpen": "Garder ces jours ouverts"
+  },
+  "dashboard": {
+    "eyebrow": "Mon agenda",
+    "upcoming_one": "{{count}} rendez-vous à venir",
+    "upcoming_other": "{{count}} rendez-vous à venir",
+    "none": "Aucun rendez-vous à venir",
+    "toMark_one": "{{count}} rendez-vous passé à noter",
+    "toMark_other": "{{count}} rendez-vous passés à noter",
+    "closure": "Fermé du {{from}} au {{to}}",
+    "closureDay": "Fermé le {{day}}",
+    "cta": "Ouvrir mon agenda"
   }
 }

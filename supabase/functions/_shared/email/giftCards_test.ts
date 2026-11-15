@@ -54,8 +54,8 @@ function setup(options: { claim?: (key: string) => Claim; resendStatus?: number;
           : Response.json({ id: "em_1" });
       },
     },
-    from: "Global Tooth Gems <no-reply@globaltoothgems.com>",
-    layout: { brandName: "Global Tooth Gems", siteUrl: "https://globaltoothgems.com" },
+    from: "Global Toothgems <no-reply@globaltoothgems.com>",
+    layout: { brandName: "Global Toothgems", siteUrl: "https://globaltoothgems.com" },
   };
   const source = (cards: DueGiftCard[]): GiftCardSource => ({
     listDue: () => Promise.resolve(cards),

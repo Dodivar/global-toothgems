@@ -1,14 +1,14 @@
 {
   "dialog": {
     "title": "Book an appointment with {{name}}",
-    "sub": "Pick your design and a one-hour slot: it is yours at once.",
+    "sub": "Pick a one-hour slot: it is yours at once.",
     "close": "Close",
     "confirm": "Book this slot",
     "sending": "Booking…",
     "cancel": "Cancel"
   },
   "gate": {
-    "body": "To book a slot with {{name}}, sign in or create your account.",
+    "toConfirm": "Pick your slot, then sign in to book with {{name}}: your choice will be waiting when you come back.",
     "signIn": "Sign in",
     "register": "Create an account",
     "why": "An account lets you find and cancel your appointments, and protects artists from fake bookings."
@@ -23,8 +23,7 @@
   "design": {
     "title": "Your design",
     "custom": "Custom design",
-    "hint": "A design from the page, or a custom one you describe.",
-    "customHint": "Describe your idea in the message: shape, colour, tooth, inspiration…"
+    "chosenHint": "{{name}} will get this design with your request."
   },
   "when": {
     "title": "Your slot",
@@ -33,11 +32,19 @@
     "retry": "Try again",
     "closed": "This calendar is not taking bookings at the moment.",
     "none": "No free slot in the coming days. Come back soon.",
-    "days": "Days with free slots",
-    "more": "Next days",
     "zone": "{{city}} time.",
     "zoneOther": "Note: {{city}} time, the artist's time zone.",
-    "duration": "Each appointment lasts 1 hour."
+    "duration": "Each appointment lasts 1 hour.",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "weekLoading": "Loading the week…",
+    "weekEmpty": "No free slot this week. Try the next one.",
+    "free": "Free",
+    "unavailable": "Unavailable",
+    "chosen": "Your choice",
+    "cell": "{{day}} at {{hour}}, free",
+    "pick": "Pick a free hour in the calendar.",
+    "picked": "Your slot: {{when}}"
   },
   "fields": {
     "name": "First and last name",
@@ -45,14 +52,15 @@
     "comment": "Message to the artist (optional)",
     "commentRequired": "Describe your idea",
     "commentPlaceholder": "Your idea, your questions, an inspiration…",
-    "noHealth": "Do not include health information"
+    "noHealth": "Do not include health information",
+    "customHint": "Describe your idea: shape, colour, tooth, inspiration…"
   },
   "problem": {
     "slot": "Pick a slot.",
     "design": "Pick a design or “Custom design”.",
     "name": "Enter your first and last name.",
     "phone": "Enter a valid phone number.",
-    "comment": "Describe your custom design.",
+    "comment": "Describe your idea in the message.",
     "commentLength": "The message is at most 1000 characters."
   },
   "error": {
@@ -100,7 +108,8 @@
       "not_found": "This appointment cannot be found.",
       "not_allowed": "This needs the Atelier plan.",
       "invalid": "Values refused: check the hours.",
-      "unavailable": "Try again in a moment."
+      "unavailable": "Try again in a moment.",
+      "too_many_closures": "You already have 20 periods to come: reopen one before adding another."
     },
     "clientErased": "The client deleted their account: their details were erased.",
     "blocked": "Client blocked",
@@ -114,11 +123,15 @@
     "markedNoShow": "No-show recorded",
     "block": "Stop accepting this client",
     "blockedDone": "This client can no longer book with you",
+    "blockTitle": "Stop accepting this client?",
+    "blockBody": "{{name}} will no longer be able to book with you, neither from your Glowbook page nor from your 3D creations. Appointments already booked are not cancelled. You can accept them again at any time from \"My calendar\" › Sync.",
+    "blockConfirm": "Stop accepting this client",
     "cancelTitle": "Cancel this appointment?",
     "cancelBody": "Your client receives an e-mail with the reason you give. The slot is free again on your Glowbook.",
     "cancelConfirm": "Cancel and tell the client",
     "cancelled": "Appointment cancelled, the client has been told",
-    "reason": "Reason (read by the client)"
+    "reason": "Reason (read by the client)",
+    "view3d": "View in 3D"
   },
   "mine": {
     "eyebrow": "Glowbook",
@@ -132,8 +145,6 @@
     "upcoming": "Upcoming",
     "noneUpcoming": "No upcoming appointment. Book from an artist's Glowbook.",
     "past": "Past and cancelled",
-    "received": "Appointments booked on my Glowbook",
-    "receivedHint": "The appointments clients booked in your calendar: those to come and the past ones whose outcome is still to record.",
     "cancelTitle": "Cancel this appointment?",
     "cancelFree": "The artist is told and the slot is free again.",
     "cancelLate": "The appointment is less than 24 hours away: the cancellation will be recorded as late. Two no-shows or late cancellations within 12 months close bookings for 3 months.",
@@ -141,7 +152,13 @@
     "keep": "Keep the appointment",
     "cancelled": "Appointment cancelled, the artist has been told",
     "artistReason": "The artist's reason: {{reason}}",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "receivedMoved": "The appointments clients book on your Glowbook are in your calendar.",
+    "receivedLink": "Open my calendar",
+    "addToCalendar": "Add to my calendar",
+    "icsSummary": "Glowbook appointment with {{name}}",
+    "icsDesign": "Design: {{design}}",
+    "placeArea": "The artist's area: the artist gives you the exact address."
   },
   "agenda": {
     "saved": "Calendar saved",
@@ -192,7 +209,8 @@
       "booked": "booked",
       "closed": "outside hours",
       "past": "past",
-      "busy": "taken elsewhere"
+      "busy": "taken elsewhere",
+      "holiday": "time off"
     },
     "upcoming_one": "{{count}} upcoming appointment",
     "upcoming_other": "{{count}} upcoming appointments",
@@ -202,7 +220,13 @@
     "unblock": "Accept again",
     "toMark_one": "{{count}} past appointment to record",
     "toMark_other": "{{count}} past appointments to record",
-    "toMarkHint": "Did the client come? Record it within 60 days: two no-shows or late cancellations within 12 months close their bookings for 3 months."
+    "toMarkHint": "Did the client come? Record it within 60 days: two no-shows or late cancellations within 12 months close their bookings for 3 months.",
+    "prevDay": "Previous day",
+    "nextDay": "Next day",
+    "dayClosed": "Day closed (time off).",
+    "closeThisDay": "Close this day",
+    "openHint": "Tap an appointment to see the client, the creation asked for and their comment.",
+    "selected": "Appointment"
   },
   "weekdays": {
     "1": "Monday",
@@ -260,5 +284,78 @@
       "forbidden_host": "This link is not accepted: it must be a public https address.",
       "timeout": "Could not read it on {{date}}: the calendar took too long to answer. Another try in 15 minutes."
     }
+  },
+  "page": {
+    "eyebrow": "Atelier",
+    "title": "My calendar",
+    "description": "Your appointments, hours and time off, in one place. Clients book from your Glowbook.",
+    "tabsLabel": "Parts of the calendar",
+    "tabs": {
+      "appointments": "Appointments",
+      "week": "Week",
+      "hours": "Hours",
+      "closures": "Time off",
+      "sync": "Sync"
+    },
+    "glowbookLink": "Manage my Glowbook",
+    "lockedTitle": "The calendar comes with the Atelier plan",
+    "lockedBody": "With the Atelier plan, clients book a slot from your Glowbook, and you manage your appointments, hours and time off here.",
+    "lockedCta": "Discover the Glowbook",
+    "noPageTitle": "Create your Glowbook first",
+    "noPageBody": "Bookings are made from your Glowbook page: create it, then come back to open your calendar.",
+    "noPageCta": "Create my Glowbook",
+    "planEnded": "Your plan no longer includes the calendar: bookings are closed. You can still handle the appointments already booked here.",
+    "planEndedCta": "See my subscription"
+  },
+  "closures": {
+    "title": "Close days",
+    "hint": "Holidays, a training, the salon closed: close whole days at once. No slot is offered on those days, not even an hour opened by hand or free in your other calendar.",
+    "from": "From",
+    "to": "To (included)",
+    "note": "Note for yourself (optional)",
+    "notePlaceholder": "Holidays, training…",
+    "noteHint": "Never shown to clients.",
+    "add": "Close these days",
+    "added": "Days closed",
+    "addedNone": "No slot will be offered on those days.",
+    "listTitle": "Closed periods",
+    "none": "No closed period to come.",
+    "range": "From {{from}} to {{to}}",
+    "oneDay": "On {{day}}",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "current": "Under way",
+    "remove": "Reopen",
+    "removeLabel": "Reopen: {{period}}",
+    "removed": "Period reopened",
+    "removeFailed": "The period could not be reopened.",
+    "max": "20 periods to come at most.",
+    "problem": {
+      "dates": "Choose both dates.",
+      "past": "A period starts today at the earliest.",
+      "order": "The end is the same day as the start, or later.",
+      "tooFar": "A period lasts a year at most and ends within the coming year.",
+      "note": "The note is 80 characters at most."
+    },
+    "cancelHint": "Appointments already booked on those days are cancelled and each client is e-mailed (\"The artist has closed their calendar on that day\"). Your note is not sent.",
+    "addedCancelled_one": "{{count}} appointment cancelled: the client is e-mailed.",
+    "addedCancelled_other": "{{count}} appointments cancelled: the clients are e-mailed.",
+    "confirmTitle_one": "Close these days and cancel {{count}} appointment?",
+    "confirmTitle_other": "Close these days and cancel {{count}} appointments?",
+    "confirmBody_one": "One appointment is already booked on those days. It will be cancelled and the client e-mailed: \"The artist has closed their calendar on that day\". This cannot be undone.",
+    "confirmBody_other": "{{count}} appointments are already booked on those days. They will be cancelled and each client e-mailed: \"The artist has closed their calendar on that day\". This cannot be undone.",
+    "confirm": "Close and cancel",
+    "keepOpen": "Keep these days open"
+  },
+  "dashboard": {
+    "eyebrow": "My calendar",
+    "upcoming_one": "{{count}} appointment to come",
+    "upcoming_other": "{{count}} appointments to come",
+    "none": "No appointment to come",
+    "toMark_one": "{{count}} past appointment to record",
+    "toMark_other": "{{count}} past appointments to record",
+    "closure": "Closed from {{from}} to {{to}}",
+    "closureDay": "Closed on {{day}}",
+    "cta": "Open my calendar"
   }
 }

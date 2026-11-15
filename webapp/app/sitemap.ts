@@ -3,13 +3,16 @@ import { productSlug } from "../src/lib/catalog/productSlugs";
 import { listPublicProductSlugs } from "../src/lib/catalog/serverCatalog";
 import { courseSlug } from "../src/lib/academy/publicCourse";
 import { listPublicCourses } from "../src/lib/academy/serverAcademy";
+import { directoryCities } from "../src/lib/glowbookDirectory";
+import { listDirectoryArtists } from "../src/lib/studioWorkspace/serverDirectory";
 import { LOCALES, localizedPath, PUBLIC_ROUTES } from "../src/lib/localeRoutes";
 import { siteUrl } from "../src/lib/siteUrl";
 
 /**
  * The indexed public pages, every product page and every published course's
  * sales page, each in French and English with its alternate (with its slug in
- * each language). Rendered per request: the catalogue and the Academy change
+ * each language), and the artist directory's city pages with the Glowbooks
+ * of the artists listed there (they chose that exposure, decision 145). Rendered per request: the catalogue and the Academy change
  * without a deploy.
  */
 export const dynamic = "force-dynamic";
@@ -35,5 +38,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       en: localizedPath("course", "en", { id: courseSlug(course, "en") }),
     }),
   );
-  return [...pages, ...products, ...courses];
+  const artists = await listDirectoryArtists();
+  const cities = directoryCities(artists).flatMap((city) =>
+    entry({ fr: localizedPath("artistsCity", "fr", { id: city.slug }), en: localizedPath("artistsCity", "en", { id: city.slug }) }),
+  );
+  const glowbooks = artists.flatMap((artist) =>
+    entry({ fr: localizedPath("glowbook", "fr", { id: artist.handle }), en: localizedPath("glowbook", "en", { id: artist.handle }) }),
+  );
+  return [...pages, ...products, ...courses, ...cities, ...glowbooks];
 }
