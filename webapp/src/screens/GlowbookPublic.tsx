@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { GlowbookProfile, GlowbookTopBar } from "../components/glowbook/GlowbookIdentity";
 import { GlowbookPlaceSection } from "../components/glowbook/GlowbookPlaceSection";
 import { BookingDialog } from "../components/glowbook/BookingDialog";
+import { useBookingReturn } from "../components/glowbook/useBookingReturn";
 import { SpotlightVideo } from "../components/glowbook/SpotlightVideo";
 import { glowbookThemeStyle } from "../components/glowbook/theme";
 import { DEFAULT_LOOK } from "../lib/studioWorkspace/glowbookLook";
@@ -39,8 +40,12 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
   const look = glowbook.look;
   const [filter, setFilter] = useState<SectionFilter>("all");
   // The calendar (decision 144): open only when the server said the page takes bookings now.
-  const [booking, setBooking] = useState(false);
+  // null until the visitor opens or closes it: back from signing in, it opens by itself.
+  const [opened, setBooking] = useState<boolean | null>(null);
   const onBook = glowbook.booking ? () => setBooking(true) : undefined;
+  // Back from signing in with a design and an hour chosen: the dialog opens again on them.
+  const back = useBookingReturn(glowbook.booking !== null);
+  const booking = opened ?? back !== null;
   const { featured, others, filter: active } = visibleCreations(glowbook.items, glowbook.sections, look?.featuredItemId ?? null, filter);
   const large = look?.layout === "large";
   const titles = glowbook.certification ? certifiedTitles(glowbook.certification, i18n.language) : [];
@@ -168,6 +173,8 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
           handle={glowbook.handle}
           artistName={glowbook.displayName}
           items={glowbook.items.map((i) => ({ id: i.id, name: i.name }))}
+          initialItemId={back?.itemId ?? null}
+          initialSlot={back?.slot ?? null}
         />
       )}
     </div>

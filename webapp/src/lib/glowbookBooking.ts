@@ -19,11 +19,13 @@ import {
   readSlots,
   type SlotList,
 } from "./glowbookBookingMapping";
+import { toPublicGlowbook } from "./studioWorkspace/glowbook";
 
 /**
  * The persistence boundary of the Glowbook bookings (decision 144).
  *
- *   anyone:  glowbook_booking_info / glowbook_booking_slots (free hours only)
+ *   anyone:  glowbook_booking_info / glowbook_booking_slots (free hours only),
+ *            studio_public_showcase (the page's creations to choose from)
  *   member:  the Edge Function `glowbook-booking` (their JWT + Turnstile) books;
  *            my_glowbook_bookings, glowbook_cancel_booking
  *   artist:  glowbook_artist_calendar, glowbook_save_booking_settings,
@@ -46,6 +48,18 @@ export async function fetchBookingInfo(handle: string): Promise<BookingInfo | nu
     throw new Error("glowbook_booking_info unavailable");
   }
   return readBookingInfo(data);
+}
+
+/**
+ * The creations a client can book from a 3D view: the approved ones of the
+ * artist's public page, read with `studio_public_showcase` exactly as a
+ * visitor sees them (the server page reads the same function).
+ */
+export async function fetchBookableItems(handle: string): Promise<{ id: string; name: string }[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("studio_public_showcase", { p_handle: handle.toLowerCase() });
+  if (error) throw new Error("studio_public_showcase unavailable");
+  return (toPublicGlowbook(data)?.items ?? []).map((i) => ({ id: i.id, name: i.name }));
 }
 
 export async function fetchSlots(handle: string, from?: string, to?: string): Promise<SlotList | null> {
