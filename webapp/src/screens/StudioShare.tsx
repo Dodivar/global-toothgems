@@ -141,13 +141,14 @@ export function StudioShare() {
   useEffect(() => {
     if (waitForSession) return;
     let live = true;
-    loadShared({ token, handle, item, booking, hash })
+    // Signed out, a booking's creation is refused anyway: the sign-in prompt shows, nothing is asked.
+    (booking && !signedIn ? Promise.resolve(null) : loadShared({ token, handle, item, booking, hash }))
       .then((found) => live && setLoaded(found ? { key, status: "ready", ...found } : { key, status: "invalid" }))
       .catch(() => live && setLoaded({ key, status: stored ? "unavailable" : "invalid" }));
     return () => {
       live = false;
     };
-  }, [token, handle, item, booking, hash, key, stored, waitForSession]);
+  }, [token, handle, item, booking, hash, key, stored, waitForSession, signedIn]);
 
   const current = loaded && loaded.key === key ? loaded : null;
   const design = current?.status === "ready" ? current.design : null;
