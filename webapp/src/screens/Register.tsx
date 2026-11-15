@@ -445,7 +445,7 @@ export function Register() {
                             size="lg"
                             iconRight={ArrowRight}
                             loading={creating}
-                            className="min-w-0 flex-1 px-5! max-sm:text-[length:var(--text-body-sm)] sm:ml-auto sm:flex-none sm:px-[30px]!"
+                            className="min-w-0 flex-1 px-5! max-sm:text-[length:var(--text-body-sm)] sm:ml-auto sm:flex-initial sm:whitespace-normal sm:px-[30px]!"
                           >
                             {primaryLabel}
                           </Button>
