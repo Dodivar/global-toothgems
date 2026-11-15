@@ -36,6 +36,8 @@ export interface Glowbook {
   changesReviewNote: string | null;
   /** Whether the page shows the "certified artist" badge when the artist has earned it (decision 102). */
   showCertification: boolean;
+  /** Whether the artist chose to appear in the public artist directory (decision 145). */
+  inDirectory: boolean;
 }
 
 export interface GlowbookItem {
@@ -130,6 +132,7 @@ export function toGlowbook(row: ShowcaseRow): Glowbook {
     pending: pendingFromColumns(row.pending_changes),
     changesReviewNote: row.changes_review_note,
     showCertification: row.show_certification,
+    inDirectory: row.in_directory,
   };
 }
 

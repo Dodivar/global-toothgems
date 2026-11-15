@@ -116,6 +116,9 @@
     "badgeShown": "Badge affiché sur votre page",
     "badgeHidden": "Badge masqué sur votre page",
     "badgeFailed": "Impossible de modifier le badge",
+    "directoryOn": "Vous apparaissez dans l’annuaire",
+    "directoryOff": "Vous n’apparaissez plus dans l’annuaire",
+    "directoryFailed": "Impossible de modifier votre présence dans l’annuaire",
     "qrFailed": "Impossible de préparer le fichier"
   },
   "saveWarning": {
@@ -323,6 +326,22 @@
       "failed": "La section n’a pas pu être enregistrée. Réessayez."
     }
   },
+  "directory": {
+    "title": "Annuaire « Trouver une artiste »",
+    "body": "Apparaissez dans l’annuaire public des artistes : votre nom, votre ville, votre salon ou votre secteur (~1 km, comme sur votre carte), votre photo de profil, une de vos créations et votre badge si vous l’affichez, avec un lien vers votre Glowbook.",
+    "toggle": "Apparaître dans l’annuaire",
+    "listed": "Votre Glowbook apparaît dans l’annuaire.",
+    "waiting": "Votre Glowbook apparaîtra dans l’annuaire dès que :",
+    "missing": {
+      "page": "votre page est approuvée par un modérateur",
+      "place": "vous indiquez où vous travaillez (onglet Apparence)",
+      "creation": "au moins une création est approuvée"
+    },
+    "city": "Indiquez votre ville dans l’onglet Apparence pour figurer aussi sur la page de votre ville.",
+    "off": "Vous n’apparaissez pas dans l’annuaire. Votre Glowbook reste accessible par son lien.",
+    "open": "Voir l’annuaire",
+    "failed": "Le réglage n’a pas pu être enregistré. Réessayez."
+  },
   "badge": {
     "label": "Artiste certifiée Global Toothgems",
     "courses": "Formation : {{titles}}",
@@ -466,9 +485,10 @@
         },
         "found": {
           "title": "On vous trouve",
-          "body": "Votre salon ou votre secteur sur une carte, et le badge « Artiste certifiée » quand vous avez suivi une formation de l’Academy."
+          "body": "Votre salon ou votre secteur sur une carte, une place dans l’annuaire « Trouver une artiste » si vous le souhaitez, et le badge « Artiste certifiée » quand vous avez suivi une formation de l’Academy."
         }
-      }
+      },
+      "directoryLink": "Voir l’annuaire des artistes"
     },
     "steps": {
       "title": "En ligne en trois étapes",
