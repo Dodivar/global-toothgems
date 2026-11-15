@@ -27,7 +27,11 @@
 --       details; an artist with upcoming bookings is blocked from erasure;
 --   B10 the global switch and the end of the artist's plan close the page;
 --       the artist still reads their calendar;
---   B11 the purge removes bookings 12 months after their hour.
+--   B11 the purge removes bookings 12 months after their hour;
+--   B12 3 upcoming bookings in all and 5 made a day are the limits; the
+--       artist records (and corrects) an outcome after the hour, never on a
+--       slot older than 60 days or an erased client's; 2 no-shows block;
+--   B13 the spring-forward day has 23 distinct hours.
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL GLOWBOOK BOOKING TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -42,6 +46,9 @@ declare
   c3      uuid := '00000000-0000-4000-a000-000000b40005';
   c_unc   uuid := '00000000-0000-4000-a000-000000b40006';
   m_none  uuid := '00000000-0000-4000-a000-000000b40007';
+  c4      uuid := '00000000-0000-4000-a000-000000b40008';
+  c5      uuid := '00000000-0000-4000-a000-000000b40009';
+  c6      uuid := '00000000-0000-4000-a000-000000b4000a';
   v_rules jsonb := (select jsonb_agg(jsonb_build_object('weekday', d, 'start_hour', 0, 'end_hour', 24)) from generate_series(1, 7) d);
   base    timestamptz := date_trunc('hour', now()) + interval '48 hours';
   v_scene jsonb := jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null,
@@ -382,6 +389,79 @@ begin
   if exists (select 1 from public.glowbook_bookings where starts_at < now() - interval '12 months') then
     raise exception 'FAIL B11: an old booking survived the purge';
   end if;
+
+  -- B12 --------------------------------------------------------------------
+  -- The limits without a deposit: 3 upcoming in all, 5 made a day, 2 no-shows.
+  execute 'reset role';
+  update public.studio_subscriptions set status = 'active' where user_id = artist;
+  insert into auth.users (id, aud, role, email, email_confirmed_at, created_at, updated_at) values
+    (c4, 'authenticated', 'authenticated', 'bk-c4.test@example.invalid', now(), now(), now()),
+    (c5, 'authenticated', 'authenticated', 'bk-c5.test@example.invalid', now(), now(), now()),
+    (c6, 'authenticated', 'authenticated', 'bk-c6.test@example.invalid', now(), now(), now());
+  -- c4: three appointments to come elsewhere; c5: five made (and cancelled in time) today.
+  insert into public.glowbook_bookings (artist_id, client_id, starts_at, timezone, design_kind, client_name, client_email, client_phone, comment)
+  select other, c4, base + make_interval(days => n), 'Europe/Paris', 'custom', 'C4', 'bk-c4.test@example.invalid', '0600000004', 'x'
+    from generate_series(1, 3) n;
+  insert into public.glowbook_bookings (artist_id, client_id, starts_at, timezone, design_kind, client_name, client_email, client_phone,
+                                        comment, status, cancelled_at)
+  select other, c5, base + make_interval(days => 10 + n), 'Europe/Paris', 'custom', 'C5', 'bk-c5.test@example.invalid', '0600000005', 'x',
+         'cancelled_client', now()
+    from generate_series(1, 5) n;
+  perform set_config('role', 'service_role', true);
+  foreach v_case in array array['limit_total', 'limit_daily'] loop
+    v_msg := null;
+    begin
+      perform public.glowbook_book_slot(case when v_case = 'limit_total' then c4 else c5 end, 'bk-artist',
+                                        base + interval '10 hours', null, 'Client', '0600000010', 'Idea', 'fr');
+    exception when others then get stacked diagnostics v_msg = message_text;
+    end;
+    if v_msg is distinct from 'glowbook_booking: ' || v_case then raise exception 'FAIL B12: expected %, got %', v_case, v_msg; end if;
+  end loop;
+
+  -- c6: two past appointments; the artist records outcomes (correctable), two no-shows block every Glowbook.
+  execute 'reset role';
+  insert into public.glowbook_bookings (artist_id, client_id, starts_at, timezone, design_kind, client_name, client_email, client_phone, comment)
+  values (artist, c6, date_trunc('hour', now()) - interval '2 days', 'Europe/Paris', 'custom', 'C6', 'bk-c6.test@example.invalid', '0600000006', 'x'),
+         (artist, c6, date_trunc('hour', now()) - interval '1 day',  'Europe/Paris', 'custom', 'C6', 'bk-c6.test@example.invalid', '0600000006', 'x'),
+         (artist, c6, date_trunc('hour', now()) - interval '61 days', 'Europe/Paris', 'custom', 'C6', 'bk-c6.test@example.invalid', '0600000006', 'x');
+  insert into public.glowbook_bookings (artist_id, client_id, starts_at, timezone, design_kind, client_erased, status)
+  values (artist, null, date_trunc('hour', now()) - interval '3 days', 'Europe/Paris', 'custom', true, 'booked');
+  -- Read as the owner (members have no grant on the table), recorded as the artist.
+  for v_row in select * from public.glowbook_bookings
+                where artist_id = artist and starts_at < now() and (client_id = c6 or client_erased) order by starts_at loop
+    v_state := null;
+    perform set_config('role', 'authenticated', true);
+    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
+    begin
+      perform public.glowbook_mark_booking(v_row.id, 'honoured');
+      perform public.glowbook_mark_booking(v_row.id, 'no_show');
+    exception when others then v_state := sqlstate;
+    end;
+    execute 'reset role';
+    if (v_row.starts_at < now() - interval '60 days' or v_row.client_erased) and v_state is distinct from '23514' then
+      raise exception 'FAIL B12: an outcome recorded on % (%)', case when v_row.client_erased then 'an erased client' else 'a 61-day-old slot' end, v_state;
+    elsif v_row.starts_at >= now() - interval '60 days' and not v_row.client_erased and v_state is not null then
+      raise exception 'FAIL B12: the artist could not record an outcome (%)', v_state;
+    end if;
+  end loop;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', c6, 'role', 'authenticated')::text, true);
+  if public.my_glowbook_bookings() ->> 'banned_until' is null then raise exception 'FAIL B12: 2 no-shows do not block'; end if;
+  execute 'reset role';
+  perform set_config('role', 'service_role', true);
+  v_msg := null;
+  begin
+    perform public.glowbook_book_slot(c6, 'bk-artist', base + interval '11 hours', null, 'C6', '0600000006', 'Idea', 'fr');
+  exception when others then get stacked diagnostics v_msg = message_text;
+  end;
+  if v_msg is distinct from 'glowbook_booking: banned' then raise exception 'FAIL B12: a client with 2 no-shows booked (%)', v_msg; end if;
+
+  -- B13 --------------------------------------------------------------------
+  -- Spring forward (Europe/Paris, 28 March 2027): 23 distinct hours, none twice.
+  execute 'reset role';
+  select count(*), count(distinct h.starts_at) into v_cnt, v_case
+    from private.glowbook_calendar_hours(artist, date '2027-03-28', date '2027-03-28') h;
+  if v_cnt <> 23 or v_case::int <> 23 then raise exception 'FAIL B13: the spring-forward day has % hours (% distinct)', v_cnt, v_case; end if;
 
   raise exception 'ALL GLOWBOOK BOOKING TESTS PASSED';
 end;

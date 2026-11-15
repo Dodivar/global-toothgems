@@ -5,6 +5,9 @@ import { supabaseUrl } from "./supabase/env";
 import { functionErrorCode, readFunctionFailure } from "./supabase/functionError";
 import {
   addDays,
+  CALENDAR_READ_SPAN,
+  DEFAULT_SETTINGS,
+  laterWindows,
   type ArtistCalendar,
   type BookingError,
   type BookingInfo,
@@ -179,9 +182,11 @@ export async function deleteClosure(id: string): Promise<ActionResult> {
 }
 
 /**
- * The artist's appointments around today: those to come (62 days) and the past
- * ones still waiting for an outcome (honoured / no-show can be recorded up to 60
- * days after the hour). Two reads, since one calendar read spans 62 days at most.
+ * The artist's appointments around today: all those to come and the past ones
+ * still waiting for an outcome (honoured / no-show can be recorded up to 60
+ * days after the hour). One calendar read spans 62 days at most: two reads,
+ * plus one per further 62 days only when something is booked beyond (the
+ * horizon goes up to 180 days; the calendar's `upcoming` list says how far).
  */
 export async function fetchArtistAppointments(today: string): Promise<{
   upcoming: ArtistCalendar["bookings"];
@@ -189,10 +194,14 @@ export async function fetchArtistAppointments(today: string): Promise<{
   pageStatus: ArtistCalendar["pageStatus"];
   closures: ArtistCalendar["closures"];
 } | null> {
-  const [past, coming] = await Promise.all([fetchArtistCalendar(addDays(today, -60), today), fetchArtistCalendar(today, addDays(today, 61))]);
+  const comingTo = addDays(today, CALENDAR_READ_SPAN);
+  const [past, coming] = await Promise.all([fetchArtistCalendar(addDays(today, -60), today), fetchArtistCalendar(today, comingTo)]);
   if (!past || !coming) return null;
+  const later = await Promise.all(
+    laterWindows(comingTo, coming.upcoming, coming.settings?.timezone ?? DEFAULT_SETTINGS.timezone).map((w) => fetchArtistCalendar(w.from, w.to)),
+  );
   const now = Date.now();
-  const all = new Map([...past.bookings, ...coming.bookings].map((b) => [b.id, b]));
+  const all = new Map([...past.bookings, ...coming.bookings, ...later.flatMap((c) => c?.bookings ?? [])].map((b) => [b.id, b]));
   const list = [...all.values()];
   return {
     pageStatus: coming.pageStatus,

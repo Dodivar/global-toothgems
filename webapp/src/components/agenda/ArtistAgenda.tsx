@@ -147,6 +147,18 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
     [week, today],
   );
 
+  // Opening or closing hours changes no appointment: only the week is read again
+  // (the appointment lists cost two to four 62-day reads).
+  const reloadWeek = useCallback(async () => {
+    if (!week) return;
+    try {
+      const weekly = await fetchArtistCalendar(week, addDays(week, 6));
+      if (weekly) setCalendar(weekly);
+    } catch {
+      setState("error");
+    }
+  }, [week]);
+
   useEffect(() => {
     void load(dirty);
     // Reload the week when it changes; the form keeps unsaved edits.
@@ -215,7 +227,7 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
       showToast(t("booking.artist.actionFailed"), t(`booking.artist.codes.${result.code}`, { defaultValue: t("booking.artist.codes.unavailable") }), "error");
       return;
     }
-    void load(true);
+    void reloadWeek();
   };
 
   const closeDay = async (day: string) => {
@@ -225,7 +237,7 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
     });
     if (open.length === 0) return;
     const result = await setCalendarHours(open.map((h) => zonedInstant(day, h, tz)), "blocked");
-    if (result.ok) void load(true);
+    if (result.ok) void reloadWeek();
     else showToast(t("booking.artist.actionFailed"), undefined, "error");
   };
 

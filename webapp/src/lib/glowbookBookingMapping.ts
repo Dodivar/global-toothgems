@@ -327,6 +327,26 @@ export function addDays(day: string, n: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** One calendar read spans at most this many days after its first (glowbook_artist_calendar refuses more than 62). */
+export const CALENDAR_READ_SPAN = 61;
+
+/**
+ * The further calendar reads ([from, to], local days) that reach every
+ * appointment to come booked after `readTo`: the horizon goes up to 180 days,
+ * one read covers 62. None in the usual case (nothing booked that far).
+ */
+export function laterWindows(readTo: string, upcoming: readonly { startsAt: string }[], timezone: string): { from: string; to: string }[] {
+  const last = upcoming.reduce<string | null>((max, b) => {
+    const day = localDay(b.startsAt, timezone);
+    return max === null || day > max ? day : max;
+  }, null);
+  const windows: { from: string; to: string }[] = [];
+  for (let from = addDays(readTo, 1); last !== null && from <= last; from = addDays(from, CALENDAR_READ_SPAN + 1)) {
+    windows.push({ from, to: addDays(from, CALENDAR_READ_SPAN) });
+  }
+  return windows;
+}
+
 /** ISO weekday (1 = Monday) of a local day key. */
 export function isoWeekday(day: string): number {
   const d = new Date(`${day}T12:00:00Z`).getUTCDay();

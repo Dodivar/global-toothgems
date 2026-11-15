@@ -13,6 +13,7 @@ import {
   groupSlotsByDay,
   hourState,
   localDay,
+  laterWindows,
   localHour,
   readArtistCalendar,
   readBookingError,
@@ -281,5 +282,28 @@ describe("closures (decision 147)", () => {
     expect(validateClosure({ ...ok, endsOn: "2027-11-17" }, today)).toBe("tooFar");
     expect(validateClosure({ ...ok, note: "x".repeat(81) }, today)).toBe("note");
     expect(validateClosure({ startsOn: today, endsOn: today, note: "  " }, today)).toBeNull();
+  });
+});
+
+describe("laterWindows (appointments beyond the first 62-day read)", () => {
+  const readTo = "2026-11-15";
+  it("asks for nothing when every appointment is inside the read", () => {
+    expect(laterWindows(readTo, [], "Europe/Paris")).toEqual([]);
+    expect(laterWindows(readTo, [{ startsAt: "2026-11-15T21:00:00Z" }], "Europe/Paris")).toEqual([]);
+  });
+
+  it("reads the local day after the read, in the artist's zone", () => {
+    // 23:30 UTC on the 15th is already the 16th in Paris.
+    expect(laterWindows(readTo, [{ startsAt: "2026-11-15T23:30:00Z" }], "Europe/Paris")).toEqual([{ from: "2026-11-16", to: "2027-01-16" }]);
+  });
+
+  it("covers a 180-day horizon in windows the database accepts (62 days at most)", () => {
+    const windows = laterWindows(readTo, [{ startsAt: "2026-12-01T10:00:00Z" }, { startsAt: "2027-04-20T10:00:00Z" }], "Europe/Paris");
+    expect(windows).toEqual([
+      { from: "2026-11-16", to: "2027-01-16" },
+      { from: "2027-01-17", to: "2027-03-19" },
+      { from: "2027-03-20", to: "2027-05-20" },
+    ]);
+    for (const w of windows) expect((Date.parse(w.to) - Date.parse(w.from)) / 86_400_000).toBeLessThanOrEqual(62);
   });
 });
