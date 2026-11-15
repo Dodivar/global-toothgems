@@ -2,7 +2,7 @@ import { assert, assertEquals, assertStringIncludes, assertThrows } from "jsr:@s
 import { paragraph } from "./components.ts";
 import { EmailRenderError, type LayoutOptions, renderEmail, type TemplateRow } from "./render.ts";
 
-const layout: LayoutOptions = { brandName: "Global Tooth Gems", siteUrl: "https://globaltoothgems.com" };
+const layout: LayoutOptions = { brandName: "Global Toothgems", siteUrl: "https://globaltoothgems.com" };
 
 const template: TemplateRow = {
   locale: "fr",
@@ -82,9 +82,9 @@ Deno.test("a placeholder the template does not declare fails", () => {
 
 Deno.test("the layout carries the brand and the site, and the text twin signs off", () => {
   const out = renderEmail(template, values, layout);
-  assertStringIncludes(out.html, "Global Tooth Gems");
+  assertStringIncludes(out.html, "Global Toothgems");
   assertStringIncludes(out.html, "globaltoothgems.com");
-  assert(out.text.endsWith("— Global Tooth Gems\nhttps://globaltoothgems.com\n"));
+  assert(out.text.endsWith("— Global Toothgems\nhttps://globaltoothgems.com\n"));
 });
 
 Deno.test("the subject is the default title, and the caller can replace or drop it", () => {

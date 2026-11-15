@@ -212,6 +212,7 @@
   --radius-pill: 999px;
   --radius-card: var(--radius-lg);
   --radius-control: var(--radius-pill);
+  --radius-textarea: var(--radius-md);
   --radius-media: var(--radius-lg);
 
   /* Elevation */
@@ -305,6 +306,14 @@
   :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
   button { font-family: inherit; }
+}
+
+/* A multi-line field never takes the pill radius of the single-line controls:
+   at 999px a tall textarea turns into a rounded capsule that clips its text and
+   its resize handle. Unlayered on purpose, so it wins over every `rounded-*`
+   utility and component class (`gt-field`, `gt-admin-field`, inline classes). */
+textarea {
+  border-radius: var(--radius-textarea);
 }
 
 @layer components {
@@ -2473,3 +2482,34 @@
 .gt-focus-chrome { display: none; }
 html[data-gt-focus] .gt-focus-chrome { display: block; }
 html[data-gt-focus] .gt-storefront-chrome { display: none; }
+
+/* Artist directory map (components/glowbook/DirectoryMapCanvas.tsx): MapLibre's
+   own stylesheet loads with the map, unlayered, so these sit outside the
+   layers and are one class more specific than its rules. */
+.gt-map-popup .maplibregl-popup-content {
+  padding: 0;
+  border-radius: 20px;
+  box-shadow: 0 14px 36px rgba(17, 17, 17, .18);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+.gt-map-popup .maplibregl-popup-close-button {
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .92);
+  color: var(--gt-ink-900);
+  font-size: 18px;
+  line-height: 1;
+}
+.gt-map-popup .maplibregl-popup-close-button:hover { background: var(--gt-ink-100); }
+.gt-map-popup .maplibregl-popup-close-button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.gt-map-marker:hover .gt-map-marker-face,
+.gt-map-marker:focus-visible .gt-map-marker-face { transform: scale(1.08); }
+.gt-map-marker:focus-visible { outline: none; }
+.gt-map-marker:focus-visible .gt-map-marker-face { box-shadow: 0 0 0 3px var(--focus-ring); }
+@media (prefers-reduced-motion: reduce) {
+  .gt-map-marker-face { transition: none !important; }
+}

@@ -3,6 +3,7 @@ import {
   addDays,
   clientCancellation,
   databaseCode,
+  dayHeader,
   defaultWeek,
   formatHour,
   groupSlotsByDay,
@@ -14,6 +15,7 @@ import {
   readMyBookings,
   readSlots,
   rulesToWeek,
+  slotWeek,
   splitBookings,
   toggleTarget,
   validateDraft,
@@ -161,5 +163,30 @@ describe("hours closed by the other calendar", () => {
     expect(hourState(h, false, false, true)).toBe("busy");
     expect(hourState(h, false, false, false)).toBe("blocked");
     expect(toggleTarget("busy")).toBe("open");
+  });
+});
+
+describe("slotWeek", () => {
+  it("lays one week of free slots out by the artist's local day and hour", () => {
+    const week = slotWeek(
+      ["2026-11-20T09:00:00Z", "2026-11-20T13:00:00Z", "2026-11-17T16:00:00Z", "2026-11-23T09:00:00Z", "2026-11-22T23:30:00Z"],
+      "Europe/Paris",
+      "2026-11-16",
+    );
+    expect(week.days).toEqual(["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21", "2026-11-22"]);
+    // 10:00 to 17:00 Paris time; the Monday after (23rd, 00:30 Paris) is another week.
+    expect(week.hours).toEqual([10, 11, 12, 13, 14, 15, 16, 17]);
+    expect(week.free.get("2026-11-20|14")).toBe("2026-11-20T13:00:00Z");
+    expect(week.free.has("2026-11-20|11")).toBe(false);
+    expect(week.free.size).toBe(3);
+  });
+
+  it("has no rows for a week without a free slot", () => {
+    expect(slotWeek([], "Europe/Paris", "2026-11-16").hours).toEqual([]);
+  });
+
+  it("splits a day column's header", () => {
+    expect(dayHeader("2026-11-20", "fr")).toEqual({ weekday: "ven.", date: "20" });
+    expect(dayHeader("2026-11-20", "en")).toEqual({ weekday: "Fri", date: "20" });
   });
 });

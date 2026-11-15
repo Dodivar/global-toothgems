@@ -6,7 +6,6 @@ import { StudioStoreError } from "./repository";
 import { storeError } from "./supabaseRepository";
 import {
   normalizeHandle,
-  normalizeInstagram,
   toGlowbook,
   toGlowbookItem,
   type Glowbook,
@@ -37,6 +36,7 @@ import { normalizeSectionName, toCertifiedCourses, toGlowbookSection, type Certi
  *   reorderSections(ids)  → `studio_reorder_showcase_sections()`
  *   fileItem(item, sec)   → `studio_set_showcase_item_section()`  one section or none
  *   setShowCertification  → `studio_set_showcase_certification()` show or hide the badge
+ *   setInDirectory        → `studio_set_showcase_directory()`   join or leave the artist directory (decision 145)
  *   certification()       → `studio_my_certification()`      the courses behind the badge
  *   downloadMedia(path)   → one of the member's own pictures, as a file (for the printable poster)
  *   spotlightState()      → `studio_spotlight_video_state()`   the spotlight video and whether it is current (decision 103)
@@ -61,6 +61,7 @@ export interface GlowbookRepository {
   reorderSections(ids: string[]): Promise<void>;
   fileItem(itemId: string, sectionId: string | null): Promise<GlowbookItem>;
   setShowCertification(visible: boolean): Promise<Glowbook>;
+  setInDirectory(listed: boolean): Promise<Glowbook>;
   certification(): Promise<CertifiedCourse[]>;
   downloadMedia(path: string): Promise<Blob>;
   spotlightState(): Promise<SpotlightVideoState | null>;
@@ -129,7 +130,8 @@ export function createGlowbookRepository(client: TypedSupabaseClient, userId: st
         p_handle: normalizeHandle(details.handle),
         p_display_name: details.displayName.trim(),
         p_bio: details.bio.trim(),
-        p_instagram: normalizeInstagram(details.instagram),
+        // No Instagram account any more (decision 146): the database refuses one.
+        p_instagram: "",
       });
       if (error) throw glowbookError(error);
       if (!data) throw new StudioStoreError("storage");
@@ -225,6 +227,13 @@ export function createGlowbookRepository(client: TypedSupabaseClient, userId: st
 
     async setShowCertification(visible) {
       const { data, error } = await client.rpc("studio_set_showcase_certification", { p_visible: visible });
+      if (error) throw storeError(error);
+      if (!data) throw new StudioStoreError("storage");
+      return toGlowbook(data);
+    },
+
+    async setInDirectory(listed) {
+      const { data, error } = await client.rpc("studio_set_showcase_directory", { p_listed: listed });
       if (error) throw storeError(error);
       if (!data) throw new StudioStoreError("storage");
       return toGlowbook(data);
