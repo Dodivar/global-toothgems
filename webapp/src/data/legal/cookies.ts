@@ -197,8 +197,8 @@ export const COOKIE_POLICY: LegalDocument = {
         {
           kind: "p",
           text: l(
-            "Cartes Glowbook : la carte d’une page d’artiste se charge lorsque vous faites défiler jusqu’à elle. Ses fonds de carte viennent d’OpenFreeMap (données © OpenStreetMap), qui reçoit alors votre adresse IP et la zone affichée pour vous les envoyer. Aucun cookie n’est déposé par ce service ; avant ce défilement, rien n’est chargé.",
-            "Glowbook maps: the map on an artist’s page loads when you scroll to it. Its map tiles come from OpenFreeMap (data © OpenStreetMap), which then receives your IP address and the area shown in order to send them to you. This service sets no cookie; before that scroll, nothing is loaded.",
+            "Cartes Glowbook : la carte d’une page d’artiste se charge lorsque vous faites défiler jusqu’à elle. Ses fonds de carte viennent d’OpenFreeMap (données © OpenStreetMap), qui reçoit alors votre adresse IP et la zone affichée pour vous les envoyer. Aucun cookie n’est déposé par ce service ; avant ce défilement, rien n’est chargé. La carte de l’annuaire des artistes fonctionne de la même façon.",
+            "Glowbook maps: the map on an artist’s page loads when you scroll to it. Its map tiles come from OpenFreeMap (data © OpenStreetMap), which then receives your IP address and the area shown in order to send them to you. This service sets no cookie; before that scroll, nothing is loaded. The artist directory’s map works the same way.",
           ),
         },
       ],

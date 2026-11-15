@@ -468,3 +468,35 @@ export function visibleHours(rules: readonly BookingRule[], hours: readonly Cale
   }
   return Array.from({ length: Math.max(last - first, 1) }, (_, i) => first + i);
 }
+
+/** One week of free slots laid out like the artist's week view: 7 days × the hours that hold a slot. */
+export interface SlotWeek {
+  days: string[];
+  hours: number[];
+  /** `${day}|${hour}` → the slot's instant, for the free hours only. */
+  free: Map<string, string>;
+}
+
+export function slotWeek(slots: readonly string[], timezone: string, monday: string): SlotWeek {
+  const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  const free = new Map<string, string>();
+  let first = 24;
+  let last = -1;
+  for (const slot of slots) {
+    const day = localDay(slot, timezone);
+    if (day < days[0] || day > days[6]) continue;
+    const hour = localHour(slot, timezone);
+    free.set(`${day}|${hour}`, slot);
+    first = Math.min(first, hour);
+    last = Math.max(last, hour);
+  }
+  const hours = last < 0 ? [] : Array.from({ length: last - first + 1 }, (_, i) => first + i);
+  return { days, hours, free };
+}
+
+/** "ven." and "20" for a day column's header. */
+export function dayHeader(day: string, locale: string): { weekday: string; date: string } {
+  const date = new Date(`${day}T12:00:00Z`);
+  const weekday = new Intl.DateTimeFormat(intlLocale(locale), { timeZone: "UTC", weekday: "short" }).format(date);
+  return { weekday, date: String(date.getUTCDate()) };
+}

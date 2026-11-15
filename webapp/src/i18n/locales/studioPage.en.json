@@ -113,7 +113,7 @@
     "items": {
       "essential": "To imagine your first looks and share them.",
       "artist": "To prepare every placement with your clients, under your own signature.",
-      "atelier": "To show your work to the world and let your clients try it on."
+      "atelier": "To show your work to the world, be found by new clients and take their bookings online."
     },
     "note": "Cancel at any time from your account: the subscription ends at the close of the paid period.",
     "perYear": "/ year",
@@ -140,7 +140,10 @@
       "posts": "Social posts: HD image and 360° video",
       "ownLogo": "Posts signed with your logo, or without a watermark",
       "transparentExport": "PNG snapshots without a background, ready to cut out",
-      "glowbook": "Your Glowbook: the public showcase of your creations, customised, with a QR code and a map",
+      "glowbook": "Your Glowbook: your public artist page, customised, with a QR code, a map and a poster",
+      "glowbookBooking": "Online booking from your Glowbook: clients book a slot, with confirmation and reminder e-mails",
+      "glowbookCalendar": "Your appointment calendar, synced with Google Calendar, Apple Calendar or Outlook",
+      "artistDirectory": "A place in the “Find an artist” directory, so clients near you can discover you",
       "tryOn": "AI try-on: your clients see your creations on their own smile",
       "collections": "Folders to file your creations",
       "postLayouts": "3 premium layouts for your posts: gallery, spotlight and band"
@@ -170,7 +173,11 @@
       },
       {
         "question": "Which subscription should I choose?",
-        "answer": "Essential to imagine your first looks: 15 creations and 3 Gem Groups, the whole library and the Global Toothgems templates. Artist to work with your clients: 150 creations, 30 Gem Groups, the front view, the placement sheet and sharing by link, folders to file your creations and social posts signed with your logo. Atelier to go further: unlimited creations and Gem Groups, your public Glowbook, the AI try-on, which lets your clients see your creations on their own smile, and layouts for your posts."
+        "answer": "Essential to imagine your first looks: 15 creations and 3 Gem Groups, the whole library and the Global Toothgems templates. Artist to work with your clients: 150 creations, 30 Gem Groups, the front view, the placement sheet and sharing by link, folders to file your creations and social posts signed with your logo. Atelier to grow your business: unlimited creations and Gem Groups, your public Glowbook with online booking and a calendar synced with yours, a place in the “Find an artist” directory, the AI try-on, which lets your clients see your creations on their own smile, and layouts for your posts."
+      },
+      {
+        "question": "What is the Glowbook, included in the Atelier plan?",
+        "answer": "Your public artist page, to put in your Instagram bio: your creations in 3D, your salon or your area on a map, and a button to book an appointment. You set your hours and clients book a one-hour slot, with confirmation and reminder e-mails; your appointments are added to your Google Calendar, Apple Calendar or Outlook, and the hours already taken in that calendar close by themselves. If you wish, your page also appears in the “Find an artist” directory, where clients look for an artist near them. Your page and your creations are approved by our team before they go public."
       },
       {
         "question": "Can I change my subscription later?",

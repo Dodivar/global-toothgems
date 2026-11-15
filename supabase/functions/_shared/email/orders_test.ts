@@ -56,8 +56,8 @@ function setup() {
         return Promise.resolve(Response.json({ id: "em_1" }));
       },
     },
-    from: "Global Tooth Gems <no-reply@globaltoothgems.com>",
-    layout: { brandName: "Global Tooth Gems", siteUrl: "https://globaltoothgems.com" },
+    from: "Global Toothgems <no-reply@globaltoothgems.com>",
+    layout: { brandName: "Global Toothgems", siteUrl: "https://globaltoothgems.com" },
   };
   return { deps, seen };
 }

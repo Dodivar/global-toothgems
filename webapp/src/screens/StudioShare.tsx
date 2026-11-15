@@ -6,7 +6,7 @@ import { ArrowLeft, Box, Eye, Gem, Link2, LoaderCircle, Minus, Orbit, PencilRule
 import { Button } from "../components/ui/Button";
 import { Dialog } from "../components/ui/Dialog";
 import { useDocumentTitle } from "../components/legal/hooks";
-import { ShoppingList } from "../components/studio/editor/ShoppingList";
+import { FoldedShoppingList } from "../components/studio/editor/ShoppingList";
 import { SignInPrompt } from "../components/studio/workspace/SignInPrompt";
 import { TryOnAllowance } from "../components/studio/tryOn/TryOnAllowance";
 import { StageFullscreenButton } from "../components/studio/StageFullscreenButton";
@@ -288,7 +288,7 @@ function SharedDesignView({
             </h2>
             <p className="m-0 text-[12px] leading-relaxed text-[var(--text-muted)]">{t("studio.workspace.share.view.shoppingBody")}</p>
           </div>
-          <ShoppingList jewels={design.scene.pieces} />
+          <FoldedShoppingList jewels={design.scene.pieces} />
         </section>
 
         {/* Copying into one's own Studio is for designs sent to the visitor, not an artist's published work. */}

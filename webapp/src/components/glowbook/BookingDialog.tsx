@@ -1,26 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { CalendarCheck, CalendarDays, Check, ChevronRight, LogIn, Sparkles, UserPlus } from "lucide-react";
+import { CalendarCheck, Check, ChevronLeft, ChevronRight, Gem, LogIn, UserPlus } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { useAuth } from "../../lib/auth";
 import { isCaptchaConfigured, useTurnstile } from "../../lib/captcha/turnstile";
 import { bookSlot, fetchSlots } from "../../lib/glowbookBooking";
+import { bookingReturnPath } from "../../lib/glowbookBookingReturn";
 import {
   addDays,
   type BookingError,
   COMMENT_MAX,
+  dayHeader,
   differentZone,
   formatDay,
-  formatHour,
   formatWhen,
-  groupSlotsByDay,
+  localDay,
   NAME_MAX,
-  type SlotList,
+  slotWeek,
   validateDraft,
+  weekStart,
   zoneCity,
 } from "../../lib/glowbookBookingMapping";
 import { isLocale } from "../../lib/localeRoutes";
@@ -28,11 +30,15 @@ import { Link, useNavigate } from "../../lib/navigation";
 
 /**
  * Booking an hour on an artist's Glowbook (decision 144). A signed-in member
- * picks a design (one of the page's creations, or a custom one described in
- * their own words), a free hour in the artist's time zone, and leaves a phone
- * number; the hour is locked at once and both sides get an e-mail. A visitor is
- * asked to sign in first. The database decides what is free and refuses what
- * breaks a rule; this dialog only explains its answers.
+ * picks a free hour in a week view of the artist's calendar (their time zone)
+ * and leaves a phone number; the hour is locked at once and both sides get an
+ * e-mail. Opened from a creation, the booking is for that creation (shown, not
+ * changeable); opened from the page, it is a custom design the member
+ * describes in the message. A visitor sees the same free hours (they are
+ * public) and is asked to sign in only to confirm; the address carries their
+ * hour through the sign-in screen, so the dialog opens again on it
+ * (`glowbookBookingReturn`). The database decides what is free and refuses
+ * what breaks a rule; this dialog only explains its answers.
  */
 
 export interface BookableItem {
@@ -45,37 +51,44 @@ interface BookingDialogProps {
   onClose: () => void;
   handle: string;
   artistName: string;
-  items: readonly BookableItem[];
-  /** Opened from a creation's "Book this design": it comes chosen. */
-  initialItemId?: string | null;
+  /** Opened from a creation's "Book this design": the booking is for it. */
+  creation?: BookableItem | null;
+  /** Back from signing in: the hour chosen before, selected again if it is still free. */
+  initialSlot?: string | null;
 }
 
 const field =
   "w-full rounded-[var(--radius-control)] border border-[var(--border-default)] bg-[var(--surface-card)] px-3.5 py-2.5 text-[length:var(--text-body-sm)] text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-subtle)] focus:border-[var(--focus-ring)] aria-[invalid=true]:border-[var(--status-error-fg)]";
 const label = "text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]";
-const chip = (on: boolean) =>
-  clsx(
-    "inline-flex min-h-10 items-center justify-center rounded-[var(--radius-pill)] border px-3.5 text-[13px] font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-    on
-      ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--surface-card)]"
-      : "border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-primary)] hover:border-[var(--text-primary)]",
-  );
+
+const cellBase = "grid h-8 w-full place-items-center rounded-[6px] border";
+const CELL = {
+  free: "cursor-pointer border-[var(--gt-blue-400)] bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)] hover:border-[var(--gt-blue-700)] hover:bg-[var(--gt-blue-200)]",
+  chosen: "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-white",
+  unavailable: "border-transparent bg-[var(--surface-sunken)] opacity-60",
+} as const;
+const navButton =
+  "grid h-9 w-9 place-items-center rounded-[var(--radius-pill)] border border-[var(--border-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] disabled:opacity-40";
+const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
 type Phase = { kind: "form" } | { kind: "sending" } | { kind: "done"; startsAt: string; timezone: string };
 
-export function BookingDialog({ open, onClose, handle, artistName, items, initialItemId = null }: BookingDialogProps) {
+export function BookingDialog({ open, onClose, handle, artistName, creation = null, initialSlot = null }: BookingDialogProps) {
   const { t, i18n } = useTranslation();
   const lang = isLocale(i18n.language) ? i18n.language : "fr";
   const { signedIn, profile } = useAuth();
   const navigate = useNavigate();
-  const ids = { name: useId(), phone: useId(), comment: useId(), problem: useId(), design: useId() };
+  const ids = { name: useId(), phone: useId(), comment: useId(), problem: useId(), design: useId(), when: useId() };
 
-  const [slots, setSlots] = useState<SlotList | null>(null);
+  // Free slots gathered week by week; `today` and the horizon come from the first answer.
+  const [calendar, setCalendar] = useState<{ timezone: string; today: string; lastDay: string } | null>(null);
+  const [free, setFree] = useState<string[]>([]);
+  const [loadedWeeks, setLoadedWeeks] = useState<ReadonlySet<string>>(new Set());
+  const [week, setWeek] = useState<string | null>(null);
+  const [weekLoading, setWeekLoading] = useState(false);
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error" | "closed">("idle");
-  const [day, setDay] = useState<string | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
-  const [itemId, setItemId] = useState<string | null>(initialItemId);
-  const [custom, setCustom] = useState(initialItemId === null && items.length === 0);
+  const wantedSlot = useRef<string | null>(initialSlot);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [comment, setComment] = useState("");
@@ -85,57 +98,96 @@ export function BookingDialog({ open, onClose, handle, artistName, items, initia
   const captchaNeeded = isCaptchaConfigured;
   const { attach: attachCaptcha, token: captchaToken, reset: resetCaptcha } = useTurnstile(open && signedIn && captchaNeeded, lang);
 
-  // A fresh form each time the dialog opens; the profile fills the name and phone.
+  // A fresh form each time the dialog opens (not when the profile reloads
+  // while it is open: that would wipe a choice).
   useEffect(() => {
     if (!open) return;
-    setItemId(initialItemId);
-    setCustom(initialItemId === null && items.length === 0);
     setSlot(null);
+    wantedSlot.current = initialSlot;
     setError(null);
     setShowProblem(false);
     setPhase({ kind: "form" });
     setComment("");
-    if (profile) {
-      setName(`${profile.firstName} ${profile.lastName}`.trim());
-      setPhone(profile.phone ?? "");
-    }
-  }, [open, initialItemId, items.length, profile]);
+  }, [open, initialSlot]);
 
-  const load = useCallback(
-    async (from?: string) => {
-      setLoadState("loading");
-      try {
-        const next = await fetchSlots(handle, from, from ? addDays(from, 13) : undefined);
-        if (!next) {
-          setLoadState("closed");
-          return;
-        }
-        setSlots((prev) => (prev && from ? { ...next, slots: [...new Set([...prev.slots, ...next.slots])], from: prev.from } : next));
-        setLoadState("idle");
-      } catch {
-        setLoadState("error");
-      }
-    },
-    [handle],
-  );
-
+  // The profile fills the name and phone, once it is there.
   useEffect(() => {
-    if (open && signedIn) void load();
-  }, [open, signedIn, load]);
+    if (!open || !profile) return;
+    setName(`${profile.firstName} ${profile.lastName}`.trim());
+    setPhone(profile.phone ?? "");
+  }, [open, profile]);
 
-  const days = useMemo(() => (slots ? groupSlotsByDay(slots.slots, slots.timezone) : []), [slots]);
-  const activeDay = day && days.some((d) => d.day === day) ? day : (days[0]?.day ?? null);
-  const daySlots = days.find((d) => d.day === activeDay)?.slots ?? [];
-  const timezone = slots?.timezone ?? "Europe/Paris";
+  // First answer: the next two weeks (this week and the next are complete),
+  // opened on the week of the first free hour.
+  const load = useCallback(async () => {
+    setLoadState("loading");
+    try {
+      const next = await fetchSlots(handle);
+      if (!next || !next.from) {
+        setLoadState("closed");
+        return;
+      }
+      const thisWeek = weekStart(next.from);
+      // Back from signing in: the hour chosen before, if it is still free.
+      const wanted = wantedSlot.current ? Date.parse(wantedSlot.current) : NaN;
+      wantedSlot.current = null;
+      const kept = next.slots.find((s) => Date.parse(s) === wanted) ?? null;
+      const first = kept ?? [...next.slots].sort()[0];
+      setCalendar({ timezone: next.timezone, today: next.from, lastDay: addDays(next.from, next.horizonDays) });
+      setFree(next.slots);
+      setLoadedWeeks(new Set([thisWeek, addDays(thisWeek, 7)]));
+      setWeek(first ? weekStart(localDay(first, next.timezone)) : thisWeek);
+      if (kept) setSlot(kept);
+      setLoadState("idle");
+    } catch {
+      setLoadState("error");
+    }
+  }, [handle]);
+
+  // Free hours are public: a visitor sees them before being asked to sign in.
+  useEffect(() => {
+    if (open) void load();
+  }, [open, load]);
+
+  // Later weeks are asked for when the member reaches them.
+  useEffect(() => {
+    if (!calendar || !week || loadedWeeks.has(week)) return;
+    let live = true;
+    setWeekLoading(true);
+    fetchSlots(handle, week < calendar.today ? calendar.today : week, addDays(week, 6))
+      .then((next) => {
+        if (!live) return;
+        setFree((prev) => [...new Set([...prev, ...(next?.slots ?? [])])]);
+        setLoadedWeeks((prev) => new Set([...prev, week]));
+      })
+      .catch(() => live && setLoadState("error"))
+      .finally(() => live && setWeekLoading(false));
+    return () => {
+      live = false;
+    };
+  }, [calendar, week, loadedWeeks, handle]);
+
+  const retry = () => {
+    setLoadedWeeks(new Set());
+    void load();
+  };
+
+  const timezone = calendar?.timezone ?? "Europe/Paris";
+  const grid = useMemo(() => (week ? slotWeek(free, timezone, week) : null), [free, timezone, week]);
   const [viewerZone, setViewerZone] = useState<string | undefined>(undefined);
   useEffect(() => setViewerZone(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
-  const canLoadMore = slots ? slots.to < addDays(slots.from, slots.horizonDays - 1) && slots.to !== "" : false;
+  const canGoBack = !!calendar && !!week && week > weekStart(calendar.today);
+  const canGoOn = !!calendar && !!week && addDays(week, 7) <= calendar.lastDay;
 
-  const draft = { slot, itemId, custom, name, phone, comment };
+  const custom = creation === null;
+  const draft = { slot, itemId: creation?.id ?? null, custom, name, phone, comment };
   const problem = validateDraft(draft);
 
   const goSignIn = (path: "/connexion" | "/inscription") => {
-    const from = typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/";
+    const from =
+      typeof window !== "undefined"
+        ? bookingReturnPath(window.location.pathname, window.location.search, { itemId: creation?.id ?? null, slot })
+        : "/";
     onClose();
     navigate(path, { state: { from, reason: "booking" } });
   };
@@ -147,7 +199,7 @@ export function BookingDialog({ open, onClose, handle, artistName, items, initia
     setPhase({ kind: "sending" });
     setError(null);
     const captcha = captchaNeeded ? await captchaToken() : null;
-    const answer = await bookSlot({ handle, startsAt: slot, itemId: custom ? null : itemId, name, phone, comment, locale: lang, captcha });
+    const answer = await bookSlot({ handle, startsAt: slot, itemId: creation?.id ?? null, name, phone, comment, locale: lang, captcha });
     resetCaptcha();
     if (answer.kind === "booked") {
       setPhase({ kind: "done", startsAt: answer.startsAt, timezone: answer.timezone });
@@ -157,36 +209,11 @@ export function BookingDialog({ open, onClose, handle, artistName, items, initia
     setError(answer.error);
     if (answer.error === "slot_taken" || answer.error === "slot_unavailable") {
       setSlot(null);
-      void load();
+      retry();
     }
   };
 
   const title = t("booking.dialog.title", { name: artistName });
-
-  if (!signedIn) {
-    return (
-      <Dialog
-        open={open}
-        onClose={onClose}
-        title={title}
-        description={t("booking.gate.body", { name: artistName })}
-        icon={<CalendarCheck size={18} />}
-        closeLabel={t("booking.dialog.close")}
-        footer={
-          <>
-            <Button variant="primary" iconLeft={LogIn} onClick={() => goSignIn("/connexion")}>
-              {t("booking.gate.signIn")}
-            </Button>
-            <Button variant="outline" iconLeft={UserPlus} onClick={() => goSignIn("/inscription")}>
-              {t("booking.gate.register")}
-            </Button>
-          </>
-        }
-      >
-        <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("booking.gate.why")}</p>
-      </Dialog>
-    );
-  }
 
   if (phase.kind === "done") {
     return (
@@ -231,80 +258,162 @@ export function BookingDialog({ open, onClose, handle, artistName, items, initia
       icon={<CalendarCheck size={18} />}
       closeLabel={t("booking.dialog.close")}
       footer={
-        <>
-          <Button variant="primary" type="submit" form={`${ids.problem}-form`} disabled={sending || loadState === "closed"} iconLeft={CalendarCheck}>
-            {sending ? t("booking.dialog.sending") : t("booking.dialog.confirm")}
-          </Button>
-          <Button variant="ghost" onClick={onClose}>
-            {t("booking.dialog.cancel")}
-          </Button>
-        </>
+        signedIn ? (
+          <>
+            <Button variant="primary" type="submit" form={`${ids.problem}-form`} disabled={sending || loadState === "closed"} iconLeft={CalendarCheck}>
+              {sending ? t("booking.dialog.sending") : t("booking.dialog.confirm")}
+            </Button>
+            <Button variant="ghost" onClick={onClose}>
+              {t("booking.dialog.cancel")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="primary" iconLeft={LogIn} disabled={loadState === "closed"} onClick={() => goSignIn("/connexion")}>
+              {t("booking.gate.signIn")}
+            </Button>
+            <Button variant="outline" iconLeft={UserPlus} disabled={loadState === "closed"} onClick={() => goSignIn("/inscription")}>
+              {t("booking.gate.register")}
+            </Button>
+          </>
+        )
       }
     >
       <form id={`${ids.problem}-form`} onSubmit={submit} noValidate className="grid gap-5">
-        {/* What the client wants */}
-        <fieldset className="m-0 grid gap-2 border-0 p-0">
-          <legend className={clsx(label, "mb-2")}>{t("booking.design.title")}</legend>
-          <div role="radiogroup" aria-describedby={ids.design} className="flex flex-wrap gap-2">
-            {items.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="radio"
-                aria-checked={!custom && itemId === item.id}
-                onClick={() => { setCustom(false); setItemId(item.id); }}
-                className={chip(!custom && itemId === item.id)}
-              >
-                {item.name}
-              </button>
-            ))}
-            <button type="button" role="radio" aria-checked={custom} onClick={() => { setCustom(true); setItemId(null); }} className={chip(custom)}>
-              <Sparkles size={14} aria-hidden="true" className="mr-1.5" />
-              {t("booking.design.custom")}
-            </button>
-          </div>
-          <p id={ids.design} className="m-0 text-[12.5px] text-[var(--text-muted)]">
-            {custom ? t("booking.design.customHint") : t("booking.design.hint")}
-          </p>
-        </fieldset>
+        {/* The creation, when the booking started from one: shown, not changeable */}
+        {creation && (
+          <section aria-labelledby={ids.design} className="grid gap-2">
+            <h3 id={ids.design} className={clsx(label, "m-0")}>{t("booking.design.title")}</h3>
+            <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-3.5 py-3">
+              <span aria-hidden="true" className="grid h-9 w-9 flex-none place-items-center rounded-[var(--radius-pill)] bg-[var(--surface-brand-wash)] text-[var(--gt-blue-700)]">
+                <Gem size={16} />
+              </span>
+              <span className="grid min-w-0 gap-0.5">
+                <span className="truncate text-[14px] font-bold text-[var(--text-primary)]">{creation.name}</span>
+                <span className="text-[12.5px] text-[var(--text-muted)]">{t("booking.design.chosenHint", { name: artistName })}</span>
+              </span>
+            </div>
+          </section>
+        )}
 
-        {/* When */}
-        <fieldset className="m-0 grid gap-2 border-0 p-0">
+        {/* When: the artist's week, laid out like their own calendar */}
+        <fieldset className="m-0 grid min-w-0 gap-3 border-0 p-0">
           <legend className={clsx(label, "mb-2")}>{t("booking.when.title")}</legend>
-          {loadState === "loading" && !slots && <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("booking.when.loading")}</p>}
+          {loadState === "loading" && !calendar && <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("booking.when.loading")}</p>}
           {loadState === "error" && (
             <p role="alert" className="m-0 text-[length:var(--text-body-sm)] text-[var(--status-error-fg)]">
               {t("booking.when.error")}{" "}
-              <button type="button" className="font-bold underline" onClick={() => void load()}>{t("booking.when.retry")}</button>
+              <button type="button" className="font-bold underline" onClick={retry}>{t("booking.when.retry")}</button>
             </p>
           )}
           {loadState === "closed" && <p role="alert" className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("booking.when.closed")}</p>}
-          {slots && days.length === 0 && loadState !== "loading" && (
-            <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("booking.when.none")}</p>
-          )}
-          {days.length > 0 && (
+          {calendar && week && grid && loadState !== "closed" && (
             <>
-              <div role="group" aria-label={t("booking.when.days")} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-                {days.map((d) => (
-                  <button key={d.day} type="button" aria-pressed={d.day === activeDay} onClick={() => { setDay(d.day); setSlot(null); }} className={clsx(chip(d.day === activeDay), "flex-none")}>
-                    <CalendarDays size={14} aria-hidden="true" className="mr-1.5" />
-                    {formatDay(d.day, lang, "short")}
-                  </button>
+              <div className="flex items-center justify-between gap-2">
+                <button type="button" aria-label={t("booking.when.prevWeek")} disabled={!canGoBack} onClick={() => setWeek(addDays(week, -7))} className={navButton}>
+                  <ChevronLeft size={16} aria-hidden="true" />
+                </button>
+                <span id={ids.when} aria-live="polite" className="text-center text-[13px] font-semibold text-[var(--text-primary)]">
+                  {formatDay(week, lang, "short")} – {formatDay(addDays(week, 6), lang, "short")}
+                </span>
+                <button type="button" aria-label={t("booking.when.nextWeek")} disabled={!canGoOn} onClick={() => setWeek(addDays(week, 7))} className={navButton}>
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
+              </div>
+
+              {weekLoading && grid.hours.length === 0 ? (
+                <div role="status" className="gt-skeleton h-48 rounded-[var(--radius-md)]">
+                  <span className="sr-only">{t("booking.when.weekLoading")}</span>
+                </div>
+              ) : grid.hours.length === 0 ? (
+                <p className="m-0 rounded-[var(--radius-md)] border border-dashed border-[var(--border-default)] px-4 py-6 text-center text-[length:var(--text-body-sm)] text-[var(--text-muted)]">
+                  {t("booking.when.weekEmpty")}
+                </p>
+              ) : (
+                <div className="-mx-1 overflow-x-auto px-1">
+                  <table aria-describedby={ids.when} className="w-full min-w-[300px] table-fixed border-separate border-spacing-[3px] text-[11px] sm:border-spacing-1 sm:text-[11.5px]">
+                    <caption className="sr-only">{t("booking.when.title")}</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col" className="w-9 sm:w-11" />
+                        {grid.days.map((d) => {
+                          const head = dayHeader(d, lang);
+                          return (
+                            <th key={d} scope="col" abbr={formatDay(d, lang)} className="pb-1 text-center font-semibold text-[var(--text-muted)]">
+                              <span className="block text-[10.5px] uppercase tracking-[var(--tracking-wide)]">{head.weekday}</span>
+                              <span
+                                className={clsx(
+                                  "mx-auto mt-0.5 grid h-6 w-6 place-items-center rounded-[var(--radius-pill)] text-[12.5px] font-bold",
+                                  d === calendar.today ? "bg-[var(--gt-ink-900)] text-white" : "text-[var(--text-primary)]",
+                                )}
+                              >
+                                {head.date}
+                              </span>
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {grid.hours.map((hour) => (
+                        <tr key={hour}>
+                          <th scope="row" className="pr-1 text-right font-semibold tabular-nums text-[var(--text-subtle)]">{hh(hour)}</th>
+                          {grid.days.map((d) => {
+                            const at = grid.free.get(`${d}|${hour}`);
+                            if (!at) {
+                              return (
+                                <td key={d} className="p-0">
+                                  <div aria-hidden="true" className={clsx(cellBase, CELL.unavailable)} />
+                                </td>
+                              );
+                            }
+                            const chosen = slot === at;
+                            return (
+                              <td key={d} className="p-0">
+                                <button
+                                  type="button"
+                                  aria-pressed={chosen}
+                                  aria-label={t("booking.when.cell", { day: formatDay(d, lang), hour: hh(hour) })}
+                                  onClick={() => setSlot(at)}
+                                  className={clsx(
+                                    cellBase,
+                                    "transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--focus-ring)]",
+                                    chosen ? CELL.chosen : CELL.free,
+                                  )}
+                                >
+                                  <span aria-hidden="true" className="inline-flex items-center gap-0.5 text-[9.5px] font-bold tabular-nums sm:text-[10.5px]">
+                                    {chosen && <Check size={12} className="hidden sm:block" />}
+                                    {hh(hour)}
+                                  </span>
+                                </button>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[11.5px] text-[var(--text-muted)]">
+                {(["free", "chosen", "unavailable"] as const).map((k) => (
+                  <li key={k} className="inline-flex items-center gap-1.5">
+                    <span aria-hidden="true" className={clsx("inline-block h-3 w-4 rounded-[3px] border", CELL[k])} />
+                    {t(`booking.when.${k}`)}
+                  </li>
                 ))}
-                {canLoadMore && (
-                  <button type="button" onClick={() => slots && void load(addDays(slots.to, 1))} className={clsx(chip(false), "flex-none")}>
-                    {t("booking.when.more")}
-                    <ChevronRight size={14} aria-hidden="true" className="ml-1" />
-                  </button>
+              </ul>
+
+              <p
+                aria-live="polite"
+                className={clsx(
+                  "m-0 rounded-[var(--radius-md)] px-3.5 py-2.5 text-[length:var(--text-body-sm)]",
+                  slot ? "bg-[var(--surface-brand-wash)] font-bold text-[var(--text-primary)]" : "bg-[var(--surface-page)] text-[var(--text-muted)]",
                 )}
-              </div>
-              <div role="radiogroup" aria-label={activeDay ? formatDay(activeDay, lang) : undefined} className="grid grid-cols-[repeat(auto-fill,minmax(84px,1fr))] gap-2">
-                {daySlots.map((s) => (
-                  <button key={s} type="button" role="radio" aria-checked={slot === s} onClick={() => setSlot(s)} className={chip(slot === s)}>
-                    {formatHour(s, timezone, lang)}
-                  </button>
-                ))}
-              </div>
+              >
+                {slot ? t("booking.when.picked", { when: formatWhen(slot, timezone, lang) }) : t("booking.when.pick")}
+              </p>
               <p className="m-0 text-[12.5px] text-[var(--text-muted)]">
                 {differentZone(timezone, viewerZone)
                   ? t("booking.when.zoneOther", { city: zoneCity(timezone) })
@@ -315,6 +424,14 @@ export function BookingDialog({ open, onClose, handle, artistName, items, initia
           )}
         </fieldset>
 
+        {!signedIn && (
+          <div className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-3.5 py-3 text-[length:var(--text-body-sm)]">
+            <p className="m-0 font-semibold text-[var(--text-primary)]">{t("booking.gate.toConfirm", { name: artistName })}</p>
+            <p className="m-0 text-[var(--text-muted)]">{t("booking.gate.why")}</p>
+          </div>
+        )}
+        {signedIn && (
+          <>
         {/* Who */}
         <div className="grid gap-3 sm:grid-cols-2">
           <label htmlFor={ids.name} className="grid gap-1.5">
@@ -330,7 +447,7 @@ export function BookingDialog({ open, onClose, handle, artistName, items, initia
           <span className={label}>{custom ? t("booking.fields.commentRequired") : t("booking.fields.comment")}</span>
           <textarea
             id={ids.comment}
-            className={clsx(field, "min-h-[96px] resize-y")}
+            className={clsx(field, "min-h-[112px] resize-y leading-relaxed")}
             value={comment}
             maxLength={COMMENT_MAX}
             placeholder={t("booking.fields.commentPlaceholder")}
@@ -339,6 +456,7 @@ export function BookingDialog({ open, onClose, handle, artistName, items, initia
             aria-describedby={`${ids.comment}-hint`}
           />
           <span id={`${ids.comment}-hint`} className="text-[12px] text-[var(--text-muted)]">
+            {custom && <>{t("booking.fields.customHint")}{" "}</>}
             {t("booking.fields.noHealth")} · {comment.length}/{COMMENT_MAX}
           </span>
         </label>
@@ -356,6 +474,8 @@ export function BookingDialog({ open, onClose, handle, artistName, items, initia
             {t("booking.privacy")}
           </Link>
         </p>
+          </>
+        )}
       </form>
     </Dialog>
   );

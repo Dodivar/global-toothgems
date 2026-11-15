@@ -5,11 +5,13 @@ import { oneOf } from "../oneOf";
  * The Glowbook's own look (decision 100): what an artist chooses so the page
  * looks like them — profile picture, banner, identity colour, background,
  * layout, a creation in the spotlight, their city, their place on a map
- * (decision 108, `glowbookPlace.ts`) and links. Pure: the lists
+ * (decision 108, `glowbookPlace.ts`). No outside link: since bookings are
+ * taken on the page (decision 144), booking, website and TikTok links are gone
+ * and the database refuses them (decision 146). Pure: the lists
  * the database accepts, the rules it checks (repeated so the form can say
  * what is wrong first), row ↔ UI mapping and the picture framing maths.
  *
- * Pictures and links are proposed: a new one waits for a moderator while the
+ * Pictures are proposed: a new one waits for a moderator while the
  * page keeps the approved one (`pending`). Colour, background, layout,
  * spotlight, city and place are live. Who may customise is one database switch
  * (`private.glowbook_customization_allowed`): every member with Studio access
@@ -43,10 +45,9 @@ export const LAYOUTS = ["grid", "large"] as const;
 export type Layout = (typeof LAYOUTS)[number];
 
 export const LOCATION_MAX = 60;
-const LINK_MAX = 300;
 
-/** The pictures and links that wait for a moderator. */
-export const MODERATED_KEYS = ["avatarPath", "bannerPath", "bookingUrl", "websiteUrl", "tiktok"] as const;
+/** The pictures that wait for a moderator. */
+export const MODERATED_KEYS = ["avatarPath", "bannerPath"] as const;
 export type ModeratedKey = (typeof MODERATED_KEYS)[number];
 
 export interface GlowbookLook {
@@ -59,9 +60,6 @@ export interface GlowbookLook {
   featuredItemId: string | null;
   avatarPath: string | null;
   bannerPath: string | null;
-  bookingUrl: string | null;
-  websiteUrl: string | null;
-  tiktok: string | null;
 }
 
 export const DEFAULT_LOOK: GlowbookLook = {
@@ -73,9 +71,6 @@ export const DEFAULT_LOOK: GlowbookLook = {
   featuredItemId: null,
   avatarPath: null,
   bannerPath: null,
-  bookingUrl: null,
-  websiteUrl: null,
-  tiktok: null,
 };
 
 /** Database column ↔ UI field (the place travels as one `place` object). */
@@ -87,9 +82,6 @@ const COLUMN: Record<Exclude<keyof GlowbookLook, "place">, string> = {
   featuredItemId: "featured_item_id",
   avatarPath: "avatar_path",
   bannerPath: "banner_path",
-  bookingUrl: "booking_url",
-  websiteUrl: "website_url",
-  tiktok: "tiktok",
 };
 
 const text = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v : null);
@@ -106,9 +98,6 @@ export function lookFromColumns(o: Record<string, unknown> | null | undefined): 
     featuredItemId: text(o.featured_item_id),
     avatarPath: text(o.avatar_path),
     bannerPath: text(o.banner_path),
-    bookingUrl: text(o.booking_url),
-    websiteUrl: text(o.website_url),
-    tiktok: text(o.tiktok),
   };
 }
 
@@ -134,24 +123,10 @@ export function lookPatch(from: GlowbookLook, to: GlowbookLook): Record<string, 
   return patch;
 }
 
-export type LookProblem = "locationLength" | "bookingUrl" | "websiteUrl" | "tiktok" | PlaceProblem;
-
-const isHttpsLink = (url: string) => /^https:\/\/[^\s<>"]+$/.test(url) && url.length >= 11 && url.length <= LINK_MAX;
-
-/** A link as typed ("monsite.fr", "https://…") → the https address to store, or the text unchanged to be refused. */
-export function normalizeLink(raw: string): string {
-  const v = raw.trim();
-  if (!v) return "";
-  if (/^https:\/\//i.test(v)) return v;
-  if (/^[a-z][a-z0-9+.-]*:/i.test(v)) return v; // another scheme: refused by the check
-  return `https://${v.replace(/^\/+/, "")}`;
-}
+export type LookProblem = "locationLength" | PlaceProblem;
 
 export function validateLook(look: GlowbookLook): LookProblem | null {
   if (look.location && look.location.trim().length > LOCATION_MAX) return "locationLength";
-  if (look.bookingUrl && !isHttpsLink(look.bookingUrl)) return "bookingUrl";
-  if (look.websiteUrl && !isHttpsLink(look.websiteUrl)) return "websiteUrl";
-  if (look.tiktok && !/^[A-Za-z0-9._]{2,24}$/.test(look.tiktok.replace(/^@/, ""))) return "tiktok";
   return validatePlace(look.place);
 }
 
@@ -188,5 +163,3 @@ export function initialsOf(name: string): string {
     .map((w) => w[0]?.toUpperCase() ?? "")
     .join("");
 }
-
-export const tiktokUrl = (account: string) => `https://www.tiktok.com/@${encodeURIComponent(account.replace(/^@/, ""))}`;

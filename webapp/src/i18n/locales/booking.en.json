@@ -1,14 +1,14 @@
 {
   "dialog": {
     "title": "Book an appointment with {{name}}",
-    "sub": "Pick your design and a one-hour slot: it is yours at once.",
+    "sub": "Pick a one-hour slot: it is yours at once.",
     "close": "Close",
     "confirm": "Book this slot",
     "sending": "Booking…",
     "cancel": "Cancel"
   },
   "gate": {
-    "body": "To book a slot with {{name}}, sign in or create your account.",
+    "toConfirm": "Pick your slot, then sign in to book with {{name}}: your choice will be waiting when you come back.",
     "signIn": "Sign in",
     "register": "Create an account",
     "why": "An account lets you find and cancel your appointments, and protects artists from fake bookings."
@@ -23,8 +23,7 @@
   "design": {
     "title": "Your design",
     "custom": "Custom design",
-    "hint": "A design from the page, or a custom one you describe.",
-    "customHint": "Describe your idea in the message: shape, colour, tooth, inspiration…"
+    "chosenHint": "{{name}} will get this design with your request."
   },
   "when": {
     "title": "Your slot",
@@ -33,11 +32,19 @@
     "retry": "Try again",
     "closed": "This calendar is not taking bookings at the moment.",
     "none": "No free slot in the coming days. Come back soon.",
-    "days": "Days with free slots",
-    "more": "Next days",
     "zone": "{{city}} time.",
     "zoneOther": "Note: {{city}} time, the artist's time zone.",
-    "duration": "Each appointment lasts 1 hour."
+    "duration": "Each appointment lasts 1 hour.",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "weekLoading": "Loading the week…",
+    "weekEmpty": "No free slot this week. Try the next one.",
+    "free": "Free",
+    "unavailable": "Unavailable",
+    "chosen": "Your choice",
+    "cell": "{{day}} at {{hour}}, free",
+    "pick": "Pick a free hour in the calendar.",
+    "picked": "Your slot: {{when}}"
   },
   "fields": {
     "name": "First and last name",
@@ -45,14 +52,15 @@
     "comment": "Message to the artist (optional)",
     "commentRequired": "Describe your idea",
     "commentPlaceholder": "Your idea, your questions, an inspiration…",
-    "noHealth": "Do not include health information"
+    "noHealth": "Do not include health information",
+    "customHint": "Describe your idea: shape, colour, tooth, inspiration…"
   },
   "problem": {
     "slot": "Pick a slot.",
     "design": "Pick a design or “Custom design”.",
     "name": "Enter your first and last name.",
     "phone": "Enter a valid phone number.",
-    "comment": "Describe your custom design.",
+    "comment": "Describe your idea in the message.",
     "commentLength": "The message is at most 1000 characters."
   },
   "error": {
@@ -114,6 +122,9 @@
     "markedNoShow": "No-show recorded",
     "block": "Stop accepting this client",
     "blockedDone": "This client can no longer book with you",
+    "blockTitle": "Stop accepting this client?",
+    "blockBody": "{{name}} will no longer be able to book with you, neither from your Glowbook page nor from your 3D creations. Appointments already booked are not cancelled. You can accept them again at any time from \"My Glowbook\" › Calendar.",
+    "blockConfirm": "Stop accepting this client",
     "cancelTitle": "Cancel this appointment?",
     "cancelBody": "Your client receives an e-mail with the reason you give. The slot is free again on your Glowbook.",
     "cancelConfirm": "Cancel and tell the client",

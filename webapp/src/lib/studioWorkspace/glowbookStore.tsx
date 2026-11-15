@@ -65,6 +65,8 @@ interface GlowbookValue {
   /** The courses behind the "certified artist" badge, as the database derives them; null while unknown. */
   certification: CertifiedCourse[] | null;
   setShowCertification: (visible: boolean) => Promise<boolean>;
+  /** Joins or leaves the public artist directory (decision 145). */
+  setInDirectory: (listed: boolean) => Promise<boolean>;
   /** One of the member's own pictures as a file (the poster draws it), or null when it cannot be read. */
   downloadMedia: (path: string) => Promise<Blob | null>;
   /** The spotlight creation's turning video (decision 103), recorded by this tab when missing or stale. */
@@ -404,6 +406,22 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     [repo, patch, showToast, t, fail],
   );
 
+  const setInDirectory = useCallback(
+    async (listed: boolean) => {
+      if (!repo) return false;
+      try {
+        const saved = await repo.setInDirectory(listed);
+        patch(() => ({ glowbook: saved }));
+        showToast(t(listed ? "studio.glowbook.toasts.directoryOn" : "studio.glowbook.toasts.directoryOff"), undefined, "success");
+        return true;
+      } catch (err) {
+        fail(err, "directoryFailed");
+        return false;
+      }
+    },
+    [repo, patch, showToast, t, fail],
+  );
+
   const downloadMedia = useCallback(
     async (path: string) => {
       if (!repo) return null;
@@ -443,6 +461,7 @@ export function GlowbookProvider({ children }: { children: ReactNode }) {
     fileItem,
     certification: certified && certified.repo === repo ? certified.courses : null,
     setShowCertification,
+    setInDirectory,
     downloadMedia,
     spotlight,
   };

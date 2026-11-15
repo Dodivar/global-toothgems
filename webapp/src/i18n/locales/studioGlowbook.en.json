@@ -42,15 +42,14 @@
   "form": {
     "createTitle": "Create my Glowbook",
     "editTitle": "Edit my page",
-    "moderationNote": "Your page will be visible once the Global Toothgems team approves it. After that, changes to the name, bio and Instagram are published at once.",
+    "moderationNote": "Your page will be visible once the Global Toothgems team approves it. After that, changes to the name and bio are published at once.",
     "displayName": "Display name",
     "displayNamePlaceholder": "e.g. Lily Gems Studio",
     "handle": "Handle (page address)",
     "handleHint": "3 to 30 characters: lower-case letters, digits, dot, hyphen or underscore.",
     "handleChangeWarning": "Changing your handle changes your page’s address and sends it for review again: it will not be visible until then.",
     "bio": "Bio",
-    "bioPlaceholder": "Your style, your city, how to book…",
-    "instagram": "Instagram account",
+    "bioPlaceholder": "Your style, your city, your specialities…",
     "create": "Send for review",
     "save": "Save"
   },
@@ -62,8 +61,7 @@
     "invalid": "These details could not be accepted. Please check them.",
     "displayNameRequired": "Enter the name to display.",
     "displayNameLength": "The display name is 60 characters at most.",
-    "bioLength": "The bio is 300 characters at most.",
-    "instagramInvalid": "This Instagram account is not valid (letters, digits, dot and underscore, 30 characters at most)."
+    "bioLength": "The bio is 300 characters at most."
   },
   "items": {
     "title_one": "{{count}} creation in your Glowbook",
@@ -105,7 +103,7 @@
     "linkCopiedBody": "Paste it in your Instagram bio.",
     "copyFailed": "Could not copy: select the link",
     "lookSaved": "Look saved",
-    "lookSavedPending": "Look saved: the new pictures and links wait for review",
+    "lookSavedPending": "Look saved: the new pictures wait for review",
     "lookFailed": "Unable to save the look",
     "uploadFailed": "Unable to upload the picture",
     "sectionsFull": "Your Glowbook already has 12 sections: delete one to create another.",
@@ -116,6 +114,9 @@
     "badgeShown": "Badge shown on your page",
     "badgeHidden": "Badge hidden on your page",
     "badgeFailed": "Unable to change the badge",
+    "directoryOn": "You appear in the directory",
+    "directoryOff": "You no longer appear in the directory",
+    "directoryFailed": "Unable to change your directory listing",
     "qrFailed": "Unable to prepare the file"
   },
   "saveWarning": {
@@ -140,7 +141,6 @@
     "metaTitle": "{{name}} — Glowbook",
     "metaDescription": "Tooth gem creations by {{name}}, designed in the Global Toothgems 3D Studio.",
     "eyebrow": "Glowbook",
-    "instagram": "@{{account}} on Instagram",
     "creationsTitle_one": "{{count}} creation",
     "creationsTitle_other": "{{count}} creations",
     "empty": "No creations published yet. Come back soon!",
@@ -150,10 +150,7 @@
     "ctaShop": "Visit the shop",
     "view3d": "View in 3D",
     "open3d": "View “{{name}}” in 3D",
-    "booking": "Book an appointment",
     "book": "Book",
-    "website": "Website",
-    "tiktok": "@{{account}} on TikTok",
     "avatarAlt": "{{name}}’s profile picture",
     "featured": "In the spotlight",
     "sectionsLabel": "Filter the creations by section",
@@ -191,7 +188,7 @@
     "kind": {
       "page": "Page",
       "creation": "Creation",
-      "changes": "Pictures and links"
+      "changes": "Pictures"
     },
     "submitted": "Sent on {{date}}",
     "byArtist": "by {{name}} (@{{handle}})",
@@ -218,10 +215,10 @@
   },
   "look": {
     "title": "Customise my page",
-    "sub": "Make your Glowbook yours: picture, colour, layout and links. Colour, background, layout, spotlight and city are published when you save; a new picture or link is reviewed by the team first.",
-    "pendingNote": "Some pictures or links wait for the team’s review: your page shows the previous ones meanwhile.",
-    "rejectedNote": "Your latest pictures or links were not approved.",
-    "rejectedNoteReason": "Your latest pictures or links were not approved. Reason: {{note}}",
+    "sub": "Make your Glowbook yours: picture, colour and layout. Colour, background, layout, spotlight and city are published when you save; a new picture is reviewed by the team first.",
+    "pendingNote": "Some pictures wait for the team’s review: your page shows the previous ones meanwhile.",
+    "rejectedNote": "Your latest pictures were not approved.",
+    "rejectedNoteReason": "Your latest pictures were not approved. Reason: {{note}}",
     "preview": "Preview",
     "accent": "Your identity colour",
     "accents": {
@@ -252,16 +249,8 @@
     "featuredHint": "It opens your page, large, in a short video moving in front of the smile from left to right (published creations only).",
     "location": "City or studio",
     "locationPlaceholder": "e.g. Lyon, Studio Rivoli",
-    "links": "Links",
-    "linksHint": "https addresses only. Every new link is reviewed before it shows.",
-    "booking": "Booking",
-    "website": "Website",
-    "tiktok": "TikTok account",
     "errors": {
       "locationLength": "The city is {{max}} characters at most.",
-      "bookingUrl": "The booking link must be a valid https address.",
-      "websiteUrl": "The website must be a valid https address.",
-      "tiktok": "This TikTok account is not valid (letters, digits, dot and underscore).",
       "placeLabel": "Give the place a name (2 to 120 characters).",
       "placeCoordinates": "Pick the place from the search or set the pin on the map."
     },
@@ -322,6 +311,22 @@
       "full": "12 sections at most: delete one to create another.",
       "failed": "The section could not be saved. Please try again."
     }
+  },
+  "directory": {
+    "title": "“Find an artist” directory",
+    "body": "Appear in the public artist directory: your name, your city, your salon or area (~1 km, as on your map), your profile picture, one of your designs and your badge if you show it, with a link to your Glowbook.",
+    "toggle": "Appear in the directory",
+    "listed": "Your Glowbook appears in the directory.",
+    "waiting": "Your Glowbook will appear in the directory as soon as:",
+    "missing": {
+      "page": "your page is approved by a moderator",
+      "place": "you say where you work (Look tab)",
+      "creation": "at least one design is approved"
+    },
+    "city": "Add your city in the Look tab to also appear on your city’s page.",
+    "off": "You do not appear in the directory. Your Glowbook stays reachable through its link.",
+    "open": "See the directory",
+    "failed": "The setting could not be saved. Try again."
   },
   "badge": {
     "label": "Global Toothgems certified artist",
@@ -410,7 +415,7 @@
       "noItems": "Add a first creation to your page.",
       "itemsRejected_one": "{{count}} declined creation to look at.",
       "itemsRejected_other": "{{count}} declined creations to look at.",
-      "changesRejected": "Your latest pictures or links were not approved.",
+      "changesRejected": "Your latest pictures were not approved.",
       "noSpotlight": "Choose the spotlight creation of your page.",
       "unfiled_one": "{{count}} creation is not in any section.",
       "unfiled_other": "{{count}} creations are not in any section."
@@ -435,11 +440,11 @@
   },
   "intro": {
     "metaTitle": "Glowbook: your tooth gem artist showcase",
-    "metaDescription": "A public page for your 3D creations, to link from your Instagram bio: clients discover them, find you and order the gems in one click.",
+    "metaDescription": "A public page for your 3D creations, to link from your Instagram bio: clients discover them, book an appointment within your hours and find you in the artist directory.",
     "back": "3D Studio",
     "eyebrow": "Glowbook · {{plan}} plan",
     "title": "All your creations, in one link.",
-    "body": "The Glowbook is your artist showcase: a public page to put in your Instagram bio, where clients spin your creations in 3D before booking.",
+    "body": "The Glowbook is your artist showcase: a public page to put in your Instagram bio, where clients spin your creations in 3D, then book their appointment online, within your hours.",
     "price": "Included in the {{plan}} plan, from {{price}} / month.",
     "see": "See what’s inside",
     "ctaOpen": "Open my Glowbook",
@@ -449,7 +454,7 @@
     "previewLabel": "Preview of a Glowbook page on a phone",
     "previewCta": "Book an appointment",
     "benefits": {
-      "eyebrow": "What your clients see",
+      "eyebrow": "What the Glowbook brings you",
       "title": "A page that works for you",
       "items": {
         "link": {
@@ -460,15 +465,24 @@
           "title": "Your creations in 3D",
           "body": "Clients spin every design, watch your spotlight creation as a video and put its gems in the cart in one click."
         },
+        "booking": {
+          "title": "Online booking",
+          "body": "Clients pick a one-hour slot within your hours, from your page or a creation. They get the confirmation and a reminder the day before; you get every request by e-mail."
+        },
+        "calendar": {
+          "title": "Your calendar, up to date",
+          "body": "Your appointments are added to Google Calendar, Apple Calendar or Outlook, and the hours already taken in your calendar (Planity included, if it allows it) close by themselves on your page."
+        },
         "identity": {
           "title": "Your identity",
-          "body": "Photo, colour, layout, sections and booking links: the page looks like you."
+          "body": "Photo, colour, layout and sections: the page looks like you, from the first glance to the booking button."
         },
         "found": {
           "title": "Easy to find",
-          "body": "Your salon or your area on a map, and the “Certified artist” badge once you have completed an Academy course."
+          "body": "Your salon or your area on a map, a place in the “Find an artist” directory for clients looking near them, if you wish, and the “Certified artist” badge once you have completed an Academy course."
         }
-      }
+      },
+      "directoryLink": "See the artist directory"
     },
     "steps": {
       "title": "Online in three steps",

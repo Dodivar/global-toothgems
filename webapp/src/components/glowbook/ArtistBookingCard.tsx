@@ -24,6 +24,7 @@ export function ArtistBookingCard({ booking, onChanged }: { booking: ArtistBooki
   const { showToast } = useToast();
   const reasonId = useId();
   const [cancelling, setCancelling] = useState(false);
+  const [blocking, setBlocking] = useState(false);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const now = Date.now();
@@ -121,11 +122,32 @@ export function ArtistBookingCard({ booking, onChanged }: { booking: ArtistBooki
         )}
         {!booking.clientErased && !booking.clientBlocked && (
           <Button size="sm" variant="ghost" iconLeft={Ban} disabled={busy}
-            onClick={() => run(() => blockClient(booking.id), t("booking.artist.blockedDone"))}>
+            onClick={() => setBlocking(true)}>
             {t("booking.artist.block")}
           </Button>
         )}
       </div>
+
+      <Dialog
+        open={blocking}
+        onClose={() => setBlocking(false)}
+        tone="danger"
+        title={t("booking.artist.blockTitle")}
+        description={t("booking.artist.blockBody", { name: booking.clientName })}
+        closeLabel={t("booking.dialog.close")}
+        footer={
+          <>
+            <Button variant="danger" disabled={busy}
+              onClick={async () => {
+                await run(() => blockClient(booking.id), t("booking.artist.blockedDone"));
+                setBlocking(false);
+              }}>
+              {t("booking.artist.blockConfirm")}
+            </Button>
+            <Button variant="ghost" onClick={() => setBlocking(false)}>{t("booking.dialog.cancel")}</Button>
+          </>
+        }
+      />
 
       <Dialog
         open={cancelling}
