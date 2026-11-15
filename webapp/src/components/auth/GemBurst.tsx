@@ -34,6 +34,10 @@ const BURST: { photo: string; x: number; y: number; size: number; rot: number; d
   { photo: "gem-raindrop-light-siam.webp", x: 96, y: 44, size: 5, rot: 22, drift: 6 },
   { photo: "gem-diamond-sunflower.webp", x: 52, y: 92, size: 8, rot: 35, drift: 8.5 },
   { photo: "gem-baguette-fuchsia.webp", x: 60, y: 7, size: 5, rot: -55, drift: 7 },
+  { photo: "gem-navette-bermuda-blue.webp", x: 79, y: 44, size: 10, rot: -35, drift: 9 },
+  { photo: "gem-round-crystal-ab.webp", x: 8, y: 82, size: 7, rot: 0, drift: 7.5 },
+  { photo: "gem-heart-siam.webp", x: 82, y: 81, size: 6, rot: 28, drift: 6.5 },
+  { photo: "gem-starflower-amethyste.webp", x: 56, y: 32, size: 5, rot: 15, drift: 8 },
 ];
 
 /** How far, in px, the pointer reaches the stones. */
@@ -108,7 +112,7 @@ export function GemBurst({ className = "" }: { className?: string }) {
     <div aria-hidden="true" className={`gt-auth-burst-box relative w-full select-none ${className}`}>
       {BURST.map((g, i) => (
         <span
-          key={g.photo}
+          key={`${g.photo}-${g.x}-${g.y}`}
           className="gt-auth-burst absolute block aspect-square"
           style={
             {
