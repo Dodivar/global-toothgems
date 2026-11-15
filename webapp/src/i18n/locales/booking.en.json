@@ -307,8 +307,6 @@
     "add": "Close these days",
     "added": "Days closed",
     "addedNone": "No slot will be offered on those days.",
-    "addedKept_one": "{{count}} appointment already booked on those days is kept: cancel it from the Appointments tab if needed.",
-    "addedKept_other": "{{count}} appointments already booked on those days are kept: cancel them from the Appointments tab if needed.",
     "listTitle": "Closed periods",
     "none": "No closed period to come.",
     "range": "From {{from}} to {{to}}",
@@ -316,8 +314,6 @@
     "days_one": "{{count}} day",
     "days_other": "{{count}} days",
     "current": "Under way",
-    "kept_one": "{{count}} appointment already booked on those days",
-    "kept_other": "{{count}} appointments already booked on those days",
     "remove": "Reopen",
     "removeLabel": "Reopen: {{period}}",
     "removed": "Period reopened",
@@ -329,7 +325,16 @@
       "order": "The end is the same day as the start, or later.",
       "tooFar": "A period lasts a year at most and ends within the coming year.",
       "note": "The note is 80 characters at most."
-    }
+    },
+    "cancelHint": "Appointments already booked on those days are cancelled and each client is e-mailed (\"The artist has closed their calendar on that day\"). Your note is not sent.",
+    "addedCancelled_one": "{{count}} appointment cancelled: the client is e-mailed.",
+    "addedCancelled_other": "{{count}} appointments cancelled: the clients are e-mailed.",
+    "confirmTitle_one": "Close these days and cancel {{count}} appointment?",
+    "confirmTitle_other": "Close these days and cancel {{count}} appointments?",
+    "confirmBody_one": "One appointment is already booked on those days. It will be cancelled and the client e-mailed: \"The artist has closed their calendar on that day\". This cannot be undone.",
+    "confirmBody_other": "{{count}} appointments are already booked on those days. They will be cancelled and each client e-mailed: \"The artist has closed their calendar on that day\". This cannot be undone.",
+    "confirm": "Close and cancel",
+    "keepOpen": "Keep these days open"
   },
   "dashboard": {
     "eyebrow": "My calendar",

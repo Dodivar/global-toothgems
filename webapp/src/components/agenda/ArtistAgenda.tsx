@@ -533,7 +533,13 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
         )}
 
         {tab === "closures" && (
-          <AgendaClosures closures={closures} today={localDay(new Date().toISOString(), tz)} onChanged={() => void load(true)} />
+          <AgendaClosures
+            closures={closures}
+            upcoming={calendar.upcoming}
+            timezone={tz}
+            today={localDay(new Date().toISOString(), tz)}
+            onChanged={() => void load(true)}
+          />
         )}
 
         {tab === "sync" && (

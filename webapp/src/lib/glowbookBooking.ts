@@ -163,13 +163,13 @@ export async function unblockClient(blockId: string): Promise<ActionResult> {
   return error ? fail(error.message) : { ok: true };
 }
 
-/** Closes whole local days (decision 147); answers how many appointments to come the period covers (they are kept). */
-export async function addClosure(startsOn: string, endsOn: string, note: string): Promise<{ ok: true; bookings: number } | { ok: false; code: string }> {
+/** Closes whole local days (decision 147); the appointments booked on them are cancelled, clients e-mailed. Answers how many. */
+export async function addClosure(startsOn: string, endsOn: string, note: string): Promise<{ ok: true; cancelled: number } | { ok: false; code: string }> {
   if (!supabase) return { ok: false, code: "unavailable" };
   const { data, error } = await supabase.rpc("glowbook_add_closure", { p_starts_on: startsOn, p_ends_on: endsOn, p_note: note.trim() || undefined });
   if (error) return { ok: false, code: databaseCode(error.message) ?? "unavailable" };
-  const bookings = (data as { bookings?: unknown } | null)?.bookings;
-  return { ok: true, bookings: typeof bookings === "number" ? bookings : 0 };
+  const cancelled = (data as { cancelled?: unknown } | null)?.cancelled;
+  return { ok: true, cancelled: typeof cancelled === "number" ? cancelled : 0 };
 }
 
 export async function deleteClosure(id: string): Promise<ActionResult> {

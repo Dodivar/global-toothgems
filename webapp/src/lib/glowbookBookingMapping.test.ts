@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   addDays,
   clientCancellation,
+  bookingsOnDays,
   closureLength,
   databaseCode,
   dayClosed,
@@ -223,6 +224,16 @@ describe("closures (decision 147)", () => {
     expect(hourState(open, true, false, false, true)).toBe("booked");
     expect(hourState(open, false, true, false, true)).toBe("past");
     expect(toggleTarget("holiday")).toBeNull();
+  });
+
+  it("counts the appointments a period would cancel, by the artist's local day", () => {
+    const upcoming = [
+      { startsAt: "2026-12-19T23:30:00Z" }, // 20 Dec, 00:30 in Paris
+      { startsAt: "2026-12-27T10:00:00Z" },
+      { startsAt: "2026-12-27T23:30:00Z" }, // 28 Dec in Paris
+    ];
+    expect(bookingsOnDays(upcoming, "Europe/Paris", "2026-12-20", "2026-12-27")).toBe(2);
+    expect(bookingsOnDays(upcoming, "Europe/Paris", "2027-01-01", "2027-01-02")).toBe(0);
   });
 
   it("checks a period like the database", () => {

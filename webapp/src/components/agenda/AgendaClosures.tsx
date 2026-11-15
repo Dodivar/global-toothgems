@@ -2,12 +2,14 @@
 
 import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarOff, CircleAlert, RotateCcw } from "lucide-react";
+import { CalendarOff, CalendarX2, RotateCcw } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
+import { Dialog } from "../ui/Dialog";
 import { addClosure, deleteClosure } from "../../lib/glowbookBooking";
 import {
   addDays,
+  bookingsOnDays,
   type CalendarClosure,
   CLOSURE_NOTE_MAX,
   CLOSURES_MAX,
@@ -23,16 +25,21 @@ import { agendaCard, agendaCardTitle, agendaLabel, agendaSmall } from "./agendaS
 /**
  * Time off (decision 147): whole local days closed at once — holidays, a
  * training, the salon closed. The database refuses every booking on those
- * days (`glowbook_book_slot`) and offers no slot there; appointments already
- * booked inside a new period are kept and counted, the artist cancels them
- * from the appointments tab if they want.
+ * days (`glowbook_book_slot`) and offers no slot there. Appointments already
+ * booked on those days are cancelled with the period and each client is
+ * e-mailed (decision 147 (a)): the artist is told how many before confirming.
  */
 export function AgendaClosures({
   closures,
+  upcoming,
+  timezone,
   today,
   onChanged,
 }: {
   closures: CalendarClosure[];
+  /** Every appointment to come (the calendar's `upcoming`), to say how many a period cancels. */
+  upcoming: readonly { startsAt: string }[];
+  timezone: string;
   /** The artist's local "YYYY-MM-DD". */
   today: string;
   onChanged: () => void;
@@ -47,6 +54,8 @@ export function AgendaClosures({
   const [problem, setProblem] = useState<ClosureProblem>(null);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  /** Appointments the period would cancel, while the artist confirms. */
+  const [confirming, setConfirming] = useState<number | null>(null);
   const full = closures.length >= CLOSURES_MAX;
 
   const period = (c: Pick<CalendarClosure, "startsOn" | "endsOn">) =>
@@ -54,22 +63,29 @@ export function AgendaClosures({
       ? t("booking.closures.oneDay", { day: formatDay(c.startsOn, lang) })
       : t("booking.closures.range", { from: formatDay(c.startsOn, lang), to: formatDay(c.endsOn, lang) });
 
-  const submit = async (e: FormEvent) => {
+  const submit = (e: FormEvent) => {
     e.preventDefault();
     const found = validateClosure({ startsOn, endsOn, note }, today);
     setProblem(found);
     if (found) return;
+    const affected = bookingsOnDays(upcoming, timezone, startsOn, endsOn);
+    if (affected > 0) setConfirming(affected);
+    else void close();
+  };
+
+  const close = async () => {
     setSaving(true);
     const result = await addClosure(startsOn, endsOn, note);
     setSaving(false);
+    setConfirming(null);
     if (!result.ok) {
       showToast(t("booking.artist.actionFailed"), t(`booking.artist.codes.${result.code}`, { defaultValue: t("booking.artist.codes.unavailable") }), "error");
       return;
     }
     showToast(
       t("booking.closures.added"),
-      result.bookings > 0 ? t("booking.closures.addedKept", { count: result.bookings }) : t("booking.closures.addedNone"),
-      result.bookings > 0 ? "info" : "success",
+      result.cancelled > 0 ? t("booking.closures.addedCancelled", { count: result.cancelled }) : t("booking.closures.addedNone"),
+      "success",
     );
     setStartsOn("");
     setEndsOn("");
@@ -91,12 +107,13 @@ export function AgendaClosures({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start [&>*]:min-w-0">
-      <form onSubmit={(e) => void submit(e)} noValidate aria-describedby={problem ? ids.problem : undefined} className={agendaCard}>
+      <form onSubmit={submit} noValidate aria-describedby={problem ? ids.problem : undefined} className={agendaCard}>
         <h2 className={agendaCardTitle}>
           <CalendarOff size={17} aria-hidden="true" />
           {t("booking.closures.title")}
         </h2>
         <p className={agendaSmall}>{t("booking.closures.hint")}</p>
+        <p className={agendaSmall}>{t("booking.closures.cancelHint")}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label htmlFor={ids.from} className="grid gap-1.5">
             <span className={agendaLabel}>{t("booking.closures.from")}</span>
@@ -191,17 +208,30 @@ export function AgendaClosures({
                     {t("booking.closures.remove")}
                   </Button>
                 </div>
-                {c.bookings > 0 && (
-                  <p className="m-0 flex items-start gap-1.5 text-[12.5px] font-semibold text-[var(--status-warning-fg)]">
-                    <CircleAlert size={14} aria-hidden="true" className="mt-0.5 flex-none" />
-                    {t("booking.closures.kept", { count: c.bookings })}
-                  </p>
-                )}
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      <Dialog
+        open={confirming !== null}
+        onClose={() => setConfirming(null)}
+        tone="danger"
+        title={t("booking.closures.confirmTitle", { count: confirming ?? 0 })}
+        description={t("booking.closures.confirmBody", { count: confirming ?? 0 })}
+        closeLabel={t("booking.dialog.close")}
+        footer={
+          <>
+            <Button variant="danger" iconLeft={CalendarX2} disabled={saving} loading={saving} onClick={() => void close()}>
+              {t("booking.closures.confirm")}
+            </Button>
+            <Button variant="ghost" onClick={() => setConfirming(null)}>{t("booking.closures.keepOpen")}</Button>
+          </>
+        }
+      >
+        {startsOn && endsOn && <p className="m-0 font-semibold text-[var(--text-primary)]">{period({ startsOn, endsOn })}</p>}
+      </Dialog>
     </div>
   );
 }

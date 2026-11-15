@@ -79,7 +79,8 @@ export interface BookingSettings {
 /**
  * A period the artist's calendar is closed (decision 147): whole local days,
  * both ends included, an optional private note, and how many appointments to
- * come it covers (they are kept: the artist decides whether to cancel them).
+ * come it covers — none in practice: closing days cancels the appointments
+ * booked on them (decision 147 (a)) and no booking lands there afterwards.
  */
 export interface CalendarClosure {
   id: string;
@@ -415,6 +416,18 @@ export function validateClosure(draft: { startsOn: string; endsOn: string; note:
   if (draft.endsOn > addDays(today, CLOSURE_LAST_DAY) || draft.endsOn > addDays(draft.startsOn, CLOSURE_LONGEST)) return "tooFar";
   if (draft.note.trim().length > CLOSURE_NOTE_MAX) return "note";
   return null;
+}
+
+/**
+ * The appointments to come on the local days of a period, which closing it
+ * cancels (decision 147 (a)): counted before asking, from the calendar's
+ * `upcoming` list (every appointment to come, whatever the range).
+ */
+export function bookingsOnDays(upcoming: readonly { startsAt: string }[], timezone: string, startsOn: string, endsOn: string): number {
+  return upcoming.filter((b) => {
+    const day = localDay(b.startsAt, timezone);
+    return day >= startsOn && day <= endsOn;
+  }).length;
 }
 
 /** Number of days in a period, both ends included. */

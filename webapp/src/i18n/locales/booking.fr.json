@@ -307,8 +307,6 @@
     "add": "Fermer ces jours",
     "added": "Jours fermés",
     "addedNone": "Aucun créneau ne sera proposé ces jours-là.",
-    "addedKept_one": "{{count}} rendez-vous déjà pris ces jours-là est conservé : annulez-le depuis l’onglet Rendez-vous si besoin.",
-    "addedKept_other": "{{count}} rendez-vous déjà pris ces jours-là sont conservés : annulez-les depuis l’onglet Rendez-vous si besoin.",
     "listTitle": "Périodes fermées",
     "none": "Aucune période fermée à venir.",
     "range": "Du {{from}} au {{to}}",
@@ -316,8 +314,6 @@
     "days_one": "{{count}} jour",
     "days_other": "{{count}} jours",
     "current": "En cours",
-    "kept_one": "{{count}} rendez-vous déjà pris ces jours-là",
-    "kept_other": "{{count}} rendez-vous déjà pris ces jours-là",
     "remove": "Rouvrir",
     "removeLabel": "Rouvrir : {{period}}",
     "removed": "Période rouverte",
@@ -329,7 +325,16 @@
       "order": "La fin est le même jour que le début, ou après.",
       "tooFar": "Une période dure un an au plus et finit dans l’année qui vient.",
       "note": "La note fait 80 caractères au plus."
-    }
+    },
+    "cancelHint": "Les rendez-vous déjà pris ces jours-là sont annulés et chaque client est prévenu par e-mail (« L’artiste a fermé son agenda ce jour-là »). Votre note n’est pas envoyée.",
+    "addedCancelled_one": "{{count}} rendez-vous annulé : le client est prévenu par e-mail.",
+    "addedCancelled_other": "{{count}} rendez-vous annulés : les clients sont prévenus par e-mail.",
+    "confirmTitle_one": "Fermer ces jours et annuler {{count}} rendez-vous ?",
+    "confirmTitle_other": "Fermer ces jours et annuler {{count}} rendez-vous ?",
+    "confirmBody_one": "Un rendez-vous est déjà pris ces jours-là. Il sera annulé et le client prévenu par e-mail : « L’artiste a fermé son agenda ce jour-là ». Cette annulation ne peut pas être reprise.",
+    "confirmBody_other": "{{count}} rendez-vous sont déjà pris ces jours-là. Ils seront annulés et chaque client prévenu par e-mail : « L’artiste a fermé son agenda ce jour-là ». Ces annulations ne peuvent pas être reprises.",
+    "confirm": "Fermer et annuler",
+    "keepOpen": "Garder ces jours ouverts"
   },
   "dashboard": {
     "eyebrow": "Mon agenda",
