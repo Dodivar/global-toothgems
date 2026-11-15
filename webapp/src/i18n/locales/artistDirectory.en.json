@@ -5,7 +5,6 @@
   },
   "eyebrow": "Artist directory",
   "title": "Find a tooth gem artist near you",
-  "intro": "Artists who show their work on their Global Toothgems Glowbook. Search by city or around you, then open their page to see their designs and get in touch.",
   "privacyNote": "“Near me” uses your device’s position in your browser only: it is never sent or stored. A city the directory does not know is looked up on OpenStreetMap.",
   "results_one": "{{count}} artist",
   "results_other": "{{count}} artists",
