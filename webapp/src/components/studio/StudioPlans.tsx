@@ -249,6 +249,15 @@ const ADDED_FEATURES: readonly StudioFeature[] = [
 ];
 
 /**
+ * Lines a feature brings along on the card, under its own line: what comes
+ * with the Glowbook and is gated by the same plan check — online booking and
+ * the synced calendar (decision 144), the artist directory (decision 145).
+ */
+const FEATURE_DETAILS: Partial<Record<StudioFeature, readonly string[]>> = {
+  glowbook: ["glowbookBooking", "glowbookCalendar", "artistDirectory"],
+};
+
+/**
  * What a plan includes, from `STUDIO_PLAN_FEATURES` (decision 113): Essential
  * lists its whole offer, the plans above say what they add to the one below.
  */
@@ -266,7 +275,9 @@ function PlanFeatureList({ plan }: { plan: StudioPaidPlanId }) {
   }
   if (!previous) lines.push(t(`${k}.library`));
   for (const feature of ADDED_FEATURES) {
-    if (hasFeature(plan, feature) && !hasFeature(previous, feature)) lines.push(t(`${k}.${feature}`));
+    if (!hasFeature(plan, feature) || hasFeature(previous, feature)) continue;
+    lines.push(t(`${k}.${feature}`));
+    for (const extra of FEATURE_DETAILS[feature] ?? []) lines.push(t(`${k}.${extra}`));
   }
 
   return (

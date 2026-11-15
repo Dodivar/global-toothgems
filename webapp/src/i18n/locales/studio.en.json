@@ -173,8 +173,8 @@
       "withPlan": "With the {{plan}} plan",
       "glowbook": {
         "title": "The Glowbook comes with the {{plan}} plan",
-        "short": "Show your creations on a public page and let your clients try them on their smile.",
-        "body": "Your public showcase, for your Instagram bio: your creations in 3D, your identity, where to find you, a QR code and a poster — and the AI try-on, which lets your clients see your creations on their own smile.",
+        "short": "A public page for your creations, online booking and a place in the artist directory.",
+        "body": "Your public showcase, to put in your Instagram bio: your creations in 3D, your identity, where to find you, a QR code and a poster. Clients book an appointment there within your hours, with a calendar synced with Google, Apple or Outlook, and find you in the “Find an artist” directory. With the AI try-on, they also see your creations on their own smile.",
         "kept": "If you already had a Glowbook, it is hidden from the public for now and comes back as it was once you are on this plan again."
       },
       "templates": {
@@ -754,6 +754,9 @@
         "signature": "Signature on posts",
         "layouts": "Post layout templates",
         "glowbook": "Your Glowbook, the public showcase of your creations",
+        "bookings": "Online booking from your Glowbook",
+        "calendarSync": "Synced calendar (Google, Apple, Outlook)",
+        "directory": "A place in the “Find an artist” directory",
         "tryOn": "AI try-on on your clients’ smile",
         "collections": "Folders to file your creations"
       },

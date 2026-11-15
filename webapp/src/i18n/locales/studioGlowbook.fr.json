@@ -50,7 +50,7 @@
     "handleChangeWarning": "Changer de pseudo change l’adresse de votre page et la renvoie en validation : elle ne sera plus visible d’ici là.",
     "bio": "Bio",
     "bioPlaceholder": "Votre style, votre ville, vos spécialités…",
-        "create": "Envoyer en validation",
+    "create": "Envoyer en validation",
     "save": "Enregistrer"
   },
   "errors": {
@@ -440,11 +440,11 @@
   },
   "intro": {
     "metaTitle": "Glowbook : votre vitrine d’artiste tooth gems",
-    "metaDescription": "Une page publique pour vos créations en 3D, à mettre dans votre bio Instagram : vos clientes les découvrent, vous trouvent et commandent les gems en un clic.",
+    "metaDescription": "Une page publique pour vos créations en 3D, à mettre dans votre bio Instagram : vos clientes les découvrent, réservent un rendez-vous selon vos horaires et vous trouvent dans l’annuaire des artistes.",
     "back": "Studio 3D",
     "eyebrow": "Glowbook · formule {{plan}}",
     "title": "Toutes vos créations, en un seul lien.",
-    "body": "Le Glowbook est votre vitrine d’artiste : une page publique à mettre dans votre bio Instagram, où vos clientes font tourner vos créations en 3D avant de prendre rendez-vous.",
+    "body": "Le Glowbook est votre vitrine d’artiste : une page publique à mettre dans votre bio Instagram, où vos clientes font tourner vos créations en 3D puis réservent leur rendez-vous en ligne, selon vos horaires.",
     "price": "Inclus dans la formule {{plan}}, dès {{price}} / mois.",
     "see": "Voir ce qu’il contient",
     "ctaOpen": "Ouvrir mon Glowbook",
@@ -454,7 +454,7 @@
     "previewLabel": "Aperçu d’une page Glowbook sur téléphone",
     "previewCta": "Prendre rendez-vous",
     "benefits": {
-      "eyebrow": "Ce que vos clientes voient",
+      "eyebrow": "Ce que le Glowbook vous apporte",
       "title": "Une page qui travaille pour vous",
       "items": {
         "link": {
@@ -465,13 +465,21 @@
           "title": "Vos créations en 3D",
           "body": "Vos clientes font tourner chaque design, voient votre création phare en vidéo et mettent ses gems au panier en un clic."
         },
+        "booking": {
+          "title": "Réservation en ligne",
+          "body": "Vos clientes choisissent un créneau d’une heure selon vos horaires, depuis votre page ou une création. Elles reçoivent la confirmation et un rappel la veille ; vous recevez chaque demande par e-mail."
+        },
+        "calendar": {
+          "title": "Votre agenda, à jour",
+          "body": "Vos rendez-vous s’ajoutent à Google Agenda, Apple Calendrier ou Outlook, et les heures déjà prises dans votre agenda (Planity compris, s’il le permet) se ferment toutes seules sur votre page."
+        },
         "identity": {
           "title": "Votre identité",
-          "body": "Photo, couleur, mise en page et sections : la page vous ressemble, et vos clientes réservent directement depuis elle."
+          "body": "Photo, couleur, mise en page et sections : la page vous ressemble, du premier regard jusqu’au bouton de réservation."
         },
         "found": {
           "title": "On vous trouve",
-          "body": "Votre salon ou votre secteur sur une carte, une place dans l’annuaire « Trouver un artiste » si vous le souhaitez, et le badge « Artiste certifiée » quand vous avez suivi une formation de l’Academy."
+          "body": "Votre salon ou votre secteur sur une carte, une place dans l’annuaire « Trouver un artiste » pour les clientes qui cherchent près de chez elles, si vous le souhaitez, et le badge « Artiste certifiée » quand vous avez suivi une formation de l’Academy."
         }
       },
       "directoryLink": "Voir l’annuaire des artistes"
