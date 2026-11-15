@@ -41,6 +41,8 @@ export type PublicRouteId =
   | "studioSubscribe"
   | "glowbook"
   | "glowbookIntro"
+  | "artists"
+  | "artistsCity"
   | "academy"
   | "course"
   | "help"
@@ -83,6 +85,9 @@ export const PUBLIC_ROUTES: readonly PublicRoute[] = [
   { id: "glowbook", fr: "/glowbook/:id", en: "/glowbook/:id", indexed: true },
   // The Glowbook's presentation, where members below its plan land (the handle "glowbook" is reserved, so no artist's page lives here).
   { id: "glowbookIntro", fr: "/glowbook", en: "/glowbook", indexed: true },
+  // The artist directory, "Find an artist near me" (decision 145), and one page per city (same slug in both languages).
+  { id: "artists", fr: "/artistes", en: "/artists", indexed: true },
+  { id: "artistsCity", fr: "/artistes/:id", en: "/artists/:id", indexed: true },
   { id: "academy", fr: "/academy", en: "/academy", indexed: true },
   { id: "course", fr: "/academy/formation/:id", en: "/academy/course/:id", indexed: true },
   { id: "help", fr: "/aide", en: "/help", indexed: true },

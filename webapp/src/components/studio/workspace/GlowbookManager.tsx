@@ -50,7 +50,7 @@ import { LibrarySkeleton } from "./CreationLibrary";
 import { GlowbookLookEditor } from "./GlowbookLookEditor";
 import { GlowbookAgenda } from "./GlowbookAgenda";
 import { GlowbookSections } from "./GlowbookSections";
-import { GlowbookBadgeCard, GlowbookQrCard } from "./GlowbookShare";
+import { GlowbookBadgeCard, GlowbookDirectoryCard, GlowbookQrCard } from "./GlowbookShare";
 import { ModerationBadge } from "./GlowbookStatus";
 import { GlowbookAvatar } from "../../glowbook/GlowbookIdentity";
 import { glowbookThemeStyle } from "../../glowbook/theme";
@@ -223,7 +223,10 @@ function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
           {tab === "share" && (
             <div className="grid gap-6 lg:grid-cols-2 lg:items-start [&>*]:min-w-0">
               <GlowbookQr glowbook={glowbook} />
-              <GlowbookLinkCard glowbook={glowbook} />
+              <div className="grid gap-6">
+                <GlowbookLinkCard glowbook={glowbook} />
+                <GlowbookDirectoryCard glowbook={glowbook} hasApprovedCreation={items.some((item) => item.status === "approved")} />
+              </div>
             </div>
           )}
         </div>
