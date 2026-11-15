@@ -23,7 +23,14 @@
   "design": {
     "title": "Your design",
     "custom": "Custom design",
-    "chosenHint": "{{name}} will get this design with your request."
+    "chosenHint": "{{name}} will get this design with your request.",
+    "customSub": "Describe your idea in the message.",
+    "mine": "My 3D Studio design",
+    "mineSub": "{{name}} will see it in 3D before the appointment.",
+    "pick": "Which design?",
+    "mineHint": "Only {{name}} can open it, read-only, from their calendar.",
+    "pending": "You are looking for an artist to make “{{name}}”: it will be offered when you book.",
+    "pendingForget": "Forget"
   },
   "when": {
     "title": "Your slot",
@@ -78,6 +85,7 @@
     "blocked": "This artist does not take bookings from you.",
     "comment_required": "Describe your custom design.",
     "item_unavailable": "This design is no longer on the page. Pick another one.",
+    "creation_unavailable": "This design no longer exists in your Studio. Pick another one.",
     "captcha_required": "The anti-robot check did not complete. Try again.",
     "captcha_failed": "The anti-robot check failed. Try again.",
     "rate_limited": "Too many attempts. Wait a few minutes.",
@@ -131,19 +139,24 @@
     "cancelConfirm": "Cancel and tell the client",
     "cancelled": "Appointment cancelled, the client has been told",
     "reason": "Reason (read by the client)",
-    "view3d": "View in 3D"
+    "view3d": "View in 3D",
+    "clientDesign": "Client’s design",
+    "clientDesignGone": "The design is no longer available."
   },
   "mine": {
-    "eyebrow": "Glowbook",
+    "eyebrow": "My account",
     "title": "My appointments",
     "nav": "My appointments",
-    "description": "The appointments booked on artists' Glowbooks. Cancelling is free until 24 hours before.",
+    "description": "The appointments you booked with artists. Cancelling is free until 24 hours before.",
+    "findArtistTitle": "Ready for a new appointment?",
+    "findArtistBody": "Find a tooth gem artist near you and book a slot on their page.",
+    "findArtistLink": "Find an artist near me",
     "unavailable": "Appointments are not available at the moment.",
     "loading": "Loading appointments…",
     "error": "The appointments could not be loaded.",
     "banned": "After two no-shows or late cancellations within 12 months, bookings are closed to you until {{date}}.",
     "upcoming": "Upcoming",
-    "noneUpcoming": "No upcoming appointment. Book from an artist's Glowbook.",
+    "noneUpcoming": "No upcoming appointment. Book from an artist's page.",
     "past": "Past and cancelled",
     "cancelTitle": "Cancel this appointment?",
     "cancelFree": "The artist is told and the slot is free again.",
@@ -156,7 +169,7 @@
     "receivedMoved": "The appointments clients book on your Glowbook are in your calendar.",
     "receivedLink": "Open my calendar",
     "addToCalendar": "Add to my calendar",
-    "icsSummary": "Glowbook appointment with {{name}}",
+    "icsSummary": "Tooth gem appointment with {{name}}",
     "icsDesign": "Design: {{design}}",
     "placeArea": "The artist's area: the artist gives you the exact address."
   },
@@ -357,5 +370,15 @@
     "closure": "Closed from {{from}} to {{to}}",
     "closureDay": "Closed on {{day}}",
     "cta": "Open my calendar"
+  },
+  "clientDashboard": {
+    "eyebrow": "Next appointment",
+    "with": "With {{name}}",
+    "others_one": "And {{count}} more upcoming appointment",
+    "others_other": "And {{count}} more upcoming appointments",
+    "cta": "See my appointments",
+    "none": "No upcoming appointment",
+    "noneBody": "Find a tooth gem artist near you and book a slot on their page.",
+    "findCta": "Find an artist"
   }
 }

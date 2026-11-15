@@ -22,7 +22,9 @@ import { STUDIO_EDITOR_PATH, STUDIO_PATH } from "../lib/studioUrl";
 import { piecesKey } from "../lib/studioWorkspace/scene";
 import { supabase } from "../lib/supabase/client";
 import { decodeSharedDesign, type SharedDesign } from "../lib/studioWorkspace/share";
-import { fetchGlowbookCreation, fetchSharedCreation } from "../lib/studioWorkspace/supabaseRepository";
+import { fetchBookingCreation, fetchGlowbookCreation, fetchSharedCreation } from "../lib/studioWorkspace/supabaseRepository";
+import { formatWhen } from "../lib/glowbookBookingMapping";
+import { AGENDA_PATH } from "../lib/agendaRoutes";
 import { BookThisDesign } from "../components/glowbook/BookThisDesign";
 
 const TryOnDialog = lazy(() => import("../components/studio/tryOn/TryOnDialog").then((m) => ({ default: m.TryOnDialog })));
@@ -54,6 +56,11 @@ const TryOnDialog = lazy(() => import("../components/studio/tryOn/TryOnDialog").
  * smile": the visitor's own photo, rendered by AI. A design
  * carried in the fragment has no server identity and offers none.
  *
+ * A client's own creation joined to a Glowbook booking
+ * (`/studio-3d/rendez-vous/<booking>`, decision 149) opens here too, read
+ * through `glowbook_booking_creation`: the booked artist and the client only,
+ * signed in; the artist may take a copy into their Studio to work from it.
+ *
  * Open to everyone and outside `RequireStudioAccess`: looking at a design
  * someone sent you is not using the paid tool. Lazy-loaded with three.js.
  */
@@ -63,19 +70,49 @@ interface GlowbookAuthor {
   displayName: string;
 }
 
+/** The booking a client's creation is joined to (decision 149), as its viewer sees it. */
+interface BookingContext {
+  viewer: "artist" | "client";
+  /** The other side: the client for the artist, the artist for the client. */
+  otherName: string | null;
+  startsAt: string | null;
+  timezone: string | null;
+}
+
 /** The stored creation, as the try-on function finds it, when its owner's plan allows trying it on. */
 type TryOn = TryOnSource | null;
 
 type Loaded =
-  | { key: string; status: "ready"; design: SharedDesign; author: GlowbookAuthor | null; tryOn: TryOn }
+  | { key: string; status: "ready"; design: SharedDesign; author: GlowbookAuthor | null; tryOn: TryOn; booking?: BookingContext | null }
   /** Unknown, disabled or unreadable link. */
   | { key: string; status: "invalid" }
   /** The database could not be reached: worth another try. */
   | { key: string; status: "unavailable" };
 
-type Source = { token?: string; handle?: string; item?: string; hash: string };
+type Source = { token?: string; handle?: string; item?: string; booking?: string; hash: string };
 
-async function loadShared({ token, handle, item, hash }: Source): Promise<{ design: SharedDesign; author: GlowbookAuthor | null; tryOn: TryOn } | null> {
+async function loadShared({
+  token,
+  handle,
+  item,
+  booking,
+  hash,
+}: Source): Promise<{ design: SharedDesign; author: GlowbookAuthor | null; tryOn: TryOn; booking?: BookingContext | null } | null> {
+  if (booking) {
+    const found = supabase ? await fetchBookingCreation(supabase, booking) : null;
+    if (!found) return null;
+    return {
+      design: found.design,
+      author: null,
+      tryOn: null,
+      booking: {
+        viewer: found.viewer,
+        otherName: found.viewer === "artist" ? found.clientName : found.artistName,
+        startsAt: found.startsAt,
+        timezone: found.timezone,
+      },
+    };
+  }
   if (handle && item) {
     const found = supabase ? await fetchGlowbookCreation(supabase, decodeURIComponent(handle), item) : null;
     if (!found) return null;
@@ -92,26 +129,32 @@ async function loadShared({ token, handle, item, hash }: Source): Promise<{ desi
 export function StudioShare() {
   const { t } = useTranslation();
   const { hash } = useLocation();
-  const { token, handle, item } = useParams();
-  const stored = !!token || !!(handle && item);
+  const { token, handle, item, booking } = useParams();
+  const { signedIn, restoring } = useAuth();
+  const stored = !!token || !!(handle && item) || !!booking;
   const [retry, setRetry] = useState(0);
-  const key = `${token ?? ""}${handle ?? ""}/${item ?? ""}${hash}#${retry}`;
+  // A booking's creation is read as the signed-in member: read again once the session is known.
+  const key = `${token ?? ""}${handle ?? ""}/${item ?? ""}${booking ?? ""}${hash}#${retry}${booking ? `@${signedIn}` : ""}`;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
+  const waitForSession = !!booking && restoring;
 
   useEffect(() => {
+    if (waitForSession) return;
     let live = true;
-    loadShared({ token, handle, item, hash })
+    // Signed out, a booking's creation is refused anyway: the sign-in prompt shows, nothing is asked.
+    (booking && !signedIn ? Promise.resolve(null) : loadShared({ token, handle, item, booking, hash }))
       .then((found) => live && setLoaded(found ? { key, status: "ready", ...found } : { key, status: "invalid" }))
       .catch(() => live && setLoaded({ key, status: stored ? "unavailable" : "invalid" }));
     return () => {
       live = false;
     };
-  }, [token, handle, item, hash, key, stored]);
+  }, [token, handle, item, booking, hash, key, stored, waitForSession, signedIn]);
 
   const current = loaded && loaded.key === key ? loaded : null;
   const design = current?.status === "ready" ? current.design : null;
   const author = current?.status === "ready" ? current.author : null;
   const tryOn = current?.status === "ready" ? current.tryOn : null;
+  const bookingContext = current?.status === "ready" ? (current.booking ?? null) : null;
   const name = design?.name || t("studio.workspace.untitled");
   useDocumentTitle(design ? `${name} · ${t("studio.workspace.share.view.documentTitle")}` : t("studio.workspace.share.view.documentTitle"));
 
@@ -125,11 +168,22 @@ export function StudioShare() {
           </span>
         </div>
       ) : design ? (
-        <SharedDesignView design={design} name={name} author={author} tryOn={tryOn} itemId={handle && item ? item : null} />
+        <SharedDesignView design={design} name={name} author={author} tryOn={tryOn} itemId={handle && item ? item : null} booking={bookingContext} />
+      ) : booking && !signedIn ? (
+        <div className="grid flex-1 place-items-center p-6">
+          <div className="w-full max-w-[440px]">
+            <SignInPrompt
+              returnTo={`/studio-3d/rendez-vous/${booking}`}
+              title={t("studio.workspace.share.view.bookingSignInTitle")}
+              body={t("studio.workspace.share.view.bookingSignInBody")}
+            />
+          </div>
+        </div>
       ) : (
         <InvalidLink
           stored={stored}
           glowbook={!!(handle && item)}
+          booking={!!booking}
           unavailable={current.status === "unavailable"}
           onRetry={() => setRetry((n) => n + 1)}
         />
@@ -141,16 +195,18 @@ export function StudioShare() {
 function InvalidLink({
   stored,
   glowbook,
+  booking = false,
   unavailable,
   onRetry,
 }: {
   stored: boolean;
   glowbook: boolean;
+  booking?: boolean;
   unavailable: boolean;
   onRetry: () => void;
 }) {
   const { t } = useTranslation();
-  const copy = unavailable ? "unavailable" : glowbook ? "glowbookGone" : stored ? "invalidStored" : "invalid";
+  const copy = unavailable ? "unavailable" : booking ? "bookingGone" : glowbook ? "glowbookGone" : stored ? "invalidStored" : "invalid";
   return (
     <div className="grid flex-1 place-items-center p-6">
       <div role="alert" className="grid max-w-[440px] justify-items-center gap-3 text-center">
@@ -179,6 +235,7 @@ function SharedDesignView({
   author,
   tryOn,
   itemId,
+  booking = null,
 }: {
   design: SharedDesign;
   name: string;
@@ -186,6 +243,8 @@ function SharedDesignView({
   tryOn: TryOn;
   /** The Glowbook creation shown, when it comes from a Glowbook (decision 144: "Book this design"). */
   itemId: string | null;
+  /** A client's creation joined to a booking (decision 149). */
+  booking?: BookingContext | null;
 }) {
   const { t, i18n } = useTranslation();
   const { signedIn, restoring } = useAuth();
@@ -217,7 +276,11 @@ function SharedDesignView({
           {/* The site's header is above: the viewer says "read only" here, quietly, instead of a second bar. */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="m-0 text-[10.5px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-600)]">
-              {author ? t("studio.workspace.share.view.glowbookEyebrow", { name: author.displayName || `@${author.handle}` }) : t("studio.workspace.share.view.eyebrow")}
+              {author
+                ? t("studio.workspace.share.view.glowbookEyebrow", { name: author.displayName || `@${author.handle}` })
+                : booking
+                  ? t("studio.workspace.share.view.bookingEyebrow")
+                  : t("studio.workspace.share.view.eyebrow")}
             </p>
             <span className="inline-flex flex-none items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--gt-blue-100)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
               <Eye size={11} aria-hidden="true" />
@@ -235,9 +298,33 @@ function SharedDesignView({
             <p className="m-0 whitespace-pre-line text-[length:var(--text-body-sm)] leading-relaxed text-[var(--text-primary)]">{design.description}</p>
           )}
           <p className="m-0 text-[12px] leading-relaxed text-[var(--text-subtle)]">
-            {t(author ? "studio.workspace.share.view.glowbookNote" : "studio.workspace.share.view.readOnlyNote")}
+            {t(
+              author
+                ? "studio.workspace.share.view.glowbookNote"
+                : booking
+                  ? `studio.workspace.share.view.${booking.viewer === "artist" ? "bookingNoteArtist" : "bookingNoteClient"}`
+                  : "studio.workspace.share.view.readOnlyNote",
+            )}
           </p>
+          {booking?.startsAt && booking.otherName && (
+            <p className="m-0 text-[12.5px] font-semibold text-[var(--text-primary)]">
+              {t(`studio.workspace.share.view.${booking.viewer === "artist" ? "bookingWithClient" : "bookingWithArtist"}`, {
+                when: formatWhen(booking.startsAt, booking.timezone ?? "Europe/Paris", isLocale(i18n.language) ? i18n.language : "fr"),
+                name: booking.otherName,
+              })}
+            </p>
+          )}
         </div>
+
+        {booking && (
+          <Link
+            to={booking.viewer === "artist" ? AGENDA_PATH : "/compte/rendez-vous"}
+            className="inline-flex items-center gap-2 justify-self-start rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-page)] py-1.5 pl-2 pr-3.5 text-[12.5px] font-semibold text-[var(--text-primary)] hover:border-[var(--gt-blue-400)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+          >
+            <ArrowLeft size={14} aria-hidden="true" />
+            {t(`studio.workspace.share.view.${booking.viewer === "artist" ? "backToAgenda" : "backToBookings"}`)}
+          </Link>
+        )}
 
         {author && (
           <Link
@@ -291,8 +378,10 @@ function SharedDesignView({
           <FoldedShoppingList jewels={design.scene.pieces} />
         </section>
 
-        {/* Copying into one's own Studio is for designs sent to the visitor, not an artist's published work. */}
-        {!author && (
+        {/* Copying into one's own Studio is for designs sent to the visitor (the booked artist
+            included, to work from the client's design), not an artist's published work nor the
+            client's own creation. */}
+        {!author && booking?.viewer !== "client" && (
           <div className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-page)] px-4">
             {restoring ? (
               <p role="status" className="m-0 flex items-center justify-center gap-2 py-8 text-[12.5px] text-[var(--text-muted)]">

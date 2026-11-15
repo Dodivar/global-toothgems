@@ -5,7 +5,10 @@ import { hashAddress } from "../_shared/email/send.ts";
  * POST /functions/v1/glowbook-booking — a signed-in member books one hour on an
  * artist's Glowbook (decision 144).
  *
- *   {handle, starts_at, item_id?, name, phone, comment?, locale, captcha?, website?}
+ *   {handle, starts_at, item_id?, client_creation_id?, name, phone, comment?, locale, captcha?, website?}
+ *
+ * `client_creation_id` joins one of the member's own Studio creations (decision 149);
+ * the database checks it is theirs and that it is not sent with `item_id`.
  *
  * Checks, in order: a member session (their JWT, verified here), the honeypot,
  * 20 requests / hour / address, Cloudflare Turnstile once TURNSTILE_SECRET_KEY
@@ -24,6 +27,7 @@ export interface BookInput {
   handle: string;
   startsAt: string;
   itemId: string | null;
+  clientCreationId: string | null;
   name: string;
   phone: string;
   comment: string | null;
@@ -67,6 +71,7 @@ export const BOOKING_REFUSALS = [
   "blocked",
   "comment_required",
   "item_unavailable",
+  "creation_unavailable",
 ] as const;
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -91,14 +96,19 @@ export function parseBooking(body: Record<string, unknown>): Omit<BookInput, "cl
   const phone = str(body, "phone");
   const comment = str(body, "comment");
   const itemRaw = body.item_id;
+  const creationRaw = body.client_creation_id;
   const date = new Date(startsAt);
   if (!HANDLE_RE.test(handle) || !startsAt || Number.isNaN(date.getTime()) || startsAt.length > 40) return null;
   if (name.length < 1 || name.length > 120 || !PHONE_RE.test(phone) || comment.length > 1000) return null;
   if (itemRaw !== undefined && itemRaw !== null && (typeof itemRaw !== "string" || !UUID_RE.test(itemRaw))) return null;
+  if (creationRaw !== undefined && creationRaw !== null && (typeof creationRaw !== "string" || !UUID_RE.test(creationRaw))) return null;
+  // A Glowbook creation and the member's own are exclusive.
+  if (typeof itemRaw === "string" && typeof creationRaw === "string") return null;
   return {
     handle,
     startsAt: date.toISOString(),
     itemId: typeof itemRaw === "string" ? itemRaw.toLowerCase() : null,
+    clientCreationId: typeof creationRaw === "string" ? creationRaw.toLowerCase() : null,
     name,
     phone,
     comment: comment || null,
