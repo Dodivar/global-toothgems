@@ -30,7 +30,6 @@ import { trackDirectoryArtistOpened, trackDirectorySearched, trackDirectoryViewe
  */
 
 const SECTION_X = "px-4 sm:px-[clamp(16px,4vw,48px)]";
-const MAP_COLOR = "#2f6fdb";
 
 type Origin = Point & { label: string; kind: "city" | "nearMe" };
 type Status = { kind: "idle" } | { kind: "busy"; method: "city" | "nearMe" } | { kind: "error"; message: string };
@@ -56,8 +55,18 @@ export function ArtistDirectory({ artists, cities, city }: ArtistDirectoryProps)
 
   const shown = useMemo(() => sortByDistance(artists, origin), [artists, origin]);
   const points = useMemo<DirectoryMapPoint[]>(
-    () => artists.map((a) => ({ handle: a.handle, name: a.displayName, place: a.place, href: resolve(`/glowbook/${a.handle}`) })),
-    [artists, resolve],
+    () =>
+      artists.map((a) => ({
+        handle: a.handle,
+        name: a.displayName,
+        place: a.place,
+        href: resolve(`/glowbook/${a.handle}`),
+        avatarUrl: a.avatarUrl,
+        certified: a.certified,
+        creationCount: a.creationCount,
+        onOpen: () => trackDirectoryArtistOpened(shown.findIndex((s) => s.handle === a.handle) + 1, origin !== null, "map"),
+      })),
+    [artists, resolve, shown, origin],
   );
 
   const fail = (method: "city" | "near_me", outcome: DirectorySearchOutcome, key: string) => {
@@ -204,7 +213,7 @@ export function ArtistDirectory({ artists, cities, city }: ArtistDirectoryProps)
           {artists.length > 0 && (
             <div className="grid gap-2">
               <h2 className="m-0 text-[length:var(--text-h4)] font-[var(--weight-black)]">{t("directory.map.title")}</h2>
-              <DirectoryMap points={points} focus={origin} color={MAP_COLOR} />
+              <DirectoryMap points={points} focus={origin} />
               <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("directory.map.note")}</p>
             </div>
           )}

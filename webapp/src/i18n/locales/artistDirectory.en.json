@@ -30,9 +30,10 @@
   },
   "map": {
     "title": "On the map",
-    "note": "A pin is a salon; a pale dot is an approximate area (~1 km) — the artist’s address is not published.",
+    "note": "A pin is a salon; a picture in a blue halo is an approximate area (~1 km) — the artist’s address is not published.",
     "open": "See their Glowbook",
-    "pin": "{{name}}: see on the map"
+    "pin": "{{name}}: see on the map",
+    "close": "Close"
   },
   "cities": {
     "title": "By city",

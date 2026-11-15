@@ -30,9 +30,10 @@
   },
   "map": {
     "title": "Sur la carte",
-    "note": "Un point plein est un salon ; un rond pâle est un secteur approximatif (~1 km), l’adresse de l’artiste n’est pas publiée.",
+    "note": "Une épingle est un salon ; une photo dans un halo bleu est un secteur approximatif (~1 km), l’adresse de l’artiste n’est pas publiée.",
     "open": "Voir son Glowbook",
-    "pin": "{{name}} : voir sur la carte"
+    "pin": "{{name}} : voir sur la carte",
+    "close": "Fermer"
   },
   "cities": {
     "title": "Par ville",
