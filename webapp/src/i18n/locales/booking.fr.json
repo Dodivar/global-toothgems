@@ -1,14 +1,14 @@
 {
   "dialog": {
     "title": "Prendre rendez-vous avec {{name}}",
-    "sub": "Choisissez votre création et un créneau d’une heure : il vous est réservé tout de suite.",
+    "sub": "Choisissez un créneau d’une heure : il vous est réservé tout de suite.",
     "close": "Fermer",
     "confirm": "Réserver ce créneau",
     "sending": "Réservation…",
     "cancel": "Annuler"
   },
   "gate": {
-    "body": "Pour réserver un créneau avec {{name}}, connectez-vous ou créez votre compte.",
+    "toConfirm": "Choisissez votre créneau, puis connectez-vous pour réserver chez {{name}} : votre choix vous attendra au retour.",
     "signIn": "Se connecter",
     "register": "Créer un compte",
     "why": "Un compte permet de retrouver et d’annuler vos rendez-vous, et protège les artistes des fausses réservations."
@@ -23,8 +23,7 @@
   "design": {
     "title": "Votre création",
     "custom": "Création personnalisée",
-    "hint": "Une création de la page, ou une création personnalisée que vous décrivez.",
-    "customHint": "Décrivez votre envie dans le message : forme, couleur, dent, inspiration…"
+    "chosenHint": "{{name}} recevra cette création avec votre demande."
   },
   "when": {
     "title": "Votre créneau",
@@ -33,11 +32,19 @@
     "retry": "Réessayer",
     "closed": "Cet agenda ne prend plus de réservation pour le moment.",
     "none": "Aucun créneau libre dans les prochains jours. Revenez bientôt.",
-    "days": "Jours avec des créneaux libres",
-    "more": "Jours suivants",
     "zone": "Heures de {{city}}.",
     "zoneOther": "Attention : heures de {{city}}, le fuseau de l’artiste.",
-    "duration": "Chaque rendez-vous dure 1 heure."
+    "duration": "Chaque rendez-vous dure 1 heure.",
+    "prevWeek": "Semaine précédente",
+    "nextWeek": "Semaine suivante",
+    "weekLoading": "Chargement de la semaine…",
+    "weekEmpty": "Aucun créneau libre cette semaine. Essayez la semaine suivante.",
+    "free": "Libre",
+    "unavailable": "Indisponible",
+    "chosen": "Votre choix",
+    "cell": "{{day}} à {{hour}}, libre",
+    "pick": "Choisissez une heure libre dans le calendrier.",
+    "picked": "Votre créneau : {{when}}"
   },
   "fields": {
     "name": "Prénom et nom",
@@ -45,14 +52,15 @@
     "comment": "Message à l’artiste (facultatif)",
     "commentRequired": "Décrivez votre envie",
     "commentPlaceholder": "Votre idée, vos questions, une inspiration…",
-    "noHealth": "N’indiquez pas d’information de santé"
+    "noHealth": "N’indiquez pas d’information de santé",
+    "customHint": "Décrivez votre envie : forme, couleur, dent, inspiration…"
   },
   "problem": {
     "slot": "Choisissez un créneau.",
     "design": "Choisissez une création ou « Création personnalisée ».",
     "name": "Indiquez votre prénom et votre nom.",
     "phone": "Indiquez un numéro de téléphone valide.",
-    "comment": "Décrivez votre création personnalisée.",
+    "comment": "Décrivez votre envie dans le message.",
     "commentLength": "Le message fait au plus 1000 caractères."
   },
   "error": {

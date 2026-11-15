@@ -23,7 +23,8 @@ import {
 /**
  * The persistence boundary of the Glowbook bookings (decision 144).
  *
- *   anyone:  glowbook_booking_info / glowbook_booking_slots (free hours only)
+ *   anyone:  glowbook_booking_info / glowbook_booking_slots (free hours only),
+ *            studio_public_showcase (the page's creations to choose from)
  *   member:  the Edge Function `glowbook-booking` (their JWT + Turnstile) books;
  *            my_glowbook_bookings, glowbook_cancel_booking
  *   artist:  glowbook_artist_calendar, glowbook_save_booking_settings,

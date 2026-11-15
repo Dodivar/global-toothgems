@@ -6,16 +6,20 @@ import { CalendarCheck } from "lucide-react";
 import { Button } from "../ui/Button";
 import { fetchBookingInfo } from "../../lib/glowbookBooking";
 import { BookingDialog } from "./BookingDialog";
+import { useBookingReturn } from "./useBookingReturn";
 
 /**
  * "Book this design" beside a Glowbook creation in 3D (decision 144): shown
  * only when the artist's calendar takes bookings now (asked once the viewer
- * has loaded); opens the booking dialog with this creation chosen.
+ * has loaded); opens the booking dialog for this creation, which the visitor
+ * cannot swap for another one.
  */
 export function BookThisDesign({ handle, itemId, designName, artistName }: { handle: string; itemId: string; designName: string; artistName: string }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  // null until the visitor opens or closes it: back from signing in, it opens by itself.
+  const [opened, setOpen] = useState<boolean | null>(null);
   const [bookable, setBookable] = useState(false);
+  const back = useBookingReturn(bookable);
 
   useEffect(() => {
     let live = true;
@@ -26,6 +30,8 @@ export function BookThisDesign({ handle, itemId, designName, artistName }: { han
       live = false;
     };
   }, [handle]);
+
+  const open = opened ?? back !== null;
 
   if (!bookable) return null;
   return (
@@ -43,8 +49,8 @@ export function BookThisDesign({ handle, itemId, designName, artistName }: { han
         onClose={() => setOpen(false)}
         handle={handle}
         artistName={artistName}
-        items={[{ id: itemId, name: designName }]}
-        initialItemId={itemId}
+        creation={{ id: itemId, name: designName }}
+        initialSlot={back?.slot ?? null}
       />
     </section>
   );
