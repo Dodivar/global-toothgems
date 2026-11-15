@@ -53,7 +53,6 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
     displayName: glowbook.displayName,
     handle: glowbook.handle,
     bio: glowbook.bio,
-    instagram: glowbook.instagram,
     look: { ...(look ?? DEFAULT_LOOK), location: glowbook.location },
     avatarUrl: glowbook.avatarUrl,
     certifiedTitles: titles,

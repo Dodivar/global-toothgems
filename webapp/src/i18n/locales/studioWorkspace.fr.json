@@ -615,9 +615,9 @@
       "glowbookLook": {
         "title": "Personnaliser son Glowbook et la création à la une",
         "body": [
-          "L’onglet Apparence règle l’identité de votre page : photo de profil, couleur, fond (clair, teinté, sombre), présentation des créations (grille ou grandes cartes), ville ou studio, et liens (prise de rendez-vous, site web, TikTok, en https).",
+          "L’onglet Apparence règle l’identité de votre page : photo de profil, couleur, fond (clair, teinté, sombre), présentation des créations (grille ou grandes cartes), ville ou studio et lieu où vous travaillez. Pas de lien externe : vos clientes réservent directement depuis votre page.",
           "La création à la une ouvre votre page en grand, dans une courte vidéo de 5 secondes qui balaie le sourire de gauche à droite, en boucle. Cette vidéo est enregistrée automatiquement par votre Studio quand elle manque ou n’est plus à jour : laissez le Studio ouvert un instant après avoir changé de création à la une.",
-          "Couleur, fond, présentation, une et ville sont publiés dès l’enregistrement ; une nouvelle photo ou un nouveau lien attend d’abord la validation de l’équipe (la page garde les précédents en attendant)."
+          "Couleur, fond, présentation, une et ville sont publiés dès l’enregistrement ; une nouvelle photo attend d’abord la validation de l’équipe (la page garde la précédente en attendant)."
         ]
       },
       "glowbookSections": {

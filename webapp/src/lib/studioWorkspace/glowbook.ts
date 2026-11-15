@@ -36,7 +36,7 @@ export interface Glowbook {
   changesReviewNote: string | null;
   /** Whether the page shows the "certified artist" badge when the artist has earned it (decision 102). */
   showCertification: boolean;
-  /** Whether the artist chose to appear in the public artist directory (decision 145). */
+  /** Whether the artist chose to appear in the public artist directory (decision 146). */
   inDirectory: boolean;
 }
 
@@ -193,7 +193,6 @@ export interface PublicGlowbook {
   handle: string;
   displayName: string;
   bio: string;
-  instagram: string | null;
   location: string | null;
   /** The artist's approved look; null when customisation is not open to them (default look). */
   look: GlowbookLook | null;
@@ -222,7 +221,6 @@ export function toPublicGlowbook(json: unknown): PublicGlowbook | null {
     handle: str(o.handle),
     displayName: str(o.display_name),
     bio: str(o.bio),
-    instagram: str(o.instagram) || null,
     location: str(o.location) || null,
     look: look ? lookFromColumns(look) : null,
     spotlightVideo: look ? toPublicSpotlightVideo(look.spotlight_video) : null,
@@ -246,5 +244,3 @@ export function toPublicGlowbook(json: unknown): PublicGlowbook | null {
     }),
   };
 }
-
-export const instagramUrl = (account: string) => `https://www.instagram.com/${encodeURIComponent(account)}/`;

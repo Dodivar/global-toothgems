@@ -615,9 +615,9 @@
       "glowbookLook": {
         "title": "Customising your Glowbook and the spotlight creation",
         "body": [
-          "The Look tab sets your page’s identity: profile picture, colour, background (light, tinted, dark), how creations show (grid or large cards), city or studio, and links (booking, website, TikTok, https only).",
+          "The Look tab sets your page’s identity: profile picture, colour, background (light, tinted, dark), how creations show (grid or large cards), city or studio and where you work. No outside links: clients book straight from your page.",
           "The spotlight creation opens your page, large, in a short 5-second video sweeping across the smile from left to right, looping. Your Studio records this video automatically whenever it is missing or out of date: leave the Studio open a moment after changing the spotlight creation.",
-          "Colour, background, layout, spotlight and city go live when saved; a new picture or link first waits for the team’s approval (the page keeps the previous ones meanwhile)."
+          "Colour, background, layout, spotlight and city go live when saved; a new picture first waits for the team’s approval (the page keeps the previous one meanwhile)."
         ]
       },
       "glowbookSections": {
