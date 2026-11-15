@@ -167,7 +167,6 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
           onClose={() => setBooking(false)}
           handle={glowbook.handle}
           artistName={glowbook.displayName}
-          items={glowbook.items.map((i) => ({ id: i.id, name: i.name }))}
         />
       )}
     </div>

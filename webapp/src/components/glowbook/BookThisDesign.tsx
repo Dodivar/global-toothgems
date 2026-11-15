@@ -43,8 +43,7 @@ export function BookThisDesign({ handle, itemId, designName, artistName }: { han
         onClose={() => setOpen(false)}
         handle={handle}
         artistName={artistName}
-        items={[{ id: itemId, name: designName }]}
-        initialItemId={itemId}
+        creation={{ id: itemId, name: designName }}
       />
     </section>
   );
