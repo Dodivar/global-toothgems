@@ -13,6 +13,7 @@ import { HelpHint } from "./HelpHint";
 import { FrontViewSection } from "../FrontViewPanel";
 import { usePlacementSheet } from "../usePlacementSheet";
 import { GlowbookControl } from "./GlowbookControl";
+import { BookArtistForCreation } from "./BookArtistForCreation";
 import { TemplatePublishControl } from "./TemplatePublishControl";
 import { useWorkspaceActions } from "./useWorkspaceActions";
 import { useWorkspaceFormat } from "./workspaceStyles";
@@ -112,6 +113,9 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
       <CreationCollectionsSummary creationId={creation.id} back={{ kind: "creationDetail", creationId: creation.id }} />
 
       <FrontViewSection pieces={creation.scene.pieces} model={creation.scene.model} />
+
+      {/* Below the Atelier plan: have it made by an artist (decision 149). */}
+      <BookArtistForCreation creation={creation} onLeave={onClose} />
 
       <GlowbookControl creation={creation} onLeave={onClose} />
 

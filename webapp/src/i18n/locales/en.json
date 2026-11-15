@@ -37,7 +37,6 @@
     "studioGroups": "My groups",
     "studioGlowbook": "Glowbook",
     "studioGlowbookSub": "Your artist showcase, in one link",
-    "studioGlowbookAgenda": "Glowbook & calendar",
     "studioAgenda": "My calendar",
     "studioAgendaSub": "Your appointments, hours and time off",
     "giftCard": "Gift card",
@@ -45,7 +44,9 @@
     "viewAllStudio": "Discover the 3D Studio",
     "mySpace": "My space",
     "studioArtists": "Find an artist",
-    "studioArtistsSub": "Artists near you"
+    "studioArtistsSub": "Artists near you",
+    "studioAppointments": "My appointments",
+    "studioAppointmentsSub": "The appointments you booked with an artist"
   },
   "common": {
     "readMore": "Learn more",
@@ -1041,7 +1042,7 @@
       "done": "done",
       "steps": {
         "profile": { "title": "Complete my profile", "text": "Phone and delivery address, to order in two clicks." },
-        "shop": { "title": "Explore the shop", "text": "Add a favourite: we tell you when it goes on sale." },
+        "shop": { "title": "Explore the shop", "text": "Add a favourite: if you wish, we tell you when it goes on sale." },
         "studio": { "title": "Try the 3D Studio", "text": "A free 48-hour trial to design your smile in 3D." },
         "academy": { "title": "See the Academy", "text": "Professional training, with a certificate at the end." }
       }
@@ -4959,6 +4960,15 @@
       "errorTitle": "Your favourites are temporarily unavailable",
       "errorBody": "We could not load them. Check your connection and try again.",
       "errorCta": "Try again"
+    },
+    "promoAlert": {
+      "title": "Hear about promotions on your favourites",
+      "body": "One e-mail, at most once a week, when one of your favourites goes on sale. You unsubscribe in one click.",
+      "cta": "Yes, keep me posted",
+      "savedTitle": "Noted",
+      "savedBody": "We will write to you when one of your favourites goes on sale.",
+      "errorTitle": "Choice not saved",
+      "errorBody": "Your choice could not be saved. Try again in a moment."
     }
   },
   "siteSearch": {
