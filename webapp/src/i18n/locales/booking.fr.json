@@ -154,7 +154,11 @@
     "artistReason": "Raison de l’artiste : {{reason}}",
     "cancel": "Annuler",
     "receivedMoved": "Les rendez-vous que des clients prennent sur votre Glowbook sont dans votre agenda.",
-    "receivedLink": "Ouvrir mon agenda"
+    "receivedLink": "Ouvrir mon agenda",
+    "addToCalendar": "Ajouter à mon agenda",
+    "icsSummary": "Rendez-vous Glowbook avec {{name}}",
+    "icsDesign": "Création : {{design}}",
+    "placeArea": "Le quartier de l’artiste : l’adresse exacte vous est donnée par l’artiste."
   },
   "agenda": {
     "saved": "Agenda enregistré",

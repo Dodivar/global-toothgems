@@ -88,6 +88,19 @@ function itemTarget(item: SectionItem, glowbookPlan: boolean | null): string {
   return item.glowbook && glowbookPlan === false ? GLOWBOOK_INTRO_PATH : item.to;
 }
 
+/**
+ * Below the Atelier plan the Glowbook and the calendar are one locked entry
+ * (owner's request, 2026-11-15): the calendar is left out and the Glowbook
+ * entry is named for both.
+ */
+function shownItem(item: SectionItem, glowbookPlan: boolean | null): boolean {
+  return !(item.mergedWhenLocked && glowbookPlan === false);
+}
+
+function itemLabel(item: SectionItem, glowbookPlan: boolean | null): string {
+  return item.glowbook && glowbookPlan === false && item.lockedLabelKey ? item.lockedLabelKey : item.labelKey;
+}
+
 /** Opens the member-space menu from inside a page (the lounge, whose screen hides the shell's own bar). */
 export function useMemberShellMenu() {
   return useContext(MemberShellMenuContext);
@@ -112,6 +125,10 @@ interface SectionItem {
   lounge?: boolean;
   /** The Glowbook: locked, and leading to its presentation page, below the Atelier plan. */
   glowbook?: boolean;
+  /** Its name while locked, when it stands for more than itself (the Glowbook and the calendar). */
+  lockedLabelKey?: string;
+  /** Folded into the Glowbook's locked entry below the plan (the calendar). */
+  mergedWhenLocked?: boolean;
   /** Carries a badge for what is new there since the member last looked. */
   activity?: ActivitySection;
 }
@@ -165,9 +182,16 @@ const GROUPS: SectionGroup[] = [
         end: true,
       })),
       // Always listed; locked (leading to the presentation page) below the Atelier plan.
-      { to: studioSectionPath("glowbook"), labelKey: "nav.studioGlowbook", shortKey: "glowbook", icon: Sparkles, glowbook: true },
-      // The artist's calendar (decision 147), in the member space; locked like the Glowbook below the plan.
-      { to: AGENDA_PATH, labelKey: "nav.studioAgenda", shortKey: "agenda", icon: CalendarDays, glowbook: true },
+      {
+        to: studioSectionPath("glowbook"),
+        labelKey: "nav.studioGlowbook",
+        lockedLabelKey: "nav.studioGlowbookAgenda",
+        shortKey: "glowbook",
+        icon: Sparkles,
+        glowbook: true,
+      },
+      // The artist's calendar (decision 147), in the member space; below the plan, part of the Glowbook's locked entry.
+      { to: AGENDA_PATH, labelKey: "nav.studioAgenda", shortKey: "agenda", icon: CalendarDays, glowbook: true, mergedWhenLocked: true },
       { to: "/compte/studio", labelKey: "account.navStudio", shortKey: "subscription", icon: CreditCard },
     ],
   },
@@ -320,6 +344,7 @@ function Drawer({ onClose, everywhere = false }: { onClose: () => void; everywhe
  * Rendered once in the desktop sidebar and once in the mobile drawer.
  */
 function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; closeButton?: ReactNode }) {
+  const glowbookPlan = useContext(GlowbookPlanContext);
   const { formatMonthYear } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -374,7 +399,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
                   </span>
                 )}
                 <ul aria-labelledby={group.labelKey ? headingId : undefined} className="m-0 grid list-none gap-0.5 p-0">
-                  {group.items.map((item) => (
+                  {group.items.filter((item) => shownItem(item, glowbookPlan)).map((item) => (
                     <SectionLink key={item.to} item={item} onNavigate={onNavigate} />
                   ))}
                 </ul>
@@ -453,7 +478,7 @@ function SectionLink({ item, onNavigate }: { item: SectionItem; onNavigate?: () 
       >
         <Icon size={16} strokeWidth={2} aria-hidden="true" />
         <span className="grid min-w-0 gap-0.5">
-          <span className="truncate">{t(item.labelKey)}</span>
+          <span className="truncate">{t(itemLabel(item, glowbookPlan))}</span>
           {locked && (
             <span className="text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">
               {glowbookLocked ? t("account.shell.atelierLocked") : t("community.navEntryLocked")}
@@ -548,12 +573,12 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
       </Link>
 
       <ul className="m-0 grid w-full list-none gap-0.5 px-1.5 py-0">
-        {SECTIONS.map((item) => (
+        {SECTIONS.filter((item) => shownItem(item, glowbookPlan)).map((item) => (
           <li key={item.to} className={clsx(GROUP_STARTS.has(item.to) && "mt-1 border-t border-[var(--border-subtle)] pt-1")}>
             <NavLink
               to={itemTarget(item, glowbookPlan)}
               end={item.end}
-              title={t(item.labelKey)}
+              title={t(itemLabel(item, glowbookPlan))}
               className={({ isActive }) =>
                 clsx(railRow, isActive ? "text-[var(--gt-ink-900)]" : "text-[var(--gt-ink-600)] hover:text-[var(--gt-ink-900)]", focusRing)
               }
@@ -584,7 +609,7 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
                     {t(`account.shell.short.${item.shortKey}`)}
                   </span>
                   <span className="sr-only">
-                    {t(item.labelKey)}
+                    {t(itemLabel(item, glowbookPlan))}
                     {item.glowbook && glowbookPlan === false ? ` — ${t("account.shell.atelierLocked")}` : ""}
                   </span>
                 </>

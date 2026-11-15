@@ -5,6 +5,8 @@
  * helpers only read its answers and lay them out in the right time zone.
  */
 
+import { placeFromJson, type GlowbookPlace } from "./studioWorkspace/glowbookPlace";
+
 export type BookingStatus = "booked" | "cancelled_client" | "cancelled_artist" | "honoured" | "no_show";
 export type DesignKind = "creation" | "custom";
 
@@ -34,6 +36,13 @@ export interface ClientBooking {
   cancelReason: string | null;
   artistName: string;
   artistHandle: string | null;
+  /** The Glowbook creation booked while its 3D view is public (decision 147 (d)), else null. */
+  itemId: string | null;
+  itemLive: boolean;
+  /** Its public picture (signed by the browser), while live. */
+  thumbnailPath: string | null;
+  /** Where the appointment takes place: a salon's address, or an area. */
+  place: GlowbookPlace | null;
 }
 
 export interface ArtistBooking {
@@ -168,6 +177,10 @@ export function readMyBookings(data: unknown): { bannedUntil: string | null; boo
       cancelReason: text(r.cancel_reason),
       artistName: text(r.artist_name) ?? "",
       artistHandle: text(r.artist_handle),
+      itemId: text(r.item_id),
+      itemLive: r.item_live === true,
+      thumbnailPath: text(r.thumbnail_path),
+      place: isRecord(r.place) ? placeFromJson({ place: r.place }) : null,
     })),
   };
 }

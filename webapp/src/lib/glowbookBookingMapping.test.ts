@@ -239,6 +239,22 @@ describe("closures (decision 147)", () => {
     expect(c?.bookings.map((b) => [b.itemId, b.thumbnailPath, b.itemLive])).toEqual([["i1", "u/1.jpg", true], [null, null, false]]);
   });
 
+  it("reads the creation and the place of a client's booking (decision 147 (d))", () => {
+    const { bookings } = readMyBookings({
+      bookings: [
+        {
+          id: "b1", starts_at: "s", ends_at: "e", status: "booked", artist_name: "Léa", artist_handle: "lea",
+          item_id: "i1", item_live: true, thumbnail_path: "u/1.jpg",
+          place: { mode: "exact", label: "12 rue de la Paix, Paris", lat: "48.8687", lng: 2.3314 },
+        },
+        { id: "b2", starts_at: "s", ends_at: "e", status: "booked", place: { mode: "area" } },
+      ],
+    });
+    expect(bookings[0]).toMatchObject({ itemId: "i1", itemLive: true, thumbnailPath: "u/1.jpg" });
+    expect(bookings[0].place).toEqual({ mode: "exact", label: "12 rue de la Paix, Paris", lat: 48.8687, lng: 2.3314 });
+    expect(bookings[1]).toMatchObject({ itemId: null, itemLive: false, thumbnailPath: null, place: null });
+  });
+
   it("shortens a client's name for a week cell", () => {
     expect(cellName("Camille Roussel")).toBe("Camille");
     expect(cellName("Maximilienne Dupont")).toBe("Maximilie…");

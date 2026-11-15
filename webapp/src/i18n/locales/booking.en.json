@@ -154,7 +154,11 @@
     "artistReason": "The artist's reason: {{reason}}",
     "cancel": "Cancel",
     "receivedMoved": "The appointments clients book on your Glowbook are in your calendar.",
-    "receivedLink": "Open my calendar"
+    "receivedLink": "Open my calendar",
+    "addToCalendar": "Add to my calendar",
+    "icsSummary": "Glowbook appointment with {{name}}",
+    "icsDesign": "Design: {{design}}",
+    "placeArea": "The artist's area: the artist gives you the exact address."
   },
   "agenda": {
     "saved": "Calendar saved",

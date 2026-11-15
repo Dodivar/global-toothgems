@@ -1,7 +1,8 @@
 -- =============================================================================
 -- Glowbook closures validation suite (decision 147)
 -- (migrations 20261115154130_glowbook_closures, 20261115160023_glowbook_closures_decision_number,
---  20261115162934_glowbook_closures_cancel_bookings, 20261115164211_glowbook_calendar_booking_details)
+--  20261115162934_glowbook_closures_cancel_bookings, 20261115164211_glowbook_calendar_booking_details,
+--  20261115170412_glowbook_client_booking_details)
 -- =============================================================================
 --   C1  anon, a member without the plan and a member without a Glowbook cannot
 --       add a period; the table is not readable by members;
@@ -18,7 +19,9 @@
 --   C7  the purge drops periods ended more than 30 days ago only;
 --   C8  the personal data export lists the periods;
 --   C9  the artist's calendar gives each booking its creation (item, picture,
---       live 3D view) and the page's handle; a custom design has none.
+--       live 3D view) and the page's handle; a custom design has none;
+--   C10 the client's own bookings carry the creation (while live) and the
+--       artist's place; another member reads none of them.
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL GLOWBOOK CLOSURES TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -268,6 +271,20 @@ begin
   if v_b is null or v_b ->> 'item_id' is not null or (v_b ->> 'item_live')::boolean then
     raise exception 'FAIL C9: a custom design has a creation %', v_b;
   end if;
+  execute 'reset role';
+
+  -- C10
+  update public.studio_showcases set place_mode = 'exact', place_label = '12 rue de la Paix, Paris', place_lat = 48.86870, place_lng = 2.33140
+   where user_id = artist;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', client3, 'role', 'authenticated')::text, true);
+  select b into v_b from jsonb_array_elements(public.my_glowbook_bookings() -> 'bookings') b where b ->> 'item_id' = v_item::text;
+  if v_b is null or (v_b ->> 'item_live')::boolean is not true or v_b ->> 'thumbnail_path' <> artist::text || '/c9.jpg'
+     or v_b -> 'place' ->> 'label' <> '12 rue de la Paix, Paris' or v_b -> 'place' ->> 'mode' <> 'exact' then
+    raise exception 'FAIL C10: client booking details %', v_b;
+  end if;
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
+  if jsonb_array_length(public.my_glowbook_bookings() -> 'bookings') <> 0 then raise exception 'FAIL C10: another member reads the bookings'; end if;
   execute 'reset role';
 
   raise exception 'ALL GLOWBOOK CLOSURES TESTS PASSED';
