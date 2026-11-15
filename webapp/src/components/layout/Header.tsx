@@ -69,7 +69,10 @@ export function Header() {
   const glowbookTarget = useGlowbookMenuTarget(panel === "studio" || (menuOpen && menuTab === "studio"));
   // The calendar is listed once the plan is known to include the Glowbook (its own page is then the target).
   const ownGlowbook = glowbookTarget !== GLOWBOOK_INTRO_PATH;
-  const studioMenu = STUDIO_MENU.filter((entry) => entry.id !== "agenda" || ownGlowbook).map((entry) =>
+  // A member's own appointments are listed once signed in (the menus open only after hydration).
+  const studioMenu = STUDIO_MENU.filter(
+    (entry) => (entry.id !== "agenda" || ownGlowbook) && (entry.id !== "appointments" || signedIn),
+  ).map((entry) =>
     entry.id === "glowbook" ? { ...entry, to: glowbookTarget } : entry,
   );
 
