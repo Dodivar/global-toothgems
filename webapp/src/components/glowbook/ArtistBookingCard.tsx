@@ -71,6 +71,27 @@ export function ArtistBookingCard({
         </Badge>
       </div>
 
+      {/* The client's own creation (decision 148): no picture (it is theirs), the 3D view read-only. */}
+      {booking.designKind === "client_creation" && (
+        <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-2">
+          <span aria-hidden="true" className="grid h-16 w-16 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--surface-card)] text-[var(--gt-blue-700)]">
+            <Box size={20} />
+          </span>
+          <div className="grid min-w-0 gap-1">
+            <p className="m-0 text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">{t("booking.artist.clientDesign")}</p>
+            <p className="m-0 truncate text-[13.5px] font-bold text-[var(--text-primary)]">{booking.creationName ?? "—"}</p>
+            {creation?.viewUrl ? (
+              <a href={creation.viewUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-fit items-center gap-1 text-[12.5px] font-semibold underline">
+                <Box size={13} aria-hidden="true" />
+                {t("booking.artist.view3d")}
+              </a>
+            ) : (
+              <p className="m-0 text-[12.5px] text-[var(--text-muted)]">{t("booking.artist.clientDesignGone")}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {booking.designKind === "creation" && creation && (creation.imageUrl || creation.viewUrl) && (
         <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] p-2">
           {creation.imageUrl ? (

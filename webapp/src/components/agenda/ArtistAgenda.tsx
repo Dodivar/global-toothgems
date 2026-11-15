@@ -45,7 +45,7 @@ import {
   zonedInstant,
 } from "../../lib/glowbookBookingMapping";
 import { AGENDA_TABS, agendaTab, type AgendaTab } from "../../lib/agendaRoutes";
-import { GLOWBOOK_INTRO_PATH, glowbookCreationPath, studioSectionPath } from "../../lib/studioUrl";
+import { bookingCreationPath, GLOWBOOK_INTRO_PATH, glowbookCreationPath, studioSectionPath } from "../../lib/studioUrl";
 import { Link } from "../../lib/navigation";
 import { useToast } from "../../lib/toast";
 import { fieldClass, focusRing } from "../studio/workspace/workspaceStyles";
@@ -213,7 +213,8 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
   const handle = calendar?.handle ?? null;
   const creationOf: CreationOf = (b) => ({
     imageUrl: b.thumbnailPath ? (images.get(b.thumbnailPath) ?? null) : null,
-    viewUrl: b.itemLive && b.itemId && handle ? glowbookCreationPath(handle, b.itemId) : null,
+    // The client's own creation (decision 148) opens read-only from the booking; a Glowbook one from the page.
+    viewUrl: b.clientCreation ? bookingCreationPath(b.id) : b.itemLive && b.itemId && handle ? glowbookCreationPath(handle, b.itemId) : null,
   });
 
   const toggle = async (day: string, hour: number, current: HourState) => {

@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { ArrowLeft, ArrowRight, BadgeCheck, Images, LocateFixed, MapPin, Search, Sparkles, Store, X } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { DirectoryMap } from "../components/glowbook/DirectoryMap";
+import { BookingCreationNotice } from "../components/glowbook/BookingCreationNotice";
 import type { DirectoryMapPoint } from "../components/glowbook/DirectoryMapCanvas";
 import { Link } from "../lib/navigation";
 import { useResolve } from "../lib/navigation/hooks";
@@ -154,6 +155,8 @@ export function ArtistDirectory({ artists, cities, city }: ArtistDirectoryProps)
               {t("directory.city.intro", { count: city.count, city: city.name })}
             </p>
           )}
+          {/* Come from the Studio with a creation to have made (decision 148). */}
+          <BookingCreationNotice />
 
           {artists.length > 1 && (
             <form onSubmit={searchCity} role="search" aria-label={t("directory.search.label")} className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">

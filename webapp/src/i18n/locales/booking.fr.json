@@ -23,7 +23,14 @@
   "design": {
     "title": "Votre création",
     "custom": "Création personnalisée",
-    "chosenHint": "{{name}} recevra cette création avec votre demande."
+    "chosenHint": "{{name}} recevra cette création avec votre demande.",
+    "customSub": "Décrivez votre envie dans le message.",
+    "mine": "Ma création du Studio 3D",
+    "mineSub": "{{name}} la verra en 3D avant le rendez-vous.",
+    "pick": "Quelle création ?",
+    "mineHint": "Seul {{name}} pourra l’ouvrir, en lecture seule, depuis son agenda.",
+    "pending": "Vous cherchez un artiste pour réaliser « {{name}} » : elle vous sera proposée au moment de réserver.",
+    "pendingForget": "Oublier"
   },
   "when": {
     "title": "Votre créneau",
@@ -78,6 +85,7 @@
     "blocked": "Cet artiste ne prend pas de réservation de votre part.",
     "comment_required": "Décrivez votre création personnalisée.",
     "item_unavailable": "Cette création n’est plus sur la page. Choisissez-en une autre.",
+    "creation_unavailable": "Cette création n’existe plus dans votre Studio. Choisissez-en une autre.",
     "captcha_required": "La vérification anti-robot n’a pas abouti. Réessayez.",
     "captcha_failed": "La vérification anti-robot a échoué. Réessayez.",
     "rate_limited": "Trop de tentatives. Patientez quelques minutes.",
@@ -131,7 +139,9 @@
     "cancelConfirm": "Annuler et prévenir le client",
     "cancelled": "Rendez-vous annulé, le client est prévenu",
     "reason": "Raison (lue par le client)",
-    "view3d": "Voir en 3D"
+    "view3d": "Voir en 3D",
+    "clientDesign": "Création du client",
+    "clientDesignGone": "La création n’est plus disponible."
   },
   "mine": {
     "eyebrow": "Mon compte",

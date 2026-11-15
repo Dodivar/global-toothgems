@@ -3600,6 +3600,7 @@ export type Database = {
           artist_id: string
           cancel_reason: string | null
           cancelled_at: string | null
+          client_creation_id: string | null
           client_email: string | null
           client_erased: boolean
           client_id: string | null
@@ -3623,6 +3624,7 @@ export type Database = {
           artist_id: string
           cancel_reason?: string | null
           cancelled_at?: string | null
+          client_creation_id?: string | null
           client_email?: string | null
           client_erased?: boolean
           client_id?: string | null
@@ -3646,6 +3648,7 @@ export type Database = {
           artist_id?: string
           cancel_reason?: string | null
           cancelled_at?: string | null
+          client_creation_id?: string | null
           client_email?: string | null
           client_erased?: boolean
           client_id?: string | null
@@ -3666,6 +3669,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "glowbook_bookings_client_creation_id_fkey"
+            columns: ["client_creation_id"]
+            isOneToOne: false
+            referencedRelation: "creations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "glowbook_bookings_artist_id_fkey"
             columns: ["artist_id"]
@@ -11832,6 +11842,7 @@ export type Database = {
       glowbook_book_slot: {
         Args: {
           p_client: string
+          p_client_creation_id?: string
           p_comment: string
           p_handle: string
           p_item_id: string
@@ -11842,6 +11853,7 @@ export type Database = {
         }
         Returns: Json
       }
+      glowbook_booking_creation: { Args: { p_booking: string }; Returns: Json }
       glowbook_booking_info: { Args: { p_handle: string }; Returns: Json }
       glowbook_booking_ip_allowed: {
         Args: { p_ip_hash: string }

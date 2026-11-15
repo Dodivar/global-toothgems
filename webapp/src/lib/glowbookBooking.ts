@@ -28,7 +28,8 @@ import {
  *
  *   anyone:  glowbook_booking_info / glowbook_booking_slots (free hours only),
  *            studio_public_showcase (the page's creations to choose from)
- *   member:  the Edge Function `glowbook-booking` (their JWT + Turnstile) books;
+ *   member:  the Edge Function `glowbook-booking` (their JWT + Turnstile) books,
+ *            with one of their own creations if they choose (decision 148);
  *            my_glowbook_bookings, glowbook_cancel_booking
  *   artist:  glowbook_artist_calendar, glowbook_save_booking_settings,
  *            glowbook_set_calendar_hours, glowbook_cancel_booking (reason),
@@ -67,6 +68,8 @@ export interface BookingRequest {
   handle: string;
   startsAt: string;
   itemId: string | null;
+  /** The member's own Studio creation (decision 148); exclusive with `itemId`. */
+  clientCreationId?: string | null;
   name: string;
   phone: string;
   comment: string;
@@ -83,6 +86,7 @@ export async function bookSlot(request: BookingRequest): Promise<BookAnswer> {
       handle: request.handle,
       starts_at: request.startsAt,
       item_id: request.itemId,
+      ...(request.clientCreationId ? { client_creation_id: request.clientCreationId } : {}),
       name: request.name.trim(),
       phone: request.phone.trim(),
       comment: request.comment.trim(),
@@ -97,6 +101,22 @@ export async function bookSlot(request: BookingRequest): Promise<BookAnswer> {
   const row = (data as { booking?: { id?: unknown; starts_at?: unknown; timezone?: unknown } } | null)?.booking;
   if (!row || typeof row.id !== "string") return { kind: "error", error: "unavailable" };
   return { kind: "booked", id: row.id, startsAt: String(row.starts_at), timezone: String(row.timezone) };
+}
+
+/** The member's own saved Studio creations, newest first, to join one to a booking (decision 148). */
+export async function fetchOwnCreations(): Promise<{ id: string; name: string }[] | null> {
+  if (!supabase) return null;
+  const { data: session } = await supabase.auth.getSession();
+  const userId = session.session?.user.id;
+  if (!userId) return null;
+  const { data, error } = await supabase
+    .from("creations")
+    .select("id, name")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(200);
+  if (error) throw new Error("creations unavailable");
+  return (data ?? []).map((row) => ({ id: row.id, name: row.name }));
 }
 
 export async function fetchMyBookings(): Promise<{ bannedUntil: string | null; bookings: ClientBooking[] } | null> {

@@ -22,7 +22,7 @@ import { AGENDA_PATH } from "../../lib/agendaRoutes";
 import { useToast } from "../../lib/toast";
 import { appointmentIcs, downloadIcs } from "../../lib/glowbookIcs";
 import { directionsLinks } from "../../lib/studioWorkspace/glowbookPlace";
-import { ARTIST_DIRECTORY_PATH, glowbookCreationPath } from "../../lib/studioUrl";
+import { ARTIST_DIRECTORY_PATH, bookingCreationPath, glowbookCreationPath } from "../../lib/studioUrl";
 import { BUCKETS, signedUrls } from "../../lib/supabase/storage";
 
 const panel = "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[clamp(16px,3vw,24px)]";
@@ -248,7 +248,12 @@ function ClientBookingRow({
   upcoming?: boolean;
 }) {
   const { t } = useTranslation();
-  const viewUrl = booking.itemLive && booking.itemId && booking.artistHandle ? glowbookCreationPath(booking.artistHandle, booking.itemId) : null;
+  // Their own Studio creation (decision 148) opens as the artist sees it; a Glowbook one from the page.
+  const viewUrl = booking.clientCreation
+    ? bookingCreationPath(booking.id)
+    : booking.itemLive && booking.itemId && booking.artistHandle
+      ? glowbookCreationPath(booking.artistHandle, booking.itemId)
+      : null;
   const design = booking.designKind === "custom" ? t("booking.design.custom") : (booking.creationName ?? "");
   const place = booking.place;
 
@@ -290,7 +295,7 @@ function ClientBookingRow({
 
       {/* What was booked: the creation's picture and 3D view, or a custom design. */}
       <div className="flex items-center gap-3">
-        {booking.designKind === "creation" && imageUrl ? (
+        {booking.designKind !== "custom" && imageUrl ? (
           <img src={imageUrl} alt="" className="h-16 w-16 flex-none rounded-[var(--radius-sm)] bg-[var(--surface-sunken)] object-cover" />
         ) : (
           <span aria-hidden="true" className="grid h-16 w-16 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--surface-sunken)] text-[var(--text-subtle)]">
