@@ -2935,11 +2935,11 @@ The owner asked an agent to settle the pending "to confirm" points. Outcome:
     share links) lists the design's shop items with "add all to cart" (the editor's shopping list; the checkout
     prices again). Agent's choice, decided on the owner's delegation (2026-11-11): (j) a Glowbook creation cannot be copied into the visitor's own
     Studio (share links still can): it is the artist's published work.
-100. **3D Studio: the Glowbook's own look** (owner's request, 2026-10-19: "let the artist customise the page — _(Links — booking, website, TikTok — removed by decision 146.)_
+100. **3D Studio: the Glowbook's own look** (owner's request, 2026-10-19: "let the artist customise the page —
     profile picture, banner, identity colour, etc.; reserved to a subscription later, open to everyone for now";
     migrations `20261019134715`, `20261019135003`). Built: profile picture, banner (framed and re-encoded to JPEG
     in the browser), identity colour from a list of ten (each tested for contrast), light / tinted / dark
-    background, grid or large cards, a creation in the spotlight, city, booking link, website and TikTok, with a
+    background, grid or large cards, a creation in the spotlight, city, booking link, website and TikTok (the three links removed by decision 146), with a
     live preview in the Studio. The plan switch is `private.glowbook_customization_allowed(user)` (Studio access
     today): it gates saving and whether the public page shows the look. Agent's choices, decided on the owner's delegation (2026-11-11): (a) new
     pictures and links wait for a moderator (in `pending_changes`) while the page keeps the approved ones;
