@@ -182,7 +182,7 @@
     "weekView": "Semaine",
     "prevWeek": "Semaine précédente",
     "nextWeek": "Semaine suivante",
-    "weekHint": "Heures de {{city}}. Touchez une heure pour la fermer ou l’ouvrir : bloquez ici les rendez-vous pris ailleurs (Planity, téléphone…).",
+    "weekHint": "Heures de {{city}}. Touchez une heure pour la fermer ou l’ouvrir : bloquez ici les rendez-vous pris ailleurs, ou laissez l’import de votre autre agenda le faire.",
     "saveFirst": "Enregistrez vos réglages pour modifier la semaine.",
     "closeDay": "Fermer",
     "cell": {
@@ -191,7 +191,8 @@
       "blocked": "fermé",
       "booked": "réservé",
       "closed": "hors horaires",
-      "past": "passé"
+      "past": "passé",
+      "busy": "pris ailleurs"
     },
     "upcoming_one": "{{count}} rendez-vous à venir",
     "upcoming_other": "{{count}} rendez-vous à venir",
@@ -234,5 +235,30 @@
     "disableTitle": "Désactiver le lien d’agenda ?",
     "disableBody": "Vos agendas ne recevront plus vos rendez-vous. Vous pourrez créer un nouveau lien plus tard.",
     "disabled": "Lien d’agenda désactivé"
+  },
+  "import": {
+    "title": "Bloquer les heures prises ailleurs",
+    "body": "Collez le lien privé d’un autre agenda : les heures où il est occupé sont fermées automatiquement sur votre Glowbook, toutes les 15 minutes.",
+    "label": "Lien de votre autre agenda (.ics)",
+    "howGoogle": "Google Agenda (sur ordinateur) : Paramètres › votre agenda › « Adresse secrète au format iCal », copiez-la.",
+    "howPlanity": "Planity : demandez à leur support s’il existe un lien d’agenda au format .ics ; sinon, fermez vos créneaux Planity à la main dans la semaine ci-dessus.",
+    "howOther": "Apple, Outlook ou autre : utilisez le lien de publication ou d’abonnement de l’agenda (il commence par https:// ou webcal://).",
+    "privacy": "Seules les heures occupées sont conservées : jamais le titre, le lieu ni les invités de vos rendez-vous. Une heure ouverte ou fermée à la main reste comme vous l’avez choisie.",
+    "save": "Enregistrer le lien",
+    "remove": "Retirer le lien",
+    "saved": "Lien enregistré",
+    "savedBody": "Les heures occupées seront fermées dans les 15 minutes.",
+    "removed": "Lien retiré : les heures importées sont rouvertes",
+    "invalid": "Le lien doit commencer par https:// ou webcal://.",
+    "waiting": "Première lecture dans les 15 minutes.",
+    "ok_one": "Lu le {{date}} : {{count}} heure fermée à venir.",
+    "ok_other": "Lu le {{date}} : {{count}} heures fermées à venir.",
+    "errors": {
+      "unreachable": "Lecture impossible le {{date}} : le lien ne répond pas. Vérifiez qu’il est toujours valide. Les heures déjà fermées restent fermées.",
+      "not_calendar": "Lecture impossible le {{date}} : ce lien ne donne pas un agenda .ics.",
+      "too_large": "Lecture impossible le {{date}} : cet agenda est trop volumineux (2 Mo au plus).",
+      "forbidden_host": "Ce lien n’est pas accepté : il doit être une adresse https publique.",
+      "timeout": "Lecture impossible le {{date}} : l’agenda a mis trop de temps à répondre. Nouvel essai dans 15 minutes."
+    }
   }
 }

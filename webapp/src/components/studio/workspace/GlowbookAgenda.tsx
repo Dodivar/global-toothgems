@@ -7,7 +7,7 @@ import { CalendarCheck, ChevronLeft, ChevronRight, CircleAlert, Plus, RotateCw, 
 import { Button } from "../../ui/Button";
 import { Checkbox } from "../../ui/Checkbox";
 import { ArtistBookingCard } from "../../glowbook/ArtistBookingCard";
-import { bookingAvailable, fetchArtistAppointments, fetchArtistCalendar, saveBookingSettings, setCalendarHours, unblockClient } from "../../../lib/glowbookBooking";
+import { bookingAvailable, fetchArtistAppointments, fetchArtistCalendar, fetchImportedHours, saveBookingSettings, setCalendarHours, unblockClient } from "../../../lib/glowbookBooking";
 import {
   addDays,
   type ArtistCalendar,
@@ -34,6 +34,7 @@ import type { Glowbook } from "../../../lib/studioWorkspace/glowbook";
 import { useToast } from "../../../lib/toast";
 import { fieldClass, focusRing } from "./workspaceStyles";
 import { GlowbookCalendarFeed } from "./GlowbookCalendarFeed";
+import { GlowbookCalendarImport } from "./GlowbookCalendarImport";
 
 const card = "grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--shadow-sm)] sm:p-6";
 const cardTitle = "m-0 inline-flex items-center gap-2 text-[16px] font-[var(--weight-black)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]";
@@ -47,6 +48,7 @@ const CELL: Record<HourState, string> = {
   open: "border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] text-[var(--gt-blue-700)] hover:border-[var(--gt-blue-600)]",
   extra: "border-[var(--gt-blue-600)] bg-[var(--gt-blue-100)] text-[var(--gt-blue-800,#173a6b)] hover:border-[var(--gt-ink-900)]",
   closed: "border-[var(--border-subtle)] bg-[var(--surface-page)] text-[var(--text-subtle)] hover:border-[var(--border-strong)]",
+  busy: "border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] text-[var(--status-warning-fg)] hover:border-[var(--gt-ink-900)]",
   blocked: "border-[var(--gt-red-400)] bg-[var(--status-error-bg)] text-[var(--status-error-fg)] line-through hover:border-[var(--gt-red-600)]",
   booked: "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-white",
   past: "border-transparent bg-transparent text-[var(--text-subtle)] opacity-60",
@@ -70,6 +72,7 @@ export function GlowbookAgenda({ glowbook }: { glowbook: Glowbook }) {
   const [calendar, setCalendar] = useState<ArtistCalendar | null>(null);
   const [upcoming, setUpcoming] = useState<ArtistCalendar["bookings"]>([]);
   const [toMark, setToMark] = useState<ArtistCalendar["bookings"]>([]);
+  const [imported, setImported] = useState<Set<string>>(new Set());
   const [state, setState] = useState<"loading" | "ready" | "error" | "unavailable">(bookingAvailable() ? "loading" : "unavailable");
   const [settings, setSettings] = useState<BookingSettings>(DEFAULT_SETTINGS);
   const [hours, setHours] = useState<WeekHours>(defaultWeek());
@@ -88,7 +91,12 @@ export function GlowbookAgenda({ glowbook }: { glowbook: Glowbook }) {
     async (keepForm: boolean) => {
       if (!week || !today || !bookingAvailable()) return;
       try {
-        const [weekly, around] = await Promise.all([fetchArtistCalendar(week, addDays(week, 6)), fetchArtistAppointments(today)]);
+        const [weekly, around, closedElsewhere] = await Promise.all([
+          fetchArtistCalendar(week, addDays(week, 6)),
+          fetchArtistAppointments(today),
+          fetchImportedHours(new Date(`${addDays(week, -1)}T00:00:00Z`).toISOString(), new Date(`${addDays(week, 8)}T00:00:00Z`).toISOString()),
+        ]);
+        setImported(closedElsewhere);
         if (!weekly) {
           setState("unavailable");
           return;
@@ -373,7 +381,7 @@ export function GlowbookAgenda({ glowbook }: { glowbook: Glowbook }) {
                       const key = `${day}|${hour}`;
                       const entry = byInstant.get(key);
                       const instant = entry?.startsAt ? new Date(entry.startsAt).toISOString() : zonedInstant(day, hour, tz);
-                      const cell = hourState(entry, bookedAt.has(instant), new Date(instant).getTime() < nowMs);
+                      const cell = hourState(entry, bookedAt.has(instant), new Date(instant).getTime() < nowMs, imported.has(instant));
                       const actionable = toggleTarget(cell) !== null && !dirty;
                       return (
                         <td key={key} className="p-0">
@@ -384,7 +392,7 @@ export function GlowbookAgenda({ glowbook }: { glowbook: Glowbook }) {
                             aria-label={`${formatDay(day, lang)} ${hh(hour)} : ${t(`booking.agenda.cell.${cell}`)}`}
                             className={clsx("h-8 w-full rounded-[6px] border text-[10.5px] font-bold transition-colors disabled:cursor-default", CELL[cell], focusRing)}
                           >
-                            <span aria-hidden="true">{cell === "booked" ? "●" : cell === "blocked" ? "×" : cell === "extra" ? "+" : ""}</span>
+                            <span aria-hidden="true">{cell === "booked" ? "●" : cell === "blocked" ? "×" : cell === "busy" ? "≡" : cell === "extra" ? "+" : ""}</span>
                           </button>
                         </td>
                       );
@@ -395,7 +403,7 @@ export function GlowbookAgenda({ glowbook }: { glowbook: Glowbook }) {
             </table>
           </div>
           <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[11.5px] text-[var(--text-muted)]">
-            {(["open", "extra", "blocked", "booked", "closed"] as const).map((s) => (
+            {(["open", "extra", "blocked", "busy", "booked", "closed"] as const).map((s) => (
               <li key={s} className="inline-flex items-center gap-1.5">
                 <span aria-hidden="true" className={clsx("inline-block h-3 w-4 rounded-[3px] border", CELL[s])} />
                 {t(`booking.agenda.cell.${s}`)}
@@ -435,7 +443,10 @@ export function GlowbookAgenda({ glowbook }: { glowbook: Glowbook }) {
         <p className={small}>{t("booking.agenda.pastHint")}</p>
       </section>
 
-      <GlowbookCalendarFeed />
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start [&>*]:min-w-0">
+        <GlowbookCalendarImport onChanged={() => void load(true)} />
+        <GlowbookCalendarFeed />
+      </div>
 
       {(calendar?.blocks.length ?? 0) > 0 && (
         <section aria-labelledby={`${ids.horizon}-blocks`} className={card}>

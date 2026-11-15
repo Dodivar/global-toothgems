@@ -154,3 +154,12 @@ describe("local hours as instants", () => {
     expect(visibleHours([], [])[0]).toBe(8);
   });
 });
+
+describe("hours closed by the other calendar", () => {
+  it("shows them as busy elsewhere and opens them with a click", () => {
+    const h = { startsAt: "", day: "", hour: 10, weekly: true, override: "blocked" as const };
+    expect(hourState(h, false, false, true)).toBe("busy");
+    expect(hourState(h, false, false, false)).toBe("blocked");
+    expect(toggleTarget("busy")).toBe("open");
+  });
+});

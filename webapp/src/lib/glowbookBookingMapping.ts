@@ -329,13 +329,14 @@ export function validateWeek(week: WeekHours): WeekProblem {
 
 /* ------------------------------------------------------------ the artist's week view */
 
-export type HourState = "open" | "closed" | "blocked" | "extra" | "booked" | "past";
+export type HourState = "open" | "closed" | "blocked" | "busy" | "extra" | "booked" | "past";
 
 /** What one hour of the week view shows. */
-export function hourState(hour: CalendarHour | undefined, booked: boolean, past: boolean): HourState {
+export function hourState(hour: CalendarHour | undefined, booked: boolean, past: boolean, imported = false): HourState {
   if (booked) return "booked";
   if (past) return "past";
-  if (hour?.override === "blocked") return "blocked";
+  // Closed by the other calendar (lot 3): a click opens it by hand, which the import then respects.
+  if (hour?.override === "blocked") return imported ? "busy" : "blocked";
   if (hour?.override === "open") return "extra";
   return hour?.weekly ? "open" : "closed";
 }
@@ -346,6 +347,7 @@ export function toggleTarget(state: HourState): "blocked" | "open" | "default" |
     case "open":
       return "blocked";
     case "closed":
+    case "busy":
       return "open";
     case "blocked":
     case "extra":

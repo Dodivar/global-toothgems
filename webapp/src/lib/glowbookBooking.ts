@@ -217,3 +217,47 @@ export async function disableFeed(): Promise<ActionResult> {
 export function feedUrl(token: string): string {
   return `${supabaseUrl.replace(/\/+$/, "")}/functions/v1/glowbook-calendar-feed?token=${token}`;
 }
+
+/* ------------------------------------------------------------ calendar import (lot 3) */
+
+export interface ImportState {
+  url: string | null;
+  checkedAt: string | null;
+  status: "ok" | "error" | null;
+  error: string | null;
+  /** Hours to come closed by the import. */
+  hours: number;
+}
+
+export async function fetchImportState(): Promise<ImportState | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("glowbook_calendar_import_state");
+  if (error) {
+    if (missing(error.code)) return null;
+    throw new Error("glowbook_calendar_import_state unavailable");
+  }
+  const r = (data ?? {}) as Record<string, unknown>;
+  const s = (v: unknown) => (typeof v === "string" ? v : null);
+  return {
+    url: s(r.url),
+    checkedAt: s(r.checked_at),
+    status: r.status === "ok" || r.status === "error" ? r.status : null,
+    error: s(r.error),
+    hours: typeof r.hours === "number" ? r.hours : 0,
+  };
+}
+
+/** Sets (https or webcal address) or removes (null) the other calendar to read. */
+export async function setImportUrl(url: string | null): Promise<ActionResult> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { error } = await supabase.rpc("glowbook_set_calendar_import", { p_url: url } as never);
+  return error ? fail(error.message) : { ok: true };
+}
+
+/** The hours closed by the import between two instants (ISO), as ISO instants. */
+export async function fetchImportedHours(from: string, to: string): Promise<Set<string>> {
+  if (!supabase) return new Set();
+  const { data, error } = await supabase.rpc("glowbook_imported_hours", { p_from: from, p_to: to });
+  if (error) return new Set();
+  return new Set(((data ?? []) as unknown[]).filter((v): v is string => typeof v === "string").map((v) => new Date(v).toISOString()));
+}

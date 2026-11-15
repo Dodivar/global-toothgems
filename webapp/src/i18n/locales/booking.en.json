@@ -182,7 +182,7 @@
     "weekView": "Week",
     "prevWeek": "Previous week",
     "nextWeek": "Next week",
-    "weekHint": "{{city}} time. Tap an hour to close or open it: block here the appointments taken elsewhere (Planity, phone…).",
+    "weekHint": "{{city}} time. Tap an hour to close or open it: block here the appointments taken elsewhere, or let the import of your other calendar do it.",
     "saveFirst": "Save your settings to edit the week.",
     "closeDay": "Close",
     "cell": {
@@ -191,7 +191,8 @@
       "blocked": "closed",
       "booked": "booked",
       "closed": "outside hours",
-      "past": "past"
+      "past": "past",
+      "busy": "taken elsewhere"
     },
     "upcoming_one": "{{count}} upcoming appointment",
     "upcoming_other": "{{count}} upcoming appointments",
@@ -234,5 +235,30 @@
     "disableTitle": "Turn the calendar link off?",
     "disableBody": "Your calendars will no longer receive your appointments. You can create a new link later.",
     "disabled": "Calendar link turned off"
+  },
+  "import": {
+    "title": "Block the hours taken elsewhere",
+    "body": "Paste the private link of another calendar: the hours it is busy in are closed automatically on your Glowbook, every 15 minutes.",
+    "label": "Link of your other calendar (.ics)",
+    "howGoogle": "Google Calendar (on a computer): Settings › your calendar › “Secret address in iCal format”, copy it.",
+    "howPlanity": "Planity: ask their support whether a .ics calendar link exists; otherwise, close your Planity slots by hand in the week above.",
+    "howOther": "Apple, Outlook or another: use the calendar's publish or subscribe link (it starts with https:// or webcal://).",
+    "privacy": "Only the busy hours are kept: never the title, place or guests of your appointments. An hour you opened or closed by hand stays as you chose.",
+    "save": "Save the link",
+    "remove": "Remove the link",
+    "saved": "Link saved",
+    "savedBody": "The busy hours will be closed within 15 minutes.",
+    "removed": "Link removed: the imported hours are open again",
+    "invalid": "The link must start with https:// or webcal://.",
+    "waiting": "First read within 15 minutes.",
+    "ok_one": "Read on {{date}}: {{count}} upcoming hour closed.",
+    "ok_other": "Read on {{date}}: {{count}} upcoming hours closed.",
+    "errors": {
+      "unreachable": "Could not read it on {{date}}: the link does not answer. Check it is still valid. Hours already closed stay closed.",
+      "not_calendar": "Could not read it on {{date}}: this link does not give a .ics calendar.",
+      "too_large": "Could not read it on {{date}}: this calendar is too large (2 MB at most).",
+      "forbidden_host": "This link is not accepted: it must be a public https address.",
+      "timeout": "Could not read it on {{date}}: the calendar took too long to answer. Another try in 15 minutes."
+    }
   }
 }
