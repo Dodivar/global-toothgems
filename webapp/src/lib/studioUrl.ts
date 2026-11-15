@@ -10,6 +10,8 @@ export const STUDIO_SUBSCRIBE_PATH = "/studio-3d/abonnement";
  * Members below that plan land here from the Studio's Glowbook section.
  */
 export const GLOWBOOK_INTRO_PATH = "/glowbook";
+/** The public artist directory, "Find an artist near me" (`/fr/artistes`, `/en/artists`; decision 145), built from the Glowbooks. */
+export const ARTIST_DIRECTORY_PATH = "/artistes";
 /**
  * The subscription's checkout, a page of its own (signed-in members only,
  * `gateFor`): `?plan=<id>&interval=month|year&from=<surface>`. Paid, it opens

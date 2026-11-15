@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "title": "Trouver une artiste tooth gems près de chez vous",
+    "description": "Les artistes tooth gems qui présentent leurs créations sur Global Toothgems : cherchez par ville ou autour de vous, voyez leurs poses et prenez contact."
+  },
+  "eyebrow": "Annuaire des artistes",
+  "title": "Trouver une artiste tooth gems près de chez vous",
+  "intro": "Des artistes qui présentent leurs créations sur leur Glowbook Global Toothgems. Cherchez par ville ou autour de vous, puis ouvrez leur page pour voir leurs poses et prendre contact.",
+  "privacyNote": "« Près de moi » utilise la position de votre appareil uniquement dans votre navigateur : elle n’est ni envoyée ni enregistrée. Une ville inconnue de l’annuaire est recherchée sur OpenStreetMap.",
+  "results_one": "{{count}} artiste",
+  "results_other": "{{count}} artistes",
+  "sorted": {
+    "name": "Classées par nom",
+    "nearMe": "Classées par distance depuis votre position",
+    "city": "Classées par distance depuis {{place}}",
+    "clear": "Effacer"
+  },
+  "search": {
+    "label": "Ville ou code postal",
+    "placeholder": "Ex. : Paris, 69003…",
+    "submit": "Rechercher",
+    "failed": "La recherche n’a pas abouti. Réessayez dans un instant.",
+    "notFound": "Nous ne trouvons pas ce lieu. Essayez une ville ou un code postal."
+  },
+  "nearMe": {
+    "button": "Près de moi",
+    "unavailable": "Votre navigateur ne donne pas de position. Cherchez par ville.",
+    "denied": "Vous n’avez pas autorisé la localisation. Cherchez par ville.",
+    "failed": "Votre position n’a pas pu être trouvée. Cherchez par ville."
+  },
+  "map": {
+    "title": "Sur la carte",
+    "note": "Un point plein est un salon ; un rond pâle est un secteur approximatif (~1 km), l’adresse de l’artiste n’est pas publiée.",
+    "open": "Voir son Glowbook",
+    "pin": "{{name}} : voir sur la carte"
+  },
+  "cities": {
+    "title": "Par ville",
+    "item": "{{city}} ({{count}})"
+  },
+  "city": {
+    "back": "Toutes les artistes",
+    "title": "Artistes tooth gems à {{city}}",
+    "intro_one": "{{count}} artiste présente ses créations à {{city}} ou dans les environs. Ouvrez sa page pour voir ses poses et prendre contact.",
+    "intro_other": "{{count}} artistes présentent leurs créations à {{city}} ou dans les environs. Ouvrez leur page pour voir leurs poses et prendre contact.",
+    "metaTitle": "Artistes tooth gems à {{city}}",
+    "metaDescription": "Les artistes tooth gems à {{city}} sur Global Toothgems : leurs créations, leur salon ou leur secteur, et comment les contacter."
+  },
+  "distance": {
+    "aboutOne": "≈ 1 km",
+    "underOne": "< 1 km",
+    "about": "≈ {{km}} km",
+    "km": "{{km}} km"
+  },
+  "card": {
+    "area": "Secteur : {{place}}",
+    "salon": "Salon : {{place}}",
+    "certified": "Certifiée",
+    "creations_one": "{{count}} création",
+    "creations_other": "{{count}} créations",
+    "open": "Voir"
+  },
+  "empty": {
+    "title": "Aucune artiste dans l’annuaire pour l’instant",
+    "body": "Les artistes qui ont un Glowbook peuvent choisir d’y apparaître. Revenez bientôt."
+  },
+  "artists": {
+    "title": "Vous êtes artiste ?",
+    "body": "Avec votre Glowbook, présentez vos créations sur une page à votre nom et apparaissez dans cet annuaire pour être trouvée par des clientes près de chez vous.",
+    "cta": "Découvrir le Glowbook"
+  }
+}

@@ -42,16 +42,15 @@
   "form": {
     "createTitle": "Créer mon Glowbook",
     "editTitle": "Modifier ma page",
-    "moderationNote": "Votre page sera visible après validation par l’équipe Global Toothgems. Ensuite, vos modifications du nom, de la bio et d’Instagram sont publiées immédiatement.",
+    "moderationNote": "Votre page sera visible après validation par l’équipe Global Toothgems. Ensuite, vos modifications du nom et de la bio sont publiées immédiatement.",
     "displayName": "Nom affiché",
     "displayNamePlaceholder": "Ex. Lily Gems Studio",
     "handle": "Pseudo (adresse de la page)",
     "handleHint": "3 à 30 caractères : lettres minuscules, chiffres, point, tiret ou tiret bas.",
     "handleChangeWarning": "Changer de pseudo change l’adresse de votre page et la renvoie en validation : elle ne sera plus visible d’ici là.",
     "bio": "Bio",
-    "bioPlaceholder": "Votre style, votre ville, comment prendre rendez-vous…",
-    "instagram": "Compte Instagram",
-    "create": "Envoyer en validation",
+    "bioPlaceholder": "Votre style, votre ville, vos spécialités…",
+        "create": "Envoyer en validation",
     "save": "Enregistrer"
   },
   "errors": {
@@ -62,8 +61,7 @@
     "invalid": "Ces informations n’ont pas pu être acceptées. Vérifiez-les.",
     "displayNameRequired": "Indiquez le nom à afficher.",
     "displayNameLength": "Le nom affiché fait au plus 60 caractères.",
-    "bioLength": "La bio fait au plus 300 caractères.",
-    "instagramInvalid": "Ce compte Instagram n’est pas valide (lettres, chiffres, point et tiret bas, 30 caractères au plus)."
+    "bioLength": "La bio fait au plus 300 caractères."
   },
   "items": {
     "title_one": "{{count}} création dans votre Glowbook",
@@ -105,7 +103,7 @@
     "linkCopiedBody": "Collez-le dans votre bio Instagram.",
     "copyFailed": "Copie impossible : sélectionnez le lien",
     "lookSaved": "Apparence enregistrée",
-    "lookSavedPending": "Apparence enregistrée : les nouvelles images et liens attendent la validation",
+    "lookSavedPending": "Apparence enregistrée : les nouvelles images attendent la validation",
     "lookFailed": "Impossible d’enregistrer l’apparence",
     "uploadFailed": "Impossible d’envoyer l’image",
     "sectionsFull": "Votre Glowbook a déjà 12 sections : supprimez-en une pour en créer une autre.",
@@ -116,6 +114,9 @@
     "badgeShown": "Badge affiché sur votre page",
     "badgeHidden": "Badge masqué sur votre page",
     "badgeFailed": "Impossible de modifier le badge",
+    "directoryOn": "Vous apparaissez dans l’annuaire",
+    "directoryOff": "Vous n’apparaissez plus dans l’annuaire",
+    "directoryFailed": "Impossible de modifier votre présence dans l’annuaire",
     "qrFailed": "Impossible de préparer le fichier"
   },
   "saveWarning": {
@@ -140,7 +141,6 @@
     "metaTitle": "{{name}} — Glowbook",
     "metaDescription": "Les créations de tooth gems de {{name}}, imaginées dans le Studio 3D Global Toothgems.",
     "eyebrow": "Glowbook",
-    "instagram": "@{{account}} sur Instagram",
     "creationsTitle_one": "{{count}} création",
     "creationsTitle_other": "{{count}} créations",
     "empty": "Aucune création publiée pour l’instant. Revenez bientôt !",
@@ -150,10 +150,7 @@
     "ctaShop": "Voir la boutique",
     "view3d": "Voir en 3D",
     "open3d": "Voir « {{name}} » en 3D",
-    "booking": "Prendre rendez-vous",
     "book": "Réserver",
-    "website": "Site web",
-    "tiktok": "@{{account}} sur TikTok",
     "avatarAlt": "Photo de profil de {{name}}",
     "featured": "À la une",
     "sectionsLabel": "Filtrer les créations par section",
@@ -191,7 +188,7 @@
     "kind": {
       "page": "Page",
       "creation": "Création",
-      "changes": "Images et liens"
+      "changes": "Images"
     },
     "submitted": "Envoyé le {{date}}",
     "byArtist": "par {{name}} (@{{handle}})",
@@ -218,10 +215,10 @@
   },
   "look": {
     "title": "Personnaliser ma page",
-    "sub": "Donnez à votre Glowbook votre identité : photo, couleur, mise en page et liens. Couleur, fond, mise en page, création à la une et ville sont publiés dès l’enregistrement ; une nouvelle photo ou un nouveau lien est d’abord validé par l’équipe.",
-    "pendingNote": "Des images ou des liens attendent la validation de l’équipe : votre page montre les précédents en attendant.",
-    "rejectedNote": "Vos dernières images ou liens n’ont pas été validés.",
-    "rejectedNoteReason": "Vos dernières images ou liens n’ont pas été validés. Motif : {{note}}",
+    "sub": "Donnez à votre Glowbook votre identité : photo, couleur et mise en page. Couleur, fond, mise en page, création à la une et ville sont publiés dès l’enregistrement ; une nouvelle photo est d’abord validée par l’équipe.",
+    "pendingNote": "Des images attendent la validation de l’équipe : votre page montre les précédentes en attendant.",
+    "rejectedNote": "Vos dernières images n’ont pas été validées.",
+    "rejectedNoteReason": "Vos dernières images n’ont pas été validées. Motif : {{note}}",
     "preview": "Aperçu",
     "accent": "Couleur de votre identité",
     "accents": {
@@ -252,16 +249,8 @@
     "featuredHint": "Elle ouvre votre page, en grand, dans une courte vidéo qui passe devant le sourire de gauche à droite (créations publiées uniquement).",
     "location": "Ville ou studio",
     "locationPlaceholder": "Ex. Lyon, Studio Rivoli",
-    "links": "Liens",
-    "linksHint": "Adresses en https uniquement. Chaque nouveau lien est validé avant d’apparaître.",
-    "booking": "Prise de rendez-vous",
-    "website": "Site web",
-    "tiktok": "Compte TikTok",
     "errors": {
       "locationLength": "La ville fait au plus {{max}} caractères.",
-      "bookingUrl": "Le lien de rendez-vous doit être une adresse https valide.",
-      "websiteUrl": "Le site web doit être une adresse https valide.",
-      "tiktok": "Ce compte TikTok n’est pas valide (lettres, chiffres, point et tiret bas).",
       "placeLabel": "Indiquez le nom du lieu (2 à 120 caractères).",
       "placeCoordinates": "Choisissez le lieu dans la recherche ou placez l’épingle sur la carte."
     },
@@ -322,6 +311,22 @@
       "full": "12 sections au plus : supprimez-en une pour en créer une autre.",
       "failed": "La section n’a pas pu être enregistrée. Réessayez."
     }
+  },
+  "directory": {
+    "title": "Annuaire « Trouver une artiste »",
+    "body": "Apparaissez dans l’annuaire public des artistes : votre nom, votre ville, votre salon ou votre secteur (~1 km, comme sur votre carte), votre photo de profil, une de vos créations et votre badge si vous l’affichez, avec un lien vers votre Glowbook.",
+    "toggle": "Apparaître dans l’annuaire",
+    "listed": "Votre Glowbook apparaît dans l’annuaire.",
+    "waiting": "Votre Glowbook apparaîtra dans l’annuaire dès que :",
+    "missing": {
+      "page": "votre page est approuvée par un modérateur",
+      "place": "vous indiquez où vous travaillez (onglet Apparence)",
+      "creation": "au moins une création est approuvée"
+    },
+    "city": "Indiquez votre ville dans l’onglet Apparence pour figurer aussi sur la page de votre ville.",
+    "off": "Vous n’apparaissez pas dans l’annuaire. Votre Glowbook reste accessible par son lien.",
+    "open": "Voir l’annuaire",
+    "failed": "Le réglage n’a pas pu être enregistré. Réessayez."
   },
   "badge": {
     "label": "Artiste certifiée Global Toothgems",
@@ -410,7 +415,7 @@
       "noItems": "Ajoutez une première création à votre page.",
       "itemsRejected_one": "{{count}} création refusée à revoir.",
       "itemsRejected_other": "{{count}} créations refusées à revoir.",
-      "changesRejected": "Vos dernières photos ou liens n’ont pas été validés.",
+      "changesRejected": "Vos dernières photos n’ont pas été validées.",
       "noSpotlight": "Choisissez la création à la une de votre page.",
       "unfiled_one": "{{count}} création n’est rangée dans aucune section.",
       "unfiled_other": "{{count}} créations ne sont rangées dans aucune section."
@@ -462,13 +467,14 @@
         },
         "identity": {
           "title": "Votre identité",
-          "body": "Photo, couleur, mise en page, sections et liens de réservation : la page vous ressemble."
+          "body": "Photo, couleur, mise en page et sections : la page vous ressemble, et vos clientes réservent directement depuis elle."
         },
         "found": {
           "title": "On vous trouve",
-          "body": "Votre salon ou votre secteur sur une carte, et le badge « Artiste certifiée » quand vous avez suivi une formation de l’Academy."
+          "body": "Votre salon ou votre secteur sur une carte, une place dans l’annuaire « Trouver une artiste » si vous le souhaitez, et le badge « Artiste certifiée » quand vous avez suivi une formation de l’Academy."
         }
-      }
+      },
+      "directoryLink": "Voir l’annuaire des artistes"
     },
     "steps": {
       "title": "En ligne en trois étapes",

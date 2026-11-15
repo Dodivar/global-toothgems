@@ -25,13 +25,10 @@ const row = (over: Partial<GlowbookQueueRow>): GlowbookQueueRow => ({
 
 describe("toQueueEntry", () => {
   it("reads a page and a creation", () => {
-    expect(toQueueEntry(row({ kind: "showcase", id: "u1", bio: "Hi", instagram: "lily" }))).toMatchObject({
-      kind: "page",
-      id: "u1",
-      bio: "Hi",
-      instagram: "lily",
-      status: "pending",
-    });
+    const page = toQueueEntry(row({ kind: "showcase", id: "u1", bio: "Hi", instagram: "lily" }));
+    expect(page).toMatchObject({ kind: "page", id: "u1", bio: "Hi", status: "pending" });
+    // No Instagram account any more (decision 146): an older row carrying one is not read.
+    expect(page).not.toHaveProperty("instagram");
     expect(toQueueEntry(row({}))).toMatchObject({ kind: "creation", name: "Aurora", elementCount: 2, pageStatus: "approved" });
   });
 
@@ -48,10 +45,11 @@ describe("proposed pictures and links", () => {
       row({
         kind: "changes",
         id: "u1",
-        details: { approved: { avatar_path: "u1/old.jpg", accent: "teal" }, pending: { avatar_path: "u1/new.jpg", tiktok: "lily" } },
+        details: { approved: { avatar_path: "u1/old.jpg", accent: "teal" }, pending: { avatar_path: "u1/new.jpg", tiktok: "lily" } }, // a legacy link proposal is ignored (decision 146)
       }),
     );
-    expect(entry).toMatchObject({ kind: "changes", look: { pending: { avatarPath: "u1/new.jpg", tiktok: "lily" } } });
+    expect(entry).toMatchObject({ kind: "changes", look: { pending: { avatarPath: "u1/new.jpg" } } });
+    expect((entry as { look: { pending: Record<string, unknown> } }).look.pending).not.toHaveProperty("tiktok");
     expect(entry.kind === "changes" && entry.look.approved.accent).toBe("teal");
     expect(queueMediaPaths([entry, toQueueEntry(row({}))])).toEqual(["u1/old.jpg", "u1/new.jpg"]);
   });
