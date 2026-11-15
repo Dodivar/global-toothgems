@@ -1081,6 +1081,21 @@
       },
       "groupAtelier": "Atelier",
       "atelierLocked": "With the Atelier plan",
+      "lockedAtelier": {
+        "eyebrow": "With the Atelier plan",
+        "title": "Your Glowbook and calendar are waiting",
+        "body": "The Glowbook is your public artist showcase, made for your Instagram bio: your creations in 3D, where you work, and clients booking straight with you. It opens with the Atelier plan, the 3D Studio's most complete plan.",
+        "perks": {
+          "page": "A public page in your style, with your creations in 3D and a place in the directory of artists near you",
+          "booking": "Online booking, straight from your page",
+          "agenda": "A calendar synced with Google, Apple or Outlook",
+          "tryOn": "AI try-on: your clients see the design on their own smile"
+        },
+        "cta": "See the Atelier plan",
+        "secondary": "Discover the Glowbook",
+        "note": "Everything opens as soon as the Atelier plan is active on your account."
+      },
+      "lockedEntry": "{{name}} — locked, see why",
       "groupLearning": "Training",
       "groupPurchases": "Purchases",
       "groupAccount": "My account",
@@ -4323,9 +4338,6 @@
       "errorTwice": "A course or a Studio access can be listed only once.",
       "errorMonths": "The Studio length is 1 to {{max}} months."
     }
-  },
-  "community": {
-    "navEntryLocked": "Access with a training"
   },
   "errors": {
     "actions": {

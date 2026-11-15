@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageMenu } from "./LanguageMenu";
 import { Link, NavLink, useLocation, useNavigate } from "../../lib/navigation";
@@ -43,6 +43,8 @@ import { CLIENT_SPACES, STUDIO_SHORTCUTS } from "./clientSpaces";
 import { useGlowbookPlanKnown } from "./useGlowbookPlanKnown";
 import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../lib/studioUrl";
 import { AGENDA_PATH } from "../../lib/agendaRoutes";
+import { captureEvent } from "../../lib/analyticsCore";
+import { LockedAccessDialog, type LockedAccessKind } from "./LockedAccessDialog";
 import monogram from "../../assets/monogram-blue.png";
 import logoWordmark from "../../assets/logo-wordmark.svg";
 
@@ -82,6 +84,38 @@ const ActivityContext = createContext<MemberActivity>({ orders: 0, reviews: 0, l
 
 /** Whether the plan includes the Glowbook (null while unknown), read once by the shell. */
 const GlowbookPlanContext = createContext<boolean | null>(null);
+
+/**
+ * Opens the dialog saying why an entry is locked (owner's request,
+ * 2026-11-15): the menu shows only a lock, the reason and the benefits come
+ * on click. Held by the shell, so closing the mobile drawer keeps it open.
+ */
+const LockedAccessContext = createContext<(kind: LockedAccessKind) => void>(() => undefined);
+
+/**
+ * A click on a locked entry opens the dialog instead of the page. A click
+ * meant for a new tab (modifier key, middle button) still follows the link,
+ * whose page says the same thing.
+ */
+function lockedClick(
+  event: MouseEvent<HTMLAnchorElement>,
+  kind: LockedAccessKind,
+  open: (kind: LockedAccessKind) => void,
+  onNavigate?: () => void,
+) {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  onNavigate?.();
+  captureEvent("member_locked_entry_clicked", { kind });
+  open(kind);
+}
+
+/** Why an entry is locked, if it is: no training for the lounge, below the Atelier plan for the Glowbook and calendar. */
+function lockedKind(item: SectionItem, hasAccess: boolean, glowbookPlan: boolean | null): LockedAccessKind | null {
+  if (item.glowbook && glowbookPlan === false) return "atelier";
+  if (item.community && !hasAccess) return "lounge";
+  return null;
+}
 
 /** Where an entry leads: the Glowbook goes to its presentation page while the plan does not include it. */
 function itemTarget(item: SectionItem, glowbookPlan: boolean | null): string {
@@ -244,9 +278,11 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const activity = useMemberActivity(pathname);
   const anyActivity = activity.orders + activity.reviews + activity.loyalty > 0;
   const glowbookPlan = useGlowbookPlanKnown();
+  const [lockedDialog, setLockedDialog] = useState<LockedAccessKind | null>(null);
 
   return (
     <MemberShellMenuContext.Provider value={menu}>
+    <LockedAccessContext.Provider value={setLockedDialog}>
     <GlowbookPlanContext.Provider value={glowbookPlan}>
     <ActivityContext.Provider value={activity}>
     <div className="flex min-h-[100dvh] bg-[var(--surface-page)]">
@@ -298,9 +334,11 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
       {/* In the lounge the drawer is also the desktop's full menu, opened from the rail. */}
       {drawerOpen && <Drawer onClose={() => setDrawerPath(null)} everywhere={compact} />}
+      <LockedAccessDialog kind={lockedDialog} onClose={() => setLockedDialog(null)} />
     </div>
     </ActivityContext.Provider>
     </GlowbookPlanContext.Provider>
+    </LockedAccessContext.Provider>
     </MemberShellMenuContext.Provider>
   );
 }
@@ -452,18 +490,23 @@ function SectionLink({ item, onNavigate }: { item: SectionItem; onNavigate?: () 
   const { t } = useTranslation();
   const { hasAccess } = useCommunity();
   const Icon = item.icon;
-  /* The community entries are the only ones that can be locked, and a lock icon alone
-     would say it in colour and shape only — so the state is also written out. */
+  /* A locked entry shows a lock only (a shape, not a colour); its name for
+     screen readers says it is locked, and a click opens the dialog saying why. */
   const glowbookPlan = useContext(GlowbookPlanContext);
-  const glowbookLocked = item.glowbook === true && glowbookPlan === false;
-  const locked = (item.community === true && !hasAccess) || glowbookLocked;
+  const openLocked = useContext(LockedAccessContext);
+  const lockedAs = lockedKind(item, hasAccess, glowbookPlan);
+  const locked = lockedAs !== null;
+  const label = t(itemLabel(item, glowbookPlan));
 
   return (
     <li>
       <NavLink
         to={itemTarget(item, glowbookPlan)}
         end={item.end}
-        onClick={onNavigate}
+        onClick={(event: MouseEvent<HTMLAnchorElement>) =>
+          lockedAs ? lockedClick(event, lockedAs, openLocked, onNavigate) : onNavigate?.()
+        }
+        aria-haspopup={locked ? "dialog" : undefined}
         className={({ isActive }) =>
           clsx(
             rowBase,
@@ -471,19 +514,15 @@ function SectionLink({ item, onNavigate }: { item: SectionItem; onNavigate?: () 
             isActive
               ? "bg-[var(--surface-inverse)] text-[var(--text-inverse)]"
               : locked
-                ? "border border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash-strong)] text-[var(--text-muted)] hover:border-[var(--gt-blue-300)] hover:text-[var(--text-primary)]"
+                ? "text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]"
                 : rowIdle,
           )
         }
       >
         <Icon size={16} strokeWidth={2} aria-hidden="true" />
-        <span className="grid min-w-0 gap-0.5">
-          <span className="truncate">{t(itemLabel(item, glowbookPlan))}</span>
-          {locked && (
-            <span className="text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">
-              {glowbookLocked ? t("account.shell.atelierLocked") : t("community.navEntryLocked")}
-            </span>
-          )}
+        <span className="min-w-0 truncate">
+          <span aria-hidden={locked || undefined}>{label}</span>
+          {locked && <span className="sr-only">{t("account.shell.lockedEntry", { name: label })}</span>}
         </span>
         {locked && <Lock size={13} strokeWidth={2} aria-hidden="true" className="ml-auto flex-none" />}
         {item.lounge && !locked && <LoungeActivity />}
@@ -560,6 +599,7 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
   const { initials, displayName } = useAuth();
   const { count } = useCart();
   const glowbookPlan = useContext(GlowbookPlanContext);
+  const openLocked = useContext(LockedAccessContext);
 
   return (
     <nav aria-label={t("account.navLabel")} className="flex h-full w-[88px] flex-col items-center overflow-y-auto overflow-x-hidden overscroll-contain py-3">
@@ -579,6 +619,12 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
               to={itemTarget(item, glowbookPlan)}
               end={item.end}
               title={t(itemLabel(item, glowbookPlan))}
+              onClick={
+                item.glowbook && glowbookPlan === false
+                  ? (event: MouseEvent<HTMLAnchorElement>) => lockedClick(event, "atelier", openLocked)
+                  : undefined
+              }
+              aria-haspopup={item.glowbook && glowbookPlan === false ? "dialog" : undefined}
               className={({ isActive }) =>
                 clsx(railRow, isActive ? "text-[var(--gt-ink-900)]" : "text-[var(--gt-ink-600)] hover:text-[var(--gt-ink-900)]", focusRing)
               }
