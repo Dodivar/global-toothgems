@@ -63,6 +63,17 @@ new subscriptions and renewals is in the database: `studio_subscription_invoices
 (`subscription_create` = new, `subscription_cycle` = renewal, `subscription_update` = plan change), written by the
 webhook (decision 94).
 
+### Artist directory (decision 145)
+
+Sent by `webapp/src/lib/directoryAnalytics.ts` through `analyticsCore.ts` (consent, never throws). Never the text
+searched, the visitor's position, a distance or an artist's handle.
+
+| Event | When | Properties |
+| --- | --- | --- |
+| `artist_directory_viewed` | The directory or a city page is shown (once per tab and kind) | `city_page`, `artist_count` |
+| `artist_directory_searched` | A city search or "near me" ends | `method` (`city` / `near_me`), `outcome` (`ok` / `not_found` / `denied` / `unavailable` / `failed`), `listed_city` |
+| `artist_directory_artist_opened` | A card is opened | `position`, `sorted_by_distance`, `via` |
+
 ## Metrics
 
 Unique-person denominators, cohort = trials started in the period. "PostHog" metrics are computed on consenting

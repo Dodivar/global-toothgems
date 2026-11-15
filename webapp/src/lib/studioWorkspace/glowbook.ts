@@ -10,7 +10,8 @@ import { toPublicSpotlightVideo, type PublicSpotlightVideo } from "./glowbookSpo
  * wrong before sending), and row ↔ UI mapping. No React, no Supabase client.
  *
  * Nothing is public before a moderator approves it: the page (handle, name,
- * bio, Instagram) and each creation. Afterwards edits are live — saving an
+ * bio) and each creation. No Instagram account nor any outside link: clients
+ * book on the page (decision 146). Afterwards edits are live — saving an
  * approved creation changes the public page at once — except a new handle,
  * which goes back to moderation. The page is shown only while its author has
  * Studio access.
@@ -22,8 +23,6 @@ export interface Glowbook {
   handle: string;
   displayName: string;
   bio: string;
-  /** Without the "@". */
-  instagram: string | null;
   status: ModerationStatus;
   /** The moderator's reason, shown to the artist when rejected. */
   reviewNote: string | null;
@@ -36,6 +35,8 @@ export interface Glowbook {
   changesReviewNote: string | null;
   /** Whether the page shows the "certified artist" badge when the artist has earned it (decision 102). */
   showCertification: boolean;
+  /** Whether the artist chose to appear in the public artist directory (decision 146). */
+  inDirectory: boolean;
 }
 
 export interface GlowbookItem {
@@ -53,7 +54,6 @@ export interface GlowbookDetails {
   handle: string;
   displayName: string;
   bio: string;
-  instagram: string;
 }
 
 const HANDLE_MIN = 3;
@@ -70,10 +70,8 @@ const RESERVED = new Set([
 ]);
 
 const HANDLE_PATTERN = /^[a-z0-9]([a-z0-9._-]{1,28})[a-z0-9]$/;
-const INSTAGRAM_PATTERN = /^[A-Za-z0-9._]{1,30}$/;
 
 export const normalizeHandle = (raw: string) => raw.trim().toLowerCase();
-export const normalizeInstagram = (raw: string) => raw.trim().replace(/^@/, "");
 
 /** A suggestion from a display name: "Lily Gems" → "lily-gems". */
 export function suggestHandle(name: string): string {
@@ -94,8 +92,7 @@ export type GlowbookProblem =
   | "handleReserved"
   | "displayNameRequired"
   | "displayNameLength"
-  | "bioLength"
-  | "instagramInvalid";
+  | "bioLength";
 
 /** The first problem with the form, or null. Mirrors the database's checks. */
 export function validateGlowbook(d: GlowbookDetails): GlowbookProblem | null {
@@ -107,8 +104,6 @@ export function validateGlowbook(d: GlowbookDetails): GlowbookProblem | null {
   if (!name) return "displayNameRequired";
   if (name.length > DISPLAY_NAME_MAX) return "displayNameLength";
   if (d.bio.trim().length > BIO_MAX) return "bioLength";
-  const ig = normalizeInstagram(d.instagram);
-  if (ig && !INSTAGRAM_PATTERN.test(ig)) return "instagramInvalid";
   return null;
 }
 
@@ -122,7 +117,6 @@ export function toGlowbook(row: ShowcaseRow): Glowbook {
     handle: row.handle,
     displayName: row.display_name,
     bio: row.bio,
-    instagram: row.instagram,
     status: asStatus(row.status),
     reviewNote: row.review_note,
     submittedAt: row.submitted_at,
@@ -130,6 +124,7 @@ export function toGlowbook(row: ShowcaseRow): Glowbook {
     pending: pendingFromColumns(row.pending_changes),
     changesReviewNote: row.changes_review_note,
     showCertification: row.show_certification,
+    inDirectory: row.in_directory,
   };
 }
 
@@ -190,7 +185,6 @@ export interface PublicGlowbook {
   handle: string;
   displayName: string;
   bio: string;
-  instagram: string | null;
   location: string | null;
   /** The artist's approved look; null when customisation is not open to them (default look). */
   look: GlowbookLook | null;
@@ -219,7 +213,6 @@ export function toPublicGlowbook(json: unknown): PublicGlowbook | null {
     handle: str(o.handle),
     displayName: str(o.display_name),
     bio: str(o.bio),
-    instagram: str(o.instagram) || null,
     location: str(o.location) || null,
     look: look ? lookFromColumns(look) : null,
     spotlightVideo: look ? toPublicSpotlightVideo(look.spotlight_video) : null,
@@ -243,5 +236,3 @@ export function toPublicGlowbook(json: unknown): PublicGlowbook | null {
     }),
   };
 }
-
-export const instagramUrl = (account: string) => `https://www.instagram.com/${encodeURIComponent(account)}/`;

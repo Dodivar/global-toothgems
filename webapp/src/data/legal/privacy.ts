@@ -234,6 +234,13 @@ export const PRIVACY: LegalDocument = {
         {
           kind: "p",
           text: l(
+            "Annuaire « Trouver un artiste » : un artiste n’y apparaît que s’il l’active lui-même depuis son Glowbook, et peut s’en retirer à tout moment. L’annuaire reprend seulement ce que sa page publique montre déjà (nom, ville, salon ou zone approximative, photo de profil, une création, badge s’il l’affiche). Pour les visiteurs, « Près de moi » utilise la position de l’appareil uniquement dans le navigateur : elle ne nous est ni envoyée ni conservée. Une ville que l’annuaire ne connaît pas est recherchée sur Nominatim (OpenStreetMap), qui reçoit alors le texte saisi et votre adresse IP.",
+            "“Find an artist” directory: an artist appears in it only after switching it on from their Glowbook, and can leave at any time. The directory only repeats what their public page already shows (name, city, salon or approximate area, profile picture, one design, badge if shown). For visitors, “Near me” uses the device’s position in the browser only: it is never sent to us or kept. A city the directory does not know is looked up on Nominatim (OpenStreetMap), which then receives the text typed and your IP address.",
+          ),
+        },
+        {
+          kind: "p",
+          text: l(
             "Quand vous réservez un rendez-vous sur le Glowbook d’un artiste, votre nom, votre adresse e-mail, votre téléphone, la création choisie et votre message sont transmis à cet artiste, qui en est responsable pour vous recevoir et vous contacter ; l’éditeur du site les héberge pour son compte. Le personnel ne les consulte pas. Ils sont conservés 12 mois après la date du rendez-vous puis effacés ; si vous supprimez votre compte, vos rendez-vous à venir sont annulés et vos coordonnées retirées.",
             "When you book an appointment on an artist’s Glowbook, your name, e-mail address, phone number, the chosen design and your message are passed on to that artist, who is responsible for them in order to see and contact you; the website publisher hosts them on the artist’s behalf. Staff do not look at them. They are kept for 12 months after the appointment date, then erased; if you delete your account, your upcoming appointments are cancelled and your details removed.",
           ),
@@ -341,12 +348,12 @@ export const PRIVACY: LegalDocument = {
             { role: l("Connexion avec Google", "Sign-in with Google"), provider: l("Google Ireland Ltd / Google LLC", "Google Ireland Ltd / Google LLC"), location: US_DPF },
             { role: l("Essai d’une création sur un sourire (IA)", "Trying a creation on a smile (AI)"), provider: l("Google (API Gemini)", "Google (Gemini API)"), location: US_DPF },
             {
-              role: l("Cartes des pages Glowbook (chargées quand vous les faites défiler)", "Glowbook page maps (loaded as you scroll to them)"),
+              role: l("Cartes des pages Glowbook et de l’annuaire des artistes (chargées quand vous les faites défiler)", "Glowbook and artist directory maps (loaded as you scroll to them)"),
               provider: l("OpenFreeMap — données © OpenStreetMap", "OpenFreeMap — data © OpenStreetMap"),
               location: EU,
             },
             {
-              role: l("Recherche d’adresse dans le Studio (artistes)", "Address search in the Studio (artists)"),
+              role: l("Recherche d’adresse dans le Studio (artistes) et de ville dans l’annuaire des artistes", "Address search in the Studio (artists) and city search in the artist directory"),
               provider: l("Nominatim — Fondation OpenStreetMap", "Nominatim — OpenStreetMap Foundation"),
               location: l("Royaume-Uni et Union européenne (décision d’adéquation)", "United Kingdom and European Union (adequacy decision)"),
             },

@@ -16,7 +16,7 @@
     "viewAllAcademy": "Voir toute l’Academy",
     "menuTabShop": "Boutique",
     "menuTabAcademy": "Academy",
-    "menuTabStudio": "Studio 3D",
+    "menuTabStudio": "Atelier",
     "openPanelShop": "Afficher les catégories de la boutique",
     "menuProductCount_one": "{{count}} produit",
     "menuProductCount_other": "{{count}} produits",
@@ -31,15 +31,18 @@
     "primary": "Navigation principale",
     "signIn": "Se connecter",
     "studio": "Studio 3D",
-    "studioWorkshop": "Ouvrir l’atelier",
+    "atelier": "Atelier",
+    "studioWorkshop": "Ouvrir le Studio 3D",
     "studioWorkshopSub": "Composer un design en 3D",
     "studioGroups": "Mes groupes",
     "studioGlowbook": "Glowbook",
     "studioGlowbookSub": "Votre vitrine d’artiste, en un lien",
     "giftCard": "Carte cadeau",
-    "openPanelStudio": "Afficher les accès au Studio 3D",
+    "openPanelStudio": "Afficher les accès à l’atelier",
     "viewAllStudio": "Découvrir le Studio 3D",
-    "mySpace": "Mon espace"
+    "mySpace": "Mon espace",
+    "studioArtists": "Trouver un artiste",
+    "studioArtistsSub": "Les artistes près de chez vous"
   },
   "common": {
     "readMore": "En savoir plus",
@@ -1068,8 +1071,12 @@
         "shop": "Boutique",
         "giftCard": "Carte cadeau",
         "academy": "Academy",
-        "subscription": "Abonnement"
+        "subscription": "Abonnement",
+        "glowbook": "Glowbook",
+        "appointments": "Rendez-vous"
       },
+      "groupAtelier": "Atelier",
+      "atelierLocked": "Avec l’abonnement Atelier",
       "groupLearning": "Formation",
       "groupPurchases": "Achats",
       "groupAccount": "Mon compte",
@@ -1332,7 +1339,8 @@
     "company": {
       "about": "À propos",
       "training": "Formations professionnelles",
-      "pro": "Demandes professionnelles"
+      "pro": "Demandes professionnelles",
+      "artists": "Trouver un artiste"
     },
     "academyAll": "Toutes les formations"
   },
