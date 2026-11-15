@@ -15,7 +15,6 @@ import { useFormat } from "../../lib/format";
 import { localizedPath } from "../../lib/localeRoutes";
 import { useToast } from "../../lib/toast";
 import { REVIEW_NOTE_MAX } from "../../lib/studioWorkspace/glowbook";
-import { tiktokUrl } from "../../lib/studioWorkspace/glowbookLook";
 import { useAdminShell } from "./AdminLayout";
 
 const STATUS_BADGE: Record<QueueStatus, { tone: BadgeTone; icon: LucideIcon }> = {
@@ -187,7 +186,6 @@ function QueueRow({
               {entry.displayName} <span className="font-semibold text-[var(--text-muted)]">@{entry.handle}</span>
             </p>
             {entry.bio && <p className="m-0 whitespace-pre-line text-[13px] leading-relaxed text-[var(--text-primary)]">{entry.bio}</p>}
-            {entry.instagram && <p className="m-0 text-[12.5px] text-[var(--text-muted)]">Instagram @{entry.instagram}</p>}
             {entry.sections.length > 0 && (
               <p className="m-0 text-[12.5px] text-[var(--text-muted)]">{t("studio.glowbook.admin.sections", { names: entry.sections.join(" · ") })}</p>
             )}
@@ -273,15 +271,11 @@ function QueueRow({
   );
 }
 
-/** What an artist proposes (decision 100): new pictures beside the current ones, new links in full. */
+/** What an artist proposes (decision 100): new pictures beside the current ones. */
 function ProposedLook({ look, images, withPage = false }: { look: QueueLook; images: Map<string, string>; withPage?: boolean }) {
   const { t } = useTranslation();
   const { pending, approved } = look;
   const url = (path: string | null | undefined) => (path ? images.get(path) : undefined);
-  const links: { key: string; label: string; value: string; href: string }[] = [];
-  if (pending.bookingUrl) links.push({ key: "booking", label: t("studio.glowbook.look.booking"), value: pending.bookingUrl, href: pending.bookingUrl });
-  if (pending.websiteUrl) links.push({ key: "website", label: t("studio.glowbook.look.website"), value: pending.websiteUrl, href: pending.websiteUrl });
-  if (pending.tiktok) links.push({ key: "tiktok", label: t("studio.glowbook.look.tiktok"), value: `@${pending.tiktok}`, href: tiktokUrl(pending.tiktok) });
   return (
     <div className="grid gap-2 rounded-[var(--admin-radius-sm)] border border-dashed border-[var(--border-default)] p-3">
       <p className="m-0 text-[12px] font-bold text-[var(--text-primary)]">
@@ -316,20 +310,6 @@ function ProposedLook({ look, images, withPage = false }: { look: QueueLook; ima
             </figure>
           )}
         </div>
-      )}
-      {links.length > 0 && (
-        <dl className="m-0 grid gap-1 text-[12.5px]">
-          {links.map((l) => (
-            <div key={l.key} className="flex flex-wrap gap-x-2">
-              <dt className="font-semibold text-[var(--text-muted)]">{l.label}</dt>
-              <dd className="m-0 min-w-0 break-all">
-                <a href={l.href} target="_blank" rel="noopener noreferrer nofollow" className="text-[var(--text-primary)] underline underline-offset-2">
-                  {l.value}
-                </a>
-              </dd>
-            </div>
-          ))}
-        </dl>
       )}
     </div>
   );
