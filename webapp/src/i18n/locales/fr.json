@@ -1068,8 +1068,12 @@
         "shop": "Boutique",
         "giftCard": "Carte cadeau",
         "academy": "Academy",
-        "subscription": "Abonnement"
+        "subscription": "Abonnement",
+        "glowbook": "Glowbook",
+        "appointments": "Rendez-vous"
       },
+      "groupAtelier": "Atelier",
+      "atelierLocked": "Avec l’abonnement Atelier",
       "groupLearning": "Formation",
       "groupPurchases": "Achats",
       "groupAccount": "Mon compte",
