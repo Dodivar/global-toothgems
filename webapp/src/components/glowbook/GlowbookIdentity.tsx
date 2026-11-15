@@ -1,16 +1,16 @@
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { AtSign, BadgeCheck, CalendarCheck, Globe, MapPin, Music2, Sparkles, UserRound } from "lucide-react";
-import { instagramUrl } from "../../lib/studioWorkspace/glowbook";
-import { DEFAULT_LOOK, initialsOf, tiktokUrl, type GlowbookLook } from "../../lib/studioWorkspace/glowbookLook";
+import { BadgeCheck, CalendarCheck, MapPin, Sparkles, UserRound } from "lucide-react";
+import { DEFAULT_LOOK, initialsOf, type GlowbookLook } from "../../lib/studioWorkspace/glowbookLook";
 import { GlowbookBadge } from "./GlowbookBadge";
 
 /**
  * Who the artist is, on their Glowbook (decisions 100 and 103). The page
  * opens on the creations: the identity is a slim bar on top (picture, name,
- * city, booking, a "Profile" link) and the full profile — bio, badge, links —
- * sits at the bottom of the page, where that link leads. No banner any more.
+ * city, booking, a "Profile" link) and the full profile — bio, badge, the
+ * booking button — sits at the bottom of the page, where that link leads. No
+ * banner any more, and no outside link (booking site, website, Instagram,
+ * TikTok): clients book here (decisions 144 and 146).
  * In the colours of `glowbookThemeStyle` (set by the parent); shared by the
  * public page and the Studio's preview. Same markup on the server and in the
  * browser.
@@ -19,14 +19,13 @@ interface GlowbookIdentityProps {
   displayName: string;
   handle: string;
   bio: string;
-  instagram: string | null;
   look: GlowbookLook | null;
   avatarUrl: string | null;
   /** The Studio's preview: links are drawn, not followed. */
   preview?: boolean;
   /** Course titles behind the "certified artist" badge (decision 102); none: no badge. */
   certifiedTitles?: readonly string[];
-  /** The Glowbook calendar is open (decision 144): the booking button opens it and replaces the external link. */
+  /** The Glowbook calendar is open (decision 144): the booking button opens it; none while it is closed. */
   onBook?: () => void;
 }
 
@@ -96,24 +95,6 @@ export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview =
             <span className="hidden whitespace-nowrap @[640px]:inline">{t("studio.glowbook.public.book")}</span>
           </button>
         )}
-        {!onBook && l.bookingUrl &&
-          (preview ? (
-            <span className={bookingClass}>
-              <CalendarCheck size={14} aria-hidden="true" />
-              <span className="hidden whitespace-nowrap @[640px]:inline">{t("studio.glowbook.public.booking")}</span>
-            </span>
-          ) : (
-            <a
-              href={l.bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              aria-label={t("studio.glowbook.public.booking")}
-              className={bookingClass}
-            >
-              <CalendarCheck size={14} aria-hidden="true" />
-              <span className="hidden whitespace-nowrap @[640px]:inline">{t("studio.glowbook.public.booking")}</span>
-            </a>
-          ))}
         {preview ? (
           <span className={profileClass}>
             <UserRound size={14} aria-hidden="true" />
@@ -130,15 +111,10 @@ export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview =
   );
 }
 
-/** The full profile, at the bottom of the page: picture, name, city, badge, bio and every link. */
-export function GlowbookProfile({ displayName, handle, bio, instagram, look, avatarUrl, preview = false, certifiedTitles = [], onBook }: GlowbookIdentityProps) {
+/** The full profile, at the bottom of the page: picture, name, city, badge, booking and bio. */
+export function GlowbookProfile({ displayName, handle, bio, look, avatarUrl, preview = false, certifiedTitles = [], onBook }: GlowbookIdentityProps) {
   const { t } = useTranslation();
   const l = look ?? DEFAULT_LOOK;
-  const links: { key: string; href: string; label: string; icon: ReactNode; primary?: boolean }[] = [];
-  if (l.bookingUrl && !onBook) links.push({ key: "booking", href: l.bookingUrl, label: t("studio.glowbook.public.booking"), icon: <CalendarCheck size={14} />, primary: true });
-  if (instagram) links.push({ key: "instagram", href: instagramUrl(instagram), label: t("studio.glowbook.public.instagram", { account: instagram }), icon: <AtSign size={14} /> });
-  if (l.tiktok) links.push({ key: "tiktok", href: tiktokUrl(l.tiktok), label: t("studio.glowbook.public.tiktok", { account: l.tiktok }), icon: <Music2 size={14} /> });
-  if (l.websiteUrl) links.push({ key: "website", href: l.websiteUrl, label: t("studio.glowbook.public.website"), icon: <Globe size={14} /> });
 
   return (
     <section
@@ -176,35 +152,6 @@ export function GlowbookProfile({ displayName, handle, bio, instagram, look, ava
           </button>
         )}
         {bio && <p className="m-0 max-w-[56ch] whitespace-pre-line text-[length:var(--text-body)] leading-relaxed">{bio}</p>}
-        {links.length > 0 && (
-          <ul className="m-0 mt-1 flex list-none flex-wrap justify-center gap-2 p-0">
-            {links.map((link) => {
-              const cls = clsx(
-                pill,
-                link.primary
-                  ? "bg-[var(--gb-accent)] text-[var(--gb-on-accent)]"
-                  : "border border-[var(--gb-border)] bg-[var(--gb-card)] text-[var(--gb-text)]",
-              );
-              return (
-                <li key={link.key}>
-                  {preview ? (
-                    <span className={cls}>
-                      {link.icon}
-                      {link.label}
-                    </span>
-                  ) : (
-                    <a href={link.href} target="_blank" rel="noopener noreferrer nofollow" className={cls}>
-                      <span aria-hidden="true" className="contents">
-                        {link.icon}
-                      </span>
-                      {link.label}
-                    </a>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
       </div>
     </section>
   );

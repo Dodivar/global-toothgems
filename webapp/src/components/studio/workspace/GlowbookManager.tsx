@@ -644,10 +644,14 @@ function GlowbookForm({ glowbook, onDone, autoFocus = true }: { glowbook?: Glowb
           autoCorrect="off"
           spellCheck={false}
           aria-invalid={!!igError}
+          aria-describedby={`${ids.instagram}-hint${igError ? ` ${ids.error}` : ""}`}
           placeholder="@"
           onChange={(e) => setDetails((d) => ({ ...d, instagram: e.target.value }))}
           className={fieldClass}
         />
+        <p id={`${ids.instagram}-hint`} className="m-0 text-[12px] text-[var(--text-subtle)]">
+          {t("studio.glowbook.form.instagramHint")}
+        </p>
         {igError && errorText(igError)}
       </div>
 

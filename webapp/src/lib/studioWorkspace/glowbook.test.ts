@@ -96,7 +96,8 @@ describe("toPublicGlowbook", () => {
       handle: "lily.gems",
       display_name: "Lily",
       bio: "Hi",
-      instagram: null,
+      // Not sent any more (decision 146); an older answer carrying it is ignored.
+      instagram: "lily.gems",
       location: null,
       look: null,
       items: [{ id: "1", name: "Aurora", description: "", element_count: 3, thumbnail_path: "u/1.jpg", updated_at: "t" }, { name: "no id" }],
@@ -105,7 +106,6 @@ describe("toPublicGlowbook", () => {
       handle: "lily.gems",
       displayName: "Lily",
       bio: "Hi",
-      instagram: null,
       location: null,
       look: null,
       spotlightVideo: null,
