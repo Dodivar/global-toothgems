@@ -193,7 +193,7 @@
       "overlap": "Two ranges of the same day overlap.",
       "tooMany": "Too many ranges: 28 at most in the week."
     },
-    "linkNote": "While bookings are open, the “Book” button of your page opens this calendar instead of your external booking link.",
+    "linkNote": "While bookings are open, clients book from your Glowbook within these hours. To close a single hour, use the Week tab; for whole days, the Time off tab.",
     "save": "Save",
     "unsaved": "Unsaved changes",
     "weekView": "Week",

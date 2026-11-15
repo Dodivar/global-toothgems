@@ -60,6 +60,17 @@ const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
 const HOURS = Array.from({ length: 25 }, (_, h) => h);
 const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
+/** One opening range: start and end hours side by side in one bordered group. */
+const rangeGroup = clsx(
+  "inline-flex h-10 items-center gap-1 rounded-[var(--radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] pl-1 pr-1",
+  "focus-within:border-[var(--focus-ring)]",
+);
+/** An hour picker inside a range group; its own padding so the text is never clipped. */
+const timeSelect = clsx(
+  "h-8 cursor-pointer rounded-[var(--radius-sm)] bg-transparent px-2 text-[14px] leading-normal tabular-nums text-[var(--text-primary)] outline-none",
+  "hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--shadow-focus)]",
+);
+
 const TAB_ICON: Record<AgendaTab, LucideIcon> = {
   appointments: ListChecks,
   week: CalendarDays,
@@ -390,7 +401,7 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
         )}
 
         {tab === "hours" && (
-          <section aria-labelledby={`${ids.tz}-title`} className={clsx(card, "max-w-[760px]")}>
+          <section aria-labelledby={`${ids.tz}-title`} className={card}>
             <h2 id={`${ids.tz}-title`} className={cardTitle}>{t("booking.agenda.settingsTitle")}</h2>
             <Checkbox label={t("booking.agenda.enable")} description={t("booking.agenda.enableHint")} checked={settings.enabled} onChange={(v) => edit("enabled", v)} />
             <div className="grid gap-3 sm:grid-cols-3">
@@ -423,57 +434,63 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
             <div className="grid gap-2">
               <p className={label}>{t("booking.agenda.weekTitle")}</p>
               <ul className="m-0 grid list-none gap-2 p-0">
-                {WEEKDAYS.map((d) => (
-                  <li key={d} className="grid gap-1.5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] p-2.5 sm:grid-cols-[110px_minmax(0,1fr)] sm:items-center">
-                    <span className="text-[13px] font-bold text-[var(--text-primary)]">{t(`booking.weekdays.${d}`)}</span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {(hours[d] ?? []).length === 0 && <span className="text-[12.5px] text-[var(--text-subtle)]">{t("booking.agenda.closedDay")}</span>}
-                      {(hours[d] ?? []).map((r, i) => (
-                        <span key={i} className="inline-flex items-center gap-1">
-                          <select
-                            aria-label={t("booking.agenda.from", { day: t(`booking.weekdays.${d}`) })}
-                            className={clsx(fieldClass, "h-9 w-auto py-1")}
-                            value={r.start}
-                            onChange={(e) => editDay(d, hours[d].map((x, j) => (j === i ? { ...x, start: Number(e.target.value) } : x)))}
-                          >
-                            {HOURS.slice(0, 24).map((h) => <option key={h} value={h}>{hh(h)}</option>)}
-                          </select>
-                          <span aria-hidden="true">–</span>
-                          <select
-                            aria-label={t("booking.agenda.to", { day: t(`booking.weekdays.${d}`) })}
-                            className={clsx(fieldClass, "h-9 w-auto py-1")}
-                            value={r.end}
-                            onChange={(e) => editDay(d, hours[d].map((x, j) => (j === i ? { ...x, end: Number(e.target.value) } : x)))}
-                          >
-                            {HOURS.slice(1).map((h) => <option key={h} value={h}>{hh(h)}</option>)}
-                          </select>
+                {WEEKDAYS.map((d) => {
+                  const ranges = hours[d] ?? [];
+                  const dayName = t(`booking.weekdays.${d}`);
+                  return (
+                    <li key={d} className="grid gap-2 rounded-[var(--radius-md)] border border-[var(--border-subtle)] px-3 py-2.5 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-center">
+                      <span className="text-[13.5px] font-bold text-[var(--text-primary)]">{dayName}</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {ranges.length === 0 && (
+                          <span className="inline-flex h-10 items-center px-1 text-[13px] text-[var(--text-subtle)]">{t("booking.agenda.closedDay")}</span>
+                        )}
+                        {ranges.map((r, i) => (
+                          <span key={i} className={rangeGroup}>
+                            <select
+                              aria-label={t("booking.agenda.from", { day: dayName })}
+                              className={timeSelect}
+                              value={r.start}
+                              onChange={(e) => editDay(d, hours[d].map((x, j) => (j === i ? { ...x, start: Number(e.target.value) } : x)))}
+                            >
+                              {HOURS.slice(0, 24).map((h) => <option key={h} value={h}>{hh(h)}</option>)}
+                            </select>
+                            <span aria-hidden="true" className="text-[var(--text-subtle)]">–</span>
+                            <select
+                              aria-label={t("booking.agenda.to", { day: dayName })}
+                              className={timeSelect}
+                              value={r.end}
+                              onChange={(e) => editDay(d, hours[d].map((x, j) => (j === i ? { ...x, end: Number(e.target.value) } : x)))}
+                            >
+                              {HOURS.slice(1).map((h) => <option key={h} value={h}>{hh(h)}</option>)}
+                            </select>
+                            <button
+                              type="button"
+                              aria-label={t("booking.agenda.removeRange")}
+                              onClick={() => editDay(d, hours[d].filter((_, j) => j !== i))}
+                              className={clsx("ml-0.5 grid h-8 w-8 flex-none place-items-center rounded-[var(--radius-pill)] text-[var(--text-muted)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]", focusRing)}
+                            >
+                              <Trash2 size={14} aria-hidden="true" />
+                            </button>
+                          </span>
+                        ))}
+                        {ranges.length < 4 && (
                           <button
                             type="button"
-                            aria-label={t("booking.agenda.removeRange")}
-                            onClick={() => editDay(d, hours[d].filter((_, j) => j !== i))}
-                            className={clsx("grid h-9 w-9 place-items-center rounded-[var(--radius-pill)] text-[var(--text-muted)] hover:bg-[var(--surface-sunken)]", focusRing)}
+                            onClick={() => {
+                              const last = ranges.at(-1);
+                              const start = last ? Math.min(last.end + 1, 23) : 10;
+                              editDay(d, [...ranges, { start, end: Math.min(start + 4, 24) }]);
+                            }}
+                            className={clsx("inline-flex h-10 items-center gap-1.5 rounded-[var(--radius-pill)] border border-dashed border-[var(--border-strong)] px-3.5 text-[12.5px] font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]", focusRing)}
                           >
-                            <Trash2 size={14} aria-hidden="true" />
+                            <Plus size={13} aria-hidden="true" />
+                            {t("booking.agenda.addRange")}
                           </button>
-                        </span>
-                      ))}
-                      {(hours[d] ?? []).length < 4 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const last = hours[d]?.at(-1);
-                            const start = last ? Math.min(last.end + 1, 23) : 10;
-                            editDay(d, [...(hours[d] ?? []), { start, end: Math.min(start + 4, 24) }]);
-                          }}
-                          className={clsx("inline-flex h-9 items-center gap-1 rounded-[var(--radius-pill)] border border-dashed border-[var(--border-strong)] px-3 text-[12.5px] font-semibold text-[var(--text-primary)]", focusRing)}
-                        >
-                          <Plus size={13} aria-hidden="true" />
-                          {t("booking.agenda.addRange")}
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                ))}
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
               {weekProblem && <p role="alert" className="m-0 text-[12.5px] font-semibold text-[var(--status-error-fg)]">{t(`booking.agenda.weekProblem.${weekProblem}`)}</p>}
             </div>

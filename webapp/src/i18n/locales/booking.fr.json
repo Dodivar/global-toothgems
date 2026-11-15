@@ -193,7 +193,7 @@
       "overlap": "Deux plages du même jour se chevauchent.",
       "tooMany": "Trop de plages : 28 au plus dans la semaine."
     },
-    "linkNote": "Quand les réservations sont ouvertes, le bouton « Réserver » de votre page ouvre cet agenda à la place de votre lien de réservation externe.",
+    "linkNote": "Quand les réservations sont ouvertes, vos clients réservent depuis votre Glowbook dans ces horaires. Pour fermer une heure précise, utilisez l’onglet Semaine ; pour des jours entiers, l’onglet Congés.",
     "save": "Enregistrer",
     "unsaved": "Modifications non enregistrées",
     "weekView": "Semaine",
