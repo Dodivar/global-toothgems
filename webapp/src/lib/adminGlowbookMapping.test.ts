@@ -25,13 +25,10 @@ const row = (over: Partial<GlowbookQueueRow>): GlowbookQueueRow => ({
 
 describe("toQueueEntry", () => {
   it("reads a page and a creation", () => {
-    expect(toQueueEntry(row({ kind: "showcase", id: "u1", bio: "Hi", instagram: "lily" }))).toMatchObject({
-      kind: "page",
-      id: "u1",
-      bio: "Hi",
-      instagram: "lily",
-      status: "pending",
-    });
+    const page = toQueueEntry(row({ kind: "showcase", id: "u1", bio: "Hi", instagram: "lily" }));
+    expect(page).toMatchObject({ kind: "page", id: "u1", bio: "Hi", status: "pending" });
+    // No Instagram account any more (decision 146): an older row carrying one is not read.
+    expect(page).not.toHaveProperty("instagram");
     expect(toQueueEntry(row({}))).toMatchObject({ kind: "creation", name: "Aurora", elementCount: 2, pageStatus: "approved" });
   });
 

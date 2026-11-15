@@ -7,7 +7,6 @@ const page = (over: Partial<Glowbook> = {}): Glowbook => ({
   handle: "lea",
   displayName: "Léa",
   bio: "",
-  instagram: null,
   status: "approved",
   reviewNote: null,
   submittedAt: "2026-10-01T00:00:00Z",

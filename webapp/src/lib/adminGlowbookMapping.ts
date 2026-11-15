@@ -33,7 +33,6 @@ export interface QueueLook {
 export interface QueuePage extends QueueBase {
   kind: "page";
   bio: string;
-  instagram: string | null;
   look: QueueLook;
   /** The page's section names, in order (decision 102): public with the page once it is approved. */
   sections: string[];
@@ -91,7 +90,7 @@ export function toQueueEntry(row: GlowbookQueueRow): QueueEntry {
     displayName: row.display_name,
     pageStatus: asStatus(row.showcase_status),
   };
-  if (row.kind === "showcase") return { ...base, kind: "page", bio: row.bio ?? "", instagram: row.instagram ?? null, look: lookOf(row.details), sections: sectionsOf(row.details) };
+  if (row.kind === "showcase") return { ...base, kind: "page", bio: row.bio ?? "", look: lookOf(row.details), sections: sectionsOf(row.details) };
   if (row.kind === "changes") return { ...base, kind: "changes", look: lookOf(row.details) };
   return {
     ...base,

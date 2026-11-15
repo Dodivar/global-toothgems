@@ -50,9 +50,7 @@
     "handleChangeWarning": "Changing your handle changes your page’s address and sends it for review again: it will not be visible until then.",
     "bio": "Bio",
     "bioPlaceholder": "Your style, your city, your specialities…",
-    "instagram": "Instagram account",
-    "instagramHint": "Seen only by the Global Toothgems team to check who you are: it does not show on your page, where clients book directly.",
-    "create": "Send for review",
+        "create": "Send for review",
     "save": "Save"
   },
   "errors": {
@@ -63,8 +61,7 @@
     "invalid": "These details could not be accepted. Please check them.",
     "displayNameRequired": "Enter the name to display.",
     "displayNameLength": "The display name is 60 characters at most.",
-    "bioLength": "The bio is 300 characters at most.",
-    "instagramInvalid": "This Instagram account is not valid (letters, digits, dot and underscore, 30 characters at most)."
+    "bioLength": "The bio is 300 characters at most."
   },
   "items": {
     "title_one": "{{count}} creation in your Glowbook",

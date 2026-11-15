@@ -4,12 +4,13 @@
 -- 20261019134715_studio_glowbook_look, 20261019142050_studio_glowbook_sections_certification,
 -- 20261021174016_studio_glowbook_spotlight_video, 20261021190830_studio_glowbook_spotlight_sweep,
 -- 20261022111758_studio_glowbook_place, 20261026170231_studio_plan_entitlements,
--- 20261115132328_glowbook_no_external_links,
+-- 20261115132328_glowbook_no_external_links, 20261115134507_glowbook_no_instagram,
 -- decisions 99, 100, 102, 103, 105, 108, 113 and 146)
 -- =============================================================================
 -- Proves, as the roles that really call them:
 --
---   G1  a member without Studio access cannot open a Glowbook; bad handles,
+--   G1  a member without Studio access cannot open a Glowbook; an Instagram
+--       account (decision 146), bad handles,
 --       reserved handles and a taken handle are refused;
 --   G2  a member on the Atelier plan opens one (pending) and adds a creation
 --       (pending); not someone else's creation, not an empty one; nothing is
@@ -147,15 +148,16 @@ begin
   end loop;
   v_state := null;
   begin
-    perform public.studio_save_showcase('lily.gems', 'Lily', '', 'not valid!');
+    -- No Instagram account any more, even a valid one (decision 146).
+    perform public.studio_save_showcase('lily.gems', 'Lily', '', '@lily.gems');
   exception when others then v_state := sqlstate;
   end;
-  if v_state is distinct from '22023' then raise exception 'FAIL G1: bad Instagram accepted (%)', v_state; end if;
+  if v_state is distinct from '22023' then raise exception 'FAIL G1: Instagram accepted (%)', v_state; end if;
   passed := passed || 'G1'::text;
 
   -- G2: open (pending), add (pending), nothing public.
-  v_sc := public.studio_save_showcase('  Lily.Gems ', ' Lily Gems ', ' Tooth gem artist ', '@lily.gems');
-  if v_sc.handle <> 'lily.gems' or v_sc.display_name <> 'Lily Gems' or v_sc.instagram <> 'lily.gems' or v_sc.status <> 'pending' then
+  v_sc := public.studio_save_showcase('  Lily.Gems ', ' Lily Gems ', ' Tooth gem artist ', '');
+  if v_sc.handle <> 'lily.gems' or v_sc.display_name <> 'Lily Gems' or v_sc.instagram is not null or v_sc.status <> 'pending' then
     raise exception 'FAIL G2: showcase %', row_to_json(v_sc);
   end if;
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
@@ -430,6 +432,12 @@ begin
   exception when others then v_state := sqlstate;
   end;
   if v_state is distinct from '23514' then raise exception 'FAIL G9: link column written (%)', v_state; end if;
+  v_state := null;
+  begin
+    update public.studio_showcases set instagram = 'nova.gems' where user_id = other;
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '23514' then raise exception 'FAIL G9: Instagram column written (%)', v_state; end if;
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', other, 'role', 'authenticated')::text, true);
   passed := passed || 'G9'::text;

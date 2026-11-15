@@ -6,7 +6,6 @@ import { StudioStoreError } from "./repository";
 import { storeError } from "./supabaseRepository";
 import {
   normalizeHandle,
-  normalizeInstagram,
   toGlowbook,
   toGlowbookItem,
   type Glowbook,
@@ -131,7 +130,8 @@ export function createGlowbookRepository(client: TypedSupabaseClient, userId: st
         p_handle: normalizeHandle(details.handle),
         p_display_name: details.displayName.trim(),
         p_bio: details.bio.trim(),
-        p_instagram: normalizeInstagram(details.instagram),
+        // No Instagram account any more (decision 146): the database refuses one.
+        p_instagram: "",
       });
       if (error) throw glowbookError(error);
       if (!data) throw new StudioStoreError("storage");

@@ -186,7 +186,6 @@ function QueueRow({
               {entry.displayName} <span className="font-semibold text-[var(--text-muted)]">@{entry.handle}</span>
             </p>
             {entry.bio && <p className="m-0 whitespace-pre-line text-[13px] leading-relaxed text-[var(--text-primary)]">{entry.bio}</p>}
-            {entry.instagram && <p className="m-0 text-[12.5px] text-[var(--text-muted)]">Instagram @{entry.instagram}</p>}
             {entry.sections.length > 0 && (
               <p className="m-0 text-[12.5px] text-[var(--text-muted)]">{t("studio.glowbook.admin.sections", { names: entry.sections.join(" · ") })}</p>
             )}

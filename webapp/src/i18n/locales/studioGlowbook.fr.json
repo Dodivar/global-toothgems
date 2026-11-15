@@ -50,9 +50,7 @@
     "handleChangeWarning": "Changer de pseudo change l’adresse de votre page et la renvoie en validation : elle ne sera plus visible d’ici là.",
     "bio": "Bio",
     "bioPlaceholder": "Votre style, votre ville, vos spécialités…",
-    "instagram": "Compte Instagram",
-    "instagramHint": "Vu uniquement par l’équipe Global Toothgems pour vérifier votre identité : il n’apparaît pas sur votre page, où vos clientes réservent directement.",
-    "create": "Envoyer en validation",
+        "create": "Envoyer en validation",
     "save": "Enregistrer"
   },
   "errors": {
@@ -63,8 +61,7 @@
     "invalid": "Ces informations n’ont pas pu être acceptées. Vérifiez-les.",
     "displayNameRequired": "Indiquez le nom à afficher.",
     "displayNameLength": "Le nom affiché fait au plus 60 caractères.",
-    "bioLength": "La bio fait au plus 300 caractères.",
-    "instagramInvalid": "Ce compte Instagram n’est pas valide (lettres, chiffres, point et tiret bas, 30 caractères au plus)."
+    "bioLength": "La bio fait au plus 300 caractères."
   },
   "items": {
     "title_one": "{{count}} création dans votre Glowbook",

@@ -60,7 +60,7 @@ import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat, workspa
 
 /**
  * "My Glowbook" (decision 99): the artist's public showcase — its address,
- * name, bio and Instagram account, the creations in it and where each stands
+ * name and bio, the creations in it and where each stands
  * in moderation. Creations are added from My Creations (a creation's detail),
  * never from the editor.
  */
@@ -261,7 +261,6 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
           <p className="m-0 truncate text-[18px] font-[var(--weight-black)] leading-tight text-[var(--text-primary)] sm:text-[20px]">{glowbook.displayName}</p>
           <p className="m-0 truncate text-[13px] font-semibold text-[var(--text-muted)]">
             @{glowbook.handle}
-            {glowbook.instagram && <span> · Instagram @{glowbook.instagram}</span>}
           </p>
           <div className="flex flex-wrap items-center gap-1.5">
             <ModerationBadge status={glowbook.status} kind="page" />
@@ -511,12 +510,11 @@ const heading =
 function GlowbookForm({ glowbook, onDone, autoFocus = true }: { glowbook?: Glowbook; onDone: () => void; autoFocus?: boolean }) {
   const { t } = useTranslation();
   const gb = useGlowbook();
-  const ids = { handle: useId(), name: useId(), bio: useId(), instagram: useId(), error: useId() };
+  const ids = { handle: useId(), name: useId(), bio: useId(), error: useId() };
   const [details, setDetails] = useState<GlowbookDetails>(() => ({
     handle: glowbook?.handle ?? "",
     displayName: glowbook?.displayName ?? "",
     bio: glowbook?.bio ?? "",
-    instagram: glowbook?.instagram ?? "",
   }));
   const [handleTouched, setHandleTouched] = useState(!!glowbook);
   const [problem, setProblem] = useState<GlowbookProblem | "handleTaken" | "invalid" | null>(null);
@@ -539,7 +537,6 @@ function GlowbookForm({ glowbook, onDone, autoFocus = true }: { glowbook?: Glowb
   const handleError = fieldError(["handleLength", "handleCharacters", "handleReserved", "handleTaken", "invalid"]);
   const nameError = fieldError(["displayNameRequired", "displayNameLength"]);
   const bioError = fieldError(["bioLength"]);
-  const igError = fieldError(["instagramInvalid"]);
   const errorText = (p: string) => (
     <p id={ids.error} className="m-0 text-[12px] font-semibold text-[var(--status-error-fg)]">
       {t(`studio.glowbook.errors.${p}`, { max: HANDLE_MAX })}
@@ -630,29 +627,6 @@ function GlowbookForm({ glowbook, onDone, autoFocus = true }: { glowbook?: Glowb
           className={`${fieldClass} resize-none leading-relaxed`}
         />
         {bioError && errorText(bioError)}
-      </div>
-
-      <div className="grid gap-1.5">
-        <label htmlFor={ids.instagram} className="text-[12.5px] font-bold text-[var(--text-primary)]">
-          {t("studio.glowbook.form.instagram")} <span className="font-medium text-[var(--text-subtle)]">{t("studio.workspace.details.optional")}</span>
-        </label>
-        <input
-          id={ids.instagram}
-          value={details.instagram}
-          maxLength={31}
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          aria-invalid={!!igError}
-          aria-describedby={`${ids.instagram}-hint${igError ? ` ${ids.error}` : ""}`}
-          placeholder="@"
-          onChange={(e) => setDetails((d) => ({ ...d, instagram: e.target.value }))}
-          className={fieldClass}
-        />
-        <p id={`${ids.instagram}-hint`} className="m-0 text-[12px] text-[var(--text-subtle)]">
-          {t("studio.glowbook.form.instagramHint")}
-        </p>
-        {igError && errorText(igError)}
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-2">
