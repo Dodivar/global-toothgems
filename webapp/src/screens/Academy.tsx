@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { AcademyHero } from "../components/academyPage/AcademyHero";
 import { CourseCatalog } from "../components/academyPage/CourseCatalog";
@@ -9,6 +9,8 @@ import { Ecosystem } from "../components/academyPage/Ecosystem";
 import { LearnerReviews } from "../components/academyPage/LearnerReviews";
 import { FinalCta } from "../components/academyPage/FinalCta";
 import { useAcademy } from "../lib/academy/AcademyProvider";
+import { useAuth } from "../lib/auth";
+import { markAcademyVisited } from "../lib/memberPreferencesApi";
 import { featuredCourse } from "../lib/academy/catalog";
 
 /**
@@ -30,6 +32,12 @@ export function Academy() {
   const { i18n } = useTranslation();
   const { courses, status, reload } = useAcademy();
   const lang = i18n.language;
+  const { userId } = useAuth();
+
+  // Opening the page ticks the dashboard's "first steps" Academy step.
+  useEffect(() => {
+    if (userId) void markAcademyVisited(userId);
+  }, [userId]);
 
   const catalogRef = useRef<HTMLElement>(null);
   const featured = useMemo(() => featuredCourse(courses), [courses]);

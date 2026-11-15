@@ -27,6 +27,9 @@ export const STUDIO_EDITOR_PATH = "/studio-3d/atelier";
  * workspace section, and viewing a shared design needs no Studio access.
  */
 export const STUDIO_SHARE_PATH = "/studio-3d/partage";
+
+/** A client's creation joined to a booking, for the booked artist and the client (decision 149). */
+export const bookingCreationPath = (bookingId: string) => `/studio-3d/rendez-vous/${encodeURIComponent(bookingId)}`;
 /**
  * A creation of an artist's public Glowbook in the read-only 3D viewer
  * (decision 99): `/studio-3d/glowbook/<handle>/<item id>`. Beside the share
