@@ -138,6 +138,8 @@ const GROUPS: SectionGroup[] = [
       { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package, activity: "orders" },
       { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles, activity: "loyalty" },
       { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText, activity: "reviews" },
+      // Glowbook appointments (decision 144): those the member booked on artists' pages, and an artist's own.
+      { to: "/compte/rendez-vous", labelKey: "booking.mine.nav", shortKey: "appointments", icon: CalendarCheck },
     ],
   },
   {
@@ -162,9 +164,6 @@ const GROUPS: SectionGroup[] = [
       })),
       // Always listed; locked (leading to the presentation page) below the Atelier plan.
       { to: studioSectionPath("glowbook"), labelKey: "nav.studioGlowbook", shortKey: "glowbook", icon: Sparkles, glowbook: true },
-      // Glowbook appointments (decision 144): those booked on artists' pages, and an artist's own.
-      // Never locked: any member who booked needs to find theirs.
-      { to: "/compte/rendez-vous", labelKey: "booking.mine.nav", shortKey: "appointments", icon: CalendarCheck },
       { to: "/compte/studio", labelKey: "account.navStudio", shortKey: "subscription", icon: CreditCard },
     ],
   },
