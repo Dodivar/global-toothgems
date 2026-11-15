@@ -326,7 +326,6 @@ function Drawer({ onClose, everywhere = false }: { onClose: () => void; everywhe
  * Rendered once in the desktop sidebar and once in the mobile drawer.
  */
 function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; closeButton?: ReactNode }) {
-  const glowbookPlan = useContext(GlowbookPlanContext);
   const { formatMonthYear } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
