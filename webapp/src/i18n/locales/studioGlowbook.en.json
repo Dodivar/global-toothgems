@@ -50,7 +50,7 @@
     "handleChangeWarning": "Changing your handle changes your page’s address and sends it for review again: it will not be visible until then.",
     "bio": "Bio",
     "bioPlaceholder": "Your style, your city, your specialities…",
-        "create": "Send for review",
+    "create": "Send for review",
     "save": "Save"
   },
   "errors": {
@@ -440,11 +440,11 @@
   },
   "intro": {
     "metaTitle": "Glowbook: your tooth gem artist showcase",
-    "metaDescription": "A public page for your 3D creations, to link from your Instagram bio: clients discover them, find you and order the gems in one click.",
+    "metaDescription": "A public page for your 3D creations, to link from your Instagram bio: clients discover them, book an appointment within your hours and find you in the artist directory.",
     "back": "3D Studio",
     "eyebrow": "Glowbook · {{plan}} plan",
     "title": "All your creations, in one link.",
-    "body": "The Glowbook is your artist showcase: a public page to put in your Instagram bio, where clients spin your creations in 3D before booking.",
+    "body": "The Glowbook is your artist showcase: a public page to put in your Instagram bio, where clients spin your creations in 3D, then book their appointment online, within your hours.",
     "price": "Included in the {{plan}} plan, from {{price}} / month.",
     "see": "See what’s inside",
     "ctaOpen": "Open my Glowbook",
@@ -454,7 +454,7 @@
     "previewLabel": "Preview of a Glowbook page on a phone",
     "previewCta": "Book an appointment",
     "benefits": {
-      "eyebrow": "What your clients see",
+      "eyebrow": "What the Glowbook brings you",
       "title": "A page that works for you",
       "items": {
         "link": {
@@ -465,13 +465,21 @@
           "title": "Your creations in 3D",
           "body": "Clients spin every design, watch your spotlight creation as a video and put its gems in the cart in one click."
         },
+        "booking": {
+          "title": "Online booking",
+          "body": "Clients pick a one-hour slot within your hours, from your page or a creation. They get the confirmation and a reminder the day before; you get every request by e-mail."
+        },
+        "calendar": {
+          "title": "Your calendar, up to date",
+          "body": "Your appointments are added to Google Calendar, Apple Calendar or Outlook, and the hours already taken in your calendar (Planity included, if it allows it) close by themselves on your page."
+        },
         "identity": {
           "title": "Your identity",
-          "body": "Photo, colour, layout and sections: the page looks like you, and clients book straight from it."
+          "body": "Photo, colour, layout and sections: the page looks like you, from the first glance to the booking button."
         },
         "found": {
           "title": "Easy to find",
-          "body": "Your salon or your area on a map, a place in the “Find an artist” directory if you wish, and the “Certified artist” badge once you have completed an Academy course."
+          "body": "Your salon or your area on a map, a place in the “Find an artist” directory for clients looking near them, if you wish, and the “Certified artist” badge once you have completed an Academy course."
         }
       },
       "directoryLink": "See the artist directory"

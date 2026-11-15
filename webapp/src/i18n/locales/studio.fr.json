@@ -173,8 +173,8 @@
       "withPlan": "Avec l’abonnement {{plan}}",
       "glowbook": {
         "title": "Le Glowbook est inclus dans la formule {{plan}}",
-        "short": "Montrez vos créations sur une page publique et laissez vos clientes les essayer sur leur sourire.",
-        "body": "Votre vitrine publique, à mettre dans votre bio Instagram : vos créations en 3D, votre identité, où vous trouver, un QR code et une affiche — et l’essayage par IA, qui permet à vos clientes de voir vos créations sur leur propre sourire.",
+        "short": "Une page publique pour vos créations, la prise de rendez-vous en ligne et une place dans l’annuaire des artistes.",
+        "body": "Votre vitrine publique, à mettre dans votre bio Instagram : vos créations en 3D, votre identité, où vous trouver, un QR code et une affiche. Vos clientes y réservent un rendez-vous selon vos horaires, avec un agenda synchronisé avec Google, Apple ou Outlook, et vous trouvent dans l’annuaire « Trouver un artiste ». Avec l’essayage par IA, elles voient aussi vos créations sur leur propre sourire.",
         "kept": "Si vous aviez déjà un Glowbook, il est masqué du public pour l’instant et revient tel quel dès que vous repassez à cette formule."
       },
       "templates": {
@@ -754,6 +754,9 @@
         "signature": "Signature des publications",
         "layouts": "Modèles de mise en page des publications",
         "glowbook": "Votre Glowbook, la vitrine publique de vos créations",
+        "bookings": "Prise de rendez-vous en ligne depuis votre Glowbook",
+        "calendarSync": "Agenda synchronisé (Google, Apple, Outlook)",
+        "directory": "Place dans l’annuaire « Trouver un artiste »",
         "tryOn": "Essayage par IA sur le sourire de vos clientes",
         "collections": "Dossiers pour ranger vos créations"
       },
