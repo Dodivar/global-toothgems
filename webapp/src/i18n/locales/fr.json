@@ -37,6 +37,8 @@
     "studioGroups": "Mes groupes",
     "studioGlowbook": "Glowbook",
     "studioGlowbookSub": "Votre vitrine d’artiste, en un lien",
+    "studioAgenda": "Mon agenda",
+    "studioAgendaSub": "Vos rendez-vous, horaires et congés",
     "giftCard": "Carte cadeau",
     "openPanelStudio": "Afficher les accès à l’atelier",
     "viewAllStudio": "Découvrir le Studio 3D",
@@ -1073,7 +1075,8 @@
         "academy": "Academy",
         "subscription": "Abonnement",
         "glowbook": "Glowbook",
-        "appointments": "Rendez-vous"
+        "appointments": "Rendez-vous",
+        "agenda": "Agenda"
       },
       "groupAtelier": "Atelier",
       "atelierLocked": "Avec l’abonnement Atelier",

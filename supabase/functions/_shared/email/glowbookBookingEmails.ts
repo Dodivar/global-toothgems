@@ -61,7 +61,7 @@ export const BOOKING_TEMPLATES: Record<BookingMailKind, string> = {
 };
 
 /** Where each side manages the appointment. */
-export const ARTIST_AGENDA_PATH = "/studio-3d/atelier/glowbook?tab=agenda";
+export const ARTIST_AGENDA_PATH = "/compte/agenda";
 export const CLIENT_BOOKINGS_PATH = "/compte/rendez-vous";
 const GLOWBOOK_PATH = { fr: "/fr/glowbook/", en: "/en/glowbook/" } as const;
 

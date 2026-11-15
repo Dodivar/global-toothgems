@@ -76,7 +76,26 @@ export interface BookingSettings {
   horizonDays: number;
 }
 
+/**
+ * A period the artist's calendar is closed (decision 147): whole local days,
+ * both ends included, an optional private note, and how many appointments to
+ * come it covers (they are kept: the artist decides whether to cancel them).
+ */
+export interface CalendarClosure {
+  id: string;
+  startsOn: string;
+  endsOn: string;
+  note: string | null;
+  bookings: number;
+}
+
+/** The Glowbook page's moderation state, or null when the member has no page yet. */
+export type PageStatus = "pending" | "approved" | "rejected" | null;
+
 export interface ArtistCalendar {
+  pageStatus: PageStatus;
+  /** Periods not ended yet, in date order. */
+  closures: CalendarClosure[];
   /** The platform-wide switch. */
   switchOn: boolean;
   /** Visitors can book now (switched on, page approved, plan active). */
@@ -148,7 +167,16 @@ export function readArtistCalendar(data: unknown): ArtistCalendar | null {
   if (!isRecord(data)) return null;
   const list = (key: string) => (Array.isArray(data[key]) ? (data[key] as unknown[]).filter(isRecord) : []);
   const s = isRecord(data.settings) ? data.settings : null;
+  const page = data.page_status;
   return {
+    pageStatus: page === "pending" || page === "approved" || page === "rejected" ? page : null,
+    closures: list("closures").map((c) => ({
+      id: String(c.id),
+      startsOn: String(c.starts_on),
+      endsOn: String(c.ends_on),
+      note: text(c.note),
+      bookings: num(c.bookings, 0),
+    })),
     switchOn: data.switch_on !== false,
     open: data.open === true,
     settings: s
@@ -329,12 +357,17 @@ export function validateWeek(week: WeekHours): WeekProblem {
 
 /* ------------------------------------------------------------ the artist's week view */
 
-export type HourState = "open" | "closed" | "blocked" | "busy" | "extra" | "booked" | "past";
+export type HourState = "open" | "closed" | "blocked" | "busy" | "extra" | "booked" | "past" | "holiday";
 
-/** What one hour of the week view shows. */
-export function hourState(hour: CalendarHour | undefined, booked: boolean, past: boolean, imported = false): HourState {
+/**
+ * What one hour of the week view shows. A day inside a closure (decision 147)
+ * is closed whatever its hours say — only an appointment already booked
+ * there still shows.
+ */
+export function hourState(hour: CalendarHour | undefined, booked: boolean, past: boolean, imported = false, closedDay = false): HourState {
   if (booked) return "booked";
   if (past) return "past";
+  if (closedDay) return "holiday";
   // Closed by the other calendar (lot 3): a click opens it by hand, which the import then respects.
   if (hour?.override === "blocked") return imported ? "busy" : "blocked";
   if (hour?.override === "open") return "extra";
@@ -355,6 +388,38 @@ export function toggleTarget(state: HourState): "blocked" | "open" | "default" |
     default:
       return null;
   }
+}
+
+/* ------------------------------------------------------------ closures (decision 147) */
+
+/** Whether a local day ("YYYY-MM-DD") falls inside one of the periods. */
+export function dayClosed(day: string, closures: readonly Pick<CalendarClosure, "startsOn" | "endsOn">[]): boolean {
+  return closures.some((c) => day >= c.startsOn && day <= c.endsOn);
+}
+
+export const CLOSURE_NOTE_MAX = 80;
+export const CLOSURES_MAX = 20;
+/** The database's limits: a start from today, an end within a year from today, a year long at most. */
+const CLOSURE_LAST_DAY = 366;
+const CLOSURE_LONGEST = 365;
+
+export type ClosureProblem = "dates" | "past" | "order" | "tooFar" | "note" | null;
+
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The same checks as glowbook_add_closure(), to say what is wrong before asking. */
+export function validateClosure(draft: { startsOn: string; endsOn: string; note: string }, today: string): ClosureProblem {
+  if (!DAY_RE.test(draft.startsOn) || !DAY_RE.test(draft.endsOn)) return "dates";
+  if (draft.startsOn < today) return "past";
+  if (draft.endsOn < draft.startsOn) return "order";
+  if (draft.endsOn > addDays(today, CLOSURE_LAST_DAY) || draft.endsOn > addDays(draft.startsOn, CLOSURE_LONGEST)) return "tooFar";
+  if (draft.note.trim().length > CLOSURE_NOTE_MAX) return "note";
+  return null;
+}
+
+/** Number of days in a period, both ends included. */
+export function closureLength(c: Pick<CalendarClosure, "startsOn" | "endsOn">): number {
+  return Math.round((Date.parse(`${c.endsOn}T00:00:00Z`) - Date.parse(`${c.startsOn}T00:00:00Z`)) / 86400000) + 1;
 }
 
 /* ------------------------------------------------------------ the booking form */

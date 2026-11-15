@@ -12,7 +12,7 @@ import { useGlowbookMenuTarget } from "./useGlowbookMenuTarget";
 import { LanguageMenu } from "./LanguageMenu";
 import { HeaderSearch } from "./HeaderSearch";
 import { CartAddedNotice } from "./CartAddedNotice";
-import { STUDIO_PATH } from "../../lib/studioUrl";
+import { GLOWBOOK_INTRO_PATH, STUDIO_PATH } from "../../lib/studioUrl";
 import logoWordmark from "../../assets/logo-wordmark.svg";
 
 type PanelKey = "shop" | "academy" | "studio" | null;
@@ -67,7 +67,11 @@ export function Header() {
   /* No "Home" entry: the logo is the way home, as on most shops, and the
      three pillars read better on their own (owner's call, 2026-11-02). */
   const glowbookTarget = useGlowbookMenuTarget(panel === "studio" || (menuOpen && menuTab === "studio"));
-  const studioMenu = STUDIO_MENU.map((entry) => (entry.id === "glowbook" ? { ...entry, to: glowbookTarget } : entry));
+  // The calendar is listed once the plan is known to include the Glowbook (its own page is then the target).
+  const ownGlowbook = glowbookTarget !== GLOWBOOK_INTRO_PATH;
+  const studioMenu = STUDIO_MENU.filter((entry) => entry.id !== "agenda" || ownGlowbook).map((entry) =>
+    entry.id === "glowbook" ? { ...entry, to: glowbookTarget } : entry,
+  );
 
   const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string }[] = [
     { id: "shop", label: t("nav.shop"), to: "/boutique", panel: "shop", panelLabel: t("nav.openPanelShop") },

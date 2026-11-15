@@ -2,16 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarCheck, CalendarX2, PlugZap, ShieldAlert, Sparkles } from "lucide-react";
+import { CalendarCheck, CalendarDays, CalendarX2, PlugZap, ShieldAlert, Sparkles } from "lucide-react";
 import { SectionHeader } from "../../components/account/SectionHeader";
-import { ArtistBookingCard } from "../../components/glowbook/ArtistBookingCard";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Dialog } from "../../components/ui/Dialog";
 import { STATUS_TONE } from "../../components/glowbook/bookingStatus";
 import { bookingAvailable, cancelBooking, fetchArtistAppointments, fetchMyBookings } from "../../lib/glowbookBooking";
 import {
-  type ArtistBooking,
   type ClientBooking,
   clientCancellation,
   formatWhen,
@@ -20,6 +18,7 @@ import {
 } from "../../lib/glowbookBookingMapping";
 import { isLocale, localizedPath } from "../../lib/localeRoutes";
 import { Link } from "../../lib/navigation";
+import { AGENDA_PATH } from "../../lib/agendaRoutes";
 import { useToast } from "../../lib/toast";
 
 const panel = "grid gap-4 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-[clamp(16px,3vw,24px)]";
@@ -31,9 +30,9 @@ type State = "loading" | "ready" | "error" | "unavailable";
  * `/compte/rendez-vous` (decision 144): the appointments the member booked on
  * artists' Glowbooks — to come (cancel: free until 24 hours before, "late"
  * afterwards) and past, a booking ban if two no-shows or late cancellations
- * led to one —, and, for an artist, the appointments booked on their own
- * calendar in the coming weeks (still handled here if they left the Atelier
- * plan, which closes the Glowbook's calendar tab). The e-mails link here.
+ * led to one. An artist's own appointments are in their calendar
+ * (`/compte/agenda`, decision 147): this page only points there. The client
+ * e-mails link here.
  */
 export function Bookings() {
   const { t, i18n } = useTranslation();
@@ -42,7 +41,7 @@ export function Bookings() {
   const [state, setState] = useState<State>(bookingAvailable() ? "loading" : "unavailable");
   const [mine, setMine] = useState<ClientBooking[]>([]);
   const [bannedUntil, setBannedUntil] = useState<string | null>(null);
-  const [received, setReceived] = useState<ArtistBooking[]>([]);
+  const [received, setReceived] = useState(0);
   const [confirm, setConfirm] = useState<ClientBooking | null>(null);
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
@@ -59,7 +58,7 @@ export function Bookings() {
       }
       setMine(own.bookings);
       setBannedUntil(own.bannedUntil);
-      setReceived([...(around?.toMark ?? []), ...(around?.upcoming ?? [])]);
+      setReceived((around?.toMark.length ?? 0) + (around?.upcoming.length ?? 0));
       setNow(new Date());
       setState("ready");
     } catch {
@@ -152,17 +151,15 @@ export function Bookings() {
             </div>
           )}
 
-          {received.length > 0 && (
-            <div className={panel}>
-              <h2 className={sectionTitle}>{t("booking.mine.received")}</h2>
-              <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("booking.mine.receivedHint")}</p>
-              <ul className="m-0 grid list-none gap-3 p-0">
-                {received.map((b) => (
-                  <li key={b.id}>
-                    <ArtistBookingCard booking={b} onChanged={() => void load()} />
-                  </li>
-                ))}
-              </ul>
+          {/* An artist's own appointments are handled in their calendar (decision 147),
+              which stays open to them after the plan ends. */}
+          {received > 0 && (
+            <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-page)] p-4">
+              <CalendarDays size={18} aria-hidden="true" className="flex-none text-[var(--text-muted)]" />
+              <p className="m-0 min-w-0 flex-1 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("booking.mine.receivedMoved")}</p>
+              <Link to={AGENDA_PATH} className="text-[length:var(--text-body-sm)] font-bold text-[var(--text-primary)] underline underline-offset-4">
+                {t("booking.mine.receivedLink")}
+              </Link>
             </div>
           )}
         </>

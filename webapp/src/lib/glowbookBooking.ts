@@ -29,7 +29,8 @@ import {
  *            my_glowbook_bookings, glowbook_cancel_booking
  *   artist:  glowbook_artist_calendar, glowbook_save_booking_settings,
  *            glowbook_set_calendar_hours, glowbook_cancel_booking (reason),
- *            glowbook_mark_booking, glowbook_block_client / glowbook_unblock_client
+ *            glowbook_mark_booking, glowbook_block_client / glowbook_unblock_client,
+ *            glowbook_add_closure / glowbook_delete_closure (decision 147)
  *
  * Without Supabase (mock mode) nothing is offered: there is no simulated booking.
  */
@@ -162,18 +163,40 @@ export async function unblockClient(blockId: string): Promise<ActionResult> {
   return error ? fail(error.message) : { ok: true };
 }
 
+/** Closes whole local days (decision 147); answers how many appointments to come the period covers (they are kept). */
+export async function addClosure(startsOn: string, endsOn: string, note: string): Promise<{ ok: true; bookings: number } | { ok: false; code: string }> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { data, error } = await supabase.rpc("glowbook_add_closure", { p_starts_on: startsOn, p_ends_on: endsOn, p_note: note.trim() || undefined });
+  if (error) return { ok: false, code: databaseCode(error.message) ?? "unavailable" };
+  const bookings = (data as { bookings?: unknown } | null)?.bookings;
+  return { ok: true, bookings: typeof bookings === "number" ? bookings : 0 };
+}
+
+export async function deleteClosure(id: string): Promise<ActionResult> {
+  if (!supabase) return { ok: false, code: "unavailable" };
+  const { error } = await supabase.rpc("glowbook_delete_closure", { p_id: id });
+  return error ? fail(error.message) : { ok: true };
+}
+
 /**
  * The artist's appointments around today: those to come (62 days) and the past
  * ones still waiting for an outcome (honoured / no-show can be recorded up to 60
  * days after the hour). Two reads, since one calendar read spans 62 days at most.
  */
-export async function fetchArtistAppointments(today: string): Promise<{ upcoming: ArtistCalendar["bookings"]; toMark: ArtistCalendar["bookings"] } | null> {
+export async function fetchArtistAppointments(today: string): Promise<{
+  upcoming: ArtistCalendar["bookings"];
+  toMark: ArtistCalendar["bookings"];
+  pageStatus: ArtistCalendar["pageStatus"];
+  closures: ArtistCalendar["closures"];
+} | null> {
   const [past, coming] = await Promise.all([fetchArtistCalendar(addDays(today, -60), today), fetchArtistCalendar(today, addDays(today, 61))]);
   if (!past || !coming) return null;
   const now = Date.now();
   const all = new Map([...past.bookings, ...coming.bookings].map((b) => [b.id, b]));
   const list = [...all.values()];
   return {
+    pageStatus: coming.pageStatus,
+    closures: coming.closures,
     upcoming: list.filter((b) => b.status === "booked" && new Date(b.startsAt).getTime() > now).sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
     toMark: list
       .filter((b) => b.status === "booked" && !b.clientErased && new Date(b.startsAt).getTime() <= now && new Date(b.startsAt).getTime() > now - 60 * 86400 * 1000)

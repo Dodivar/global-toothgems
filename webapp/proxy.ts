@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { legacyAgendaAddress } from "./src/lib/agendaRoutes";
 import { gateFor, signInRedirect } from "./src/lib/authRoutes";
 import { LANGUAGE_KEY, legacyAddress, negotiateLocale, parsePath } from "./src/lib/localeRoutes";
 import { LOCALE_HEADER, PATH_HEADER } from "./src/lib/localeHeader";
@@ -44,6 +45,10 @@ export async function proxy(request: NextRequest) {
   }
   const moved = legacyAddress(pathname);
   if (moved) return NextResponse.redirect(new URL(`${moved}${search}`, request.url), 308);
+  // The former Glowbook "Calendar" tab, still in e-mails and calendar feeds (decision 147):
+  // moved before the Studio's access check, so an artist whose plan ended still gets there.
+  const agenda = legacyAgendaAddress(pathname, search);
+  if (agenda) return NextResponse.redirect(new URL(agenda, request.url), 308);
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(LOCALE_HEADER, parsePath(pathname).locale ?? negotiateLocale(saved, acceptLanguage));

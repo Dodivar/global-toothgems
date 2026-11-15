@@ -34,7 +34,8 @@
       "feedback": "Feedback",
       "shop": "Shop",
       "academy": "Academy",
-      "account": "My space"
+      "account": "My space",
+      "agenda": "Calendar"
     },
     "desc": {
       "studio": "Back to the design on the stage",
@@ -46,8 +47,10 @@
       "feedback": "Tell us how it feels",
       "shop": "Gems, tools and kits",
       "academy": "The trainings",
-      "account": "Orders, certificates, profile"
-    }
+      "account": "Orders, certificates, profile",
+      "agenda": "Appointments, hours and time off"
+    },
+    "agenda": "My calendar"
   },
   "status": {
     "empty": "Nothing to save yet",

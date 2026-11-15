@@ -3788,6 +3788,41 @@ export type Database = {
           },
         ]
       }
+      glowbook_closures: {
+        Row: {
+          created_at: string
+          ends_on: string
+          id: string
+          note: string | null
+          starts_on: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_on: string
+          id?: string
+          note?: string | null
+          starts_on: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_on?: string
+          id?: string
+          note?: string | null
+          starts_on?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowbook_closures_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "studio_showcases"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           availability: string
@@ -11770,6 +11805,10 @@ export type Database = {
         Args: { p_gift_card_id: string }
         Returns: string
       }
+      glowbook_add_closure: {
+        Args: { p_ends_on: string; p_note?: string; p_starts_on: string }
+        Returns: Json
+      }
       glowbook_apply_calendar_import: {
         Args: {
           p_error: string
@@ -11830,6 +11869,7 @@ export type Database = {
         Returns: Json
       }
       glowbook_create_calendar_feed: { Args: never; Returns: string }
+      glowbook_delete_closure: { Args: { p_id: string }; Returns: undefined }
       glowbook_directory: { Args: never; Returns: Json }
       glowbook_disable_calendar_feed: { Args: never; Returns: undefined }
       glowbook_imported_hours: {

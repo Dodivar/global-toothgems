@@ -34,7 +34,8 @@
       "feedback": "Avis",
       "shop": "Boutique",
       "academy": "Academy",
-      "account": "Mon espace"
+      "account": "Mon espace",
+      "agenda": "Agenda"
     },
     "desc": {
       "studio": "Revenir à la création en cours",
@@ -46,8 +47,10 @@
       "feedback": "Dites-nous ce que vous en pensez",
       "shop": "Gems, outils et kits",
       "academy": "Les formations",
-      "account": "Commandes, attestations, profil"
-    }
+      "account": "Commandes, attestations, profil",
+      "agenda": "Rendez-vous, horaires et congés"
+    },
+    "agenda": "Mon agenda"
   },
   "status": {
     "empty": "Rien à enregistrer pour l’instant",

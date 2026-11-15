@@ -5,6 +5,7 @@ import { Link, NavLink, useLocation, useNavigate } from "../../lib/navigation";
 import {
   Award,
   CalendarCheck,
+  CalendarDays,
   Cookie,
   CreditCard,
   LayoutDashboard,
@@ -41,6 +42,7 @@ import { LEGAL_PATHS } from "../../data/legal/routes";
 import { CLIENT_SPACES, STUDIO_SHORTCUTS } from "./clientSpaces";
 import { useGlowbookPlanKnown } from "./useGlowbookPlanKnown";
 import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../lib/studioUrl";
+import { AGENDA_PATH } from "../../lib/agendaRoutes";
 import monogram from "../../assets/monogram-blue.png";
 import logoWordmark from "../../assets/logo-wordmark.svg";
 
@@ -164,6 +166,8 @@ const GROUPS: SectionGroup[] = [
       })),
       // Always listed; locked (leading to the presentation page) below the Atelier plan.
       { to: studioSectionPath("glowbook"), labelKey: "nav.studioGlowbook", shortKey: "glowbook", icon: Sparkles, glowbook: true },
+      // The artist's calendar (decision 147), in the member space; locked like the Glowbook below the plan.
+      { to: AGENDA_PATH, labelKey: "nav.studioAgenda", shortKey: "agenda", icon: CalendarDays, glowbook: true },
       { to: "/compte/studio", labelKey: "account.navStudio", shortKey: "subscription", icon: CreditCard },
     ],
   },

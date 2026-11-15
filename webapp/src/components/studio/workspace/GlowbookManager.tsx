@@ -5,7 +5,7 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUp,
-  CalendarCheck,
+  CalendarDays,
   Check,
   CircleAlert,
   Clock3,
@@ -24,7 +24,8 @@ import {
   UserRound,
 } from "lucide-react";
 import { Button } from "../../ui/Button";
-import { Navigate, useNavigate } from "../../../lib/navigation";
+import { Link, Navigate, useNavigate } from "../../../lib/navigation";
+import { AGENDA_PATH } from "../../../lib/agendaRoutes";
 import { isLocale, localizedPath } from "../../../lib/localeRoutes";
 import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../../lib/studioUrl";
 import {
@@ -48,7 +49,6 @@ import { useToast } from "../../../lib/toast";
 import { CreationThumb } from "./CreationCard";
 import { LibrarySkeleton } from "./CreationLibrary";
 import { GlowbookLookEditor } from "./GlowbookLookEditor";
-import { GlowbookAgenda } from "./GlowbookAgenda";
 import { GlowbookSections } from "./GlowbookSections";
 import { GlowbookBadgeCard, GlowbookDirectoryCard, GlowbookQrCard } from "./GlowbookShare";
 import { ModerationBadge } from "./GlowbookStatus";
@@ -108,9 +108,10 @@ export function GlowbookManager() {
 
 /* -------------------------------------------------------------- dashboard */
 
-type Tab = GlowbookPanel | "share" | "agenda";
-const TABS: readonly Tab[] = ["creations", "look", "profile", "agenda", "share"];
-const TAB_ICON: Record<Tab, typeof Check> = { creations: LayoutGrid, look: Palette, profile: UserRound, agenda: CalendarCheck, share: QrCode };
+type Tab = GlowbookPanel | "share";
+const TABS: readonly Tab[] = ["creations", "look", "profile", "share"];
+const TAB_ICON: Record<Tab, typeof Check> = { creations: LayoutGrid, look: Palette, profile: UserRound, share: QrCode };
+const isTab = (value: string | null): value is Tab => TABS.includes(value as Tab);
 
 /**
  * The artist's control panel. On top, always in view: who the page is, its
@@ -125,11 +126,21 @@ function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
   const gb = useGlowbook();
   const ws = useWorkspace();
   const baseId = useId();
-  const [tab, setTab] = useState<Tab>("creations");
-  // The booking e-mails link to the calendar (?tab=agenda, decision 144); read once hydrated.
+  const [tab, setTabState] = useState<Tab>("creations");
+  // Each tab has its address (?tab=look…), read once hydrated and kept in the
+  // address as tabs change, so a link opens one directly. The calendar left
+  // for its own page (/compte/agenda, decision 147); the proxy moves ?tab=agenda there.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("tab") === "agenda") setTab("agenda");
+    const asked = new URLSearchParams(window.location.search).get("tab");
+    if (isTab(asked)) setTabState(asked);
   }, []);
+  const setTab = (next: Tab) => {
+    setTabState(next);
+    const url = new URL(window.location.href);
+    if (next === "creations") url.searchParams.delete("tab");
+    else url.searchParams.set("tab", next);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  };
   // The profile form starts afresh after a save or a cancel; it takes the focus when asked for.
   const [form, setForm] = useState({ key: 0, focus: false });
   // A creation deleted elsewhere has left the page too (cascade): never count it,
@@ -219,7 +230,6 @@ function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
               </div>
             </div>
           )}
-          {tab === "agenda" && <GlowbookAgenda glowbook={glowbook} />}
           {tab === "share" && (
             <div className="grid gap-6 lg:grid-cols-2 lg:items-start [&>*]:min-w-0">
               <GlowbookQr glowbook={glowbook} />
@@ -317,6 +327,15 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
             t(`studio.glowbook.page.${glowbook.status}`)
           )}
         </p>
+        {/* The calendar has its own page in the member space (decision 147). */}
+        <Link
+          to={AGENDA_PATH}
+          className={clsx("inline-flex w-fit items-center gap-1.5 text-[13px] font-bold text-[var(--text-primary)] underline decoration-1 underline-offset-4", focusRing)}
+        >
+          <CalendarDays size={15} aria-hidden="true" />
+          {t("nav.studioAgenda")}
+          <ArrowRight size={14} aria-hidden="true" />
+        </Link>
       </div>
     </section>
   );

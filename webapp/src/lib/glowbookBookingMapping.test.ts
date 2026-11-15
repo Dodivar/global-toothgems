@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   addDays,
   clientCancellation,
+  closureLength,
   databaseCode,
+  dayClosed,
   dayHeader,
   defaultWeek,
   formatHour,
@@ -18,6 +20,7 @@ import {
   slotWeek,
   splitBookings,
   toggleTarget,
+  validateClosure,
   validateDraft,
   validateWeek,
   weekStart,
@@ -188,5 +191,49 @@ describe("slotWeek", () => {
   it("splits a day column's header", () => {
     expect(dayHeader("2026-11-20", "fr")).toEqual({ weekday: "ven.", date: "20" });
     expect(dayHeader("2026-11-20", "en")).toEqual({ weekday: "Fri", date: "20" });
+  });
+});
+
+describe("closures (decision 147)", () => {
+  const closures = [{ startsOn: "2026-12-20", endsOn: "2026-12-27" }];
+
+  it("reads the periods and the page state from the calendar answer", () => {
+    const c = readArtistCalendar({
+      page_status: "approved",
+      closures: [{ id: "c1", starts_on: "2026-12-20", ends_on: "2026-12-27", note: "Noël", bookings: 2 }, "junk"],
+    });
+    expect(c?.pageStatus).toBe("approved");
+    expect(c?.closures).toEqual([{ id: "c1", startsOn: "2026-12-20", endsOn: "2026-12-27", note: "Noël", bookings: 2 }]);
+    expect(readArtistCalendar({ page_status: "other" })?.pageStatus).toBeNull();
+    expect(readArtistCalendar({})?.closures).toEqual([]);
+  });
+
+  it("knows which days are closed, both ends included", () => {
+    expect(dayClosed("2026-12-19", closures)).toBe(false);
+    expect(dayClosed("2026-12-20", closures)).toBe(true);
+    expect(dayClosed("2026-12-27", closures)).toBe(true);
+    expect(dayClosed("2026-12-28", closures)).toBe(false);
+    expect(closureLength(closures[0])).toBe(8);
+  });
+
+  it("shows a closed day as a holiday, never actionable, an appointment still showing", () => {
+    const open = { startsAt: "", day: "", hour: 10, weekly: true, override: null };
+    expect(hourState(open, false, false, false, true)).toBe("holiday");
+    expect(hourState({ ...open, override: "open" as const }, false, false, false, true)).toBe("holiday");
+    expect(hourState(open, true, false, false, true)).toBe("booked");
+    expect(hourState(open, false, true, false, true)).toBe("past");
+    expect(toggleTarget("holiday")).toBeNull();
+  });
+
+  it("checks a period like the database", () => {
+    const today = "2026-11-15";
+    const ok = { startsOn: "2026-12-20", endsOn: "2026-12-27", note: "" };
+    expect(validateClosure(ok, today)).toBeNull();
+    expect(validateClosure({ ...ok, startsOn: "" }, today)).toBe("dates");
+    expect(validateClosure({ ...ok, startsOn: "2026-11-14" }, today)).toBe("past");
+    expect(validateClosure({ ...ok, endsOn: "2026-12-19" }, today)).toBe("order");
+    expect(validateClosure({ ...ok, endsOn: "2027-11-17" }, today)).toBe("tooFar");
+    expect(validateClosure({ ...ok, note: "x".repeat(81) }, today)).toBe("note");
+    expect(validateClosure({ startsOn: today, endsOn: today, note: "  " }, today)).toBeNull();
   });
 });
