@@ -33,6 +33,8 @@ export interface WelcomeFacts {
   /** The account was created from a Studio page. */
   signedUpForStudio: boolean;
   holdsCourse: boolean;
+  /** The member opened the Academy page: looking is enough, buying is not required. */
+  academyVisited: boolean;
 }
 
 /** States of a member who already uses (or has used) a paid Studio: nothing to pitch. */
@@ -54,7 +56,7 @@ export function welcomeSteps(facts: WelcomeFacts): WelcomeStep[] {
   if (facts.studio !== null && !STUDIO_MEMBER.includes(facts.studio) && !facts.signedUpForStudio) {
     steps.push({ id: "studio", to: STUDIO_PATH, done: STUDIO_TRIED.includes(facts.studio) });
   }
-  steps.push({ id: "academy", to: "/academy", done: facts.holdsCourse });
+  steps.push({ id: "academy", to: "/academy", done: facts.academyVisited || facts.holdsCourse });
   return steps;
 }
 

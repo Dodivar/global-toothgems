@@ -40,6 +40,7 @@ export function WelcomeChecklist() {
   const [loaded, setLoaded] = useState<{
     userId: string;
     dismissed: boolean;
+    academyVisited: boolean;
     createdAt: string | null;
     forStudio: boolean;
   } | null>(null);
@@ -50,7 +51,7 @@ export function WelcomeChecklist() {
     let active = true;
     void Promise.all([fetchMemberPreferences(), fetchAccountOrigin()]).then(([prefs, origin]) => {
       if (!active || !prefs || !origin) return;
-      setLoaded({ userId, dismissed: prefs.welcomeDismissed, createdAt: origin.createdAt, forStudio: origin.forStudio });
+      setLoaded({ userId, dismissed: prefs.welcomeDismissed, academyVisited: prefs.academyVisited, createdAt: origin.createdAt, forStudio: origin.forStudio });
     });
     return () => {
       active = false;
@@ -67,6 +68,7 @@ export function WelcomeChecklist() {
     studio: access?.status.kind === "ready" ? access.status.info.state : null,
     signedUpForStudio: loaded.forStudio,
     holdsCourse: enrolledCourses().length > 0,
+    academyVisited: loaded.academyVisited,
   });
   if (!showsWelcome({ isNew: isNewAccount(loaded.createdAt), dismissed: loaded.dismissed, steps })) return null;
 
