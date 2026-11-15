@@ -34,7 +34,7 @@ export interface EmailStore {
 export interface EmailDeps {
   store: EmailStore;
   resend: ResendConfig;
-  /** `Global Tooth Gems <no-reply@globaltoothgems.com>` */
+  /** `Global Toothgems <no-reply@globaltoothgems.com>` */
   from: string;
   replyTo?: string;
   layout: LayoutOptions;

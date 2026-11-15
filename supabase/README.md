@@ -2520,7 +2520,7 @@ The owner asked an agent to settle the pending "to confirm" points. Outcome:
     - The Next.js server routes (contact, newsletter confirmation) call an internal Edge Function `send-email`
       `{template_key, to, locale, variables}`: `verify_jwt = false`, authenticated by the `EMAIL_INTERNAL_SECRET`
       header (constant-time compare), recipient and template allow-listed per caller; one place holds `RESEND_API_KEY`.
-    - Secrets: `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `EMAIL_FROM` (`Global Tooth Gems <no-reply@globaltoothgems.com>`),
+    - Secrets: `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `EMAIL_FROM` (`Global Toothgems <no-reply@globaltoothgems.com>`),
       `EMAIL_REPLY_TO`, `EMAIL_INTERNAL_SECRET`; the Next.js side holds `EMAIL_INTERNAL_SECRET` only.
     - Webhook `resend-webhook` (Svix signature): `email.delivered` / `opened` / `bounced` / `complained` →
       `record_gift_card_delivery` and `newsletter_subscriptions.status`.

@@ -66,8 +66,8 @@ function setup(options: { claim?: (eventKey: string) => Claim; resendFails?: boo
         return options.resendFails ? new Response("{}", { status: 422 }) : Response.json({ id: `em_${seen.requests.length}` });
       },
     },
-    from: "Global Tooth Gems <no-reply@globaltoothgems.com>",
-    layout: { brandName: "Global Tooth Gems", siteUrl: SITE },
+    from: "Global Toothgems <no-reply@globaltoothgems.com>",
+    layout: { brandName: "Global Toothgems", siteUrl: SITE },
   };
   return { deps, seen };
 }
