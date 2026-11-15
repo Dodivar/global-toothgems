@@ -1071,8 +1071,12 @@
         "shop": "Shop",
         "giftCard": "Gift card",
         "academy": "Academy",
-        "subscription": "Subscription"
+        "subscription": "Subscription",
+        "glowbook": "Glowbook",
+        "appointments": "Bookings"
       },
+      "groupAtelier": "Atelier",
+      "atelierLocked": "With the Atelier plan",
       "groupLearning": "Training",
       "groupPurchases": "Purchases",
       "groupAccount": "My account",

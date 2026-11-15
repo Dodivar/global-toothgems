@@ -1785,7 +1785,9 @@ spotlight video (dec. 103)  Studio tab (useSpotlightRecorder) → studio_spotlig
 - Search and "near me" are computed in the browser (`sortByDistance`): the position is never sent or stored; a typed
   city is matched against the listed cities first, only an unknown one goes to Nominatim. Distances in whole km.
 - The map loads as the visitor scrolls near it, like the Glowbook's (owner's choice); a salon is a pin, an area a
-  pale dot at its rounded point.
+  pale blue halo at its rounded point, both showing the artist's profile picture (else their initial); a click opens
+  a card in the site's style (picture, certified badge, place, creations, "See their Glowbook" button, counted as
+  `via: "map"`) and the map pans so the card is seen whole (2026-11-15, owner's request).
 
 ### 3D Studio Glowbook bookings (decision 144)
 
