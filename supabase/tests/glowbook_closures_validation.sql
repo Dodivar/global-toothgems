@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Glowbook closures validation suite (decision 147)
 -- (migrations 20261115154130_glowbook_closures, 20261115160023_glowbook_closures_decision_number,
---  20261115162934_glowbook_closures_cancel_bookings)
+--  20261115162934_glowbook_closures_cancel_bookings, 20261115164211_glowbook_calendar_booking_details)
 -- =============================================================================
 --   C1  anon, a member without the plan and a member without a Glowbook cannot
 --       add a period; the table is not readable by members;
@@ -16,7 +16,9 @@
 --   C5  at most 20 periods not ended yet;
 --   C6  deleting the period gives the hours back;
 --   C7  the purge drops periods ended more than 30 days ago only;
---   C8  the personal data export lists the periods.
+--   C8  the personal data export lists the periods;
+--   C9  the artist's calendar gives each booking its creation (item, picture,
+--       live 3D view) and the page's handle; a custom design has none.
 --
 -- ONE transaction, ALWAYS rolled back by raising `ALL GLOWBOOK CLOSURES TESTS PASSED`
 -- (or `FAIL: ...`).
@@ -41,6 +43,11 @@ declare
   v_id    uuid;
   v_state text;
   v_n     int;
+  v_scene jsonb := jsonb_build_object('version', 2, 'model', 'dentition', 'lightPreset', 'studio', 'camera', null,
+                     'pieces', '[]'::jsonb, 'groups', '[]'::jsonb);
+  v_crea  uuid;
+  v_item  uuid;
+  v_b     jsonb;
 begin
   v_noon  := (v_day + time '12:00') at time zone 'Europe/Paris';
   v_two   := (v_day + time '14:00') at time zone 'Europe/Paris';
@@ -237,6 +244,30 @@ begin
     raise exception 'FAIL C8: the export lists % periods', jsonb_array_length(v_j -> 'archive' -> 'glowbook_bookings' -> 'closures');
   end if;
   if (v_j -> 'archive' -> 'glowbook_bookings' -> 'closures' -> 0) ? 'user_id' then raise exception 'FAIL C8: the export leaks user_id'; end if;
+  execute 'reset role';
+
+  -- C9
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
+  insert into public.creations (name, scene_data) values ('Aurora', v_scene) returning id into v_crea;
+  execute 'reset role';
+  update public.creations set thumbnail_path = artist::text || '/c9.jpg' where id = v_crea;
+  insert into public.studio_showcase_items (user_id, creation_id, status) values (artist, v_crea, 'approved') returning id into v_item;
+  perform set_config('role', 'service_role', true);
+  perform public.glowbook_book_slot(client3, 'clo-artist', v_next + interval '2 hours', v_item, 'Client 3', '0600000002', null, 'fr');
+  execute 'reset role';
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artist, 'role', 'authenticated')::text, true);
+  v_j := public.glowbook_artist_calendar(v_day + 1, v_day + 1);
+  if v_j ->> 'handle' <> 'clo-artist' then raise exception 'FAIL C9: handle %', v_j ->> 'handle'; end if;
+  select b into v_b from jsonb_array_elements(v_j -> 'bookings') b where b ->> 'item_id' = v_item::text;
+  if v_b is null or v_b ->> 'thumbnail_path' <> artist::text || '/c9.jpg' or (v_b ->> 'item_live')::boolean is not true then
+    raise exception 'FAIL C9: booking creation %', v_b;
+  end if;
+  select b into v_b from jsonb_array_elements(v_j -> 'bookings') b where (b ->> 'starts_at')::timestamptz = v_next;
+  if v_b is null or v_b ->> 'item_id' is not null or (v_b ->> 'item_live')::boolean then
+    raise exception 'FAIL C9: a custom design has a creation %', v_b;
+  end if;
   execute 'reset role';
 
   raise exception 'ALL GLOWBOOK CLOSURES TESTS PASSED';

@@ -7,8 +7,6 @@ import {
   CalendarCheck,
   CalendarDays,
   CalendarOff,
-  ChevronLeft,
-  ChevronRight,
   CircleAlert,
   Clock3,
   ListChecks,
@@ -29,10 +27,8 @@ import {
   addDays,
   type ArtistCalendar,
   type BookingSettings,
-  dayClosed,
   DEFAULT_SETTINGS,
   defaultWeek,
-  formatDay,
   HORIZON_CHOICES,
   hourState,
   type HourState,
@@ -49,30 +45,20 @@ import {
   zonedInstant,
 } from "../../lib/glowbookBookingMapping";
 import { AGENDA_TABS, agendaTab, type AgendaTab } from "../../lib/agendaRoutes";
-import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../lib/studioUrl";
+import { GLOWBOOK_INTRO_PATH, glowbookCreationPath, studioSectionPath } from "../../lib/studioUrl";
 import { Link } from "../../lib/navigation";
 import { useToast } from "../../lib/toast";
 import { fieldClass, focusRing } from "../studio/workspace/workspaceStyles";
 import { GlowbookCalendarFeed } from "../studio/workspace/GlowbookCalendarFeed";
 import { GlowbookCalendarImport } from "../studio/workspace/GlowbookCalendarImport";
 import { AgendaClosures } from "./AgendaClosures";
+import { AgendaWeek, type CreationOf } from "./AgendaWeek";
+import { BUCKETS, signedUrls } from "../../lib/supabase/storage";
 import { agendaCard as card, agendaCardTitle as cardTitle, agendaLabel as label, agendaSmall as small } from "./agendaStyles";
 
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
 const HOURS = Array.from({ length: 25 }, (_, h) => h);
 const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
-
-const CELL: Record<HourState, string> = {
-  open: "border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] text-[var(--gt-blue-700)] hover:border-[var(--gt-blue-600)]",
-  extra: "border-[var(--gt-blue-600)] bg-[var(--gt-blue-100)] text-[var(--gt-blue-800,#173a6b)] hover:border-[var(--gt-ink-900)]",
-  closed: "border-[var(--border-subtle)] bg-[var(--surface-page)] text-[var(--text-subtle)] hover:border-[var(--border-strong)]",
-  busy: "border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] text-[var(--status-warning-fg)] hover:border-[var(--gt-ink-900)]",
-  blocked: "border-[var(--gt-red-400)] bg-[var(--status-error-bg)] text-[var(--status-error-fg)] line-through hover:border-[var(--gt-red-600)]",
-  booked: "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-white",
-  past: "border-transparent bg-transparent text-[var(--text-subtle)] opacity-60",
-  holiday: "border-dashed border-[var(--gt-ink-300)] bg-[var(--surface-sunken)] text-[var(--text-muted)]",
-};
-const GLYPH: Partial<Record<HourState, string>> = { booked: "●", blocked: "×", busy: "≡", extra: "+", holiday: "–" };
 
 const TAB_ICON: Record<AgendaTab, LucideIcon> = {
   appointments: ListChecks,
@@ -97,8 +83,7 @@ type State = "loading" | "ready" | "error" | "unavailable";
  * one. The database checks every write.
  */
 export function ArtistAgenda({ plan }: { plan: boolean | null }) {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language?.startsWith("en") ? "en" : "fr";
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const baseId = useId();
   const ids = { tz: useId(), notice: useId(), horizon: useId() };
@@ -194,13 +179,30 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
 
   const tz = calendar?.settings?.timezone ?? settings.timezone;
   const closures = useMemo(() => calendar?.closures ?? [], [calendar]);
-  const days = useMemo(() => (week ? WEEKDAYS.map((_, i) => addDays(week, i)) : []), [week]);
   const rows = useMemo(() => visibleHours(calendar?.rules ?? [], calendar?.hours ?? []), [calendar]);
   const byInstant = useMemo(() => new Map((calendar?.hours ?? []).map((h) => [`${h.day}|${h.hour}`, h])), [calendar]);
-  const bookedAt = useMemo(
-    () => new Set((calendar?.bookings ?? []).filter((b) => b.status === "booked").map((b) => new Date(b.startsAt).toISOString())),
-    [calendar],
-  );
+  // The chosen creations' pictures (the artist's own private thumbnails), signed once per load.
+  const [images, setImages] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    const paths = [...new Set([...(calendar?.bookings ?? []), ...upcoming, ...toMark].flatMap((b) => (b.thumbnailPath ? [b.thumbnailPath] : [])))];
+    if (paths.length === 0) return;
+    let cancelled = false;
+    signedUrls(BUCKETS.studioThumbnails, paths)
+      .then((urls) => {
+        if (!cancelled) setImages(urls);
+      })
+      .catch(() => {
+        /* No picture rather than a broken one. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [calendar, upcoming, toMark]);
+  const handle = calendar?.handle ?? null;
+  const creationOf: CreationOf = (b) => ({
+    imageUrl: b.thumbnailPath ? (images.get(b.thumbnailPath) ?? null) : null,
+    viewUrl: b.itemLive && b.itemId && handle ? glowbookCreationPath(handle, b.itemId) : null,
+  });
 
   const toggle = async (day: string, hour: number, current: HourState) => {
     const target = toggleTarget(current);
@@ -266,7 +268,7 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
 
   const hasAppointments = upcoming.length > 0 || toMark.length > 0;
   const appointments = (
-    <AppointmentLists upcoming={upcoming} toMark={toMark} onChanged={() => void load(true)} />
+    <AppointmentLists upcoming={upcoming} toMark={toMark} onChanged={() => void load(true)} creationOf={creationOf} />
   );
 
   // No Glowbook page: nothing to book yet — unless appointments are left to handle.
@@ -292,7 +294,6 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
     );
   }
 
-  const nowMs = Date.now();
   const status = !calendar.switchOn
     ? "switchOff"
     : !calendar.settings?.enabled
@@ -357,81 +358,23 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
         {tab === "appointments" && appointments}
 
         {tab === "week" && (
-          <section aria-labelledby={`${ids.notice}-week`} className={card}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 id={`${ids.notice}-week`} className={cardTitle}>{t("booking.agenda.weekView")}</h2>
-              <div className="flex items-center gap-1">
-                <button type="button" aria-label={t("booking.agenda.prevWeek")} disabled={week <= weekStart(today)} onClick={() => setWeek(addDays(week, -7))}
-                  className={clsx("grid h-9 w-9 place-items-center rounded-[var(--radius-pill)] border border-[var(--border-subtle)] disabled:opacity-40", focusRing)}>
-                  <ChevronLeft size={16} aria-hidden="true" />
-                </button>
-                <span className="min-w-[9.5rem] text-center text-[13px] font-semibold text-[var(--text-primary)]">
-                  {formatDay(week, lang, "short")} – {formatDay(addDays(week, 6), lang, "short")}
-                </span>
-                <button type="button" aria-label={t("booking.agenda.nextWeek")} onClick={() => setWeek(addDays(week, 7))}
-                  className={clsx("grid h-9 w-9 place-items-center rounded-[var(--radius-pill)] border border-[var(--border-subtle)]", focusRing)}>
-                  <ChevronRight size={16} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-            <p className={small}>{t("booking.agenda.weekHint", { city: tz.split("/").pop()?.replace(/_/g, " ") })}</p>
-            {dirty && <p className={clsx(small, "font-semibold text-[var(--status-warning-fg)]")}>{t("booking.agenda.saveFirst")}</p>}
-            <div className="-mx-1 overflow-x-auto px-1">
-              <table className="w-full min-w-[560px] border-separate border-spacing-1 text-[11.5px]">
-                <caption className="sr-only">{t("booking.agenda.weekView")}</caption>
-                <thead>
-                  <tr>
-                    <th scope="col" className="w-12" />
-                    {days.map((day) => (
-                      <th key={day} scope="col" className="text-center font-semibold text-[var(--text-muted)]">
-                        <span className="block">{formatDay(day, lang, "short")}</span>
-                        {day >= today && !dayClosed(day, closures) && (
-                          <button type="button" onClick={() => void closeDay(day)} className="mt-0.5 text-[10.5px] font-semibold text-[var(--text-subtle)] underline hover:text-[var(--text-primary)]">
-                            {t("booking.agenda.closeDay")}
-                          </button>
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((hour) => (
-                    <tr key={hour}>
-                      <th scope="row" className="pr-1 text-right font-semibold tabular-nums text-[var(--text-subtle)]">{hh(hour)}</th>
-                      {days.map((day) => {
-                        const key = `${day}|${hour}`;
-                        const entry = byInstant.get(key);
-                        const instant = entry?.startsAt ? new Date(entry.startsAt).toISOString() : zonedInstant(day, hour, tz);
-                        const cell = hourState(entry, bookedAt.has(instant), new Date(instant).getTime() < nowMs, imported.has(instant), dayClosed(day, closures));
-                        const actionable = toggleTarget(cell) !== null && !dirty;
-                        return (
-                          <td key={key} className="p-0">
-                            <button
-                              type="button"
-                              disabled={!actionable || pendingCell === key}
-                              onClick={() => void toggle(day, hour, cell)}
-                              aria-label={`${formatDay(day, lang)} ${hh(hour)} : ${t(`booking.agenda.cell.${cell}`)}`}
-                              className={clsx("h-8 w-full rounded-[6px] border text-[10.5px] font-bold transition-colors disabled:cursor-default", CELL[cell], focusRing)}
-                            >
-                              <span aria-hidden="true">{GLYPH[cell] ?? ""}</span>
-                            </button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[11.5px] text-[var(--text-muted)]">
-              {(["open", "extra", "blocked", "busy", "holiday", "booked", "closed"] as const).map((s) => (
-                <li key={s} className="inline-flex items-center gap-1.5">
-                  <span aria-hidden="true" className={clsx("inline-block h-3 w-4 rounded-[3px] border", CELL[s])} />
-                  {t(`booking.agenda.cell.${s}`)}
-                </li>
-              ))}
-            </ul>
-          </section>
+          <AgendaWeek
+            week={week}
+            today={today}
+            timezone={tz}
+            rows={rows}
+            hours={calendar.hours}
+            bookings={calendar.bookings}
+            imported={imported}
+            closures={closures}
+            dirty={dirty}
+            pendingCell={pendingCell}
+            onWeek={setWeek}
+            onToggle={(day, hour, state) => void toggle(day, hour, state)}
+            onCloseDay={(day) => void closeDay(day)}
+            onChanged={() => void load(true)}
+            creationOf={creationOf}
+          />
         )}
 
         {tab === "hours" && (
@@ -578,10 +521,12 @@ function AppointmentLists({
   upcoming,
   toMark,
   onChanged,
+  creationOf,
 }: {
   upcoming: ArtistCalendar["bookings"];
   toMark: ArtistCalendar["bookings"];
   onChanged: () => void;
+  creationOf: CreationOf;
 }) {
   const { t } = useTranslation();
   const ids = { mark: useId(), coming: useId() };
@@ -594,7 +539,7 @@ function AppointmentLists({
           <ul className="m-0 grid list-none gap-3 p-0 lg:grid-cols-2">
             {toMark.map((b) => (
               <li key={b.id}>
-                <ArtistBookingCard booking={b} onChanged={onChanged} />
+                <ArtistBookingCard booking={b} creation={creationOf(b)} onChanged={onChanged} />
               </li>
             ))}
           </ul>
@@ -608,7 +553,7 @@ function AppointmentLists({
           <ul className="m-0 grid list-none gap-3 p-0 lg:grid-cols-2">
             {upcoming.map((b) => (
               <li key={b.id}>
-                <ArtistBookingCard booking={b} onChanged={onChanged} />
+                <ArtistBookingCard booking={b} creation={creationOf(b)} onChanged={onChanged} />
               </li>
             ))}
           </ul>

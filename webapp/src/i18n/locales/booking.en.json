@@ -130,7 +130,8 @@
     "cancelBody": "Your client receives an e-mail with the reason you give. The slot is free again on your Glowbook.",
     "cancelConfirm": "Cancel and tell the client",
     "cancelled": "Appointment cancelled, the client has been told",
-    "reason": "Reason (read by the client)"
+    "reason": "Reason (read by the client)",
+    "view3d": "View in 3D"
   },
   "mine": {
     "eyebrow": "Glowbook",
@@ -215,7 +216,13 @@
     "unblock": "Accept again",
     "toMark_one": "{{count}} past appointment to record",
     "toMark_other": "{{count}} past appointments to record",
-    "toMarkHint": "Did the client come? Record it within 60 days: two no-shows or late cancellations within 12 months close their bookings for 3 months."
+    "toMarkHint": "Did the client come? Record it within 60 days: two no-shows or late cancellations within 12 months close their bookings for 3 months.",
+    "prevDay": "Previous day",
+    "nextDay": "Next day",
+    "dayClosed": "Day closed (time off).",
+    "closeThisDay": "Close this day",
+    "openHint": "Tap an appointment to see the client, the creation asked for and their comment.",
+    "selected": "Appointment"
   },
   "weekdays": {
     "1": "Monday",

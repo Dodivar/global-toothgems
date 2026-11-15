@@ -3,6 +3,7 @@ import {
   addDays,
   clientCancellation,
   bookingsOnDays,
+  cellName,
   closureLength,
   databaseCode,
   dayClosed,
@@ -224,6 +225,24 @@ describe("closures (decision 147)", () => {
     expect(hourState(open, true, false, false, true)).toBe("booked");
     expect(hourState(open, false, true, false, true)).toBe("past");
     expect(toggleTarget("holiday")).toBeNull();
+  });
+
+  it("reads each booking's creation and the page's handle", () => {
+    const c = readArtistCalendar({
+      handle: "lea",
+      bookings: [
+        { id: "b1", starts_at: "s", ends_at: "e", status: "booked", item_id: "i1", thumbnail_path: "u/1.jpg", item_live: true },
+        { id: "b2", starts_at: "s", ends_at: "e", status: "booked" },
+      ],
+    });
+    expect(c?.handle).toBe("lea");
+    expect(c?.bookings.map((b) => [b.itemId, b.thumbnailPath, b.itemLive])).toEqual([["i1", "u/1.jpg", true], [null, null, false]]);
+  });
+
+  it("shortens a client's name for a week cell", () => {
+    expect(cellName("Camille Roussel")).toBe("Camille");
+    expect(cellName("Maximilienne Dupont")).toBe("Maximilie…");
+    expect(cellName(null)).toBe("");
   });
 
   it("counts the appointments a period would cancel, by the artist's local day", () => {

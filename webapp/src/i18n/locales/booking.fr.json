@@ -130,7 +130,8 @@
     "cancelBody": "Votre client reçoit un e-mail avec la raison que vous indiquez. Le créneau redevient libre sur votre Glowbook.",
     "cancelConfirm": "Annuler et prévenir le client",
     "cancelled": "Rendez-vous annulé, le client est prévenu",
-    "reason": "Raison (lue par le client)"
+    "reason": "Raison (lue par le client)",
+    "view3d": "Voir en 3D"
   },
   "mine": {
     "eyebrow": "Glowbook",
@@ -215,7 +216,13 @@
     "unblock": "Accepter de nouveau",
     "toMark_one": "{{count}} rendez-vous passé à noter",
     "toMark_other": "{{count}} rendez-vous passés à noter",
-    "toMarkHint": "Le client est-il venu ? Notez-le dans les 60 jours : deux absences ou annulations tardives en 12 mois lui ferment les réservations pendant 3 mois."
+    "toMarkHint": "Le client est-il venu ? Notez-le dans les 60 jours : deux absences ou annulations tardives en 12 mois lui ferment les réservations pendant 3 mois.",
+    "prevDay": "Jour précédent",
+    "nextDay": "Jour suivant",
+    "dayClosed": "Journée fermée (congés).",
+    "closeThisDay": "Fermer cette journée",
+    "openHint": "Touchez un rendez-vous pour voir le client, la création demandée et son commentaire.",
+    "selected": "Rendez-vous"
   },
   "weekdays": {
     "1": "Lundi",

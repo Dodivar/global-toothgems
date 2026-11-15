@@ -53,6 +53,12 @@ export interface ArtistBooking {
   comment: string | null;
   cancelReason: string | null;
   createdAt: string;
+  /** The Glowbook creation chosen (null for a custom design or one since removed). */
+  itemId: string | null;
+  /** Its picture in the artist's private thumbnails (signed by the browser). */
+  thumbnailPath: string | null;
+  /** Page and creation approved: its public 3D view exists. */
+  itemLive: boolean;
 }
 
 export interface BookingRule {
@@ -95,6 +101,8 @@ export type PageStatus = "pending" | "approved" | "rejected" | null;
 
 export interface ArtistCalendar {
   pageStatus: PageStatus;
+  /** The page's address (`/fr/glowbook/<handle>`), null without a page. */
+  handle: string | null;
   /** Periods not ended yet, in date order. */
   closures: CalendarClosure[];
   /** The platform-wide switch. */
@@ -171,6 +179,7 @@ export function readArtistCalendar(data: unknown): ArtistCalendar | null {
   const page = data.page_status;
   return {
     pageStatus: page === "pending" || page === "approved" || page === "rejected" ? page : null,
+    handle: text(data.handle),
     closures: list("closures").map((c) => ({
       id: String(c.id),
       startsOn: String(c.starts_on),
@@ -213,6 +222,9 @@ export function readArtistCalendar(data: unknown): ArtistCalendar | null {
       comment: text(b.comment),
       cancelReason: text(b.cancel_reason),
       createdAt: String(b.created_at),
+      itemId: text(b.item_id),
+      thumbnailPath: text(b.thumbnail_path),
+      itemLive: b.item_live === true,
     })),
     upcoming: list("upcoming").map((u) => ({ id: String(u.id), startsAt: String(u.starts_at) })),
     blocks: list("blocks").map((b) => ({ id: String(b.id), clientName: text(b.client_name) ?? "—", createdAt: String(b.created_at) })),
@@ -389,6 +401,15 @@ export function toggleTarget(state: HourState): "blocked" | "open" | "default" |
     default:
       return null;
   }
+}
+
+/**
+ * The first name shown in a week-view cell: the first word of the name the
+ * client gave, cut to fit (the full name is in the appointment's panel).
+ */
+export function cellName(name: string | null, max = 10): string {
+  const first = (name ?? "").trim().split(/\s+/)[0] ?? "";
+  return first.length > max ? `${first.slice(0, max - 1)}…` : first;
 }
 
 /* ------------------------------------------------------------ closures (decision 147) */
