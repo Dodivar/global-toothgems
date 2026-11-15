@@ -360,5 +360,15 @@
     "closure": "Closed from {{from}} to {{to}}",
     "closureDay": "Closed on {{day}}",
     "cta": "Open my calendar"
+  },
+  "clientDashboard": {
+    "eyebrow": "Next appointment",
+    "with": "With {{name}}",
+    "others_one": "And {{count}} more upcoming appointment",
+    "others_other": "And {{count}} more upcoming appointments",
+    "cta": "See my appointments",
+    "none": "No upcoming appointment",
+    "noneBody": "Find a tooth gem artist near you and book a slot on their page.",
+    "findCta": "Find an artist"
   }
 }

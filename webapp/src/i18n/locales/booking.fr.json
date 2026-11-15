@@ -360,5 +360,15 @@
     "closure": "Fermé du {{from}} au {{to}}",
     "closureDay": "Fermé le {{day}}",
     "cta": "Ouvrir mon agenda"
+  },
+  "clientDashboard": {
+    "eyebrow": "Prochain rendez-vous",
+    "with": "Avec {{name}}",
+    "others_one": "Et {{count}} autre rendez-vous à venir",
+    "others_other": "Et {{count}} autres rendez-vous à venir",
+    "cta": "Voir mes rendez-vous",
+    "none": "Aucun rendez-vous à venir",
+    "noneBody": "Trouvez un artiste tooth gems près de chez vous et réservez un créneau sur sa page.",
+    "findCta": "Trouver un artiste"
   }
 }
