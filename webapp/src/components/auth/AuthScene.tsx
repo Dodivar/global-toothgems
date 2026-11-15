@@ -1,37 +1,61 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { CSSProperties, InputHTMLAttributes, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
 import { CircleAlert } from "lucide-react";
-import { ShapeGlyph, GLYPH_PATHS } from "../ui/ShapeGlyph";
 import { photo } from "../../lib/images";
-import { AUTH_PHOTO } from "./authPhoto";
 import { AppleMark } from "./AppleMark";
 
 /**
  * The shared setting of the authentication pages — `/connexion`, `/inscription`
- * and the account-confirmation landing — in the jewellery sense: the card is the
- * stone, everything around it is the mount. The card wears a pastel-blue crown; the page
- * sits on a flat pastel field with one oversized brand cut drawn into it; and
- * the editorial column holds a rounded photograph with its own offset outline.
+ * and the account-confirmation landing. The page sits on a flat pastel field;
+ * beside the card, a burst of the shop's own gems (the home carousel's cut-outs)
+ * flies out of the centre once and then drifts gently, above the three reasons
+ * to hold an account, set as cards.
  *
  * Colour is rationed on purpose: pastel blue carries the whole surface, emerald
  * appears on exactly one control (the primary submit), and fuchsia is reduced to
- * small sparkle marks. A few white gem cuts set in the crown's corner are the
- * card's only decoration, never a label, an instruction or legal copy.
+ * small sparkle marks. The gems are the page's only decoration, never a label,
+ * an instruction or legal copy.
  */
 
 /** Shared page gutter, matched to the rest of the site. */
 const AUTH_GUTTER = "px-[clamp(14px,4vw,48px)]";
 
 /**
- * The three reasons to hold an account. The catalogue's own gem cuts stand in
- * for generic icons: the brand already owns a set of marks, so the page uses them.
+ * The three reasons to hold an account, each with one shop gem as its mark: the
+ * brand already owns a set of stones, so the page uses them instead of icons.
  */
 const BENEFITS = [
-  { shape: "round", titleKey: "auth.benefit1Title", bodyKey: "auth.benefit1Body" },
-  { shape: "navette", titleKey: "auth.benefit2Title", bodyKey: "auth.benefit2Body" },
-  { shape: "star", titleKey: "auth.benefit3Title", bodyKey: "auth.benefit3Body" },
+  { gem: "gem-round-saphir.webp", titleKey: "auth.benefit1Title", bodyKey: "auth.benefit1Body" },
+  { gem: "gem-navette-bermuda-blue.webp", titleKey: "auth.benefit2Title", bodyKey: "auth.benefit2Body" },
+  { gem: "gem-gold-star.webp", titleKey: "auth.benefit3Title", bodyKey: "auth.benefit3Body" },
 ] as const;
+
+/**
+ * The burst: shop gems thrown out from the centre of the panel. A fixed layout
+ * (never random at render time, which would break hydration); `x`/`y` are the
+ * piece's centre in % of the panel, `size` its width in % of the panel's width.
+ */
+const BURST: { photo: string; x: number; y: number; size: number; rot: number }[] = [
+  { photo: "gem-heart-fuchsia.webp", x: 30, y: 34, size: 13, rot: 20 },
+  { photo: "gem-diamond-violet.webp", x: 70, y: 30, size: 13, rot: -25 },
+  { photo: "gem-rivoli-bermuda-blue.webp", x: 50, y: 50, size: 12, rot: -12 },
+  { photo: "gem-starflower-light-topaz.webp", x: 16, y: 62, size: 11, rot: 40 },
+  { photo: "gem-navette-emeraude.webp", x: 84, y: 64, size: 11, rot: 10 },
+  { photo: "gem-gold-star.webp", x: 36, y: 78, size: 10, rot: -30 },
+  { photo: "gem-heart-aquamarine.webp", x: 64, y: 78, size: 11, rot: 15 },
+  { photo: "gem-raindrop-heliotrope.webp", x: 91, y: 22, size: 8, rot: -10 },
+  { photo: "gem-baguette-peridot.webp", x: 9, y: 24, size: 9, rot: 25 },
+  { photo: "gem-rivoli-crystal-ab.webp", x: 21, y: 88, size: 8, rot: 60 },
+  { photo: "gem-square-aquamarine.webp", x: 78, y: 10, size: 8, rot: -40 },
+  { photo: "gem-round-saphir.webp", x: 46, y: 14, size: 9, rot: 30 },
+  { photo: "gem-gold-heart.webp", x: 91, y: 88, size: 7, rot: 5 },
+  { photo: "gem-heart-siam.webp", x: 22, y: 12, size: 9, rot: -18 },
+  { photo: "gem-round-emeraude.webp", x: 65, y: 55, size: 7, rot: 0 },
+  { photo: "gem-gold-lightning.webp", x: 35, y: 56, size: 7, rot: 18 },
+  { photo: "gem-starflower-amethyste.webp", x: 8, y: 44, size: 7, rot: -8 },
+  { photo: "gem-raindrop-light-siam.webp", x: 94, y: 46, size: 7, rot: 22 },
+];
 
 /** Four-point mark. Decorative only — every instance is hidden from assistive tech. */
 export function Sparkle({ size = 16, className = "", color = "currentColor" }: { size?: number; className?: string; color?: string }) {
@@ -45,56 +69,15 @@ export function Sparkle({ size = 16, className = "", color = "currentColor" }: {
   );
 }
 
-/**
- * The page's field: a flat pastel plane with one oversized brand cut drawn into
- * it. It is the catalogue's own `star-flower` glyph, scaled up until the petals
- * read as architecture rather than as an icon, and turned a little, as a stone
- * is set by hand rather than squared to the page.
- */
+/** The page's field: a flat pastel plane with two small sparkle marks. */
 function FacetField() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gt-blue-50)]" />
-      {/* Centred roughly on the card, so the card's own body masks the middle and
-          only the petals come out around it — the stone in its setting. */}
-      <svg
-        viewBox="0 0 32 32"
-        fill="none"
-        className="absolute -right-[24%] -top-[22%] h-[90vw] max-h-[900px] w-[90vw] max-w-[900px] rotate-[14deg] text-[var(--gt-blue-300)] lg:-right-[12%] lg:-top-[16%]"
-        style={{ opacity: 0.85 }}
-      >
-        <path d={GLYPH_PATHS["star-flower"].outline} stroke="currentColor" strokeWidth={0.06} strokeLinejoin="round" fill="none" />
-        <path d={GLYPH_PATHS["star-flower"].facets} stroke="currentColor" strokeWidth={0.045} strokeLinecap="round" fill="none" />
-      </svg>
       {/* Fuchsia, once, small: the whole budget for the accent on this surface. */}
       <Sparkle size={20} color="var(--gt-fuchsia-300)" className="absolute left-[6%] top-[22%] hidden lg:block" />
       <Sparkle size={12} color="var(--gt-blue-400)" className="absolute left-[46%] top-[12%] hidden lg:block" />
     </div>
-  );
-}
-
-/** One white cut, outline and facets, for the crown's corner. */
-function CrownCut({ shape, size, className }: { shape: keyof typeof GLYPH_PATHS; size: number; className: string }) {
-  const { outline, facets } = GLYPH_PATHS[shape];
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false" className={`absolute ${className}`}>
-      <path d={outline} fill="white" fillOpacity={0.35} stroke="white" strokeWidth={1.1} strokeLinejoin="round" />
-      <path d={facets} stroke="white" strokeWidth={0.7} strokeOpacity={0.8} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-/**
- * The crown's ornament: three of the catalogue's own cuts set in the corner,
- * the way gems are placed on a tooth — one hero stone and two accents.
- */
-function CrownGems() {
-  return (
-    <span aria-hidden="true" className="pointer-events-none absolute -right-3 -top-4 h-[96px] w-[118px] select-none">
-      <CrownCut shape="star-flower" size={76} className="right-0 top-0 rotate-[14deg]" />
-      <CrownCut shape="round" size={22} className="bottom-4 left-7" />
-      <CrownCut shape="navette" size={18} className="left-1 top-6 -rotate-[24deg]" />
-    </span>
   );
 }
 
@@ -115,7 +98,7 @@ export function AuthModeSwitch({ current, state }: { current: "signIn" | "signUp
     "flex min-h-11 items-center justify-center whitespace-nowrap rounded-[var(--radius-control)] px-2 text-center text-[length:var(--text-caption)] font-semibold sm:px-3 sm:text-[length:var(--text-body-sm)]";
   return (
     <>
-      <p className="m-0 flex items-center gap-2 text-balance pr-20 text-[length:var(--text-caption)] font-semibold text-[var(--gt-blue-700)]">
+      <p className="m-0 flex items-center gap-2 text-balance text-[length:var(--text-caption)] font-semibold text-[var(--gt-blue-700)]">
         <Sparkle size={12} color="var(--gt-fuchsia-400)" className="flex-none" />
         {t("authSwitch.oneAccount")}
       </p>
@@ -142,7 +125,7 @@ export function AuthModeSwitch({ current, state }: { current: "signIn" | "signUp
 }
 
 /**
- * The card shell: crown, its gem ornament, then whatever it holds.
+ * The card shell: a pastel crown, then whatever it holds.
  *
  * `overflow-clip` rather than `overflow-hidden`: clipping keeps the rounded
  * corners without making the card a scroll container, so a sticky action bar
@@ -154,55 +137,84 @@ export function AuthCard({ children, crown, label }: { children: ReactNode; crow
       aria-label={label}
       className="min-w-0 overflow-clip rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)]"
     >
-      <div className="relative overflow-hidden bg-[var(--gt-blue-200)] px-[clamp(20px,4vw,32px)] py-6">
-        <CrownGems />
-        <div className="relative grid gap-4">{crown}</div>
-      </div>
+      <div className="grid gap-4 bg-[var(--gt-blue-200)] px-[clamp(20px,4vw,32px)] py-6">{crown}</div>
       <div className="px-5 py-6 sm:px-8 sm:py-8">{children}</div>
     </section>
   );
 }
 
 /**
- * The editorial column: the photograph, the three reasons to hold an account,
- * and the reminder that the shop never asks for one. Entirely non-interactive
- * apart from that last link, so the tab order stays in the form.
+ * The burst panel: each gem flies out from the centre once (`gt-auth-burst`,
+ * staggered), then floats like the home carousel's stones. The fly-out is
+ * measured in container units, so it starts from the panel's true centre at
+ * any width. Purely decorative.
  */
-function EditorialColumn({ image = AUTH_PHOTO }: { image?: string }) {
+function GemBurst() {
+  return (
+    <div
+      aria-hidden="true"
+      className="gt-auth-burst-panel relative aspect-[16/9] w-full overflow-hidden rounded-[var(--radius-2xl)] bg-[var(--gt-blue-100)] lg:aspect-[5/4]"
+    >
+      <span className="absolute inset-[22%] rounded-full bg-white/70 blur-3xl" />
+      {BURST.map((g, i) => (
+        <span
+          key={g.photo}
+          className="gt-auth-burst absolute block aspect-square"
+          style={
+            {
+              left: `${g.x - g.size / 2}%`,
+              top: `calc(${g.y}% - ${g.size / 2}cqw)`,
+              width: `${g.size}%`,
+              "--burst-dx": `${50 - g.x}cqw`,
+              "--burst-dy": `${50 - g.y}cqh`,
+              animationDelay: `${i * 35}ms`,
+            } as CSSProperties
+          }
+        >
+          {/* Fitted in a square box: tall cuts (raindrops, navettes) keep the size of the round ones. */}
+          <img
+            src={photo(g.photo)}
+            alt=""
+            decoding="async"
+            className={`gt-alt-gem gt-alt-float block h-full w-full object-contain ${i % 2 === 1 ? "gt-alt-float--late" : ""}`}
+            style={{ rotate: `${g.rot}deg` }}
+          />
+        </span>
+      ))}
+      <Sparkle size={18} color="var(--gt-fuchsia-300)" className="gt-auth-twinkle absolute left-[57%] top-[40%]" />
+      <Sparkle size={12} color="white" className="gt-auth-twinkle gt-auth-twinkle--late absolute left-[43%] top-[66%]" />
+    </div>
+  );
+}
+
+/**
+ * The editorial column: the gem burst, the three reasons to hold an account as
+ * cards, and the reminder that the shop never asks for one. Entirely
+ * non-interactive apart from that last link, so the tab order stays in the form.
+ */
+function EditorialColumn() {
   const { t } = useTranslation();
   return (
-    <div className="grid w-full gap-[clamp(24px,3vw,40px)]">
-      <figure className="relative m-0 lg:max-w-[480px]">
-        {/* The outline is the photograph's echo, offset like a printed register
-            mark, with the same radius as every other surface on the site. */}
-        <span
-          aria-hidden="true"
-          className="absolute -left-3 -top-3 h-full w-full rounded-[var(--radius-2xl)] border border-[var(--gt-blue-400)] sm:-left-4 sm:-top-4"
-        />
-        <div className="gt-sparkle relative aspect-[16/11] w-full overflow-hidden rounded-[var(--radius-2xl)] lg:aspect-[5/6]">
-          {/* Fetched at once and first: on a wide screen it is the largest thing
-              in view, so a lazy load left an empty frame for a moment. */}
-          <img src={photo(image)} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
-        </div>
-      </figure>
+    <div className="grid w-full gap-[clamp(20px,2.5vw,32px)]">
+      <GemBurst />
 
       <div className="grid gap-4">
         <h2 className="flex items-center gap-2.5 text-[length:var(--text-h4)]">
           <Sparkle size={14} color="var(--gt-fuchsia-400)" />
           {t("auth.benefitsTitle")}
         </h2>
-        <ul className="m-0 grid list-none gap-0 p-0">
-          {BENEFITS.map(({ shape, titleKey, bodyKey }) => (
+        <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+          {BENEFITS.map(({ gem, titleKey, bodyKey }) => (
             <li
               key={titleKey}
-              className="flex items-start gap-4 border-t border-[var(--gt-blue-200)] py-4 first:border-t-0 first:pt-0 last:pb-0"
+              className="flex items-start gap-3.5 rounded-[var(--radius-xl)] border border-white bg-white/75 p-4 shadow-[var(--shadow-sm)] sm:flex-col lg:flex-row xl:flex-col"
             >
-              <span className="mt-0.5 flex-none text-[var(--gt-blue-500)]">
-                <ShapeGlyph shape={shape} size={26} />
+              <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-[var(--gt-blue-100)]">
+                <img src={photo(gem)} alt="" decoding="async" className="gt-alt-gem h-7 w-7 object-contain" />
               </span>
-              <span className="grid gap-0.5">
+              <span className="grid gap-1">
                 <strong className="text-[length:var(--text-body-sm)] text-[var(--text-primary)]">{t(titleKey)}</strong>
-                <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t(bodyKey)}</span>
+                <span className="text-[length:var(--text-caption)] leading-snug text-[var(--text-muted)]">{t(bodyKey)}</span>
               </span>
             </li>
           ))}
@@ -224,9 +236,9 @@ function EditorialColumn({ image = AUTH_PHOTO }: { image?: string }) {
 }
 
 /**
- * Page layout: the facet field, then the editorial column beside the card.
+ * Page layout: the pastel field, then the editorial column beside the card.
  * The column comes second on a phone — the form is what the visitor came for,
- * and a photograph above it would push the first input off the screen.
+ * and a picture above it would push the first input off the screen.
  */
 export function AuthLayout({ children, before, wide = false }: { children: ReactNode; before?: ReactNode; wide?: boolean }) {
   return (

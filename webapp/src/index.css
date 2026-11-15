@@ -2054,6 +2054,27 @@ textarea {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
 }
+
+/* Sign-in pages: the gem burst (components/auth/AuthScene.tsx). Each stone
+   leaves the panel's centre once — offsets in container units set per stone
+   as --burst-dx / --burst-dy — then floats (gt-alt-float on its image). */
+.gt-auth-burst-panel { container-type: size; }
+.gt-auth-burst { animation: gt-auth-burst 1.1s cubic-bezier(.16, 1, .3, 1) both; }
+.gt-auth-twinkle { animation: gt-auth-twinkle 3.2s var(--ease-in-out) infinite; }
+.gt-auth-twinkle--late { animation-delay: -1.6s; }
+@keyframes gt-auth-burst {
+  from { opacity: 0; transform: translate(var(--burst-dx, 0), var(--burst-dy, 0)) scale(.2) rotate(-40deg); }
+  35% { opacity: 1; }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gt-auth-twinkle {
+  0%, 100% { opacity: .35; transform: scale(.7); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gt-auth-burst,
+  .gt-auth-twinkle { animation: none; }
+}
 @keyframes gt-alt-reel {
   from { opacity: 0; transform: scale(.97); }
   to { opacity: 1; transform: none; }
