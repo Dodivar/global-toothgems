@@ -31,7 +31,7 @@ export const STUDIO_SHARE_PATH = "/studio-3d/partage";
  * viewer, open to everyone; the Glowbook page itself is a public page
  * (`/fr/glowbook/<handle>`).
  */
-const STUDIO_GLOWBOOK_VIEW_PATH = "/studio-3d/glowbook";
+export const STUDIO_GLOWBOOK_VIEW_PATH = "/studio-3d/glowbook";
 
 export function glowbookCreationPath(handle: string, itemId: string): string {
   return `${STUDIO_GLOWBOOK_VIEW_PATH}/${encodeURIComponent(handle)}/${encodeURIComponent(itemId)}`;
