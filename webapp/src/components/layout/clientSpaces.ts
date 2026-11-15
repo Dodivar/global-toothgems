@@ -75,13 +75,14 @@ export const STUDIO_SHORTCUTS: StudioShortcut[] = [
 
 /**
  * The storefront header's Studio entries (panel and phone menu): the ways
- * into the workspace, then the Glowbook's presentation page — a public page
+ * into the workshop (the 3D Studio only: creations and Gem Groups live in the
+ * Studio's own rail), then the Glowbook's presentation page — a public page
  * open to everyone, which leads members whose plan includes the Glowbook to
  * theirs and the others to the plan — and the public artist directory built
  * from the Glowbooks (decision 145).
  */
 export const STUDIO_MENU: StudioShortcut[] = [
-  ...STUDIO_SHORTCUTS,
+  ...STUDIO_SHORTCUTS.filter((shortcut) => shortcut.id === "workshop"),
   {
     id: "glowbook",
     to: GLOWBOOK_INTRO_PATH,

@@ -1,11 +1,10 @@
 {
   "meta": {
-    "title": "Trouver une artiste tooth gems près de chez vous",
+    "title": "Trouver un artiste tooth gems près de chez vous",
     "description": "Les artistes tooth gems qui présentent leurs créations sur Global Toothgems : cherchez par ville ou autour de vous, voyez leurs poses et prenez contact."
   },
   "eyebrow": "Annuaire des artistes",
-  "title": "Trouver une artiste tooth gems près de chez vous",
-  "intro": "Des artistes qui présentent leurs créations sur leur Glowbook Global Toothgems. Cherchez par ville ou autour de vous, puis ouvrez leur page pour voir leurs poses et prendre contact.",
+  "title": "Trouver un artiste tooth gems près de chez vous",
   "privacyNote": "« Près de moi » utilise la position de votre appareil uniquement dans votre navigateur : elle n’est ni envoyée ni enregistrée. Une ville inconnue de l’annuaire est recherchée sur OpenStreetMap.",
   "results_one": "{{count}} artiste",
   "results_other": "{{count}} artistes",

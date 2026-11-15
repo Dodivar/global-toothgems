@@ -149,9 +149,11 @@ export function ArtistDirectory({ artists, cities, city }: ArtistDirectoryProps)
           >
             {city ? t("directory.city.title", { city: city.name }) : t("directory.title")}
           </h1>
-          <p className="m-0 max-w-[60ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">
-            {city ? t("directory.city.intro", { count: city.count, city: city.name }) : t("directory.intro")}
-          </p>
+          {city && (
+            <p className="m-0 max-w-[60ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">
+              {t("directory.city.intro", { count: city.count, city: city.name })}
+            </p>
+          )}
 
           {artists.length > 1 && (
             <form onSubmit={searchCity} role="search" aria-label={t("directory.search.label")} className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">

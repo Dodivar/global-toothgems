@@ -313,7 +313,7 @@
     }
   },
   "directory": {
-    "title": "Annuaire « Trouver une artiste »",
+    "title": "Annuaire « Trouver un artiste »",
     "body": "Apparaissez dans l’annuaire public des artistes : votre nom, votre ville, votre salon ou votre secteur (~1 km, comme sur votre carte), votre photo de profil, une de vos créations et votre badge si vous l’affichez, avec un lien vers votre Glowbook.",
     "toggle": "Apparaître dans l’annuaire",
     "listed": "Votre Glowbook apparaît dans l’annuaire.",
@@ -471,7 +471,7 @@
         },
         "found": {
           "title": "On vous trouve",
-          "body": "Votre salon ou votre secteur sur une carte, une place dans l’annuaire « Trouver une artiste » si vous le souhaitez, et le badge « Artiste certifiée » quand vous avez suivi une formation de l’Academy."
+          "body": "Votre salon ou votre secteur sur une carte, une place dans l’annuaire « Trouver un artiste » si vous le souhaitez, et le badge « Artiste certifiée » quand vous avez suivi une formation de l’Academy."
         }
       },
       "directoryLink": "Voir l’annuaire des artistes"
