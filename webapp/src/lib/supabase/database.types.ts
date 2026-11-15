@@ -3546,6 +3546,10 @@ export type Database = {
           feed_created_at: string | null
           feed_token_hash: string | null
           horizon_days: number
+          import_checked_at: string | null
+          import_error: string | null
+          import_status: string | null
+          import_url: string | null
           min_notice_hours: number
           timezone: string
           updated_at: string
@@ -3557,6 +3561,10 @@ export type Database = {
           feed_created_at?: string | null
           feed_token_hash?: string | null
           horizon_days?: number
+          import_checked_at?: string | null
+          import_error?: string | null
+          import_status?: string | null
+          import_url?: string | null
           min_notice_hours?: number
           timezone?: string
           updated_at?: string
@@ -3568,6 +3576,10 @@ export type Database = {
           feed_created_at?: string | null
           feed_token_hash?: string | null
           horizon_days?: number
+          import_checked_at?: string | null
+          import_error?: string | null
+          import_status?: string | null
+          import_url?: string | null
           min_notice_hours?: number
           timezone?: string
           updated_at?: string
@@ -10036,6 +10048,7 @@ export type Database = {
           display_name: string
           featured_item_id: string | null
           handle: string
+          in_directory: boolean
           instagram: string | null
           layout: string
           location: string | null
@@ -10074,6 +10087,7 @@ export type Database = {
           display_name: string
           featured_item_id?: string | null
           handle: string
+          in_directory?: boolean
           instagram?: string | null
           layout?: string
           location?: string | null
@@ -10112,6 +10126,7 @@ export type Database = {
           display_name?: string
           featured_item_id?: string | null
           handle?: string
+          in_directory?: boolean
           instagram?: string | null
           layout?: string
           location?: string | null
@@ -11755,6 +11770,15 @@ export type Database = {
         Args: { p_gift_card_id: string }
         Returns: string
       }
+      glowbook_apply_calendar_import: {
+        Args: {
+          p_error: string
+          p_hours: string[]
+          p_url: string
+          p_user: string
+        }
+        Returns: number
+      }
       glowbook_artist_calendar: {
         Args: { p_from: string; p_to: string }
         Returns: Json
@@ -11791,12 +11815,27 @@ export type Database = {
         Returns: boolean
       }
       glowbook_calendar_feed_state: { Args: never; Returns: Json }
+      glowbook_calendar_import_state: { Args: never; Returns: Json }
+      glowbook_calendar_import_targets: {
+        Args: { p_limit?: number }
+        Returns: {
+          horizon_days: number
+          timezone: string
+          url: string
+          user_id: string
+        }[]
+      }
       glowbook_cancel_booking: {
         Args: { p_id: string; p_reason?: string }
         Returns: Json
       }
       glowbook_create_calendar_feed: { Args: never; Returns: string }
+      glowbook_directory: { Args: never; Returns: Json }
       glowbook_disable_calendar_feed: { Args: never; Returns: undefined }
+      glowbook_imported_hours: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       glowbook_mark_booking: {
         Args: { p_id: string; p_outcome: string }
         Returns: undefined
@@ -11814,6 +11853,10 @@ export type Database = {
       glowbook_set_calendar_hours: {
         Args: { p_starts: string[]; p_state: string }
         Returns: number
+      }
+      glowbook_set_calendar_import: {
+        Args: { p_url: string }
+        Returns: undefined
       }
       glowbook_unblock_client: {
         Args: { p_block_id: string }
@@ -12732,6 +12775,7 @@ export type Database = {
           display_name: string
           featured_item_id: string | null
           handle: string
+          in_directory: boolean
           instagram: string | null
           layout: string
           location: string | null
@@ -12779,6 +12823,7 @@ export type Database = {
           display_name: string
           featured_item_id: string | null
           handle: string
+          in_directory: boolean
           instagram: string | null
           layout: string
           location: string | null
@@ -12844,6 +12889,55 @@ export type Database = {
           display_name: string
           featured_item_id: string | null
           handle: string
+          in_directory: boolean
+          instagram: string | null
+          layout: string
+          location: string | null
+          pending_changes: Json | null
+          place_label: string | null
+          place_lat: number | null
+          place_lng: number | null
+          place_mode: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          show_certification: boolean
+          spotlight_video_at: string | null
+          spotlight_video_item_id: string | null
+          spotlight_video_path: string | null
+          spotlight_video_scene_md5: string | null
+          spotlight_video_seconds: number | null
+          spotlight_video_type: string | null
+          status: string
+          submitted_at: string
+          tiktok: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "studio_showcases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      studio_set_showcase_directory: {
+        Args: { p_listed: boolean }
+        Returns: {
+          accent: string
+          avatar_path: string | null
+          background: string
+          banner_path: string | null
+          bio: string
+          booking_url: string | null
+          changes_review_note: string | null
+          changes_submitted_at: string | null
+          created_at: string
+          display_name: string
+          featured_item_id: string | null
+          handle: string
+          in_directory: boolean
           instagram: string | null
           layout: string
           location: string | null

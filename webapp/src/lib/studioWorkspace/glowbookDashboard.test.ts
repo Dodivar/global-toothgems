@@ -15,6 +15,7 @@ const page = (over: Partial<Glowbook> = {}): Glowbook => ({
   pending: {},
   changesReviewNote: null,
   showCertification: true,
+  inDirectory: false,
   ...over,
 });
 const item = (id: string, status: ModerationStatus, sectionId: string | null = null): GlowbookItem => ({

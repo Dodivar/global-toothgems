@@ -39,7 +39,9 @@
     "giftCard": "Carte cadeau",
     "openPanelStudio": "Afficher les accès au Studio 3D",
     "viewAllStudio": "Découvrir le Studio 3D",
-    "mySpace": "Mon espace"
+    "mySpace": "Mon espace",
+    "studioArtists": "Trouver une artiste",
+    "studioArtistsSub": "Les artistes près de chez vous"
   },
   "common": {
     "readMore": "En savoir plus",
@@ -1332,7 +1334,8 @@
     "company": {
       "about": "À propos",
       "training": "Formations professionnelles",
-      "pro": "Demandes professionnelles"
+      "pro": "Demandes professionnelles",
+      "artists": "Trouver une artiste"
     },
     "academyAll": "Toutes les formations"
   },

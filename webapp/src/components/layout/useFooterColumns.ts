@@ -6,6 +6,7 @@ import { courseHref } from "../../lib/academyUrl";
 import { useCookieConsent } from "../../lib/cookieConsent";
 import { contactHref, LEGAL_PATHS } from "../../data/legal/routes";
 import { shopHref } from "../../data/taxonomy";
+import { ARTIST_DIRECTORY_PATH } from "../../lib/studioUrl";
 
 /**
  * The footer's link columns, used by `Footer`.
@@ -87,6 +88,7 @@ export function useFooterColumns(): FooterColumn[] {
       heading: t("footer.colCompany"),
       items: [
         { label: t("footer.company.about"), to: LEGAL_PATHS.about },
+        { label: t("footer.company.artists"), to: ARTIST_DIRECTORY_PATH },
         { label: t("footer.company.training"), to: "/academy" },
         { label: t("footer.company.pro"), to: contactHref("professional") },
       ],

@@ -11,7 +11,7 @@ import { photo } from "../lib/images";
 import { Link, useNavigate } from "../lib/navigation";
 import { StudioAccessProvider, useStudioAccess } from "../lib/studioAccess";
 import { lowestPlanWith } from "../lib/studioEntitlements";
-import { STUDIO_PATH, STUDIO_SUBSCRIBE_PATH, studioSectionPath } from "../lib/studioUrl";
+import { ARTIST_DIRECTORY_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_PATH, studioSectionPath } from "../lib/studioUrl";
 import { useHydrated } from "../lib/useHydrated";
 import { useReveal } from "../lib/useReveal";
 
@@ -164,6 +164,14 @@ function GlowbookIntroContent() {
               </li>
             ))}
           </ul>
+          <Link
+            to={ARTIST_DIRECTORY_PATH}
+            className="inline-flex w-fit items-center gap-2 text-[length:var(--text-body-sm)] font-bold text-[var(--text-primary)] underline decoration-1 underline-offset-4 hover:text-[var(--gt-blue-700)]"
+          >
+            <MapPin size={16} aria-hidden="true" />
+            {t("studio.glowbook.intro.benefits.directoryLink")}
+            <ArrowRight size={15} aria-hidden="true" />
+          </Link>
         </div>
       </section>
 

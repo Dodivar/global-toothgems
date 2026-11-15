@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "title": "Find a tooth gem artist near you",
+    "description": "Tooth gem artists who show their work on Global Toothgems: search by city or around you, see their designs and get in touch."
+  },
+  "eyebrow": "Artist directory",
+  "title": "Find a tooth gem artist near you",
+  "intro": "Artists who show their work on their Global Toothgems Glowbook. Search by city or around you, then open their page to see their designs and get in touch.",
+  "privacyNote": "“Near me” uses your device’s position in your browser only: it is never sent or stored. A city the directory does not know is looked up on OpenStreetMap.",
+  "results_one": "{{count}} artist",
+  "results_other": "{{count}} artists",
+  "sorted": {
+    "name": "Sorted by name",
+    "nearMe": "Sorted by distance from your position",
+    "city": "Sorted by distance from {{place}}",
+    "clear": "Clear"
+  },
+  "search": {
+    "label": "City or postcode",
+    "placeholder": "E.g. London, 75011…",
+    "submit": "Search",
+    "failed": "The search did not go through. Try again in a moment.",
+    "notFound": "We cannot find that place. Try a city or a postcode."
+  },
+  "nearMe": {
+    "button": "Near me",
+    "unavailable": "Your browser does not give a position. Search by city.",
+    "denied": "You did not allow location. Search by city.",
+    "failed": "Your position could not be found. Search by city."
+  },
+  "map": {
+    "title": "On the map",
+    "note": "A pin is a salon; a pale dot is an approximate area (~1 km) — the artist’s address is not published.",
+    "open": "See their Glowbook",
+    "pin": "{{name}}: see on the map"
+  },
+  "cities": {
+    "title": "By city",
+    "item": "{{city}} ({{count}})"
+  },
+  "city": {
+    "back": "All artists",
+    "title": "Tooth gem artists in {{city}}",
+    "intro_one": "{{count}} artist shows their work in or around {{city}}. Open their page to see their designs and get in touch.",
+    "intro_other": "{{count}} artists show their work in or around {{city}}. Open their pages to see their designs and get in touch.",
+    "metaTitle": "Tooth gem artists in {{city}}",
+    "metaDescription": "Tooth gem artists in {{city}} on Global Toothgems: their designs, their salon or area, and how to get in touch."
+  },
+  "distance": {
+    "aboutOne": "≈ 1 km",
+    "underOne": "< 1 km",
+    "about": "≈ {{km}} km",
+    "km": "{{km}} km"
+  },
+  "card": {
+    "area": "Area: {{place}}",
+    "salon": "Salon: {{place}}",
+    "certified": "Certified",
+    "creations_one": "{{count}} design",
+    "creations_other": "{{count}} designs",
+    "open": "See"
+  },
+  "empty": {
+    "title": "No artists in the directory yet",
+    "body": "Artists with a Glowbook can choose to appear here. Check back soon."
+  },
+  "artists": {
+    "title": "Are you an artist?",
+    "body": "With your Glowbook, show your work on a page in your name and appear in this directory so clients near you can find you.",
+    "cta": "Discover the Glowbook"
+  }
+}

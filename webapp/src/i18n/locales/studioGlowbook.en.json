@@ -116,6 +116,9 @@
     "badgeShown": "Badge shown on your page",
     "badgeHidden": "Badge hidden on your page",
     "badgeFailed": "Unable to change the badge",
+    "directoryOn": "You appear in the directory",
+    "directoryOff": "You no longer appear in the directory",
+    "directoryFailed": "Unable to change your directory listing",
     "qrFailed": "Unable to prepare the file"
   },
   "saveWarning": {
@@ -323,6 +326,22 @@
       "failed": "The section could not be saved. Please try again."
     }
   },
+  "directory": {
+    "title": "“Find an artist” directory",
+    "body": "Appear in the public artist directory: your name, your city, your salon or area (~1 km, as on your map), your profile picture, one of your designs and your badge if you show it, with a link to your Glowbook.",
+    "toggle": "Appear in the directory",
+    "listed": "Your Glowbook appears in the directory.",
+    "waiting": "Your Glowbook will appear in the directory as soon as:",
+    "missing": {
+      "page": "your page is approved by a moderator",
+      "place": "you say where you work (Look tab)",
+      "creation": "at least one design is approved"
+    },
+    "city": "Add your city in the Look tab to also appear on your city’s page.",
+    "off": "You do not appear in the directory. Your Glowbook stays reachable through its link.",
+    "open": "See the directory",
+    "failed": "The setting could not be saved. Try again."
+  },
   "badge": {
     "label": "Global Toothgems certified artist",
     "courses": "Course: {{titles}}",
@@ -466,9 +485,10 @@
         },
         "found": {
           "title": "Easy to find",
-          "body": "Your salon or your area on a map, and the “Certified artist” badge once you have completed an Academy course."
+          "body": "Your salon or your area on a map, a place in the “Find an artist” directory if you wish, and the “Certified artist” badge once you have completed an Academy course."
         }
-      }
+      },
+      "directoryLink": "See the artist directory"
     },
     "steps": {
       "title": "Online in three steps",
