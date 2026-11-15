@@ -5221,18 +5221,21 @@ export type Database = {
       }
       member_preferences: {
         Row: {
+          academy_visited_at: string | null
           created_at: string
           updated_at: string
           user_id: string
           welcome_dismissed_at: string | null
         }
         Insert: {
+          academy_visited_at?: string | null
           created_at?: string
           updated_at?: string
           user_id?: string
           welcome_dismissed_at?: string | null
         }
         Update: {
+          academy_visited_at?: string | null
           created_at?: string
           updated_at?: string
           user_id?: string
