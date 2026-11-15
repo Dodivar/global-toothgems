@@ -11,7 +11,6 @@ import {
   BACKGROUNDS,
   LAYOUTS,
   LOCATION_MAX,
-  normalizeLink,
   validateLook,
   type GlowbookLook,
   type LookProblem,
@@ -30,8 +29,10 @@ import { chipClass, fieldClass, focusRing } from "./workspaceStyles";
  * "Customise my page" (decision 100): the artist's Glowbook in their own look,
  * with a live preview drawn by the same component as the public page.
  * Colour, background, layout, spotlight, city and place (decision 108) are
- * public as soon as they are saved; a new picture or link waits for a moderator while the page keeps
- * the approved one (the badge says so). Removing one is immediate. The
+ * public as soon as they are saved; a new picture waits for a moderator while the page keeps
+ * the approved one (the badge says so). Removing one is immediate. No outside
+ * link (booking, website, TikTok): clients book on the page itself
+ * (decisions 144 and 146). The
  * spotlight creation turns in a short video this tab records (decision 103);
  * the page has no banner any more.
  */
@@ -44,7 +45,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
   const [draft, setDraft] = useState<GlowbookLook>(base);
   const [problem, setProblem] = useState<LookProblem | null>(null);
   const [busy, setBusy] = useState(false);
-  const ids = { location: useId(), booking: useId(), website: useId(), tiktok: useId(), featured: useId(), error: useId() };
+  const ids = { location: useId(), featured: useId(), error: useId() };
 
   // Back to what is stored whenever the store changes it (after a save, a reload).
   const [seen, setSeen] = useState(base);
@@ -55,7 +56,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(base);
   const set = <K extends keyof GlowbookLook>(key: K, value: GlowbookLook[K]) => setDraft((d) => ({ ...d, [key]: value }));
-  const waits = (key: "avatarPath" | "bannerPath" | "bookingUrl" | "websiteUrl" | "tiktok") =>
+  const waits = (key: "avatarPath" | "bannerPath") =>
     !!draft[key] && draft[key] !== glowbook.look[key];
 
   const approvedItems = useMemo(
@@ -72,9 +73,6 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
   const save = async () => {
     const next: GlowbookLook = {
       ...draft,
-      bookingUrl: draft.bookingUrl ? normalizeLink(draft.bookingUrl) : null,
-      websiteUrl: draft.websiteUrl ? normalizeLink(draft.websiteUrl) : null,
-      tiktok: draft.tiktok ? draft.tiktok.trim().replace(/^@/, "") || null : null,
       location: draft.location?.trim() || null,
       place: draft.place ? { ...draft.place, label: draft.place.label.trim() } : null,
     };
@@ -90,7 +88,6 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
     displayName: glowbook.displayName,
     handle: glowbook.handle,
     bio: glowbook.bio,
-    instagram: glowbook.instagram,
     look: draft,
     avatarUrl: draft.avatarPath ? (gb.mediaUrls.get(draft.avatarPath) ?? null) : null,
     certifiedTitles: badge,
@@ -234,45 +231,11 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
             onChange={(place) => set("place", place)}
           />
 
-          <fieldset className="m-0 grid gap-3 border-0 p-0">
-            <legend className="mb-1 p-0 text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.glowbook.look.links")}</legend>
-            <p className="m-0 -mt-1 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.linksHint")}</p>
-            <LinkField
-              id={ids.booking}
-              label={t("studio.glowbook.look.booking")}
-              placeholder="https://"
-              value={draft.bookingUrl}
-              waiting={waits("bookingUrl")}
-              invalid={problem === "bookingUrl"}
-              errorId={ids.error}
-              onChange={(v) => set("bookingUrl", v)}
-            />
-            <LinkField
-              id={ids.website}
-              label={t("studio.glowbook.look.website")}
-              placeholder="https://"
-              value={draft.websiteUrl}
-              waiting={waits("websiteUrl")}
-              invalid={problem === "websiteUrl"}
-              errorId={ids.error}
-              onChange={(v) => set("websiteUrl", v)}
-            />
-            <LinkField
-              id={ids.tiktok}
-              label={t("studio.glowbook.look.tiktok")}
-              placeholder="@"
-              value={draft.tiktok}
-              waiting={waits("tiktok")}
-              invalid={problem === "tiktok"}
-              errorId={ids.error}
-              onChange={(v) => set("tiktok", v)}
-            />
-            {problem && (
-              <p id={ids.error} role="alert" className="m-0 text-[12px] font-semibold text-[var(--status-error-fg)]">
-                {t(`studio.glowbook.look.errors.${problem}`, { max: LOCATION_MAX })}
-              </p>
-            )}
-          </fieldset>
+          {problem && (
+            <p id={ids.error} role="alert" className="m-0 text-[12px] font-semibold text-[var(--status-error-fg)]">
+              {t(`studio.glowbook.look.errors.${problem}`, { max: LOCATION_MAX })}
+            </p>
+          )}
           {/* Kept in reach while there is something to save, until the preview sits beside the fields. */}
           <div
             className={clsx(
@@ -429,49 +392,6 @@ function ChoiceRow<T extends string>({
           </button>
         ))}
       </div>
-    </div>
-  );
-}
-
-function LinkField({
-  id,
-  label,
-  placeholder,
-  value,
-  waiting,
-  invalid,
-  errorId,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  placeholder: string;
-  value: string | null;
-  waiting: boolean;
-  invalid: boolean;
-  errorId: string;
-  onChange: (value: string | null) => void;
-}) {
-  return (
-    <div className="grid gap-1.5">
-      <div className="flex items-center gap-2">
-        <label htmlFor={id} className="text-[12px] font-semibold text-[var(--text-primary)]">
-          {label}
-        </label>
-        {waiting && <WaitingBadge />}
-      </div>
-      <input
-        id={id}
-        value={value ?? ""}
-        placeholder={placeholder}
-        autoCapitalize="none"
-        autoCorrect="off"
-        spellCheck={false}
-        aria-invalid={invalid}
-        aria-describedby={invalid ? errorId : undefined}
-        onChange={(e) => onChange(e.target.value || null)}
-        className={fieldClass}
-      />
     </div>
   );
 }

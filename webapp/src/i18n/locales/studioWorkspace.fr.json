@@ -607,7 +607,7 @@
         "title": "Le Glowbook : créer sa page et y publier",
         "body": [
           "Le Glowbook est votre vitrine publique : une page à votre nom (/glowbook/votre-pseudo), à mettre en lien dans votre bio Instagram, qui montre les créations que vous choisissez. Chacune s’ouvre en 3D pour les visiteurs, qui peuvent aussi commander ses gemmes.",
-          "Créez la page depuis « Mon Glowbook » (nom affiché, pseudo, bio, Instagram). Ajoutez une création depuis son détail dans Mes créations, avec « Ajouter à mon Glowbook » (jamais depuis l’éditeur) ; 60 créations au maximum.",
+          "Créez la page depuis « Mon Glowbook » (nom affiché, pseudo, bio). Ajoutez une création depuis son détail dans Mes créations, avec « Ajouter à mon Glowbook » (jamais depuis l’éditeur) ; 60 créations au maximum.",
           "Modération : la page et chaque nouvelle création sont validées par l’équipe Global Toothgems avant d’être visibles. En cas de refus, le motif s’affiche ; modifiez puis renvoyez. Une fois une création validée, vos prochains enregistrements y sont publiés immédiatement : le Studio vous prévient avant d’enregistrer. Changer de pseudo change l’adresse et renvoie la page en validation.",
           "La page reste visible tant que votre formule Atelier est active. Supprimer une création la retire aussi de votre Glowbook."
         ]
@@ -615,9 +615,9 @@
       "glowbookLook": {
         "title": "Personnaliser son Glowbook et la création à la une",
         "body": [
-          "L’onglet Apparence règle l’identité de votre page : photo de profil, couleur, fond (clair, teinté, sombre), présentation des créations (grille ou grandes cartes), ville ou studio, et liens (prise de rendez-vous, site web, TikTok, en https).",
+          "L’onglet Apparence règle l’identité de votre page : photo de profil, couleur, fond (clair, teinté, sombre), présentation des créations (grille ou grandes cartes), ville ou studio et lieu où vous travaillez. Pas de lien externe : vos clientes réservent directement depuis votre page.",
           "La création à la une ouvre votre page en grand, dans une courte vidéo de 5 secondes qui balaie le sourire de gauche à droite, en boucle. Cette vidéo est enregistrée automatiquement par votre Studio quand elle manque ou n’est plus à jour : laissez le Studio ouvert un instant après avoir changé de création à la une.",
-          "Couleur, fond, présentation, une et ville sont publiés dès l’enregistrement ; une nouvelle photo ou un nouveau lien attend d’abord la validation de l’équipe (la page garde les précédents en attendant)."
+          "Couleur, fond, présentation, une et ville sont publiés dès l’enregistrement ; une nouvelle photo attend d’abord la validation de l’équipe (la page garde la précédente en attendant)."
         ]
       },
       "glowbookSections": {

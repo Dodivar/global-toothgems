@@ -7,7 +7,6 @@ const page = (over: Partial<Glowbook> = {}): Glowbook => ({
   handle: "lea",
   displayName: "Léa",
   bio: "",
-  instagram: null,
   status: "approved",
   reviewNote: null,
   submittedAt: "2026-10-01T00:00:00Z",
@@ -15,6 +14,7 @@ const page = (over: Partial<Glowbook> = {}): Glowbook => ({
   pending: {},
   changesReviewNote: null,
   showCertification: true,
+  inDirectory: false,
   ...over,
 });
 const item = (id: string, status: ModerationStatus, sectionId: string | null = null): GlowbookItem => ({
@@ -64,10 +64,10 @@ describe("glowbookTodos", () => {
     expect(glowbookTodos(page(), [item("a", "pending")], 0)).toEqual([]);
   });
 
-  it("reports refused pictures or links only while nothing new waits", () => {
+  it("reports refused pictures only while nothing new waits", () => {
     const refused = page({ changesReviewNote: "", look: { ...DEFAULT_LOOK, featuredItemId: "a" } });
     expect(glowbookTodos(refused, [item("a", "approved")], 0).map((t) => t.code)).toEqual(["changesRejected"]);
-    expect(glowbookTodos({ ...refused, pending: { tiktok: "lea" } }, [item("a", "approved")], 0)).toEqual([]);
+    expect(glowbookTodos({ ...refused, pending: { avatarPath: "u/lea.jpg" } }, [item("a", "approved")], 0)).toEqual([]);
   });
 
   it("lists creations left out of every section", () => {
