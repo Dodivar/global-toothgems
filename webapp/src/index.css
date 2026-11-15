@@ -212,6 +212,7 @@
   --radius-pill: 999px;
   --radius-card: var(--radius-lg);
   --radius-control: var(--radius-pill);
+  --radius-textarea: var(--radius-md);
   --radius-media: var(--radius-lg);
 
   /* Elevation */
@@ -305,6 +306,14 @@
   :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
   button { font-family: inherit; }
+}
+
+/* A multi-line field never takes the pill radius of the single-line controls:
+   at 999px a tall textarea turns into a rounded capsule that clips its text and
+   its resize handle. Unlayered on purpose, so it wins over every `rounded-*`
+   utility and component class (`gt-field`, `gt-admin-field`, inline classes). */
+textarea {
+  border-radius: var(--radius-textarea);
 }
 
 @layer components {
