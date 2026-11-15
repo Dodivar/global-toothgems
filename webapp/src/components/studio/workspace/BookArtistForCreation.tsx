@@ -8,7 +8,7 @@ import { ARTIST_DIRECTORY_PATH } from "../../../lib/studioUrl";
 import type { Creation } from "../../../lib/studioWorkspace/types";
 
 /**
- * "Have it made by an artist" (decision 148), on a saved creation, for members
+ * "Have it made by an artist" (decision 149), on a saved creation, for members
  * whose plan does not include the Glowbook (below Atelier): the creation is
  * remembered for the tab and the member goes to the artist directory; on the
  * artist's page the booking dialog comes with it selected, and the booked

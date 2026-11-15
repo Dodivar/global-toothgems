@@ -6,7 +6,7 @@ import { Box, X } from "lucide-react";
 import { type BookingCreationChoice, forgetBookingCreation, readBookingCreation } from "../../lib/glowbookBookingCreation";
 
 /**
- * The Studio creation the member came to have made (decision 148), recalled on
+ * The Studio creation the member came to have made (decision 149), recalled on
  * the artist directory: the booking dialog on an artist's page will offer it. Read once hydrated (it lives in the tab's storage); "Forget" drops it.
  */
 export function BookingCreationNotice() {

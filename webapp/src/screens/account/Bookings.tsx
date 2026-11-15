@@ -248,7 +248,7 @@ function ClientBookingRow({
   upcoming?: boolean;
 }) {
   const { t } = useTranslation();
-  // Their own Studio creation (decision 148) opens as the artist sees it; a Glowbook one from the page.
+  // Their own Studio creation (decision 149) opens as the artist sees it; a Glowbook one from the page.
   const viewUrl = booking.clientCreation
     ? bookingCreationPath(booking.id)
     : booking.itemLive && booking.itemId && booking.artistHandle

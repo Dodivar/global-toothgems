@@ -114,7 +114,7 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
 
       <FrontViewSection pieces={creation.scene.pieces} model={creation.scene.model} />
 
-      {/* Below the Atelier plan: have it made by an artist (decision 148). */}
+      {/* Below the Atelier plan: have it made by an artist (decision 149). */}
       <BookArtistForCreation creation={creation} onLeave={onClose} />
 
       <GlowbookControl creation={creation} onLeave={onClose} />

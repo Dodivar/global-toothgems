@@ -36,7 +36,7 @@ import { Link, useNavigate } from "../../lib/navigation";
  * e-mail. Opened from a creation, the booking is for that creation (shown, not
  * changeable); opened from the page, it is a custom design the member
  * describes in the message, or one of the member's own Studio creations
- * (decision 148: the artist then opens it read-only from their calendar),
+ * (decision 149: the artist then opens it read-only from their calendar),
  * selected already when the member came from the Studio's "Book an artist
  * for this design" (`glowbookBookingCreation`). A visitor sees the same free hours (they are
  * public) and is asked to sign in only to confirm; the address carries their
@@ -83,7 +83,7 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
   const { signedIn, profile } = useAuth();
   const navigate = useNavigate();
   const ids = { name: useId(), phone: useId(), comment: useId(), problem: useId(), design: useId(), when: useId(), mine: useId() };
-  // From the page: a custom idea, or one of the member's own Studio creations (decision 148).
+  // From the page: a custom idea, or one of the member's own Studio creations (decision 149).
   const [designMode, setDesignMode] = useState<"custom" | "mine">("custom");
   const [ownCreations, setOwnCreations] = useState<{ id: string; name: string }[] | null>(null);
   const [ownCreationId, setOwnCreationId] = useState<string>("");

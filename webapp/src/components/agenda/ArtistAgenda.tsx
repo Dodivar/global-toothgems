@@ -213,7 +213,7 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
   const handle = calendar?.handle ?? null;
   const creationOf: CreationOf = (b) => ({
     imageUrl: b.thumbnailPath ? (images.get(b.thumbnailPath) ?? null) : null,
-    // The client's own creation (decision 148) opens read-only from the booking; a Glowbook one from the page.
+    // The client's own creation (decision 149) opens read-only from the booking; a Glowbook one from the page.
     viewUrl: b.clientCreation ? bookingCreationPath(b.id) : b.itemLive && b.itemId && handle ? glowbookCreationPath(handle, b.itemId) : null,
   });
 

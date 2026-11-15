@@ -1,4 +1,4 @@
--- Decision 148: a member books an artist with one of their own Studio creations.
+-- Decision 149: a member books an artist with one of their own Studio creations.
 --
 -- A booking had two kinds of design: one of the artist's Glowbook creations
 -- ('creation') or a custom idea described in the comment ('custom'). A third

@@ -155,7 +155,7 @@ export function ArtistDirectory({ artists, cities, city }: ArtistDirectoryProps)
               {t("directory.city.intro", { count: city.count, city: city.name })}
             </p>
           )}
-          {/* Come from the Studio with a creation to have made (decision 148). */}
+          {/* Come from the Studio with a creation to have made (decision 149). */}
           <BookingCreationNotice />
 
           {artists.length > 1 && (

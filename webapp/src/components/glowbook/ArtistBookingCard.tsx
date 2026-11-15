@@ -71,7 +71,7 @@ export function ArtistBookingCard({
         </Badge>
       </div>
 
-      {/* The client's own creation (decision 148): no picture (it is theirs), the 3D view read-only. */}
+      {/* The client's own creation (decision 149): no picture (it is theirs), the 3D view read-only. */}
       {booking.designKind === "client_creation" && (
         <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-2">
           <span aria-hidden="true" className="grid h-16 w-16 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--surface-card)] text-[var(--gt-blue-700)]">

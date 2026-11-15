@@ -1,5 +1,5 @@
 /**
- * The Studio creation a member wants an artist to make (decision 148), kept
+ * The Studio creation a member wants an artist to make (decision 149), kept
  * for the browser tab while they look for an artist: chosen from the Studio
  * ("Book an artist for this design"), read by the booking dialog, which
  * selects it in "My creation". A convenience only: the booking itself sends

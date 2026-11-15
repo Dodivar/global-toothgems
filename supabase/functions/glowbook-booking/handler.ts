@@ -7,7 +7,7 @@ import { hashAddress } from "../_shared/email/send.ts";
  *
  *   {handle, starts_at, item_id?, client_creation_id?, name, phone, comment?, locale, captcha?, website?}
  *
- * `client_creation_id` joins one of the member's own Studio creations (decision 148);
+ * `client_creation_id` joins one of the member's own Studio creations (decision 149);
  * the database checks it is theirs and that it is not sent with `item_id`.
  *
  * Checks, in order: a member session (their JWT, verified here), the honeypot,

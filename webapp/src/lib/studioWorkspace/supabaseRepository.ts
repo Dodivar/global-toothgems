@@ -601,7 +601,7 @@ export async function fetchSharedCreation(client: TypedSupabaseClient, token: st
 }
 
 /**
- * The Studio creation a client joined to a booking (decision 148), for the
+ * The Studio creation a client joined to a booking (decision 149), for the
  * booked artist or the client only, read through `glowbook_booking_creation`
  * (null for anyone else, a cancelled booking on the artist's side, or a
  * creation since deleted).

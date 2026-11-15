@@ -8,7 +8,7 @@
 import { placeFromJson, type GlowbookPlace } from "./studioWorkspace/glowbookPlace";
 
 export type BookingStatus = "booked" | "cancelled_client" | "cancelled_artist" | "honoured" | "no_show";
-/** A Glowbook creation of the artist, a custom idea, or the client's own Studio creation (decision 148). */
+/** A Glowbook creation of the artist, a custom idea, or the client's own Studio creation (decision 149). */
 export type DesignKind = "creation" | "custom" | "client_creation";
 
 export interface BookingInfo {
@@ -44,7 +44,7 @@ export interface ClientBooking {
   thumbnailPath: string | null;
   /** Where the appointment takes place: a salon's address, or an area. */
   place: GlowbookPlace | null;
-  /** The member's own Studio creation is joined and still exists (decision 148). */
+  /** The member's own Studio creation is joined and still exists (decision 149). */
   clientCreation: boolean;
 }
 
@@ -71,7 +71,7 @@ export interface ArtistBooking {
   thumbnailPath: string | null;
   /** Page and creation approved: its public 3D view exists. */
   itemLive: boolean;
-  /** The client joined their own Studio creation, readable now (decision 148). */
+  /** The client joined their own Studio creation, readable now (decision 149). */
   clientCreation: boolean;
 }
 
@@ -501,7 +501,7 @@ export function closureLength(c: Pick<CalendarClosure, "startsOn" | "endsOn">): 
 export interface BookingDraft {
   slot: string | null;
   itemId: string | null;
-  /** The member's own Studio creation joined instead of a custom idea (decision 148). */
+  /** The member's own Studio creation joined instead of a custom idea (decision 149). */
   clientCreationId?: string | null;
   custom: boolean;
   name: string;

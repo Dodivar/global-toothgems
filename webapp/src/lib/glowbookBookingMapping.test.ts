@@ -119,7 +119,7 @@ describe("the booking form", () => {
     expect(validateDraft({ ...ok, comment: "a".repeat(1001) })).toBe("commentLength");
   });
 
-  it("needs no comment when the member joins their own creation (decision 148)", () => {
+  it("needs no comment when the member joins their own creation (decision 149)", () => {
     expect(validateDraft({ ...ok, itemId: null, custom: true, clientCreationId: "c" })).toBeNull();
     expect(validateDraft({ ...ok, itemId: null, custom: true, clientCreationId: null })).toBe("comment");
   });

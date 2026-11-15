@@ -1,5 +1,5 @@
 -- =============================================================================
--- Glowbook booking with the client's own Studio creation (decision 148)
+-- Glowbook booking with the client's own Studio creation (decision 149)
 -- (migration 20261115205913_glowbook_booking_client_creation)
 -- =============================================================================
 -- Proves, as the roles that really call them:

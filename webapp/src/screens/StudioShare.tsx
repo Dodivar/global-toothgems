@@ -57,7 +57,7 @@ const TryOnDialog = lazy(() => import("../components/studio/tryOn/TryOnDialog").
  * carried in the fragment has no server identity and offers none.
  *
  * A client's own creation joined to a Glowbook booking
- * (`/studio-3d/rendez-vous/<booking>`, decision 148) opens here too, read
+ * (`/studio-3d/rendez-vous/<booking>`, decision 149) opens here too, read
  * through `glowbook_booking_creation`: the booked artist and the client only,
  * signed in; the artist may take a copy into their Studio to work from it.
  *
@@ -70,7 +70,7 @@ interface GlowbookAuthor {
   displayName: string;
 }
 
-/** The booking a client's creation is joined to (decision 148), as its viewer sees it. */
+/** The booking a client's creation is joined to (decision 149), as its viewer sees it. */
 interface BookingContext {
   viewer: "artist" | "client";
   /** The other side: the client for the artist, the artist for the client. */
@@ -242,7 +242,7 @@ function SharedDesignView({
   tryOn: TryOn;
   /** The Glowbook creation shown, when it comes from a Glowbook (decision 144: "Book this design"). */
   itemId: string | null;
-  /** A client's creation joined to a booking (decision 148). */
+  /** A client's creation joined to a booking (decision 149). */
   booking?: BookingContext | null;
 }) {
   const { t, i18n } = useTranslation();
