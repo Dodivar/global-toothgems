@@ -162,6 +162,7 @@
     "spotlightPlay": "Lire la vidéo",
     "spotlightPause": "Mettre la vidéo en pause",
     "bookCreation": "Réserver cette création",
+    "bookShort": "Réserver",
     "stickyBook": "Prendre rendez-vous",
     "openCreation": "Voir « {{name}} » en grand",
     "viewer": {

@@ -162,6 +162,7 @@
     "spotlightPlay": "Play the video",
     "spotlightPause": "Pause the video",
     "bookCreation": "Book this design",
+    "bookShort": "Book",
     "stickyBook": "Book an appointment",
     "openCreation": "View “{{name}}” full screen",
     "viewer": {

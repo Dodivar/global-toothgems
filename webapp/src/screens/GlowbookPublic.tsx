@@ -254,7 +254,7 @@ function Spotlight({
 }) {
   const { t } = useTranslation();
   const button =
-    "inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-pill)] px-5 text-[12px] font-bold uppercase tracking-[var(--tracking-wide)] transition-opacity hover:opacity-90";
+    "inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-[var(--radius-pill)] px-3 text-[12px] font-bold uppercase tracking-[var(--tracking-wide)] transition-opacity hover:opacity-90 sm:px-5";
   const light = "bg-white text-[#16171b] md:bg-[var(--gb-accent)] md:text-[var(--gb-on-accent)]";
   return (
     <article
@@ -264,21 +264,26 @@ function Spotlight({
       <div className="relative aspect-square bg-[var(--gb-soft)] md:aspect-auto md:min-h-[min(72vh,620px)]">
         <SpotlightVideo videoUrl={videoUrl} videoType={videoType} posterUrl={item.imageUrl} name={item.name} priority className="absolute inset-0" />
       </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 grid content-end gap-2 bg-[linear-gradient(to_top,rgba(10,11,14,.88)_0%,rgba(10,11,14,.62)_55%,rgba(10,11,14,0)_100%)] px-4 pb-4 pt-20 text-white md:pointer-events-auto md:static md:content-center md:gap-3 md:bg-none md:p-8 md:text-[var(--gb-text)]">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 grid content-end gap-1.5 bg-[linear-gradient(to_top,rgba(10,11,14,.9)_0%,rgba(10,11,14,.7)_50%,rgba(10,11,14,0)_100%)] px-4 pb-4 pt-14 text-white md:pointer-events-auto md:static md:content-center md:gap-3 md:bg-none md:p-8 md:text-[var(--gb-text)]">
         <span className="inline-flex w-fit items-center gap-1 rounded-[var(--radius-pill)] bg-white px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[#16171b] md:bg-[var(--gb-accent)] md:text-[var(--gb-on-accent)]">
           <Star size={11} aria-hidden="true" />
           {t("studio.glowbook.public.featured")}
         </span>
-        <h2 id="gt-glowbook-spotlight" className="m-0 text-[clamp(1.4rem,3vw,2.1rem)] font-[var(--weight-black)] leading-tight tracking-[var(--tracking-tight)]">
+        <h2
+          id="gt-glowbook-spotlight"
+          className="m-0 text-[clamp(1.35rem,3vw,2.1rem)] font-[var(--weight-black)] leading-tight tracking-[var(--tracking-tight)] text-white md:text-[var(--gb-text)]"
+        >
           {item.name}
         </h2>
         {item.description && <p className="m-0 hidden whitespace-pre-line text-[14px] leading-relaxed text-[var(--gb-muted)] md:line-clamp-6">{item.description}</p>}
         <p className="m-0 text-[12.5px] text-white/80 md:text-[var(--gb-muted)]">{t("studio.workspace.gems", { count: item.elementCount })}</p>
-        <div className="pointer-events-auto mt-1 flex flex-wrap gap-2">
+        {/* Side by side on a phone: the short label there, the full one from the tablet up. */}
+        <div className={clsx("pointer-events-auto mt-1.5 grid gap-2 md:flex md:flex-wrap", onBook ? "grid-cols-2" : "grid-cols-1")}>
           {onBook && (
             <button type="button" onClick={onBook} className={clsx(button, light, focus)}>
-              <CalendarCheck size={15} aria-hidden="true" />
-              {t("studio.glowbook.public.bookCreation")}
+              <CalendarCheck size={15} aria-hidden="true" className="flex-none" />
+              <span className="truncate md:hidden">{t("studio.glowbook.public.bookShort")}</span>
+              <span className="hidden md:inline">{t("studio.glowbook.public.bookCreation")}</span>
             </button>
           )}
           <Link
@@ -290,8 +295,8 @@ function Spotlight({
               focus,
             )}
           >
-            <Box size={15} aria-hidden="true" />
-            {t("studio.glowbook.public.view3d")}
+            <Box size={15} aria-hidden="true" className="flex-none" />
+            <span className="truncate">{t("studio.glowbook.public.view3d")}</span>
           </Link>
         </div>
       </div>

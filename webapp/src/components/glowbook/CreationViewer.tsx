@@ -207,7 +207,7 @@ export function CreationViewer({
                   </div>
                 </div>
                 <div className="mx-auto grid w-full max-w-[720px] flex-none gap-2 px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pt-4">
-                  <h2 className="m-0 text-[22px] font-[var(--weight-black)] leading-tight tracking-[var(--tracking-tight)]">{item.name}</h2>
+                  <h2 className="m-0 text-[22px] font-[var(--weight-black)] leading-tight tracking-[var(--tracking-tight)] text-white">{item.name}</h2>
                   {item.description && <p className="m-0 line-clamp-3 whitespace-pre-line text-[14px] leading-relaxed text-white/75">{item.description}</p>}
                   <p className="m-0 text-[12.5px] text-white/60">{t("studio.workspace.gems", { count: item.elementCount })}</p>
                   <div className="mt-1 grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
