@@ -199,6 +199,8 @@
     "weekView": "Week",
     "prevWeek": "Previous week",
     "nextWeek": "Next week",
+    "pickWeek": "Choose a week",
+    "pickDay": "Choose a day",
     "weekHint": "{{city}} time. Tap an hour to close or open it: block here the appointments taken elsewhere, or let the import of your other calendar do it.",
     "saveFirst": "Save your settings to edit the week.",
     "closeDay": "Close",
@@ -211,6 +213,22 @@
       "past": "past",
       "busy": "taken elsewhere",
       "holiday": "time off"
+    },
+    "cellShort": {
+      "open": "Open",
+      "extra": "Open +",
+      "blocked": "Closed",
+      "busy": "Busy",
+      "holiday": "Off"
+    },
+    "legend": {
+      "open": "Open: clients can book it",
+      "extra": "Open on top of your hours",
+      "blocked": "Closed by you",
+      "busy": "Busy elsewhere: taken in your imported calendar (Google, Planity…)",
+      "holiday": "Time off: day closed",
+      "booked": "Booked: the client's first name",
+      "closed": "Outside your hours"
     },
     "upcoming_one": "{{count}} upcoming appointment",
     "upcoming_other": "{{count}} upcoming appointments",

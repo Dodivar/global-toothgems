@@ -199,6 +199,8 @@
     "weekView": "Semaine",
     "prevWeek": "Semaine précédente",
     "nextWeek": "Semaine suivante",
+    "pickWeek": "Choisir une semaine",
+    "pickDay": "Choisir un jour",
     "weekHint": "Heures de {{city}}. Touchez une heure pour la fermer ou l’ouvrir : bloquez ici les rendez-vous pris ailleurs, ou laissez l’import de votre autre agenda le faire.",
     "saveFirst": "Enregistrez vos réglages pour modifier la semaine.",
     "closeDay": "Fermer",
@@ -211,6 +213,22 @@
       "past": "passé",
       "busy": "pris ailleurs",
       "holiday": "congés"
+    },
+    "cellShort": {
+      "open": "Ouvert",
+      "extra": "Ouvert +",
+      "blocked": "Fermé",
+      "busy": "Pris",
+      "holiday": "Congés"
+    },
+    "legend": {
+      "open": "Ouvert : réservable par vos clients",
+      "extra": "Ouvert en plus de vos horaires",
+      "blocked": "Fermé par vous",
+      "busy": "Pris ailleurs : occupé dans votre autre agenda importé (Google, Planity…)",
+      "holiday": "Congés : journée fermée",
+      "booked": "Réservé : le prénom du client",
+      "closed": "Hors de vos horaires"
     },
     "upcoming_one": "{{count}} rendez-vous à venir",
     "upcoming_other": "{{count}} rendez-vous à venir",
