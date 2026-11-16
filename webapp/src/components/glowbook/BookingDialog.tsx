@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { CalendarCheck, Check, ChevronLeft, ChevronRight, Gem, LogIn, UserPlus } from "lucide-react";
+import { Box, CalendarCheck, Check, ChevronLeft, ChevronRight, Gem, LogIn, PencilLine, UserPlus } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { useAuth } from "../../lib/auth";
 import { isCaptchaConfigured, useTurnstile } from "../../lib/captcha/turnstile";
-import { bookSlot, fetchSlots } from "../../lib/glowbookBooking";
+import { bookSlot, fetchOwnCreations, fetchSlots } from "../../lib/glowbookBooking";
+import { forgetBookingCreation, readBookingCreation } from "../../lib/glowbookBookingCreation";
 import { bookingReturnPath } from "../../lib/glowbookBookingReturn";
 import {
   addDays,
@@ -34,7 +35,10 @@ import { Link, useNavigate } from "../../lib/navigation";
  * and leaves a phone number; the hour is locked at once and both sides get an
  * e-mail. Opened from a creation, the booking is for that creation (shown, not
  * changeable); opened from the page, it is a custom design the member
- * describes in the message. A visitor sees the same free hours (they are
+ * describes in the message, or one of the member's own Studio creations
+ * (decision 149: the artist then opens it read-only from their calendar),
+ * selected already when the member came from the Studio's "Book an artist
+ * for this design" (`glowbookBookingCreation`). A visitor sees the same free hours (they are
  * public) and is asked to sign in only to confirm; the address carries their
  * hour through the sign-in screen, so the dialog opens again on it
  * (`glowbookBookingReturn`). The database decides what is free and refuses
@@ -78,7 +82,11 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
   const lang = isLocale(i18n.language) ? i18n.language : "fr";
   const { signedIn, profile } = useAuth();
   const navigate = useNavigate();
-  const ids = { name: useId(), phone: useId(), comment: useId(), problem: useId(), design: useId(), when: useId() };
+  const ids = { name: useId(), phone: useId(), comment: useId(), problem: useId(), design: useId(), when: useId(), mine: useId() };
+  // From the page: a custom idea, or one of the member's own Studio creations (decision 149).
+  const [designMode, setDesignMode] = useState<"custom" | "mine">("custom");
+  const [ownCreations, setOwnCreations] = useState<{ id: string; name: string }[] | null>(null);
+  const [ownCreationId, setOwnCreationId] = useState<string>("");
 
   // Free slots gathered week by week; `today` and the horizon come from the first answer.
   const [calendar, setCalendar] = useState<{ timezone: string; today: string; lastDay: string } | null>(null);
@@ -108,7 +116,31 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
     setShowProblem(false);
     setPhase({ kind: "form" });
     setComment("");
+    setDesignMode("custom");
+    setOwnCreationId("");
   }, [open, initialSlot]);
+
+  // The member's own creations, from the page only; the one chosen in the Studio comes selected.
+  useEffect(() => {
+    if (!open || !signedIn || creation) return;
+    let live = true;
+    fetchOwnCreations()
+      .then((list) => {
+        if (!live) return;
+        setOwnCreations(list ?? []);
+        const chosen = readBookingCreation();
+        if (chosen && list?.some((c) => c.id === chosen.id)) {
+          setDesignMode("mine");
+          setOwnCreationId(chosen.id);
+        } else if (list && list.length > 0) {
+          setOwnCreationId(list[0].id);
+        }
+      })
+      .catch(() => live && setOwnCreations([]));
+    return () => {
+      live = false;
+    };
+  }, [open, signedIn, creation]);
 
   // The profile fills the name and phone, once it is there.
   useEffect(() => {
@@ -180,7 +212,9 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
   const canGoOn = !!calendar && !!week && addDays(week, 7) <= calendar.lastDay;
 
   const custom = creation === null;
-  const draft = { slot, itemId: creation?.id ?? null, custom, name, phone, comment };
+  const clientCreationId = custom && designMode === "mine" && ownCreationId ? ownCreationId : null;
+  const describe = custom && !clientCreationId;
+  const draft = { slot, itemId: creation?.id ?? null, clientCreationId, custom, name, phone, comment };
   const problem = validateDraft(draft);
 
   const goSignIn = (path: "/connexion" | "/inscription") => {
@@ -199,9 +233,10 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
     setPhase({ kind: "sending" });
     setError(null);
     const captcha = captchaNeeded ? await captchaToken() : null;
-    const answer = await bookSlot({ handle, startsAt: slot, itemId: creation?.id ?? null, name, phone, comment, locale: lang, captcha });
+    const answer = await bookSlot({ handle, startsAt: slot, itemId: creation?.id ?? null, clientCreationId, name, phone, comment, locale: lang, captcha });
     resetCaptcha();
     if (answer.kind === "booked") {
+      if (clientCreationId) forgetBookingCreation();
       setPhase({ kind: "done", startsAt: answer.startsAt, timezone: answer.timezone });
       return;
     }
@@ -432,6 +467,45 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
         )}
         {signedIn && (
           <>
+        {/* What, from the page: a custom idea, or one of the member's own Studio creations */}
+        {custom && ownCreations && ownCreations.length > 0 && (
+          <fieldset className="m-0 grid min-w-0 gap-2 border-0 p-0">
+            <legend className={clsx(label, "mb-2")}>{t("booking.design.title")}</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {(["custom", "mine"] as const).map((mode) => (
+                <label
+                  key={mode}
+                  className={clsx(
+                    "flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border px-3.5 py-3 transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--focus-ring)]",
+                    designMode === mode ? "border-[var(--gt-ink-900)] bg-[var(--surface-brand-wash)]" : "border-[var(--border-subtle)] bg-[var(--surface-card)]",
+                  )}
+                >
+                  <input type="radio" name={ids.design} value={mode} checked={designMode === mode} onChange={() => setDesignMode(mode)} className="sr-only" />
+                  <span aria-hidden="true" className="grid h-8 w-8 flex-none place-items-center rounded-[var(--radius-pill)] bg-[var(--surface-page)] text-[var(--gt-blue-700)]">
+                    {mode === "custom" ? <PencilLine size={15} /> : <Box size={15} />}
+                  </span>
+                  <span className="grid min-w-0 gap-0.5">
+                    <span className="text-[14px] font-bold text-[var(--text-primary)]">{t(`booking.design.${mode === "custom" ? "custom" : "mine"}`)}</span>
+                    <span className="text-[12.5px] text-[var(--text-muted)]">{t(`booking.design.${mode === "custom" ? "customSub" : "mineSub"}`, { name: artistName })}</span>
+                  </span>
+                  {designMode === mode && <Check size={16} aria-hidden="true" className="ml-auto flex-none text-[var(--text-primary)]" />}
+                </label>
+              ))}
+            </div>
+            {designMode === "mine" && (
+              <label htmlFor={ids.mine} className="grid gap-1.5">
+                <span className={label}>{t("booking.design.pick")}</span>
+                <select id={ids.mine} className={field} value={ownCreationId} onChange={(e) => setOwnCreationId(e.target.value)}>
+                  {ownCreations.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name || t("studio.workspace.untitled")}</option>
+                  ))}
+                </select>
+                <span className="text-[12px] text-[var(--text-muted)]">{t("booking.design.mineHint", { name: artistName })}</span>
+              </label>
+            )}
+          </fieldset>
+        )}
+
         {/* Who */}
         <div className="grid gap-3 sm:grid-cols-2">
           <label htmlFor={ids.name} className="grid gap-1.5">
@@ -444,7 +518,7 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
           </label>
         </div>
         <label htmlFor={ids.comment} className="grid gap-1.5">
-          <span className={label}>{custom ? t("booking.fields.commentRequired") : t("booking.fields.comment")}</span>
+          <span className={label}>{describe ? t("booking.fields.commentRequired") : t("booking.fields.comment")}</span>
           <textarea
             id={ids.comment}
             className={clsx(field, "min-h-[112px] resize-y leading-relaxed")}
@@ -456,7 +530,7 @@ export function BookingDialog({ open, onClose, handle, artistName, creation = nu
             aria-describedby={`${ids.comment}-hint`}
           />
           <span id={`${ids.comment}-hint`} className="text-[12px] text-[var(--text-muted)]">
-            {custom && <>{t("booking.fields.customHint")}{" "}</>}
+            {describe && <>{t("booking.fields.customHint")}{" "}</>}
             {t("booking.fields.noHealth")} · {comment.length}/{COMMENT_MAX}
           </span>
         </label>

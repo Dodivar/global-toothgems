@@ -18,7 +18,7 @@ import { HelpPanel } from "../components/studio/workspace/HelpPanel";
 import { useWorkspaceActions } from "../components/studio/workspace/useWorkspaceActions";
 import { useDocumentTitle } from "../components/legal/hooks";
 import { useToast } from "../lib/toast";
-import { duplicateMirroredPieces, duplicatePieces, removePieces } from "../lib/studio3d/actions";
+import { duplicateMirroredPieces, duplicatePieces, removePieces, setPiecesLocked } from "../lib/studio3d/actions";
 import { getEngine } from "../lib/studio3d/engine";
 import { setNoticeHandler } from "../lib/studio3d/notices";
 import { studioStore, useStudio } from "../lib/studio3d/store";
@@ -195,6 +195,12 @@ function StudioWorkspace() {
         // Shift + D: the copies land on the mirror side of the arch.
         if (e.shiftKey) duplicateMirroredPieces([...studioStore.selectedJewelIds]);
         else duplicatePieces([...studioStore.selectedJewelIds]);
+        return;
+      }
+      if (key === "l" && e.shiftKey && !meta && !e.altKey) {
+        // Shift + L: lock the selection, or unlock it when every piece already is.
+        const ids = [...studioStore.selectedJewelIds];
+        if (ids.length) setPiecesLocked(ids, studioStore.editableIds(ids).length > 0);
         return;
       }
       if (key === "l" && !meta && !e.altKey) {

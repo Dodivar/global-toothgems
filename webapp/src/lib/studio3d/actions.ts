@@ -31,9 +31,21 @@ export function duplicateMirroredPieces(ids: string[], axis: "h" | "v" = "h") {
   if (!n) notify(axis === "h" ? "noRoomMirrored" : "noRoomMirroredV", undefined, "warning");
 }
 
+/** Delete pieces; the locked ones stay, and the customer is told so. */
 export function removePieces(ids: string[]) {
   if (!ids.length) return;
+  const kept = ids.length - studioStore.editableIds(ids).length;
   studioStore.removeJewels(ids);
+  if (kept) notify("lockedKept", { count: kept }, "info");
+}
+
+/**
+ * Lock the pieces (none of them moves or changes any more) or unlock them,
+ * in one undo step. Each piece is locked on its own: no group is made.
+ */
+export function setPiecesLocked(ids: string[], locked: boolean) {
+  if (!ids.length) return;
+  studioStore.setLocked(ids, locked);
 }
 
 /**
@@ -52,7 +64,7 @@ export function rotatePieces(ids: string[], clockwiseDeg = 90) {
  * size, or whose gem the shop no longer sells, stays as it is.
  */
 export function resizePieces(ids: string[], steps: number) {
-  const pieces = studioStore.jewels.filter((j) => ids.includes(j.id));
+  const pieces = studioStore.jewels.filter((j) => ids.includes(j.id) && !j.locked);
   if (!pieces.length || !steps) return;
   const next = (productId: string, size: GemSize): GemSize => {
     const gem = studioGem(productId);
@@ -91,6 +103,7 @@ export interface RotationSession {
  */
 export function beginRotation(ids: string[]): RotationSession {
   const engine = getEngine();
+  ids = studioStore.editableIds(ids); // locked pieces do not turn
   const start = studioStore.jewels
     .filter((j) => ids.includes(j.id))
     .map((j) => ({ id: j.id, rotation: j.rotation, sign: engine?.screenClockwiseSign(j.id) ?? -1 }));

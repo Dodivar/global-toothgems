@@ -1,7 +1,8 @@
 import { A4, writePdf, type PdfOp, type PdfPathCommand } from "../documents/pdfWriter";
 import { DOC_INK } from "../documents/template";
 import { textWidth, type FontWeight } from "../documents/text";
-import { circleOutline, crownOutline, gemOutline, type FrontViewPathCommand, type FrontViewProjection } from "./frontView";
+import { crownDetails, crownOutline, gumOutline } from "./flatView";
+import { circleOutline, gemOutline, type FrontViewPathCommand, type FrontViewProjection } from "./frontView";
 import { sizeKey, type GemSize } from "../gemOptions";
 
 /**
@@ -77,7 +78,7 @@ const WIDTH = A4.width - M.x * 2;
 const LOGO = { w: 110, ratio: 1400 / 375 };
 const ENAMEL = "#fbf8f1";
 const ENAMEL_EDGE = "#b9ab95";
-const GUM = "#f3d3d5";
+const GUM = "#efc2c7";
 const STAGE = "#f4f8fc";
 const GEM_EDGE = "#263c52";
 const ROW = 15;
@@ -118,20 +119,14 @@ function drawFigure(ops: PdfOp[], input: PlacementSheetInput, top: number): numb
   const k = WIDTH / box.width;
   const map = (x: number, y: number): [number, number] => [M.x + (x - box.x) * k, top + (y - box.y) * k];
   ops.push({ kind: "rect", x: M.x, y: top, w: WIDTH, h: height, fill: STAGE });
-  // Gums: a band behind each arch's necks.
-  const upper = projection.teeth.filter((t) => !t.lower);
-  const lower = projection.teeth.filter((t) => t.lower);
-  const band = (teeth: typeof upper, up: boolean) => {
-    const xs = teeth.flatMap((t) => [t.x0, t.x1]);
-    const neck = up ? Math.max(...teeth.map((t) => t.cervical)) : Math.min(...teeth.map((t) => t.cervical));
-    const [x0, y0] = map(Math.min(...xs) - 0.6, up ? box.y : neck - 2.4);
-    const [x1, y1] = map(Math.max(...xs) + 0.6, up ? neck + 2.4 : box.y + box.height);
-    ops.push({ kind: "rect", x: x0, y: y0, w: x1 - x0, h: y1 - y0, fill: GUM });
-  };
-  band(upper, true);
-  band(lower, false);
+  // Gums: behind each arch's crowns, which cut the gum line.
+  for (const lower of [false, true]) {
+    const gum = gumOutline(projection.teeth.filter((t) => t.lower === lower), box);
+    if (gum.length) ops.push({ kind: "path", commands: toPage(gum, map), fill: GUM });
+  }
   for (const t of projection.teeth) {
     ops.push({ kind: "path", commands: toPage(crownOutline(t), map), fill: ENAMEL, stroke: ENAMEL_EDGE, width: 0.45 });
+    for (const line of crownDetails(t)) ops.push({ kind: "path", commands: toPage(line, map), stroke: ENAMEL_EDGE, width: 0.4 });
   }
   // Which side is which: an artist faces the patient.
   text(ops, M.x + 6, top + 11, input.labels.patientRight, "bold", 6.4, DOC_INK.muted);

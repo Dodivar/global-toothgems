@@ -236,11 +236,10 @@
   "locked": {
     "eyebrow": "Members only",
     "title": "Your seat in the Lounge is waiting",
-    "body": "The Members' Lounge is the private chat of artists who have followed a Global Toothgems training: language lounges, live conversations and private messages between professionals.",
+    "body": "The Members' Lounge is the private chat of artists who have followed a Global Toothgems training: language lounges and live conversations between professionals.",
     "perks": {
       "languages": "Lounges in English, French, German and Spanish",
-      "experts": "Answers from our educators and mentors, every day",
-      "network": "Private messages to build your professional network"
+      "experts": "Answers from our educators and mentors, every day"
     },
     "cta": "Discover the trainings",
     "back": "Back to my space",

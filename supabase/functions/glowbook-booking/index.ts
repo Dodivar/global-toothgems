@@ -40,6 +40,7 @@ const deps: GlowbookBookingDeps = {
       p_handle: input.handle,
       p_starts_at: input.startsAt,
       p_item_id: input.itemId,
+      p_client_creation_id: input.clientCreationId,
       p_name: input.name,
       p_phone: input.phone,
       p_comment: input.comment,

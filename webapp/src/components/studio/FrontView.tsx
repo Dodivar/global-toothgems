@@ -1,12 +1,14 @@
 import { useId } from "react";
 import clsx from "clsx";
-import { GLYPH_SPAN, crownOutline, pathToSvg, type FrontViewProjection } from "../../lib/studio3d/frontView";
+import { crownDetails, crownOutline, gumOutline } from "../../lib/studio3d/flatView";
+import { GLYPH_SPAN, pathToSvg, type FrontViewProjection } from "../../lib/studio3d/frontView";
 import { shapeGlyph } from "./editor/pieceGlyphs";
 
 /**
- * The front view drawn in SVG: both arches flat, as seen facing the patient,
- * and every gem at its place on its tooth, in its outline, size, turn and
- * colour, with its number (`lib/studio3d/frontView.ts` does the projection).
+ * The front view drawn in SVG: both arches laid flat, every tooth showing its
+ * outer face in the silhouette of its type, and every gem at its place on its
+ * tooth, in its outline, size, turn and colour, with its number
+ * (`lib/studio3d/flatView.ts` lays the teeth out and places the gems).
  *
  * The drawing is in the projection's millimetres (`viewBox` = `box`), so a
  * gem keeps its true proportions. With `showTeeth={false}` it draws the gems
@@ -22,7 +24,9 @@ import { shapeGlyph } from "./editor/pieceGlyphs";
 const ENAMEL_TOP = "#fbf8f1";
 const ENAMEL_BOTTOM = "#ece3d0";
 const ENAMEL_EDGE = "rgba(120, 98, 70, .38)";
-const GUM = "#f1c7cb";
+const ENAMEL_LINE = "rgba(120, 98, 70, .3)";
+const GUM = "#eeb9c0";
+const GUM_DEEP = "#e3a3ad";
 const STAGE = "#eef3f9";
 const GEM_EDGE = "rgba(38, 60, 82, .7)";
 const INK = "#111111";
@@ -122,14 +126,6 @@ export function FrontView({ projection, showTeeth = true, numbered = true, highl
   const { box } = projection;
   const upper = projection.teeth.filter((t) => !t.lower);
   const lower = projection.teeth.filter((t) => t.lower);
-  const span = (teeth: typeof upper) => {
-    const xs = teeth.flatMap((t) => [t.x0, t.x1]);
-    return [Math.min(...xs) - 0.6, Math.max(...xs) + 0.6] as const;
-  };
-  const [ux0, ux1] = span(upper);
-  const [lx0, lx1] = span(lower);
-  const upperNeck = Math.max(...upper.map((t) => t.cervical));
-  const lowerNeck = Math.min(...lower.map((t) => t.cervical));
 
   return (
     <svg
@@ -155,18 +151,31 @@ export function FrontView({ projection, showTeeth = true, numbered = true, highl
               <stop offset="0%" stopColor={ENAMEL_TOP} />
               <stop offset="100%" stopColor={ENAMEL_BOTTOM} />
             </linearGradient>
+            <linearGradient id={`${id}-gum-up`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={GUM} />
+              <stop offset="100%" stopColor={GUM_DEEP} />
+            </linearGradient>
+            <linearGradient id={`${id}-gum-down`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={GUM_DEEP} />
+              <stop offset="100%" stopColor={GUM} />
+            </linearGradient>
           </defs>
           <rect x={box.x} y={box.y} width={box.width} height={box.height} fill={STAGE} />
-          <rect x={ux0} y={box.y} width={ux1 - ux0} height={upperNeck + 2.4 - box.y} fill={GUM} />
-          <rect x={lx0} y={lowerNeck - 2.4} width={lx1 - lx0} height={box.y + box.height - lowerNeck + 2.4} fill={GUM} />
+          <path d={pathToSvg(gumOutline(upper, box))} fill={`url(#${id}-gum-down)`} />
+          <path d={pathToSvg(gumOutline(lower, box))} fill={`url(#${id}-gum-up)`} />
           {projection.teeth.map((t) => (
-            <path
-              key={t.fdi}
-              d={pathToSvg(crownOutline(t))}
-              fill={`url(#${id}-enamel-${t.lower ? "up" : "down"})`}
-              stroke={ENAMEL_EDGE}
-              strokeWidth={0.12}
-            />
+            <g key={t.fdi}>
+              <path
+                d={pathToSvg(crownOutline(t))}
+                fill={`url(#${id}-enamel-${t.lower ? "up" : "down"})`}
+                stroke={ENAMEL_EDGE}
+                strokeWidth={0.14}
+                strokeLinejoin="round"
+              />
+              {crownDetails(t).map((line, i) => (
+                <path key={i} d={pathToSvg(line)} fill="none" stroke={ENAMEL_LINE} strokeWidth={0.14} strokeLinecap="round" />
+              ))}
+            </g>
           ))}
           {sideLabels && (
             <g fontFamily={FONT} fontWeight={700} fontSize={1.3} fill="#5c5c5c">

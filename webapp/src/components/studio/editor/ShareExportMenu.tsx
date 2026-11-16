@@ -5,6 +5,7 @@ import {
   Image as ImageIcon,
   Link2,
   LoaderCircle,
+  MapPinned,
   ReceiptText,
   Save,
   ScanFace,
@@ -32,6 +33,9 @@ import { lowestPlanWith, type LockedFeature } from "../../../lib/studioEntitleme
 import type { ShareLink } from "../../../lib/studioWorkspace/share";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
+import { rememberBookingCreation } from "../../../lib/glowbookBookingCreation";
+import { useNavigate } from "../../../lib/navigation";
+import { ARTIST_DIRECTORY_PATH } from "../../../lib/studioUrl";
 import { useFormat } from "../../../lib/format";
 
 const inputClass =
@@ -86,6 +90,11 @@ export function ShareExportMenu() {
   const linksAllowed = useStudioFeature("clientTools");
   // The raw JSON is a team tool, not a member export.
   const staff = useStudioStaff();
+  // "Have it made by an artist" (decision 149), as on the creation detail: for members whose plan
+  // has no Glowbook of their own (an Atelier member is an artist). The booked artist reads the
+  // saved creation, so it is offered once the design is saved.
+  const bookArtist = useStudioFeature("glowbook") === false;
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!open || !sheet || !studioStore.jewels.length) return;
@@ -372,6 +381,25 @@ export function ShareExportMenu() {
             }}
           />
         )
+      )}
+
+      {bookArtist && (
+        <>
+          <PopoverSeparator />
+          <PopoverItem
+            icon={<MapPinned size={14} />}
+            label={t("studio.workspace.bookArtist.title")}
+            {...(saved
+              ? { sub: t("studio.workspace.bookArtist.editorSub") }
+              : { notice: t(snap.jewels.length === 0 ? "studio.workspace.bookArtist.editorNoticeEmpty" : "studio.workspace.bookArtist.editorNoticeSave") })}
+            onClick={() => {
+              if (!saved) return;
+              close();
+              rememberBookingCreation({ id: saved.id, name: saved.name });
+              navigate(ARTIST_DIRECTORY_PATH);
+            }}
+          />
+        </>
       )}
 
       {staff && (

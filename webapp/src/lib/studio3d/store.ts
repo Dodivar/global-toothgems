@@ -251,6 +251,8 @@ export class DesignStore {
   insertJewels(copies: PlacedJewelry[]): number {
     if (!copies.length) return 0;
     this.pushHistory();
+    // A copy is a new piece, free to move: it does not inherit its source's lock.
+    copies = copies.map((c) => withLock(c, false));
     this.jewels = [...this.jewels, ...copies];
     this.selectedJewelIds = copies.map((c) => c.id);
     this.selectedToothId = null;
@@ -258,7 +260,38 @@ export class DesignStore {
     this.commit();
     return copies.length;
   }
+  /** True when the piece is locked: it takes no edit until it is unlocked. */
+  isLocked(id: string): boolean {
+    return this.jewels.some((j) => j.id === id && j.locked === true);
+  }
+  /** The pieces among `ids` that can be edited (the locked ones left out). */
+  editableIds(ids: readonly string[]): string[] {
+    const locked = new Set(this.jewels.filter((j) => j.locked).map((j) => j.id));
+    return ids.filter((id) => !locked.has(id));
+  }
+  /**
+   * Lock or unlock pieces, in one undo step. Each piece is locked on its own:
+   * this makes no group, so unlocking one later leaves the others locked.
+   */
+  setLocked(ids: readonly string[], locked: boolean) {
+    const target = new Set(ids);
+    const changing = this.jewels.filter((j) => target.has(j.id) && (j.locked === true) !== locked);
+    if (!changing.length) return;
+    this.pushHistory();
+    const changed = new Set(changing.map((j) => j.id));
+    this.jewels = this.jewels.map((j) => (changed.has(j.id) ? withLock(j, locked) : j));
+    this.contextMenu = null;
+    this.commit();
+  }
+
+  /*
+   * The edits below leave locked pieces as they are, whichever control asked:
+   * the lock is enforced here, in the one place every edit goes through.
+   * Re-seating a loaded scene or moving the design onto another model is not
+   * an edit (`settleLoadedPieces`, `replaceDesign`) and moves them too.
+   */
   updateJewel(id: string, patch: Partial<PlacedJewelry>) {
+    if (this.isLocked(id)) return;
     this.jewels = this.jewels.map((j) => (j.id === id ? { ...j, ...patch } : j));
     this.commit();
   }
@@ -268,7 +301,7 @@ export class DesignStore {
     const map = new Map(updates.map((u) => [u.id, u.patch]));
     this.jewels = this.jewels.map((j) => {
       const patch = map.get(j.id);
-      return patch ? { ...j, ...patch } : j;
+      return patch && !j.locked ? { ...j, ...patch } : j;
     });
     this.commit();
   }
@@ -276,17 +309,19 @@ export class DesignStore {
   updateSelected(patch: Partial<PlacedJewelry>) {
     if (!this.selectedJewelIds.length) return;
     const sel = new Set(this.selectedJewelIds);
-    this.jewels = this.jewels.map((j) => (sel.has(j.id) ? { ...j, ...patch } : j));
+    this.jewels = this.jewels.map((j) => (sel.has(j.id) && !j.locked ? { ...j, ...patch } : j));
     this.commit();
   }
-  removeJewels(ids: string[]) {
-    if (!ids.length) return;
+  /** Delete pieces; locked ones stay. Returns how many were deleted. */
+  removeJewels(ids: string[]): number {
+    const kill = new Set(this.editableIds(ids));
+    if (!kill.size) return 0;
     this.pushHistory();
-    const kill = new Set(ids);
     this.jewels = this.jewels.filter((j) => !kill.has(j.id));
     this.selectedJewelIds = this.selectedJewelIds.filter((id) => !kill.has(id));
     this.contextMenu = null;
     this.commit();
+    return kill.size;
   }
   /** Naive duplication beside each source; the engine's collision-aware version is preferred. */
   duplicateJewels(ids: string[]): number {
@@ -576,6 +611,14 @@ export class DesignStore {
     this.groups = [...pruneGroups(this.groups, this.jewels), ref];
     this.commit();
   }
+}
+
+/** The piece locked or unlocked (`locked` is absent rather than false, like the saved scene). */
+export function withLock(j: PlacedJewelry, locked: boolean): PlacedJewelry {
+  if (locked) return j.locked ? j : { ...j, locked: true };
+  if (!j.locked) return j;
+  const { locked: _drop, ...rest } = j;
+  return rest;
 }
 
 function readActive(input: unknown): ActiveCreation | null {

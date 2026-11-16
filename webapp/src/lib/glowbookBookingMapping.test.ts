@@ -119,6 +119,19 @@ describe("the booking form", () => {
     expect(validateDraft({ ...ok, comment: "a".repeat(1001) })).toBe("commentLength");
   });
 
+  it("needs no comment when the member joins their own creation (decision 149)", () => {
+    expect(validateDraft({ ...ok, itemId: null, custom: true, clientCreationId: "c" })).toBeNull();
+    expect(validateDraft({ ...ok, itemId: null, custom: true, clientCreationId: null })).toBe("comment");
+  });
+
+  it("reads the client's own creation on both sides", () => {
+    const mine = readMyBookings({ bookings: [{ id: "b", starts_at: "2026-12-01T10:00:00Z", design_kind: "client_creation", client_creation: true }] });
+    expect(mine.bookings[0]).toMatchObject({ designKind: "client_creation", clientCreation: true });
+    const old = readMyBookings({ bookings: [{ id: "b", starts_at: "2026-12-01T10:00:00Z", design_kind: "weird" }] });
+    expect(old.bookings[0]).toMatchObject({ designKind: "creation", clientCreation: false });
+    expect(readBookingError("creation_unavailable")).toBe("creation_unavailable");
+  });
+
   it("maps error codes", () => {
     expect(readBookingError("slot_taken")).toBe("slot_taken");
     expect(readBookingError("boom")).toBe("unavailable");

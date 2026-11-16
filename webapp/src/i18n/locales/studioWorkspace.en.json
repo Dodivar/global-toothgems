@@ -533,7 +533,7 @@
       "frontView": {
         "title": "The numbered front view",
         "body": [
-          "The front view draws both arches from the front, as you see your client, with every gem in its place, numbered. Mind the direction: the patient’s right is on the left of the drawing.",
+          "The front view draws both arches laid flat, as you see your client: every tooth shows its visible face, from the incisors to the molars, with every gem in its place, numbered. Mind the direction: the patient’s right is on the left of the drawing.",
           "The numbers match the gem list and the placement sheet: you know exactly which gem goes where. The front view is in the editor’s right-hand panel and in a creation’s detail; “Enlarge” opens it full size.",
           "Gems placed on an imported model or off the identified teeth are not drawn, but stay in the list."
         ]
@@ -874,8 +874,27 @@
       "shoppingBody": "Add everything it takes to your cart in one go. Prices are confirmed at checkout.",
       "glowbookGoneTitle": "Creation unavailable",
       "glowbookGoneBody": "This creation is no longer published in this Glowbook, or the address is incomplete.",
-      "glowbookEyebrow": "{{name}}’s Glowbook"
+      "glowbookEyebrow": "{{name}}’s Glowbook",
+      "bookingEyebrow": "Design joined to the appointment",
+      "bookingWithClient": "Appointment on {{when}} with {{name}}",
+      "bookingWithArtist": "Appointment on {{when}} with {{name}}",
+      "bookingNoteArtist": "The client shows you what they want. Only you see it, while the appointment exists; it cannot be changed here.",
+      "bookingNoteClient": "Your design, as the artist sees it before the appointment.",
+      "backToAgenda": "Back to my calendar",
+      "backToBookings": "Back to my appointments",
+      "bookingGoneTitle": "Design unavailable",
+      "bookingGoneBody": "The appointment was cancelled, the design was deleted, or it is not meant for you.",
+      "bookingSignInTitle": "Sign in to see this design",
+      "bookingSignInBody": "Only the booked artist and the client can open it."
     }
+  },
+  "bookArtist": {
+    "title": "Have it made by an artist",
+    "body": "Find an artist near you and book with this design: they will see it in 3D before the appointment.",
+    "cta": "Find an artist",
+    "editorSub": "Find an artist near you: they will see this design in 3D before the appointment.",
+    "editorNoticeSave": "Save the creation first: the artist will see its saved version.",
+    "editorNoticeEmpty": "Add gems, then save the creation to offer it to an artist."
   },
   "collections": {
     "label": "Collections",
