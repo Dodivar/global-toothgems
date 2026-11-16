@@ -1,10 +1,11 @@
-import { Clapperboard, Copy, FileDown, FolderOpen, Gem, Link2, MoreHorizontal, PencilLine, ScanFace, Trash2 } from "lucide-react";
+import { Clapperboard, Copy, FileDown, FolderOpen, Gem, Link2, Lock, MoreHorizontal, PencilLine, ScanFace, Trash2 } from "lucide-react";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { Menu } from "../../ui/Menu";
 import { useFormat } from "../../../lib/format";
 import { useToast } from "../../../lib/toast";
 import { useStudioFeature } from "../../../lib/studioAccess";
+import { lowestPlanWith } from "../../../lib/studioEntitlements";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { CreationCollectionsSummary } from "./Collections";
@@ -32,6 +33,9 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
   // The placement sheet is the Artist plan's and above (decision 133); share links and posts
   // are held back by the dialogs themselves (WorkspaceDialogs).
   const clientToolsLocked = useStudioFeature("clientTools") === false;
+  // Trying a creation on a smile is the Atelier plan's only (decision 111 (a)): below it the
+  // button stays, locked, and opens the plan panel (the function refuses the render anyway).
+  const tryOnLocked = useStudioFeature("tryOn") === false;
   const creation = ws.creations.find((c) => c.id === creationId);
   if (!creation) return null;
 
@@ -123,9 +127,10 @@ export function CreationDetail({ creationId, onClose }: { creationId: string; on
         <Button
           variant="outline"
           size="sm"
-          iconLeft={ScanFace}
-          disabled={creation.elementCount === 0}
-          onClick={() => openWorkspaceDialog({ kind: "tryOn", creation })}
+          iconLeft={tryOnLocked ? Lock : ScanFace}
+          disabled={!tryOnLocked && creation.elementCount === 0}
+          title={tryOnLocked ? t("studio.access.planLocked.withPlan", { plan: t(`studio.plans.items.${lowestPlanWith("tryOn")}.name`) }) : undefined}
+          onClick={() => openWorkspaceDialog(tryOnLocked ? { kind: "planLocked", feature: "tryOn" } : { kind: "tryOn", creation })}
         >
           {t("studio.tryOn.action")}
         </Button>
