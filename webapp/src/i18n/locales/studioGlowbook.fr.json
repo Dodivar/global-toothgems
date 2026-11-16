@@ -160,7 +160,19 @@
     "profileEyebrow": "L’artiste",
     "spotlightVideo": "« {{name}} » vu de gauche à droite",
     "spotlightPlay": "Lire la vidéo",
-    "spotlightPause": "Mettre la vidéo en pause"
+    "spotlightPause": "Mettre la vidéo en pause",
+    "bookCreation": "Réserver cette création",
+    "stickyBook": "Prendre rendez-vous",
+    "openCreation": "Voir « {{name}} » en grand",
+    "viewer": {
+      "label": "Créations de {{name}}",
+      "counter": "{{index}} sur {{count}}",
+      "slide": "création",
+      "close": "Fermer",
+      "previous": "Création précédente",
+      "next": "Création suivante",
+      "cartHint": "Ses gems s’ajoutent au panier depuis la vue 3D."
+    }
   },
   "admin": {
     "title": "Glowbook",

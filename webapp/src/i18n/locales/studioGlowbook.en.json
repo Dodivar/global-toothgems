@@ -160,7 +160,19 @@
     "profileEyebrow": "The artist",
     "spotlightVideo": "“{{name}}” seen from left to right",
     "spotlightPlay": "Play the video",
-    "spotlightPause": "Pause the video"
+    "spotlightPause": "Pause the video",
+    "bookCreation": "Book this design",
+    "stickyBook": "Book an appointment",
+    "openCreation": "View “{{name}}” full screen",
+    "viewer": {
+      "label": "{{name}}’s creations",
+      "counter": "{{index}} of {{count}}",
+      "slide": "creation",
+      "close": "Close",
+      "previous": "Previous creation",
+      "next": "Next creation",
+      "cartHint": "Its gems go to the cart from the 3D view."
+    }
   },
   "admin": {
     "title": "Glowbook",
