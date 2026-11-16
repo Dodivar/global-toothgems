@@ -265,7 +265,7 @@ function ActionRow({
 }) {
   const { t } = useEditorLabels();
   return (
-    <div className="mt-6 grid grid-cols-2 gap-2">
+    <div className="mt-3 grid grid-cols-2 gap-2">
       <button
         type="button"
         onClick={onDuplicate}
@@ -306,7 +306,7 @@ function LockControl({ ids, lockedCount }: { ids: string[]; lockedCount: number 
   return (
     <div
       className={clsx(
-        "mt-4 rounded-[var(--radius-md)] border px-3 py-2.5",
+        "mt-6 rounded-[var(--radius-md)] border px-3 py-2.5",
         lockedCount ? "border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)]" : "border-[var(--border-subtle)] bg-[var(--surface-page)]",
       )}
     >
@@ -365,7 +365,6 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         </SectionInfo>
       </div>
       <Hint className="mt-1.5">{t("studio.editor.inspector.multiSub", { count: teethUsed })}</Hint>
-      <LockControl ids={ids} lockedCount={lockedCount} />
       <SaveSelectionAsGroup ids={ids} />
 
       <fieldset className="m-0 min-w-0 border-0 p-0 disabled:opacity-50" disabled={allLocked}>
@@ -436,6 +435,7 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
 
       <SectionLabel info={t("studio.editor.mirror.hint")} topic="mirror">{t("studio.editor.mirror.label")}</SectionLabel>
       <MirrorRow locked={allLocked} />
+      <LockControl ids={ids} lockedCount={lockedCount} />
       <ActionRow count={selected.length} onDuplicate={() => duplicatePieces(ids)} onDelete={() => removePieces(ids)} deleteDisabled={allLocked} />
     </>
   );
@@ -520,8 +520,6 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
         </div>
       </div>
 
-      <LockControl ids={[jewel.id]} lockedCount={locked ? 1 : 0} />
-
       {/* A locked piece shows its settings but takes no change until it is unlocked. */}
       <fieldset className="m-0 min-w-0 border-0 p-0 disabled:opacity-50" disabled={locked}>
         <SectionLabel info={t("studio.editor.inspector.colorHint")} topic="colors">{t("studio.editor.inspector.color")}</SectionLabel>
@@ -603,6 +601,7 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
         )}
       </fieldset>
 
+      <LockControl ids={[jewel.id]} lockedCount={locked ? 1 : 0} />
       <ActionRow count={1} onDuplicate={() => duplicatePieces([jewel.id])} onDelete={() => removePieces([jewel.id])} deleteDisabled={locked} />
       <SaveSelectionAsGroup ids={[jewel.id]} />
     </>
