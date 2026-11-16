@@ -141,7 +141,9 @@
     "reason": "Reason (read by the client)",
     "view3d": "View in 3D",
     "clientDesign": "Client’s design",
-    "clientDesignGone": "The design is no longer available."
+    "clientDesignGone": "The design is no longer available.",
+    "icsSummary": "Tooth gem appointment — {{name}}",
+    "icsPhone": "Phone: {{phone}}"
   },
   "mine": {
     "eyebrow": "My account",
@@ -168,7 +170,6 @@
     "cancel": "Cancel",
     "receivedMoved": "The appointments clients book on your Glowbook are in your calendar.",
     "receivedLink": "Open my calendar",
-    "addToCalendar": "Add to my calendar",
     "icsSummary": "Tooth gem appointment with {{name}}",
     "icsDesign": "Design: {{design}}",
     "placeArea": "The artist's area: the artist gives you the exact address."
@@ -271,7 +272,11 @@
     "disable": "Turn the link off",
     "disableTitle": "Turn the calendar link off?",
     "disableBody": "Your calendars will no longer receive your appointments. You can create a new link later.",
-    "disabled": "Calendar link turned off"
+    "disabled": "Calendar link turned off",
+    "phoneTitle": "Add in one tap",
+    "phoneApple": "Add to Apple Calendar",
+    "phoneGoogle": "Add to Google Calendar",
+    "phoneHint": "Your calendar asks you to confirm the subscription, on a phone or a computer. For another device or Outlook, copy the link."
   },
   "import": {
     "title": "Block the hours taken elsewhere",
@@ -380,5 +385,12 @@
     "none": "No upcoming appointment",
     "noneBody": "Find a tooth gem artist near you and book a slot on their page.",
     "findCta": "Find an artist"
+  },
+  "calendar": {
+    "add": "Add to my calendar",
+    "apple": "Apple Calendar (iPhone, iPad, Mac)",
+    "google": "Google Calendar",
+    "outlook": "Outlook",
+    "file": "Other calendar (.ics file)"
   }
 }

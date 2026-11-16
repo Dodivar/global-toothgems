@@ -10,6 +10,8 @@ import { Dialog } from "../ui/Dialog";
 import { blockClient, cancelBooking, markBooking } from "../../lib/glowbookBooking";
 import { type ArtistBooking, formatWhen } from "../../lib/glowbookBookingMapping";
 import { useToast } from "../../lib/toast";
+import type { AppointmentEvent } from "../../lib/glowbookIcs";
+import { AddToCalendarMenu } from "./AddToCalendarMenu";
 
 /**
  * One appointment as the artist sees it (decision 144): when, what the client
@@ -53,6 +55,27 @@ export function ArtistBookingCard({
     } else {
       showToast(t("booking.artist.actionFailed"), t(`booking.artist.codes.${result.code}`, { defaultValue: t("booking.artist.codes.unavailable") }), "error");
     }
+  };
+
+  // "Add to my calendar" for an appointment to come: client, design, phone and comment in the event.
+  const calendarEvent = (): AppointmentEvent => {
+    const pageUrl = `${window.location.origin}/compte/agenda`;
+    const design = booking.designKind === "custom" ? t("booking.design.custom") : (booking.creationName ?? "");
+    const lines = [
+      design ? t("booking.mine.icsDesign", { design }) : "",
+      booking.clientPhone ? t("booking.artist.icsPhone", { phone: booking.clientPhone }) : "",
+      booking.comment ?? "",
+      pageUrl,
+    ].filter(Boolean);
+    return {
+      bookingId: booking.id,
+      startsAt: booking.startsAt,
+      endsAt: booking.endsAt,
+      summary: t("booking.artist.icsSummary", { name: booking.clientName ?? "" }),
+      description: lines.join("\n"),
+      location: null,
+      url: pageUrl,
+    };
   };
 
   return (
@@ -156,6 +179,9 @@ export function ArtistBookingCard({
       )}
 
       <div className="flex flex-wrap gap-2">
+        {booking.status === "booked" && future && !booking.clientErased && (
+          <AddToCalendarMenu event={calendarEvent()} filename={lang === "fr" ? "rendez-vous.ics" : "appointment.ics"} />
+        )}
         {booking.status === "booked" && future && (
           <Button size="sm" variant="dangerOutline" iconLeft={CalendarX2} disabled={busy} onClick={() => setCancelling(true)}>
             {t("booking.artist.cancel")}

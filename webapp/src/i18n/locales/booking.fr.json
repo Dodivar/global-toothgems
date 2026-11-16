@@ -141,7 +141,9 @@
     "reason": "Raison (lue par le client)",
     "view3d": "Voir en 3D",
     "clientDesign": "Création du client",
-    "clientDesignGone": "La création n’est plus disponible."
+    "clientDesignGone": "La création n’est plus disponible.",
+    "icsSummary": "Rendez-vous tooth gems — {{name}}",
+    "icsPhone": "Téléphone : {{phone}}"
   },
   "mine": {
     "eyebrow": "Mon compte",
@@ -168,7 +170,6 @@
     "cancel": "Annuler",
     "receivedMoved": "Les rendez-vous que des clients prennent sur votre Glowbook sont dans votre agenda.",
     "receivedLink": "Ouvrir mon agenda",
-    "addToCalendar": "Ajouter à mon agenda",
     "icsSummary": "Rendez-vous tooth gems avec {{name}}",
     "icsDesign": "Création : {{design}}",
     "placeArea": "Le quartier de l’artiste : l’adresse exacte vous est donnée par l’artiste."
@@ -271,7 +272,11 @@
     "disable": "Désactiver le lien",
     "disableTitle": "Désactiver le lien d’agenda ?",
     "disableBody": "Vos agendas ne recevront plus vos rendez-vous. Vous pourrez créer un nouveau lien plus tard.",
-    "disabled": "Lien d’agenda désactivé"
+    "disabled": "Lien d’agenda désactivé",
+    "phoneTitle": "Ajouter en un geste",
+    "phoneApple": "Ajouter au Calendrier Apple",
+    "phoneGoogle": "Ajouter à Google Agenda",
+    "phoneHint": "Votre agenda vous demande de confirmer l’abonnement, sur téléphone comme sur ordinateur. Pour un autre appareil ou Outlook, copiez le lien."
   },
   "import": {
     "title": "Bloquer les heures prises ailleurs",
@@ -380,5 +385,12 @@
     "none": "Aucun rendez-vous à venir",
     "noneBody": "Trouvez un artiste tooth gems près de chez vous et réservez un créneau sur sa page.",
     "findCta": "Trouver un artiste"
+  },
+  "calendar": {
+    "add": "Ajouter à mon agenda",
+    "apple": "Calendrier Apple (iPhone, iPad, Mac)",
+    "google": "Google Agenda",
+    "outlook": "Outlook",
+    "file": "Autre agenda (fichier .ics)"
   }
 }

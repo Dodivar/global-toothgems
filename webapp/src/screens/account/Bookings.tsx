@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Box, CalendarCheck, CalendarDays, CalendarPlus, CalendarX2, MapPin, MapPinned, PlugZap, ShieldAlert, Sparkles } from "lucide-react";
+import { ArrowRight, Box, CalendarCheck, CalendarDays, CalendarX2, MapPin, MapPinned, PlugZap, ShieldAlert, Sparkles } from "lucide-react";
 import { SectionHeader } from "../../components/account/SectionHeader";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
@@ -20,7 +20,8 @@ import { isLocale, localizedPath } from "../../lib/localeRoutes";
 import { Link } from "../../lib/navigation";
 import { AGENDA_PATH } from "../../lib/agendaRoutes";
 import { useToast } from "../../lib/toast";
-import { appointmentIcs, downloadIcs } from "../../lib/glowbookIcs";
+import type { AppointmentEvent } from "../../lib/glowbookIcs";
+import { AddToCalendarMenu } from "../../components/glowbook/AddToCalendarMenu";
 import { directionsLinks } from "../../lib/studioWorkspace/glowbookPlace";
 import { ARTIST_DIRECTORY_PATH, bookingCreationPath, glowbookCreationPath } from "../../lib/studioUrl";
 import { BUCKETS, signedUrls } from "../../lib/supabase/storage";
@@ -257,21 +258,19 @@ function ClientBookingRow({
   const design = booking.designKind === "custom" ? t("booking.design.custom") : (booking.creationName ?? "");
   const place = booking.place;
 
-  const addToCalendar = () => {
+  // "Add to my calendar": the device's calendar, Google, Outlook or the .ics file (AddToCalendarMenu).
+  const calendarEvent = (): AppointmentEvent => {
     const pageUrl = `${window.location.origin}/compte/rendez-vous`;
     const lines = [t("booking.mine.icsDesign", { design }), booking.comment ?? "", pageUrl].filter(Boolean);
-    downloadIcs(
-      appointmentIcs({
-        bookingId: booking.id,
-        startsAt: booking.startsAt,
-        endsAt: booking.endsAt,
-        summary: t("booking.mine.icsSummary", { name: booking.artistName }),
-        description: lines.join("\n"),
-        location: place?.label ?? null,
-        url: pageUrl,
-      }),
-      lang === "fr" ? "rendez-vous.ics" : "appointment.ics",
-    );
+    return {
+      bookingId: booking.id,
+      startsAt: booking.startsAt,
+      endsAt: booking.endsAt,
+      summary: t("booking.mine.icsSummary", { name: booking.artistName }),
+      description: lines.join("\n"),
+      location: place?.label ?? null,
+      url: pageUrl,
+    };
   };
 
   return (
@@ -340,7 +339,7 @@ function ClientBookingRow({
       {(onCancel || (upcoming && booking.status === "booked")) && (
         <div className="flex flex-wrap gap-2">
           {upcoming && booking.status === "booked" && (
-            <Button size="sm" variant="outline" iconLeft={CalendarPlus} onClick={addToCalendar}>{t("booking.mine.addToCalendar")}</Button>
+            <AddToCalendarMenu event={calendarEvent()} filename={lang === "fr" ? "rendez-vous.ics" : "appointment.ics"} />
           )}
           {onCancel && <Button size="sm" variant="dangerOutline" iconLeft={CalendarX2} onClick={onCancel}>{t("booking.mine.cancel")}</Button>}
         </div>
