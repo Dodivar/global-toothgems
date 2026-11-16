@@ -215,35 +215,11 @@
   },
   "look": {
     "title": "Customise my page",
-    "sub": "Make your Glowbook yours: picture, colour and layout. Colour, background, layout, spotlight and city are published when you save; a new picture is reviewed by the team first.",
+    "sub": "Your picture, the creation that opens your page and where you work. The spotlight, city and place are published when you save; a new picture is reviewed by the team first.",
     "pendingNote": "Some pictures wait for the team’s review: your page shows the previous ones meanwhile.",
     "rejectedNote": "Your latest pictures were not approved.",
     "rejectedNoteReason": "Your latest pictures were not approved. Reason: {{note}}",
     "preview": "Preview",
-    "accent": "Your identity colour",
-    "accents": {
-      "ink": "Ink",
-      "blue": "Blue",
-      "fuchsia": "Fuchsia",
-      "rose": "Rose",
-      "coral": "Coral",
-      "gold": "Gold",
-      "emerald": "Emerald",
-      "teal": "Lagoon",
-      "violet": "Violet",
-      "plum": "Plum"
-    },
-    "background": "Page background",
-    "backgrounds": {
-      "light": "Light",
-      "tinted": "Tinted",
-      "dark": "Dark"
-    },
-    "layout": "Creations layout",
-    "layouts": {
-      "grid": "Grid",
-      "large": "Large cards"
-    },
     "featured": "Creation in the spotlight",
     "featuredNone": "None",
     "featuredHint": "It opens your page, large, in a short video moving in front of the smile from left to right (published creations only).",
@@ -345,7 +321,7 @@
     "previewAlt": "QR code of the address {{url}}",
     "png": "QR code (PNG)",
     "pdf": "A4 poster (PDF)",
-    "hint": "The poster shows your name, profile picture and colour. The QR code opens your page in {{language}}.",
+    "hint": "The poster shows your name and profile picture. The QR code opens your page in {{language}}.",
     "language": "English",
     "eyebrow": "Glowbook",
     "cta": "Scan to see my creations",
@@ -475,7 +451,7 @@
         },
         "identity": {
           "title": "Your identity",
-          "body": "Photo, colour, layout and sections: the page looks like you, from the first glance to the booking button."
+          "body": "Photo, spotlight creation and sections: your creations up front, from the first glance to the booking button."
         },
         "found": {
           "title": "Easy to find",

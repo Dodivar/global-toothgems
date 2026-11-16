@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  ACCENT_COLORS,
-  ACCENTS,
   coverCrop,
   DEFAULT_LOOK,
+  GLOWBOOK_COLORS,
   lookFromColumns,
   lookPatch,
   pendingFromColumns,
@@ -20,19 +19,18 @@ const contrast = (a: string, b: string) => {
   return (x + 0.05) / (y + 0.05);
 };
 
-describe("identity colours", () => {
-  it.each(ACCENTS)("%s keeps white text readable on it and reads on the light page", (accent) => {
-    const c = ACCENT_COLORS[accent];
-    expect(contrast(c.solid, "#ffffff")).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(c.solid, "#fbfbfc")).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(c.bright, "#141519")).toBeGreaterThanOrEqual(4.5);
+describe("Glowbook colours (decision 150)", () => {
+  it("keep white text readable on the accent, which reads on the light page and on its soft band", () => {
+    expect(contrast(GLOWBOOK_COLORS.solid, "#ffffff")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(GLOWBOOK_COLORS.solid, "#fbfbfc")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(GLOWBOOK_COLORS.solid, GLOWBOOK_COLORS.soft)).toBeGreaterThanOrEqual(4.5);
   });
 });
 
 describe("lookFromColumns / pendingFromColumns", () => {
-  it("reads a row, falling back on the defaults for unknown values and ignoring outside links (decision 146)", () => {
-    const look = lookFromColumns({ accent: "teal", background: "neon", layout: "large", location: "Lyon", avatar_path: "u/a.jpg", tiktok: "lily", booking_url: "https://x.example" });
-    expect(look).toEqual({ ...DEFAULT_LOOK, accent: "teal", layout: "large", location: "Lyon", avatarPath: "u/a.jpg" });
+  it("reads a row, ignoring outside links (decision 146) and the former colour, background and layout (decision 150)", () => {
+    const look = lookFromColumns({ accent: "teal", background: "dark", layout: "large", location: "Lyon", avatar_path: "u/a.jpg", tiktok: "lily", booking_url: "https://x.example" });
+    expect(look).toEqual({ ...DEFAULT_LOOK, location: "Lyon", avatarPath: "u/a.jpg" });
     expect(lookFromColumns(null)).toEqual(DEFAULT_LOOK);
   });
   it("reads what waits for a moderator, pictures only", () => {
@@ -46,8 +44,8 @@ describe("lookFromColumns / pendingFromColumns", () => {
 describe("lookPatch", () => {
   it("sends only what changed, in column names, null to remove", () => {
     const from = { ...DEFAULT_LOOK, avatarPath: "u/a.jpg" };
-    const to = { ...from, accent: "plum" as const, avatarPath: null };
-    expect(lookPatch(from, to)).toEqual({ accent: "plum", avatar_path: null });
+    const to = { ...from, location: "Lyon", avatarPath: null };
+    expect(lookPatch(from, to)).toEqual({ location: "Lyon", avatar_path: null });
     expect(lookPatch(from, from)).toEqual({});
   });
 });

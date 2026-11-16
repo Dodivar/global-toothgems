@@ -215,35 +215,11 @@
   },
   "look": {
     "title": "Personnaliser ma page",
-    "sub": "Donnez à votre Glowbook votre identité : photo, couleur et mise en page. Couleur, fond, mise en page, création à la une et ville sont publiés dès l’enregistrement ; une nouvelle photo est d’abord validée par l’équipe.",
+    "sub": "Votre photo, la création qui ouvre votre page et l’endroit où vous travaillez. La création à la une, la ville et le lieu sont publiés dès l’enregistrement ; une nouvelle photo est d’abord validée par l’équipe.",
     "pendingNote": "Des images attendent la validation de l’équipe : votre page montre les précédentes en attendant.",
     "rejectedNote": "Vos dernières images n’ont pas été validées.",
     "rejectedNoteReason": "Vos dernières images n’ont pas été validées. Motif : {{note}}",
     "preview": "Aperçu",
-    "accent": "Couleur de votre identité",
-    "accents": {
-      "ink": "Encre",
-      "blue": "Bleu",
-      "fuchsia": "Fuchsia",
-      "rose": "Rose",
-      "coral": "Corail",
-      "gold": "Or",
-      "emerald": "Émeraude",
-      "teal": "Lagon",
-      "violet": "Violet",
-      "plum": "Prune"
-    },
-    "background": "Fond de page",
-    "backgrounds": {
-      "light": "Clair",
-      "tinted": "Teinté",
-      "dark": "Sombre"
-    },
-    "layout": "Présentation des créations",
-    "layouts": {
-      "grid": "Grille",
-      "large": "Grandes cartes"
-    },
     "featured": "Création à la une",
     "featuredNone": "Aucune",
     "featuredHint": "Elle ouvre votre page, en grand, dans une courte vidéo qui passe devant le sourire de gauche à droite (créations publiées uniquement).",
@@ -345,7 +321,7 @@
     "previewAlt": "QR code de l’adresse {{url}}",
     "png": "QR code (PNG)",
     "pdf": "Affiche A4 (PDF)",
-    "hint": "L’affiche reprend votre nom, votre photo de profil et votre couleur. Le QR code ouvre votre page en {{language}}.",
+    "hint": "L’affiche reprend votre nom et votre photo de profil. Le QR code ouvre votre page en {{language}}.",
     "language": "français",
     "eyebrow": "Glowbook",
     "cta": "Scannez pour voir mes créations",
@@ -475,7 +451,7 @@
         },
         "identity": {
           "title": "Votre identité",
-          "body": "Photo, couleur, mise en page et sections : la page vous ressemble, du premier regard jusqu’au bouton de réservation."
+          "body": "Photo, création à la une et sections : vos créations au premier plan, du premier regard jusqu’au bouton de réservation."
         },
         "found": {
           "title": "On vous trouve",

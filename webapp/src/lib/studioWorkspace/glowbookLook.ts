@@ -1,48 +1,29 @@
 import { placeFromJson, samePlace, validatePlace, type GlowbookPlace, type PlaceProblem } from "./glowbookPlace";
-import { oneOf } from "../oneOf";
 
 /**
- * The Glowbook's own look (decision 100): what an artist chooses so the page
- * looks like them — profile picture, banner, identity colour, background,
- * layout, a creation in the spotlight, their city, their place on a map
- * (decision 108, `glowbookPlace.ts`). No outside link: since bookings are
+ * The Glowbook's own look (decision 100): what an artist chooses for their
+ * page — profile picture, banner, a creation in the spotlight, their city,
+ * their place on a map (decision 108, `glowbookPlace.ts`). Since decision 150
+ * the identity colour, background and layout are no longer the artist's: every
+ * page is drawn in `GLOWBOOK_COLORS`, the database's `accent`, `background`
+ * and `layout` columns stay unused and are ignored here. No outside link: since bookings are
  * taken on the page (decision 144), booking, website and TikTok links are gone
  * and the database refuses them (decision 146). Pure: the lists
  * the database accepts, the rules it checks (repeated so the form can say
  * what is wrong first), row ↔ UI mapping and the picture framing maths.
  *
  * Pictures are proposed: a new one waits for a moderator while the
- * page keeps the approved one (`pending`). Colour, background, layout,
- * spotlight, city and place are live. Who may customise is one database switch
+ * page keeps the approved one (`pending`). Spotlight, city and place are live. Who may customise is one database switch
  * (`private.glowbook_customization_allowed`): every member with Studio access
  * today, a paid plan later.
  */
 
-export const ACCENTS = ["ink", "blue", "fuchsia", "rose", "coral", "gold", "emerald", "teal", "violet", "plum"] as const;
-export type Accent = (typeof ACCENTS)[number];
-
 /**
- * The identity colours. Each is dark enough for white text on it (WCAG AA,
- * 4.5:1) and readable as text on the light page; `soft` tints the light
- * background, `bright` is the colour on the dark one.
+ * Every Glowbook's colours (decision 150): the former default look — ink on a
+ * light page — for every artist. `solid` is dark enough for white text on it
+ * (WCAG AA, 4.5:1), `soft` tints the profile band.
  */
-export const ACCENT_COLORS: Record<Accent, { solid: string; soft: string; bright: string }> = {
-  ink: { solid: "#1b1d22", soft: "#f1f1f3", bright: "#e9e9ee" },
-  blue: { solid: "#2a5a9e", soft: "#eaf1fb", bright: "#8fb6ee" },
-  fuchsia: { solid: "#a8115f", soft: "#fbeaf3", bright: "#f28cc2" },
-  rose: { solid: "#b4234a", soft: "#fcecf0", bright: "#f59ab2" },
-  coral: { solid: "#b2431f", soft: "#fdeee8", bright: "#f7a283" },
-  gold: { solid: "#86600b", soft: "#fbf4e2", bright: "#e9c46a" },
-  emerald: { solid: "#0b7e5b", soft: "#e7f6f0", bright: "#6fd3ad" },
-  teal: { solid: "#0f6f73", soft: "#e6f4f4", bright: "#6cc9cc" },
-  violet: { solid: "#5b3cc4", soft: "#efebfb", bright: "#ab98f2" },
-  plum: { solid: "#6e2a78", soft: "#f4eaf6", bright: "#cf98d8" },
-};
-
-export const BACKGROUNDS = ["light", "tinted", "dark"] as const;
-export type Background = (typeof BACKGROUNDS)[number];
-export const LAYOUTS = ["grid", "large"] as const;
-export type Layout = (typeof LAYOUTS)[number];
+export const GLOWBOOK_COLORS = { solid: "#1b1d22", soft: "#f1f1f3" } as const;
 
 export const LOCATION_MAX = 60;
 
@@ -51,9 +32,6 @@ export const MODERATED_KEYS = ["avatarPath", "bannerPath"] as const;
 export type ModeratedKey = (typeof MODERATED_KEYS)[number];
 
 export interface GlowbookLook {
-  accent: Accent;
-  background: Background;
-  layout: Layout;
   location: string | null;
   /** Where the artist works (decision 108); null: not shown. */
   place: GlowbookPlace | null;
@@ -63,9 +41,6 @@ export interface GlowbookLook {
 }
 
 export const DEFAULT_LOOK: GlowbookLook = {
-  accent: "ink",
-  background: "light",
-  layout: "grid",
   location: null,
   place: null,
   featuredItemId: null,
@@ -75,9 +50,6 @@ export const DEFAULT_LOOK: GlowbookLook = {
 
 /** Database column ↔ UI field (the place travels as one `place` object). */
 const COLUMN: Record<Exclude<keyof GlowbookLook, "place">, string> = {
-  accent: "accent",
-  background: "background",
-  layout: "layout",
   location: "location",
   featuredItemId: "featured_item_id",
   avatarPath: "avatar_path",
@@ -90,9 +62,6 @@ const text = (v: unknown): string | null => (typeof v === "string" && v.trim() ?
 export function lookFromColumns(o: Record<string, unknown> | null | undefined): GlowbookLook {
   if (!o) return DEFAULT_LOOK;
   return {
-    accent: oneOf(o.accent, ACCENTS, "ink"),
-    background: oneOf(o.background, BACKGROUNDS, "light"),
-    layout: oneOf(o.layout, LAYOUTS, "grid"),
     location: text(o.location),
     place: placeFromJson(o),
     featuredItemId: text(o.featured_item_id),

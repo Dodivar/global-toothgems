@@ -618,9 +618,9 @@
       "glowbookLook": {
         "title": "Customising your Glowbook and the spotlight creation",
         "body": [
-          "The Look tab sets your page’s identity: profile picture, colour, background (light, tinted, dark), how creations show (grid or large cards), city or studio and where you work. No outside links: clients book straight from your page.",
+          "The Look tab sets your profile picture, the spotlight creation, your city or studio and where you work. Colours and layout are the same for every page, designed to show off your creations. No outside links: clients book straight from your page.",
           "The spotlight creation opens your page, large, in a short 5-second video sweeping across the smile from left to right, looping. Your Studio records this video automatically whenever it is missing or out of date: leave the Studio open a moment after changing the spotlight creation.",
-          "Colour, background, layout, spotlight and city go live when saved; a new picture first waits for the team’s approval (the page keeps the previous one meanwhile)."
+          "The spotlight, city and place go live when saved; a new picture first waits for the team’s approval (the page keeps the previous one meanwhile)."
         ]
       },
       "glowbookSections": {
@@ -644,7 +644,7 @@
       "glowbookShare": {
         "title": "Spreading the word: link, QR code, badge",
         "body": [
-          "The Share tab gives your page’s address to copy into your bio, a QR code as a PNG and an A4 poster (PDF) with your name, picture and colour, to print for your studio. They are available once the page is approved.",
+          "The Share tab gives your page’s address to copy into your bio, a QR code as a PNG and an A4 poster (PDF) with your name and picture, to print for your studio. They are available once the page is approved.",
           "If you completed a Global Toothgems Academy course with a certificate, your page can show the “Certified artist” badge, with the course title. You can hide it."
         ]
       },

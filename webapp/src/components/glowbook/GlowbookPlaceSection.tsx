@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { MapPin, Navigation } from "lucide-react";
-import { ACCENT_COLORS, type Accent } from "../../lib/studioWorkspace/glowbookLook";
+import { GLOWBOOK_COLORS } from "../../lib/studioWorkspace/glowbookLook";
 import { directionsLinks, type GlowbookPlace } from "../../lib/studioWorkspace/glowbookPlace";
 import { GlowbookMap } from "./GlowbookMap";
 
@@ -24,7 +24,7 @@ const pill = clsx(
   focus,
 );
 
-export function GlowbookPlaceSection({ place, accent }: { place: GlowbookPlace; accent: Accent }) {
+export function GlowbookPlaceSection({ place }: { place: GlowbookPlace }) {
   const { t } = useTranslation();
   const [showMap, setShowMap] = useState(false);
   const frame = useRef<HTMLDivElement>(null);
@@ -63,7 +63,7 @@ export function GlowbookPlaceSection({ place, accent }: { place: GlowbookPlace; 
           className="relative h-[min(60vh,380px)] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--gb-border)] bg-[var(--gb-soft)]"
         >
           {showMap ? (
-            <GlowbookMap place={place} color={ACCENT_COLORS[accent].solid} className="h-full w-full" />
+            <GlowbookMap place={place} color={GLOWBOOK_COLORS.solid} className="h-full w-full" />
           ) : (
             <span aria-hidden="true" className="grid h-full w-full place-items-center text-[var(--gb-muted)]">
               <MapPin size={22} />

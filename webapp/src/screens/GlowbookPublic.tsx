@@ -18,8 +18,9 @@ import { glowbookCreationPath, STUDIO_PATH } from "../lib/studioUrl";
 
 /**
  * An artist's Glowbook (decisions 99, 100 and 103): their chosen Studio
- * creations, read only, behind the link in their Instagram bio, in the look
- * they chose. The page opens on the work: a slim identity bar, then the
+ * creations, read only, behind the link in their Instagram bio, every page
+ * in the same colours (decision 150: no colour, background or layout of the
+ * artist's any more). The page opens on the work: a slim identity bar, then the
  * creation in the spotlight turning in a short video (its still render until
  * the artist's Studio has recorded it), then the others; the full profile —
  * bio, badge, links — closes the page, one tap away from the bar. Everything
@@ -47,7 +48,6 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
   const back = useBookingReturn(glowbook.booking !== null);
   const booking = opened ?? back !== null;
   const { featured, others, filter: active } = visibleCreations(glowbook.items, glowbook.sections, look?.featuredItemId ?? null, filter);
-  const large = look?.layout === "large";
   const titles = glowbook.certification ? certifiedTitles(glowbook.certification, i18n.language) : [];
   const identity = {
     displayName: glowbook.displayName,
@@ -60,7 +60,7 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
   };
 
   return (
-    <div style={glowbookThemeStyle(look)} className="bg-[var(--gb-page)] text-[var(--gb-text)]">
+    <div style={glowbookThemeStyle()} className="bg-[var(--gb-page)] text-[var(--gb-text)]">
       <GlowbookTopBar {...identity} />
 
       <section aria-labelledby="gt-glowbook-creations" className="mx-auto grid max-w-[1180px] gap-6 px-4 pb-14 pt-5 sm:px-8 sm:pt-8">
@@ -109,14 +109,7 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
           </p>
         ) : (
           others.length > 0 && (
-            <ul
-              className={clsx(
-                "m-0 grid list-none gap-4 p-0 sm:gap-5",
-                large
-                  ? "grid-cols-[repeat(auto-fill,minmax(min(100%,380px),1fr))]"
-                  : "grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]",
-              )}
-            >
+            <ul className="m-0 grid list-none grid-cols-2 gap-4 p-0 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] sm:gap-5">
               {others.map((item) => (
                 <li key={item.id} className="grid">
                   <CreationCard item={item} handle={glowbook.handle} />
@@ -131,7 +124,7 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
         <GlowbookProfile {...identity} />
         {look?.place && (
           <div className="border-t border-[var(--gb-border)]">
-            <GlowbookPlaceSection place={look.place} accent={look.accent} />
+            <GlowbookPlaceSection place={look.place} />
           </div>
         )}
       </div>
@@ -228,13 +221,6 @@ function CreationCard({ item, handle }: { item: Item; handle: string }) {
     >
       <span className="relative block aspect-square overflow-hidden bg-[var(--gb-soft)]">
         <Render item={item} className="transition-transform duration-[var(--duration-base)] motion-safe:group-hover:scale-[1.04]" />
-        <span
-          aria-hidden="true"
-          className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] bg-[rgba(22,26,32,.72)] px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-white backdrop-blur-sm"
-        >
-          <Box size={12} />
-          3D
-        </span>
       </span>
       <span className="grid content-center gap-0.5 px-3.5 py-3">
         <span className="truncate text-[14.5px] font-bold">{item.name}</span>

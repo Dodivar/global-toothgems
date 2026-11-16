@@ -618,9 +618,9 @@
       "glowbookLook": {
         "title": "Personnaliser son Glowbook et la création à la une",
         "body": [
-          "L’onglet Apparence règle l’identité de votre page : photo de profil, couleur, fond (clair, teinté, sombre), présentation des créations (grille ou grandes cartes), ville ou studio et lieu où vous travaillez. Pas de lien externe : vos clientes réservent directement depuis votre page.",
+          "L’onglet Apparence règle votre photo de profil, la création à la une, la ville ou le studio et le lieu où vous travaillez. Les couleurs et la présentation sont les mêmes pour toutes les pages, pensées pour mettre vos créations en valeur. Pas de lien externe : vos clientes réservent directement depuis votre page.",
           "La création à la une ouvre votre page en grand, dans une courte vidéo de 5 secondes qui balaie le sourire de gauche à droite, en boucle. Cette vidéo est enregistrée automatiquement par votre Studio quand elle manque ou n’est plus à jour : laissez le Studio ouvert un instant après avoir changé de création à la une.",
-          "Couleur, fond, présentation, une et ville sont publiés dès l’enregistrement ; une nouvelle photo attend d’abord la validation de l’équipe (la page garde la précédente en attendant)."
+          "La une, la ville et le lieu sont publiés dès l’enregistrement ; une nouvelle photo attend d’abord la validation de l’équipe (la page garde la précédente en attendant)."
         ]
       },
       "glowbookSections": {
@@ -644,7 +644,7 @@
       "glowbookShare": {
         "title": "Faire connaître son Glowbook : lien, QR code, badge",
         "body": [
-          "L’onglet Partager donne l’adresse de votre page à copier dans votre bio, un QR code en PNG et une affiche A4 (PDF) avec votre nom, votre photo et votre couleur, à imprimer pour votre studio. Ils sont disponibles une fois la page validée.",
+          "L’onglet Partager donne l’adresse de votre page à copier dans votre bio, un QR code en PNG et une affiche A4 (PDF) avec votre nom et votre photo, à imprimer pour votre studio. Ils sont disponibles une fois la page validée.",
           "Si vous avez terminé une formation de l’Academy Global Toothgems avec certificat, votre page peut afficher le badge « Artiste certifiée », avec le titre de la formation. Vous pouvez le masquer."
         ]
       },

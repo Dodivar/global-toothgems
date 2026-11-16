@@ -5,7 +5,7 @@ import { Button } from "../../ui/Button";
 import { Link } from "../../../lib/navigation";
 import { useToast } from "../../../lib/toast";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
-import { ACCENT_COLORS, initialsOf } from "../../../lib/studioWorkspace/glowbookLook";
+import { GLOWBOOK_COLORS, initialsOf } from "../../../lib/studioWorkspace/glowbookLook";
 import { certifiedTitles } from "../../../lib/studioWorkspace/glowbookSections";
 import type { Glowbook } from "../../../lib/studioWorkspace/glowbook";
 import { posterFileName, shortUrl } from "../../../lib/glowbookPoster/layout";
@@ -60,7 +60,7 @@ export function GlowbookQrCard({ glowbook, url }: { glowbook: Glowbook; url: str
             displayName: glowbook.displayName,
             handle: glowbook.handle,
             url,
-            accent: ACCENT_COLORS[glowbook.look.accent].solid,
+            accent: GLOWBOOK_COLORS.solid,
             hasAvatar: !!avatar,
             initials: initialsOf(glowbook.displayName),
             qr: matrix,
