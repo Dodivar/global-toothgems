@@ -85,8 +85,9 @@ export const APPOINTMENTS_PATH = "/compte/rendez-vous";
  * theirs and the others to the plan —, for those members only their
  * calendar (decision 147; the header leaves it out for everyone else), and
  * the public artist directory built from the Glowbooks (decision 145), and,
- * for signed-in members only, the appointments they booked with artists
- * (`/compte/rendez-vous`; the header leaves it out for visitors).
+ * for signed-in members below the Glowbook's plan only, the appointments they
+ * booked with artists (`/compte/rendez-vous`; the header leaves it out for
+ * visitors and for the members who have the calendar instead).
  */
 export const STUDIO_MENU: StudioShortcut[] = [
   ...STUDIO_SHORTCUTS.filter((shortcut) => shortcut.id === "workshop"),
