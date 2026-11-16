@@ -1,4 +1,4 @@
--- Decision 152 (owner's request, 2026-11-16): the Artist plan gets the Glowbook
+-- Decision 153 (owner's request, 2026-11-16): the Artist plan gets the Glowbook
 -- for visibility, but not what takes clients' appointments.
 --
 --   * The Glowbook (the page, its creations, moderation, place, sections,
@@ -31,7 +31,7 @@ as $$
 $$;
 
 comment on function private.studio_plan_limit(text, text) is
-  '3D Studio (decisions 113, 152): how many creations / gem_groups a plan tier may hold — essential 15 / 3, artist 30 / 10; null = unlimited (atelier) or no tier. Mirrored for display in webapp/src/data/studio.ts.';
+  '3D Studio (decisions 113, 153): how many creations / gem_groups a plan tier may hold — essential 15 / 3, artist 30 / 10; null = unlimited (atelier) or no tier. Mirrored for display in webapp/src/data/studio.ts.';
 
 -- -----------------------------------------------------------------------------
 -- 2. The Glowbook: Artist and Atelier
@@ -47,7 +47,7 @@ as $$
 $$;
 
 comment on function private.glowbook_allowed(uuid) is
-  'Glowbook (decisions 113, 152): whether this member may run a Glowbook and whether it is public — the Artist and Atelier tiers (subscription, grant or active staff). Bookings, the calendar and the directory are private.glowbook_booking_allowed().';
+  'Glowbook (decisions 113, 153): whether this member may run a Glowbook and whether it is public — the Artist and Atelier tiers (subscription, grant or active staff). Bookings, the calendar and the directory are private.glowbook_booking_allowed().';
 
 -- -----------------------------------------------------------------------------
 -- 3. Bookings, calendar, directory: Atelier only
@@ -63,7 +63,7 @@ as $$
 $$;
 
 comment on function private.glowbook_booking_allowed(uuid) is
-  'Glowbook (decision 152): whether this member''s plan takes online bookings, runs the artist''s calendar (hours, time off, feed, import) and appears in the artist directory — the Atelier tier only (Atelier subscription or grant, or active staff).';
+  'Glowbook (decision 153): whether this member''s plan takes online bookings, runs the artist''s calendar (hours, time off, feed, import) and appears in the artist directory — the Atelier tier only (Atelier subscription or grant, or active staff).';
 
 revoke all on function private.glowbook_booking_allowed(uuid) from public;
 grant execute on function private.glowbook_booking_allowed(uuid) to service_role;
@@ -197,12 +197,12 @@ as $$
 $$;
 
 comment on function public.glowbook_directory() is
-  'Artist directory (decisions 145, 152): the artists who opted in, whose Glowbook is public (approved) with a place and an approved creation, on the Atelier plan — only what their page already shows.';
+  'Artist directory (decisions 145, 153): the artists who opted in, whose Glowbook is public (approved) with a place and an approved creation, on the Atelier plan — only what their page already shows.';
 
 -- -----------------------------------------------------------------------------
 -- 4. The state the screens read: the Glowbook and the bookings apart
 -- -----------------------------------------------------------------------------
--- Security definer since decision 152: the two plan helpers are not callable by
+-- Security definer since decision 153: the two plan helpers are not callable by
 -- members; the function only ever reads the caller's own state (auth.uid()).
 create or replace function public.studio_access_state()
 returns jsonb

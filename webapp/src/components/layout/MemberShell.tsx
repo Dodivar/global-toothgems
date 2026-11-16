@@ -84,7 +84,7 @@ const ActivityContext = createContext<MemberActivity>({ orders: 0, reviews: 0, l
 
 /**
  * What the plan opens (null while unknown), read once by the shell: the
- * Glowbook page (Artist and up) and the calendar (Atelier; decision 152).
+ * Glowbook page (Artist and up) and the calendar (Atelier; decision 153).
  */
 interface GlowbookRights {
   glowbook: boolean | null;
@@ -160,7 +160,7 @@ interface SectionItem {
   /** The Members' Lounge: carries its unread activity. */
   lounge?: boolean;
   /**
-   * The plan right the entry needs (decision 152): the Glowbook page (Artist and
+   * The plan right the entry needs (decision 153): the Glowbook page (Artist and
    * up) or the calendar (Atelier). Below it the entry is locked and leads to
    * the Glowbook's presentation page.
    */
@@ -225,7 +225,7 @@ const GROUPS: SectionGroup[] = [
         icon: Sparkles,
         plan: "glowbook",
       },
-      // The artist's calendar (decision 147), in the member space; locked below the Atelier plan (decision 152).
+      // The artist's calendar (decision 147), in the member space; locked below the Atelier plan (decision 153).
       { to: AGENDA_PATH, labelKey: "nav.studioAgenda", shortKey: "agenda", icon: CalendarDays, plan: "bookings" },
       { to: "/compte/studio", labelKey: "account.navStudio", shortKey: "subscription", icon: CreditCard },
     ],

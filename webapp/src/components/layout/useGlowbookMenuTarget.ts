@@ -16,7 +16,7 @@ import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../lib/studioUrl";
  * is opened by a signed-in member, and kept for that account. Display only:
  * the editor's Glowbook section and the database enforce the plan.
  *
- * `bookings` says whether the plan also runs the calendar (decision 152:
+ * `bookings` says whether the plan also runs the calendar (decision 153:
  * Atelier or staff; the Artist plan has the Glowbook without it).
  */
 export function useGlowbookMenuTarget(menuOpen: boolean): { target: string; bookings: boolean } {

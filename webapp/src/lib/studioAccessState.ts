@@ -60,7 +60,7 @@ export interface StudioAccessInfo {
    */
   tier: StudioTier | null;
   glowbook: boolean;
-  /** Online bookings, the calendar and the artist directory (decision 152: Atelier only). */
+  /** Online bookings, the calendar and the artist directory (decision 153: Atelier only). */
   bookings: boolean;
   limits: StudioCounts<number | null>;
   usage: StudioCounts<number>;

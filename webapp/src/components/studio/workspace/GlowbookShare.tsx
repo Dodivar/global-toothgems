@@ -188,7 +188,7 @@ export function GlowbookBadgeCard({ glowbook }: { glowbook: Glowbook }) {
  * work to people who never visited their page. Says what the directory shows
  * and, while it is on, what is still missing before the page is listed (the
  * database decides: approved page, a place, an approved creation, the plan).
- * The directory is the Atelier plan's (decision 152): below it the card says
+ * The directory is the Atelier plan's (decision 153): below it the card says
  * so and offers the switch only to turn a listing off.
  */
 export function GlowbookDirectoryCard({ glowbook, hasApprovedCreation }: { glowbook: Glowbook; hasApprovedCreation: boolean }) {

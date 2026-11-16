@@ -18,9 +18,9 @@ interface KnownPlan {
  * Display only — the editor and the database enforce the plan. Without
  * Supabase (mock mode) everything is shown open, as in the preview.
  *
- *   * `glowbook` — the public page (decision 152: Artist, Atelier or staff);
+ *   * `glowbook` — the public page (decision 153: Artist, Atelier or staff);
  *   * `bookings` — online bookings, the calendar and the directory listing
- *     (decision 152: Atelier or staff).
+ *     (decision 153: Atelier or staff).
  */
 function useKnownPlan(): KnownPlan | null | "open" {
   const { userId, realAuth } = useAuth();

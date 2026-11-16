@@ -21,7 +21,7 @@ interface NavItem {
   key: string;
   /** A page outside the workspace (never current here), in place of a section. */
   to?: string;
-  /** Listed only while the plan runs the calendar (Atelier, decision 152). */
+  /** Listed only while the plan runs the calendar (Atelier, decision 153). */
   bookingsPlan?: boolean;
 }
 

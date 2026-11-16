@@ -32,7 +32,7 @@ import { useReveal } from "../lib/useReveal";
 const SECTION_X = "px-4 sm:px-[clamp(16px,4vw,48px)]";
 const BENEFITS_ID = "gt-glowbook-intro-benefits";
 
-/** `bookings`: the benefit comes with the calendar's plan (Atelier), not the Glowbook's (decision 152). */
+/** `bookings`: the benefit comes with the calendar's plan (Atelier), not the Glowbook's (decision 153). */
 const BENEFITS: readonly { key: string; icon: typeof Link2; bookings?: boolean }[] = [
   { key: "link", icon: Link2 },
   { key: "creations", icon: Rotate3d },

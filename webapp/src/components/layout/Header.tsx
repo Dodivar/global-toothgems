@@ -67,7 +67,7 @@ export function Header() {
   /* No "Home" entry: the logo is the way home, as on most shops, and the
      three pillars read better on their own (owner's call, 2026-11-02). */
   const { target: glowbookTarget, bookings: ownCalendar } = useGlowbookMenuTarget(panel === "studio" || (menuOpen && menuTab === "studio"));
-  // One or the other, never both: a member whose plan runs the calendar (Atelier, decision 152) reads
+  // One or the other, never both: a member whose plan runs the calendar (Atelier, decision 153) reads
   // their week in "My calendar" and has no use for the appointments they booked; every other signed-in
   // member keeps "My appointments" to check the ones they hold with an artist (owner's call, 2026-11-16).
   const studioMenu = STUDIO_MENU.filter((entry) => {

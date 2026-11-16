@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 3D Studio plan entitlements validation suite
 -- (migration 20261026170231_studio_plan_entitlements, decision 113;
---  migration 20261116224903_studio_artist_plan_glowbook, decision 152)
+--  migration 20261116224903_studio_artist_plan_glowbook, decision 153)
 -- =============================================================================
 --   P1  the numbers: essential 15 creations / 3 Gem Groups, artist 30 / 10,
 --       atelier and no tier unlimited (null);
@@ -13,7 +13,7 @@
 --       limited;
 --   P4  after a downgrade the member keeps every row (read and edit) but
 --       saves no new one over the new limit;
---   P5  the Glowbook is the Artist and Atelier plans' (decision 152): a trial
+--   P5  the Glowbook is the Artist and Atelier plans' (decision 153): a trial
 --       member cannot open one (42501); an Artist member and an Atelier member
 --       can; bookings, the calendar and the directory are Atelier's only
 --       (private.glowbook_booking_allowed); once the author drops to Essential
@@ -143,7 +143,7 @@ begin
   update public.studio_subscriptions set plan = 'artist' where user_id = artistm;
   passed := passed || 'P4'::text;
 
-  -- P5: the Glowbook is Artist's and Atelier's, bookings Atelier's (decision 152)
+  -- P5: the Glowbook is Artist's and Atelier's, bookings Atelier's (decision 153)
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', trialist, 'role', 'authenticated')::text, true);
   v_state := null;

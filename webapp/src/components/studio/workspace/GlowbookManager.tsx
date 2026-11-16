@@ -67,7 +67,7 @@ import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat, workspa
 export function GlowbookManager() {
   const { t } = useWorkspaceFormat();
   const gb = useGlowbook();
-  // Below the Artist plan the Glowbook is closed (decisions 113, 152): the database refuses its writes,
+  // Below the Artist plan the Glowbook is closed (decisions 113, 153): the database refuses its writes,
   // and the section hands over to the presentation page (`GlowbookIntro`).
   const locked = useGlowbookPlan() === false;
 
@@ -328,7 +328,7 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
             t(`studio.glowbook.page.${glowbook.status}`)
           )}
         </p>
-        {/* The calendar has its own page in the member space (decision 147), on the Atelier plan (decision 152). */}
+        {/* The calendar has its own page in the member space (decision 147), on the Atelier plan (decision 153). */}
         {bookings && (
         <Link
           to={AGENDA_PATH}

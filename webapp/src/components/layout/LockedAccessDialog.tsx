@@ -18,7 +18,7 @@ import { GLOWBOOK_INTRO_PATH, STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl"
  * decides access.
  */
 
-/** `artist`: the Glowbook page (Artist plan); `atelier`: the calendar and bookings (Atelier plan, decision 152). */
+/** `artist`: the Glowbook page (Artist plan); `atelier`: the calendar and bookings (Atelier plan, decision 153). */
 export type LockedAccessKind = "lounge" | "artist" | "atelier";
 
 interface LockedCopy {

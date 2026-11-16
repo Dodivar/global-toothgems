@@ -19,11 +19,13 @@ import { placeFromJson, samePlace, validatePlace, type GlowbookPlace, type Place
  */
 
 /**
- * Every Glowbook's colours (decision 150): the former default look — ink on a
- * light page — for every artist. `solid` is dark enough for white text on it
- * (WCAG AA, 4.5:1), `soft` tints the profile band.
+ * Every Glowbook's colours (decision 150), Global Toothgems' own since
+ * decision 152 (`index.css` tokens): `solid` the deep blue (`--gt-blue-700`;
+ * map pin, poster band, icons — dark enough for white text on it, WCAG AA),
+ * `soft` the pale blue tint (`--gt-blue-100`), `cta` the green call to action
+ * (`--gt-emerald-400`, with ink text).
  */
-export const GLOWBOOK_COLORS = { solid: "#1b1d22", soft: "#f1f1f3" } as const;
+export const GLOWBOOK_COLORS = { solid: "#3f5a75", soft: "#e7eef7", cta: "#3edba0" } as const;
 
 export const LOCATION_MAX = 60;
 

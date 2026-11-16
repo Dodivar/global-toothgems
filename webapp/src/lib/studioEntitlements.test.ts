@@ -92,7 +92,7 @@ describe("hasFeature", () => {
     expect(lowestPlanWith("clientTools")).toBe("artist");
   });
 
-  it("opens the Glowbook from the Artist plan, keeps bookings, the AI try-on and the post layouts for Atelier (decision 152)", () => {
+  it("opens the Glowbook from the Artist plan, keeps bookings, the AI try-on and the post layouts for Atelier (decision 153)", () => {
     expect(lowestPlanWith("glowbook")).toBe("artist");
     expect(lowestPlanWith("bookings")).toBe("atelier");
     expect(lowestPlanWith("tryOn")).toBe("atelier");
@@ -181,7 +181,7 @@ describe("the database's answer drives the rights", () => {
     expect(info.bookings).toBe(true);
   });
 
-  it("an Artist member holds the Glowbook without bookings (decision 152)", () => {
+  it("an Artist member holds the Glowbook without bookings (decision 153)", () => {
     const info = parseAccessRow({ ...base, state: "subscribed", tier: "artist", glowbook: true, bookings: false })!;
     expect(info.glowbook).toBe(true);
     expect(info.bookings).toBe(false);

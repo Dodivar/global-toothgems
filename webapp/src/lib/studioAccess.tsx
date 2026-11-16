@@ -221,7 +221,7 @@ export function useStudioAccess(): StudioAccessValue | null {
 export const STUDIO_PREVIEW = !isSupabaseConfigured;
 
 /**
- * Whether the member's plan includes the Glowbook (decisions 113, 152: Artist,
+ * Whether the member's plan includes the Glowbook (decisions 113, 153: Artist,
  * Atelier or active staff), as far as the page knows: true in the preview, null while
  * unknown. Display only — the database refuses every Glowbook write below it
  * and hides the public page.
@@ -235,7 +235,7 @@ export function useGlowbookPlan(): boolean | null {
 
 /**
  * Whether the member's plan takes online bookings and runs the calendar and the
- * directory listing (decision 152: Atelier or active staff), as far as the page
+ * directory listing (decision 153: Atelier or active staff), as far as the page
  * knows: true in the preview, null while unknown. Display only.
  */
 export function useBookingsPlan(): boolean | null {
