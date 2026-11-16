@@ -40,7 +40,7 @@ import type { ActivitySection } from "../../lib/memberActivity";
 import { useMemberActivity, type MemberActivity } from "../../lib/useMemberActivity";
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import { CLIENT_SPACES, STUDIO_SHORTCUTS } from "./clientSpaces";
-import { useGlowbookPlanKnown } from "./useGlowbookPlanKnown";
+import { useGlowbookRightsKnown } from "./useGlowbookPlanKnown";
 import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../lib/studioUrl";
 import { AGENDA_PATH } from "../../lib/agendaRoutes";
 import { captureEvent } from "../../lib/analyticsCore";
@@ -82,8 +82,15 @@ const MemberShellMenuContext = createContext<{ openMenu: () => void } | null>(nu
 /** New things per section (orders, reviews, loyalty), read once by the shell for every menu it draws. */
 const ActivityContext = createContext<MemberActivity>({ orders: 0, reviews: 0, loyalty: 0 });
 
-/** Whether the plan includes the Glowbook (null while unknown), read once by the shell. */
-const GlowbookPlanContext = createContext<boolean | null>(null);
+/**
+ * What the plan opens (null while unknown), read once by the shell: the
+ * Glowbook page (Artist and up) and the calendar (Atelier; decision 152).
+ */
+interface GlowbookRights {
+  glowbook: boolean | null;
+  bookings: boolean | null;
+}
+const GlowbookPlanContext = createContext<GlowbookRights>({ glowbook: null, bookings: null });
 
 /**
  * Opens the dialog saying why an entry is locked (owner's request,
@@ -110,16 +117,24 @@ function lockedClick(
   open(kind);
 }
 
-/** Why an entry is locked, if it is: no training for the lounge, below the Atelier plan for the Glowbook and calendar. */
-function lockedKind(item: SectionItem, hasAccess: boolean, glowbookPlan: boolean | null): LockedAccessKind | null {
-  if (item.glowbook && glowbookPlan === false) return "atelier";
+/** Which plan dialog a Studio entry opens while the plan lacks it: the Glowbook (Artist), the calendar (Atelier). */
+function planLock(item: SectionItem, rights: GlowbookRights): LockedAccessKind | null {
+  if (item.plan === "glowbook" && rights.glowbook === false) return "artist";
+  if (item.plan === "bookings" && rights.bookings === false) return "atelier";
+  return null;
+}
+
+/** Why an entry is locked, if it is: no training for the lounge, below the plan for the Glowbook and calendar. */
+function lockedKind(item: SectionItem, hasAccess: boolean, rights: GlowbookRights): LockedAccessKind | null {
+  const plan = planLock(item, rights);
+  if (plan) return plan;
   if (item.community && !hasAccess) return "lounge";
   return null;
 }
 
-/** Where an entry leads: the Glowbook goes to its presentation page while the plan does not include it. */
-function itemTarget(item: SectionItem, glowbookPlan: boolean | null): string {
-  return item.glowbook && glowbookPlan === false ? GLOWBOOK_INTRO_PATH : item.to;
+/** Where an entry leads: a Studio entry goes to the Glowbook's presentation page while the plan lacks it. */
+function itemTarget(item: SectionItem, rights: GlowbookRights): string {
+  return planLock(item, rights) ? GLOWBOOK_INTRO_PATH : item.to;
 }
 
 /** Opens the member-space menu from inside a page (the lounge, whose screen hides the shell's own bar). */
@@ -144,8 +159,12 @@ interface SectionItem {
   community?: boolean;
   /** The Members' Lounge: carries its unread activity. */
   lounge?: boolean;
-  /** The Glowbook: locked, and leading to its presentation page, below the Atelier plan. */
-  glowbook?: boolean;
+  /**
+   * The plan right the entry needs (decision 152): the Glowbook page (Artist and
+   * up) or the calendar (Atelier). Below it the entry is locked and leads to
+   * the Glowbook's presentation page.
+   */
+  plan?: "glowbook" | "bookings";
   /** Carries a badge for what is new there since the member last looked. */
   activity?: ActivitySection;
 }
@@ -198,16 +217,16 @@ const GROUPS: SectionGroup[] = [
         icon: shortcut.icon,
         end: true,
       })),
-      // Always listed; locked (leading to the presentation page) below the Atelier plan.
+      // Always listed; locked (leading to the presentation page) below the Artist plan.
       {
         to: studioSectionPath("glowbook"),
         labelKey: "nav.studioGlowbook",
         shortKey: "glowbook",
         icon: Sparkles,
-        glowbook: true,
+        plan: "glowbook",
       },
-      // The artist's calendar (decision 147), in the member space; locked like the Glowbook below the plan.
-      { to: AGENDA_PATH, labelKey: "nav.studioAgenda", shortKey: "agenda", icon: CalendarDays, glowbook: true },
+      // The artist's calendar (decision 147), in the member space; locked below the Atelier plan (decision 152).
+      { to: AGENDA_PATH, labelKey: "nav.studioAgenda", shortKey: "agenda", icon: CalendarDays, plan: "bookings" },
       { to: "/compte/studio", labelKey: "account.navStudio", shortKey: "subscription", icon: CreditCard },
     ],
   },
@@ -259,13 +278,14 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const menu = useMemo(() => ({ openMenu: () => setDrawerPath(pathname) }), [pathname]);
   const activity = useMemberActivity(pathname);
   const anyActivity = activity.orders + activity.reviews + activity.loyalty > 0;
-  const glowbookPlan = useGlowbookPlanKnown();
+  const { glowbook: glowbookPlan, bookings: bookingsPlan } = useGlowbookRightsKnown();
+  const rights = useMemo(() => ({ glowbook: glowbookPlan, bookings: bookingsPlan }), [glowbookPlan, bookingsPlan]);
   const [lockedDialog, setLockedDialog] = useState<LockedAccessKind | null>(null);
 
   return (
     <MemberShellMenuContext.Provider value={menu}>
     <LockedAccessContext.Provider value={setLockedDialog}>
-    <GlowbookPlanContext.Provider value={glowbookPlan}>
+    <GlowbookPlanContext.Provider value={rights}>
     <ActivityContext.Provider value={activity}>
     <div className="flex min-h-[100dvh] bg-[var(--surface-page)]">
       <aside
@@ -473,16 +493,16 @@ function SectionLink({ item, onNavigate }: { item: SectionItem; onNavigate?: () 
   const Icon = item.icon;
   /* A locked entry shows a lock only (a shape, not a colour); its name for
      screen readers says it is locked, and a click opens the dialog saying why. */
-  const glowbookPlan = useContext(GlowbookPlanContext);
+  const rights = useContext(GlowbookPlanContext);
   const openLocked = useContext(LockedAccessContext);
-  const lockedAs = lockedKind(item, hasAccess, glowbookPlan);
+  const lockedAs = lockedKind(item, hasAccess, rights);
   const locked = lockedAs !== null;
   const label = t(item.labelKey);
 
   return (
     <li>
       <NavLink
-        to={itemTarget(item, glowbookPlan)}
+        to={itemTarget(item, rights)}
         end={item.end}
         onClick={(event: MouseEvent<HTMLAnchorElement>) =>
           lockedAs ? lockedClick(event, lockedAs, openLocked, onNavigate) : onNavigate?.()
@@ -579,7 +599,7 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
   const { t } = useTranslation();
   const { initials, displayName } = useAuth();
   const { count } = useCart();
-  const glowbookPlan = useContext(GlowbookPlanContext);
+  const rights = useContext(GlowbookPlanContext);
   const openLocked = useContext(LockedAccessContext);
 
   return (
@@ -597,15 +617,14 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
         {SECTIONS.map((item) => (
           <li key={item.to} className={clsx(GROUP_STARTS.has(item.to) && "mt-1 border-t border-[var(--border-subtle)] pt-1")}>
             <NavLink
-              to={itemTarget(item, glowbookPlan)}
+              to={itemTarget(item, rights)}
               end={item.end}
               title={t(item.labelKey)}
-              onClick={
-                item.glowbook && glowbookPlan === false
-                  ? (event: MouseEvent<HTMLAnchorElement>) => lockedClick(event, "atelier", openLocked)
-                  : undefined
-              }
-              aria-haspopup={item.glowbook && glowbookPlan === false ? "dialog" : undefined}
+              onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+                const lock = planLock(item, rights);
+                if (lock) lockedClick(event, lock, openLocked);
+              }}
+              aria-haspopup={planLock(item, rights) ? "dialog" : undefined}
               className={({ isActive }) =>
                 clsx(railRow, isActive ? "text-[var(--gt-ink-900)]" : "text-[var(--gt-ink-600)] hover:text-[var(--gt-ink-900)]", focusRing)
               }
@@ -626,7 +645,7 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
                     )}
                   >
                     <item.icon size={18} aria-hidden="true" strokeWidth={isActive ? 2.2 : 1.8} />
-                    {item.glowbook && glowbookPlan === false && (
+                    {planLock(item, rights) && (
                       <Lock size={10} strokeWidth={2.4} aria-hidden="true" className="absolute -right-0.5 -top-0.5" />
                     )}
                     {item.lounge && <LoungeActivity onRail />}
@@ -637,7 +656,7 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
                   </span>
                   <span className="sr-only">
                     {t(item.labelKey)}
-                    {item.glowbook && glowbookPlan === false ? ` — ${t("account.shell.atelierLocked")}` : ""}
+                    {planLock(item, rights) ? ` — ${t(planLock(item, rights) === "artist" ? "account.shell.artistLocked" : "account.shell.atelierLocked")}` : ""}
                   </span>
                 </>
               )}

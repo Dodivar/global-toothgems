@@ -85,7 +85,8 @@ export const COMPOSITIONS: Record<CompositionId, PlacedPiece[]> = {
 /**
  * The Studio's offers: a free trial, then three plans billed monthly or yearly
  * (yearly = 10 months, "two months free"). Amounts in integer minor units,
- * VAT included (§8) — confirmed by the owner on 2026-10-18.
+ * VAT included (§8) — confirmed by the owner on 2026-10-18; Essential 4,90 € since
+ * decision 152 (2026-11-16).
  *
  * These are the values the pages show until the live prices are read from
  * `studio_plan_prices` (`lib/studioBilling.ts`, `useStudioPlanPrices`), and the
@@ -114,7 +115,7 @@ export interface StudioPlan {
 
 export const STUDIO_PLANS: StudioPlan[] = [
   { id: "trial", amountMinor: 0, currency: "EUR", trialDays: 2 },
-  { id: "essential", amountMinor: 500, yearlyAmountMinor: 5000, currency: "EUR" },
+  { id: "essential", amountMinor: 490, yearlyAmountMinor: 4900, currency: "EUR" },
   { id: "artist", amountMinor: 1990, yearlyAmountMinor: 19900, currency: "EUR", featured: true },
   { id: "atelier", amountMinor: 3990, yearlyAmountMinor: 39900, currency: "EUR" },
 ];
@@ -125,14 +126,18 @@ export const STUDIO_TRIAL_DAYS = STUDIO_PLANS.find((plan) => plan.id === "trial"
 
 /**
  * What each paid plan includes (decision 113, owner's request 2026-10-26):
- * Essential is limited in features and in what it saves, Artist saves more and
- * signs its posts, Atelier has (almost) everything unlimited plus the Glowbook
- * and the AI smile try-on for its clients.
+ * Essential is limited in features and in what it saves, Artist saves more,
+ * signs its posts and shows its work on a Glowbook (decision 152), Atelier has
+ * (almost) everything unlimited plus online bookings, the calendar, the artist
+ * directory and the AI smile try-on for its clients.
  *
  * Display copy of what the database enforces — keep both in step:
  *   * the numbers: `private.studio_plan_limit()` (migration
  *     `20261026170231_studio_plan_entitlements`), a save over them is refused;
- *   * the Glowbook: `private.glowbook_allowed()` (same migration);
+ *   * the Glowbook: `private.glowbook_allowed()` (same migration; Artist and up
+ *     since decision 152, migration `20261116224903_studio_artist_plan_glowbook`);
+ *   * online bookings, the calendar and the artist directory:
+ *     `private.glowbook_booking_allowed()` (decision 152: Atelier only);
  *   * collections: `private.studio_artist_plan()` (decision 113 (b), migration
  *     `20261026190000_studio_templates_collections_artist`); templates: any Studio
  *     tier since decision 133 (owner's request 2026-11-11);
@@ -160,7 +165,10 @@ export interface StudioPlanFeatures {
   templates: boolean;
   /** Collections ("folders"): creating, renaming and filing creations. */
   collections: boolean;
+  /** The public Glowbook page (decision 152: Artist and up). */
   glowbook: boolean;
+  /** Online bookings, the artist's calendar and the "Find an artist" directory (decision 152: Atelier only). */
+  bookings: boolean;
   tryOn: boolean;
 }
 
@@ -176,11 +184,12 @@ export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> 
     templates: true,
     collections: false,
     glowbook: false,
+    bookings: false,
     tryOn: false,
   },
   artist: {
-    creations: 150,
-    gemGroups: 30,
+    creations: 30,
+    gemGroups: 10,
     postSignature: "ownLogo",
     postLayouts: false,
     posts: true,
@@ -188,7 +197,8 @@ export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> 
     transparentExport: true,
     templates: true,
     collections: true,
-    glowbook: false,
+    glowbook: true,
+    bookings: false,
     tryOn: false,
   },
   atelier: {
@@ -202,6 +212,7 @@ export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> 
     templates: true,
     collections: true,
     glowbook: true,
+    bookings: true,
     tryOn: true,
   },
 };

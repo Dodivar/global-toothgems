@@ -5,6 +5,7 @@ import { Button } from "../../ui/Button";
 import { Link } from "../../../lib/navigation";
 import { useToast } from "../../../lib/toast";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
+import { useBookingsPlan } from "../../../lib/studioAccess";
 import { GLOWBOOK_COLORS, initialsOf } from "../../../lib/studioWorkspace/glowbookLook";
 import { certifiedTitles } from "../../../lib/studioWorkspace/glowbookSections";
 import type { Glowbook } from "../../../lib/studioWorkspace/glowbook";
@@ -187,12 +188,15 @@ export function GlowbookBadgeCard({ glowbook }: { glowbook: Glowbook }) {
  * work to people who never visited their page. Says what the directory shows
  * and, while it is on, what is still missing before the page is listed (the
  * database decides: approved page, a place, an approved creation, the plan).
+ * The directory is the Atelier plan's (decision 152): below it the card says
+ * so and offers the switch only to turn a listing off.
  */
 export function GlowbookDirectoryCard({ glowbook, hasApprovedCreation }: { glowbook: Glowbook; hasApprovedCreation: boolean }) {
   const { t } = useTranslation();
   const gb = useGlowbook();
   const toggleId = useId();
   const [busy, setBusy] = useState(false);
+  const planLocked = useBookingsPlan() === false;
   const missing = [
     glowbook.status !== "approved" && "page",
     !glowbook.look.place && "place",
@@ -206,6 +210,18 @@ export function GlowbookDirectoryCard({ glowbook, hasApprovedCreation }: { glowb
         {t("studio.glowbook.directory.title")}
       </h2>
       <p className="m-0 text-[13px] leading-relaxed text-[var(--text-muted)]">{t("studio.glowbook.directory.body")}</p>
+      {planLocked && (
+        <p className="m-0 inline-flex items-start gap-1.5 text-[12.5px] font-semibold text-[var(--text-primary)]">
+          <Lock size={14} aria-hidden="true" className="mt-0.5 flex-none" />
+          <span>
+            {t("studio.glowbook.directory.planLocked")}{" "}
+            <Link to="/compte/studio" className="underline underline-offset-4">
+              {t("studio.glowbook.directory.planLockedCta")}
+            </Link>
+          </span>
+        </p>
+      )}
+      {(!planLocked || glowbook.inDirectory) && (
       <label htmlFor={toggleId} className="inline-flex w-fit cursor-pointer items-center gap-2 text-[13px] font-semibold text-[var(--text-primary)]">
         <input
           id={toggleId}
@@ -221,7 +237,8 @@ export function GlowbookDirectoryCard({ glowbook, hasApprovedCreation }: { glowb
         />
         {t("studio.glowbook.directory.toggle")}
       </label>
-      {!glowbook.inDirectory ? (
+      )}
+      {planLocked ? null : !glowbook.inDirectory ? (
         <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.directory.off")}</p>
       ) : missing.length ? (
         <div className="grid gap-1 text-[12.5px] text-[var(--text-muted)]">

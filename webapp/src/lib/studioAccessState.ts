@@ -60,6 +60,8 @@ export interface StudioAccessInfo {
    */
   tier: StudioTier | null;
   glowbook: boolean;
+  /** Online bookings, the calendar and the artist directory (decision 152: Atelier only). */
+  bookings: boolean;
   limits: StudioCounts<number | null>;
   usage: StudioCounts<number>;
 }
@@ -117,6 +119,7 @@ export function parseAccessRow(raw: unknown): StudioAccessInfo | null {
     grantActive: row.grant_active === true,
     tier: isStudioTier(row.tier) ? row.tier : null,
     glowbook: row.glowbook === true,
+    bookings: row.bookings === true,
     limits: { creations: count(record(row.limits).creations), gemGroups: count(record(row.limits).gem_groups) },
     usage: { creations: count(record(row.usage).creations) ?? 0, gemGroups: count(record(row.usage).gem_groups) ?? 0 },
   };

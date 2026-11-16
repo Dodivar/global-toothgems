@@ -315,7 +315,9 @@
     "city": "Add your city in the Look tab to also appear on your city’s page.",
     "off": "You do not appear in the directory. Your Glowbook stays reachable through its link.",
     "open": "See the directory",
-    "failed": "The setting could not be saved. Try again."
+    "failed": "The setting could not be saved. Try again.",
+    "planLocked": "The directory comes with the Atelier plan.",
+    "planLockedCta": "See the plans"
   },
   "badge": {
     "label": "Global Toothgems certified artist",
@@ -433,7 +435,7 @@
     "back": "3D Studio",
     "eyebrow": "Glowbook · {{plan}} plan",
     "title": "All your creations, in one link.",
-    "body": "The Glowbook is your artist showcase: a public page to put in your Instagram bio, where clients spin your creations in 3D, then book their appointment online, within your hours.",
+    "body": "The Glowbook is your artist showcase: a public page to put in your Instagram bio, where clients spin your creations in 3D. With the Atelier plan, they also book their appointment there online.",
     "price": "Included in the {{plan}} plan, from {{price}} / month.",
     "see": "See what’s inside",
     "ctaOpen": "Open my Glowbook",
@@ -481,6 +483,7 @@
         "share": "Our team approves your page, then you share your link."
       },
       "note": "Every page and every creation is checked by the Global Toothgems team before it goes public."
-    }
+    },
+    "withPlan": "With the {{plan}} plan"
   }
 }

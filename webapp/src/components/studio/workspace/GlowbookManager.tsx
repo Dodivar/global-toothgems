@@ -42,7 +42,7 @@ import {
 } from "../../../lib/studioWorkspace/glowbook";
 import { glowbookCounts, glowbookTodos, type GlowbookPanel, type GlowbookTodo } from "../../../lib/studioWorkspace/glowbookDashboard";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
-import { useGlowbookPlan } from "../../../lib/studioAccess";
+import { useBookingsPlan, useGlowbookPlan } from "../../../lib/studioAccess";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useToast } from "../../../lib/toast";
@@ -67,7 +67,7 @@ import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat, workspa
 export function GlowbookManager() {
   const { t } = useWorkspaceFormat();
   const gb = useGlowbook();
-  // Below the Atelier plan the Glowbook is closed (decision 113): the database refuses its writes,
+  // Below the Artist plan the Glowbook is closed (decisions 113, 152): the database refuses its writes,
   // and the section hands over to the presentation page (`GlowbookIntro`).
   const locked = useGlowbookPlan() === false;
 
@@ -254,6 +254,7 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
   const gb = useGlowbook();
   const url = useGlowbookUrl(glowbook.handle);
   const copy = useCopyLink(url);
+  const bookings = useBookingsPlan() === true;
   const live = glowbook.status === "approved";
   const avatarPath = gb.draftLook?.avatarPath ?? glowbook.look.avatarPath;
   const avatarUrl = avatarPath ? (gb.mediaUrls.get(avatarPath) ?? null) : null;
@@ -327,7 +328,8 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
             t(`studio.glowbook.page.${glowbook.status}`)
           )}
         </p>
-        {/* The calendar has its own page in the member space (decision 147). */}
+        {/* The calendar has its own page in the member space (decision 147), on the Atelier plan (decision 152). */}
+        {bookings && (
         <Link
           to={AGENDA_PATH}
           className={clsx("inline-flex w-fit items-center gap-1.5 text-[13px] font-bold text-[var(--text-primary)] underline decoration-1 underline-offset-4", focusRing)}
@@ -336,6 +338,7 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
           {t("nav.studioAgenda")}
           <ArrowRight size={14} aria-hidden="true" />
         </Link>
+        )}
       </div>
     </section>
   );

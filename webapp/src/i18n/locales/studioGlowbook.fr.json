@@ -315,7 +315,9 @@
     "city": "Indiquez votre ville dans l’onglet Apparence pour figurer aussi sur la page de votre ville.",
     "off": "Vous n’apparaissez pas dans l’annuaire. Votre Glowbook reste accessible par son lien.",
     "open": "Voir l’annuaire",
-    "failed": "Le réglage n’a pas pu être enregistré. Réessayez."
+    "failed": "Le réglage n’a pas pu être enregistré. Réessayez.",
+    "planLocked": "L’annuaire est réservé à l’abonnement Atelier.",
+    "planLockedCta": "Voir les abonnements"
   },
   "badge": {
     "label": "Artiste certifiée Global Toothgems",
@@ -433,7 +435,7 @@
     "back": "Studio 3D",
     "eyebrow": "Glowbook · formule {{plan}}",
     "title": "Toutes vos créations, en un seul lien.",
-    "body": "Le Glowbook est votre vitrine d’artiste : une page publique à mettre dans votre bio Instagram, où vos clientes font tourner vos créations en 3D puis réservent leur rendez-vous en ligne, selon vos horaires.",
+    "body": "Le Glowbook est votre vitrine d’artiste : une page publique à mettre dans votre bio Instagram, où vos clientes font tourner vos créations en 3D. Avec la formule Atelier, elles y réservent aussi leur rendez-vous en ligne.",
     "price": "Inclus dans la formule {{plan}}, dès {{price}} / mois.",
     "see": "Voir ce qu’il contient",
     "ctaOpen": "Ouvrir mon Glowbook",
@@ -481,6 +483,7 @@
         "share": "Notre équipe valide votre page, puis vous partagez votre lien."
       },
       "note": "Chaque page et chaque création est vérifiée par l’équipe Global Toothgems avant d’être publique."
-    }
+    },
+    "withPlan": "Avec la formule {{plan}}"
   }
 }

@@ -612,7 +612,7 @@
           "The Glowbook is your public showcase: a page in your name (/glowbook/your-handle), to link from your Instagram bio, showing the creations you choose. Each opens in 3D for visitors, who can also order its gems.",
           "Create the page from “My Glowbook” (display name, handle, bio). Add a creation from its detail in My Creations, with “Add to my Glowbook” (never from the editor); 60 creations at most.",
           "Moderation: the page and every new creation are approved by the Global Toothgems team before they show. If refused, the reason is shown; edit and send it again. Once a creation is approved, your next saves are published at once: the Studio warns you before saving. Changing your handle changes the address and sends the page back for approval.",
-          "The page stays visible while your Atelier plan is active. Deleting a creation also takes it off your Glowbook."
+          "The page stays visible while your Artist or Atelier plan is active. Deleting a creation also takes it off your Glowbook."
         ]
       },
       "glowbookLook": {
@@ -662,8 +662,8 @@
         ],
         "points": [
           "Essential: 15 saved creations and 3 Gem Groups; Global Toothgems templates.",
-          "Artist: 150 creations and 30 groups; front view, placement sheet and share links; social posts, signed with your logo or unsigned; collections and folders.",
-          "Atelier: unlimited creations and groups; everything in Artist; post layouts; Glowbook, with online booking, a calendar synced with Google, Apple or Outlook and a place in the “Find an artist” directory; AI smile try-on, for you and for visitors of your creations.",
+          "Artist: 30 creations and 10 groups; front view, placement sheet and share links; social posts, signed with your logo or unsigned; collections and folders; your public Glowbook.",
+          "Atelier: unlimited creations and groups; everything in Artist; post layouts; online booking from your Glowbook, a calendar synced with Google, Apple or Outlook and a place in the “Find an artist” directory; AI smile try-on, for you and for visitors of your creations.",
           "Over the limit, a new save is refused (nothing is lost): editing or deleting a creation is always possible."
         ]
       },

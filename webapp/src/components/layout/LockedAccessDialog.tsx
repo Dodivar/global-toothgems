@@ -18,7 +18,8 @@ import { GLOWBOOK_INTRO_PATH, STUDIO_SUBSCRIBE_PATH } from "../../lib/studioUrl"
  * decides access.
  */
 
-export type LockedAccessKind = "lounge" | "atelier";
+/** `artist`: the Glowbook page (Artist plan); `atelier`: the calendar and bookings (Atelier plan, decision 152). */
+export type LockedAccessKind = "lounge" | "artist" | "atelier";
 
 interface LockedCopy {
   eyebrow: string;
@@ -47,6 +48,17 @@ function useLockedCopy(kind: LockedAccessKind): LockedCopy {
       perks: (["languages", "experts"] as const).map((perk) => t(`lounge.locked.perks.${perk}`)),
       cta: { to: "/academy", label: t("lounge.locked.cta") },
       note: t("lounge.locked.note"),
+    };
+  }
+  if (kind === "artist") {
+    return {
+      eyebrow: t("account.shell.lockedArtist.eyebrow"),
+      title: t("account.shell.lockedArtist.title"),
+      body: t("account.shell.lockedArtist.body"),
+      perks: (["page", "creations", "map"] as const).map((perk) => t(`account.shell.lockedArtist.perks.${perk}`)),
+      cta: { to: STUDIO_SUBSCRIBE_PATH, label: t("account.shell.lockedArtist.cta") },
+      secondary: { to: GLOWBOOK_INTRO_PATH, label: t("account.shell.lockedArtist.secondary") },
+      note: t("account.shell.lockedArtist.note"),
     };
   }
   return {

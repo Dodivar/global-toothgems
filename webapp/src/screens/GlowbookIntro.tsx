@@ -32,14 +32,15 @@ import { useReveal } from "../lib/useReveal";
 const SECTION_X = "px-4 sm:px-[clamp(16px,4vw,48px)]";
 const BENEFITS_ID = "gt-glowbook-intro-benefits";
 
-const BENEFITS = [
+/** `bookings`: the benefit comes with the calendar's plan (Atelier), not the Glowbook's (decision 152). */
+const BENEFITS: readonly { key: string; icon: typeof Link2; bookings?: boolean }[] = [
   { key: "link", icon: Link2 },
   { key: "creations", icon: Rotate3d },
-  { key: "booking", icon: CalendarCheck },
-  { key: "calendar", icon: RefreshCw },
+  { key: "booking", icon: CalendarCheck, bookings: true },
+  { key: "calendar", icon: RefreshCw, bookings: true },
   { key: "identity", icon: Palette },
-  { key: "found", icon: MapPin },
-] as const;
+  { key: "found", icon: MapPin, bookings: true },
+];
 
 const STEPS = ["plan", "page", "share"] as const;
 
@@ -60,6 +61,8 @@ function GlowbookIntroContent() {
   const { formatMoney } = useFormat();
   const planId = lowestPlanWith("glowbook");
   const plan = t(`studio.plans.items.${planId ?? "atelier"}.name`);
+  const bookingsPlanId = lowestPlanWith("bookings");
+  const bookingsPlan = t(`studio.plans.items.${bookingsPlanId ?? "atelier"}.name`);
   const offer = STUDIO_PLANS.find((p) => p.id === planId);
   const price = offer?.amountMinor ? formatMoney(offer.amountMinor, offer.currency) : null;
   const cta = useGlowbookCta(plan);
@@ -150,7 +153,7 @@ function GlowbookIntroContent() {
             </h2>
           </div>
           <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {BENEFITS.map(({ key, icon: Icon }) => (
+            {BENEFITS.map(({ key, icon: Icon, bookings }) => (
               <li
                 key={key}
                 className="gt-studio-b-card grid grid-cols-[auto_minmax(0,1fr)] content-start items-start gap-x-4 gap-y-1 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] p-4 sm:grid-cols-1 sm:gap-y-4 sm:p-6"
@@ -162,7 +165,14 @@ function GlowbookIntroContent() {
                   <Icon size={19} />
                 </span>
                 <h3 className="text-[length:var(--text-h4)]">{t(`studio.glowbook.intro.benefits.items.${key}.title`)}</h3>
-                <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t(`studio.glowbook.intro.benefits.items.${key}.body`)}</p>
+                <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
+                  {t(`studio.glowbook.intro.benefits.items.${key}.body`)}
+                  {bookings && bookingsPlanId !== planId && (
+                    <span className="mt-2 block w-fit rounded-[var(--radius-pill)] bg-[var(--gt-blue-50)] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gt-blue-700)]">
+                      {t("studio.glowbook.intro.withPlan", { plan: bookingsPlan })}
+                    </span>
+                  )}
+                </p>
               </li>
             ))}
           </ul>

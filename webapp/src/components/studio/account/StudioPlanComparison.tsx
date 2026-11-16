@@ -33,10 +33,10 @@ const ROWS: { key: string; cells: Record<StudioPaidPlanId, Cell> }[] = [
   { key: "signature", cells: perPlan((f) => (f.posts ? f.postSignature : false)) },
   { key: "layouts", cells: perPlan((f) => f.postLayouts) },
   { key: "glowbook", cells: perPlan((f) => f.glowbook) },
-  // Part of the Glowbook, under the same plan check (decisions 144, 145).
-  { key: "bookings", cells: perPlan((f) => f.glowbook) },
-  { key: "calendarSync", cells: perPlan((f) => f.glowbook) },
-  { key: "directory", cells: perPlan((f) => f.glowbook) },
+  // The Atelier plan's own check, apart from the Glowbook page (decision 152).
+  { key: "bookings", cells: perPlan((f) => f.bookings) },
+  { key: "calendarSync", cells: perPlan((f) => f.bookings) },
+  { key: "directory", cells: perPlan((f) => f.bookings) },
   { key: "tryOn", cells: perPlan((f) => f.tryOn) },
 ];
 

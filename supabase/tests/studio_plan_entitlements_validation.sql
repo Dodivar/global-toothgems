@@ -1,22 +1,26 @@
 -- =============================================================================
 -- 3D Studio plan entitlements validation suite
--- (migration 20261026170231_studio_plan_entitlements, decision 113)
+-- (migration 20261026170231_studio_plan_entitlements, decision 113;
+--  migration 20261116224903_studio_artist_plan_glowbook, decision 152)
 -- =============================================================================
---   P1  the numbers: essential 15 creations / 3 Gem Groups, artist 150 / 30,
+--   P1  the numbers: essential 15 creations / 3 Gem Groups, artist 30 / 10,
 --       atelier and no tier unlimited (null);
 --   P2  a trial member (essential) saves up to 15 creations and 3 Gem Groups
 --       as themselves; the next one is refused with GTL01; editing and
 --       deleting are not limited, and once under the limit a save passes;
---   P3  an Artist member saves beyond Essential's numbers; an Atelier member
---       and active staff are never limited;
+--   P3  an Artist member saves beyond Essential's numbers up to 10 Gem Groups
+--       (the 11th is refused); an Atelier member and active staff are never
+--       limited;
 --   P4  after a downgrade the member keeps every row (read and edit) but
 --       saves no new one over the new limit;
---   P5  the Glowbook is the Atelier plan's: an Artist or trial member cannot
---       open one (42501); an Atelier member can; once the author drops to
---       Artist the page, its 3D creation and its renders are hidden, and come
---       back on an upgrade; the owner may still delete it;
---   P6  studio_access_state() returns the tier, the Glowbook flag, the limits
---       and the usage of the caller only.
+--   P5  the Glowbook is the Artist and Atelier plans' (decision 152): a trial
+--       member cannot open one (42501); an Artist member and an Atelier member
+--       can; bookings, the calendar and the directory are Atelier's only
+--       (private.glowbook_booking_allowed); once the author drops to Essential
+--       the page, its 3D creation and its renders are hidden, and come back on
+--       an upgrade; the owner may still delete it;
+--   P6  studio_access_state() returns the tier, the Glowbook and bookings
+--       flags, the limits and the usage of the caller only.
 -- ONE transaction, ALWAYS rolled back by raising `ALL STUDIO PLAN TESTS PASSED`.
 -- =============================================================================
 
@@ -57,7 +61,7 @@ begin
 
   -- P1: the numbers
   if private.studio_plan_limit('essential', 'creations') <> 15 or private.studio_plan_limit('essential', 'gem_groups') <> 3
-     or private.studio_plan_limit('artist', 'creations') <> 150 or private.studio_plan_limit('artist', 'gem_groups') <> 30
+     or private.studio_plan_limit('artist', 'creations') <> 30 or private.studio_plan_limit('artist', 'gem_groups') <> 10
      or private.studio_plan_limit('atelier', 'creations') is not null or private.studio_plan_limit(null, 'creations') is not null then
     raise exception 'FAIL P1: plan numbers';
   end if;
@@ -97,9 +101,15 @@ begin
   for n in 1..20 loop
     insert into public.creations (name, scene_data) values ('Art ' || n, v_scene);
   end loop;
-  for n in 1..5 loop
+  for n in 1..10 loop
     insert into public.gem_groups (name, group_data) values ('Art group ' || n, v_group);
   end loop;
+  v_state := null;
+  begin
+    insert into public.gem_groups (name, group_data) values ('Art group 11', v_group);
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from 'GTL01' then raise exception 'FAIL P3: 11th Artist Gem Group (%)', v_state; end if;
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', atelierm, 'role', 'authenticated')::text, true);
   for n in 1..160 loop
     insert into public.creations (name, scene_data) values ('Atl ' || n, v_scene) returning id into c_show;
@@ -133,17 +143,36 @@ begin
   update public.studio_subscriptions set plan = 'artist' where user_id = artistm;
   passed := passed || 'P4'::text;
 
-  -- P5: the Glowbook is Atelier's
+  -- P5: the Glowbook is Artist's and Atelier's, bookings Atelier's (decision 152)
   perform set_config('role', 'authenticated', true);
-  foreach v_json in array array[to_jsonb(artistm), to_jsonb(trialist)] loop
-    perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', v_json #>> '{}', 'role', 'authenticated')::text, true);
-    v_state := null;
-    begin
-      perform public.studio_save_showcase('plan.' || substr(v_json #>> '{}', 33), 'Below Atelier', '', null);
-    exception when others then v_state := sqlstate;
-    end;
-    if v_state is distinct from '42501' then raise exception 'FAIL P5: Glowbook below Atelier (%)', v_state; end if;
-  end loop;
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', trialist, 'role', 'authenticated')::text, true);
+  v_state := null;
+  begin
+    perform public.studio_save_showcase('plan.trial', 'Below Artist', '', null);
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL P5: Glowbook below Artist (%)', v_state; end if;
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artistm, 'role', 'authenticated')::text, true);
+  perform public.studio_save_showcase('plan.artist', 'Artist', '', null);
+  v_state := null;
+  begin
+    perform public.glowbook_save_booking_settings(true, 'Europe/Paris', 1, 30, '[{"weekday":1,"start_hour":9,"end_hour":12}]'::jsonb);
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL P5: Artist opened a calendar (%)', v_state; end if;
+  v_state := null;
+  begin
+    perform public.glowbook_create_calendar_feed();
+  exception when others then v_state := sqlstate;
+  end;
+  if v_state is distinct from '42501' then raise exception 'FAIL P5: Artist created a calendar feed (%)', v_state; end if;
+  execute 'reset role';
+  if private.glowbook_booking_allowed(artistm) or private.glowbook_booking_allowed(trialist)
+     or not private.glowbook_booking_allowed(atelierm)
+     or not private.glowbook_allowed(artistm) then
+    raise exception 'FAIL P5: plan helpers';
+  end if;
+  perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', atelierm, 'role', 'authenticated')::text, true);
   perform public.studio_save_showcase('plan.atelier', 'Atelier', '', null);
   update public.creations set thumbnail_path = atelierm || '/show.jpg' where id = c_show;
@@ -161,7 +190,7 @@ begin
   if v_cnt <> 1 then raise exception 'FAIL P5: Atelier render not readable'; end if;
 
   execute 'reset role';
-  update public.studio_subscriptions set plan = 'artist' where user_id = atelierm;
+  update public.studio_subscriptions set plan = 'essential' where user_id = atelierm;
   perform set_config('role', 'anon', true);
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   if public.studio_public_showcase('plan.atelier') is not null then raise exception 'FAIL P5: page shown after downgrade'; end if;
@@ -183,7 +212,7 @@ begin
   perform set_config('request.jwt.claims', '{"role":"anon"}', true);
   if public.studio_public_showcase('plan.atelier') is null then raise exception 'FAIL P5: page not back after upgrade'; end if;
   execute 'reset role';
-  update public.studio_subscriptions set plan = 'artist' where user_id = atelierm;
+  update public.studio_subscriptions set plan = 'essential' where user_id = atelierm;
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', atelierm, 'role', 'authenticated')::text, true);
   delete from public.studio_showcases where user_id = atelierm;
@@ -194,14 +223,20 @@ begin
   -- P6: what the browser is told (the trial member: 15 creations, 3 groups)
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', trialist, 'role', 'authenticated')::text, true);
   v_json := public.studio_access_state();
-  if v_json ->> 'tier' <> 'essential' or (v_json ->> 'glowbook')::boolean
+  if v_json ->> 'tier' <> 'essential' or (v_json ->> 'glowbook')::boolean or (v_json ->> 'bookings')::boolean
      or (v_json #>> '{limits,creations}')::int <> 15 or (v_json #>> '{limits,gem_groups}')::int <> 3
      or (v_json #>> '{usage,creations}')::int <> 15 or (v_json #>> '{usage,gem_groups}')::int <> 3 then
     raise exception 'FAIL P6: trial state %', v_json;
   end if;
+  perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', artistm, 'role', 'authenticated')::text, true);
+  v_json := public.studio_access_state();
+  if v_json ->> 'tier' <> 'artist' or not (v_json ->> 'glowbook')::boolean or (v_json ->> 'bookings')::boolean
+     or (v_json #>> '{limits,creations}')::int <> 30 or (v_json #>> '{limits,gem_groups}')::int <> 10 then
+    raise exception 'FAIL P6: artist state %', v_json;
+  end if;
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', staffer, 'role', 'authenticated')::text, true);
   v_json := public.studio_access_state();
-  if v_json ->> 'tier' <> 'atelier' or not (v_json ->> 'glowbook')::boolean
+  if v_json ->> 'tier' <> 'atelier' or not (v_json ->> 'glowbook')::boolean or not (v_json ->> 'bookings')::boolean
      or v_json #> '{limits,creations}' <> 'null'::jsonb or (v_json #>> '{usage,gem_groups}')::int <> 20 then
     raise exception 'FAIL P6: staff state %', v_json;
   end if;

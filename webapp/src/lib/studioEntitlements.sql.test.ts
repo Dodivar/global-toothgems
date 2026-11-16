@@ -51,6 +51,16 @@ describe("the plan table matches the database", () => {
     expect(tiersAllowed(latestDefinition("private.glowbook_allowed"))).toEqual(fromTier(lowestPlanWith("glowbook")));
   });
 
+  it("bookings, the calendar and the directory (private.glowbook_booking_allowed, decision 152)", () => {
+    expect(tiersAllowed(latestDefinition("private.glowbook_booking_allowed"))).toEqual(fromTier(lowestPlanWith("bookings")));
+    for (const fn of ["private.glowbook_booking_open", "private.glowbook_require_artist", "public.glowbook_calendar_import_targets", "public.glowbook_directory"]) {
+      const body = latestDefinition(fn);
+      expect(body, fn).toMatch(/private\.glowbook_booking_allowed\(/);
+      expect(body, fn).not.toMatch(/private\.glowbook_allowed\(/);
+    }
+    expect(latestDefinition("public.glowbook_create_calendar_feed")).toMatch(/private\.glowbook_require_artist\(\)/);
+  });
+
   it("the AI try-on (private.studio_try_on_allowed)", () => {
     expect(tiersAllowed(latestDefinition("private.studio_try_on_allowed"))).toEqual(fromTier(lowestPlanWith("tryOn")));
   });
