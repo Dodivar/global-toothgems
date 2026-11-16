@@ -415,6 +415,22 @@
       "duplicateVertical": "Vertical copy",
       "hint": "Horizontal reflects across the midline of the arch (11 ↔ 21…); vertical reflects from one arch to the other (11 ↔ 41…), or from one edge of the tooth to the other when the model has a single arch. Pieces snap back onto the enamel and never overlap."
     },
+    "lock": {
+      "lock_one": "Lock",
+      "lock_other": "Lock all",
+      "unlock_one": "Unlock",
+      "unlock_other": "Unlock all",
+      "unlockAll": "Unlock every selected piece",
+      "free_one": "Piece unlocked",
+      "free_other": "Pieces unlocked",
+      "locked_one": "Piece locked",
+      "locked_other": "{{count}} pieces locked",
+      "someLocked_one": "{{count}} of {{total}} pieces locked",
+      "someLocked_other": "{{count}} of {{total}} pieces locked",
+      "hint_one": "It can no longer be moved or changed. Unlock it to change its position, colour or size.",
+      "hint_other": "A locked piece can no longer be moved or changed; changes apply to the unlocked pieces only. Each piece unlocks on its own, without making a group.",
+      "badge": "Locked"
+    },
     "inspector": {
       "label": "Properties",
       "multiSub_one": "On {{count}} tooth",
@@ -497,6 +513,7 @@
       "deselect": "Deselect / cancel",
       "pan": "Pan the camera",
       "focus": "Focus on a tooth",
+      "lock": "Lock / unlock the selection",
       "keys": {
         "undoRedo": "Ctrl Z|Ctrl ⇧ Z",
         "selectAll": "Ctrl A",
@@ -508,7 +525,8 @@
         "delete": "Del",
         "deselect": "Esc",
         "pan": "⇧ + drag",
-        "focus": "Double-click"
+        "focus": "Double-click",
+        "lock": "Shift L"
       }
     },
     "webgl": {
@@ -529,6 +547,7 @@
       "duplicateMirrorV": "Duplicate mirrored vertically",
       "mirrorH": "Mirror horizontally",
       "mirrorV": "Mirror vertically",
+      "lock": "Lock / unlock",
       "delete": "Delete",
       "reset": "Restore the default buttons"
     },
@@ -592,7 +611,10 @@
         "empty": "This file contains no 3D model"
       },
       "addedToCart_one": "{{count}} item added to your cart",
-      "addedToCart_other": "{{count}} items added to your cart"
+      "addedToCart_other": "{{count}} items added to your cart",
+      "lockedNoMove": "This piece is locked — unlock it to move it",
+      "lockedKept_one": "{{count}} locked piece was not deleted",
+      "lockedKept_other": "{{count}} locked pieces were not deleted"
     },
     "pieceUnavailable": "Gem no longer in the shop",
     "shopPrice": "Shop price: {{price}}",

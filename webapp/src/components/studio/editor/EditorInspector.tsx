@@ -13,6 +13,7 @@ import {
   FlipHorizontal2,
   FlipVertical2,
   Lock,
+  LockOpen,
   Maximize2,
   RotateCcw,
   RotateCw,
@@ -37,6 +38,7 @@ import {
   mirrorSelection,
   removePieces,
   rotatePieces,
+  setPiecesLocked,
 } from "../../../lib/studio3d/actions";
 import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
@@ -58,6 +60,7 @@ const selectClass = clsx(
 const miniButton = clsx(
   "inline-flex h-8 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[var(--radius-pill)] border border-[var(--border-default)] bg-[var(--surface-card)] px-3 text-[11px] font-semibold text-[var(--text-body)] transition-colors",
   "hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]",
+  "disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-[var(--border-default)] disabled:hover:text-[var(--text-body)]",
   focusRing,
 );
 
@@ -219,16 +222,17 @@ function QuickRotate({ isOn, onSet, onPlus90 }: { isOn: (deg: number) => boolean
   );
 }
 
-function MirrorRow() {
+/** `locked`: every selected piece is locked — they cannot be mirrored in place, only copied. */
+function MirrorRow({ locked = false }: { locked?: boolean }) {
   const { t } = useEditorLabels();
   return (
     <>
       <div className="flex gap-2">
-        <button type="button" className={miniButton} onClick={() => mirrorSelection("h")}>
+        <button type="button" className={miniButton} disabled={locked} onClick={() => mirrorSelection("h")}>
           <FlipHorizontal2 size={14} aria-hidden="true" />
           {t("studio.editor.mirror.horizontal")}
         </button>
-        <button type="button" className={miniButton} onClick={() => mirrorSelection("v")}>
+        <button type="button" className={miniButton} disabled={locked} onClick={() => mirrorSelection("v")}>
           <FlipVertical2 size={14} aria-hidden="true" />
           {t("studio.editor.mirror.vertical")}
         </button>
@@ -247,7 +251,18 @@ function MirrorRow() {
   );
 }
 
-function ActionRow({ onDuplicate, onDelete, count }: { onDuplicate: () => void; onDelete: () => void; count: number }) {
+function ActionRow({
+  onDuplicate,
+  onDelete,
+  count,
+  deleteDisabled = false,
+}: {
+  onDuplicate: () => void;
+  onDelete: () => void;
+  count: number;
+  /** Every piece is locked: nothing to delete. */
+  deleteDisabled?: boolean;
+}) {
   const { t } = useEditorLabels();
   return (
     <div className="mt-6 grid grid-cols-2 gap-2">
@@ -265,14 +280,62 @@ function ActionRow({ onDuplicate, onDelete, count }: { onDuplicate: () => void; 
       <button
         type="button"
         onClick={onDelete}
+        disabled={deleteDisabled}
         className={clsx(
-          "inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-pill)] border border-[var(--gt-red-400)] text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--status-error-fg)] transition-colors hover:bg-[var(--status-error-bg)]",
+          "inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-pill)] border border-[var(--gt-red-400)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent text-[11px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--status-error-fg)] transition-colors hover:bg-[var(--status-error-bg)]",
           focusRing,
         )}
       >
         <Trash2 size={14} aria-hidden="true" />
         {t("studio.editor.context.delete", { count })}
       </button>
+    </div>
+  );
+}
+
+/**
+ * Lock or unlock the selected pieces. A locked piece stays where it is and as
+ * it is; each piece is locked on its own (no group), so one of them can be
+ * unlocked to change it while the others stay locked.
+ */
+function LockControl({ ids, lockedCount }: { ids: string[]; lockedCount: number }) {
+  const { t } = useEditorLabels();
+  const count = ids.length;
+  const allLocked = lockedCount === count;
+  const Icon = allLocked ? LockOpen : Lock;
+  return (
+    <div
+      className={clsx(
+        "mt-4 rounded-[var(--radius-md)] border px-3 py-2.5",
+        lockedCount ? "border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)]" : "border-[var(--border-subtle)] bg-[var(--surface-page)]",
+      )}
+    >
+      <div className="flex items-center gap-2.5">
+        {lockedCount > 0 && <Lock size={15} aria-hidden="true" className="flex-none text-[var(--gt-blue-700)]" />}
+        <p className="m-0 min-w-0 flex-1 text-[11.5px] font-semibold leading-snug text-[var(--text-body)]" role="status">
+          {lockedCount === 0
+            ? t("studio.editor.lock.free", { count })
+            : allLocked
+              ? t("studio.editor.lock.locked", { count })
+              : t("studio.editor.lock.someLocked", { count: lockedCount, total: count })}
+        </p>
+        <button
+          type="button"
+          className={clsx(miniButton, "flex-none")}
+          aria-pressed={allLocked}
+          onClick={() => setPiecesLocked(ids, !allLocked)}
+        >
+          <Icon size={13} aria-hidden="true" />
+          {allLocked ? t("studio.editor.lock.unlock", { count }) : t("studio.editor.lock.lock", { count })}
+        </button>
+      </div>
+      {lockedCount > 0 && <Hint className="mt-1.5">{t("studio.editor.lock.hint", { count })}</Hint>}
+      {lockedCount > 0 && !allLocked && (
+        <button type="button" className={clsx(miniButton, "mt-2 w-full")} onClick={() => setPiecesLocked(ids, false)}>
+          <LockOpen size={13} aria-hidden="true" />
+          {t("studio.editor.lock.unlockAll")}
+        </button>
+      )}
     </div>
   );
 }
@@ -287,6 +350,9 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
   const ids = selected.map((j) => j.id);
   const teethUsed = new Set(selected.map((j) => j.toothId)).size;
   const alignLabelId = useId();
+  const lockedCount = selected.filter((j) => j.locked).length;
+  // Every piece locked: nothing here can change them (the store would refuse it anyway).
+  const allLocked = lockedCount === selected.length;
 
   return (
     <>
@@ -299,75 +365,78 @@ function MultiPanel({ selected }: { selected: PlacedJewelry[] }) {
         </SectionInfo>
       </div>
       <Hint className="mt-1.5">{t("studio.editor.inspector.multiSub", { count: teethUsed })}</Hint>
+      <LockControl ids={ids} lockedCount={lockedCount} />
       <SaveSelectionAsGroup ids={ids} />
 
-      <SectionLabel info={t("studio.editor.inspector.colorHint")} topic="colors">{t("studio.editor.inspector.colorAll")}</SectionLabel>
-      <ColorOptions selected={selected} />
+      <fieldset className="m-0 min-w-0 border-0 p-0 disabled:opacity-50" disabled={allLocked}>
+        <SectionLabel info={t("studio.editor.inspector.colorHint")} topic="colors">{t("studio.editor.inspector.colorAll")}</SectionLabel>
+        <ColorOptions selected={selected} />
 
-      <SectionLabel info={t("studio.editor.inspector.sizeHint")} topic="sizes">{t("studio.editor.inspector.sizeAll")}</SectionLabel>
-      <SizeOptions selected={selected} />
+        <SectionLabel info={t("studio.editor.inspector.sizeHint")} topic="sizes">{t("studio.editor.inspector.sizeAll")}</SectionLabel>
+        <SizeOptions selected={selected} />
 
-      <SectionLabel info={t("studio.editor.inspector.rotationGroupHint")} topic="rotation">{t("studio.editor.inspector.rotationAll")}</SectionLabel>
-      <GroupTurnButtons ids={ids} />
+        <SectionLabel info={t("studio.editor.inspector.rotationGroupHint")} topic="rotation">{t("studio.editor.inspector.rotationAll")}</SectionLabel>
+        <GroupTurnButtons ids={ids} />
 
-      <SectionLabel>{t("studio.editor.inspector.mountingAll")}</SectionLabel>
-      <Slider
-        label={t("studio.editor.inspector.standoff")}
-        value={first.offset ?? 0}
-        {...OFFSET_RANGE}
-        format={offsetText}
-        onCommit={(v) => studioStore.updateSelected({ offset: v })}
-      />
+        <SectionLabel>{t("studio.editor.inspector.mountingAll")}</SectionLabel>
+        <Slider
+          label={t("studio.editor.inspector.standoff")}
+          value={first.offset ?? 0}
+          {...OFFSET_RANGE}
+          format={offsetText}
+          onCommit={(v) => studioStore.updateSelected({ offset: v })}
+        />
 
-      <SectionLabel info={t("studio.editor.inspector.layoutHint")} topic="layout">{t("studio.editor.inspector.layout")}</SectionLabel>
-      <div role="group" aria-labelledby={alignLabelId} className="flex items-center gap-2">
-        <span id={alignLabelId} className="flex-none text-[11px] font-semibold text-[var(--text-muted)]">
-          {t("studio.editor.inspector.align")}
-        </span>
-        <button
-          type="button"
-          className={miniButton}
-          aria-label={t("studio.editor.inspector.alignHorizontalLabel")}
-          title={t("studio.editor.inspector.alignHorizontalLabel")}
-          onClick={() => alignSelection("h")}
-        >
-          <AlignCenterHorizontal size={14} aria-hidden="true" />
-          {t("studio.editor.inspector.alignHorizontal")}
-        </button>
-        <button
-          type="button"
-          className={miniButton}
-          aria-label={t("studio.editor.inspector.alignVerticalLabel")}
-          title={t("studio.editor.inspector.alignVerticalLabel")}
-          onClick={() => alignSelection("v")}
-        >
-          <AlignCenterVertical size={14} aria-hidden="true" />
-          {t("studio.editor.inspector.alignVertical")}
-        </button>
-      </div>
-      <div className="mt-2 flex gap-2">
-        {/* Spacing needs a piece between the two outermost ones. */}
-        {selected.length >= 3 && (
-          <button type="button" className={miniButton} onClick={distributeSelection}>
-            <AlignHorizontalSpaceAround size={14} aria-hidden="true" />
-            {t("studio.editor.inspector.distribute")}
+        <SectionLabel info={t("studio.editor.inspector.layoutHint")} topic="layout">{t("studio.editor.inspector.layout")}</SectionLabel>
+        <div role="group" aria-labelledby={alignLabelId} className="flex items-center gap-2">
+          <span id={alignLabelId} className="flex-none text-[11px] font-semibold text-[var(--text-muted)]">
+            {t("studio.editor.inspector.align")}
+          </span>
+          <button
+            type="button"
+            className={miniButton}
+            aria-label={t("studio.editor.inspector.alignHorizontalLabel")}
+            title={t("studio.editor.inspector.alignHorizontalLabel")}
+            onClick={() => alignSelection("h")}
+          >
+            <AlignCenterHorizontal size={14} aria-hidden="true" />
+            {t("studio.editor.inspector.alignHorizontal")}
           </button>
-        )}
-        <button
-          type="button"
-          className={miniButton}
-          aria-label={t("studio.editor.inspector.centerAll")}
-          title={t("studio.editor.inspector.centerAll")}
-          onClick={() => centerOnTeeth(ids)}
-        >
-          <Crosshair size={14} aria-hidden="true" />
-          {t("studio.editor.inspector.centerShort")}
-        </button>
-      </div>
+          <button
+            type="button"
+            className={miniButton}
+            aria-label={t("studio.editor.inspector.alignVerticalLabel")}
+            title={t("studio.editor.inspector.alignVerticalLabel")}
+            onClick={() => alignSelection("v")}
+          >
+            <AlignCenterVertical size={14} aria-hidden="true" />
+            {t("studio.editor.inspector.alignVertical")}
+          </button>
+        </div>
+        <div className="mt-2 flex gap-2">
+          {/* Spacing needs a piece between the two outermost ones. */}
+          {selected.length >= 3 && (
+            <button type="button" className={miniButton} onClick={distributeSelection}>
+              <AlignHorizontalSpaceAround size={14} aria-hidden="true" />
+              {t("studio.editor.inspector.distribute")}
+            </button>
+          )}
+          <button
+            type="button"
+            className={miniButton}
+            aria-label={t("studio.editor.inspector.centerAll")}
+            title={t("studio.editor.inspector.centerAll")}
+            onClick={() => centerOnTeeth(ids)}
+          >
+            <Crosshair size={14} aria-hidden="true" />
+            {t("studio.editor.inspector.centerShort")}
+          </button>
+        </div>
+      </fieldset>
 
       <SectionLabel info={t("studio.editor.mirror.hint")} topic="mirror">{t("studio.editor.mirror.label")}</SectionLabel>
-      <MirrorRow />
-      <ActionRow count={selected.length} onDuplicate={() => duplicatePieces(ids)} onDelete={() => removePieces(ids)} />
+      <MirrorRow locked={allLocked} />
+      <ActionRow count={selected.length} onDuplicate={() => duplicatePieces(ids)} onDelete={() => removePieces(ids)} deleteDisabled={allLocked} />
     </>
   );
 }
@@ -406,7 +475,9 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
   const finish = gem ? findFinish(gem, jewel.variantId) : null;
   const colour = finishName(jewel);
   const surface = getEngine()?.describeSurface(jewel) ?? null;
+  const locked = jewel.locked === true;
   const set = (patch: Partial<PlacedJewelry>, history = true) => {
+    if (locked) return;
     if (history) studioStore.pushHistory();
     studioStore.updateJewel(jewel.id, patch);
   };
@@ -449,82 +520,90 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
         </div>
       </div>
 
-      <SectionLabel info={t("studio.editor.inspector.colorHint")} topic="colors">{t("studio.editor.inspector.color")}</SectionLabel>
-      <ColorOptions selected={[jewel]} />
+      <LockControl ids={[jewel.id]} lockedCount={locked ? 1 : 0} />
 
-      <SectionLabel info={t("studio.editor.inspector.sizeHint")} topic="sizes">{t("studio.editor.inspector.size")}</SectionLabel>
-      <SizeOptions selected={[jewel]} />
+      {/* A locked piece shows its settings but takes no change until it is unlocked. */}
+      <fieldset className="m-0 min-w-0 border-0 p-0 disabled:opacity-50" disabled={locked}>
+        <SectionLabel info={t("studio.editor.inspector.colorHint")} topic="colors">{t("studio.editor.inspector.color")}</SectionLabel>
+        <ColorOptions selected={[jewel]} />
 
-      <SectionLabel>{t("studio.editor.inspector.rotation")}</SectionLabel>
-      <QuickRotate
-        isOn={(deg) => jewel.rotation === deg}
-        onSet={(deg) => set({ rotation: deg })}
-        onPlus90={() => rotatePieces([jewel.id], 90)}
-      />
-      <Slider
-        label={t("studio.editor.inspector.spin")}
-        value={jewel.rotation}
-        min={0}
-        max={360}
-        step={1}
-        format={(v) => `${Math.round(v)}°`}
-        onCommit={(v) => set({ rotation: v }, false)}
-      />
+        <SectionLabel info={t("studio.editor.inspector.sizeHint")} topic="sizes">{t("studio.editor.inspector.size")}</SectionLabel>
+        <SizeOptions selected={[jewel]} />
 
-      <SectionLabel info={t("studio.editor.inspector.standoffHint")} topic="standoff">{t("studio.editor.inspector.mounting")}</SectionLabel>
-      <Slider
-        label={t("studio.editor.inspector.standoff")}
-        value={jewel.offset ?? 0}
-        {...OFFSET_RANGE}
-        format={offsetText}
-        onCommit={(v) => set({ offset: v }, false)}
-      />
+        <SectionLabel>{t("studio.editor.inspector.rotation")}</SectionLabel>
+        <QuickRotate
+          isOn={(deg) => jewel.rotation === deg}
+          onSet={(deg) => set({ rotation: deg })}
+          onPlus90={() => rotatePieces([jewel.id], 90)}
+        />
+        <Slider
+          label={t("studio.editor.inspector.spin")}
+          value={jewel.rotation}
+          min={0}
+          max={360}
+          step={1}
+          format={(v) => `${Math.round(v)}°`}
+          onCommit={(v) => set({ rotation: v }, false)}
+        />
+
+        <SectionLabel info={t("studio.editor.inspector.standoffHint")} topic="standoff">{t("studio.editor.inspector.mounting")}</SectionLabel>
+        <Slider
+          label={t("studio.editor.inspector.standoff")}
+          value={jewel.offset ?? 0}
+          {...OFFSET_RANGE}
+          format={offsetText}
+          onCommit={(v) => set({ offset: v }, false)}
+        />
+
+      </fieldset>
 
       <SectionLabel info={t("studio.editor.mirror.hint")} topic="mirror">{t("studio.editor.mirror.label")}</SectionLabel>
-      <MirrorRow />
+      <MirrorRow locked={locked} />
 
-      <SectionLabel info={t("studio.editor.inspector.positionHint")} topic="noOverlap">{t("studio.editor.inspector.position")}</SectionLabel>
-      <span className="relative block">
-        <select
-          aria-label={t("studio.editor.inspector.position")}
-          className={selectClass}
-          value={jewel.toothId}
-          onChange={(e) => {
-            if (e.target.value === FREE_TOOTH) return;
-            const ok = getEngine()?.relocateJewelToTooth(jewel.id, e.target.value);
-            if (!ok) notify("noRoomOnTooth", undefined, "warning");
-          }}
-        >
-          {jewel.toothId === FREE_TOOTH && <option value={FREE_TOOTH}>{t("studio.editor.freePlacementLong")}</option>}
-          {/* The simplified reference arch and imports carry the upper arch only. */}
-          {(snap.modelMode === "dentition" ? ALL_TEETH : UPPER_TEETH).map((fdi) => (
-            <option key={fdi} value={fdi}>
-              {fdi} — {toothShort(fdi)}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          size={15}
-          aria-hidden="true"
-          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-        />
-      </span>
-      {surface && (
-        <p className="m-0 mt-2 text-[12px] font-semibold text-[var(--text-body)]">
-          {t("studio.editor.surface.line", {
-            third: t(`studio.editor.surface.third.${surface.third}`),
-            face: t(`studio.editor.surface.face.${surface.face}`),
-          })}
-        </p>
-      )}
-      {jewel.toothId !== FREE_TOOTH && (
-        <button type="button" className={clsx(miniButton, "mt-2.5 w-full")} onClick={() => centerOnTeeth([jewel.id])}>
-          <Crosshair size={14} aria-hidden="true" />
-          {t("studio.editor.inspector.center")}
-        </button>
-      )}
+      <fieldset className="m-0 min-w-0 border-0 p-0 disabled:opacity-50" disabled={locked}>
+        <SectionLabel info={t("studio.editor.inspector.positionHint")} topic="noOverlap">{t("studio.editor.inspector.position")}</SectionLabel>
+        <span className="relative block">
+          <select
+            aria-label={t("studio.editor.inspector.position")}
+            className={selectClass}
+            value={jewel.toothId}
+            onChange={(e) => {
+              if (e.target.value === FREE_TOOTH) return;
+              const ok = getEngine()?.relocateJewelToTooth(jewel.id, e.target.value);
+              if (!ok) notify("noRoomOnTooth", undefined, "warning");
+            }}
+          >
+            {jewel.toothId === FREE_TOOTH && <option value={FREE_TOOTH}>{t("studio.editor.freePlacementLong")}</option>}
+            {/* The simplified reference arch and imports carry the upper arch only. */}
+            {(snap.modelMode === "dentition" ? ALL_TEETH : UPPER_TEETH).map((fdi) => (
+              <option key={fdi} value={fdi}>
+                {fdi} — {toothShort(fdi)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={15}
+            aria-hidden="true"
+            className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+          />
+        </span>
+        {surface && (
+          <p className="m-0 mt-2 text-[12px] font-semibold text-[var(--text-body)]">
+            {t("studio.editor.surface.line", {
+              third: t(`studio.editor.surface.third.${surface.third}`),
+              face: t(`studio.editor.surface.face.${surface.face}`),
+            })}
+          </p>
+        )}
+        {jewel.toothId !== FREE_TOOTH && (
+          <button type="button" className={clsx(miniButton, "mt-2.5 w-full")} onClick={() => centerOnTeeth([jewel.id])}>
+            <Crosshair size={14} aria-hidden="true" />
+            {t("studio.editor.inspector.center")}
+          </button>
+        )}
+      </fieldset>
 
-      <ActionRow count={1} onDuplicate={() => duplicatePieces([jewel.id])} onDelete={() => removePieces([jewel.id])} />
+      <ActionRow count={1} onDuplicate={() => duplicatePieces([jewel.id])} onDelete={() => removePieces([jewel.id])} deleteDisabled={locked} />
       <SaveSelectionAsGroup ids={[jewel.id]} />
     </>
   );
@@ -568,6 +647,7 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
     "pieceActions",
     "duplicate",
     "duplicateMirror",
+    "lock",
     "delete",
     "deselect",
     "pan",
@@ -728,7 +808,7 @@ function FrontViewSection({ snap }: { snap: StudioSnapshot }) {
 }
 
 function PieceList({ jewels, label }: { jewels: PlacedJewelry[]; label: (j: PlacedJewelry) => string }) {
-  const { toothTag } = useEditorLabels();
+  const { t, toothTag } = useEditorLabels();
   if (!jewels.length) return null;
   return (
     <ul className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-1.5 p-0">
@@ -750,6 +830,9 @@ function PieceList({ jewels, label }: { jewels: PlacedJewelry[]; label: (j: Plac
             </span>
             <PieceIcon look={j.look} size={15} />
             <span className="truncate">{label(j)}</span>
+            {j.locked && (
+              <Lock size={12} role="img" aria-label={t("studio.editor.lock.badge")} className="ml-auto flex-none text-[var(--gt-blue-700)]" />
+            )}
           </button>
         </li>
       ))}
