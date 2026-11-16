@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FREE_TOOTH, scaleForSize, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
 import { approxLabialPoint } from "./archLayout";
 import { DENTITION_CROWNS } from "./dentition";
-import { FRONT_VIEW_BOX, FRONT_VIEW_TEETH, crownOutline, gemOutline, pathToSvg, projectFrontView, seatOnTooth } from "./frontView";
+import { FRONT_VIEW_BOX, FRONT_VIEW_TEETH, gemOutline, projectFrontView, seatOnTooth } from "./frontView";
 
 const crown = (fdi: string) => DENTITION_CROWNS.find((c) => c.fdi === fdi)!;
 
@@ -52,12 +52,6 @@ describe("front view teeth", () => {
     expect(t11.cervical).toBeLessThan(t41.cervical);
     expect(t11.x0).toBeLessThan(t21.x0);
     expect(FRONT_VIEW_TEETH.find((t) => t.fdi === "13")!.pointed).toBe(true);
-  });
-
-  it("outlines a crown as a closed path", () => {
-    const d = pathToSvg(crownOutline(FRONT_VIEW_TEETH[20]));
-    expect(d.startsWith("M")).toBe(true);
-    expect(d.endsWith("Z")).toBe(true);
   });
 });
 

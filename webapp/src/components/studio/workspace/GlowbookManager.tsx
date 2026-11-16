@@ -264,7 +264,7 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
       className="grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-[var(--shadow-sm)] sm:p-5 lg:grid-cols-2 lg:items-center lg:gap-8"
     >
       <div className="flex min-w-0 items-center gap-3.5">
-        <span style={glowbookThemeStyle(gb.draftLook ?? glowbook.look)} className="contents">
+        <span style={glowbookThemeStyle()} className="contents">
           <GlowbookAvatar name={glowbook.displayName} url={avatarUrl} className="h-14 w-14 text-[18px] sm:h-16 sm:w-16" />
         </span>
         <div className="grid min-w-0 flex-1 gap-1">

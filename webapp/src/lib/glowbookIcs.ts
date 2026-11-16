@@ -80,3 +80,17 @@ export function downloadIcs(content: string, filename: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/**
+ * Opens the file for the calendar app. On an iPhone or iPad a download goes to
+ * Files, so the file is opened instead as a `data:` address, which Safari hands
+ * to Calendar ("Add to Calendar"); elsewhere it is downloaded and the system
+ * opens it with the calendar app.
+ */
+export function openIcs(content: string, filename: string, ios: boolean): void {
+  if (ios) {
+    window.location.href = `data:text/calendar;charset=utf-8,${encodeURIComponent(content)}`;
+    return;
+  }
+  downloadIcs(content, filename);
+}

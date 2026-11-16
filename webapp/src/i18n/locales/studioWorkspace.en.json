@@ -533,7 +533,7 @@
       "frontView": {
         "title": "The numbered front view",
         "body": [
-          "The front view draws both arches from the front, as you see your client, with every gem in its place, numbered. Mind the direction: the patient’s right is on the left of the drawing.",
+          "The front view draws both arches laid flat, as you see your client: every tooth shows its visible face, from the incisors to the molars, with every gem in its place, numbered. Mind the direction: the patient’s right is on the left of the drawing.",
           "The numbers match the gem list and the placement sheet: you know exactly which gem goes where. The front view is in the editor’s right-hand panel and in a creation’s detail; “Enlarge” opens it full size.",
           "Gems placed on an imported model or off the identified teeth are not drawn, but stay in the list."
         ]
@@ -618,9 +618,9 @@
       "glowbookLook": {
         "title": "Customising your Glowbook and the spotlight creation",
         "body": [
-          "The Look tab sets your page’s identity: profile picture, colour, background (light, tinted, dark), how creations show (grid or large cards), city or studio and where you work. No outside links: clients book straight from your page.",
+          "The Look tab sets your profile picture, the spotlight creation, your city or studio and where you work. Colours and layout are the same for every page, designed to show off your creations. No outside links: clients book straight from your page.",
           "The spotlight creation opens your page, large, in a short 5-second video sweeping across the smile from left to right, looping. Your Studio records this video automatically whenever it is missing or out of date: leave the Studio open a moment after changing the spotlight creation.",
-          "Colour, background, layout, spotlight and city go live when saved; a new picture first waits for the team’s approval (the page keeps the previous one meanwhile)."
+          "The spotlight, city and place go live when saved; a new picture first waits for the team’s approval (the page keeps the previous one meanwhile)."
         ]
       },
       "glowbookSections": {
@@ -644,7 +644,7 @@
       "glowbookShare": {
         "title": "Spreading the word: link, QR code, badge",
         "body": [
-          "The Share tab gives your page’s address to copy into your bio, a QR code as a PNG and an A4 poster (PDF) with your name, picture and colour, to print for your studio. They are available once the page is approved.",
+          "The Share tab gives your page’s address to copy into your bio, a QR code as a PNG and an A4 poster (PDF) with your name and picture, to print for your studio. They are available once the page is approved.",
           "If you completed a Global Toothgems Academy course with a certificate, your page can show the “Certified artist” badge, with the course title. You can hide it."
         ]
       },
@@ -874,8 +874,27 @@
       "shoppingBody": "Add everything it takes to your cart in one go. Prices are confirmed at checkout.",
       "glowbookGoneTitle": "Creation unavailable",
       "glowbookGoneBody": "This creation is no longer published in this Glowbook, or the address is incomplete.",
-      "glowbookEyebrow": "{{name}}’s Glowbook"
+      "glowbookEyebrow": "{{name}}’s Glowbook",
+      "bookingEyebrow": "Design joined to the appointment",
+      "bookingWithClient": "Appointment on {{when}} with {{name}}",
+      "bookingWithArtist": "Appointment on {{when}} with {{name}}",
+      "bookingNoteArtist": "The client shows you what they want. Only you see it, while the appointment exists; it cannot be changed here.",
+      "bookingNoteClient": "Your design, as the artist sees it before the appointment.",
+      "backToAgenda": "Back to my calendar",
+      "backToBookings": "Back to my appointments",
+      "bookingGoneTitle": "Design unavailable",
+      "bookingGoneBody": "The appointment was cancelled, the design was deleted, or it is not meant for you.",
+      "bookingSignInTitle": "Sign in to see this design",
+      "bookingSignInBody": "Only the booked artist and the client can open it."
     }
+  },
+  "bookArtist": {
+    "title": "Have it made by an artist",
+    "body": "Find an artist near you and book with this design: they will see it in 3D before the appointment.",
+    "cta": "Find an artist",
+    "editorSub": "Find an artist near you: they will see this design in 3D before the appointment.",
+    "editorNoticeSave": "Save the creation first: the artist will see its saved version.",
+    "editorNoticeEmpty": "Add gems, then save the creation to offer it to an artist."
   },
   "collections": {
     "label": "Collections",

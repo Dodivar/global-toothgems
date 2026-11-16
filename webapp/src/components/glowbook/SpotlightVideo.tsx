@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { preload } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Gem, Pause, Play } from "lucide-react";
 import clsx from "clsx";
@@ -11,7 +12,10 @@ import clsx from "clsx";
  * visitors who asked for reduced motion, who get the play button instead —
  * and can always be paused. A browser that cannot play the file (a WebM
  * recorded by Firefox on an older iPhone) keeps the still. Same markup on the
- * server and on the first browser render.
+ * server and on the first browser render. With `priority` (the page's
+ * spotlight, the largest picture above the fold) its still is fetched first.
+ * The pause button sits top right, clear of the text laid over the bottom of
+ * the picture on phones.
  */
 export function SpotlightVideo({
   videoUrl,
@@ -19,14 +23,18 @@ export function SpotlightVideo({
   posterUrl,
   name,
   className,
+  priority = false,
 }: {
   videoUrl: string | null;
   videoType: string | null;
   posterUrl: string | null;
   name: string;
   className?: string;
+  priority?: boolean;
 }) {
   const { t } = useTranslation();
+  // Hoisted into the document's head, on the server too: the spotlight's still is the page's largest paint.
+  if (priority && posterUrl) preload(posterUrl, { as: "image", fetchPriority: "high" });
   const ref = useRef<HTMLVideoElement>(null);
   const [failed, setFailed] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -49,7 +57,7 @@ export function SpotlightVideo({
       );
     }
     // eslint-disable-next-line @next/next/no-img-element -- signed Storage URL
-    return <img src={posterUrl} alt={name} className={clsx("h-full w-full object-cover", className)} />;
+    return <img src={posterUrl} alt={name} fetchPriority={priority ? "high" : undefined} className={clsx("h-full w-full object-cover", className)} />;
   }
 
   const toggle = () => {
@@ -80,7 +88,7 @@ export function SpotlightVideo({
         type="button"
         onClick={toggle}
         aria-label={t(playing ? "studio.glowbook.public.spotlightPause" : "studio.glowbook.public.spotlightPlay")}
-        className="absolute bottom-3 left-3 grid h-10 w-10 place-items-center rounded-full bg-[rgba(22,26,32,.72)] text-white backdrop-blur-sm transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-[rgba(22,26,32,.72)] text-white backdrop-blur-sm transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         {playing ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
       </button>

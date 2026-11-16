@@ -41,6 +41,8 @@ export function WorkspaceDialogs() {
   // (card menu, creation detail, editor) lands here, so the plan panel replaces the dialog.
   const clientToolsLocked = useStudioFeature("clientTools") === false;
   const postsLocked = useStudioFeature("posts") === false;
+  // Trying one's own creation on a smile is the Atelier plan's only (decision 111 (a)).
+  const tryOnLocked = useStudioFeature("tryOn") === false;
   const close = closeWorkspaceDialog;
   if (!dialog) return null;
 
@@ -64,6 +66,7 @@ export function WorkspaceDialogs() {
       if (clientToolsLocked) return <PlanLockedDialog feature="clientTools" onClose={close} />;
       return <ShareDialog creation={dialog.creation} onClose={close} />;
     case "tryOn":
+      if (tryOnLocked) return <PlanLockedDialog feature="tryOn" onClose={close} />;
       return <TryOnDialog creation={dialog.creation} source={{ kind: "own", creationId: dialog.creation.id }} onClose={close} />;
     case "socialExport":
       if (postsLocked) return <PlanLockedDialog feature="posts" onClose={close} />;

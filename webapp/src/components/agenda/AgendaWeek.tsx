@@ -24,18 +24,15 @@ import { agendaCard as card, agendaCardTitle as cardTitle, agendaSmall as small 
 
 const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
-/** Closed by hand: diagonal stripes, so it reads as "shut" without the colour. */
-const STRIPES = "bg-[repeating-linear-gradient(135deg,var(--status-error-bg)_0_5px,var(--surface-card)_5px_9px)]";
-
 export const CELL: Record<HourState, string> = {
-  open: "border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] text-[var(--gt-blue-700)] hover:border-[var(--gt-blue-600)]",
-  extra: "border-[var(--gt-blue-600)] bg-[var(--gt-blue-100)] text-[var(--gt-blue-800,#173a6b)] hover:border-[var(--gt-ink-900)]",
-  closed: "border-[var(--border-subtle)] bg-[var(--surface-page)] text-[var(--text-subtle)] hover:border-[var(--border-strong)]",
+  open: "border-[var(--gt-blue-400,#6b9be8)] bg-white text-[var(--gt-blue-700)] hover:border-[var(--gt-blue-600)]",
+  extra: "border-[var(--gt-blue-700)] bg-[var(--gt-blue-600)] font-black text-white hover:bg-[var(--gt-blue-700)]",
+  closed: "border-[var(--border-subtle)] bg-[var(--surface-sunken)] bg-[repeating-linear-gradient(135deg,transparent_0_4px,rgba(0,0,0,0.06)_4px_5px)] text-[var(--text-subtle)] hover:border-[var(--border-strong)]",
   busy: "border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] text-[var(--status-warning-fg)] hover:border-[var(--gt-ink-900)]",
-  blocked: `border-[var(--gt-red-400)] ${STRIPES} text-[var(--status-error-fg)] hover:border-[var(--gt-red-600)]`,
-  booked: "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-white hover:bg-[var(--gt-ink-700)]",
+  blocked: "border-[var(--gt-red-400)] bg-[var(--status-error-bg)] text-[var(--status-error-fg)] hover:border-[var(--gt-red-600)]",
+  booked: "border-[var(--gt-emerald-600)] bg-[var(--gt-emerald-600)] text-white hover:bg-[var(--gt-emerald-500)]",
   past: "border-transparent bg-transparent text-[var(--text-subtle)] opacity-60",
-  holiday: "border-dashed border-[var(--gt-ink-300)] bg-[var(--surface-sunken)] text-[var(--text-muted)]",
+  holiday: "border-[var(--gt-ink-300)] bg-[var(--gt-ink-300)] text-[var(--gt-ink-900)]",
 };
 /** States written in the cell itself (a word, not a sign); out-of-hours and past hours stay blank. */
 const WORDED: readonly HourState[] = ["open", "extra", "blocked", "busy", "holiday"];
