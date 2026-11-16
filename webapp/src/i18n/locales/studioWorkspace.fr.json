@@ -891,7 +891,10 @@
   "bookArtist": {
     "title": "Faites-la réaliser par un artiste",
     "body": "Trouvez un artiste près de chez vous et réservez avec cette création : il la verra en 3D avant le rendez-vous.",
-    "cta": "Trouver un artiste"
+    "cta": "Trouver un artiste",
+    "editorSub": "Trouvez un artiste près de chez vous : il verra cette création en 3D avant le rendez-vous.",
+    "editorNoticeSave": "Enregistrez d’abord la création : l’artiste verra sa version enregistrée.",
+    "editorNoticeEmpty": "Ajoutez des strass puis enregistrez la création pour la proposer à un artiste."
   },
   "collections": {
     "label": "Collections",

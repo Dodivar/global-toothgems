@@ -891,7 +891,10 @@
   "bookArtist": {
     "title": "Have it made by an artist",
     "body": "Find an artist near you and book with this design: they will see it in 3D before the appointment.",
-    "cta": "Find an artist"
+    "cta": "Find an artist",
+    "editorSub": "Find an artist near you: they will see this design in 3D before the appointment.",
+    "editorNoticeSave": "Save the creation first: the artist will see its saved version.",
+    "editorNoticeEmpty": "Add gems, then save the creation to offer it to an artist."
   },
   "collections": {
     "label": "Collections",
