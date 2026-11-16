@@ -9,6 +9,7 @@ const facts = (over: Partial<WelcomeFacts> = {}): WelcomeFacts => ({
   studio: "not_started",
   signedUpForStudio: false,
   holdsCourse: false,
+  academyVisited: false,
   ...over,
 });
 
@@ -56,6 +57,11 @@ describe("welcomeSteps", () => {
 
   it("ticks the Academy for a held course", () => {
     expect(welcomeSteps(facts({ holdsCourse: true })).at(-1)?.done).toBe(true);
+  });
+
+  it("ticks the Academy once the page was visited, without a course", () => {
+    expect(welcomeSteps(facts()).at(-1)?.done).toBe(false);
+    expect(welcomeSteps(facts({ academyVisited: true })).at(-1)?.done).toBe(true);
   });
 });
 
