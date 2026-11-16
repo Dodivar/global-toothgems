@@ -1038,10 +1038,10 @@
   },
   "frontView": {
     "title": "Vue de face",
-    "hint": "Les deux arcades vues de face, comme vous voyez votre client. Chaque gemme est numérotée : les numéros renvoient à la liste et à la fiche de pose.",
+    "hint": "Les deux arcades à plat, comme vous voyez votre client : chaque dent montre sa face visible, des incisives aux molaires. Chaque gemme est numérotée : les numéros renvoient à la liste et à la fiche de pose.",
     "svgTitle": "Vue de face schématique des dents et des gemmes",
-    "svgDescription_one": "Arcades supérieure et inférieure vues de face, avec {{count}} gemme numérotée à sa place sur sa dent. La droite du patient est à gauche du dessin.",
-    "svgDescription_other": "Arcades supérieure et inférieure vues de face, avec {{count}} gemmes numérotées à leur place sur leur dent. La droite du patient est à gauche du dessin.",
+    "svgDescription_one": "Arcades supérieure et inférieure dessinées à plat, chaque dent vue de face, avec {{count}} gemme numérotée à sa place sur sa dent. La droite du patient est à gauche du dessin.",
+    "svgDescription_other": "Arcades supérieure et inférieure dessinées à plat, chaque dent vue de face, avec {{count}} gemmes numérotées à leur place sur leur dent. La droite du patient est à gauche du dessin.",
     "patientRight": "Droite du patient",
     "patientLeft": "Gauche du patient",
     "listToggle_one": "Voir la gemme ({{count}})",

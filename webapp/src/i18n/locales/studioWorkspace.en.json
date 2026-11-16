@@ -533,7 +533,7 @@
       "frontView": {
         "title": "The numbered front view",
         "body": [
-          "The front view draws both arches from the front, as you see your client, with every gem in its place, numbered. Mind the direction: the patient’s right is on the left of the drawing.",
+          "The front view draws both arches laid flat, as you see your client: every tooth shows its visible face, from the incisors to the molars, with every gem in its place, numbered. Mind the direction: the patient’s right is on the left of the drawing.",
           "The numbers match the gem list and the placement sheet: you know exactly which gem goes where. The front view is in the editor’s right-hand panel and in a creation’s detail; “Enlarge” opens it full size.",
           "Gems placed on an imported model or off the identified teeth are not drawn, but stay in the list."
         ]

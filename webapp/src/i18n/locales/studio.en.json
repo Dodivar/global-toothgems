@@ -1038,10 +1038,10 @@
   },
   "frontView": {
     "title": "Front view",
-    "hint": "Both arches seen from the front, as you see your client. Every gem is numbered: the numbers match the list and the placement sheet.",
+    "hint": "Both arches laid flat, as you see your client: every tooth shows its visible face, from the incisors to the molars. Every gem is numbered: the numbers match the list and the placement sheet.",
     "svgTitle": "Schematic front view of the teeth and gems",
-    "svgDescription_one": "Upper and lower arches seen from the front, with {{count}} numbered gem in its place on its tooth. The patient's right is on the left of the drawing.",
-    "svgDescription_other": "Upper and lower arches seen from the front, with {{count}} numbered gems in their places on their teeth. The patient's right is on the left of the drawing.",
+    "svgDescription_one": "Upper and lower arches drawn flat, every tooth seen from the front, with {{count}} numbered gem in its place on its tooth. The patient's right is on the left of the drawing.",
+    "svgDescription_other": "Upper and lower arches drawn flat, every tooth seen from the front, with {{count}} numbered gems in their places on their teeth. The patient's right is on the left of the drawing.",
     "patientRight": "Patient's right",
     "patientLeft": "Patient's left",
     "listToggle_one": "Show the gem ({{count}})",

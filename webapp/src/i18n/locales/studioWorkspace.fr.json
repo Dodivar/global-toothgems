@@ -533,7 +533,7 @@
       "frontView": {
         "title": "La vue de face numérotée",
         "body": [
-          "La vue de face dessine les deux arcades de face, comme vous voyez votre client·e, avec chaque gemme à sa place, numérotée. Attention au sens : la droite du patient est à gauche du dessin.",
+          "La vue de face dessine les deux arcades à plat, comme vous voyez votre client·e : chaque dent montre sa face visible, des incisives aux molaires, avec chaque gemme à sa place, numérotée. Attention au sens : la droite du patient est à gauche du dessin.",
           "Les numéros renvoient à la liste des gemmes et à la fiche de pose : vous savez exactement quelle gemme va où. La vue de face est dans le panneau de droite de l’éditeur et dans le détail d’une création ; « Agrandir » l’ouvre en grand.",
           "Les gemmes posées sur un modèle importé ou hors des dents repérées ne sont pas dessinées, mais restent dans la liste."
         ]
