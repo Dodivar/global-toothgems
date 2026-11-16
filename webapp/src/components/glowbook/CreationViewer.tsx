@@ -216,7 +216,7 @@ export function CreationViewer({
                         type="button"
                         onClick={() => close(() => onBook(item))}
                         className={clsx(
-                          "inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-white px-5 text-[12.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[#16171b] transition-opacity hover:opacity-90",
+                          "inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-pill)] px-5 text-[12.5px] font-bold uppercase tracking-[var(--tracking-wide)] transition-colors bg-[var(--gb-cta)] text-[var(--gb-on-cta)] hover:bg-[var(--gb-cta-hover)]",
                           ring,
                         )}
                       >

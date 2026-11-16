@@ -123,7 +123,7 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
                     className={clsx(
                       "inline-flex h-9 flex-none items-center rounded-[var(--radius-pill)] border px-4 text-[13px] font-bold transition-colors",
                       on
-                        ? "border-[var(--gb-accent)] bg-[var(--gb-accent)] text-[var(--gb-on-accent)]"
+                        ? "border-[var(--gb-brand)] bg-[var(--gb-brand)] text-[var(--gb-on-brand)]"
                         : "border-[var(--gb-border)] bg-[var(--gb-card)] text-[var(--gb-text)] hover:border-[var(--gb-accent)]",
                       focus,
                     )}
@@ -153,16 +153,13 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
         )}
       </section>
 
-      <div className="border-t border-[var(--gb-border)] bg-[var(--gb-soft)]">
-        <GlowbookProfile {...identity} />
-        {look?.place && (
-          <div className="border-t border-[var(--gb-border)]">
-            <GlowbookPlaceSection place={look.place} />
-          </div>
-        )}
+      {/* The artist and where they work, one white band (decision 152). */}
+      <div className="border-t border-[var(--gb-border)] bg-[var(--gb-card)]">
+        <GlowbookProfile {...identity} withPlace={!!look?.place} />
+        {look?.place && <GlowbookPlaceSection place={look.place} />}
       </div>
 
-      <section className="border-t border-[var(--gb-border)] bg-[var(--gb-card)]">
+      <section className="border-t border-[var(--gb-border)] bg-[var(--gb-page)]">
         <div className="mx-auto flex max-w-[880px] flex-col items-center gap-3 px-4 py-10 text-center">
           <p className="m-0 text-[length:var(--text-h4)] font-[var(--weight-black)] tracking-[var(--tracking-tight)]">{t("studio.glowbook.public.ctaTitle")}</p>
           <p className="m-0 max-w-[52ch] text-[length:var(--text-body-sm)] text-[var(--gb-muted)]">{t("studio.glowbook.public.ctaBody")}</p>
@@ -170,7 +167,7 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
             <Link
               to={STUDIO_PATH}
               className={clsx(
-                "inline-flex h-9 items-center gap-2 rounded-[var(--radius-pill)] bg-[var(--gb-accent)] px-4 text-[12px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gb-on-accent)]",
+                "inline-flex h-9 items-center gap-2 rounded-[var(--radius-pill)] px-4 text-[12px] font-bold uppercase tracking-[var(--tracking-wide)] transition-colors bg-[var(--gb-cta)] text-[var(--gb-on-cta)] hover:bg-[var(--gb-cta-hover)]",
                 focus,
               )}
             >
@@ -198,7 +195,7 @@ export function GlowbookPublic({ glowbook }: { glowbook: PublicGlowbookPage }) {
             type="button"
             onClick={() => book(null)}
             className={clsx(
-              "inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] bg-[var(--gb-accent)] px-5 text-[13px] font-bold uppercase tracking-[var(--tracking-wide)] text-[var(--gb-on-accent)]",
+              "inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-pill)] px-5 text-[13px] font-bold uppercase tracking-[var(--tracking-wide)] transition-colors bg-[var(--gb-cta)] text-[var(--gb-on-cta)] hover:bg-[var(--gb-cta-hover)]",
               focus,
             )}
           >
@@ -254,8 +251,8 @@ function Spotlight({
 }) {
   const { t } = useTranslation();
   const button =
-    "inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-[var(--radius-pill)] px-3 text-[12px] font-bold uppercase tracking-[var(--tracking-wide)] transition-opacity hover:opacity-90 sm:px-5";
-  const light = "bg-white text-[#16171b] md:bg-[var(--gb-accent)] md:text-[var(--gb-on-accent)]";
+    "inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-[var(--radius-pill)] px-3 text-[12px] font-bold uppercase tracking-[var(--tracking-wide)] transition-colors sm:px-5";
+  const light = "bg-[var(--gb-cta)] text-[var(--gb-on-cta)] hover:bg-[var(--gb-cta-hover)]";
   return (
     <article
       aria-labelledby="gt-glowbook-spotlight"
@@ -265,7 +262,7 @@ function Spotlight({
         <SpotlightVideo videoUrl={videoUrl} videoType={videoType} posterUrl={item.imageUrl} name={item.name} priority className="absolute inset-0" />
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 grid content-end gap-1.5 bg-[linear-gradient(to_top,rgba(10,11,14,.9)_0%,rgba(10,11,14,.7)_50%,rgba(10,11,14,0)_100%)] px-4 pb-4 pt-14 text-white md:pointer-events-auto md:static md:content-center md:gap-3 md:bg-none md:p-8 md:text-[var(--gb-text)]">
-        <span className="inline-flex w-fit items-center gap-1 rounded-[var(--radius-pill)] bg-white px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[#16171b] md:bg-[var(--gb-accent)] md:text-[var(--gb-on-accent)]">
+        <span className="inline-flex w-fit items-center gap-1 rounded-[var(--radius-pill)] bg-white px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[var(--tracking-wide)] text-[#16171b] md:bg-[var(--gb-brand)] md:text-[var(--gb-on-brand)]">
           <Star size={11} aria-hidden="true" />
           {t("studio.glowbook.public.featured")}
         </span>

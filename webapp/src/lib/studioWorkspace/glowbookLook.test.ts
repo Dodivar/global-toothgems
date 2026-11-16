@@ -19,11 +19,14 @@ const contrast = (a: string, b: string) => {
   return (x + 0.05) / (y + 0.05);
 };
 
-describe("Glowbook colours (decision 150)", () => {
-  it("keep white text readable on the accent, which reads on the light page and on its soft band", () => {
+describe("Glowbook colours (decisions 150 and 152)", () => {
+  it("keep white text readable on the deep blue, which reads on the pale blue page and on its soft band", () => {
     expect(contrast(GLOWBOOK_COLORS.solid, "#ffffff")).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(GLOWBOOK_COLORS.solid, "#fbfbfc")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(GLOWBOOK_COLORS.solid, "#f4f8fc")).toBeGreaterThanOrEqual(4.5);
     expect(contrast(GLOWBOOK_COLORS.solid, GLOWBOOK_COLORS.soft)).toBeGreaterThanOrEqual(4.5);
+  });
+  it("keep ink text readable on the green call to action", () => {
+    expect(contrast("#111111", GLOWBOOK_COLORS.cta)).toBeGreaterThanOrEqual(4.5);
   });
 });
 
