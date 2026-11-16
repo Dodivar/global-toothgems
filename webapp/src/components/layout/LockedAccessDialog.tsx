@@ -44,7 +44,7 @@ function useLockedCopy(kind: LockedAccessKind): LockedCopy {
       eyebrow: t("lounge.locked.eyebrow"),
       title: t("lounge.locked.title"),
       body: t("lounge.locked.body"),
-      perks: (["languages", "experts", "network"] as const).map((perk) => t(`lounge.locked.perks.${perk}`)),
+      perks: (["languages", "experts"] as const).map((perk) => t(`lounge.locked.perks.${perk}`)),
       cta: { to: "/academy", label: t("lounge.locked.cta") },
       note: t("lounge.locked.note"),
     };
