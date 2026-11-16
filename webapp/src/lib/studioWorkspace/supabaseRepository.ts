@@ -599,3 +599,30 @@ export async function fetchSharedCreation(client: TypedSupabaseClient, token: st
   const design = parseSharedCreation(row);
   return design ? { design, tryOn: row?.try_on === true } : null;
 }
+
+/**
+ * The Studio creation a client joined to a booking (decision 149), for the
+ * booked artist or the client only, read through `glowbook_booking_creation`
+ * (null for anyone else, a cancelled booking on the artist's side, or a
+ * creation since deleted).
+ */
+export async function fetchBookingCreation(
+  client: TypedSupabaseClient,
+  bookingId: string,
+): Promise<{ design: SharedDesign; viewer: "artist" | "client"; clientName: string | null; artistName: string | null; startsAt: string | null; timezone: string | null } | null> {
+  if (!UUID_PATTERN.test(bookingId)) return null;
+  const { data, error } = await client.rpc("glowbook_booking_creation", { p_booking: bookingId });
+  if (error) throw storeError(error);
+  const design = parseSharedCreation(data);
+  if (!design || !data || typeof data !== "object" || Array.isArray(data)) return null;
+  const row = data as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v : null);
+  return {
+    design,
+    viewer: row.viewer === "artist" ? "artist" : "client",
+    clientName: str(row.client_name),
+    artistName: str(row.artist_name),
+    startsAt: str(row.starts_at),
+    timezone: str(row.timezone),
+  };
+}

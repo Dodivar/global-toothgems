@@ -8,7 +8,8 @@
 import { placeFromJson, type GlowbookPlace } from "./studioWorkspace/glowbookPlace";
 
 export type BookingStatus = "booked" | "cancelled_client" | "cancelled_artist" | "honoured" | "no_show";
-export type DesignKind = "creation" | "custom";
+/** A Glowbook creation of the artist, a custom idea, or the client's own Studio creation (decision 149). */
+export type DesignKind = "creation" | "custom" | "client_creation";
 
 export interface BookingInfo {
   timezone: string;
@@ -43,6 +44,8 @@ export interface ClientBooking {
   thumbnailPath: string | null;
   /** Where the appointment takes place: a salon's address, or an area. */
   place: GlowbookPlace | null;
+  /** The member's own Studio creation is joined and still exists (decision 149). */
+  clientCreation: boolean;
 }
 
 export interface ArtistBooking {
@@ -68,6 +71,8 @@ export interface ArtistBooking {
   thumbnailPath: string | null;
   /** Page and creation approved: its public 3D view exists. */
   itemLive: boolean;
+  /** The client joined their own Studio creation, readable now (decision 149). */
+  clientCreation: boolean;
 }
 
 export interface BookingRule {
@@ -144,7 +149,7 @@ const text = (v: unknown): string | null => (typeof v === "string" ? v : null);
 const num = (v: unknown, fallback: number): number => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
 const STATUSES: readonly BookingStatus[] = ["booked", "cancelled_client", "cancelled_artist", "honoured", "no_show"];
 const status = (v: unknown): BookingStatus => (STATUSES.includes(v as BookingStatus) ? (v as BookingStatus) : "booked");
-const design = (v: unknown): DesignKind => (v === "custom" ? "custom" : "creation");
+const design = (v: unknown): DesignKind => (v === "custom" || v === "client_creation" ? v : "creation");
 
 export function readBookingInfo(data: unknown): BookingInfo | null {
   if (!isRecord(data) || typeof data.timezone !== "string") return null;
@@ -181,6 +186,7 @@ export function readMyBookings(data: unknown): { bannedUntil: string | null; boo
       itemLive: r.item_live === true,
       thumbnailPath: text(r.thumbnail_path),
       place: isRecord(r.place) ? placeFromJson({ place: r.place }) : null,
+      clientCreation: r.client_creation === true,
     })),
   };
 }
@@ -238,6 +244,7 @@ export function readArtistCalendar(data: unknown): ArtistCalendar | null {
       itemId: text(b.item_id),
       thumbnailPath: text(b.thumbnail_path),
       itemLive: b.item_live === true,
+      clientCreation: b.client_creation === true,
     })),
     upcoming: list("upcoming").map((u) => ({ id: String(u.id), startsAt: String(u.starts_at) })),
     blocks: list("blocks").map((b) => ({ id: String(b.id), clientName: text(b.client_name) ?? "—", createdAt: String(b.created_at) })),
@@ -494,6 +501,8 @@ export function closureLength(c: Pick<CalendarClosure, "startsOn" | "endsOn">): 
 export interface BookingDraft {
   slot: string | null;
   itemId: string | null;
+  /** The member's own Studio creation joined instead of a custom idea (decision 149). */
+  clientCreationId?: string | null;
   custom: boolean;
   name: string;
   phone: string;
@@ -508,7 +517,7 @@ export function validateDraft(d: BookingDraft): DraftProblem {
   if (!d.name.trim() || d.name.trim().length > NAME_MAX) return "name";
   if (!PHONE_RE.test(d.phone.trim())) return "phone";
   if (d.comment.trim().length > COMMENT_MAX) return "commentLength";
-  if (d.custom && !d.comment.trim()) return "comment";
+  if (d.custom && !d.clientCreationId && !d.comment.trim()) return "comment";
   return null;
 }
 
@@ -528,6 +537,7 @@ export const BOOKING_ERRORS = [
   "blocked",
   "comment_required",
   "item_unavailable",
+  "creation_unavailable",
   "captcha_required",
   "captcha_failed",
   "rate_limited",

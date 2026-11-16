@@ -400,3 +400,147 @@ test.describe("Academy learner access, through Auth and RLS (decision: courses a
     }
   });
 });
+
+test.describe("Glowbook bookings (decisions 144, 147)", () => {
+  /**
+   * An approved Atelier artist opens their calendar through the real artist
+   * function; a member books one hour; the artist reads it in /compte/agenda
+   * and cancels it with a reason. The Edge Function `glowbook-booking` is not
+   * served by the local stack, so the booking itself is made as it makes it:
+   * glowbook_book_slot() as the service role, after the member's checks.
+   * Every account is new to the run (the daily and upcoming limits never
+   * carry over on a stack kept between runs).
+   */
+  test("a member books an Atelier artist's hour; only the artist and the client see it; the artist cancels it", async ({ page, problems }) => {
+    const db = serviceClient();
+    const run = `${Date.now().toString(36)}${test.info().workerIndex}`;
+    const handle = `e2e-${run}`.slice(0, 30);
+    const clientName = `Booker ${run}`;
+    const created: string[] = [];
+    const account = async (label: string) => {
+      const email = `e2e.glowbook.${label}.${run}@example.com`;
+      const { data, error } = await db.auth.admin.createUser({
+        email,
+        password: testPassword(),
+        email_confirm: true,
+        user_metadata: { first_name: label, last_name: "E2E", terms_accepted: true, policy_version: "e2e", locale: "fr" },
+      });
+      if (error || !data.user) throw new Error(`Cannot create ${email}: ${error?.message}`);
+      created.push(data.user.id);
+      return { id: data.user.id, email };
+    };
+    const freeSlots = async () => {
+      const { data } = await anonClient().rpc("glowbook_booking_slots", { p_handle: handle, p_from: null, p_to: null } as never);
+      return ((data as { slots?: string[] } | null)?.slots ?? []).map((s) => new Date(s).getTime());
+    };
+
+    try {
+      const artist = await account("artist");
+      const client = await account("client");
+      const other = await account("other");
+
+      // The artist: Atelier plan, an approved page and one approved creation.
+      const subscription = await db.from("studio_subscriptions").insert({
+        user_id: artist.id,
+        plan: "atelier",
+        status: "active",
+        stripe_subscription_id: `sub_e2e_${run}`,
+        current_period_end: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+      });
+      expect(subscription.error).toBeNull();
+      const piece = {
+        productId: "solitaire",
+        ss: 5,
+        look: { shape: "round", material: "crystal", color: "#ffffff", effect: "none" },
+        rotation: 0,
+        at: { x: 0, y: 0, z: 0 },
+        facing: { x: 0, y: 0, z: 1 },
+      };
+      const creation = await db
+        .from("creations")
+        .insert({ user_id: artist.id, name: "Aurora E2E", scene_data: { version: 2, model: "dentition", lightPreset: "studio", camera: null, groups: [], pieces: [piece] } })
+        .select("id")
+        .single();
+      expect(creation.error).toBeNull();
+      const showcase = await db.from("studio_showcases").insert({ user_id: artist.id, handle, display_name: "Artist E2E", status: "approved" });
+      expect(showcase.error).toBeNull();
+      const item = await db.from("studio_showcase_items").insert({ user_id: artist.id, creation_id: creation.data!.id, status: "approved" }).select("id").single();
+      expect(item.error).toBeNull();
+      const itemId = item.data!.id as string;
+
+      // Open every day, all day, through the artist's own function (the plan is checked by the database).
+      const artistApi = await signedInClient(artist.email, testPassword());
+      const rules = [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({ weekday, start_hour: 0, end_hour: 24 }));
+      const saved = await artistApi.rpc("glowbook_save_booking_settings", {
+        p_enabled: true,
+        p_timezone: "Europe/Paris",
+        p_min_notice_hours: 1,
+        p_horizon_days: 30,
+        p_rules: rules,
+      });
+      expect(saved.error).toBeNull();
+
+      // A visitor sees the free hours; take one more than a day ahead (the card then offers to cancel it).
+      const slotTime = (await freeSlots()).find((t) => t > Date.now() + 26 * 3_600_000);
+      expect(slotTime, "the artist offers hours").toBeTruthy();
+      const slot = new Date(slotTime!).toISOString();
+      const booking = (clientId: string, name: string, item: string | null, comment: string | null) => ({
+        p_client: clientId,
+        p_handle: handle,
+        p_starts_at: slot,
+        p_item_id: item,
+        p_name: name,
+        p_phone: "+33 6 00 00 00 01",
+        p_comment: comment,
+        p_locale: "fr",
+      });
+
+      // A member cannot book directly: only the Edge Function's service role can.
+      const clientApi = await signedInClient(client.email, testPassword());
+      expect((await clientApi.rpc("glowbook_book_slot", booking(client.id, clientName, itemId, null) as never)).error?.code).toBe("42501");
+
+      const booked = await db.rpc("glowbook_book_slot", booking(client.id, clientName, itemId, "Un petit éclat") as never);
+      expect(booked.error).toBeNull();
+      const bookingId = (booked.data as { id: string }).id;
+
+      // The hour is no longer offered; a second booking of it is refused.
+      expect(await freeSlots()).not.toContain(slotTime);
+      const twice = await db.rpc("glowbook_book_slot", booking(other.id, "Other", null, "Idée") as never);
+      expect(twice.error?.message).toContain("slot_taken");
+
+      // The client sees it; another member sees nothing of it and cannot cancel it; nobody reads the table.
+      const mine = (await clientApi.rpc("my_glowbook_bookings")).data as { bookings: { id: string }[] };
+      expect(mine.bookings.map((b) => b.id)).toEqual([bookingId]);
+      const otherApi = await signedInClient(other.email, testPassword());
+      expect(((await otherApi.rpc("my_glowbook_bookings")).data as { bookings: unknown[] }).bookings).toEqual([]);
+      expect((await otherApi.rpc("glowbook_cancel_booking", { p_id: bookingId, p_reason: "Pas à moi" } as never)).error?.code).toBe("P0002");
+      const day = slot.slice(0, 10);
+      const otherCalendar = (await otherApi.rpc("glowbook_artist_calendar", { p_from: day, p_to: day })).data as { bookings: unknown[] };
+      expect(otherCalendar.bookings).toEqual([]);
+      expect((await otherApi.from("glowbook_bookings").select("id")).error).not.toBeNull();
+      expect((await anonClient().from("glowbook_bookings").select("id")).error).not.toBeNull();
+
+      // The artist reads it in their calendar and cancels it with a reason.
+      await signIn(page, artist.email, "/connexion?suite=%2Fcompte%2Fagenda");
+      await expect(page).toHaveURL((url) => url.pathname === "/compte/agenda");
+      const card = page.getByRole("article").filter({ hasText: clientName }).first();
+      await expect(card).toBeVisible({ timeout: 30_000 });
+      await expect(card.getByText("Aurora E2E").first()).toBeVisible();
+      await card.getByRole("button", { name: "Annuler le rendez-vous" }).click();
+      await page.getByLabel("Raison (lue par le client)").fill("Absente ce jour-là");
+      await page.getByRole("button", { name: "Annuler et prévenir le client" }).click();
+      await expect
+        .poll(async () => (await db.from("glowbook_bookings").select("status, cancel_reason").eq("id", bookingId).single()).data)
+        .toEqual({ status: "cancelled_artist", cancel_reason: "Absente ce jour-là" });
+
+      // The client reads the reason; the hour is free again.
+      const cancelled = (await clientApi.rpc("my_glowbook_bookings")).data as { bookings: { status: string; cancel_reason: string }[] };
+      expect(cancelled.bookings[0]).toMatchObject({ status: "cancelled_artist", cancel_reason: "Absente ce jour-là" });
+      expect(await freeSlots()).toContain(slotTime);
+
+      expect(problems).toEqual([]);
+    } finally {
+      for (const id of created) await db.auth.admin.deleteUser(id);
+    }
+  });
+});

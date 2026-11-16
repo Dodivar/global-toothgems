@@ -37,7 +37,6 @@
     "studioGroups": "My groups",
     "studioGlowbook": "Glowbook",
     "studioGlowbookSub": "Your artist showcase, in one link",
-    "studioGlowbookAgenda": "Glowbook & calendar",
     "studioAgenda": "My calendar",
     "studioAgendaSub": "Your appointments, hours and time off",
     "giftCard": "Gift card",
@@ -45,7 +44,9 @@
     "viewAllStudio": "Discover the 3D Studio",
     "mySpace": "My space",
     "studioArtists": "Find an artist",
-    "studioArtistsSub": "Artists near you"
+    "studioArtistsSub": "Artists near you",
+    "studioAppointments": "My appointments",
+    "studioAppointmentsSub": "The appointments you booked with an artist"
   },
   "common": {
     "readMore": "Learn more",
@@ -1041,7 +1042,7 @@
       "done": "done",
       "steps": {
         "profile": { "title": "Complete my profile", "text": "Phone and delivery address, to order in two clicks." },
-        "shop": { "title": "Explore the shop", "text": "Add a favourite: we tell you when it goes on sale." },
+        "shop": { "title": "Explore the shop", "text": "Add a favourite: if you wish, we tell you when it goes on sale." },
         "studio": { "title": "Try the 3D Studio", "text": "A free 48-hour trial to design your smile in 3D." },
         "academy": { "title": "See the Academy", "text": "Professional training, with a certificate at the end." }
       }
@@ -1081,6 +1082,21 @@
       },
       "groupAtelier": "Atelier",
       "atelierLocked": "With the Atelier plan",
+      "lockedAtelier": {
+        "eyebrow": "With the Atelier plan",
+        "title": "Your Glowbook and calendar are waiting",
+        "body": "The Glowbook is your public artist showcase, made for your Instagram bio: your creations in 3D, where you work, and clients booking straight with you. It opens with the Atelier plan, the 3D Studio's most complete plan.",
+        "perks": {
+          "page": "A public page in your style, with your creations in 3D and a place in the directory of artists near you",
+          "booking": "Online booking, straight from your page",
+          "agenda": "A calendar synced with Google, Apple or Outlook",
+          "tryOn": "AI try-on: your clients see the design on their own smile"
+        },
+        "cta": "See the Atelier plan",
+        "secondary": "Discover the Glowbook",
+        "note": "Everything opens as soon as the Atelier plan is active on your account."
+      },
+      "lockedEntry": "{{name}} — locked, see why",
       "groupLearning": "Training",
       "groupPurchases": "Purchases",
       "groupAccount": "My account",
@@ -4324,9 +4340,6 @@
       "errorMonths": "The Studio length is 1 to {{max}} months."
     }
   },
-  "community": {
-    "navEntryLocked": "Access with a training"
-  },
   "errors": {
     "actions": {
       "home": "Back to homepage"
@@ -4947,6 +4960,15 @@
       "errorTitle": "Your favourites are temporarily unavailable",
       "errorBody": "We could not load them. Check your connection and try again.",
       "errorCta": "Try again"
+    },
+    "promoAlert": {
+      "title": "Hear about promotions on your favourites",
+      "body": "One e-mail, at most once a week, when one of your favourites goes on sale. You unsubscribe in one click.",
+      "cta": "Yes, keep me posted",
+      "savedTitle": "Noted",
+      "savedBody": "We will write to you when one of your favourites goes on sale.",
+      "errorTitle": "Choice not saved",
+      "errorBody": "Your choice could not be saved. Try again in a moment."
     }
   },
   "siteSearch": {

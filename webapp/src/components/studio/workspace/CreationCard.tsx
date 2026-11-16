@@ -61,12 +61,13 @@ export function CreationCard({
   return (
     <article
       className={clsx(
-        "group/card relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border bg-[var(--surface-card)] shadow-[var(--shadow-sm)]",
+        "group/card relative flex flex-col rounded-[var(--radius-lg)] has-[[aria-expanded=true]]:z-20 border bg-[var(--surface-card)] shadow-[var(--shadow-sm)]",
         "transition-[box-shadow,transform,border-color] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]",
         onStage ? "border-[var(--gt-blue-400)]" : "border-[var(--border-subtle)]",
       )}
     >
-      <div className="relative">
+      {/* The card itself does not clip: its "…" menu has to overflow it. */}
+      <div className="relative overflow-hidden rounded-t-[calc(var(--radius-lg)-1px)]">
         <button
           type="button"
           onClick={showDetails}

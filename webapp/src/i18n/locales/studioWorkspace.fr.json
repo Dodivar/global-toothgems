@@ -874,8 +874,27 @@
       "shoppingBody": "Ajoutez au panier tout ce qu’il faut pour la reproduire. Les prix sont confirmés au paiement.",
       "glowbookGoneTitle": "Création indisponible",
       "glowbookGoneBody": "Cette création n’est plus publiée dans ce Glowbook, ou l’adresse est incomplète.",
-      "glowbookEyebrow": "Glowbook de {{name}}"
+      "glowbookEyebrow": "Glowbook de {{name}}",
+      "bookingEyebrow": "Création jointe au rendez-vous",
+      "bookingWithClient": "Rendez-vous du {{when}} avec {{name}}",
+      "bookingWithArtist": "Rendez-vous du {{when}} avec {{name}}",
+      "bookingNoteArtist": "Le client vous montre ce qu’il souhaite. Vous seul la voyez, tant que le rendez-vous existe ; elle ne peut pas être modifiée ici.",
+      "bookingNoteClient": "Votre création, telle que l’artiste la voit avant le rendez-vous.",
+      "backToAgenda": "Retour à mon agenda",
+      "backToBookings": "Retour à mes rendez-vous",
+      "bookingGoneTitle": "Création indisponible",
+      "bookingGoneBody": "Le rendez-vous a été annulé, la création a été supprimée, ou elle ne vous est pas destinée.",
+      "bookingSignInTitle": "Connectez-vous pour voir cette création",
+      "bookingSignInBody": "Seuls l’artiste réservé et le client peuvent l’ouvrir."
     }
+  },
+  "bookArtist": {
+    "title": "Faites-la réaliser par un artiste",
+    "body": "Trouvez un artiste près de chez vous et réservez avec cette création : il la verra en 3D avant le rendez-vous.",
+    "cta": "Trouver un artiste",
+    "editorSub": "Trouvez un artiste près de chez vous : il verra cette création en 3D avant le rendez-vous.",
+    "editorNoticeSave": "Enregistrez d’abord la création : l’artiste verra sa version enregistrée.",
+    "editorNoticeEmpty": "Ajoutez des strass puis enregistrez la création pour la proposer à un artiste."
   },
   "collections": {
     "label": "Collections",
