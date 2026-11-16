@@ -105,6 +105,12 @@ export interface PlacedJewelry {
   scale: number;
   /** Manual standoff fine-tune from the enamel, in world units. */
   offset?: number;
+  /**
+   * Locked by the customer: the piece stays where it is and as it is — no
+   * drag, move, turn, resize, recolour or delete — until it is unlocked.
+   * Per piece, never a group: unlocking one leaves the others locked.
+   */
+  locked?: true;
 }
 
 /** Virtual tooth id for a piece sitting on an unlabelled region of a free-mode model. */
@@ -277,6 +283,7 @@ export function sanitizeJewels(input: unknown): PlacedJewelry[] {
       rotation: isNum(j.rotation) ? ((j.rotation % 360) + 360) % 360 : 0,
       scale: scaleForSize(size),
       ...(isNum(j.offset) ? { offset: clampTo(j.offset, OFFSET_RANGE.min, OFFSET_RANGE.max) } : {}),
+      ...(j.locked === true ? { locked: true as const } : {}),
     });
   }
   return out;

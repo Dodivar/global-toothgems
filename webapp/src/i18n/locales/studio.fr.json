@@ -415,6 +415,22 @@
       "duplicateVertical": "Copie verticale",
       "hint": "L’horizontal reflète de part et d’autre du milieu de l’arcade (11 ↔ 21…) ; le vertical reflète d’une arcade à l’autre (11 ↔ 41…), ou d’un bord à l’autre de la dent si le modèle n’a qu’une arcade. Les pièces se recalent sur l’émail et ne se chevauchent jamais."
     },
+    "lock": {
+      "lock_one": "Verrouiller",
+      "lock_other": "Tout verrouiller",
+      "unlock_one": "Déverrouiller",
+      "unlock_other": "Tout déverrouiller",
+      "unlockAll": "Déverrouiller toutes les pièces sélectionnées",
+      "free_one": "Pièce libre",
+      "free_other": "Pièces libres",
+      "locked_one": "Pièce verrouillée",
+      "locked_other": "{{count}} pièces verrouillées",
+      "someLocked_one": "{{count}} pièce verrouillée sur {{total}}",
+      "someLocked_other": "{{count}} pièces verrouillées sur {{total}}",
+      "hint_one": "Elle ne peut plus être déplacée ni modifiée. Déverrouillez-la pour changer sa position, sa couleur ou sa taille.",
+      "hint_other": "Une pièce verrouillée ne peut plus être déplacée ni modifiée ; les modifications ne s’appliquent qu’aux pièces libres. Chaque pièce se déverrouille séparément, sans former de groupe.",
+      "badge": "Verrouillée"
+    },
     "inspector": {
       "label": "Propriétés",
       "multiSub_one": "Sur {{count}} dent",
@@ -497,6 +513,7 @@
       "deselect": "Désélectionner / annuler",
       "pan": "Déplacer la caméra",
       "focus": "Centrer sur une dent",
+      "lock": "Verrouiller / déverrouiller la sélection",
       "keys": {
         "undoRedo": "Ctrl Z|Ctrl Maj Z",
         "selectAll": "Ctrl A",
@@ -508,7 +525,8 @@
         "delete": "Suppr",
         "deselect": "Échap",
         "pan": "Maj + glisser",
-        "focus": "Double-clic"
+        "focus": "Double-clic",
+        "lock": "Maj L"
       }
     },
     "webgl": {
@@ -529,6 +547,7 @@
       "duplicateMirrorV": "Dupliquer en miroir vertical",
       "mirrorH": "Refléter horizontalement",
       "mirrorV": "Refléter verticalement",
+      "lock": "Verrouiller / déverrouiller",
       "delete": "Supprimer",
       "reset": "Rétablir les boutons par défaut"
     },
@@ -592,7 +611,10 @@
         "empty": "Ce fichier ne contient aucun modèle 3D"
       },
       "addedToCart_one": "{{count}} article ajouté au panier",
-      "addedToCart_other": "{{count}} articles ajoutés au panier"
+      "addedToCart_other": "{{count}} articles ajoutés au panier",
+      "lockedNoMove": "Cette pièce est verrouillée — déverrouillez-la pour la déplacer",
+      "lockedKept_one": "{{count}} pièce verrouillée n’a pas été supprimée",
+      "lockedKept_other": "{{count}} pièces verrouillées n’ont pas été supprimées"
     },
     "pieceUnavailable": "Gemme retirée de la boutique",
     "shopPrice": "Prix boutique : {{price}}",
