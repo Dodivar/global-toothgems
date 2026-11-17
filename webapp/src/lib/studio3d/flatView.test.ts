@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scaleForSize, type PlacedJewelry } from "../../data/studioEditor";
 import { DENTITION_CROWNS } from "./dentition";
-import { FLAT_VIEW_BOX, FLAT_VIEW_TEETH, crownDetails, crownOutline, gumOutline, projectFlatView } from "./flatView";
+import { FLAT_VIEW_BOX, FLAT_VIEW_TEETH, crownDetails, crownOutline, projectFlatView } from "./flatView";
 import { pathToSvg, projectFrontView, type FrontViewPathCommand } from "./frontView";
 
 const tooth = (fdi: string) => FLAT_VIEW_TEETH.find((t) => t.fdi === fdi)!;
@@ -114,23 +114,6 @@ describe("flat view outlines", () => {
     expect(crownDetails(tooth("47"))).toHaveLength(1);
     expect(crownDetails(tooth("11"))).toHaveLength(0);
     expect(crownDetails(tooth("14"))).toHaveLength(0);
-  });
-
-  it("closes each arch's gum across the frame, on its own side", () => {
-    const box = FLAT_VIEW_BOX;
-    const upper = gumOutline(FLAT_VIEW_TEETH.filter((t) => !t.lower), box);
-    const lower = gumOutline(FLAT_VIEW_TEETH.filter((t) => t.lower), box);
-    for (const gum of [upper, lower]) {
-      expect(gum[0][0]).toBe("M");
-      expect(gum[gum.length - 1][0]).toBe("Z");
-      const xs = points(gum).map(([x]) => x);
-      expect(Math.min(...xs)).toBeCloseTo(box.x, 6);
-      expect(Math.max(...xs)).toBeCloseTo(box.x + box.width, 6);
-    }
-    // Neither gum reaches the other arch.
-    expect(Math.max(...points(upper).map(([, y]) => y))).toBeLessThan(0);
-    expect(Math.min(...points(lower).map(([, y]) => y))).toBeGreaterThan(0);
-    expect(gumOutline([], box)).toEqual([]);
   });
 });
 

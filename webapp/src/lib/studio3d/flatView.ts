@@ -14,7 +14,8 @@ import {
  * the placement sheet. Both arches are unrolled — every tooth shows its outer
  * face, at its real proportions, the molars as readable as the incisors — and
  * each crown has the silhouette of its type (square incisors, pointed
- * canines, blunt premolars, two-cusped molars) under a scalloped gum line.
+ * canines, blunt premolars, two-cusped molars), drawn without gum in the
+ * style of the front render (`renderView.ts`).
  *
  * The orthographic projection of `frontView.ts` could not serve as a drawing:
  * seen from the front the side teeth are slivers and the upper incisors hide
@@ -54,6 +55,9 @@ const CROWN_SIZE: Record<Arch, Record<ToothKey, readonly [width: number, height:
   },
 };
 
+/** A crown's real width, mm (average adult dimensions): the flat view's, and the measure of the render's foreshortening (`renderView.ts`). */
+export const crownWidth = (lower: boolean, kind: ToothKey): number => CROWN_SIZE[lower ? "lower" : "upper"][kind][0];
+
 /** How far each biting edge stays from the biting plane, mm: the smile line (laterals shorter, the back teeth rising). */
 const EDGE_LIFT: Record<Arch, Record<ToothKey, number>> = {
   upper: { central: 0, lateral: 0.7, canine: 0.2, pm1: 0.7, pm2: 0.9, m1: 1, m2: 1.3 },
@@ -64,7 +68,7 @@ const EDGE_LIFT: Record<Arch, Record<ToothKey, number>> = {
 const HALF_OPENING = 0.8;
 /** Margin left and right of the teeth, mm. */
 const MARGIN = 2.2;
-/** Gum drawn beyond the highest neck, mm. */
+/** Margin above and below the highest necks, mm. */
 const GUM_BAND = 3.4;
 
 function archTeeth(fdis: readonly string[], lower: boolean): FrontViewTooth[] {
@@ -230,48 +234,4 @@ export function crownDetails(t: FrontViewTooth): FrontViewPathCommand[][] {
   const at = crownFrame(t);
   const from = 1 - p.edge.groove;
   return [[["M", ...at(0, from)], ["C", ...at(0.05, from - 0.14), ...at(-0.04, from - 0.3), ...at(0, 0.5)]]];
-}
-
-/**
- * The gum of one arch (`teeth`: that arch only, in any order), as a closed
- * shape to fill behind its crowns: a band across the frame, whose edge runs
- * just inside each crown's neck and comes to a point between two teeth, near
- * their contact. The crowns, drawn over it, cut the scalloped gum line.
- */
-export function gumOutline(teeth: readonly FrontViewTooth[], box: FrontViewBox): FrontViewPathCommand[] {
-  const row = [...teeth].sort((a, b) => a.x0 - b.x0);
-  if (!row.length) return [];
-  const edge = row[0].lower ? box.y + box.height : box.y;
-  const reach = (t: FrontViewTooth, d: number) => t.cervical + d * (t.incisal - t.cervical);
-  /** Where the gum ends at the boundary after tooth `i`: between two teeth, just short of their contact; past the last tooth, a little under its neck. */
-  const tip = (i: number): [number, number] => {
-    const a = row[i];
-    const b = row[i + 1];
-    if (a && b) return [a.x1, (reach(a, profileOf(a).contact * 0.9) + reach(b, profileOf(b).contact * 0.9)) / 2];
-    const end = a ?? b;
-    return [a ? a.x1 : b.x0, reach(end, profileOf(end).neckDepth + 0.14)];
-  };
-  const first = tip(-1);
-  const last = tip(row.length - 1);
-  const out: FrontViewPathCommand[] = [
-    ["M", box.x, edge],
-    ["L", box.x, first[1]],
-    ["L", ...first],
-  ];
-  row.forEach((t, i) => {
-    const { neck: n, neckDepth: nd, contact: c } = profileOf(t);
-    const cx = (t.x0 + t.x1) / 2;
-    const half = (t.x1 - t.x0) / 2;
-    // Across the crown (-1 its left edge … 1 its right one) and down it, a hair inside the enamel's own side curve (`crownOutline`).
-    const at = (s: number, d: number): [number, number] => [cx + s * half * 0.97, reach(t, d + 0.03)];
-    const side = c - nd;
-    const shoulder = n + (1 - n) * 0.4;
-    out.push(
-      ["C", ...at(-1, c - side * 0.35), ...at(-shoulder, nd + side * 0.35), ...at(-n, nd)],
-      ["L", ...at(n, nd)],
-      ["C", ...at(shoulder, nd + side * 0.35), ...at(1, c - side * 0.35), ...tip(i)],
-    );
-  });
-  out.push(["L", box.x + box.width, last[1]], ["L", box.x + box.width, edge], ["Z"]);
-  return out;
 }

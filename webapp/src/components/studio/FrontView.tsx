@@ -1,14 +1,17 @@
 import { useId } from "react";
 import clsx from "clsx";
-import { crownDetails, crownOutline, gumOutline } from "../../lib/studio3d/flatView";
+import dentitionRender from "../../assets/studio/dentition-front.webp";
+import { crownDetails, crownOutline } from "../../lib/studio3d/flatView";
 import { GLYPH_SPAN, pathToSvg, type FrontViewProjection } from "../../lib/studio3d/frontView";
 import { shapeGlyph } from "./editor/pieceGlyphs";
 
 /**
- * The front view drawn in SVG: both arches laid flat, every tooth showing its
- * outer face in the silhouette of its type, and every gem at its place on its
- * tooth, in its outline, size, turn and colour, with its number
- * (`lib/studio3d/flatView.ts` lays the teeth out and places the gems).
+ * The front view drawn in SVG: both arches, and every gem at its place on its
+ * tooth, in its outline, size, turn and colour, with its number. The teeth
+ * are the brand's front render (`projection.backdrop === "render"`,
+ * `lib/studio3d/renderView.ts`) or, laid flat without perspective, vector
+ * crowns in the silhouette of their type and the render's style — pale blue
+ * glossy enamel, no gum (`lib/studio3d/flatView.ts`).
  *
  * The drawing is in the projection's millimetres (`viewBox` = `box`), so a
  * gem keeps its true proportions. With `showTeeth={false}` it draws the gems
@@ -21,18 +24,25 @@ import { shapeGlyph } from "./editor/pieceGlyphs";
  * tongue side is dashed, a highlighted gem is ringed.
  */
 
-const ENAMEL_TOP = "#fbf8f1";
-const ENAMEL_BOTTOM = "#ece3d0";
-const ENAMEL_EDGE = "rgba(120, 98, 70, .38)";
-const ENAMEL_LINE = "rgba(120, 98, 70, .3)";
-const GUM = "#eeb9c0";
-const GUM_DEEP = "#e3a3ad";
-const STAGE = "#eef3f9";
+// The front render's enamel: pale blue, lighter at the heart of the crown, a gloss on its upper side.
+const ENAMEL_LIGHT = "#eef4fa";
+const ENAMEL = "#d9e4ef";
+const ENAMEL_SHADE = "#b4c5d8";
+const ENAMEL_EDGE = "rgba(92, 120, 152, .45)";
+const ENAMEL_LINE = "rgba(92, 120, 152, .35)";
+const STAGE = "#f4f8fc";
 const GEM_EDGE = "rgba(38, 60, 82, .7)";
 const INK = "#111111";
 const FONT = 'Montserrat, "Helvetica Neue", Arial, sans-serif';
 /** Number badge radius, mm of the drawing. */
 const BADGE = 1.25;
+
+/** The gloss: the crown's own outline, shrunk toward its upper middle, so the light stays inside the enamel. */
+function glossTransform(t: FrontViewProjection["teeth"][number]): string {
+  const cx = (t.x0 + t.x1) / 2;
+  const top = Math.min(t.cervical, t.incisal);
+  return `translate(${cx} ${top + 0.6}) scale(0.72 0.62) translate(${-cx} ${-top})`;
+}
 
 interface FrontViewGemsProps {
   projection: FrontViewProjection;
@@ -124,8 +134,6 @@ interface FrontViewProps extends FrontViewGemsProps {
 export function FrontView({ projection, showTeeth = true, numbered = true, highlightIds, title, description, sideLabels, className }: FrontViewProps) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const { box } = projection;
-  const upper = projection.teeth.filter((t) => !t.lower);
-  const lower = projection.teeth.filter((t) => t.lower);
 
   return (
     <svg
@@ -142,41 +150,36 @@ export function FrontView({ projection, showTeeth = true, numbered = true, highl
       {title && description && <desc id={`${id}-desc`}>{description}</desc>}
       {showTeeth && (
         <>
-          <defs>
-            <linearGradient id={`${id}-enamel-up`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={ENAMEL_BOTTOM} />
-              <stop offset="100%" stopColor={ENAMEL_TOP} />
-            </linearGradient>
-            <linearGradient id={`${id}-enamel-down`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={ENAMEL_TOP} />
-              <stop offset="100%" stopColor={ENAMEL_BOTTOM} />
-            </linearGradient>
-            <linearGradient id={`${id}-gum-up`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={GUM} />
-              <stop offset="100%" stopColor={GUM_DEEP} />
-            </linearGradient>
-            <linearGradient id={`${id}-gum-down`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={GUM_DEEP} />
-              <stop offset="100%" stopColor={GUM} />
-            </linearGradient>
-          </defs>
           <rect x={box.x} y={box.y} width={box.width} height={box.height} fill={STAGE} />
-          <path d={pathToSvg(gumOutline(upper, box))} fill={`url(#${id}-gum-down)`} />
-          <path d={pathToSvg(gumOutline(lower, box))} fill={`url(#${id}-gum-up)`} />
-          {projection.teeth.map((t) => (
-            <g key={t.fdi}>
-              <path
-                d={pathToSvg(crownOutline(t))}
-                fill={`url(#${id}-enamel-${t.lower ? "up" : "down"})`}
-                stroke={ENAMEL_EDGE}
-                strokeWidth={0.14}
-                strokeLinejoin="round"
-              />
-              {crownDetails(t).map((line, i) => (
-                <path key={i} d={pathToSvg(line)} fill="none" stroke={ENAMEL_LINE} strokeWidth={0.14} strokeLinecap="round" />
-              ))}
-            </g>
-          ))}
+          {projection.backdrop === "render" ? (
+            <image href={dentitionRender.src} x={box.x} y={box.y} width={box.width} height={box.height} preserveAspectRatio="none" />
+          ) : (
+            <>
+              <defs>
+                <radialGradient id={`${id}-enamel`} cx="42%" cy="40%" r="70%">
+                  <stop offset="0%" stopColor={ENAMEL_LIGHT} />
+                  <stop offset="60%" stopColor={ENAMEL} />
+                  <stop offset="100%" stopColor={ENAMEL_SHADE} />
+                </radialGradient>
+                <linearGradient id={`${id}-gloss`} x1="0" y1="0" x2="0.7" y2="1">
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity=".85" />
+                  <stop offset="45%" stopColor="#ffffff" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {projection.teeth.map((t) => {
+                const d = pathToSvg(crownOutline(t));
+                return (
+                  <g key={t.fdi}>
+                    <path d={d} fill={`url(#${id}-enamel)`} stroke={ENAMEL_EDGE} strokeWidth={0.14} strokeLinejoin="round" />
+                    <path d={d} fill={`url(#${id}-gloss)`} transform={glossTransform(t)} />
+                    {crownDetails(t).map((line, i) => (
+                      <path key={i} d={pathToSvg(line)} fill="none" stroke={ENAMEL_LINE} strokeWidth={0.14} strokeLinecap="round" />
+                    ))}
+                  </g>
+                );
+              })}
+            </>
+          )}
           {sideLabels && (
             <g fontFamily={FONT} fontWeight={700} fontSize={1.3} fill="#5c5c5c">
               <text x={box.x + 1.2} y={box.y + 1.9}>

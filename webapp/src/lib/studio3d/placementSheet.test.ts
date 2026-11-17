@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { scaleForSize, type PlacedJewelry } from "../../data/studioEditor";
 import { DENTITION_CROWNS } from "./dentition";
 import { projectFlatView } from "./flatView";
+import { RENDER_IMAGE, projectRenderView } from "./renderView";
 import { buildPlacementSheet, fitText, placementSheetFileName, referenceGroups, toothCell, type PlacementSheetInput } from "./placementSheet";
 
 function piece(id: string, fdi: string, extra: Partial<PlacedJewelry> = {}): PlacedJewelry {
@@ -74,6 +75,17 @@ describe("placement sheet", () => {
     // Gems are drawn as filled and stroked paths in their colour.
     expect(pdf).toContain("0.88 0.28 0.61 rg");
     expect(pdf.trimEnd().endsWith("%%EOF")).toBe(true);
+  });
+
+  it("embeds the front render as a JPEG image under the gems", () => {
+    const projection = projectRenderView([piece("a", "11")], "dentition");
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+    const pdf = latin1(buildPlacementSheet({ ...input([]), projection, render: { ...RENDER_IMAGE, jpeg } }));
+    expect(pdf).toContain(`/Width ${RENDER_IMAGE.width} /Height ${RENDER_IMAGE.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length 4`);
+    expect(pdf).toMatch(/\/XObject << \/Logo 5 0 R \/Im0 \d+ 0 R >>/);
+    expect(pdf).toContain("/Im0 Do");
+    expect(pdf).toContain("0.88 0.28 0.61 rg");
+    expect(() => buildPlacementSheet({ ...input([]), projection })).toThrow();
   });
 
   it("flows a long design over several pages", () => {
