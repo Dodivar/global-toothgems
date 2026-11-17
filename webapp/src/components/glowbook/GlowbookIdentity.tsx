@@ -27,6 +27,8 @@ interface GlowbookIdentityProps {
   certifiedTitles?: readonly string[];
   /** The Glowbook calendar is open (decision 144): the booking button opens it; none while it is closed. */
   onBook?: () => void;
+  /** The artist's place follows right under the profile (decision 152): less space below it. */
+  withPlace?: boolean;
 }
 
 /** The id of the profile section, the target of the bar's "Profile" link. */
@@ -66,7 +68,7 @@ export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview =
   const { t } = useTranslation();
   const l = look ?? DEFAULT_LOOK;
   const certified = certifiedTitles.length > 0;
-  const bookingClass = clsx(pill, "bg-[var(--gb-accent)] px-3 text-[var(--gb-on-accent)] @[640px]:px-4");
+  const bookingClass = clsx(pill, "px-3 @[640px]:px-4", "bg-[var(--gb-cta)] text-[var(--gb-on-cta)] hover:bg-[var(--gb-cta-hover)]");
   const profileClass = clsx(pill, "border border-[var(--gb-border)] bg-[var(--gb-card)] px-3 text-[var(--gb-text)] @[640px]:px-4");
   return (
     <header className="@container border-b border-[var(--gb-border)] bg-[var(--gb-card)] text-[var(--gb-text)]">
@@ -112,7 +114,7 @@ export function GlowbookTopBar({ displayName, handle, look, avatarUrl, preview =
 }
 
 /** The full profile, at the bottom of the page: picture, name, city, badge, booking and bio. */
-export function GlowbookProfile({ displayName, handle, bio, look, avatarUrl, preview = false, certifiedTitles = [], onBook }: GlowbookIdentityProps) {
+export function GlowbookProfile({ displayName, handle, bio, look, avatarUrl, preview = false, certifiedTitles = [], onBook, withPlace = false }: GlowbookIdentityProps) {
   const { t } = useTranslation();
   const l = look ?? DEFAULT_LOOK;
 
@@ -122,7 +124,7 @@ export function GlowbookProfile({ displayName, handle, bio, look, avatarUrl, pre
       aria-labelledby={preview ? undefined : `${GLOWBOOK_PROFILE_ID}-title`}
       className="scroll-mt-20 text-[var(--gb-text)]"
     >
-      <div className={clsx("mx-auto grid max-w-[880px] justify-items-center gap-3 px-4 text-center", preview ? "py-5" : "py-12")}>
+      <div className={clsx("mx-auto grid max-w-[880px] justify-items-center gap-3 px-4 text-center", preview ? "py-5" : withPlace ? "pb-6 pt-12" : "py-12")}>
         <p className="m-0 text-[11px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gb-muted)]">{t("studio.glowbook.public.profileEyebrow")}</p>
         <GlowbookAvatar
           name={displayName}
@@ -146,7 +148,7 @@ export function GlowbookProfile({ displayName, handle, bio, look, avatarUrl, pre
         </p>
         <GlowbookBadge titles={certifiedTitles} />
         {onBook && !preview && (
-          <button type="button" onClick={onBook} className={clsx(pill, "mt-1 bg-[var(--gb-accent)] text-[var(--gb-on-accent)]")}>
+          <button type="button" onClick={onBook} className={clsx(pill, "mt-1", "bg-[var(--gb-cta)] text-[var(--gb-on-cta)] hover:bg-[var(--gb-cta-hover)]")}>
             <CalendarCheck size={14} aria-hidden="true" />
             {t("studio.glowbook.public.book")}
           </button>

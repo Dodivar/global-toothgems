@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { DashboardTile } from "./DashboardTile";
 import { useAuth } from "../../../lib/auth";
 import { AGENDA_PATH } from "../../../lib/agendaRoutes";
+import { useBookingsPlanKnown } from "../../layout/useGlowbookPlanKnown";
 import { bookingAvailable, fetchArtistAppointments } from "../../../lib/glowbookBooking";
 import { DEFAULT_SETTINGS, formatDay, formatWhen, localDay, type ArtistCalendar } from "../../../lib/glowbookBookingMapping";
 
@@ -20,11 +21,13 @@ const SHOWN = 3;
  * left to record (in the dark dress: the client's no-show count depends on
  * it), and the next time off. Shown to a member who has a Glowbook page or
  * appointments booked on it — whatever the plan, since the calendar stays
- * readable after it ends —, never to anyone else. Read from
+ * readable after it ends —, never to anyone else. A page without the
+ * calendar's plan (Artist, decision 153) and no appointment shows no card. Read from
  * `glowbook_artist_calendar` (the artist's own rows only).
  */
 export function AgendaTile() {
   const { userId } = useAuth();
+  const bookingsPlan = useBookingsPlanKnown();
   const [agenda, setAgenda] = useState<{ userId: string; data: Agenda } | null>(null);
 
   useEffect(() => {
@@ -44,7 +47,7 @@ export function AgendaTile() {
 
   if (!agenda || agenda.userId !== userId) return null;
   const { data } = agenda;
-  if (!data.pageStatus && data.upcoming.length === 0 && data.toMark.length === 0) return null;
+  if ((!data.pageStatus || bookingsPlan !== true) && data.upcoming.length === 0 && data.toMark.length === 0) return null;
   return <AgendaTileCard upcoming={data.upcoming} toMark={data.toMark.length} closure={data.closures[0] ?? null} />;
 }
 

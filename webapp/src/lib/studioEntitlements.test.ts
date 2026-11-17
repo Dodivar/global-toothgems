@@ -18,6 +18,7 @@ const FEATURES: StudioFeature[] = [
   "templates",
   "collections",
   "glowbook",
+  "bookings",
   "tryOn",
 ];
 
@@ -25,7 +26,7 @@ const FEATURES: StudioFeature[] = [
  * Who gets what (decision 113). The expected table is written out here, on
  * purpose, rather than read from `STUDIO_PLAN_FEATURES`: changing what a plan
  * includes must be a deliberate edit of this test too (and of the database,
- * `private.studio_plan_limit()`, `glowbook_allowed()`, `studio_artist_plan()`,
+ * `private.studio_plan_limit()`, `glowbook_allowed()`, `glowbook_booking_allowed()`, `studio_artist_plan()`,
  * `studio_try_on_allowed()`, `studio_user_tier()`).
  */
 const EXPECTED: Record<StudioPaidPlanId, Record<StudioFeature, boolean>> = {
@@ -38,6 +39,7 @@ const EXPECTED: Record<StudioPaidPlanId, Record<StudioFeature, boolean>> = {
     templates: true,
     collections: false,
     glowbook: false,
+    bookings: false,
     tryOn: false,
   },
   artist: {
@@ -48,7 +50,8 @@ const EXPECTED: Record<StudioPaidPlanId, Record<StudioFeature, boolean>> = {
     transparentExport: true,
     templates: true,
     collections: true,
-    glowbook: false,
+    glowbook: true,
+    bookings: false,
     tryOn: false,
   },
   atelier: {
@@ -60,6 +63,7 @@ const EXPECTED: Record<StudioPaidPlanId, Record<StudioFeature, boolean>> = {
     templates: true,
     collections: true,
     glowbook: true,
+    bookings: true,
     tryOn: true,
   },
 };
@@ -88,8 +92,9 @@ describe("hasFeature", () => {
     expect(lowestPlanWith("clientTools")).toBe("artist");
   });
 
-  it("keeps the Glowbook, the AI try-on and the post layouts for Atelier", () => {
-    expect(lowestPlanWith("glowbook")).toBe("atelier");
+  it("opens the Glowbook from the Artist plan, keeps bookings, the AI try-on and the post layouts for Atelier (decision 153)", () => {
+    expect(lowestPlanWith("glowbook")).toBe("artist");
+    expect(lowestPlanWith("bookings")).toBe("atelier");
     expect(lowestPlanWith("tryOn")).toBe("atelier");
     expect(lowestPlanWith("postLayouts")).toBe("atelier");
     expect(lowestPlanWith("ownLogo")).toBe("artist");
@@ -126,12 +131,13 @@ describe("saved creations and Gem Groups", () => {
   });
 
   it("refuses the save past the limit, at the exact boundary", () => {
-    expect(canSaveMore("essential", "creations", 14)).toBe(true);
+    expect(canSaveMore("essential", "creations", 9)).toBe(true);
     expect(canSaveMore("essential", "creations", 10)).toBe(false);
     expect(canSaveMore("essential", "gemGroups", 2)).toBe(true);
     expect(canSaveMore("essential", "gemGroups", 3)).toBe(false);
-    expect(canSaveMore("artist", "creations", 149)).toBe(true);
+    expect(canSaveMore("artist", "creations", 49)).toBe(true);
     expect(canSaveMore("artist", "creations", 50)).toBe(false);
+    expect(canSaveMore("artist", "gemGroups", 14)).toBe(true);
     expect(canSaveMore("artist", "gemGroups", 15)).toBe(false);
   });
 
@@ -143,9 +149,9 @@ describe("saved creations and Gem Groups", () => {
   });
 
   it("keeps everything after a downgrade but saves nothing over the new limit", () => {
-    // An Artist member holding 40 creations moves to Essential.
-    expect(canSaveMore("artist", "creations", 40)).toBe(true);
-    expect(canSaveMore("essential", "creations", 40)).toBe(false);
+    // An Artist member holding 25 creations moves to Essential.
+    expect(canSaveMore("artist", "creations", 25)).toBe(true);
+    expect(canSaveMore("essential", "creations", 25)).toBe(false);
   });
 });
 
@@ -169,9 +175,17 @@ describe("the database's answer drives the rights", () => {
   });
 
   it("active staff get the Atelier plan's rights", () => {
-    const info = parseAccessRow({ ...base, state: "staff", tier: "atelier", glowbook: true, limits: { creations: null, gem_groups: null } })!;
+    const info = parseAccessRow({ ...base, state: "staff", tier: "atelier", glowbook: true, bookings: true, limits: { creations: null, gem_groups: null } })!;
     for (const feature of FEATURES) expect(hasFeature(info.tier, feature)).toBe(true);
     expect(info.glowbook).toBe(true);
+    expect(info.bookings).toBe(true);
+  });
+
+  it("an Artist member holds the Glowbook without bookings (decision 153)", () => {
+    const info = parseAccessRow({ ...base, state: "subscribed", tier: "artist", glowbook: true, bookings: false })!;
+    expect(info.glowbook).toBe(true);
+    expect(info.bookings).toBe(false);
+    expect(parseAccessRow({ ...base, state: "subscribed", tier: "artist", glowbook: true, bookings: "yes" })!.bookings).toBe(false);
     expect(atLimit(info, "creations")).toBe(false);
   });
 
@@ -208,11 +222,12 @@ describe("every plan string exists in French and English", () => {
   it.each(Object.keys(locales) as (keyof typeof locales)[])("%s", (lang) => {
     const { page, studio } = locales[lang];
     const keys = [
-      // Plan cards (StudioPlans: PlanFeatureList)
-      ...FEATURES.map((f) => `plans.features.${f}`),
-      ...["title", "plus", "creations_one", "creations_other", "gemGroups_one", "gemGroups_other", "unlimited", "library"].map(
-        (k) => `plans.features.${k}`,
-      ),
+      // Plan cards (StudioPlans: PlanFeatureList): one short line each, most with a detail
+      ...["templates", "clientTools", "posts", "glowbook", "bookings", "directory", "tryOn", "postLayouts", "counts"].flatMap((k) => [
+        `plans.features.${k}`,
+        `plans.features.${k}Tip`,
+      ]),
+      ...["title", "plus", "extras", "unlimited", "library", "more", "less"].map((k) => `plans.features.${k}`),
       ...TIERS.map((tier) => `plans.items.${tier}`),
     ];
     for (const key of keys) expect(at(page, key), `studioPage.${key}`).toEqual(expect.any(String));

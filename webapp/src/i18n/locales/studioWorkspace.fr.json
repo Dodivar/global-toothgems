@@ -533,7 +533,7 @@
       "frontView": {
         "title": "La vue de face numérotée",
         "body": [
-          "La vue de face dessine les deux arcades de face, comme vous voyez votre client·e, avec chaque gemme à sa place, numérotée. Attention au sens : la droite du patient est à gauche du dessin.",
+          "La vue de face dessine les deux arcades à plat, comme vous voyez votre client·e : chaque dent montre sa face visible, des incisives aux molaires, avec chaque gemme à sa place, numérotée. Attention au sens : la droite du patient est à gauche du dessin.",
           "Les numéros renvoient à la liste des gemmes et à la fiche de pose : vous savez exactement quelle gemme va où. La vue de face est dans le panneau de droite de l’éditeur et dans le détail d’une création ; « Agrandir » l’ouvre en grand.",
           "Les gemmes posées sur un modèle importé ou hors des dents repérées ne sont pas dessinées, mais restent dans la liste."
         ]
@@ -612,15 +612,15 @@
           "Le Glowbook est votre vitrine publique : une page à votre nom (/glowbook/votre-pseudo), à mettre en lien dans votre bio Instagram, qui montre les créations que vous choisissez. Chacune s’ouvre en 3D pour les visiteurs, qui peuvent aussi commander ses gemmes.",
           "Créez la page depuis « Mon Glowbook » (nom affiché, pseudo, bio). Ajoutez une création depuis son détail dans Mes créations, avec « Ajouter à mon Glowbook » (jamais depuis l’éditeur) ; 60 créations au maximum.",
           "Modération : la page et chaque nouvelle création sont validées par l’équipe Global Toothgems avant d’être visibles. En cas de refus, le motif s’affiche ; modifiez puis renvoyez. Une fois une création validée, vos prochains enregistrements y sont publiés immédiatement : le Studio vous prévient avant d’enregistrer. Changer de pseudo change l’adresse et renvoie la page en validation.",
-          "La page reste visible tant que votre formule Atelier est active. Supprimer une création la retire aussi de votre Glowbook."
+          "La page reste visible tant que votre formule Artiste ou Atelier est active. Supprimer une création la retire aussi de votre Glowbook."
         ]
       },
       "glowbookLook": {
         "title": "Personnaliser son Glowbook et la création à la une",
         "body": [
-          "L’onglet Apparence règle l’identité de votre page : photo de profil, couleur, fond (clair, teinté, sombre), présentation des créations (grille ou grandes cartes), ville ou studio et lieu où vous travaillez. Pas de lien externe : vos clientes réservent directement depuis votre page.",
+          "L’onglet Apparence règle votre photo de profil, la création à la une, la ville ou le studio et le lieu où vous travaillez. Les couleurs et la présentation sont les mêmes pour toutes les pages, pensées pour mettre vos créations en valeur. Pas de lien externe : vos clientes réservent directement depuis votre page.",
           "La création à la une ouvre votre page en grand, dans une courte vidéo de 5 secondes qui balaie le sourire de gauche à droite, en boucle. Cette vidéo est enregistrée automatiquement par votre Studio quand elle manque ou n’est plus à jour : laissez le Studio ouvert un instant après avoir changé de création à la une.",
-          "Couleur, fond, présentation, une et ville sont publiés dès l’enregistrement ; une nouvelle photo attend d’abord la validation de l’équipe (la page garde la précédente en attendant)."
+          "La une, la ville et le lieu sont publiés dès l’enregistrement ; une nouvelle photo attend d’abord la validation de l’équipe (la page garde la précédente en attendant)."
         ]
       },
       "glowbookSections": {
@@ -644,7 +644,7 @@
       "glowbookShare": {
         "title": "Faire connaître son Glowbook : lien, QR code, badge",
         "body": [
-          "L’onglet Partager donne l’adresse de votre page à copier dans votre bio, un QR code en PNG et une affiche A4 (PDF) avec votre nom, votre photo et votre couleur, à imprimer pour votre studio. Ils sont disponibles une fois la page validée.",
+          "L’onglet Partager donne l’adresse de votre page à copier dans votre bio, un QR code en PNG et une affiche A4 (PDF) avec votre nom et votre photo, à imprimer pour votre studio. Ils sont disponibles une fois la page validée.",
           "Si vous avez terminé une formation de l’Academy Global Toothgems avec certificat, votre page peut afficher le badge « Artiste certifiée », avec le titre de la formation. Vous pouvez le masquer."
         ]
       },
@@ -662,8 +662,8 @@
         ],
         "points": [
           "Essentielle : 10 créations et 3 groupes de gemmes enregistrés ; modèles Global Toothgems.",
-          "Artiste : 50 créations et 15 groupes ; vue de face, fiche de pose et liens de partage ; posts pour les réseaux, signés de votre logo ou sans signature ; collections et dossiers.",
-          "Atelier : créations et groupes illimités ; tout ce que comprend Artiste ; mises en page des posts ; Glowbook, avec la prise de rendez-vous en ligne, un agenda synchronisé avec Google, Apple ou Outlook et une place dans l’annuaire « Trouver un artiste » ; essai sur un sourire par IA, pour vous et pour les visiteurs de vos créations.",
+          "Artiste : 50 créations et 15 groupes ; vue de face, fiche de pose et liens de partage ; posts pour les réseaux, signés de votre logo ou sans signature ; collections et dossiers ; votre Glowbook public.",
+          "Atelier : créations et groupes illimités ; tout ce que comprend Artiste ; mises en page des posts ; la prise de rendez-vous en ligne depuis votre Glowbook, un agenda synchronisé avec Google, Apple ou Outlook et une place dans l’annuaire « Trouver un artiste » ; essai sur un sourire par IA, pour vous et pour les visiteurs de vos créations.",
           "Au-delà de la limite, un nouvel enregistrement est refusé (rien n’est perdu) : modifier ou supprimer une création reste toujours possible."
         ]
       },
@@ -874,8 +874,27 @@
       "shoppingBody": "Ajoutez au panier tout ce qu’il faut pour la reproduire. Les prix sont confirmés au paiement.",
       "glowbookGoneTitle": "Création indisponible",
       "glowbookGoneBody": "Cette création n’est plus publiée dans ce Glowbook, ou l’adresse est incomplète.",
-      "glowbookEyebrow": "Glowbook de {{name}}"
+      "glowbookEyebrow": "Glowbook de {{name}}",
+      "bookingEyebrow": "Création jointe au rendez-vous",
+      "bookingWithClient": "Rendez-vous du {{when}} avec {{name}}",
+      "bookingWithArtist": "Rendez-vous du {{when}} avec {{name}}",
+      "bookingNoteArtist": "Le client vous montre ce qu’il souhaite. Vous seul la voyez, tant que le rendez-vous existe ; elle ne peut pas être modifiée ici.",
+      "bookingNoteClient": "Votre création, telle que l’artiste la voit avant le rendez-vous.",
+      "backToAgenda": "Retour à mon agenda",
+      "backToBookings": "Retour à mes rendez-vous",
+      "bookingGoneTitle": "Création indisponible",
+      "bookingGoneBody": "Le rendez-vous a été annulé, la création a été supprimée, ou elle ne vous est pas destinée.",
+      "bookingSignInTitle": "Connectez-vous pour voir cette création",
+      "bookingSignInBody": "Seuls l’artiste réservé et le client peuvent l’ouvrir."
     }
+  },
+  "bookArtist": {
+    "title": "Faites-la réaliser par un artiste",
+    "body": "Trouvez un artiste près de chez vous et réservez avec cette création : il la verra en 3D avant le rendez-vous.",
+    "cta": "Trouver un artiste",
+    "editorSub": "Trouvez un artiste près de chez vous : il verra cette création en 3D avant le rendez-vous.",
+    "editorNoticeSave": "Enregistrez d’abord la création : l’artiste verra sa version enregistrée.",
+    "editorNoticeEmpty": "Ajoutez des strass puis enregistrez la création pour la proposer à un artiste."
   },
   "collections": {
     "label": "Collections",

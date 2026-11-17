@@ -13,7 +13,7 @@ import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { STUDIO_EXPLORE, type ClientSpace } from "../../layout/clientSpaces";
 import { focusRing } from "./workspaceStyles";
 import { AGENDA_PATH } from "../../../lib/agendaRoutes";
-import { useGlowbookPlan } from "../../../lib/studioAccess";
+import { useBookingsPlan } from "../../../lib/studioAccess";
 
 interface NavItem {
   section: StudioSection | null;
@@ -21,8 +21,8 @@ interface NavItem {
   key: string;
   /** A page outside the workspace (never current here), in place of a section. */
   to?: string;
-  /** Listed only while the plan includes the Glowbook. */
-  glowbookPlan?: boolean;
+  /** Listed only while the plan runs the calendar (Atelier, decision 153). */
+  bookingsPlan?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -32,14 +32,14 @@ const NAV: NavItem[] = [
   { section: "templates", icon: LayoutTemplate, key: "templates" },
   { section: "glowbook", icon: Sparkles, key: "glowbook" },
   // The artist's calendar has its own page in the member space (decision 147).
-  { section: null, icon: CalendarDays, key: "agenda", to: AGENDA_PATH, glowbookPlan: true },
+  { section: null, icon: CalendarDays, key: "agenda", to: AGENDA_PATH, bookingsPlan: true },
   { section: "help", icon: LifeBuoy, key: "help" },
 ];
 
-/** The rail's entries for this member: the calendar only while the plan includes the Glowbook. */
+/** The rail's entries for this member: the calendar only while the plan runs it. */
 function useNav(): NavItem[] {
-  const plan = useGlowbookPlan();
-  return NAV.filter((item) => !item.glowbookPlan || plan === true);
+  const plan = useBookingsPlan();
+  return NAV.filter((item) => !item.bookingsPlan || plan === true);
 }
 
 /**

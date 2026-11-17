@@ -41,7 +41,7 @@ export interface PendingBookingMail {
   startsAt: string;
   endsAt: string;
   timezone: string;
-  designKind: "creation" | "custom";
+  designKind: "creation" | "custom" | "client_creation";
   creationName: string | null;
   comment: string | null;
   cancelReason: string | null;
@@ -75,6 +75,9 @@ const LABELS = {
     artist: "Artiste",
     design: "Création",
     custom: "Création personnalisée",
+    clientDesign: "Création du client",
+    clientDesignNotice: "Le client a joint sa création du Studio 3D",
+    clientDesignBody: "Ouvrez votre agenda pour la voir en 3D, en lecture seule.",
     comment: "Envie du client",
     yourComment: "Votre message",
     client: "Client",
@@ -98,6 +101,9 @@ const LABELS = {
     artist: "Artist",
     design: "Design",
     custom: "Custom design",
+    clientDesign: "Client’s design",
+    clientDesignNotice: "The client joined their 3D Studio design",
+    clientDesignBody: "Open your calendar to see it in 3D, read-only.",
     comment: "Client’s idea",
     yourComment: "Your message",
     client: "Client",
@@ -178,7 +184,10 @@ export function bookingContent(mail: PendingBookingMail, locale: string, siteUrl
     { label: l.duration, value: l.oneHour },
   ];
   if (!forArtist) rows.push({ label: l.artist, value: mail.artistName });
-  rows.push({ label: l.design, value: mail.designKind === "custom" ? l.custom : (mail.creationName ?? "—") });
+  rows.push({
+    label: mail.designKind === "client_creation" ? l.clientDesign : l.design,
+    value: mail.designKind === "custom" ? l.custom : (mail.creationName ?? "—"),
+  });
   if (mail.comment) rows.push({ label: forArtist ? l.comment : l.yourComment, value: mail.comment });
   if (forArtist && !mail.clientErased) {
     if (mail.clientName) rows.push({ label: l.client, value: mail.clientName });
@@ -191,6 +200,9 @@ export function bookingContent(mail: PendingBookingMail, locale: string, siteUrl
   if (mail.kind === "cancel_client" && mail.clientErased) blocks.push(notice({ tone: "info", title: l.clientGone }));
   if (mail.kind === "cancel_client" && mail.lateCancel) blocks.push(notice({ tone: "warning", title: l.late }));
   if (mail.kind === "cancel_artist" && mail.cancelReason) blocks.push(notice({ tone: "info", title: l.reason, body: mail.cancelReason }));
+  if (mail.kind === "new" && mail.designKind === "client_creation") {
+    blocks.push(notice({ tone: "info", title: l.clientDesignNotice, body: l.clientDesignBody }));
+  }
   if (mail.kind === "confirmed") blocks.push(notice({ tone: "info", title: l.noHealth }));
 
   const base = site(siteUrl);
@@ -278,7 +290,7 @@ export function mapBookingMail(row: Record<string, unknown>): PendingBookingMail
     startsAt: String(row.starts_at),
     endsAt: String(row.ends_at),
     timezone: text(row.timezone) ?? "Europe/Paris",
-    designKind: row.design_kind === "custom" ? "custom" : "creation",
+    designKind: row.design_kind === "custom" || row.design_kind === "client_creation" ? row.design_kind : "creation",
     creationName: text(row.creation_name),
     comment: text(row.comment),
     cancelReason: text(row.cancel_reason),

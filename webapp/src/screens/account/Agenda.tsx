@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { CalendarDays } from "lucide-react";
 import { SectionHeader } from "../../components/account/SectionHeader";
 import { ArtistAgenda } from "../../components/agenda/ArtistAgenda";
-import { useGlowbookPlanKnown } from "../../components/layout/useGlowbookPlanKnown";
+import { useBookingsPlanKnown } from "../../components/layout/useGlowbookPlanKnown";
 
 /**
  * `/compte/agenda` (decision 147): the artist's calendar in the member space —
@@ -15,7 +15,7 @@ import { useGlowbookPlanKnown } from "../../components/layout/useGlowbookPlanKno
  */
 export function Agenda() {
   const { t } = useTranslation();
-  const plan = useGlowbookPlanKnown();
+  const plan = useBookingsPlanKnown();
   return (
     <section className="grid gap-[var(--space-5)]">
       <SectionHeader icon={CalendarDays} eyebrow={t("booking.page.eyebrow")} title={t("booking.page.title")} description={t("booking.page.description")} />

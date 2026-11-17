@@ -29,6 +29,8 @@ import {
   Trash2,
   TriangleAlert,
   X,
+  Lock,
+  LockOpen,
 } from "lucide-react";
 import { useEditorLabels } from "./editorLabels";
 import type { EditorPanel, EditorPanels } from "./useEditorPanels";
@@ -46,6 +48,7 @@ import {
   removePieces,
   resizePieces,
   rotatePieces,
+  setPiecesLocked,
   type RotationSession,
 } from "../../../lib/studio3d/actions";
 import { getEngine, setEngine, StudioEngine, type SelectionAnchor } from "../../../lib/studio3d/engine";
@@ -456,6 +459,8 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
   }, []);
 
   const selected = jewels.filter((j) => ids.includes(j.id));
+  // Every selected piece locked: the bar offers only what leaves them as they are.
+  const allLocked = selected.length > 0 && selected.every((j) => j.locked);
   // One size for the whole selection, or none when the pieces differ.
   const sizes = new Set(selected.map((j) => sizeKey(j.size)));
   const size = sizes.size === 1 && selected.length ? selected[0].size : null;
@@ -557,13 +562,13 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
   const turning = dial !== null;
   const count = ids.length;
   const rotateLabel = t("studio.editor.viewport.rotateLabel", { count });
-  const icon = (label: string, Icon: typeof Copy, onClick: () => void, danger = false) => (
+  const icon = (label: string, Icon: typeof Copy, onClick: () => void, danger = false, active = false) => (
     <button
       type="button"
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={clsx(quickButton, danger && "text-[#ffb4ab]")}
+      className={clsx(quickButton, danger && "text-[#ffb4ab]", active && "bg-white/15")}
       style={{ width: QUICK_BUTTON, height: QUICK_BUTTON }}
     >
       <Icon size={17} aria-hidden="true" />
@@ -645,12 +650,21 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
         return icon(t("studio.editor.mirror.horizontal"), FlipHorizontal2, () => mirrorSelection("h"));
       case "mirrorV":
         return icon(t("studio.editor.mirror.vertical"), FlipVertical2, () => mirrorSelection("v"));
+      case "lock":
+        return allLocked
+          ? icon(t("studio.editor.lock.unlock", { count }), LockOpen, () => setPiecesLocked(ids, false), false, true)
+          : icon(t("studio.editor.lock.lock", { count }), Lock, () => setPiecesLocked(ids, true));
       case "delete":
         return icon(t("studio.editor.context.delete", { count }), Trash2, () => removePieces(ids), true);
     }
   };
   // While turning, only the rotate handle stays (the same element, so it keeps the pointer).
-  const shown = turning ? actions.filter((id) => id === "rotate") : actions;
+  // Locked pieces keep only the actions that do not change them: unlock and the duplicates.
+  const shown = turning
+    ? actions.filter((id) => id === "rotate")
+    : allLocked
+      ? actions.filter((id) => LOCKED_QUICK_ACTIONS.includes(id))
+      : actions;
 
   return (
     <>
@@ -687,7 +701,7 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
           </Fragment>
         ))}
       </div>
-      {colorOpen && !turning && actions.includes("color") && (
+      {colorOpen && !turning && !allLocked && actions.includes("color") && (
         <QuickColorPanel
           ref={panelRef}
           id={panelId}
@@ -702,6 +716,9 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     </>
   );
 }
+
+/** The quick actions that leave a locked piece as it is. */
+const LOCKED_QUICK_ACTIONS: readonly QuickActionId[] = ["duplicate", "duplicateMirror", "duplicateMirrorV", "lock"];
 
 /** The bar beside the selection, and the colour panel (a sibling: the bar scrolls and would clip it) beside the bar. */
 function placeBarAndPanel(bar: HTMLElement | null, panel: HTMLElement | null, a: SelectionAnchor, turning: boolean) {
@@ -790,6 +807,8 @@ function ContextMenu({ cm, snap }: { cm: ContextMenuState; snap: StudioSnapshot 
   const gems = snap.jewels.filter((j) => ids.includes(j.id));
   if (!gems.length) return null;
   const count = gems.length;
+  const lockedCount = gems.filter((j) => j.locked).length;
+  const allLocked = lockedCount === count;
   const act = (fn: () => void) => {
     fn();
     studioStore.closeContextMenu();
@@ -835,16 +854,25 @@ function ContextMenu({ cm, snap }: { cm: ContextMenuState; snap: StudioSnapshot 
       <p className="m-0 mb-1 truncate border-b border-[var(--border-subtle)] px-3 pb-2 pt-1.5 text-[10.5px] font-extrabold uppercase tracking-[.1em] text-[var(--text-subtle)]">
         {heading}
       </p>
-      {item(t("studio.editor.context.rotate", { count }), RotateCw, () => rotatePieces(ids))}
+      {/* Locked pieces: only what leaves them as they are — unlock, duplicate. */}
+      {allLocked
+        ? item(t("studio.editor.lock.unlock", { count }), LockOpen, () => setPiecesLocked(ids, false))
+        : item(t("studio.editor.lock.lock", { count }), Lock, () => setPiecesLocked(ids, true))}
+      {lockedCount > 0 && !allLocked && item(t("studio.editor.lock.unlockAll"), LockOpen, () => setPiecesLocked(ids, false))}
+      {!allLocked && item(t("studio.editor.context.rotate", { count }), RotateCw, () => rotatePieces(ids))}
       {item(t("studio.editor.context.duplicate", { count }), Copy, () => duplicatePieces(ids))}
       {item(t("studio.editor.context.duplicateMirror", { count }), SquareSplitHorizontal, () => duplicateMirroredPieces(ids))}
       {item(t("studio.editor.context.duplicateMirrorV", { count }), SquareSplitVertical, () => duplicateMirroredPieces(ids, "v"))}
-      {item(t("studio.editor.mirror.horizontal"), FlipHorizontal2, () => mirrorSelection("h"))}
-      {item(t("studio.editor.mirror.vertical"), FlipVertical2, () => mirrorSelection("v"))}
+      {!allLocked && item(t("studio.editor.mirror.horizontal"), FlipHorizontal2, () => mirrorSelection("h"))}
+      {!allLocked && item(t("studio.editor.mirror.vertical"), FlipVertical2, () => mirrorSelection("v"))}
       {count >= GROUP_MIN_PIECES &&
         item(t("studio.workspace.groups.contextSave", { count }), Layers, () => openWorkspaceDialog({ kind: "saveGroup", pieceIds: ids }))}
-      <span role="none" className="mx-2 my-1 block h-px bg-[var(--border-subtle)]" />
-      {item(t("studio.editor.context.delete", { count }), Trash2, () => removePieces(ids), true)}
+      {!allLocked && (
+        <>
+          <span role="none" className="mx-2 my-1 block h-px bg-[var(--border-subtle)]" />
+          {item(t("studio.editor.context.delete", { count }), Trash2, () => removePieces(ids), true)}
+        </>
+      )}
     </div>
   );
 }

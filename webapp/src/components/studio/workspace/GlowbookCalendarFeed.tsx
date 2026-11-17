@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarSync, Copy, Link2Off, RefreshCw } from "lucide-react";
+import { CalendarPlus, CalendarSync, Copy, Link2Off, RefreshCw, Smartphone } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { createFeed, disableFeed, type FeedState, fetchFeedState } from "../../../lib/glowbookBooking";
 import { useToast } from "../../../lib/toast";
+import { googleSubscribeUrl, webcalUrl } from "../../../lib/calendarLinks";
 import { fieldClass } from "./workspaceStyles";
 
 const card = "grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--shadow-sm)] sm:p-6";
@@ -19,6 +20,9 @@ const small = "m-0 text-[12.5px] leading-relaxed text-[var(--text-muted)]";
  * Google about once a day). The secret is shown once, when the link is created;
  * a new link revokes the old one; the link can be switched off. The feed carries
  * the clients' names, phones and comments, which the card says before creating it.
+ * Once shown, the link is also offered in one tap — "Add to Apple Calendar"
+ * (webcal://, which the iPhone and the Mac open as a subscription) and "Add to
+ * Google Calendar" (its subscription page) — so a phone needs no copy-paste.
  */
 export function GlowbookCalendarFeed() {
   const { t, i18n } = useTranslation();
@@ -97,6 +101,16 @@ export function GlowbookCalendarFeed() {
             <Button size="sm" iconLeft={Copy} onClick={() => void copy()}>{t("booking.feed.copy")}</Button>
           </div>
           <p className="m-0 text-[12.5px] font-semibold text-[var(--status-warning-fg)]">{t("booking.feed.onlyOnce")}</p>
+          <div className="grid gap-2 rounded-[var(--radius-md)] bg-[var(--surface-page)] p-3">
+            <p className="m-0 text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">{t("booking.feed.phoneTitle")}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" as="a" href={webcalUrl(url)} iconLeft={Smartphone}>{t("booking.feed.phoneApple")}</Button>
+              <Button size="sm" variant="outline" iconLeft={CalendarPlus} onClick={() => window.open(googleSubscribeUrl(url), "_blank", "noopener,noreferrer")}>
+                {t("booking.feed.phoneGoogle")}
+              </Button>
+            </div>
+            <p className={small}>{t("booking.feed.phoneHint")}</p>
+          </div>
           <ul className="m-0 grid gap-1 pl-5 text-[12.5px] leading-relaxed text-[var(--text-body)]">
             <li>{t("booking.feed.howGoogle")}</li>
             <li>{t("booking.feed.howApple")}</li>

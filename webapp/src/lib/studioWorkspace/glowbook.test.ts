@@ -125,10 +125,12 @@ describe("toPublicGlowbook", () => {
     expect(toPublicGlowbook({ handle: "x.y", display_name: "X", certification: null, items: [] })?.certification).toBeNull();
     expect(toPublicGlowbook({ handle: "x.y", display_name: "X", certification: { courses: [] }, items: [] })?.certification).toBeNull();
   });
-  it("reads the artist's look when the page carries one", () => {
-    const page = toPublicGlowbook({ handle: "lily.gems", display_name: "Lily", location: "Lyon", look: { accent: "rose", layout: "large" }, items: [] });
+  it("reads the artist's look when the page carries one, without the former colour and layout (decision 150)", () => {
+    const page = toPublicGlowbook({ handle: "lily.gems", display_name: "Lily", location: "Lyon", look: { accent: "rose", layout: "large", featured_item_id: "i1" }, items: [] });
     expect(page?.location).toBe("Lyon");
-    expect(page?.look).toMatchObject({ accent: "rose", layout: "large", background: "light" });
+    expect(page?.look).toMatchObject({ featuredItemId: "i1" });
+    expect(page?.look).not.toHaveProperty("accent");
+    expect(page?.look).not.toHaveProperty("layout");
   });
   it("is null without a public page", () => {
     expect(toPublicGlowbook(null)).toBeNull();

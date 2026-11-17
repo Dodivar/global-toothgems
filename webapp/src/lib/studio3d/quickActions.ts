@@ -8,7 +8,18 @@ import { useSyncExternalStore } from "react";
  * below the stage and the right-click menu is out of reach.
  */
 
-export const QUICK_ACTIONS = ["rotate", "size", "color", "duplicate", "duplicateMirror", "duplicateMirrorV", "mirrorH", "mirrorV", "delete"] as const;
+export const QUICK_ACTIONS = [
+  "rotate",
+  "size",
+  "color",
+  "duplicate",
+  "duplicateMirror",
+  "duplicateMirrorV",
+  "mirrorH",
+  "mirrorV",
+  "lock",
+  "delete",
+] as const;
 export type QuickActionId = (typeof QUICK_ACTIONS)[number];
 
 interface QuickActionPrefs {
@@ -24,7 +35,7 @@ const KEY = "gt-studio3d-quick-actions-v1";
 const DEFAULT_QUICK_ACTIONS: QuickActionPrefs = {
   enabled: true,
   // The mirrored duplicates are offered but off: with them, a single piece's bar is wider than a phone.
-  actions: ["rotate", "size", "color", "duplicate", "delete"],
+  actions: ["rotate", "size", "color", "duplicate", "lock", "delete"],
   known: [...QUICK_ACTIONS],
 };
 /** What the first version offered, for choices saved before `known` existed. */

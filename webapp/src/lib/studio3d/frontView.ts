@@ -8,6 +8,7 @@ import {
   toothKeys,
   type PlacedJewelry,
   type StudioShape,
+  type ToothKey,
 } from "../../data/studioEditor";
 import type { GemSize } from "../gemOptions";
 import type { SceneModel } from "../studioWorkspace/scene";
@@ -16,9 +17,11 @@ import { DENTITION_CROWNS, type CrownFrame } from "./dentition";
 import { longAxis } from "./pieceScale";
 
 /**
- * The front view of a design: both arches drawn flat, as seen from in front of
- * the patient, with every piece at its place on its tooth — the drawing of the
- * placement sheet and of the "front view" panels.
+ * The front projection of a design: both arches as seen from in front of the
+ * patient, with every piece at its place on its tooth — what the try-on fits
+ * onto a photo (`tryOnRegistration.ts`). The drawing people read (the "front
+ * view" panels, the placement sheet) is the flat view of `flatView.ts`, which
+ * shares this module's seats, numbering and gem outlines.
  *
  * The teeth are the Studio's default dentition (`DENTITION_CROWNS`) in a
  * front orthographic projection: each crown spans its calibrated width along
@@ -61,6 +64,8 @@ export interface FrontViewTooth {
   incisal: number;
   /** Canines end in a point. */
   pointed: boolean;
+  /** The tooth's type: what its crown looks like. */
+  kind: ToothKey;
 }
 
 /** Where a piece is drawn. */
@@ -133,6 +138,7 @@ function toothOf(c: CrownFrame): FrontViewTooth {
     cervical: c.lower ? -c.bottom : -c.top,
     incisal: c.lower ? -c.top : -c.bottom,
     pointed: key === "canine",
+    kind: key ?? "central",
   };
 }
 
@@ -181,21 +187,43 @@ export function seatOnTooth(piece: PlacedJewelry, model: SceneModel): { u: numbe
   return null;
 }
 
+/** A piece's seat on its tooth, as `seatOnTooth` measures it. */
+export type FrontViewSeat = NonNullable<ReturnType<typeof seatOnTooth>>;
+
 /**
- * Where a piece is drawn, or null: its seat on its tooth, put on the drawn
- * crown. On the dentition itself this is the orthographic projection (world
- * x and y) for the front teeth; on the side teeth, whose outer face is seen
- * edge-on, it keeps the piece on its crown rather than past its edge.
+ * A drawing of the dentition a design can be projected onto: its frame, its
+ * teeth, and where a seat on a tooth lands (mm, y down; null: tooth not drawn).
  */
-function pointOf(piece: PlacedJewelry, model: SceneModel): FrontViewPoint | null {
-  const c = byFdi.get(piece.toothId);
-  const seat = c ? seatOnTooth(piece, model) : null;
-  if (!c || !seat) return null;
-  const x = c.center.x + c.tangent.x * seat.u * halfWidth(c) * 0.6;
-  const worldY = c.center.y + seat.v * halfHeight(c) * 0.55;
+export interface FrontViewLayout {
+  box: FrontViewBox;
+  teeth: FrontViewTooth[];
+  place: (fdi: string, seat: FrontViewSeat) => { x: number; y: number } | null;
+}
+
+/**
+ * The orthographic front projection, as the try-on fits it on a photo
+ * (`tryOnRegistration.ts`). On the dentition itself this is world x and y
+ * for the front teeth; on the side teeth, whose outer face is seen edge-on,
+ * it keeps the piece on its crown rather than past its edge.
+ */
+const FRONT_LAYOUT: FrontViewLayout = {
+  box: FRONT_VIEW_BOX,
+  teeth: FRONT_VIEW_TEETH,
+  place: (fdi, seat) => {
+    const c = byFdi.get(fdi);
+    if (!c) return null;
+    return { x: c.center.x + c.tangent.x * seat.u * halfWidth(c) * 0.6, y: -(c.center.y + seat.v * halfHeight(c) * 0.55) };
+  },
+};
+
+/** Where a piece is drawn on `layout`, or null: its seat on its tooth, put on the drawn crown. */
+function pointOf(piece: PlacedJewelry, model: SceneModel, layout: FrontViewLayout): FrontViewPoint | null {
+  const seat = seatOnTooth(piece, model);
+  const point = seat ? layout.place(piece.toothId, seat) : null;
+  if (!seat || !point) return null;
+  const { x, y } = point;
   const r = piece.scale;
-  const box = FRONT_VIEW_BOX;
-  const y = -worldY;
+  const box = layout.box;
   return {
     x,
     y,
@@ -238,7 +266,12 @@ const archRank = (fdi: string) => (fdi === FREE_TOOTH || !ALL_TEETH.includes(fdi
  * gum side of a tooth before its biting edge.
  */
 export function projectFrontView(pieces: readonly PlacedJewelry[], model: SceneModel): FrontViewProjection {
-  const entries = pieces.map((piece) => ({ piece, at: pointOf(piece, model) }));
+  return projectOnto(FRONT_LAYOUT, pieces, model);
+}
+
+/** `projectFrontView` on another drawing of the dentition (the flat view, `flatView.ts`): same numbering and order rules. */
+export function projectOnto(layout: FrontViewLayout, pieces: readonly PlacedJewelry[], model: SceneModel): FrontViewProjection {
+  const entries = pieces.map((piece) => ({ piece, at: pointOf(piece, model, layout) }));
   const tieBreak = (a: PlacedJewelry, b: PlacedJewelry) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
   const reading = [...entries].sort((a, b) => {
@@ -285,11 +318,11 @@ export function projectFrontView(pieces: readonly PlacedJewelry[], model: SceneM
     piece: e.piece,
     at: e.at,
   }));
-  const box = FRONT_VIEW_BOX;
+  const box = layout.box;
   return {
     box,
     aspect: box.width / box.height,
-    teeth: FRONT_VIEW_TEETH,
+    teeth: layout.teeth,
     gems,
     unplaced: gems.filter((g) => !g.at).length,
   };
@@ -303,35 +336,6 @@ export type FrontViewPathCommand =
   | ["L", number, number]
   | ["C", number, number, number, number, number, number]
   | ["Z"];
-
-/** A crown's outline: rounded at the gum, square or pointed at the biting edge. */
-export function crownOutline(t: FrontViewTooth): FrontViewPathCommand[] {
-  const l = t.x0;
-  const r = t.x1;
-  const w = r - l;
-  const cx = (l + r) / 2;
-  // Distance from the gum line toward the biting edge (positive down on the upper arch, up on the lower).
-  const dir = t.incisal > t.cervical ? 1 : -1;
-  const h = Math.abs(t.incisal - t.cervical);
-  const at = (d: number) => t.cervical + dir * d;
-  const neck = Math.min(w * 0.18, h * 0.3);
-  const corner = Math.min(w * 0.3, 1.4);
-  const tip = t.pointed ? h * 0.1 : 0;
-  const k = 0.55;
-  return [
-    ["M", l + w * 0.14, at(0)],
-    ["L", r - w * 0.14, at(0)],
-    ["C", r - w * 0.14 + w * 0.14 * k, at(0), r, at(neck * (1 - k)), r, at(neck)],
-    ["L", r, at(h - corner)],
-    ["C", r, at(h - corner * (1 - k)), r - corner * (1 - k), at(h), r - corner, at(h)],
-    ...(t.pointed ? ([["L", cx, at(h + tip)]] as FrontViewPathCommand[]) : []),
-    ["L", l + corner, at(h)],
-    ["C", l + corner * (1 - k), at(h), l, at(h - corner * (1 - k)), l, at(h - corner)],
-    ["L", l, at(neck)],
-    ["C", l, at(neck * (1 - k)), l + w * 0.14 * (1 - k), at(0), l + w * 0.14, at(0)],
-    ["Z"],
-  ];
-}
 
 /** Commands as an SVG `d` attribute. */
 export function pathToSvg(commands: FrontViewPathCommand[]): string {

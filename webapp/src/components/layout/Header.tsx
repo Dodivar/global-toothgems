@@ -12,7 +12,7 @@ import { useGlowbookMenuTarget } from "./useGlowbookMenuTarget";
 import { LanguageMenu } from "./LanguageMenu";
 import { HeaderSearch } from "./HeaderSearch";
 import { CartAddedNotice } from "./CartAddedNotice";
-import { GLOWBOOK_INTRO_PATH, STUDIO_PATH } from "../../lib/studioUrl";
+import { STUDIO_PATH } from "../../lib/studioUrl";
 import logoWordmark from "../../assets/logo-wordmark.svg";
 
 type PanelKey = "shop" | "academy" | "studio" | null;
@@ -66,10 +66,15 @@ export function Header() {
 
   /* No "Home" entry: the logo is the way home, as on most shops, and the
      three pillars read better on their own (owner's call, 2026-11-02). */
-  const glowbookTarget = useGlowbookMenuTarget(panel === "studio" || (menuOpen && menuTab === "studio"));
-  // The calendar is listed once the plan is known to include the Glowbook (its own page is then the target).
-  const ownGlowbook = glowbookTarget !== GLOWBOOK_INTRO_PATH;
-  const studioMenu = STUDIO_MENU.filter((entry) => entry.id !== "agenda" || ownGlowbook).map((entry) =>
+  const { target: glowbookTarget, bookings: ownCalendar } = useGlowbookMenuTarget(panel === "studio" || (menuOpen && menuTab === "studio"));
+  // One or the other, never both: a member whose plan runs the calendar (Atelier, decision 153) reads
+  // their week in "My calendar" and has no use for the appointments they booked; every other signed-in
+  // member keeps "My appointments" to check the ones they hold with an artist (owner's call, 2026-11-16).
+  const studioMenu = STUDIO_MENU.filter((entry) => {
+    if (entry.id === "agenda") return ownCalendar;
+    if (entry.id === "appointments") return signedIn && !ownCalendar;
+    return true;
+  }).map((entry) =>
     entry.id === "glowbook" ? { ...entry, to: glowbookTarget } : entry,
   );
 

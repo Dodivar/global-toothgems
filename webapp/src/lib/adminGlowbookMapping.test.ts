@@ -50,7 +50,8 @@ describe("proposed pictures and links", () => {
     );
     expect(entry).toMatchObject({ kind: "changes", look: { pending: { avatarPath: "u1/new.jpg" } } });
     expect((entry as { look: { pending: Record<string, unknown> } }).look.pending).not.toHaveProperty("tiktok");
-    expect(entry.kind === "changes" && entry.look.approved.accent).toBe("teal");
+    expect(entry.kind === "changes" && entry.look.approved.avatarPath).toBe("u1/old.jpg");
+    expect(entry.kind === "changes" && entry.look.approved).not.toHaveProperty("accent"); // decision 150
     expect(queueMediaPaths([entry, toQueueEntry(row({}))])).toEqual(["u1/old.jpg", "u1/new.jpg"]);
   });
 });

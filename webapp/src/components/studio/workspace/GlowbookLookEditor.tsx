@@ -6,10 +6,7 @@ import { Button } from "../../ui/Button";
 import { GlowbookProfile, GlowbookTopBar } from "../../glowbook/GlowbookIdentity";
 import { glowbookThemeStyle } from "../../glowbook/theme";
 import {
-  ACCENT_COLORS,
-  ACCENTS,
-  BACKGROUNDS,
-  LAYOUTS,
+  GLOWBOOK_COLORS,
   LOCATION_MAX,
   validateLook,
   type GlowbookLook,
@@ -23,12 +20,13 @@ import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { useToast } from "../../../lib/toast";
 import { usePrefersReducedMotion } from "../../homeAlt/usePrefersReducedMotion";
 import { GlowbookPlaceField } from "./GlowbookPlaceField";
-import { chipClass, fieldClass, focusRing } from "./workspaceStyles";
+import { fieldClass } from "./workspaceStyles";
 
 /**
- * "Customise my page" (decision 100): the artist's Glowbook in their own look,
- * with a live preview drawn by the same component as the public page.
- * Colour, background, layout, spotlight, city and place (decision 108) are
+ * "Customise my page" (decision 100): the artist's picture, spotlight
+ * creation, city and place, with a live preview drawn by the same component
+ * as the public page. The colours and the layout are the same for every page
+ * since decision 150. Spotlight, city and place (decision 108) are
  * public as soon as they are saved; a new picture waits for a moderator while the page keeps
  * the approved one (the badge says so). Removing one is immediate. No outside
  * link (booking, website, TikTok): clients book on the page itself
@@ -129,7 +127,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
         {/* Live preview, drawn like the public page: above the fields on phones, beside them on wide screens. */}
         <figure className="m-0 grid gap-2 lg:sticky lg:top-16 lg:col-start-2 lg:row-start-1">
           <figcaption className="text-[11px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">{t("studio.glowbook.look.preview")}</figcaption>
-          <div style={glowbookThemeStyle(draft)} className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--gb-page)]">
+          <div style={glowbookThemeStyle()} className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--gb-page)]">
             <GlowbookTopBar preview {...previewIdentity} />
             <div className="border-t border-[var(--gb-border)] bg-[var(--gb-soft)]">
               <GlowbookProfile preview {...previewIdentity} />
@@ -139,50 +137,6 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
 
         <div className="@container grid min-w-0 gap-5 lg:col-start-1 lg:row-start-1">
           <PictureField kind="avatar" path={draft.avatarPath} waiting={waits("avatarPath")} onChange={(p) => set("avatarPath", p)} />
-
-          <fieldset className="m-0 grid gap-2 border-0 p-0">
-            <legend className="mb-2 p-0 text-[12.5px] font-bold text-[var(--text-primary)]">{t("studio.glowbook.look.accent")}</legend>
-            <div role="radiogroup" aria-label={t("studio.glowbook.look.accent")} className="flex flex-wrap gap-2">
-              {ACCENTS.map((accent) => {
-                const on = draft.accent === accent;
-                return (
-                  <button
-                    key={accent}
-                    type="button"
-                    role="radio"
-                    aria-checked={on}
-                    aria-label={t(`studio.glowbook.look.accents.${accent}`)}
-                    title={t(`studio.glowbook.look.accents.${accent}`)}
-                    onClick={() => set("accent", accent)}
-                    className={clsx(
-                      "grid h-9 w-9 place-items-center rounded-full border-2 transition-transform motion-safe:hover:scale-105",
-                      on ? "border-[var(--gt-ink-900)]" : "border-transparent",
-                      focusRing,
-                    )}
-                  >
-                    <span className="grid h-7 w-7 place-items-center rounded-full text-white" style={{ background: ACCENT_COLORS[accent].solid }}>
-                      {on && <Check size={14} aria-hidden="true" />}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-
-          <div className="grid items-start gap-5 @lg:grid-cols-2">
-            <ChoiceRow
-              label={t("studio.glowbook.look.background")}
-              options={BACKGROUNDS.map((v) => ({ value: v, label: t(`studio.glowbook.look.backgrounds.${v}`) }))}
-              value={draft.background}
-              onChange={(v) => set("background", v)}
-            />
-            <ChoiceRow
-              label={t("studio.glowbook.look.layout")}
-              options={LAYOUTS.map((v) => ({ value: v, label: t(`studio.glowbook.look.layouts.${v}`) }))}
-              value={draft.layout}
-              onChange={(v) => set("layout", v)}
-            />
-          </div>
 
           <div className="grid items-start gap-5 @lg:grid-cols-2">
             <div className="grid gap-1.5">
@@ -225,7 +179,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
 
           <GlowbookPlaceField
             place={draft.place}
-            color={ACCENT_COLORS[draft.accent].solid}
+            color={GLOWBOOK_COLORS.solid}
             invalid={problem === "placeLabel" || problem === "placeCoordinates"}
             errorId={ids.error}
             onChange={(place) => set("place", place)}
@@ -367,31 +321,6 @@ function PictureField({ kind, path, waiting, onChange }: { kind: MediaKind; path
         </div>
       </div>
       <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t(`studio.glowbook.look.${kind}Hint`)}</p>
-    </div>
-  );
-}
-
-function ChoiceRow<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: { value: T; label: string }[];
-  value: T;
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div className="grid gap-2">
-      <span className="text-[12.5px] font-bold text-[var(--text-primary)]">{label}</span>
-      <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
-        {options.map((o) => (
-          <button key={o.value} type="button" role="radio" aria-checked={o.value === value} onClick={() => onChange(o.value)} className={chipClass(o.value === value)}>
-            {o.label}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

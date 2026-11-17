@@ -111,9 +111,9 @@
       "note_other": "Explore the Studio for {{count}} days before choosing your subscription."
     },
     "items": {
-      "essential": "To imagine your first looks and share them.",
-      "artist": "To prepare every placement with your clients, under your own signature.",
-      "atelier": "To show your work to the world, be found by new clients and take their bookings online."
+      "essential": "To imagine your first looks.",
+      "artist": "To prepare your placements and show your work online.",
+      "atelier": "To attract new clients and take their bookings online."
     },
     "note": "Cancel at any time from your account: the subscription ends at the close of the paid period.",
     "perYear": "/ year",
@@ -129,24 +129,29 @@
     "features": {
       "title": "Included",
       "plus": "Everything in {{plan}}, plus:",
-      "creations_one": "{{count}} saved creation",
-      "creations_other": "{{count}} saved creations",
-      "gemGroups_one": "{{count}} Gem Group, your reusable arrangements",
-      "gemGroups_other": "{{count}} Gem Groups, your reusable arrangements",
+      "counts": "{{creations}} creations, {{gemGroups}} Gem Groups",
+      "countsTip": "Creations are your saved looks. Gem Groups are your gem arrangements, reused from one look to the next.",
       "unlimited": "Unlimited creations and Gem Groups",
-      "library": "The shop’s whole gem library, at their real sizes",
-      "clientTools": "Front view, printable placement sheet and sharing by link",
-      "templates": "The Global Toothgems templates, to copy into your creations",
-      "posts": "Social posts: HD image and 360° video",
-      "ownLogo": "Posts signed with your logo, or without a watermark",
-      "transparentExport": "PNG snapshots without a background, ready to cut out",
-      "glowbook": "Your Glowbook: your public artist page, customised, with a QR code, a map and a poster",
-      "glowbookBooking": "Online booking from your Glowbook: clients book a slot, with confirmation and reminder e-mails",
-      "glowbookCalendar": "Your appointment calendar, synced with Google Calendar, Apple Calendar or Outlook",
-      "artistDirectory": "A place in the “Find an artist” directory, so clients near you can discover you",
-      "tryOn": "AI try-on: your clients see your creations on their own smile",
-      "collections": "Folders to file your creations",
-      "postLayouts": "3 premium layouts for your posts: gallery, spotlight and band"
+      "library": "Every gem in the shop, at real size",
+      "templates": "The Global Toothgems templates",
+      "templatesTip": "Ready-made looks by our team, to copy into your creations and adapt.",
+      "clientTools": "Prepare every placement with your clients",
+      "clientToolsTip": "Front view of the teeth, a printable placement sheet and a link so your client sees the design in 3D.",
+      "posts": "HD posts and 360° videos in your name",
+      "postsTip": "HD image or 360° video in story, square or portrait format, signed with your logo or without a watermark.",
+      "extras": "PNGs without a background and folders",
+      "glowbook": "Your Glowbook, your online showcase",
+      "glowbookTip": "A public artist page for your bio: your creations in 3D, where you work on a map, a QR code and a poster to print. Every page is approved by our team.",
+      "bookings": "Online bookings and a calendar",
+      "bookingsTip": "Clients book a slot from your Glowbook, with confirmation and reminder e-mails. Your calendar syncs with Google Calendar, Apple Calendar or Outlook.",
+      "directory": "Listed in the “Find an artist” directory",
+      "directoryTip": "Clients looking for an artist nearby find you by city or around them.",
+      "tryOn": "AI try-on on your clients’ smiles",
+      "tryOnTip": "Your client sends a photo of their smile and sees your creation on it. Up to 10 renders a day.",
+      "postLayouts": "Premium layouts for your posts",
+      "postLayoutsTip": "Three layouts for your posts: gallery, spotlight and band.",
+      "more": "More about: {{feature}}",
+      "less": "Hide details: {{feature}}"
     }
   },
   "closing": {
@@ -173,15 +178,15 @@
       },
       {
         "question": "Which subscription should I choose?",
-        "answer": "Essential to imagine your first looks: 10 creations and 3 Gem Groups, the whole library and the Global Toothgems templates. Artist to work with your clients: 50 creations, 15 Gem Groups, the front view, the placement sheet and sharing by link, folders to file your creations and social posts signed with your logo. Atelier to grow your business: unlimited creations and Gem Groups, your public Glowbook with online booking and a calendar synced with yours, a place in the “Find an artist” directory, the AI try-on, which lets your clients see your creations on their own smile, and layouts for your posts."
+        "answer": "Essential to imagine your first looks: 10 creations and 3 Gem Groups, the whole library and the Global Toothgems templates. Artist to work with your clients and show your work online: 50 creations, 15 Gem Groups, the front view, the placement sheet and sharing by link, folders to file your creations, social posts signed with your logo and your public Glowbook. Atelier to grow your business: unlimited creations and Gem Groups, online booking from your Glowbook and a calendar synced with yours, a place in the “Find an artist” directory, the AI try-on, which lets your clients see your creations on their own smile, and layouts for your posts."
       },
       {
-        "question": "What is the Glowbook, included in the Atelier plan?",
-        "answer": "Your public artist page, to put in your Instagram bio: your creations in 3D, your salon or your area on a map, and a button to book an appointment. You set your hours and clients book a one-hour slot, with confirmation and reminder e-mails; your appointments are added to your Google Calendar, Apple Calendar or Outlook, and the hours already taken in that calendar close by themselves. If you wish, your page also appears in the “Find an artist” directory, where clients look for an artist near them. Your page and your creations are approved by our team before they go public."
+        "question": "What is the Glowbook, included from the Artist plan?",
+        "answer": "Your public artist page, to put in your Instagram bio: your creations in 3D and your salon or your area on a map, with a QR code and a poster to print. With the Atelier plan it also takes your bookings: you set your hours and clients book a one-hour slot, with confirmation and reminder e-mails; your appointments are added to your Google Calendar, Apple Calendar or Outlook, and the hours already taken in that calendar close by themselves. If you wish, your page also appears in the “Find an artist” directory, where clients look for an artist near them. Your page and your creations are approved by our team before they go public."
       },
       {
         "question": "Can I change my subscription later?",
-        "answer": "Yes, at any time from My subscription: a plan change is prorated on your next invoice. If you move to a smaller plan you keep all your creations — you save new ones once under the limit — and your Glowbook is hidden until you are back on Atelier. You can cancel for the end of the paid period, and withdraw within 14 days of your first payment."
+        "answer": "Yes, at any time from My subscription: a plan change is prorated on your next invoice. If you move to a smaller plan you keep all your creations — you save new ones once under the limit — and your Glowbook is hidden while you are below the Artist plan; below Atelier, bookings and the directory stop. You can cancel for the end of the paid period, and withdraw within 14 days of your first payment."
       },
       {
         "question": "Do I need experience with 3D design to get started?",

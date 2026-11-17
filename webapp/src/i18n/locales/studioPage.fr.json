@@ -111,9 +111,9 @@
       "note_other": "Explorez le Studio pendant {{count}} jours avant de choisir votre abonnement."
     },
     "items": {
-      "essential": "Pour imaginer vos premiers looks et les partager.",
-      "artist": "Pour préparer chaque pose avec vos clientes, avec votre signature.",
-      "atelier": "Pour montrer votre travail au monde, attirer de nouvelles clientes et recevoir leurs rendez-vous en ligne."
+      "essential": "Pour imaginer vos premiers looks.",
+      "artist": "Pour préparer vos poses et montrer votre travail en ligne.",
+      "atelier": "Pour attirer de nouvelles clientes et recevoir leurs rendez-vous en ligne."
     },
     "note": "Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée.",
     "perYear": "/ an",
@@ -129,24 +129,29 @@
     "features": {
       "title": "Inclus",
       "plus": "Tout {{plan}}, plus :",
-      "creations_one": "{{count}} création enregistrée",
-      "creations_other": "{{count}} créations enregistrées",
-      "gemGroups_one": "{{count}} Gem Group, vos assemblages réutilisables",
-      "gemGroups_other": "{{count}} Gem Groups, vos assemblages réutilisables",
+      "counts": "{{creations}} créations, {{gemGroups}} Gem Groups",
+      "countsTip": "Les créations sont vos looks enregistrés. Les Gem Groups sont vos assemblages de gemmes, à réutiliser d’un look à l’autre.",
       "unlimited": "Créations et Gem Groups illimités",
-      "library": "Toute la bibliothèque de gemmes de la boutique, à leurs vraies tailles",
-      "clientTools": "Vue de face, fiche de placement à imprimer et partage par lien",
-      "templates": "Les modèles Global Toothgems, à copier dans vos créations",
-      "posts": "Publications pour les réseaux : image HD et vidéo 360°",
-      "ownLogo": "Publications signées de votre logo, ou sans filigrane",
-      "transparentExport": "Captures PNG sans fond, prêtes à détourer",
-      "glowbook": "Votre Glowbook : votre page publique d’artiste, personnalisée, avec QR code, carte et affiche",
-      "glowbookBooking": "Prise de rendez-vous en ligne depuis votre Glowbook : vos clientes réservent un créneau, avec confirmation et rappel par e-mail",
-      "glowbookCalendar": "Votre agenda de rendez-vous, synchronisé avec Google Agenda, Apple Calendrier ou Outlook",
-      "artistDirectory": "Une place dans l’annuaire « Trouver un artiste », pour que les clientes près de chez vous vous découvrent",
-      "tryOn": "Essayage par IA : vos clientes voient vos créations sur leur propre sourire",
-      "collections": "Des dossiers pour ranger vos créations",
-      "postLayouts": "3 habillages premium pour vos publications : galerie, spotlight et bandeau"
+      "library": "Toutes les gemmes de la boutique, à taille réelle",
+      "templates": "Les modèles Global Toothgems",
+      "templatesTip": "Des looks prêts à l’emploi créés par notre équipe, à copier dans vos créations puis à adapter.",
+      "clientTools": "Préparez chaque pose avec vos clientes",
+      "clientToolsTip": "Vue de face des dents, fiche de placement à imprimer et lien à envoyer pour que votre cliente voie le design en 3D.",
+      "posts": "Publications HD et vidéo 360° à votre nom",
+      "postsTip": "Image HD ou vidéo 360° au format story, carré ou portrait, signée de votre logo ou sans filigrane.",
+      "extras": "PNG sans fond et dossiers de rangement",
+      "glowbook": "Votre Glowbook, votre vitrine en ligne",
+      "glowbookTip": "Une page publique d’artiste à mettre dans votre bio : vos créations en 3D, votre lieu sur une carte, un QR code et une affiche à imprimer. Chaque page est validée par notre équipe.",
+      "bookings": "Réservations en ligne et agenda",
+      "bookingsTip": "Vos clientes réservent un créneau depuis votre Glowbook, avec confirmation et rappel par e-mail. Votre agenda se synchronise avec Google Agenda, Apple Calendrier ou Outlook.",
+      "directory": "Visible dans l’annuaire « Trouver un artiste »",
+      "directoryTip": "Les clientes qui cherchent un ou une artiste près de chez elles vous trouvent par ville ou autour d’elles.",
+      "tryOn": "Essai par IA sur le sourire de vos clientes",
+      "tryOnTip": "Votre cliente envoie une photo de son sourire et voit votre création posée dessus. Jusqu’à 10 rendus par jour.",
+      "postLayouts": "Habillages premium pour vos publications",
+      "postLayoutsTip": "Trois mises en page pour vos posts : galerie, spotlight et bandeau.",
+      "more": "En savoir plus : {{feature}}",
+      "less": "Masquer le détail : {{feature}}"
     }
   },
   "closing": {
@@ -173,15 +178,15 @@
       },
       {
         "question": "Quelle formule choisir ?",
-        "answer": "Essentiel pour imaginer vos premiers looks : 10 créations et 3 Gem Groups, toute la bibliothèque et les modèles Global Toothgems. Artiste pour travailler avec vos clientes : 50 créations, 15 Gem Groups, la vue de face, la fiche de placement et le partage par lien, des dossiers pour ranger vos créations et des publications pour les réseaux signées de votre logo. Atelier pour développer votre activité : créations et Gem Groups illimités, votre Glowbook public avec la prise de rendez-vous en ligne et un agenda synchronisé avec le vôtre, une place dans l’annuaire « Trouver un artiste », l’essayage par IA, qui permet à vos clientes de voir vos créations sur leur propre sourire, et des mises en page pour vos publications."
+        "answer": "Essentiel pour imaginer vos premiers looks : 10 créations et 3 Gem Groups, toute la bibliothèque et les modèles Global Toothgems. Artiste pour travailler avec vos clientes et vous montrer en ligne : 50 créations, 15 Gem Groups, la vue de face, la fiche de placement et le partage par lien, des dossiers pour ranger vos créations, des publications pour les réseaux signées de votre logo et votre Glowbook public. Atelier pour développer votre activité : créations et Gem Groups illimités, la prise de rendez-vous en ligne depuis votre Glowbook et un agenda synchronisé avec le vôtre, une place dans l’annuaire « Trouver un artiste », l’essayage par IA, qui permet à vos clientes de voir vos créations sur leur propre sourire, et des mises en page pour vos publications."
       },
       {
-        "question": "Qu’est-ce que le Glowbook, inclus dans la formule Atelier ?",
-        "answer": "Votre page publique d’artiste, à mettre dans votre bio Instagram : vos créations en 3D, votre salon ou votre secteur sur une carte, et un bouton pour prendre rendez-vous. Vous fixez vos horaires et vos clientes réservent un créneau d’une heure, avec confirmation et rappel par e-mail ; vos rendez-vous s’ajoutent à votre Google Agenda, Apple Calendrier ou Outlook, et les heures déjà prises dans cet agenda se ferment toutes seules. Si vous le souhaitez, votre page apparaît aussi dans l’annuaire « Trouver un artiste », où les clientes cherchent une artiste près de chez elles. Votre page et vos créations sont validées par notre équipe avant d’être publiques."
+        "question": "Qu’est-ce que le Glowbook, inclus dès la formule Artiste ?",
+        "answer": "Votre page publique d’artiste, à mettre dans votre bio Instagram : vos créations en 3D et votre salon ou votre secteur sur une carte, avec un QR code et une affiche à imprimer. Avec la formule Atelier, elle prend aussi vos rendez-vous : vous fixez vos horaires et vos clientes réservent un créneau d’une heure, avec confirmation et rappel par e-mail ; vos rendez-vous s’ajoutent à votre Google Agenda, Apple Calendrier ou Outlook, et les heures déjà prises dans cet agenda se ferment toutes seules. Si vous le souhaitez, votre page apparaît aussi dans l’annuaire « Trouver un artiste », où les clientes cherchent une artiste près de chez elles. Votre page et vos créations sont validées par notre équipe avant d’être publiques."
       },
       {
         "question": "Puis-je changer de formule plus tard ?",
-        "answer": "Oui, à tout moment depuis Mon abonnement : un changement de formule est ajusté au prorata sur votre prochaine facture. Si vous passez à une formule plus petite, vous gardez toutes vos créations — vous en enregistrez de nouvelles une fois sous la limite — et votre Glowbook est masqué jusqu’à votre retour à Atelier. Vous pouvez résilier pour la fin de la période payée, et vous rétracter dans les 14 jours suivant votre premier paiement."
+        "answer": "Oui, à tout moment depuis Mon abonnement : un changement de formule est ajusté au prorata sur votre prochaine facture. Si vous passez à une formule plus petite, vous gardez toutes vos créations — vous en enregistrez de nouvelles une fois sous la limite — et votre Glowbook est masqué tant que vous êtes sous la formule Artiste ; sous Atelier, ce sont les réservations et l’annuaire qui s’arrêtent. Vous pouvez résilier pour la fin de la période payée, et vous rétracter dans les 14 jours suivant votre premier paiement."
       },
       {
         "question": "Faut-il savoir manier la 3D pour commencer ?",

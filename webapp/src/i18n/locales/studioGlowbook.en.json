@@ -160,7 +160,20 @@
     "profileEyebrow": "The artist",
     "spotlightVideo": "“{{name}}” seen from left to right",
     "spotlightPlay": "Play the video",
-    "spotlightPause": "Pause the video"
+    "spotlightPause": "Pause the video",
+    "bookCreation": "Book this design",
+    "bookShort": "Book",
+    "stickyBook": "Book an appointment",
+    "openCreation": "View “{{name}}” full screen",
+    "viewer": {
+      "label": "{{name}}’s creations",
+      "counter": "{{index}} of {{count}}",
+      "slide": "creation",
+      "close": "Close",
+      "previous": "Previous creation",
+      "next": "Next creation",
+      "cartHint": "Its gems go to the cart from the 3D view."
+    }
   },
   "admin": {
     "title": "Glowbook",
@@ -215,35 +228,11 @@
   },
   "look": {
     "title": "Customise my page",
-    "sub": "Make your Glowbook yours: picture, colour and layout. Colour, background, layout, spotlight and city are published when you save; a new picture is reviewed by the team first.",
+    "sub": "Your picture, the creation that opens your page and where you work. The spotlight, city and place are published when you save; a new picture is reviewed by the team first.",
     "pendingNote": "Some pictures wait for the team’s review: your page shows the previous ones meanwhile.",
     "rejectedNote": "Your latest pictures were not approved.",
     "rejectedNoteReason": "Your latest pictures were not approved. Reason: {{note}}",
     "preview": "Preview",
-    "accent": "Your identity colour",
-    "accents": {
-      "ink": "Ink",
-      "blue": "Blue",
-      "fuchsia": "Fuchsia",
-      "rose": "Rose",
-      "coral": "Coral",
-      "gold": "Gold",
-      "emerald": "Emerald",
-      "teal": "Lagoon",
-      "violet": "Violet",
-      "plum": "Plum"
-    },
-    "background": "Page background",
-    "backgrounds": {
-      "light": "Light",
-      "tinted": "Tinted",
-      "dark": "Dark"
-    },
-    "layout": "Creations layout",
-    "layouts": {
-      "grid": "Grid",
-      "large": "Large cards"
-    },
     "featured": "Creation in the spotlight",
     "featuredNone": "None",
     "featuredHint": "It opens your page, large, in a short video moving in front of the smile from left to right (published creations only).",
@@ -326,7 +315,9 @@
     "city": "Add your city in the Look tab to also appear on your city’s page.",
     "off": "You do not appear in the directory. Your Glowbook stays reachable through its link.",
     "open": "See the directory",
-    "failed": "The setting could not be saved. Try again."
+    "failed": "The setting could not be saved. Try again.",
+    "planLocked": "The directory comes with the Atelier plan.",
+    "planLockedCta": "See the plans"
   },
   "badge": {
     "label": "Global Toothgems certified artist",
@@ -345,7 +336,7 @@
     "previewAlt": "QR code of the address {{url}}",
     "png": "QR code (PNG)",
     "pdf": "A4 poster (PDF)",
-    "hint": "The poster shows your name, profile picture and colour. The QR code opens your page in {{language}}.",
+    "hint": "The poster shows your name and profile picture. The QR code opens your page in {{language}}.",
     "language": "English",
     "eyebrow": "Glowbook",
     "cta": "Scan to see my creations",
@@ -380,7 +371,6 @@
     "moveHint": "Drag the pin or tap the map to adjust the position.",
     "remove": "Remove the place",
     "pinLabel": "Location of the place",
-    "eyebrow": "Where to find me",
     "publicExact": "The salon where I welcome you.",
     "publicArea": "I work in this area. The exact address is given when you book.",
     "directions": {
@@ -444,7 +434,7 @@
     "back": "3D Studio",
     "eyebrow": "Glowbook · {{plan}} plan",
     "title": "All your creations, in one link.",
-    "body": "The Glowbook is your artist showcase: a public page to put in your Instagram bio, where clients spin your creations in 3D, then book their appointment online, within your hours.",
+    "body": "The Glowbook is your artist showcase: a public page to put in your Instagram bio, where clients spin your creations in 3D. With the Atelier plan, they also book their appointment there online.",
     "price": "Included in the {{plan}} plan, from {{price}} / month.",
     "see": "See what’s inside",
     "ctaOpen": "Open my Glowbook",
@@ -475,7 +465,7 @@
         },
         "identity": {
           "title": "Your identity",
-          "body": "Photo, colour, layout and sections: the page looks like you, from the first glance to the booking button."
+          "body": "Photo, spotlight creation and sections: your creations up front, from the first glance to the booking button."
         },
         "found": {
           "title": "Easy to find",
@@ -492,6 +482,7 @@
         "share": "Our team approves your page, then you share your link."
       },
       "note": "Every page and every creation is checked by the Global Toothgems team before it goes public."
-    }
+    },
+    "withPlan": "With the {{plan}} plan"
   }
 }

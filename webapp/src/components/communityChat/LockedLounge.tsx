@@ -76,7 +76,7 @@ export function LockedLounge() {
           </div>
 
           <ul className="m-0 grid list-none gap-2.5 p-0">
-            {(["languages", "experts", "network"] as const).map((perk) => (
+            {(["languages", "experts"] as const).map((perk) => (
               <li key={perk} className="flex items-start gap-2.5 text-[14px] text-[var(--text-body)]">
                 <span className="mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-full bg-[var(--gt-emerald-50)] text-[var(--gt-emerald-600)]">
                   <Check size={13} strokeWidth={2.6} aria-hidden="true" />

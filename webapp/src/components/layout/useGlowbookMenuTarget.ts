@@ -15,18 +15,21 @@ import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../lib/studioUrl";
  * from the database (`studio_access_state()`) the first time the Studio menu
  * is opened by a signed-in member, and kept for that account. Display only:
  * the editor's Glowbook section and the database enforce the plan.
+ *
+ * `bookings` says whether the plan also runs the calendar (decision 153:
+ * Atelier or staff; the Artist plan has the Glowbook without it).
  */
-export function useGlowbookMenuTarget(menuOpen: boolean): string {
+export function useGlowbookMenuTarget(menuOpen: boolean): { target: string; bookings: boolean } {
   const { userId, realAuth } = useAuth();
   const live = isSupabaseConfigured && realAuth;
-  const [known, setKnown] = useState<{ userId: string; glowbook: boolean } | null>(null);
+  const [known, setKnown] = useState<{ userId: string; glowbook: boolean; bookings: boolean } | null>(null);
 
   useEffect(() => {
     if (!live || !userId || !menuOpen || known?.userId === userId) return;
     let cancelled = false;
     fetchStudioAccess()
       .then((info) => {
-        if (!cancelled) setKnown({ userId, glowbook: info.glowbook });
+        if (!cancelled) setKnown({ userId, glowbook: info.glowbook, bookings: info.bookings });
       })
       .catch(() => {
         /* Unknown: the presentation page stays the target. */
@@ -36,6 +39,7 @@ export function useGlowbookMenuTarget(menuOpen: boolean): string {
     };
   }, [live, userId, menuOpen, known]);
 
-  if (!live) return GLOWBOOK_INTRO_PATH;
-  return known && known.userId === userId && known.glowbook ? studioSectionPath("glowbook") : GLOWBOOK_INTRO_PATH;
+  if (!live) return { target: GLOWBOOK_INTRO_PATH, bookings: false };
+  const mine = known && known.userId === userId ? known : null;
+  return { target: mine?.glowbook ? studioSectionPath("glowbook") : GLOWBOOK_INTRO_PATH, bookings: mine?.bookings === true };
 }

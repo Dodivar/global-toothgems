@@ -10,13 +10,41 @@ import { supabase } from "./supabase/client";
  */
 export interface MemberPreferences {
   welcomeDismissed: boolean;
+  /** The member opened the Academy page at least once. */
+  academyVisited: boolean;
 }
 
 export async function fetchMemberPreferences(): Promise<MemberPreferences | null> {
   if (!supabase) return null;
-  const { data, error } = await supabase.from("member_preferences").select("welcome_dismissed_at").maybeSingle();
+  const { data, error } = await supabase
+    .from("member_preferences")
+    .select("welcome_dismissed_at, academy_visited_at")
+    .maybeSingle();
   if (error) return null;
-  return { welcomeDismissed: data?.welcome_dismissed_at != null };
+  return { welcomeDismissed: data?.welcome_dismissed_at != null, academyVisited: data?.academy_visited_at != null };
+}
+
+/** Accounts whose Academy visit was already saved during this page load. */
+const academyVisitSaved = new Set<string>();
+
+/**
+ * Remembers that the member opened the Academy page, which ticks the first-steps
+ * card's Academy step. Written at most once per account and page load; later
+ * visits never move the first date (a no-op when it is already set).
+ */
+export async function markAcademyVisited(userId: string): Promise<void> {
+  if (!supabase || academyVisitSaved.has(userId)) return;
+  academyVisitSaved.add(userId);
+  const { data, error } = await supabase.from("member_preferences").select("academy_visited_at").maybeSingle();
+  if (error) {
+    academyVisitSaved.delete(userId);
+    return;
+  }
+  if (data?.academy_visited_at != null) return;
+  const { error: saveError } = await supabase
+    .from("member_preferences")
+    .upsert({ academy_visited_at: new Date().toISOString() }, { onConflict: "user_id" });
+  if (saveError) academyVisitSaved.delete(userId);
 }
 
 /** Closes the first-steps card for good (upsert: the row is created on first change). */

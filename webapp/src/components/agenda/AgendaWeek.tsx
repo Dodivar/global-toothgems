@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ArtistBookingCard } from "../glowbook/ArtistBookingCard";
 import {
   addDays,
@@ -25,16 +25,17 @@ import { agendaCard as card, agendaCardTitle as cardTitle, agendaSmall as small 
 const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
 export const CELL: Record<HourState, string> = {
-  open: "border-[var(--gt-blue-300)] bg-[var(--surface-brand-wash)] text-[var(--gt-blue-700)] hover:border-[var(--gt-blue-600)]",
-  extra: "border-[var(--gt-blue-600)] bg-[var(--gt-blue-100)] text-[var(--gt-blue-800,#173a6b)] hover:border-[var(--gt-ink-900)]",
-  closed: "border-[var(--border-subtle)] bg-[var(--surface-page)] text-[var(--text-subtle)] hover:border-[var(--border-strong)]",
+  open: "border-[var(--gt-blue-400,#6b9be8)] bg-white text-[var(--gt-blue-700)] hover:border-[var(--gt-blue-600)]",
+  extra: "border-[var(--gt-blue-700)] bg-[var(--gt-blue-600)] font-black text-white hover:bg-[var(--gt-blue-700)]",
+  closed: "border-[var(--border-subtle)] bg-[var(--surface-sunken)] bg-[repeating-linear-gradient(135deg,transparent_0_4px,rgba(0,0,0,0.06)_4px_5px)] text-[var(--text-subtle)] hover:border-[var(--border-strong)]",
   busy: "border-[var(--gt-amber-400)] bg-[var(--status-warning-bg)] text-[var(--status-warning-fg)] hover:border-[var(--gt-ink-900)]",
-  blocked: "border-[var(--gt-red-400)] bg-[var(--status-error-bg)] text-[var(--status-error-fg)] line-through hover:border-[var(--gt-red-600)]",
-  booked: "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-white hover:bg-[var(--gt-ink-700)]",
+  blocked: "border-[var(--gt-red-400)] bg-[var(--status-error-bg)] text-[var(--status-error-fg)] hover:border-[var(--gt-red-600)]",
+  booked: "border-[var(--gt-emerald-600)] bg-[var(--gt-emerald-600)] text-white hover:bg-[var(--gt-emerald-500)]",
   past: "border-transparent bg-transparent text-[var(--text-subtle)] opacity-60",
-  holiday: "border-dashed border-[var(--gt-ink-300)] bg-[var(--surface-sunken)] text-[var(--text-muted)]",
+  holiday: "border-[var(--gt-ink-300)] bg-[var(--gt-ink-300)] text-[var(--gt-ink-900)]",
 };
-const GLYPH: Partial<Record<HourState, string>> = { booked: "●", blocked: "×", busy: "≡", extra: "+", holiday: "–" };
+/** States written in the cell itself (a word, not a sign); out-of-hours and past hours stay blank. */
+const WORDED: readonly HourState[] = ["open", "extra", "blocked", "busy", "holiday"];
 const LEGEND: readonly HourState[] = ["open", "extra", "blocked", "busy", "holiday", "booked", "closed"];
 
 /** A creation's signed picture and public 3D view, for an appointment's panel. */
@@ -136,18 +137,22 @@ export function AgendaWeek({
       <section aria-labelledby={titleId} className={card}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id={titleId} className={cardTitle}>{t("booking.agenda.weekView")}</h2>
-          {/* Week arrows (wide screens). */}
+          {/* Week arrows and a calendar to jump to any week (wide screens). */}
           <div className="hidden items-center gap-1 sm:flex">
             <ArrowButton label={t("booking.agenda.prevWeek")} disabled={week <= weekStart(today)} onClick={() => onWeek(addDays(week, -7))} icon="prev" />
-            <span className="min-w-[9.5rem] text-center text-[13px] font-semibold text-[var(--text-primary)]">
-              {formatDay(week, lang, "short")} – {formatDay(addDays(week, 6), lang, "short")}
-            </span>
+            <DatePicker
+              value={week}
+              min={weekStart(today)}
+              label={t("booking.agenda.pickWeek")}
+              onPick={(d) => onWeek(weekStart(d))}
+              text={`${formatDay(week, lang, "short")} – ${formatDay(addDays(week, 6), lang, "short")}`}
+            />
             <ArrowButton label={t("booking.agenda.nextWeek")} onClick={() => onWeek(addDays(week, 7))} icon="next" />
           </div>
-          {/* Day arrows (phones). */}
+          {/* Day arrows and a calendar to jump to any day (phones). */}
           <div className="flex items-center gap-1 sm:hidden">
             <ArrowButton label={t("booking.agenda.prevDay")} disabled={day <= today} onClick={() => goDay(addDays(day, -1))} icon="prev" />
-            <span className="min-w-[8.5rem] text-center text-[13px] font-semibold text-[var(--text-primary)]">{formatDay(day, lang, "short")}</span>
+            <DatePicker value={day} min={today} label={t("booking.agenda.pickDay")} onPick={goDay} text={formatDay(day, lang, "short")} />
             <ArrowButton label={t("booking.agenda.nextDay")} onClick={() => goDay(addDays(day, 1))} icon="next" />
           </div>
         </div>
@@ -196,7 +201,7 @@ export function AgendaWeek({
                           )}
                         >
                           <span aria-hidden="true" className="block truncate">
-                            {s.booking ? cellName(s.booking.clientName) || GLYPH.booked : (GLYPH[s.state] ?? "")}
+                            {s.booking ? cellName(s.booking.clientName) || "●" : WORDED.includes(s.state) ? t(`booking.agenda.cellShort.${s.state}`) : ""}
                           </span>
                         </button>
                       </td>
@@ -241,11 +246,13 @@ export function AgendaWeek({
           )}
         </ul>
 
-        <ul className="m-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[11.5px] text-[var(--text-muted)]">
+        <ul className="m-0 grid list-none gap-x-4 gap-y-1.5 p-0 text-[11.5px] text-[var(--text-muted)] sm:grid-cols-2">
           {LEGEND.map((s) => (
             <li key={s} className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className={clsx("inline-block h-3 w-4 rounded-[3px] border", CELL[s])} />
-              {t(`booking.agenda.cell.${s}`)}
+              <span aria-hidden="true" className={clsx("inline-flex h-5 min-w-[3.25rem] items-center justify-center rounded-[4px] border px-1 text-[10px] font-bold", CELL[s])}>
+                {s === "booked" ? "●" : WORDED.includes(s) ? t(`booking.agenda.cellShort.${s}`) : ""}
+              </span>
+              {t(`booking.agenda.legend.${s}`)}
             </li>
           ))}
         </ul>
@@ -284,5 +291,49 @@ function ArrowButton({ label, onClick, disabled, icon }: { label: string; onClic
     >
       <Icon size={16} aria-hidden="true" />
     </button>
+  );
+}
+
+/**
+ * The date between the arrows, as a button opening the browser's own date
+ * picker (a native `<input type="date">` laid under it): the day on phones,
+ * any day of the wanted week on wide screens.
+ */
+function DatePicker({ value, min, label, text, onPick }: { value: string; min: string; label: string; text: string; onPick: (day: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input) return;
+    try {
+      input.showPicker();
+    } catch {
+      input.focus();
+    }
+  };
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        onClick={openPicker}
+        aria-label={`${label} (${text})`}
+        className={clsx(
+          "inline-flex h-9 min-w-[9.5rem] items-center justify-center gap-1.5 rounded-[var(--radius-pill)] border border-[var(--border-subtle)] px-3 text-[13px] font-semibold text-[var(--text-primary)] hover:border-[var(--border-strong)]",
+          focusRing,
+        )}
+      >
+        <CalendarDays size={14} aria-hidden="true" className="text-[var(--text-muted)]" />
+        {text}
+      </button>
+      <input
+        ref={inputRef}
+        type="date"
+        tabIndex={-1}
+        aria-hidden="true"
+        value={value}
+        min={min}
+        onChange={(e) => e.target.value && e.target.value >= min && onPick(e.target.value)}
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px w-full opacity-0"
+      />
+    </span>
   );
 }
