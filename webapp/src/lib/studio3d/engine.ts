@@ -1109,12 +1109,13 @@ export class StudioEngine {
     root.scale.setScalar(scale);
     root.position.set(-origin.x * scale, -origin.y * scale, -origin.z * scale);
     // One resin-like finish for the whole cast, seen from inside too where the socles are open.
-    const material = new THREE.MeshPhysicalMaterial({
+    // A standard finish, not a physical one: a clear coat at 0.35 roughness added
+    // little sheen to a matte cast but its own lighting pass on 140k triangles,
+    // drawn twice a frame once a crystal is on stage (once more for its glass).
+    const material = new THREE.MeshStandardMaterial({
       color: 0xf3ede2,
-      roughness: 0.4,
-      clearcoat: 0.4,
-      clearcoatRoughness: 0.35,
-      envMapIntensity: 0.8,
+      roughness: 0.38,
+      envMapIntensity: 0.85,
       side: THREE.DoubleSide,
     });
     root.traverse((o) => {
@@ -3284,6 +3285,25 @@ export class StudioEngine {
    * angle, so the arrangement turns rigidly. A single piece spins in place.
    * Overlaps are not prevented here; the design check reports them.
    */
+  /**
+   * Show changes on the stage without committing them: a gesture in progress
+   * (the rotate handle). The pieces are posed as the patches say; the design,
+   * its check and the panels wait for the commit that ends the gesture, and
+   * any commit meanwhile puts the stage back to the design as stored.
+   */
+  previewPatches(updates: { id: string; patch: Partial<PlacedJewelry> }[]) {
+    const byId = new Map(this.store.jewels.map((j) => [j.id, j]));
+    for (const { id, patch } of updates) {
+      const rig = this.jewelRigs.get(id);
+      const j = byId.get(id);
+      if (!rig || !j || this.isDragged(rig)) continue;
+      this.applyPose(rig.group, { ...j, ...patch }, rig.halfDepth);
+    }
+    this.shadowsDirty = true;
+    this.markMotion();
+    this.wake();
+  }
+
   beginGroupTurn(ids: string[]): GroupTurn | null {
     ids = this.store.editableIds(ids); // locked pieces neither turn nor follow the group
     const start = this.store.jewels.filter((j) => ids.includes(j.id));
