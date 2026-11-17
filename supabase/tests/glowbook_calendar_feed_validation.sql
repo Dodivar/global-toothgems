@@ -32,6 +32,10 @@ begin
   insert into public.studio_showcases (user_id, handle, display_name, status) values
     (artist, 'feed-artist', 'Feed Artist', 'approved'),
     (other,  'feed-other',  'Feed Other',  'approved');
+  -- The calendar is the Atelier plan's (decision 153): both artists hold it.
+  insert into public.studio_subscriptions (user_id, plan, status, stripe_subscription_id, current_period_end) values
+    (artist, 'atelier', 'active', 'sub_feed_artist', now() + interval '1 month'),
+    (other,  'atelier', 'active', 'sub_feed_other',  now() + interval '1 month');
   insert into public.glowbook_bookings (artist_id, client_id, starts_at, timezone, design_kind, client_name, client_email, client_phone, comment) values
     (artist, client, date_trunc('hour', now()) + interval '3 days', 'Europe/Paris', 'custom', 'Sam Client', 'feed-client.test@example.invalid', '0600000000', 'A star'),
     (other,  client, date_trunc('hour', now()) + interval '4 days', 'Europe/Paris', 'custom', 'Sam Client', 'feed-client.test@example.invalid', '0600000000', 'Other one');
