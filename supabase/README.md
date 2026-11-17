@@ -2261,9 +2261,9 @@ The owner asked an agent to settle the pending "to confirm" points. Outcome:
   4. Glowbook time off (decision 147 (b)): should the public page say "Back on <date>" during a closure (not built)?
   5. A client joins their own Studio creation to a booking whatever their Studio access today (decision 149 (a)): keep it, or require an active trial or plan?
   6. "Atelier" names both the pro universe (header pillar, member menu group, decision 154) and the top Studio plan ("abonnement Atelier"): the Atelier group shows entries locked "With the Atelier plan". Rename the plan, or the universe?
-  7. Course page packages (2026-11-17): the kit paired with the course is the GLOBAL™ PRO STUDIO KIT
-     (`COURSE_KIT_SLUG`, agent's reading) — confirm, and whether the "Formation + kit" option should also hold the
-     Valise Signature; a "you save X €" mention on the pack is not shown until cleared (Omnibus / lawyer).
+  7. Course page packages (2026-11-17): the owner pairs the course with the GLOBAL™ PRO MASTER PACK only (no
+     separate "course + kit" option, decided that day); a "you save X €" mention on the pack is not shown until
+     cleared (Omnibus / lawyer).
 - **For the accountant** (before launch): VAT franchise eligibility and threshold monitoring for the seller and the
   publisher (114, 135 (a)); EU distance-selling / OSS for goods, courses and Studio subscriptions (5, 68, 115 (d), 126);
   the configured VAT rates, kept for when the franchise ends (5, 68); gift cards as multi-purpose vouchers, no VAT at
