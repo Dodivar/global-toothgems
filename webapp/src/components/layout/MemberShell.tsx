@@ -31,7 +31,8 @@ import { useGlowbookRightsKnown } from "./useGlowbookPlanKnown";
 import { GLOWBOOK_INTRO_PATH } from "../../lib/studioUrl";
 import { captureEvent } from "../../lib/analyticsCore";
 import { LockedAccessDialog, type LockedAccessKind } from "./LockedAccessDialog";
-import { MEMBER_MENU_GROUPS as GROUPS, type MemberMenuItem as SectionItem } from "./memberMenu";
+import { MEMBER_MENU_GROUPS as GROUPS, memberMenuFor, type MemberMenuGroup, type MemberMenuItem as SectionItem } from "./memberMenu";
+import { useCourseEntry } from "./useCourseEntry";
 import monogram from "../../assets/monogram-blue.png";
 import logoWordmark from "../../assets/logo-wordmark.svg";
 
@@ -134,9 +135,9 @@ export function useMemberShellMenu() {
 const SECTIONS: SectionItem[] = GROUPS.flatMap((group) => group.items);
 
 /** The first rail entry of every group but the first: the lounge rail draws a divider above it. */
-const GROUP_STARTS = new Set(
-  GROUPS.slice(1).flatMap((group) => group.items[0]?.to ?? []),
-);
+function groupStarts(groups: MemberMenuGroup[]): Set<string> {
+  return new Set(groups.slice(1).flatMap((group) => group.items[0]?.to ?? []));
+}
 
 /** The section a pathname belongs to, for the title of the mobile bar. */
 function currentSection(pathname: string): SectionItem | undefined {
@@ -279,6 +280,8 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { displayName, initials, email, signOut } = useAuth();
+  // "My course" only for a member who holds one, leading to it.
+  const groups = memberMenuFor(useCourseEntry());
   const { memberSince } = useOrders();
   const { openSettings } = useCookieConsent();
   /* Staff (any role the admin session accepts) get a way back to the back
@@ -319,7 +322,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
         </div>
 
         <nav aria-label={t("account.navLabel")} className="grid gap-4">
-          {GROUPS.map((group) => {
+          {groups.map((group) => {
             const headingId = `gt-member-nav-${group.id}`;
             return (
               <div key={group.id} className="grid gap-1">
@@ -492,6 +495,10 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
   const { count } = useCart();
   const rights = useContext(GlowbookPlanContext);
   const openLocked = useContext(LockedAccessContext);
+  // "My course" only for a member who holds one, leading to it.
+  const groups = memberMenuFor(useCourseEntry());
+  const sections = groups.flatMap((group) => group.items);
+  const starts = groupStarts(groups);
 
   return (
     <nav aria-label={t("account.navLabel")} className="flex h-full w-[88px] flex-col items-center overflow-y-auto overflow-x-hidden overscroll-contain py-3">
@@ -505,8 +512,8 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
       </Link>
 
       <ul className="m-0 grid w-full list-none gap-0.5 px-1.5 py-0">
-        {SECTIONS.map((item) => (
-          <li key={item.to} className={clsx(GROUP_STARTS.has(item.to) && "mt-1 border-t border-[var(--border-subtle)] pt-1")}>
+        {sections.map((item) => (
+          <li key={item.to} className={clsx(starts.has(item.to) && "mt-1 border-t border-[var(--border-subtle)] pt-1")}>
             <NavLink
               to={itemTarget(item, rights)}
               end={item.end}

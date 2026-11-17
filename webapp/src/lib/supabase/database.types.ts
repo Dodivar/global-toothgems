@@ -12213,6 +12213,7 @@ export type Database = {
           consent_version: string
           consented_at: string
           course_name: string
+          course_slug: string
           email: string
           entitlement_id: string
           first_name: string

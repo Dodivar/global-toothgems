@@ -80,6 +80,8 @@ export interface PendingShipping extends MailTarget {
 export interface PendingEnrolment extends MailTarget {
   entitlementId: string;
   courseName: string;
+  /** `courses.slug`, the address of the learner page the e-mail's button opens; null from an older function. */
+  courseSlug?: string | null;
   /** The waiver of the right of withdrawal ticked before paying, repeated in the e-mail; null before it was asked. */
   waiver?: CourseWaiver | null;
 }
@@ -277,7 +279,8 @@ export function sendCourseEnrolmentEmails(
         variables: { first_name: enrolment.firstName, course_name: enrolment.courseName },
         eventKey: `course_enrolment:${enrolment.entitlementId}`,
         orderId: enrolment.orderId,
-        content: (locale) => courseEnrolmentContent(enrolment.waiver ?? null, locale) ?? {},
+        content: (locale) =>
+          courseEnrolmentContent(enrolment.waiver ?? null, locale, { siteUrl: deps.layout.siteUrl, slug: enrolment.courseSlug ?? null }),
       }), log)
   );
 }
@@ -579,7 +582,7 @@ export function supabasePendingSource(db: SupabaseClient): PendingSource {
       return rows.map((row) => ({ ...target(row), shipmentId: row.shipment_id, userId: row.user_id, trackingUrl: row.tracking_url }));
     },
     async courseEnrolments({ orderId, limit }) {
-      const rows = await rpc<TargetRow & { entitlement_id: string; course_name: string; consent_version: string | null; consented_at: string | null }>(
+      const rows = await rpc<TargetRow & { entitlement_id: string; course_name: string; consent_version: string | null; consented_at: string | null; course_slug?: string | null }>(
         "pending_course_enrolment_emails",
         { p_order_id: orderId ?? null, p_limit: limit },
       );
@@ -587,6 +590,7 @@ export function supabasePendingSource(db: SupabaseClient): PendingSource {
         ...target(row),
         entitlementId: row.entitlement_id,
         courseName: row.course_name,
+        courseSlug: row.course_slug ?? null,
         waiver: row.consent_version && row.consented_at ? { version: row.consent_version, acceptedAt: row.consented_at } : null,
       }));
     },

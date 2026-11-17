@@ -3,6 +3,7 @@ import {
   CalendarCheck,
   CalendarDays,
   CreditCard,
+  GraduationCap,
   Heart,
   LayoutDashboard,
   MessageSquareText,
@@ -49,6 +50,8 @@ export interface MemberMenuItem {
    * the Glowbook's presentation page.
    */
   plan?: "glowbook" | "bookings";
+  /** "My course": drawn only for a member who holds one, its address given by `memberMenuFor`. */
+  course?: boolean;
   /** Carries a badge for what is new there since the member last looked. */
   activity?: ActivitySection;
 }
@@ -59,6 +62,9 @@ export interface MemberMenuGroup {
   labelKey?: string;
   items: MemberMenuItem[];
 }
+
+/** The course entry's address until the member's course is known: the route that resumes the last course opened. */
+const COURSE_ENTRY = "/academy/lecon";
 
 export const MEMBER_MENU_GROUPS: MemberMenuGroup[] = [
   {
@@ -85,6 +91,8 @@ export const MEMBER_MENU_GROUPS: MemberMenuGroup[] = [
     id: "learning",
     labelKey: "account.shell.groupLearning",
     items: [
+      // Only for a member who holds a course, leading to it (`memberMenuFor`): one course is the usual case.
+      { to: COURSE_ENTRY, labelKey: "account.navMyCourse", shortKey: "course", icon: GraduationCap, course: true },
       { to: "/compte/attestations", labelKey: "account.navCertificates", shortKey: "certificates", icon: Award },
       { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
     ],
@@ -124,6 +132,19 @@ export const MEMBER_MENU_GROUPS: MemberMenuGroup[] = [
   },
 ];
 
+/**
+ * The member's menu for what they hold: "My course" leads to the course
+ * (`courseTarget`, from `useCourseEntry`) and is left out for a member who holds
+ * none (owner, 2026-11-17: an entry only once a course is bought). Groups left
+ * empty are dropped.
+ */
+export function memberMenuFor(courseTarget: string | null): MemberMenuGroup[] {
+  return MEMBER_MENU_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.flatMap((item) => (item.course ? (courseTarget ? [{ ...item, to: courseTarget }] : []) : [item])),
+  })).filter((group) => group.items.length > 0);
+}
+
 /** The favourites, a filter of the shop: in the header's menu only (owner, 2026-11-17: no room in the header itself). */
 export const FAVORITES_ENTRY: MemberMenuItem = { to: "/boutique?favoris=1", labelKey: "account.menu.favorites", icon: Heart };
 
@@ -134,6 +155,8 @@ export interface AccountMenuRights {
   bookings: boolean | null;
   /** A training (or a staff role) opens the Members' Lounge. */
   lounge: boolean;
+  /** The member's course (`useCourseEntry`), null when they hold none. */
+  course: string | null;
 }
 
 /**
@@ -154,7 +177,7 @@ export function accountMenuGroups(rights: AccountMenuRights): MemberMenuGroup[] 
     return true;
   };
   const exits = new Set([CLIENT_SPACES.home.to, CLIENT_SPACES.shop.to, CLIENT_SPACES.academy.to]);
-  return MEMBER_MENU_GROUPS.map((group) => {
+  return memberMenuFor(rights.course).map((group) => {
     const items = group.items.filter((item) => !exits.has(item.to) && opens(item));
     if (group.id === "purchases") {
       const orders = items.findIndex((item) => item.to === "/compte/commandes");

@@ -1093,7 +1093,8 @@
         "subscription": "Subscription",
         "glowbook": "Glowbook",
         "appointments": "Bookings",
-        "agenda": "Calendar"
+        "agenda": "Calendar",
+        "course": "Course"
       },
       "groupAtelier": "Atelier",
       "atelierLocked": "With the Atelier plan",
@@ -1370,7 +1371,8 @@
       "open": "Open my space menu",
       "label": "My space shortcuts",
       "favorites": "My favourites"
-    }
+    },
+    "navMyCourse": "My course"
   },
   "footer": {
     "blurb": "Professional gems, tools and training. Shipped internationally.",

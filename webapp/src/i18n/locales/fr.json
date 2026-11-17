@@ -1093,7 +1093,8 @@
         "subscription": "Abonnement",
         "glowbook": "Glowbook",
         "appointments": "Rendez-vous",
-        "agenda": "Agenda"
+        "agenda": "Agenda",
+        "course": "Formation"
       },
       "groupAtelier": "Atelier",
       "atelierLocked": "Avec l’abonnement Atelier",
@@ -1370,7 +1371,8 @@
       "open": "Ouvrir le menu de mon espace",
       "label": "Raccourcis de mon espace",
       "favorites": "Mes favoris"
-    }
+    },
+    "navMyCourse": "Ma formation"
   },
   "footer": {
     "blurb": "Gems, outils et formation professionnels. Expédié à l’international.",

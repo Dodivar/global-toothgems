@@ -8,6 +8,7 @@ import { useCommunity } from "../../lib/community";
 import { GLOWBOOK_INTRO_PATH } from "../../lib/studioUrl";
 import { accountMenuGroups } from "./memberMenu";
 import { useGlowbookMenuTarget } from "./useGlowbookMenuTarget";
+import { useCourseEntry } from "./useCourseEntry";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]";
@@ -37,7 +38,8 @@ export function AccountMenu({ variant, onOpen }: { variant: "desktop" | "mobile"
   const open = openOn === pathname;
   // The plan's rights are asked only once the menu opens, never on every page view.
   const { target, bookings } = useGlowbookMenuTarget(open);
-  const groups = accountMenuGroups({ glowbook: target !== GLOWBOOK_INTRO_PATH, bookings, lounge: hasAccess });
+  const course = useCourseEntry();
+  const groups = accountMenuGroups({ glowbook: target !== GLOWBOOK_INTRO_PATH, bookings, lounge: hasAccess, course });
 
   useEffect(() => {
     if (!open) return;

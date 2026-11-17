@@ -20,6 +20,7 @@ import { attachDocument } from "../_shared/email/invoicePdf.ts";
 import { orderConfirmationContent, refundContent, shippingContent, type OrderSnapshot } from "../_shared/email/orderContent.ts";
 import type { SendRequest } from "../_shared/email/send.ts";
 import { backInStockContent, stockDigestContent, type StockDigestItem } from "../_shared/email/stockContent.ts";
+import { courseEnrolmentContent } from "../_shared/email/courseContent.ts";
 import {
   abandonedCartContent,
   courseReviewRequestContent,
@@ -264,6 +265,7 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
       request: {
         ...base, templateKey: "course_enrolment", eventKey: key("course_enrolment"),
         variables: { first_name: "Camille", course_name: "Initiation Tooth Gems" },
+        content: (locale) => courseEnrolmentContent(null, locale, { siteUrl: ctx.siteUrl, slug: "initiation-tooth-gems" }),
       },
     },
     {
