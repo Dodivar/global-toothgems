@@ -20,7 +20,7 @@ import { longAxis } from "./pieceScale";
  * The front projection of a design: both arches as seen from in front of the
  * patient, with every piece at its place on its tooth — what the try-on fits
  * onto a photo (`tryOnRegistration.ts`). The drawing people read (the "front
- * view" panels, the placement sheet) is the flat view of `flatView.ts`, which
+ * view" panels, the placement sheet) is the front render of `renderView.ts`, which
  * shares this module's seats, numbering and gem outlines.
  *
  * The teeth are the Studio's default dentition (`DENTITION_CROWNS`) in a
@@ -197,7 +197,8 @@ export type FrontViewSeat = NonNullable<ReturnType<typeof seatOnTooth>>;
 export interface FrontViewLayout {
   box: FrontViewBox;
   teeth: FrontViewTooth[];
-  place: (fdi: string, seat: FrontViewSeat) => { x: number; y: number } | null;
+  /** `scale`: the piece's size on this tooth (default 1), below 1 on a drawn tooth seen at an angle. */
+  place: (fdi: string, seat: FrontViewSeat) => { x: number; y: number; scale?: number } | null;
 }
 
 /**
@@ -222,7 +223,7 @@ function pointOf(piece: PlacedJewelry, model: SceneModel, layout: FrontViewLayou
   const point = seat ? layout.place(piece.toothId, seat) : null;
   if (!seat || !point) return null;
   const { x, y } = point;
-  const r = piece.scale;
+  const r = piece.scale * (point.scale ?? 1);
   const box = layout.box;
   return {
     x,
@@ -269,7 +270,7 @@ export function projectFrontView(pieces: readonly PlacedJewelry[], model: SceneM
   return projectOnto(FRONT_LAYOUT, pieces, model);
 }
 
-/** `projectFrontView` on another drawing of the dentition (the flat view, `flatView.ts`): same numbering and order rules. */
+/** `projectFrontView` on another drawing of the dentition (the front render, `renderView.ts`): same numbering and order rules. */
 export function projectOnto(layout: FrontViewLayout, pieces: readonly PlacedJewelry[], model: SceneModel): FrontViewProjection {
   const entries = pieces.map((piece) => ({ piece, at: pointOf(piece, model, layout) }));
   const tieBreak = (a: PlacedJewelry, b: PlacedJewelry) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);

@@ -811,6 +811,9 @@
       "invoice": "Invoice",
       "creditNote": "Credit note",
       "download": "PDF",
+      "statusPaid": "Paid",
+      "statusFailed": "Failed",
+      "failedHint": "Payment declined: update your card and we will try again.",
       "downloadLabel": "Download {{kind}} {{number}} (PDF)",
       "loadError": "Your invoices could not be loaded.",
       "pdfError": "The PDF could not be produced. Please try again."

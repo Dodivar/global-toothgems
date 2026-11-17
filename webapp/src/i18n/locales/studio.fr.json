@@ -811,6 +811,9 @@
       "invoice": "Facture",
       "creditNote": "Avoir",
       "download": "PDF",
+      "statusPaid": "Payée",
+      "statusFailed": "Échec",
+      "failedHint": "Paiement refusé : mettez à jour votre carte, nous retenterons le prélèvement.",
       "downloadLabel": "Télécharger {{kind}} {{number}} (PDF)",
       "loadError": "Vos factures n’ont pas pu être chargées.",
       "pdfError": "Le PDF n’a pas pu être créé. Réessayez."
