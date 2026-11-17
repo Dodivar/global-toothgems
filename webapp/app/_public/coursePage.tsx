@@ -4,6 +4,7 @@ import { courseDescription, courseJsonLd, courseTitle } from "../../src/lib/acad
 import { courseAddresses, courseSlug } from "../../src/lib/academy/publicCourse";
 import { findPublicCourse } from "../../src/lib/academy/serverAcademy";
 import { jsonLdScript } from "../../src/lib/catalog/productMeta";
+import { loadCourseOffers } from "../../src/lib/catalog/serverCatalog";
 import { localizedPath, type Locale } from "../../src/lib/localeRoutes";
 import { siteUrl } from "../../src/lib/siteUrl";
 import { CourseDetail } from "../../src/screens/CourseDetail";
@@ -51,10 +52,11 @@ export async function courseMetadata(props: CoursePageProps, locale: Locale): Pr
 
 export async function CoursePage({ props, locale }: { props: CoursePageProps; locale: Locale }) {
   const course = await courseFor(props, locale);
+  const offers = await loadCourseOffers(course.enrolment === "sale" ? course.dbId : undefined);
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(courseJsonLd(course, locale, siteUrl())) }} />
-      <CourseDetail course={course} />
+      <CourseDetail course={course} offers={offers} />
     </>
   );
 }

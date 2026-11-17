@@ -1,4 +1,4 @@
-import { scaleForSize } from "../../data/studioEditor";
+import { scaleForSize, type PlacedJewelry } from "../../data/studioEditor";
 import { sameSize, type GemSize } from "../gemOptions";
 import { nearestSize } from "./gemCatalog";
 import { studioGem } from "./gemRegistry";
@@ -112,20 +112,33 @@ export function beginRotation(ids: string[]): RotationSession {
     patchesFor: (deg: number) => start.map((p) => ({ id: p.id, patch: { rotation: (((p.rotation + p.sign * deg) % 360) + 360) % 360 } })),
   };
   let current = 0;
+  // The turn shown on the stage and not committed yet.
+  let pending: { id: string; patch: Partial<PlacedJewelry> }[] | null = null;
   let recorded = false;
   return {
     set(clockwiseDeg) {
       const deg = Math.round(clockwiseDeg);
       if (deg === current || !start.length) return;
-      if (!recorded) {
-        studioStore.pushHistory();
-        recorded = true;
-      }
       current = deg;
-      studioStore.applyPatches(turn.patchesFor(deg));
+      const patches = turn.patchesFor(deg);
+      // While the handle turns, the stage alone follows: the design, its check
+      // and the panels take the turn once, as it ends.
+      if (engine) {
+        pending = patches;
+        engine.previewPatches(patches);
+        return;
+      }
+      // No stage: each step goes to the design, the gesture still one undo step.
+      if (!recorded) studioStore.pushHistory();
+      recorded = true;
+      studioStore.applyPatches(patches);
     },
     end() {
-      /* the gesture was one undo step; nothing to announce */
+      if (!pending) return;
+      // One undo step, and none when the handle came back where it started.
+      studioStore.pushHistory();
+      studioStore.applyPatches(pending);
+      pending = null;
     },
   };
 }
