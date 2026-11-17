@@ -377,6 +377,21 @@
     },
     "zoomIn": "Zoomer",
     "zoomOut": "Dézoomer",
+    "modelShade": {
+      "title": "Couleur du modèle",
+      "hint": "Teintez la dentition pour mettre les gems en valeur : naturel, ou un pastel qui en fait un présentoir plutôt que de vraies dents. La couleur est enregistrée avec la création et se retrouve dans les posts, les liens de partage et le Glowbook.",
+      "current": "Couleur : {{name}}",
+      "imported": "Un modèle importé garde ses propres couleurs.",
+      "items": {
+        "natural": "Naturel",
+        "glacier": "Glacier",
+        "rose": "Rose poudré",
+        "mint": "Menthe",
+        "lavender": "Lavande",
+        "peach": "Pêche",
+        "pearl": "Perle"
+      }
+    },
     "lights": {
       "label": "Éclairage",
       "studio": "Studio",

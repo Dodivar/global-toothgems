@@ -33,6 +33,7 @@ import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
 import { alignedColumn, alignedHeights, centeredOffsets, type CenterItem } from "./layout";
 import { mirroredRotation, opposingTooth } from "./mirror";
 import { notify } from "./notices";
+import { DEFAULT_MODEL_SHADE, modelShadeSpec, type ModelShade } from "./modelShades";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
 
 /* An asset URL both bundlers resolve and fingerprint (Vite's `?url` suffix is
@@ -452,6 +453,12 @@ export class StudioEngine {
   private raycaster = new THREE.Raycaster();
   private container: HTMLElement;
   private dentitionGroup: THREE.Group = new THREE.Group();
+  /** Colour of the dental model (`modelShades.ts`), applied to the built-in models only. */
+  private modelShade: ModelShade = DEFAULT_MODEL_SHADE;
+  /** The default scan's one finish, recoloured by `setModelShade`. */
+  private castMaterial: THREE.MeshPhysicalMaterial | null = null;
+  /** The procedural arch's gum, recoloured with its teeth. */
+  private gumMaterial: THREE.MeshPhysicalMaterial | null = null;
   private archAnchors = new Map<string, { center: THREE.Vector3; outward: THREE.Vector3; tangent: THREE.Vector3 }>();
   private toothRigs = new Map<string, ToothRig>();
   private toothMeshes: THREE.Object3D[] = [];
@@ -583,6 +590,7 @@ export class StudioEngine {
   constructor(container: HTMLElement, store: DesignStore, options: EngineOptions = {}) {
     this.container = container;
     this.store = store;
+    this.modelShade = store.modelShade;
     this.readOnly = options.readOnly ?? false;
     this.offscreen = options.offscreen ?? false;
     // Teeth raycasts read the nearest hit only: the hierarchy stops there
@@ -723,6 +731,26 @@ export class StudioEngine {
     this.scene.add(this.floor);
   }
 
+  /** The dental model's colour: the default scan and the reference arch; an imported model keeps its own. */
+  setModelShade(shade: ModelShade) {
+    if (shade === this.modelShade) return;
+    this.modelShade = shade;
+    this.applyModelShade();
+    this.wake();
+  }
+  private applyModelShade() {
+    const spec = modelShadeSpec(this.modelShade);
+    this.castMaterial?.color.setHex(spec.model);
+    this.gumMaterial?.color.setHex(spec.gum);
+    this.toothRigs.forEach((rig) => {
+      if (rig.imported) return;
+      // Each tooth of the reference arch keeps its own slight variation around the base colour.
+      for (const mat of rig.materials) {
+        mat.color.setHex(spec.enamel).offsetHSL((seeded(rig.id, 1) - 0.5) * 0.012, (seeded(rig.id, 2) - 0.5) * 0.03, (seeded(rig.id, 3) - 0.5) * 0.035);
+      }
+    });
+  }
+
   /** Lighting presets — smoothly crossfaded in the frame loop. */
   setLightPreset(p: LightPreset) {
     this.wake();
@@ -809,7 +837,6 @@ export class StudioEngine {
     this.forEachArchTooth((fdi, spec, pos, outward, tangent) => {
       const geo = createToothGeometry(spec);
       const mat = baseEnamel.clone();
-      mat.color.offsetHSL((seeded(fdi, 1) - 0.5) * 0.012, (seeded(fdi, 2) - 0.5) * 0.03, (seeded(fdi, 3) - 0.5) * 0.035);
       const mesh = new THREE.Mesh(geo, mat);
       mesh.rotation.order = "YXZ";
       mesh.rotation.set(THREE.MathUtils.degToRad(spec.procline), Math.atan2(outward.x, outward.z), 0);
@@ -837,6 +864,8 @@ export class StudioEngine {
     gum.castShadow = true;
     gum.receiveShadow = true;
     group.add(gum);
+    this.gumMaterial = gum.material as THREE.MeshPhysicalMaterial;
+    this.applyModelShade();
     this.scene.add(group);
     this.scene.updateMatrixWorld(true);
   }
@@ -933,6 +962,8 @@ export class StudioEngine {
       });
     }
     this.dentitionGroup = new THREE.Group();
+    this.castMaterial = null;
+    this.gumMaterial = null;
     this.toothRigs.clear();
     this.toothMeshes.length = 0;
     this.calibrated = false;
@@ -1124,6 +1155,8 @@ export class StudioEngine {
       old.forEach((x) => x.dispose());
       m.material = material;
     });
+    this.castMaterial = material;
+    this.applyModelShade();
     this.dentitionGroup = root;
     this.scene.add(root);
     this.calibrated = true;
@@ -3125,6 +3158,7 @@ export class StudioEngine {
     }
     this.store.settleLoadedPieces(updates, this.modelMode);
     this.setLightPreset(this.store.lightPreset);
+    this.setModelShade(this.store.modelShade);
     // A camera saved on another model frames another stage: start from the default view there.
     if (load.camera && load.model === this.modelMode) {
       const [px, py, pz] = load.camera.position;

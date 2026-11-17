@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { PlacedJewelry } from "../../data/studioEditor";
 import { DesignStore } from "../studio3d/store";
 import { studioSectionFromPath, studioSectionPath } from "../studioUrl";
-import { createScene, piecesKey } from "./scene";
+import { createScene, designKey, piecesKey, sanitizeScene } from "./scene";
 
 /**
  * The Saved / Unsaved contract between the design on the stage and the
@@ -29,7 +29,7 @@ function loaded() {
   store.loadScene(createScene({ pieces: [piece(), piece({ id: "b", toothId: "21", position: { x: 4, y: 0.5, z: 3 } })], lightPreset: "lamp" }), link);
   return store;
 }
-const clean = (store: DesignStore) => !!store.active && piecesKey(store.jewels) === store.active.baselineKey;
+const clean = (store: DesignStore) => !!store.active && designKey(store.jewels, store.modelShade) === store.active.baselineKey;
 
 describe("design store and saved creations", () => {
   it("loads a scene as a clean, linked design with nothing to undo", () => {
@@ -71,10 +71,34 @@ describe("design store and saved creations", () => {
   it("takes the saved pieces as the new baseline", () => {
     const store = loaded();
     store.updateJewel("a", { productId: "aquamarine" });
-    const saved = structuredClone(store.jewels);
+    const saved = { pieces: structuredClone(store.jewels), modelShade: store.modelShade };
     store.markSaved({ ...link, savedAt: "2026-09-27T11:00:00.000Z" }, saved);
     expect(clean(store)).toBe(true);
     expect(store.active?.savedAt).toBe("2026-09-27T11:00:00.000Z");
+  });
+
+  it("counts a new model colour as a change to save, without an undo step", () => {
+    const store = loaded();
+    expect(store.modelShade).toBe("natural");
+    store.setModelShade("glacier");
+    expect(clean(store)).toBe(false);
+    expect(store.getSnapshot().canUndo).toBe(false);
+    expect(store.toScene({ model: "dentition", camera: null }).modelShade).toBe("glacier");
+    store.markSaved({ ...link, savedAt: "2026-09-27T11:00:00.000Z" }, { pieces: store.jewels, modelShade: store.modelShade });
+    expect(clean(store)).toBe(true);
+    store.setModelShade("natural");
+    expect(clean(store)).toBe(false);
+  });
+
+  it("loads the saved model colour, and reads older scenes as natural", () => {
+    const store = new DesignStore();
+    store.loadScene(createScene({ pieces: [piece()], modelShade: "rose" }), link);
+    expect(store.modelShade).toBe("rose");
+    expect(clean(store)).toBe(true);
+    expect(sanitizeScene({ pieces: [] }).modelShade).toBe("natural");
+    expect(sanitizeScene({ pieces: [], modelShade: "neon" }).modelShade).toBe("natural");
+    // The natural colour keeps the keys taken before colours existed.
+    expect(designKey([piece()], "natural")).toBe(piecesKey([piece()]));
   });
 
   it("starts a new, unlinked design that can be undone", () => {

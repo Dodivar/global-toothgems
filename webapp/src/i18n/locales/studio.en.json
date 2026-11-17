@@ -377,6 +377,21 @@
     },
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
+    "modelShade": {
+      "title": "Model colour",
+      "hint": "Tint the dentition to set off the gems: natural, or a pastel that makes it a display stand rather than real teeth. The colour is saved with the creation and shows in posts, share links and the Glowbook.",
+      "current": "Colour: {{name}}",
+      "imported": "An imported model keeps its own colours.",
+      "items": {
+        "natural": "Natural",
+        "glacier": "Glacier",
+        "rose": "Powder pink",
+        "mint": "Mint",
+        "lavender": "Lavender",
+        "peach": "Peach",
+        "pearl": "Pearl"
+      }
+    },
     "lights": {
       "label": "Lighting",
       "studio": "Studio",

@@ -1,6 +1,7 @@
 import { sanitizeJewels, type PlacedJewelry } from "../../data/studioEditor";
 import { sameSize, sizeKey } from "../gemOptions";
 import { currentEstimate } from "../studio3d/gemRegistry";
+import { DEFAULT_MODEL_SHADE, isModelShade, type ModelShade } from "../studio3d/modelShades";
 
 /**
  * A saved design's `scene_data`: everything needed to rebuild the composition
@@ -49,6 +50,8 @@ export interface StudioScene {
   version: typeof SCENE_VERSION;
   model: SceneModel;
   lightPreset: SceneLight;
+  /** Colour of the dental model (`lib/studio3d/modelShades.ts`); rows saved before it read as "natural". */
+  modelShade: ModelShade;
   camera: SceneCamera | null;
   pieces: PlacedJewelry[];
   groups: SceneGroupRef[];
@@ -72,6 +75,7 @@ export function createScene(parts: {
   groups?: SceneGroupRef[];
   model?: SceneModel;
   lightPreset?: SceneLight;
+  modelShade?: ModelShade;
   camera?: SceneCamera | null;
 }): StudioScene {
   const pieces = structuredClone(parts.pieces);
@@ -79,6 +83,7 @@ export function createScene(parts: {
     version: SCENE_VERSION,
     model: parts.model ?? "studio",
     lightPreset: parts.lightPreset ?? "studio",
+    modelShade: parts.modelShade ?? DEFAULT_MODEL_SHADE,
     camera: parts.camera ?? null,
     pieces,
     groups: pruneGroups(structuredClone(parts.groups ?? []), pieces),
@@ -111,6 +116,7 @@ export function sanitizeScene(input: unknown): StudioScene {
     version: SCENE_VERSION,
     model: MODELS.includes(data.model as SceneModel) ? (data.model as SceneModel) : "studio",
     lightPreset: LIGHTS.includes(data.lightPreset as SceneLight) ? (data.lightPreset as SceneLight) : "studio",
+    modelShade: isModelShade(data.modelShade) ? data.modelShade : DEFAULT_MODEL_SHADE,
     camera: cam && isTriple(cam.position) && isTriple(cam.target) ? { position: [...cam.position], target: [...cam.target] } : null,
     pieces,
     groups: pruneGroups(sanitizeGroups(data.groups), pieces),
@@ -153,6 +159,16 @@ export function piecesKey(pieces: PlacedJewelry[]): string {
       p.locked === true,
     ]),
   );
+}
+
+/**
+ * `piecesKey` plus the model's colour: what "unsaved changes" compares, so a
+ * new colour is something to save. The natural colour adds nothing, so keys
+ * taken before colours existed (local drafts) still match.
+ */
+export function designKey(pieces: PlacedJewelry[], shade: ModelShade): string {
+  const key = piecesKey(pieces);
+  return shade === DEFAULT_MODEL_SHADE ? key : `${key}|${shade}`;
 }
 
 /**

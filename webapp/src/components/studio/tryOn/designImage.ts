@@ -15,7 +15,8 @@ const SIZE = { width: 1280, height: 800 };
 export async function renderDesignImage(creation: TryOnCreation): Promise<Blob | null> {
   let stage: ExportStage | null = null;
   try {
-    stage = await ExportStage.open(creation.scene);
+    // Always on the natural model: a coloured cast could lead the image model to tint the client's teeth.
+    stage = await ExportStage.open({ ...creation.scene, modelShade: "natural" });
     return await stage.stageStill(SIZE);
   } catch {
     return null;
