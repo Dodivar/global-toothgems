@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../lib/auth";
 import { isSupabaseConfigured } from "../../lib/supabase/client";
 import { fetchStudioAccess } from "../../lib/studioAccessApi";
-import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../lib/studioUrl";
+import { GLOWBOOK_INTRO_PATH, GLOWBOOK_SPACE_PATH } from "../../lib/studioUrl";
 
 /**
  * Where the header's Studio "Glowbook" entry leads: the member's own Glowbook
@@ -41,5 +41,5 @@ export function useGlowbookMenuTarget(menuOpen: boolean): { target: string; book
 
   if (!live) return { target: GLOWBOOK_INTRO_PATH, bookings: false };
   const mine = known && known.userId === userId ? known : null;
-  return { target: mine?.glowbook ? studioSectionPath("glowbook") : GLOWBOOK_INTRO_PATH, bookings: mine?.bookings === true };
+  return { target: mine?.glowbook ? GLOWBOOK_SPACE_PATH : GLOWBOOK_INTRO_PATH, bookings: mine?.bookings === true };
 }

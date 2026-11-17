@@ -10,9 +10,10 @@ import { ShopMenu } from "./ShopMenu";
 import { STUDIO_MENU } from "./clientSpaces";
 import { useGlowbookMenuTarget } from "./useGlowbookMenuTarget";
 import { LanguageMenu } from "./LanguageMenu";
+import { AccountMenu } from "./AccountMenu";
 import { HeaderSearch } from "./HeaderSearch";
 import { CartAddedNotice } from "./CartAddedNotice";
-import { STUDIO_PATH } from "../../lib/studioUrl";
+import { GLOWBOOK_INTRO_PATH, STUDIO_PATH } from "../../lib/studioUrl";
 import logoWordmark from "../../assets/logo-wordmark.svg";
 
 type PanelKey = "shop" | "academy" | "studio" | null;
@@ -52,7 +53,7 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { count } = useCart();
-  const { signedIn, initials } = useAuth();
+  const { signedIn } = useAuth();
 
   const [panel, setPanel] = useState<PanelKey>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -75,7 +76,8 @@ export function Header() {
     if (entry.id === "appointments") return signedIn && !ownCalendar;
     return true;
   }).map((entry) =>
-    entry.id === "glowbook" ? { ...entry, to: glowbookTarget } : entry,
+    // The member's own Glowbook is "My Glowbook", as in the member space; the presentation page stays "Glowbook".
+    entry.id === "glowbook" ? { ...entry, to: glowbookTarget, labelKey: glowbookTarget === GLOWBOOK_INTRO_PATH ? entry.labelKey : "nav.myGlowbook" } : entry,
   );
 
   const links: { id: string; label: string; to: string; panel?: Exclude<PanelKey, null>; panelLabel?: string }[] = [
@@ -261,18 +263,8 @@ export function Header() {
             />
             {signedIn ? (
               /* Signed in, the account is a named place — "My space", with the
-                 member's initials — rather than an anonymous person icon: it is
-                 the way back to the member space's own sidebar. */
-              <Link
-                to="/compte"
-                onClick={closeAll}
-                className="mx-1 inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border-subtle)] bg-[var(--surface-card)] py-1 pl-1 pr-3 text-xs font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-primary)] transition-colors hover:border-[var(--gt-blue-300)]"
-              >
-                <span aria-hidden="true" className="grid h-7 w-7 place-items-center rounded-full bg-[var(--surface-brand)] text-[10.5px] font-[var(--weight-black)] text-[var(--gt-ink-900)]">
-                  {initials}
-                </span>
-                {t("nav.mySpace")}
-              </Link>
+                 member's initials, and its menu (the member space's entries). */
+              <AccountMenu variant="desktop" onOpen={closeAll} />
             ) : (
               <IconButton icon={User} label={t("nav.signIn")} onClick={openAccount} />
             )}
@@ -393,7 +385,7 @@ export function Header() {
           >
             <img src={logoWordmark.src} alt="Global Toothgems" className="h-4 w-auto" />
           </Link>
-          <IconButton icon={User} label={signedIn ? t("nav.mySpace") : t("nav.signIn")} onClick={openAccount} />
+          {signedIn ? <AccountMenu variant="mobile" onOpen={closeAll} /> : <IconButton icon={User} label={t("nav.signIn")} onClick={openAccount} />}
           <IconButton icon={ShoppingBag} label={cartLabel} badge={count} onClick={() => navigate("/panier")} />
         </div>
         {menuOpen && (

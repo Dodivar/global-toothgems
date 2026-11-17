@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { legacyAgendaAddress } from "./src/lib/agendaRoutes";
+import { legacyGlowbookAddress } from "./src/lib/studioUrl";
 import { gateFor, signInRedirect } from "./src/lib/authRoutes";
 import { LANGUAGE_KEY, legacyAddress, negotiateLocale, parsePath } from "./src/lib/localeRoutes";
 import { LOCALE_HEADER, PATH_HEADER } from "./src/lib/localeHeader";
@@ -49,6 +50,9 @@ export async function proxy(request: NextRequest) {
   // moved before the Studio's access check, so an artist whose plan ended still gets there.
   const agenda = legacyAgendaAddress(pathname, search);
   if (agenda) return NextResponse.redirect(new URL(agenda, request.url), 308);
+  // "My Glowbook" left the Studio workspace for the member space (artist space, 2026-11-17).
+  const glowbook = legacyGlowbookAddress(pathname, search);
+  if (glowbook) return NextResponse.redirect(new URL(glowbook, request.url), 308);
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(LOCALE_HEADER, parsePath(pathname).locale ?? negotiateLocale(saved, acceptLanguage));

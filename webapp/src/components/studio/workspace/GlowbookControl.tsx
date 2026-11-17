@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Sparkles, Send, Trash2 } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { useNavigate } from "../../../lib/navigation";
-import { studioSectionPath } from "../../../lib/studioUrl";
+import { GLOWBOOK_SPACE_PATH } from "../../../lib/studioUrl";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
 import type { Creation } from "../../../lib/studioWorkspace/types";
 import { ModerationBadge } from "./GlowbookStatus";
@@ -33,7 +33,7 @@ export function GlowbookControl({ creation, onLeave }: { creation: Creation; onL
   };
   const toGlowbook = () => {
     onLeave();
-    navigate(studioSectionPath("glowbook"));
+    navigate(GLOWBOOK_SPACE_PATH);
   };
 
   const text = !gb.glowbook

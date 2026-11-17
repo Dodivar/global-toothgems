@@ -1365,6 +1365,11 @@
       "discoverEyebrow": "Academy",
       "discoverTitle": "Se former avec Global Toothgems",
       "studioGrantUntil": "Offert par votre pack jusqu’au {{date}}."
+    },
+    "menu": {
+      "open": "Ouvrir le menu de mon espace",
+      "label": "Raccourcis de mon espace",
+      "favorites": "Mes favoris"
     }
   },
   "footer": {

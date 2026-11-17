@@ -45,7 +45,7 @@ import {
   zonedInstant,
 } from "../../lib/glowbookBookingMapping";
 import { AGENDA_TABS, agendaTab, type AgendaTab } from "../../lib/agendaRoutes";
-import { bookingCreationPath, GLOWBOOK_INTRO_PATH, glowbookCreationPath, studioSectionPath } from "../../lib/studioUrl";
+import { bookingCreationPath, GLOWBOOK_INTRO_PATH, glowbookCreationPath, GLOWBOOK_SPACE_PATH } from "../../lib/studioUrl";
 import { Link } from "../../lib/navigation";
 import { useToast } from "../../lib/toast";
 import { fieldClass, focusRing } from "../studio/workspace/workspaceStyles";
@@ -300,7 +300,7 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
     return plan === false ? (
       <Gate icon={Lock} title={t("booking.page.lockedTitle")} body={t("booking.page.lockedBody")} cta={t("booking.page.lockedCta")} to={GLOWBOOK_INTRO_PATH} />
     ) : (
-      <Gate icon={Sparkles} title={t("booking.page.noPageTitle")} body={t("booking.page.noPageBody")} cta={t("booking.page.noPageCta")} to={studioSectionPath("glowbook")} />
+      <Gate icon={Sparkles} title={t("booking.page.noPageTitle")} body={t("booking.page.noPageBody")} cta={t("booking.page.noPageCta")} to={GLOWBOOK_SPACE_PATH} />
     );
   }
 
@@ -339,7 +339,7 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
       >
         {status === "open" ? <CalendarCheck size={18} aria-hidden="true" className="mt-0.5 flex-none" /> : <CircleAlert size={18} aria-hidden="true" className="mt-0.5 flex-none" />}
         <p className="m-0 min-w-0 flex-1 font-semibold">{t(`booking.agenda.status.${status}`)}</p>
-        <Link to={studioSectionPath("glowbook")} className="font-bold underline underline-offset-4">{t("booking.page.glowbookLink")}</Link>
+        <Link to={GLOWBOOK_SPACE_PATH} className="font-bold underline underline-offset-4">{t("booking.page.glowbookLink")}</Link>
       </div>
 
       <div

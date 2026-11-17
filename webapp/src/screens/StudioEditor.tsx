@@ -13,7 +13,6 @@ import { WorkspaceDialogs } from "../components/studio/workspace/WorkspaceDialog
 import { CreationLibrary } from "../components/studio/workspace/CreationLibrary";
 import { GemGroupLibrary } from "../components/studio/workspace/GemGroupLibrary";
 import { TemplateLibrary } from "../components/studio/workspace/TemplateLibrary";
-import { GlowbookManager } from "../components/studio/workspace/GlowbookManager";
 import { HelpPanel } from "../components/studio/workspace/HelpPanel";
 import { useWorkspaceActions } from "../components/studio/workspace/useWorkspaceActions";
 import { useDocumentTitle } from "../components/legal/hooks";
@@ -63,7 +62,6 @@ const SECTION_TITLE: Record<StudioSection, string> = {
   creations: "creations",
   groups: "groups",
   templates: "templates",
-  glowbook: "glowbook",
   help: "help",
 };
 
@@ -270,7 +268,6 @@ function StudioWorkspace() {
               {section === "creations" && <CreationLibrary />}
               {section === "groups" && <GemGroupLibrary />}
               {section === "templates" && <TemplateLibrary />}
-              {section === "glowbook" && <GlowbookManager />}
               {section === "help" && <HelpPanel />}
             </div>
           </main>

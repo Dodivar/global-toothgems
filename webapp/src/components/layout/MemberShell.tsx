@@ -3,27 +3,15 @@ import { useTranslation } from "react-i18next";
 import { LanguageMenu } from "./LanguageMenu";
 import { Link, NavLink, useLocation, useNavigate } from "../../lib/navigation";
 import {
-  Award,
-  CalendarCheck,
-  CalendarDays,
   Cookie,
-  CreditCard,
-  LayoutDashboard,
   LifeBuoy,
   Lock,
   LogOut,
   Menu,
-  MessageSquareText,
   PanelLeftOpen,
-  MessagesSquare,
-  Package,
-  ShieldCheck,
   ShoppingBag,
-  Sparkles,
   UserCog,
-  UserRound,
   X,
-  type LucideIcon,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuth } from "../../lib/auth";
@@ -39,12 +27,11 @@ import { useFocusTrap } from "../../lib/useFocusTrap";
 import type { ActivitySection } from "../../lib/memberActivity";
 import { useMemberActivity, type MemberActivity } from "../../lib/useMemberActivity";
 import { LEGAL_PATHS } from "../../data/legal/routes";
-import { CLIENT_SPACES, STUDIO_SHORTCUTS } from "./clientSpaces";
 import { useGlowbookRightsKnown } from "./useGlowbookPlanKnown";
-import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../lib/studioUrl";
-import { AGENDA_PATH } from "../../lib/agendaRoutes";
+import { GLOWBOOK_INTRO_PATH } from "../../lib/studioUrl";
 import { captureEvent } from "../../lib/analyticsCore";
 import { LockedAccessDialog, type LockedAccessKind } from "./LockedAccessDialog";
+import { MEMBER_MENU_GROUPS as GROUPS, type MemberMenuItem as SectionItem } from "./memberMenu";
 import monogram from "../../assets/monogram-blue.png";
 import logoWordmark from "../../assets/logo-wordmark.svg";
 
@@ -142,103 +129,7 @@ export function useMemberShellMenu() {
   return useContext(MemberShellMenuContext);
 }
 
-interface SectionItem {
-  to: string;
-  labelKey: string;
-  /** Under `account.shell.short`, for the rail; none for an entry left off it. */
-  shortKey?: string;
-  icon: LucideIcon;
-  /** The dashboard and the home page need it: every other path is a distinct prefix. */
-  end?: boolean;
-  /**
-   * The Members' Lounge, the entry whose
-   * availability depends on what the account owns. They are never removed and
-   * never disabled: without a training they still lead somewhere, to the
-   * preview of what is behind them.
-   */
-  community?: boolean;
-  /** The Members' Lounge: carries its unread activity. */
-  lounge?: boolean;
-  /**
-   * The plan right the entry needs (decision 153): the Glowbook page (Artist and
-   * up) or the calendar (Atelier). Below it the entry is locked and leads to
-   * the Glowbook's presentation page.
-   */
-  plan?: "glowbook" | "bookings";
-  /** Carries a badge for what is new there since the member last looked. */
-  activity?: ActivitySection;
-}
 
-interface SectionGroup {
-  id: string;
-  /** None for the first group: the dashboard needs no heading. */
-  labelKey?: string;
-  items: SectionItem[];
-}
-
-const GROUPS: SectionGroup[] = [
-  {
-    id: "home",
-    items: [
-      { to: "/compte", labelKey: "account.navDashboard", shortKey: "dashboard", icon: LayoutDashboard, end: true },
-      { to: CLIENT_SPACES.home.to, labelKey: CLIENT_SPACES.home.labelKey, shortKey: "home", icon: CLIENT_SPACES.home.icon, end: true },
-      { to: CLIENT_SPACES.shop.to, labelKey: CLIENT_SPACES.shop.labelKey, shortKey: "shop", icon: CLIENT_SPACES.shop.icon },
-      { to: CLIENT_SPACES.academy.to, labelKey: CLIENT_SPACES.academy.labelKey, shortKey: "academy", icon: CLIENT_SPACES.academy.icon },
-    ],
-  },
-  {
-    id: "purchases",
-    labelKey: "account.shell.groupPurchases",
-    items: [
-      { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package, activity: "orders" },
-      { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles, activity: "loyalty" },
-      { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText, activity: "reviews" },
-      // Glowbook appointments (decision 144): those the member booked on artists' pages, and an artist's own.
-      { to: "/compte/rendez-vous", labelKey: "booking.mine.nav", shortKey: "appointments", icon: CalendarCheck },
-    ],
-  },
-  {
-    id: "learning",
-    labelKey: "account.shell.groupLearning",
-    items: [
-      { to: "/compte/attestations", labelKey: "account.navCertificates", shortKey: "certificates", icon: Award },
-      { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
-    ],
-  },
-  {
-    id: "studio",
-    labelKey: "account.shell.groupAtelier",
-    items: [
-      // Only the workshop: creations and groups are one click away inside it.
-      ...STUDIO_SHORTCUTS.filter((shortcut) => shortcut.id === "workshop").map((shortcut) => ({
-        to: shortcut.to,
-        labelKey: shortcut.labelKey,
-        shortKey: shortcut.shortKey,
-        icon: shortcut.icon,
-        end: true,
-      })),
-      // Always listed; locked (leading to the presentation page) below the Artist plan.
-      {
-        to: studioSectionPath("glowbook"),
-        labelKey: "nav.studioGlowbook",
-        shortKey: "glowbook",
-        icon: Sparkles,
-        plan: "glowbook",
-      },
-      // The artist's calendar (decision 147), in the member space; locked below the Atelier plan (decision 153).
-      { to: AGENDA_PATH, labelKey: "nav.studioAgenda", shortKey: "agenda", icon: CalendarDays, plan: "bookings" },
-      { to: "/compte/studio", labelKey: "account.navStudio", shortKey: "subscription", icon: CreditCard },
-    ],
-  },
-  {
-    id: "account",
-    labelKey: "account.shell.groupAccount",
-    items: [
-      { to: "/compte/profil", labelKey: "account.navProfile", shortKey: "profile", icon: UserRound },
-      { to: "/compte/securite", labelKey: "account.navSecurity", shortKey: "security", icon: ShieldCheck },
-    ],
-  },
-];
 
 const SECTIONS: SectionItem[] = GROUPS.flatMap((group) => group.items);
 
@@ -409,7 +300,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
         {closeButton}
       </div>
 
-      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto overscroll-contain px-3 py-4">
+      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-4">
         {/* Who is signed in: the space is theirs. */}
         <div className="flex items-center gap-3 px-2">
           <span

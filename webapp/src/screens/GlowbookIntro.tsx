@@ -11,7 +11,7 @@ import { photo } from "../lib/images";
 import { Link, useNavigate } from "../lib/navigation";
 import { StudioAccessProvider, useStudioAccess } from "../lib/studioAccess";
 import { lowestPlanWith } from "../lib/studioEntitlements";
-import { ARTIST_DIRECTORY_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_PATH, studioSectionPath } from "../lib/studioUrl";
+import { ARTIST_DIRECTORY_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_PATH, GLOWBOOK_SPACE_PATH } from "../lib/studioUrl";
 import { useHydrated } from "../lib/useHydrated";
 import { useReveal } from "../lib/useReveal";
 
@@ -240,7 +240,7 @@ function useGlowbookCta(plan: string): { label: string; go: () => void; open: bo
   const choose = { label: t("studio.glowbook.intro.ctaChoose", { plan }), go: () => navigate(STUDIO_SUBSCRIBE_PATH), open: false, locked: false };
   if (!hydrated || !status) return choose;
   if (status.kind === "preview" || (status.kind === "ready" && status.info.glowbook)) {
-    return { label: t("studio.glowbook.intro.ctaOpen"), go: () => navigate(studioSectionPath("glowbook")), open: true, locked: false };
+    return { label: t("studio.glowbook.intro.ctaOpen"), go: () => navigate(GLOWBOOK_SPACE_PATH), open: true, locked: false };
   }
   if (status.kind !== "ready") return choose;
   // A paying member below the plan switches on their subscription page (prorated, decision 112).

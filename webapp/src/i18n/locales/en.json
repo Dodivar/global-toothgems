@@ -1365,6 +1365,11 @@
       "discoverEyebrow": "Academy",
       "discoverTitle": "Train with Global Toothgems",
       "studioGrantUntil": "Included with your pack until {{date}}."
+    },
+    "menu": {
+      "open": "Open my space menu",
+      "label": "My space shortcuts",
+      "favorites": "My favourites"
     }
   },
   "footer": {
