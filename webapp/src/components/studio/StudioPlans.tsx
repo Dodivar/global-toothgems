@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { ArrowRight, Check, CircleCheck, Gift, Info } from "lucide-react";
@@ -292,14 +292,34 @@ function PlanFeatureList({ plan }: { plan: StudioPaidPlanId }) {
 /**
  * One line of a plan card, with its detail behind an info button when it has
  * one: opened by a click, a tap or the keyboard (never by hover alone, §11),
- * shown under the line so it never covers the card on a phone.
+ * as a popover floating under the line, so opening it never changes the
+ * card's height (the buttons below do not move).
  */
 function PlanFeatureLine({ id, text, tip }: { id: string; text: string; tip?: string }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLLIElement>(null);
   const k = "studioPage.plans.features";
+
+  // A popover closes on a press elsewhere (one open at a time) or Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   return (
-    <li className="grid gap-1.5 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
+    <li ref={ref} className="relative text-[length:var(--text-body-sm)] text-[var(--text-body)]">
       <div className="flex items-start gap-2">
         <Check size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--status-success-fg)]" />
         <span className="min-w-0">{text}</span>
@@ -326,7 +346,8 @@ function PlanFeatureLine({ id, text, tip }: { id: string; text: string; tip?: st
         <p
           id={id}
           hidden={!open}
-          className="m-0 ml-6 rounded-[var(--radius-md)] bg-[var(--gt-blue-50)] px-3 py-2 text-[length:var(--text-caption)] leading-relaxed text-[var(--text-body)]"
+          role="tooltip"
+          className="absolute inset-x-0 top-full z-20 m-0 mt-1 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 py-2 text-[length:var(--text-caption)] leading-relaxed text-[var(--text-body)] shadow-[var(--shadow-md)]"
         >
           {tip}
         </p>
