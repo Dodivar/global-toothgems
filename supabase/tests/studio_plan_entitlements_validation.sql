@@ -2,9 +2,9 @@
 -- 3D Studio plan entitlements validation suite
 -- (migration 20261026170231_studio_plan_entitlements, decision 113)
 -- =============================================================================
---   P1  the numbers: essential 15 creations / 3 Gem Groups, artist 150 / 30,
+--   P1  the numbers: essential 10 creations / 3 Gem Groups, artist 50 / 15,
 --       atelier and no tier unlimited (null);
---   P2  a trial member (essential) saves up to 15 creations and 3 Gem Groups
+--   P2  a trial member (essential) saves up to 10 creations and 3 Gem Groups
 --       as themselves; the next one is refused with GTL01; editing and
 --       deleting are not limited, and once under the limit a save passes;
 --   P3  an Artist member saves beyond Essential's numbers; an Atelier member
@@ -56,8 +56,8 @@ begin
   update public.profiles set role = 'manager' where id = modr;
 
   -- P1: the numbers
-  if private.studio_plan_limit('essential', 'creations') <> 15 or private.studio_plan_limit('essential', 'gem_groups') <> 3
-     or private.studio_plan_limit('artist', 'creations') <> 150 or private.studio_plan_limit('artist', 'gem_groups') <> 30
+  if private.studio_plan_limit('essential', 'creations') <> 10 or private.studio_plan_limit('essential', 'gem_groups') <> 3
+     or private.studio_plan_limit('artist', 'creations') <> 50 or private.studio_plan_limit('artist', 'gem_groups') <> 15
      or private.studio_plan_limit('atelier', 'creations') is not null or private.studio_plan_limit(null, 'creations') is not null then
     raise exception 'FAIL P1: plan numbers';
   end if;
@@ -66,7 +66,7 @@ begin
   -- P2: the trial member, as themselves
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', trialist, 'role', 'authenticated')::text, true);
-  for n in 1..15 loop
+  for n in 1..10 loop
     insert into public.creations (name, scene_data) values ('Look ' || n, v_scene) returning id into c_show;
     if n = 1 then c_first := c_show; end if;
   end loop;
@@ -75,7 +75,7 @@ begin
     insert into public.creations (name, scene_data) values ('One too many', v_scene);
   exception when others then v_state := sqlstate;
   end;
-  if v_state is distinct from 'GTL01' then raise exception 'FAIL P2: 16th creation (%)', v_state; end if;
+  if v_state is distinct from 'GTL01' then raise exception 'FAIL P2: 11th creation (%)', v_state; end if;
   for n in 1..3 loop
     insert into public.gem_groups (name, group_data) values ('Group ' || n, v_group);
   end loop;
@@ -191,12 +191,12 @@ begin
   if v_cnt <> 1 then raise exception 'FAIL P5: owner could not delete after downgrade'; end if;
   passed := passed || 'P5'::text;
 
-  -- P6: what the browser is told (the trial member: 15 creations, 3 groups)
+  -- P6: what the browser is told (the trial member: 10 creations, 3 groups)
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', trialist, 'role', 'authenticated')::text, true);
   v_json := public.studio_access_state();
   if v_json ->> 'tier' <> 'essential' or (v_json ->> 'glowbook')::boolean
-     or (v_json #>> '{limits,creations}')::int <> 15 or (v_json #>> '{limits,gem_groups}')::int <> 3
-     or (v_json #>> '{usage,creations}')::int <> 15 or (v_json #>> '{usage,gem_groups}')::int <> 3 then
+     or (v_json #>> '{limits,creations}')::int <> 10 or (v_json #>> '{limits,gem_groups}')::int <> 3
+     or (v_json #>> '{usage,creations}')::int <> 10 or (v_json #>> '{usage,gem_groups}')::int <> 3 then
     raise exception 'FAIL P6: trial state %', v_json;
   end if;
   perform set_config('request.jwt.claims', json_build_object('aal', 'aal2', 'sub', staffer, 'role', 'authenticated')::text, true);

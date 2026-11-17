@@ -114,7 +114,7 @@ export interface StudioPlan {
 
 export const STUDIO_PLANS: StudioPlan[] = [
   { id: "trial", amountMinor: 0, currency: "EUR", trialDays: 2 },
-  { id: "essential", amountMinor: 500, yearlyAmountMinor: 5000, currency: "EUR" },
+  { id: "essential", amountMinor: 490, yearlyAmountMinor: 4900, currency: "EUR" },
   { id: "artist", amountMinor: 1990, yearlyAmountMinor: 19900, currency: "EUR", featured: true },
   { id: "atelier", amountMinor: 3990, yearlyAmountMinor: 39900, currency: "EUR" },
 ];
@@ -166,7 +166,7 @@ export interface StudioPlanFeatures {
 
 export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> = {
   essential: {
-    creations: 15,
+    creations: 10,
     gemGroups: 3,
     postSignature: "watermark",
     postLayouts: false,
@@ -179,8 +179,8 @@ export const STUDIO_PLAN_FEATURES: Record<StudioPaidPlanId, StudioPlanFeatures> 
     tryOn: false,
   },
   artist: {
-    creations: 150,
-    gemGroups: 30,
+    creations: 50,
+    gemGroups: 15,
     postSignature: "ownLogo",
     postLayouts: false,
     posts: true,

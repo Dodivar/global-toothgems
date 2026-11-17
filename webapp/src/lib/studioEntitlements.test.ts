@@ -117,22 +117,22 @@ describe("hasFeature", () => {
 
 describe("saved creations and Gem Groups", () => {
   it("mirrors the database's numbers (private.studio_plan_limit)", () => {
-    expect(countLimit("essential", "creations")).toBe(15);
+    expect(countLimit("essential", "creations")).toBe(10);
     expect(countLimit("essential", "gemGroups")).toBe(3);
-    expect(countLimit("artist", "creations")).toBe(150);
-    expect(countLimit("artist", "gemGroups")).toBe(30);
+    expect(countLimit("artist", "creations")).toBe(50);
+    expect(countLimit("artist", "gemGroups")).toBe(15);
     expect(countLimit("atelier", "creations")).toBeNull();
     expect(countLimit("atelier", "gemGroups")).toBeNull();
   });
 
   it("refuses the save past the limit, at the exact boundary", () => {
     expect(canSaveMore("essential", "creations", 14)).toBe(true);
-    expect(canSaveMore("essential", "creations", 15)).toBe(false);
+    expect(canSaveMore("essential", "creations", 10)).toBe(false);
     expect(canSaveMore("essential", "gemGroups", 2)).toBe(true);
     expect(canSaveMore("essential", "gemGroups", 3)).toBe(false);
     expect(canSaveMore("artist", "creations", 149)).toBe(true);
-    expect(canSaveMore("artist", "creations", 150)).toBe(false);
-    expect(canSaveMore("artist", "gemGroups", 30)).toBe(false);
+    expect(canSaveMore("artist", "creations", 50)).toBe(false);
+    expect(canSaveMore("artist", "gemGroups", 15)).toBe(false);
   });
 
   it("never limits Atelier, and lets nothing be saved without a tier", () => {
@@ -160,8 +160,8 @@ describe("the database's answer drives the rights", () => {
       trial_expires_at: "2026-10-28T09:00:00.000Z",
       tier: "essential",
       glowbook: false,
-      limits: { creations: 15, gem_groups: 3 },
-      usage: { creations: 15, gem_groups: 0 },
+      limits: { creations: 10, gem_groups: 3 },
+      usage: { creations: 10, gem_groups: 0 },
     })!;
     for (const feature of FEATURES) expect(hasFeature(info.tier, feature)).toBe(feature === "templates");
     expect(atLimit(info, "creations")).toBe(true);
