@@ -11,6 +11,7 @@ Progress events are sent from the learner store (`lib/progress.tsx`) **after the
 | Event | When | Properties |
 | --- | --- | --- |
 | `academy_course_added_to_cart` | "Buy" on a course's sales page | `course_id`, `price_minor`, `currency` |
+| `academy_course_offer_chosen` | A package chosen in "Choose your package" on a course's page (a pack that opens the course) | `course_id`, `offer` (`pack`), `product_id` |
 | `academy_course_started` | The learner opens a lesson of a course where nothing is done yet (once per course and tab) | `course_id` |
 | `academy_lesson_opened` | A lesson or quiz page opens (once per lesson and tab) | `course_id`, `course_pct`, `step_kind` (`step` or `quiz`), `module_index`, `index_in_module`, `path_index`, `path_length` |
 | `academy_step_completed` | The server recorded a step as done | same + `done_count`, `total` |

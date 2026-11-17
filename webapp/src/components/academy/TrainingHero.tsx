@@ -36,6 +36,8 @@ export function TrainingHero({
   ctaLabel,
   ctaBusy = false,
   onExploreCurriculum,
+  onSeeOffers,
+  offersStudioMonths = null,
 }: {
   course: PublicCourse;
   lang: string;
@@ -50,6 +52,10 @@ export function TrainingHero({
   /** The member's courses are still being read: the button waits rather than offer a purchase they may not need. */
   ctaBusy?: boolean;
   onExploreCurriculum: () => void;
+  /** Moves to "Choose your package" (kit, packs with the 3D Studio); absent when the page offers none. */
+  onSeeOffers?: () => void;
+  /** Studio months of the course's pack, for that link's sentence; null when no pack opens the Studio. */
+  offersStudioMonths?: number | null;
 }) {
   const { formatMoney, formatDate } = useFormat();
   const { t } = useTranslation();
@@ -206,6 +212,19 @@ export function TrainingHero({
                 </Button>
               </div>
             </div>
+
+            {onSeeOffers && (
+              <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
+                {offersStudioMonths ? t("training.offers.heroHint", { count: offersStudioMonths }) : t("training.offers.heroHintPlain")}{" "}
+                <button
+                  type="button"
+                  onClick={onSeeOffers}
+                  className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-[var(--text-link)] underline decoration-1 underline-offset-4 hover:text-[var(--text-link-hover)]"
+                >
+                  {t("training.offers.heroLink")}
+                </button>
+              </p>
+            )}
 
             {!signedIn && (
               <p className="m-0 flex items-center gap-2 text-[length:var(--text-body-sm)] text-[var(--text-muted)]">

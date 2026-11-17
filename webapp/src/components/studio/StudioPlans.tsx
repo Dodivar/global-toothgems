@@ -112,13 +112,15 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
  * On the member's subscription page (decision 112) `current` marks the plan and
  * billing they have (opened on that billing), the other cards switch to theirs,
  * and `locked` holds every switch while the subscription cannot change.
+ * Without `onChoose` the cards are shown for information only, with no call
+ * to action (a team account, which already has the Atelier rights).
  */
 export function StudioPaidPlans({
   onChoose,
   current = null,
   locked = false,
 }: {
-  onChoose: ChooseStudioPlan;
+  onChoose?: ChooseStudioPlan;
   current?: { plan: StudioPaidPlanId; interval: StudioBillingInterval } | null;
   locked?: boolean;
 }) {
@@ -205,7 +207,7 @@ export function StudioPaidPlans({
                 <p className="m-0 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-muted)]">{t("studioPage.plans.unavailable")}</p>
               )}
 
-              {isCurrent ? (
+              {!onChoose ? null : isCurrent ? (
                 <Button variant="outline" size="lg" fullWidth iconLeft={CircleCheck} disabled>
                   {t("studioPage.plans.currentCta")}
                 </Button>
