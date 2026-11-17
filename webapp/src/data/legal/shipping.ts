@@ -101,9 +101,9 @@ export const SHIPPING: LegalDocument = {
           kind: "p",
           text: lp(
             (p) =>
-              `Les commandes sont préparées sous ${p.preparationTime} après confirmation du paiement, hors week-ends et jours fériés, puis confiées à ${p.carriers}. Les formations en ligne ne sont pas expédiées : elles sont disponibles immédiatement dans votre espace <<Mon compte|/compte>>.`,
+              `Les commandes sont préparées sous ${p.preparationTime} après confirmation du paiement, hors week-ends et jours fériés, puis confiées à ${p.carriers}. Les formations en ligne ne sont pas expédiées : elles sont disponibles immédiatement dans <<Mon espace|/compte>>.`,
             (p) =>
-              `Orders are prepared within ${p.preparationTime} after payment is confirmed, excluding weekends and public holidays, then handed to ${p.carriers}. Online courses are not shipped: they are available straight away in <<My account|/compte>>.`,
+              `Orders are prepared within ${p.preparationTime} after payment is confirmed, excluding weekends and public holidays, then handed to ${p.carriers}. Online courses are not shipped: they are available straight away in <<My space|/compte>>.`,
           ),
         },
       ],

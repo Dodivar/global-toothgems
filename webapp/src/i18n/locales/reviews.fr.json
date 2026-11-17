@@ -278,7 +278,7 @@
     "reviewed": "Avis donné · {{status}}"
   },
   "mine": {
-    "eyebrow": "Mon compte",
+    "eyebrow": "Mon espace",
     "title": "Mes avis",
     "description": "Les avis que vous avez partagés, où en est chacun, et ce que vous pourriez encore évaluer.",
     "statsLabel": "Vos avis en chiffres",

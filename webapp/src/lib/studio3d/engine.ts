@@ -1593,7 +1593,7 @@ export class StudioEngine {
   /** Move one piece to a tooth (inspector dropdown) — slides to a free spot. */
   relocateJewelToTooth(id: string, toothId: string): boolean {
     const j = this.store.jewels.find((x) => x.id === id);
-    if (!j || !this.toothRigs.has(toothId)) return false;
+    if (!j || j.locked || !this.toothRigs.has(toothId)) return false;
     const anchor = this.getSurfacePoint(toothId, 0, 0);
     const blockers = this.blockersFor(new Set([id]));
     const free = this.findFreeSpot(anchor, poseOf(j), blockers);
@@ -1644,7 +1644,8 @@ export class StudioEngine {
   }
   /** Mirror the current selection in place (see `mirroredSpot` for each axis). One undo step. */
   mirrorSelection(axis: "h" | "v"): MoveResult | null {
-    const ids = [...this.store.getSnapshot().selectedJewelIds];
+    // Locked pieces stay where they are (and block the others like any piece).
+    const ids = this.store.editableIds(this.store.getSnapshot().selectedJewelIds);
     const affected = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!affected.length) return null;
     const blockers = this.blockersFor(new Set(ids));
@@ -1678,7 +1679,8 @@ export class StudioEngine {
   /** Distribute the selected pieces evenly between the two outermost ones,
        moving each along the arch tangent and re-snapping onto the enamel. */
   distributeSelectionAlongArch(): MoveResult | null {
-    const ids = [...this.store.getSnapshot().selectedJewelIds];
+    // Locked pieces stay where they are (and block the others like any piece).
+    const ids = this.store.editableIds(this.store.getSnapshot().selectedJewelIds);
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (gems.length < 3) return null;
     const centers = this.archCenters();
@@ -1741,7 +1743,8 @@ export class StudioEngine {
    * or taken stays where it is, so the others never end up off the line.
    */
   alignSelectionHorizontally(): MoveResult | null {
-    const ids = [...this.store.getSnapshot().selectedJewelIds];
+    // Locked pieces stay where they are (and block the others like any piece).
+    const ids = this.store.editableIds(this.store.getSnapshot().selectedJewelIds);
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (gems.length < 2) return null;
     const posOf = (j: PlacedJewelry) => new THREE.Vector3(j.position.x, j.position.y, j.position.z);
@@ -1780,7 +1783,8 @@ export class StudioEngine {
    * enamel (hidden behind the other arch), off screen or taken stays put.
    */
   alignSelectionVertically(): MoveResult | null {
-    const ids = [...this.store.getSnapshot().selectedJewelIds];
+    // Locked pieces stay where they are (and block the others like any piece).
+    const ids = this.store.editableIds(this.store.getSnapshot().selectedJewelIds);
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (gems.length < 2) return null;
     this.camera.updateMatrixWorld();
@@ -1895,6 +1899,7 @@ export class StudioEngine {
    * a cluster and keep their spacing (see `centeredOffsets`).
    */
   centerSelectionOnTeeth(ids: string[]): MoveResult | null {
+    ids = this.store.editableIds(ids); // locked pieces stay put
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!gems.length) return null;
     const rigs = new Map<string, ToothRig>();
@@ -2230,6 +2235,15 @@ export class StudioEngine {
     if (this.mode === "jewel-press" && moved) {
       this.clearLongPress();
       const rig = this.jewelRigs.get(this.press.jewelId!);
+      if (rig && this.store.isLocked(rig.id)) {
+        // A locked piece is not picked up: the press only selects it, and says why.
+        this.store.selectJewel(rig.id);
+        notify("lockedNoMove", undefined, "info");
+        this.mode = "idle";
+        this.press = null;
+        this.setCursor("not-allowed");
+        return;
+      }
       if (rig) {
         this.store.pushHistory();
         this.beginDrag(rig);
@@ -2374,7 +2388,8 @@ export class StudioEngine {
     }
     for (const f of this.store.jewels) {
       const followerRig = this.jewelRigs.get(f.id);
-      if (f.id === rig.id || !followerRig || !sel.includes(f.id)) continue;
+      // Locked pieces of the selection stay behind, and block the group like any other piece.
+      if (f.id === rig.id || !followerRig || !sel.includes(f.id) || f.locked) continue;
       const start = spotOf(f);
       this.dragFollowers.push({ rig: followerRig, pose: poseOf(f), start });
       this.dragFollowerSpots.set(f.id, start);
@@ -2484,7 +2499,8 @@ export class StudioEngine {
     if (jHit) {
       this.hoverJewelId = jHit.jewelId;
       this.setHoverTooth(null);
-      this.setCursor("grab");
+      // A locked piece can be selected, not picked up.
+      this.setCursor(this.store.isLocked(jHit.jewelId) ? "pointer" : "grab");
       return;
     }
     this.hoverJewelId = null;
@@ -3176,6 +3192,7 @@ export class StudioEngine {
    * Overlaps are not prevented here; the design check reports them.
    */
   beginGroupTurn(ids: string[]): GroupTurn | null {
+    ids = this.store.editableIds(ids); // locked pieces neither turn nor follow the group
     const start = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!start.length) return null;
     const pivot = new THREE.Vector3();

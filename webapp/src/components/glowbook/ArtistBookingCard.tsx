@@ -10,6 +10,8 @@ import { Dialog } from "../ui/Dialog";
 import { blockClient, cancelBooking, markBooking } from "../../lib/glowbookBooking";
 import { type ArtistBooking, formatWhen } from "../../lib/glowbookBookingMapping";
 import { useToast } from "../../lib/toast";
+import type { AppointmentEvent } from "../../lib/glowbookIcs";
+import { AddToCalendarMenu } from "./AddToCalendarMenu";
 
 /**
  * One appointment as the artist sees it (decision 144): when, what the client
@@ -55,6 +57,27 @@ export function ArtistBookingCard({
     }
   };
 
+  // "Add to my calendar" for an appointment to come: client, design, phone and comment in the event.
+  const calendarEvent = (): AppointmentEvent => {
+    const pageUrl = `${window.location.origin}/compte/agenda`;
+    const design = booking.designKind === "custom" ? t("booking.design.custom") : (booking.creationName ?? "");
+    const lines = [
+      design ? t("booking.mine.icsDesign", { design }) : "",
+      booking.clientPhone ? t("booking.artist.icsPhone", { phone: booking.clientPhone }) : "",
+      booking.comment ?? "",
+      pageUrl,
+    ].filter(Boolean);
+    return {
+      bookingId: booking.id,
+      startsAt: booking.startsAt,
+      endsAt: booking.endsAt,
+      summary: t("booking.artist.icsSummary", { name: booking.clientName ?? "" }),
+      description: lines.join("\n"),
+      location: null,
+      url: pageUrl,
+    };
+  };
+
   return (
     <article className="grid gap-3 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -70,6 +93,27 @@ export function ArtistBookingCard({
           {booking.status === "cancelled_client" && booking.lateCancel ? ` · ${t("booking.status.late")}` : ""}
         </Badge>
       </div>
+
+      {/* The client's own creation (decision 149): no picture (it is theirs), the 3D view read-only. */}
+      {booking.designKind === "client_creation" && (
+        <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] p-2">
+          <span aria-hidden="true" className="grid h-16 w-16 flex-none place-items-center rounded-[var(--radius-sm)] bg-[var(--surface-card)] text-[var(--gt-blue-700)]">
+            <Box size={20} />
+          </span>
+          <div className="grid min-w-0 gap-1">
+            <p className="m-0 text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">{t("booking.artist.clientDesign")}</p>
+            <p className="m-0 truncate text-[13.5px] font-bold text-[var(--text-primary)]">{booking.creationName ?? "—"}</p>
+            {creation?.viewUrl ? (
+              <a href={creation.viewUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-fit items-center gap-1 text-[12.5px] font-semibold underline">
+                <Box size={13} aria-hidden="true" />
+                {t("booking.artist.view3d")}
+              </a>
+            ) : (
+              <p className="m-0 text-[12.5px] text-[var(--text-muted)]">{t("booking.artist.clientDesignGone")}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {booking.designKind === "creation" && creation && (creation.imageUrl || creation.viewUrl) && (
         <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--border-subtle)] p-2">
@@ -135,6 +179,9 @@ export function ArtistBookingCard({
       )}
 
       <div className="flex flex-wrap gap-2">
+        {booking.status === "booked" && future && !booking.clientErased && (
+          <AddToCalendarMenu event={calendarEvent()} filename={lang === "fr" ? "rendez-vous.ics" : "appointment.ics"} />
+        )}
         {booking.status === "booked" && future && (
           <Button size="sm" variant="dangerOutline" iconLeft={CalendarX2} disabled={busy} onClick={() => setCancelling(true)}>
             {t("booking.artist.cancel")}

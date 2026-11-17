@@ -32,12 +32,11 @@
     "signIn": "Se connecter",
     "studio": "Studio 3D",
     "atelier": "Atelier",
-    "studioWorkshop": "Ouvrir le Studio 3D",
+    "studioWorkshop": "Studio 3D",
     "studioWorkshopSub": "Composer un design en 3D",
     "studioGroups": "Mes groupes",
     "studioGlowbook": "Glowbook",
     "studioGlowbookSub": "Votre vitrine d’artiste, en un lien",
-    "studioGlowbookAgenda": "Glowbook et agenda",
     "studioAgenda": "Mon agenda",
     "studioAgendaSub": "Vos rendez-vous, horaires et congés",
     "giftCard": "Carte cadeau",
@@ -45,7 +44,11 @@
     "viewAllStudio": "Découvrir le Studio 3D",
     "mySpace": "Mon espace",
     "studioArtists": "Trouver un artiste",
-    "studioArtistsSub": "Les artistes près de chez vous"
+    "studioArtistsSub": "Les artistes près de chez vous",
+    "studioAppointments": "Mes rendez-vous",
+    "studioAppointmentsSub": "Les rendez-vous pris chez un artiste",
+    "openStudioWorkshop": "Ouvrir le Studio 3D",
+    "myGlowbook": "Mon Glowbook"
   },
   "common": {
     "readMore": "En savoir plus",
@@ -408,10 +411,11 @@
       "signIn": "Se connecter",
       "createAccount": "Créer un compte",
       "openCourses": "Accéder à mes formations",
-      "paidBody": "Vos formations sont disponibles dans votre espace membre.",
+      "paidBody": "Vos formations sont disponibles dans Mon espace.",
       "consentTitle": "Accès immédiat à la formation",
       "consentLabel": "Je demande l’accès immédiat à la formation et je renonce expressément à mon droit de rétractation : je reconnais le perdre dès que je commence à suivre la formation.",
-      "consentHint": "Tant qu’aucune leçon n’est ouverte, vous gardez 14 jours pour vous rétracter."
+      "consentHint": "Tant qu’aucune leçon n’est ouverte, vous gardez 14 jours pour vous rétracter.",
+      "openCourse": "Commencer ma formation"
     },
     "pack": {
       "line": "1 pack par commande · formation et Studio ouverts sur votre compte"
@@ -1024,8 +1028,8 @@
     "ie": "Ireland"
   },
   "account": {
-    "eyebrow": "Espace membre",
-    "navLabel": "Sections de l’espace membre",
+    "eyebrow": "Mon espace",
+    "navLabel": "Sections de mon espace",
     "navDashboard": "Tableau de bord",
     "navCertificates": "Attestations",
     "navOrders": "Commandes",
@@ -1040,16 +1044,28 @@
       "progress": "{{done}} sur {{total}} faits",
       "done": "fait",
       "steps": {
-        "profile": { "title": "Compléter mon profil", "text": "Téléphone et adresse de livraison, pour commander en deux clics." },
-        "shop": { "title": "Découvrir la boutique", "text": "Ajoutez un favori : on vous prévient des promotions." },
-        "studio": { "title": "Essayer le Studio 3D", "text": "48 h d’essai gratuit pour concevoir votre sourire en 3D." },
-        "academy": { "title": "Voir l’Academy", "text": "Des formations professionnelles, avec attestation à la clé." }
+        "profile": {
+          "title": "Compléter mon profil",
+          "text": "Téléphone et adresse de livraison, pour commander en deux clics."
+        },
+        "shop": {
+          "title": "Découvrir la boutique",
+          "text": "Ajoutez un favori : si vous le souhaitez, on vous prévient de ses promotions."
+        },
+        "studio": {
+          "title": "Essayer le Studio 3D",
+          "text": "48 h d’essai gratuit pour concevoir votre sourire en 3D."
+        },
+        "academy": {
+          "title": "Voir l’Academy",
+          "text": "Des formations professionnelles, avec attestation à la clé."
+        }
       }
     },
     "shell": {
-      "openMenu": "Ouvrir le menu de l’espace membre",
+      "openMenu": "Ouvrir le menu de mon espace",
       "closeMenu": "Fermer le menu",
-      "menuLabel": "Menu de l’espace membre",
+      "menuLabel": "Menu de mon espace",
       "homeAlt": "Global Toothgems — accueil",
       "help": "Aide",
       "cookies": "Cookies",
@@ -1067,7 +1083,7 @@
         "security": "Sécurité",
         "menu": "Menu",
         "cart": "Panier",
-        "studio": "Atelier",
+        "studio": "Studio 3D",
         "creations": "Créations",
         "groups": "Groupes",
         "home": "Accueil site",
@@ -1077,10 +1093,26 @@
         "subscription": "Abonnement",
         "glowbook": "Glowbook",
         "appointments": "Rendez-vous",
-        "agenda": "Agenda"
+        "agenda": "Agenda",
+        "course": "Formation"
       },
       "groupAtelier": "Atelier",
       "atelierLocked": "Avec l’abonnement Atelier",
+      "lockedAtelier": {
+        "eyebrow": "Avec l’abonnement Atelier",
+        "title": "Votre agenda vous attend",
+        "body": "Avec l’abonnement Atelier, vos clientes réservent directement depuis votre Glowbook et vous retrouvez tous vos rendez-vous dans un agenda. C’est la formule la plus complète du Studio 3D.",
+        "perks": {
+          "page": "Une place dans l’annuaire des artistes près de chez vous",
+          "booking": "La prise de rendez-vous en ligne, directement depuis votre page",
+          "agenda": "Un agenda synchronisé avec Google, Apple ou Outlook",
+          "tryOn": "L’essayage IA : vos clientes voient le design sur leur propre sourire"
+        },
+        "cta": "Voir l’abonnement Atelier",
+        "secondary": "Découvrir le Glowbook",
+        "note": "Tout s’ouvre dès que l’abonnement Atelier est actif sur votre compte."
+      },
+      "lockedEntry": "{{name}} — accès verrouillé, voir pourquoi",
       "groupLearning": "Formation",
       "groupPurchases": "Achats",
       "groupAccount": "Mon compte",
@@ -1092,6 +1124,20 @@
         "reviews_other": "{{count}} nouveautés dans vos avis",
         "loyalty_one": "Carte complète : votre récompense vous attend",
         "loyalty_other": "{{count}} récompenses vous attendent"
+      },
+      "artistLocked": "Avec l’abonnement Artiste",
+      "lockedArtist": {
+        "eyebrow": "Avec l’abonnement Artiste",
+        "title": "Votre Glowbook vous attend",
+        "body": "Le Glowbook est votre vitrine publique d’artiste, à mettre dans votre bio Instagram : vos plus belles créations en 3D et l’endroit où vous travaillez. Il s’ouvre avec l’abonnement Artiste.",
+        "perks": {
+          "page": "Une page publique à votre nom, validée par notre équipe",
+          "creations": "Vos créations en 3D, que vos clientes font tourner du bout du doigt",
+          "map": "Votre lieu sur une carte, un QR code et une affiche à imprimer"
+        },
+        "cta": "Voir l’abonnement Artiste",
+        "secondary": "Découvrir le Glowbook",
+        "note": "Le Glowbook s’ouvre dès que l’abonnement Artiste ou Atelier est actif sur votre compte."
       }
     },
     "resumeEyebrow": "Reprendre",
@@ -1286,7 +1332,7 @@
     "certificateDocRefLabel": "N° d’attestation",
     "certificateDocSeal": "Validée",
     "certificateDocIssuer": "Organisme émetteur",
-    "navStudio": "Abonnement Studio",
+    "navStudio": "Abonnement Studio 3D",
     "dashboard": {
       "accountEyebrow": "En un coup d’œil",
       "accountTitle": "Votre compte",
@@ -1320,7 +1366,13 @@
       "discoverEyebrow": "Academy",
       "discoverTitle": "Se former avec Global Toothgems",
       "studioGrantUntil": "Offert par votre pack jusqu’au {{date}}."
-    }
+    },
+    "menu": {
+      "open": "Ouvrir le menu de mon espace",
+      "label": "Raccourcis de mon espace",
+      "favorites": "Mes favoris"
+    },
+    "navMyCourse": "Ma formation"
   },
   "footer": {
     "blurb": "Gems, outils et formation professionnels. Expédié à l’international.",
@@ -1531,7 +1583,7 @@
       "openNav": "Ouvrir la navigation",
       "breadcrumb": "Fil d’Ariane",
       "viewStore": "Voir la boutique",
-      "memberSpace": "Mon espace membre"
+      "memberSpace": "Mon espace"
     },
     "nav": {
       "primary": "Navigation de l’administration",
@@ -4324,9 +4376,6 @@
       "errorMonths": "La durée du Studio va de 1 à {{max}} mois."
     }
   },
-  "community": {
-    "navEntryLocked": "Accès avec une formation"
-  },
   "errors": {
     "actions": {
       "home": "Retour à l’accueil"
@@ -4947,6 +4996,15 @@
       "errorTitle": "Vos favoris sont momentanément indisponibles",
       "errorBody": "Nous n’avons pas pu les charger. Vérifiez votre connexion puis réessayez.",
       "errorCta": "Réessayer"
+    },
+    "promoAlert": {
+      "title": "Soyez prévenu des promotions de vos favoris",
+      "body": "Un e-mail, au plus une fois par semaine, quand l’un de vos favoris passe en promotion. Vous vous désinscrivez en un clic.",
+      "cta": "Oui, me prévenir",
+      "savedTitle": "C’est noté",
+      "savedBody": "Nous vous écrirons quand l’un de vos favoris sera en promotion.",
+      "errorTitle": "Choix non enregistré",
+      "errorBody": "Votre choix n’a pas pu être enregistré. Réessayez dans un instant."
     }
   },
   "siteSearch": {

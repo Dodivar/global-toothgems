@@ -563,6 +563,12 @@ textarea {
   to { opacity: 1; transform: none; }
 }
 
+/* A band that appears after the first paint (the home page's member band) unfolds rather than jumps in. */
+@keyframes gt-unfold {
+  from { grid-template-rows: 0fr; opacity: 0; }
+  to { grid-template-rows: 1fr; opacity: 1; }
+}
+
 /* Members' Lounge: a message reached from search or the inbox glows once. */
 @keyframes gt-lounge-flash {
   0%, 35% { background-color: var(--gt-blue-100); }
@@ -2053,6 +2059,38 @@ textarea {
 @keyframes gt-alt-rise {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
+}
+
+/* Sign-in pages: the gem burst (components/auth/GemBurst.tsx). Each stone
+   leaves the box's centre once — offsets in container units set per stone
+   as --burst-dx / --burst-dy —, then drifts and turns around its resting
+   angle (--drift-rot). The middle layer leans from the pointer (translate /
+   rotate written by the component) and grows on hover. */
+.gt-auth-burst-box { container-type: size; }
+.gt-auth-burst { animation: gt-auth-burst 1.1s cubic-bezier(.16, 1, .3, 1) both; }
+.gt-auth-stone {
+  transition: translate 420ms cubic-bezier(.16, 1, .3, 1), rotate 420ms cubic-bezier(.16, 1, .3, 1), scale 260ms var(--ease-out-soft);
+}
+.gt-auth-stone:hover { scale: 1.22; }
+.gt-auth-drift {
+  rotate: var(--drift-rot, 0deg);
+  animation: gt-auth-drift 8s var(--ease-in-out) infinite;
+}
+@keyframes gt-auth-burst {
+  from { opacity: 0; transform: translate(var(--burst-dx, 0), var(--burst-dy, 0)) scale(.2) rotate(-40deg); }
+  35% { opacity: 1; }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gt-auth-drift {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-8px) rotate(7deg); }
+  66% { transform: translateY(4px) rotate(-5deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gt-auth-burst,
+  .gt-auth-drift { animation: none; }
+  .gt-auth-stone { transition: none; }
+  .gt-auth-stone:hover { scale: none; }
 }
 @keyframes gt-alt-reel {
   from { opacity: 0; transform: scale(.97); }

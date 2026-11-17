@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowRight, Check, CircleCheck, Gift } from "lucide-react";
+import { ArrowRight, Check, CircleCheck, Gift, Info } from "lucide-react";
 import { Button } from "../ui/Button";
 import { trackStudio } from "../../lib/studioAnalytics";
 import { useNavigate } from "../../lib/navigation";
@@ -235,27 +235,26 @@ export function StudioPaidPlans({
 /** The plan below, whose features this one builds on ("Everything in Essential, plus:"). */
 const PREVIOUS_PLAN: Partial<Record<StudioPaidPlanId, StudioPaidPlanId>> = { artist: "essential", atelier: "artist" };
 
-/** The features a card names, in its order, when the plan has them and the one below does not. */
-const ADDED_FEATURES: readonly StudioFeature[] = [
-  "templates",
-  "clientTools",
-  "posts",
-  "ownLogo",
-  "transparentExport",
-  "collections",
-  "glowbook",
-  "tryOn",
-  "postLayouts",
+/**
+ * The lines a card names, in this order, when the plan has every feature of
+ * the line and the plan below does not (owner's request, 2026-11-16: one
+ * short line each, the detail behind an info button). Several features may
+ * share a line ("posts in your name" = posts + own logo).
+ */
+const PLAN_LINES: readonly { key: string; features: readonly StudioFeature[]; tip?: boolean }[] = [
+  { key: "templates", features: ["templates"], tip: true },
+  { key: "clientTools", features: ["clientTools"], tip: true },
+  { key: "posts", features: ["posts", "ownLogo"], tip: true },
+  { key: "extras", features: ["transparentExport", "collections"] },
+  { key: "glowbook", features: ["glowbook"], tip: true },
+  { key: "bookings", features: ["bookings"], tip: true },
+  { key: "directory", features: ["bookings"], tip: true },
+  { key: "tryOn", features: ["tryOn"], tip: true },
+  { key: "postLayouts", features: ["postLayouts"], tip: true },
 ];
 
-/**
- * Lines a feature brings along on the card, under its own line: what comes
- * with the Glowbook and is gated by the same plan check — online booking and
- * the synced calendar (decision 144), the artist directory (decision 145).
- */
-const FEATURE_DETAILS: Partial<Record<StudioFeature, readonly string[]>> = {
-  glowbook: ["glowbookBooking", "glowbookCalendar", "artistDirectory"],
-};
+const hasAll = (plan: StudioPaidPlanId | null, features: readonly StudioFeature[]) =>
+  plan !== null && features.every((feature) => hasFeature(plan, feature));
 
 /**
  * What a plan includes, from `STUDIO_PLAN_FEATURES` (decision 113): Essential
@@ -267,17 +266,13 @@ function PlanFeatureList({ plan }: { plan: StudioPaidPlanId }) {
   const f = STUDIO_PLAN_FEATURES[plan];
   const previous = PREVIOUS_PLAN[plan] ?? null;
 
-  const lines: string[] = [];
-  if (f.creations === null && f.gemGroups === null) lines.push(t(`${k}.unlimited`));
-  else {
-    if (f.creations !== null) lines.push(t(`${k}.creations`, { count: f.creations }));
-    if (f.gemGroups !== null) lines.push(t(`${k}.gemGroups`, { count: f.gemGroups }));
-  }
-  if (!previous) lines.push(t(`${k}.library`));
-  for (const feature of ADDED_FEATURES) {
-    if (!hasFeature(plan, feature) || hasFeature(previous, feature)) continue;
-    lines.push(t(`${k}.${feature}`));
-    for (const extra of FEATURE_DETAILS[feature] ?? []) lines.push(t(`${k}.${extra}`));
+  const lines: { id: string; text: string; tip?: string }[] = [];
+  if (f.creations === null && f.gemGroups === null) lines.push({ id: "unlimited", text: t(`${k}.unlimited`) });
+  else lines.push({ id: "counts", text: t(`${k}.counts`, { creations: f.creations, gemGroups: f.gemGroups }), tip: t(`${k}.countsTip`) });
+  if (!previous) lines.push({ id: "library", text: t(`${k}.library`) });
+  for (const line of PLAN_LINES) {
+    if (!hasAll(plan, line.features) || hasAll(previous, line.features)) continue;
+    lines.push({ id: line.key, text: t(`${k}.${line.key}`), tip: line.tip ? t(`${k}.${line.key}Tip`) : undefined });
   }
 
   return (
@@ -287,12 +282,55 @@ function PlanFeatureList({ plan }: { plan: StudioPaidPlanId }) {
       </span>
       <ul className="m-0 grid list-none gap-2 p-0">
         {lines.map((line) => (
-          <li key={line} className="flex items-start gap-2 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
-            <Check size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--status-success-fg)]" />
-            <span>{line}</span>
-          </li>
+          <PlanFeatureLine key={line.id} id={`gt-plan-${plan}-${line.id}`} text={line.text} tip={line.tip} />
         ))}
       </ul>
     </div>
+  );
+}
+
+/**
+ * One line of a plan card, with its detail behind an info button when it has
+ * one: opened by a click, a tap or the keyboard (never by hover alone, §11),
+ * shown under the line so it never covers the card on a phone.
+ */
+function PlanFeatureLine({ id, text, tip }: { id: string; text: string; tip?: string }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const k = "studioPage.plans.features";
+  return (
+    <li className="grid gap-1.5 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
+      <div className="flex items-start gap-2">
+        <Check size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--status-success-fg)]" />
+        <span className="min-w-0">{text}</span>
+        {tip && (
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={id}
+            aria-label={t(open ? `${k}.less` : `${k}.more`, { feature: text })}
+            onClick={() => setOpen((value) => !value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && open) setOpen(false);
+            }}
+            className={clsx(
+              "-my-1 ml-auto grid h-7 w-7 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+              open ? "bg-[var(--gt-blue-50)] text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]",
+            )}
+          >
+            <Info size={15} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+      {tip && (
+        <p
+          id={id}
+          hidden={!open}
+          className="m-0 ml-6 rounded-[var(--radius-md)] bg-[var(--gt-blue-50)] px-3 py-2 text-[length:var(--text-caption)] leading-relaxed text-[var(--text-body)]"
+        >
+          {tip}
+        </p>
+      )}
+    </li>
   );
 }

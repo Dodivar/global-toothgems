@@ -1,29 +1,17 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageMenu } from "./LanguageMenu";
 import { Link, NavLink, useLocation, useNavigate } from "../../lib/navigation";
 import {
-  Award,
-  CalendarCheck,
-  CalendarDays,
   Cookie,
-  CreditCard,
-  LayoutDashboard,
   LifeBuoy,
   Lock,
   LogOut,
   Menu,
-  MessageSquareText,
   PanelLeftOpen,
-  MessagesSquare,
-  Package,
-  ShieldCheck,
   ShoppingBag,
-  Sparkles,
   UserCog,
-  UserRound,
   X,
-  type LucideIcon,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuth } from "../../lib/auth";
@@ -39,10 +27,12 @@ import { useFocusTrap } from "../../lib/useFocusTrap";
 import type { ActivitySection } from "../../lib/memberActivity";
 import { useMemberActivity, type MemberActivity } from "../../lib/useMemberActivity";
 import { LEGAL_PATHS } from "../../data/legal/routes";
-import { CLIENT_SPACES, STUDIO_SHORTCUTS } from "./clientSpaces";
-import { useGlowbookPlanKnown } from "./useGlowbookPlanKnown";
-import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../lib/studioUrl";
-import { AGENDA_PATH } from "../../lib/agendaRoutes";
+import { useGlowbookRightsKnown } from "./useGlowbookPlanKnown";
+import { GLOWBOOK_INTRO_PATH } from "../../lib/studioUrl";
+import { captureEvent } from "../../lib/analyticsCore";
+import { LockedAccessDialog, type LockedAccessKind } from "./LockedAccessDialog";
+import { MEMBER_MENU_GROUPS as GROUPS, memberMenuFor, type MemberMenuGroup, type MemberMenuItem as SectionItem } from "./memberMenu";
+import { useCourseEntry } from "./useCourseEntry";
 import monogram from "../../assets/monogram-blue.png";
 import logoWordmark from "../../assets/logo-wordmark.svg";
 
@@ -80,25 +70,59 @@ const MemberShellMenuContext = createContext<{ openMenu: () => void } | null>(nu
 /** New things per section (orders, reviews, loyalty), read once by the shell for every menu it draws. */
 const ActivityContext = createContext<MemberActivity>({ orders: 0, reviews: 0, loyalty: 0 });
 
-/** Whether the plan includes the Glowbook (null while unknown), read once by the shell. */
-const GlowbookPlanContext = createContext<boolean | null>(null);
-
-/** Where an entry leads: the Glowbook goes to its presentation page while the plan does not include it. */
-function itemTarget(item: SectionItem, glowbookPlan: boolean | null): string {
-  return item.glowbook && glowbookPlan === false ? GLOWBOOK_INTRO_PATH : item.to;
+/**
+ * What the plan opens (null while unknown), read once by the shell: the
+ * Glowbook page (Artist and up) and the calendar (Atelier; decision 153).
+ */
+interface GlowbookRights {
+  glowbook: boolean | null;
+  bookings: boolean | null;
 }
+const GlowbookPlanContext = createContext<GlowbookRights>({ glowbook: null, bookings: null });
 
 /**
- * Below the Atelier plan the Glowbook and the calendar are one locked entry
- * (owner's request, 2026-11-15): the calendar is left out and the Glowbook
- * entry is named for both.
+ * Opens the dialog saying why an entry is locked (owner's request,
+ * 2026-11-15): the menu shows only a lock, the reason and the benefits come
+ * on click. Held by the shell, so closing the mobile drawer keeps it open.
  */
-function shownItem(item: SectionItem, glowbookPlan: boolean | null): boolean {
-  return !(item.mergedWhenLocked && glowbookPlan === false);
+const LockedAccessContext = createContext<(kind: LockedAccessKind) => void>(() => undefined);
+
+/**
+ * A click on a locked entry opens the dialog instead of the page. A click
+ * meant for a new tab (modifier key, middle button) still follows the link,
+ * whose page says the same thing.
+ */
+function lockedClick(
+  event: MouseEvent<HTMLAnchorElement>,
+  kind: LockedAccessKind,
+  open: (kind: LockedAccessKind) => void,
+  onNavigate?: () => void,
+) {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  onNavigate?.();
+  captureEvent("member_locked_entry_clicked", { kind });
+  open(kind);
 }
 
-function itemLabel(item: SectionItem, glowbookPlan: boolean | null): string {
-  return item.glowbook && glowbookPlan === false && item.lockedLabelKey ? item.lockedLabelKey : item.labelKey;
+/** Which plan dialog a Studio entry opens while the plan lacks it: the Glowbook (Artist), the calendar (Atelier). */
+function planLock(item: SectionItem, rights: GlowbookRights): LockedAccessKind | null {
+  if (item.plan === "glowbook" && rights.glowbook === false) return "artist";
+  if (item.plan === "bookings" && rights.bookings === false) return "atelier";
+  return null;
+}
+
+/** Why an entry is locked, if it is: no training for the lounge, below the plan for the Glowbook and calendar. */
+function lockedKind(item: SectionItem, hasAccess: boolean, rights: GlowbookRights): LockedAccessKind | null {
+  const plan = planLock(item, rights);
+  if (plan) return plan;
+  if (item.community && !hasAccess) return "lounge";
+  return null;
+}
+
+/** Where an entry leads: a Studio entry goes to the Glowbook's presentation page while the plan lacks it. */
+function itemTarget(item: SectionItem, rights: GlowbookRights): string {
+  return planLock(item, rights) ? GLOWBOOK_INTRO_PATH : item.to;
 }
 
 /** Opens the member-space menu from inside a page (the lounge, whose screen hides the shell's own bar). */
@@ -106,111 +130,14 @@ export function useMemberShellMenu() {
   return useContext(MemberShellMenuContext);
 }
 
-interface SectionItem {
-  to: string;
-  labelKey: string;
-  /** Under `account.shell.short`, for the rail; none for an entry left off it. */
-  shortKey?: string;
-  icon: LucideIcon;
-  /** The dashboard and the home page need it: every other path is a distinct prefix. */
-  end?: boolean;
-  /**
-   * The Members' Lounge, the entry whose
-   * availability depends on what the account owns. They are never removed and
-   * never disabled: without a training they still lead somewhere, to the
-   * preview of what is behind them.
-   */
-  community?: boolean;
-  /** The Members' Lounge: carries its unread activity. */
-  lounge?: boolean;
-  /** The Glowbook: locked, and leading to its presentation page, below the Atelier plan. */
-  glowbook?: boolean;
-  /** Its name while locked, when it stands for more than itself (the Glowbook and the calendar). */
-  lockedLabelKey?: string;
-  /** Folded into the Glowbook's locked entry below the plan (the calendar). */
-  mergedWhenLocked?: boolean;
-  /** Carries a badge for what is new there since the member last looked. */
-  activity?: ActivitySection;
-}
 
-interface SectionGroup {
-  id: string;
-  /** None for the first group: the dashboard needs no heading. */
-  labelKey?: string;
-  items: SectionItem[];
-}
-
-const GROUPS: SectionGroup[] = [
-  {
-    id: "home",
-    items: [
-      { to: "/compte", labelKey: "account.navDashboard", shortKey: "dashboard", icon: LayoutDashboard, end: true },
-      { to: CLIENT_SPACES.home.to, labelKey: CLIENT_SPACES.home.labelKey, shortKey: "home", icon: CLIENT_SPACES.home.icon, end: true },
-      { to: CLIENT_SPACES.shop.to, labelKey: CLIENT_SPACES.shop.labelKey, shortKey: "shop", icon: CLIENT_SPACES.shop.icon },
-      { to: CLIENT_SPACES.academy.to, labelKey: CLIENT_SPACES.academy.labelKey, shortKey: "academy", icon: CLIENT_SPACES.academy.icon },
-    ],
-  },
-  {
-    id: "purchases",
-    labelKey: "account.shell.groupPurchases",
-    items: [
-      { to: "/compte/commandes", labelKey: "account.navOrders", shortKey: "orders", icon: Package, activity: "orders" },
-      { to: "/compte/fidelite", labelKey: "account.navLoyalty", shortKey: "loyalty", icon: Sparkles, activity: "loyalty" },
-      { to: "/compte/avis", labelKey: "reviews.nav.account", shortKey: "reviews", icon: MessageSquareText, activity: "reviews" },
-      // Glowbook appointments (decision 144): those the member booked on artists' pages, and an artist's own.
-      { to: "/compte/rendez-vous", labelKey: "booking.mine.nav", shortKey: "appointments", icon: CalendarCheck },
-    ],
-  },
-  {
-    id: "learning",
-    labelKey: "account.shell.groupLearning",
-    items: [
-      { to: "/compte/attestations", labelKey: "account.navCertificates", shortKey: "certificates", icon: Award },
-      { to: "/compte/salons", labelKey: "lounge.navEntry", shortKey: "lounge", icon: MessagesSquare, community: true, lounge: true },
-    ],
-  },
-  {
-    id: "studio",
-    labelKey: "account.shell.groupAtelier",
-    items: [
-      // Only the workshop: creations and groups are one click away inside it.
-      ...STUDIO_SHORTCUTS.filter((shortcut) => shortcut.id === "workshop").map((shortcut) => ({
-        to: shortcut.to,
-        labelKey: shortcut.labelKey,
-        shortKey: shortcut.shortKey,
-        icon: shortcut.icon,
-        end: true,
-      })),
-      // Always listed; locked (leading to the presentation page) below the Atelier plan.
-      {
-        to: studioSectionPath("glowbook"),
-        labelKey: "nav.studioGlowbook",
-        lockedLabelKey: "nav.studioGlowbookAgenda",
-        shortKey: "glowbook",
-        icon: Sparkles,
-        glowbook: true,
-      },
-      // The artist's calendar (decision 147), in the member space; below the plan, part of the Glowbook's locked entry.
-      { to: AGENDA_PATH, labelKey: "nav.studioAgenda", shortKey: "agenda", icon: CalendarDays, glowbook: true, mergedWhenLocked: true },
-      { to: "/compte/studio", labelKey: "account.navStudio", shortKey: "subscription", icon: CreditCard },
-    ],
-  },
-  {
-    id: "account",
-    labelKey: "account.shell.groupAccount",
-    items: [
-      { to: "/compte/profil", labelKey: "account.navProfile", shortKey: "profile", icon: UserRound },
-      { to: "/compte/securite", labelKey: "account.navSecurity", shortKey: "security", icon: ShieldCheck },
-    ],
-  },
-];
 
 const SECTIONS: SectionItem[] = GROUPS.flatMap((group) => group.items);
 
 /** The first rail entry of every group but the first: the lounge rail draws a divider above it. */
-const GROUP_STARTS = new Set(
-  GROUPS.slice(1).flatMap((group) => group.items[0]?.to ?? []),
-);
+function groupStarts(groups: MemberMenuGroup[]): Set<string> {
+  return new Set(groups.slice(1).flatMap((group) => group.items[0]?.to ?? []));
+}
 
 /** The section a pathname belongs to, for the title of the mobile bar. */
 function currentSection(pathname: string): SectionItem | undefined {
@@ -243,11 +170,14 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const menu = useMemo(() => ({ openMenu: () => setDrawerPath(pathname) }), [pathname]);
   const activity = useMemberActivity(pathname);
   const anyActivity = activity.orders + activity.reviews + activity.loyalty > 0;
-  const glowbookPlan = useGlowbookPlanKnown();
+  const { glowbook: glowbookPlan, bookings: bookingsPlan } = useGlowbookRightsKnown();
+  const rights = useMemo(() => ({ glowbook: glowbookPlan, bookings: bookingsPlan }), [glowbookPlan, bookingsPlan]);
+  const [lockedDialog, setLockedDialog] = useState<LockedAccessKind | null>(null);
 
   return (
     <MemberShellMenuContext.Provider value={menu}>
-    <GlowbookPlanContext.Provider value={glowbookPlan}>
+    <LockedAccessContext.Provider value={setLockedDialog}>
+    <GlowbookPlanContext.Provider value={rights}>
     <ActivityContext.Provider value={activity}>
     <div className="flex min-h-[100dvh] bg-[var(--surface-page)]">
       <aside
@@ -298,9 +228,11 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
       {/* In the lounge the drawer is also the desktop's full menu, opened from the rail. */}
       {drawerOpen && <Drawer onClose={() => setDrawerPath(null)} everywhere={compact} />}
+      <LockedAccessDialog kind={lockedDialog} onClose={() => setLockedDialog(null)} />
     </div>
     </ActivityContext.Provider>
     </GlowbookPlanContext.Provider>
+    </LockedAccessContext.Provider>
     </MemberShellMenuContext.Provider>
   );
 }
@@ -344,11 +276,12 @@ function Drawer({ onClose, everywhere = false }: { onClose: () => void; everywhe
  * Rendered once in the desktop sidebar and once in the mobile drawer.
  */
 function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; closeButton?: ReactNode }) {
-  const glowbookPlan = useContext(GlowbookPlanContext);
   const { formatMonthYear } = useFormat();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { displayName, initials, email, signOut } = useAuth();
+  // "My course" only for a member who holds one, leading to it.
+  const groups = memberMenuFor(useCourseEntry());
   const { memberSince } = useOrders();
   const { openSettings } = useCookieConsent();
   /* Staff (any role the admin session accepts) get a way back to the back
@@ -370,7 +303,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
         {closeButton}
       </div>
 
-      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto overscroll-contain px-3 py-4">
+      <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-4">
         {/* Who is signed in: the space is theirs. */}
         <div className="flex items-center gap-3 px-2">
           <span
@@ -389,7 +322,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
         </div>
 
         <nav aria-label={t("account.navLabel")} className="grid gap-4">
-          {GROUPS.map((group) => {
+          {groups.map((group) => {
             const headingId = `gt-member-nav-${group.id}`;
             return (
               <div key={group.id} className="grid gap-1">
@@ -399,7 +332,7 @@ function SidebarBody({ onNavigate, closeButton }: { onNavigate?: () => void; clo
                   </span>
                 )}
                 <ul aria-labelledby={group.labelKey ? headingId : undefined} className="m-0 grid list-none gap-0.5 p-0">
-                  {group.items.filter((item) => shownItem(item, glowbookPlan)).map((item) => (
+                  {group.items.map((item) => (
                     <SectionLink key={item.to} item={item} onNavigate={onNavigate} />
                   ))}
                 </ul>
@@ -452,18 +385,23 @@ function SectionLink({ item, onNavigate }: { item: SectionItem; onNavigate?: () 
   const { t } = useTranslation();
   const { hasAccess } = useCommunity();
   const Icon = item.icon;
-  /* The community entries are the only ones that can be locked, and a lock icon alone
-     would say it in colour and shape only — so the state is also written out. */
-  const glowbookPlan = useContext(GlowbookPlanContext);
-  const glowbookLocked = item.glowbook === true && glowbookPlan === false;
-  const locked = (item.community === true && !hasAccess) || glowbookLocked;
+  /* A locked entry shows a lock only (a shape, not a colour); its name for
+     screen readers says it is locked, and a click opens the dialog saying why. */
+  const rights = useContext(GlowbookPlanContext);
+  const openLocked = useContext(LockedAccessContext);
+  const lockedAs = lockedKind(item, hasAccess, rights);
+  const locked = lockedAs !== null;
+  const label = t(item.labelKey);
 
   return (
     <li>
       <NavLink
-        to={itemTarget(item, glowbookPlan)}
+        to={itemTarget(item, rights)}
         end={item.end}
-        onClick={onNavigate}
+        onClick={(event: MouseEvent<HTMLAnchorElement>) =>
+          lockedAs ? lockedClick(event, lockedAs, openLocked, onNavigate) : onNavigate?.()
+        }
+        aria-haspopup={locked ? "dialog" : undefined}
         className={({ isActive }) =>
           clsx(
             rowBase,
@@ -471,19 +409,15 @@ function SectionLink({ item, onNavigate }: { item: SectionItem; onNavigate?: () 
             isActive
               ? "bg-[var(--surface-inverse)] text-[var(--text-inverse)]"
               : locked
-                ? "border border-dashed border-[var(--border-default)] bg-[var(--surface-brand-wash-strong)] text-[var(--text-muted)] hover:border-[var(--gt-blue-300)] hover:text-[var(--text-primary)]"
+                ? "text-[var(--text-muted)] hover:bg-[var(--gt-ink-100)] hover:text-[var(--text-primary)]"
                 : rowIdle,
           )
         }
       >
         <Icon size={16} strokeWidth={2} aria-hidden="true" />
-        <span className="grid min-w-0 gap-0.5">
-          <span className="truncate">{t(itemLabel(item, glowbookPlan))}</span>
-          {locked && (
-            <span className="text-[10px] font-semibold uppercase tracking-[var(--tracking-wide)] text-[var(--text-subtle)]">
-              {glowbookLocked ? t("account.shell.atelierLocked") : t("community.navEntryLocked")}
-            </span>
-          )}
+        <span className="min-w-0 truncate">
+          <span aria-hidden={locked || undefined}>{label}</span>
+          {locked && <span className="sr-only">{t("account.shell.lockedEntry", { name: label })}</span>}
         </span>
         {locked && <Lock size={13} strokeWidth={2} aria-hidden="true" className="ml-auto flex-none" />}
         {item.lounge && !locked && <LoungeActivity />}
@@ -559,7 +493,12 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
   const { t } = useTranslation();
   const { initials, displayName } = useAuth();
   const { count } = useCart();
-  const glowbookPlan = useContext(GlowbookPlanContext);
+  const rights = useContext(GlowbookPlanContext);
+  const openLocked = useContext(LockedAccessContext);
+  // "My course" only for a member who holds one, leading to it.
+  const groups = memberMenuFor(useCourseEntry());
+  const sections = groups.flatMap((group) => group.items);
+  const starts = groupStarts(groups);
 
   return (
     <nav aria-label={t("account.navLabel")} className="flex h-full w-[88px] flex-col items-center overflow-y-auto overflow-x-hidden overscroll-contain py-3">
@@ -573,12 +512,17 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
       </Link>
 
       <ul className="m-0 grid w-full list-none gap-0.5 px-1.5 py-0">
-        {SECTIONS.filter((item) => shownItem(item, glowbookPlan)).map((item) => (
-          <li key={item.to} className={clsx(GROUP_STARTS.has(item.to) && "mt-1 border-t border-[var(--border-subtle)] pt-1")}>
+        {sections.map((item) => (
+          <li key={item.to} className={clsx(starts.has(item.to) && "mt-1 border-t border-[var(--border-subtle)] pt-1")}>
             <NavLink
-              to={itemTarget(item, glowbookPlan)}
+              to={itemTarget(item, rights)}
               end={item.end}
-              title={t(itemLabel(item, glowbookPlan))}
+              title={t(item.labelKey)}
+              onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+                const lock = planLock(item, rights);
+                if (lock) lockedClick(event, lock, openLocked);
+              }}
+              aria-haspopup={planLock(item, rights) ? "dialog" : undefined}
               className={({ isActive }) =>
                 clsx(railRow, isActive ? "text-[var(--gt-ink-900)]" : "text-[var(--gt-ink-600)] hover:text-[var(--gt-ink-900)]", focusRing)
               }
@@ -599,7 +543,7 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
                     )}
                   >
                     <item.icon size={18} aria-hidden="true" strokeWidth={isActive ? 2.2 : 1.8} />
-                    {item.glowbook && glowbookPlan === false && (
+                    {planLock(item, rights) && (
                       <Lock size={10} strokeWidth={2.4} aria-hidden="true" className="absolute -right-0.5 -top-0.5" />
                     )}
                     {item.lounge && <LoungeActivity onRail />}
@@ -609,8 +553,8 @@ function Rail({ onExpand, expanded }: { onExpand: () => void; expanded: boolean 
                     {t(`account.shell.short.${item.shortKey}`)}
                   </span>
                   <span className="sr-only">
-                    {t(itemLabel(item, glowbookPlan))}
-                    {item.glowbook && glowbookPlan === false ? ` — ${t("account.shell.atelierLocked")}` : ""}
+                    {t(item.labelKey)}
+                    {planLock(item, rights) ? ` — ${t(planLock(item, rights) === "artist" ? "account.shell.artistLocked" : "account.shell.atelierLocked")}` : ""}
                   </span>
                 </>
               )}

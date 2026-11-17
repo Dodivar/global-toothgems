@@ -36,7 +36,7 @@ export const DEFAULT_MENU_THUMB = img("mouth-01.jpg");
    navigation, and it must not drop a signed-out visitor onto a login wall.
    The member area closes the list. */
 export const ACADEMY_MEMBER_ITEM: MenuItem = {
-  title: { fr: "Mon espace membre", en: "My member area" },
+  title: { fr: "Mon espace", en: "My space" },
   sub: { fr: "Progression, attestations, commandes", en: "Progress, certificates, orders" },
   thumb: img("mouth-04.jpg"),
   to: "/compte",

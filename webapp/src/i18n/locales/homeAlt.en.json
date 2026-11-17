@@ -180,5 +180,20 @@
     "successHint": "Nothing within a few minutes? Check your spam folder. The link is valid for 48 hours.",
     "subscribedTitle": "You’re subscribed",
     "subscribedBody": "Thank you! The next newsletter will land in {{email}}. Every e-mail has an unsubscribe link."
+  },
+  "member": {
+    "hello": "Hello {{name}}",
+    "toSpace": "My space",
+    "orderShipped": "Your order is on its way",
+    "orderPreparing": "Your order is being prepared",
+    "resume": "Resume my course",
+    "progress": "{{pct}}% done",
+    "reward": "Your loyalty reward is waiting",
+    "rewardSub": "To use on your next order",
+    "favorites": "My favourites",
+    "favoritesSub_one": "{{count}} product saved",
+    "favoritesSub_other": "{{count}} products saved",
+    "space": "My space",
+    "spaceSub": "Orders, courses, Atelier"
   }
 }

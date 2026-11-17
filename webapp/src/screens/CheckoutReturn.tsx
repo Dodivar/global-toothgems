@@ -8,6 +8,8 @@ import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { useCart } from "../lib/cart";
 import { hasCourse } from "../lib/checkout/cartLines";
+import { courseAfterPayment } from "../lib/checkout/afterPayment";
+import { MEMBER_SPACE_PATH } from "../lib/memberSpace";
 import { useProgress } from "../lib/progress";
 import { fetchCheckoutStatus, isCheckoutSessionId, type CheckoutStatus } from "../lib/checkout/api";
 import { isSupabaseConfigured } from "../lib/supabase/client";
@@ -33,8 +35,8 @@ type View =
   | { kind: "slow" }
   | { kind: "invalid" }
   | { kind: "error" }
-  /** `course`: the basket being paid held a course (noted before it is emptied). */
-  | { kind: "done"; status: CheckoutStatus; course: boolean };
+  /** `course`: where the course opened by the basket is (noted before the basket is emptied), else null. */
+  | { kind: "done"; status: CheckoutStatus; course: string | null };
 
 export function CheckoutReturn() {
   const { t } = useTranslation();
@@ -69,7 +71,7 @@ export function CheckoutReturn() {
           if (!active) return;
           if (status && status.state !== "pending") {
             const basket = linesRef.current;
-            setView({ kind: "done", status, course: hasCourse(basket) });
+            setView({ kind: "done", status, course: courseAfterPayment(basket) });
             // Once per order and tab: a reload of this page does not count it again.
             if (status.state === "paid") {
               // The basket still holds the order's lines here (emptied below).
@@ -106,7 +108,8 @@ export function CheckoutReturn() {
 
   // The basket became a paid order: it is emptied once, on the database's word.
   const paid = view.kind === "done" && view.status.state === "paid";
-  const boughtCourse = paid && view.course;
+  const courseTarget = view.kind === "done" && view.status.state === "paid" ? view.course : null;
+  const boughtCourse = courseTarget !== null;
   useEffect(() => {
     if (paid && !cleared.current) {
       cleared.current = true;
@@ -140,8 +143,8 @@ export function CheckoutReturn() {
           {t("checkout.reference", { reference: view.status.orderNumber })}
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          {boughtCourse ? (
-            <Button variant="primary" onClick={() => navigate("/compte")}>{t("checkout.course.openCourses")}</Button>
+          {courseTarget ? (
+            <Button variant="primary" onClick={() => navigate(courseTarget)}>{t(courseTarget === MEMBER_SPACE_PATH ? "checkout.course.openCourses" : "checkout.course.openCourse")}</Button>
           ) : (
             <Button variant="primary" onClick={() => navigate("/compte/commandes")}>{t("cart.confirmedOpenAccount")}</Button>
           )}

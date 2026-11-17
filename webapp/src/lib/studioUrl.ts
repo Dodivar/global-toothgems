@@ -27,6 +27,9 @@ export const STUDIO_EDITOR_PATH = "/studio-3d/atelier";
  * workspace section, and viewing a shared design needs no Studio access.
  */
 export const STUDIO_SHARE_PATH = "/studio-3d/partage";
+
+/** A client's creation joined to a booking, for the booked artist and the client (decision 149). */
+export const bookingCreationPath = (bookingId: string) => `/studio-3d/rendez-vous/${encodeURIComponent(bookingId)}`;
 /**
  * A creation of an artist's public Glowbook in the read-only 3D viewer
  * (decision 99): `/studio-3d/glowbook/<handle>/<item id>`. Beside the share
@@ -44,16 +47,46 @@ export function glowbookCreationPath(handle: string, itemId: string): string {
  * (`/studio-3d/atelier/mes-creations`…). French slugs like the rest of the
  * site; the English ones are accepted too, like the path aliases above.
  */
-export type StudioSection = "creations" | "groups" | "templates" | "glowbook" | "help";
+export type StudioSection = "creations" | "groups" | "templates" | "help";
 
 const SECTION_SLUGS: Record<StudioSection, string> = {
   creations: "mes-creations",
   groups: "mes-groupes",
   templates: "modeles",
-  glowbook: "glowbook",
   help: "aide",
 };
 const SLUG_ALIASES: Record<string, StudioSection> = { creations: "creations", groups: "groups", templates: "templates", help: "help" };
+
+/**
+ * "My Glowbook", the artist's management of their public page, in the member
+ * space beside the calendar and the subscription (the owner's "artist space",
+ * 2026-11-17). It was a section of the Studio workspace until then.
+ */
+export const GLOWBOOK_SPACE_PATH = "/compte/glowbook";
+
+/** The Studio workspace's former Glowbook section, kept in sent e-mails and bookmarks. */
+const LEGACY_GLOWBOOK_SECTION = `${STUDIO_EDITOR_PATH}/glowbook`;
+
+/**
+ * Where the former Glowbook section moved: the member space's page, its tab
+ * (`?tab=look`…) kept. The calendar tab (`?tab=agenda`) is moved first, to the
+ * calendar, by `legacyAgendaAddress`.
+ */
+export function legacyGlowbookAddress(pathname: string, search: string): string | null {
+  if (pathname.replace(/\/+$/, "") !== LEGACY_GLOWBOOK_SECTION) return null;
+  return `${GLOWBOOK_SPACE_PATH}${search}`;
+}
+
+/** My Creations with one creation's detail open (`?creation=<id>`), from outside the workspace. */
+export function creationDetailPath(creationId: string): string {
+  return `${STUDIO_EDITOR_PATH}/${SECTION_SLUGS.creations}?creation=${encodeURIComponent(creationId)}`;
+}
+
+/** The creation a `?creation=` asks My Creations to open, if any. */
+export function creationFromQuery(search: string): string | null {
+  const id = new URLSearchParams(search).get("creation");
+  return id && /^[0-9a-zA-Z_-]{1,64}$/.test(id) ? id : null;
+}
 
 export function studioSectionPath(section: StudioSection | null): string {
   return section ? `${STUDIO_EDITOR_PATH}/${SECTION_SLUGS[section]}` : STUDIO_EDITOR_PATH;

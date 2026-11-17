@@ -47,6 +47,7 @@ const MEMBER_SCREENS: { path: string; heading: RegExp }[] = [
   { path: "/compte/avis", heading: /^Mes avis$/ },
   { path: "/compte/rendez-vous", heading: /^Mes rendez-vous$/ },
   { path: "/compte/agenda", heading: /^Mon agenda$/ },
+  { path: "/compte/glowbook", heading: /^Mon Glowbook$/ },
   { path: "/compte/moderation", heading: /^Modération des salons$/ },
   { path: "/compte/salons/en/discussion", heading: /^Salon des membres$/ },
 ];
@@ -231,6 +232,15 @@ test("a link to another zone opens it, and the back button returns", async ({ pa
   await page.waitForLoadState("networkidle");
   expect(problems).toEqual([]);
 });
+test("My Glowbook's former Studio address moves to the member space, its tab kept", async ({ request }) => {
+  const moved = await request.get("/studio-3d/atelier/glowbook?tab=look", { maxRedirects: 0 });
+  expect(moved.status()).toBe(308);
+  expect(new URL(moved.headers()["location"], "http://x").pathname + new URL(moved.headers()["location"], "http://x").search).toBe("/compte/glowbook?tab=look");
+  // The former calendar tab still goes to the calendar (decision 147).
+  const agenda = await request.get("/studio-3d/atelier/glowbook?tab=agenda", { maxRedirects: 0 });
+  expect(new URL(agenda.headers()["location"], "http://x").pathname).toBe("/compte/agenda");
+});
+
 test("the Studio workspace's former English aliases are not kept (404)", async ({ request }) => {
   for (const path of ["/studio-3d/editor", "/studio-3d/editor/groups", "/studio-3d/share", "/studio-3d/share/abc"]) {
     expect((await request.get(path, { maxRedirects: 0 })).status(), path).toBe(404);

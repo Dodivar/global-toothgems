@@ -4,7 +4,7 @@ import type { PlacedJewelry } from "../../data/studioEditor";
 import { sameSize, type GemSize } from "../../lib/gemOptions";
 import { useFormat } from "../../lib/format";
 import { useLocalized } from "../../lib/localized";
-import { projectFrontView } from "../../lib/studio3d/frontView";
+import { projectFlatView } from "../../lib/studio3d/flatView";
 import { estimateComposition, type EstimateLine } from "../../lib/studio3d/gemCatalog";
 import { useStudioGems } from "../../lib/studio3d/useStudioGems";
 import type { SceneModel } from "../../lib/studioWorkspace/scene";
@@ -53,7 +53,7 @@ export function usePlacementSheet() {
       setStatus("working");
       try {
         const [sheet, files] = await Promise.all([import("../../lib/studio3d/placementSheet"), import("../../lib/saveFile")]);
-        const projection = projectFrontView(request.pieces, request.model);
+        const projection = projectFlatView(request.pieces, request.model);
         const now = new Date();
         const today = formatDate(now.toISOString());
 

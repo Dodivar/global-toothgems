@@ -13,12 +13,11 @@ import { WorkspaceDialogs } from "../components/studio/workspace/WorkspaceDialog
 import { CreationLibrary } from "../components/studio/workspace/CreationLibrary";
 import { GemGroupLibrary } from "../components/studio/workspace/GemGroupLibrary";
 import { TemplateLibrary } from "../components/studio/workspace/TemplateLibrary";
-import { GlowbookManager } from "../components/studio/workspace/GlowbookManager";
 import { HelpPanel } from "../components/studio/workspace/HelpPanel";
 import { useWorkspaceActions } from "../components/studio/workspace/useWorkspaceActions";
 import { useDocumentTitle } from "../components/legal/hooks";
 import { useToast } from "../lib/toast";
-import { duplicateMirroredPieces, duplicatePieces, removePieces } from "../lib/studio3d/actions";
+import { duplicateMirroredPieces, duplicatePieces, removePieces, setPiecesLocked } from "../lib/studio3d/actions";
 import { getEngine } from "../lib/studio3d/engine";
 import { setNoticeHandler } from "../lib/studio3d/notices";
 import { studioStore, useStudio } from "../lib/studio3d/store";
@@ -63,7 +62,6 @@ const SECTION_TITLE: Record<StudioSection, string> = {
   creations: "creations",
   groups: "groups",
   templates: "templates",
-  glowbook: "glowbook",
   help: "help",
 };
 
@@ -197,6 +195,12 @@ function StudioWorkspace() {
         else duplicatePieces([...studioStore.selectedJewelIds]);
         return;
       }
+      if (key === "l" && e.shiftKey && !meta && !e.altKey) {
+        // Shift + L: lock the selection, or unlock it when every piece already is.
+        const ids = [...studioStore.selectedJewelIds];
+        if (ids.length) setPiecesLocked(ids, studioStore.editableIds(ids).length > 0);
+        return;
+      }
       if (key === "l" && !meta && !e.altKey) {
         getEngine()?.cancelLasso();
         studioStore.setLasso(!studioStore.lasso);
@@ -264,7 +268,6 @@ function StudioWorkspace() {
               {section === "creations" && <CreationLibrary />}
               {section === "groups" && <GemGroupLibrary />}
               {section === "templates" && <TemplateLibrary />}
-              {section === "glowbook" && <GlowbookManager />}
               {section === "help" && <HelpPanel />}
             </div>
           </main>

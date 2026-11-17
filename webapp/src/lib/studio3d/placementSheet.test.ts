@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scaleForSize, type PlacedJewelry } from "../../data/studioEditor";
 import { DENTITION_CROWNS } from "./dentition";
-import { projectFrontView } from "./frontView";
+import { projectFlatView } from "./flatView";
 import { buildPlacementSheet, fitText, placementSheetFileName, referenceGroups, toothCell, type PlacementSheetInput } from "./placementSheet";
 
 function piece(id: string, fdi: string, extra: Partial<PlacedJewelry> = {}): PlacedJewelry {
@@ -21,7 +21,7 @@ function piece(id: string, fdi: string, extra: Partial<PlacedJewelry> = {}): Pla
 }
 
 function input(pieces: PlacedJewelry[]): PlacementSheetInput {
-  const projection = projectFrontView(pieces, "dentition");
+  const projection = projectFlatView(pieces, "dentition");
   return {
     projection,
     name: "Sourire étoilé",
@@ -84,7 +84,7 @@ describe("placement sheet", () => {
   });
 
   it("groups gems per product, colour and size, keeping their numbers", () => {
-    const view = projectFrontView([piece("a", "11"), piece("b", "21"), piece("c", "12", { size: { ss: 7 } })], "dentition");
+    const view = projectFlatView([piece("a", "11"), piece("b", "21"), piece("c", "12", { size: { ss: 7 } })], "dentition");
     const groups = referenceGroups(view);
     expect(groups).toHaveLength(2);
     expect(groups.find((g) => g.size.ss === 5)!.numbers).toEqual([2, 3]);

@@ -1,18 +1,17 @@
 import clsx from "clsx";
-import { ArrowLeft, CalendarDays, Component, Images, LayoutTemplate, LifeBuoy, PencilRuler, MessageSquareHeart, Sparkles, UserRound, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Component, Images, LayoutTemplate, LifeBuoy, PencilRuler, MessageSquareHeart, Sparkles, UserRound, X, type LucideIcon } from "lucide-react";
 import { Link, useLocation } from "../../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import monogram from "../../../assets/monogram-blue.png";
 import { useAuth } from "../../../lib/auth";
 import { useFocusTrap } from "../../../lib/useFocusTrap";
-import { STUDIO_PATH, studioSectionPath, type StudioSection } from "../../../lib/studioUrl";
+import { GLOWBOOK_INTRO_PATH, GLOWBOOK_SPACE_PATH, STUDIO_PATH, studioSectionPath, type StudioSection } from "../../../lib/studioUrl";
 import { collectionCounts, studioCollectionPath } from "../../../lib/studioWorkspace/collections";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { CollectionDot, useSortedCollections } from "./Collections";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { STUDIO_EXPLORE, type ClientSpace } from "../../layout/clientSpaces";
 import { focusRing } from "./workspaceStyles";
-import { AGENDA_PATH } from "../../../lib/agendaRoutes";
 import { useGlowbookPlan } from "../../../lib/studioAccess";
 
 interface NavItem {
@@ -21,7 +20,7 @@ interface NavItem {
   key: string;
   /** A page outside the workspace (never current here), in place of a section. */
   to?: string;
-  /** Listed only while the plan includes the Glowbook. */
+  /** Leads to the Glowbook's presentation page while the plan lacks it (below Artist, decision 153). */
   glowbookPlan?: boolean;
 }
 
@@ -30,16 +29,16 @@ const NAV: NavItem[] = [
   { section: "creations", icon: Images, key: "creations" },
   { section: "groups", icon: Component, key: "groups" },
   { section: "templates", icon: LayoutTemplate, key: "templates" },
-  { section: "glowbook", icon: Sparkles, key: "glowbook" },
-  // The artist's calendar has its own page in the member space (decision 147).
-  { section: null, icon: CalendarDays, key: "agenda", to: AGENDA_PATH, glowbookPlan: true },
+  // "My Glowbook" lives in the member space with the calendar and the subscription (artist space,
+  // 2026-11-17): one way there from the Studio, which stays the place where creations are made.
+  { section: null, icon: Sparkles, key: "glowbook", to: GLOWBOOK_SPACE_PATH, glowbookPlan: true },
   { section: "help", icon: LifeBuoy, key: "help" },
 ];
 
-/** The rail's entries for this member: the calendar only while the plan includes the Glowbook. */
+/** The rail's entries for this member: My Glowbook, or its presentation page while the plan lacks it. */
 function useNav(): NavItem[] {
   const plan = useGlowbookPlan();
-  return NAV.filter((item) => !item.glowbookPlan || plan === true);
+  return NAV.map((item) => (item.glowbookPlan && plan === false ? { ...item, to: GLOWBOOK_INTRO_PATH } : item));
 }
 
 /**

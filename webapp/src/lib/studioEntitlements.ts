@@ -22,6 +22,7 @@ export type StudioFeature =
   | "templates"
   | "collections"
   | "glowbook"
+  | "bookings"
   | "tryOn";
 
 /** The features that show the "comes with the … plan" panel when the plan lacks them (`PlanLocked`). */
