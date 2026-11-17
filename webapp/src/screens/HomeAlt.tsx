@@ -10,6 +10,7 @@ import { StudioVideoFeature } from "../components/homeAlt/StudioVideoFeature";
 import { GiftCardFeature } from "../components/homeAlt/GiftCardFeature";
 import { LoyaltyFeature } from "../components/homeAlt/LoyaltyFeature";
 import { NewsletterBand } from "../components/homeAlt/NewsletterBand";
+import { MemberHomeBand } from "../components/homeAlt/MemberHomeBand";
 
 /**
  * The home page, at /: the brand's storefront composed full width and
@@ -28,6 +29,8 @@ export function HomeAlt() {
           what the page is. */}
       <h1 className="sr-only">{t("homeAlt.pageTitle")}</h1>
       <HeroCarousel />
+      {/* Signed-in members only, once the session is known in the browser: their shortcuts. */}
+      <MemberHomeBand />
       <BestSellersRail />
       <CategoryMosaic />
       <AcademyFeature />

@@ -236,11 +236,10 @@
   "locked": {
     "eyebrow": "Réservé aux membres",
     "title": "Votre place au Salon vous attend",
-    "body": "Le Salon des membres est l’espace de discussion privé des artistes qui ont suivi une formation Global Toothgems : des salons par langue, des conversations en direct et des messages privés entre professionnels.",
+    "body": "Le Salon des membres est l’espace de discussion privé des artistes qui ont suivi une formation Global Toothgems : des salons par langue et des conversations en direct entre professionnels.",
     "perks": {
       "languages": "Des salons en anglais, français, allemand et espagnol",
-      "experts": "Des réponses de nos formatrices et de nos mentors, chaque jour",
-      "network": "Des messages privés pour construire votre réseau professionnel"
+      "experts": "Des réponses de nos formatrices et de nos mentors, chaque jour"
     },
     "cta": "Découvrir les formations",
     "back": "Retour à mon espace",
@@ -250,7 +249,7 @@
     "attention_one": "{{count}} message pour vous",
     "attention_other": "{{count}} messages pour vous",
     "unread": "Nouveaux messages",
-    "backToSpace": "Espace membre",
+    "backToSpace": "Mon espace",
     "backToSpaceHint": "Menu de votre compte",
     "dashboardTitle": "Le Salon des membres",
     "dashboardAttention_one": "{{count}} message vous attend",

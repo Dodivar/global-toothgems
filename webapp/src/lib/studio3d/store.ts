@@ -147,6 +147,16 @@ export class DesignStore {
   restored = false;
   private past: string[] = [];
   private future: string[] = [];
+  /**
+   * The design as it was when the change in progress began (`pushHistory`),
+   * kept until the design's pieces are next committed: an undo step then, or
+   * nothing when they came back unchanged (a piece dropped where it was, a
+   * slider pressed and released). While it is pending the pieces have not
+   * changed since it was taken.
+   */
+  private stepBase: string | null = null;
+  /** The pieces of the last commit: a new array is a change of the design. */
+  private committedJewels: PlacedJewelry[];
   private listeners = new Set<() => void>();
   private snap: StudioSnapshot;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -170,6 +180,7 @@ export class DesignStore {
       this.groups = sanitizeScene({ pieces: this.jewels, groups: data.groups }).groups;
       this.active = readActive(data.active);
     }
+    this.committedJewels = this.jewels;
     this.snap = this.buildSnap();
   }
 
@@ -182,6 +193,10 @@ export class DesignStore {
   getSnapshot = (): StudioSnapshot => this.snap;
 
   private commit() {
+    if (this.jewels !== this.committedJewels) {
+      this.settleStep();
+      this.committedJewels = this.jewels;
+    }
     this.snap = this.buildSnap();
     this.listeners.forEach((l) => l());
     if (!this.persist) return;
@@ -210,14 +225,24 @@ export class DesignStore {
     };
   }
 
-  /** Record the current design as one undo step, before a change. */
+  /**
+   * Mark the current design as the start of one undo step, before a change.
+   * The step is recorded with the change's commit, and only if the pieces
+   * then differ: a gesture that ends where it began leaves no empty step, and
+   * nothing is committed (nor re-rendered) here.
+   */
   pushHistory() {
-    const snap = JSON.stringify(this.jewels);
-    if (this.past.length && this.past[this.past.length - 1] === snap && !this.future.length) return;
-    this.past.push(snap);
+    this.stepBase ??= JSON.stringify(this.jewels);
+  }
+  /** Record the step `pushHistory` began, the pieces having just changed — or drop it when they are back as they were. */
+  private settleStep() {
+    const base = this.stepBase;
+    if (base === null) return;
+    this.stepBase = null;
+    if (base === JSON.stringify(this.jewels)) return;
+    this.past.push(base);
     if (this.past.length > HISTORY_LIMIT) this.past.shift();
     this.future = [];
-    this.commit();
   }
   private fixSelection() {
     if (this.selectedJewelIds.length) {
@@ -251,6 +276,8 @@ export class DesignStore {
   insertJewels(copies: PlacedJewelry[]): number {
     if (!copies.length) return 0;
     this.pushHistory();
+    // A copy is a new piece, free to move: it does not inherit its source's lock.
+    copies = copies.map((c) => withLock(c, false));
     this.jewels = [...this.jewels, ...copies];
     this.selectedJewelIds = copies.map((c) => c.id);
     this.selectedToothId = null;
@@ -258,7 +285,38 @@ export class DesignStore {
     this.commit();
     return copies.length;
   }
+  /** True when the piece is locked: it takes no edit until it is unlocked. */
+  isLocked(id: string): boolean {
+    return this.jewels.some((j) => j.id === id && j.locked === true);
+  }
+  /** The pieces among `ids` that can be edited (the locked ones left out). */
+  editableIds(ids: readonly string[]): string[] {
+    const locked = new Set(this.jewels.filter((j) => j.locked).map((j) => j.id));
+    return ids.filter((id) => !locked.has(id));
+  }
+  /**
+   * Lock or unlock pieces, in one undo step. Each piece is locked on its own:
+   * this makes no group, so unlocking one later leaves the others locked.
+   */
+  setLocked(ids: readonly string[], locked: boolean) {
+    const target = new Set(ids);
+    const changing = this.jewels.filter((j) => target.has(j.id) && (j.locked === true) !== locked);
+    if (!changing.length) return;
+    this.pushHistory();
+    const changed = new Set(changing.map((j) => j.id));
+    this.jewels = this.jewels.map((j) => (changed.has(j.id) ? withLock(j, locked) : j));
+    this.contextMenu = null;
+    this.commit();
+  }
+
+  /*
+   * The edits below leave locked pieces as they are, whichever control asked:
+   * the lock is enforced here, in the one place every edit goes through.
+   * Re-seating a loaded scene or moving the design onto another model is not
+   * an edit (`settleLoadedPieces`, `replaceDesign`) and moves them too.
+   */
   updateJewel(id: string, patch: Partial<PlacedJewelry>) {
+    if (this.isLocked(id)) return;
     this.jewels = this.jewels.map((j) => (j.id === id ? { ...j, ...patch } : j));
     this.commit();
   }
@@ -268,7 +326,7 @@ export class DesignStore {
     const map = new Map(updates.map((u) => [u.id, u.patch]));
     this.jewels = this.jewels.map((j) => {
       const patch = map.get(j.id);
-      return patch ? { ...j, ...patch } : j;
+      return patch && !j.locked ? { ...j, ...patch } : j;
     });
     this.commit();
   }
@@ -276,17 +334,19 @@ export class DesignStore {
   updateSelected(patch: Partial<PlacedJewelry>) {
     if (!this.selectedJewelIds.length) return;
     const sel = new Set(this.selectedJewelIds);
-    this.jewels = this.jewels.map((j) => (sel.has(j.id) ? { ...j, ...patch } : j));
+    this.jewels = this.jewels.map((j) => (sel.has(j.id) && !j.locked ? { ...j, ...patch } : j));
     this.commit();
   }
-  removeJewels(ids: string[]) {
-    if (!ids.length) return;
+  /** Delete pieces; locked ones stay. Returns how many were deleted. */
+  removeJewels(ids: string[]): number {
+    const kill = new Set(this.editableIds(ids));
+    if (!kill.size) return 0;
     this.pushHistory();
-    const kill = new Set(ids);
     this.jewels = this.jewels.filter((j) => !kill.has(j.id));
     this.selectedJewelIds = this.selectedJewelIds.filter((id) => !kill.has(id));
     this.contextMenu = null;
     this.commit();
+    return kill.size;
   }
   /** Naive duplication beside each source; the engine's collision-aware version is preferred. */
   duplicateJewels(ids: string[]): number {
@@ -398,6 +458,7 @@ export class DesignStore {
    * start for undo: the earlier steps hold positions on the old model.
    */
   replaceDesign(jewels: PlacedJewelry[], model: ModelMode) {
+    this.stepBase = null;
     this.jewels = jewels;
     this.designModel = model;
     this.past = [];
@@ -428,6 +489,7 @@ export class DesignStore {
   }
   undo() {
     if (!this.past.length) return;
+    this.stepBase = null;
     this.future.push(JSON.stringify(this.jewels));
     this.jewels = JSON.parse(this.past.pop()!);
     this.fixSelection();
@@ -436,6 +498,7 @@ export class DesignStore {
   }
   redo() {
     if (!this.future.length) return;
+    this.stepBase = null;
     this.past.push(JSON.stringify(this.jewels));
     this.jewels = JSON.parse(this.future.pop()!);
     this.fixSelection();
@@ -500,6 +563,7 @@ export class DesignStore {
     this.jewels = clean.pieces;
     this.groups = clean.groups;
     this.lightPreset = clean.lightPreset;
+    this.stepBase = null;
     this.past = [];
     this.future = [];
     this.selectedJewelIds = [];
@@ -529,6 +593,8 @@ export class DesignStore {
    */
   settleLoadedPieces(updates: { id: string; patch: Partial<PlacedJewelry> }[], model?: ModelMode) {
     if (model) this.designModel = model;
+    // Not an edit: no step may come of it.
+    this.stepBase = null;
     const wasClean = !!this.active && this.active.baselineKey === piecesKey(this.jewels);
     if (updates.length) {
       const map = new Map(updates.map((u) => [u.id, u.patch]));
@@ -576,6 +642,14 @@ export class DesignStore {
     this.groups = [...pruneGroups(this.groups, this.jewels), ref];
     this.commit();
   }
+}
+
+/** The piece locked or unlocked (`locked` is absent rather than false, like the saved scene). */
+export function withLock(j: PlacedJewelry, locked: boolean): PlacedJewelry {
+  if (locked) return j.locked ? j : { ...j, locked: true };
+  if (!j.locked) return j;
+  const { locked: _drop, ...rest } = j;
+  return rest;
 }
 
 function readActive(input: unknown): ActiveCreation | null {

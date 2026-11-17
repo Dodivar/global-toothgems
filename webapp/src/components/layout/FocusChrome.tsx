@@ -33,7 +33,7 @@ export function FocusBar() {
           onClick={() => navigate(member ? STUDIO_EDITOR_PATH : `${SIGN_IN_PATH}?${RETURN_PARAM}=${encodeURIComponent(STUDIO_EDITOR_PATH)}`)}
           className="min-h-11 rounded-[var(--radius-md)] px-2 text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)] hover:underline"
         >
-          {member ? t("nav.studioWorkshop") : t("nav.signIn")}
+          {member ? t("nav.openStudioWorkshop") : t("nav.signIn")}
         </button>
       </div>
     </header>

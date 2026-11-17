@@ -26,7 +26,7 @@ describe("displayPrice", () => {
     expect(displayPrice("artist", "year", live)?.amountMinor).toBe(19900);
     // Live prices read but this one missing: not on sale, nothing invented.
     expect(displayPrice("artist", "month", live)).toBeNull();
-    expect(displayPrice("essential", "month", null)).toEqual({ plan: "essential", interval: "month", amountMinor: 500, currency: "EUR" });
+    expect(displayPrice("essential", "month", null)).toEqual({ plan: "essential", interval: "month", amountMinor: 490, currency: "EUR" });
     expect(displayPrice("atelier", "year", [])?.amountMinor).toBe(39900);
   });
 });

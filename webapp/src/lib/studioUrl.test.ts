@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseStudioCheckoutQuery, studioCheckoutPath, studioPlansPathFor } from "./studioUrl";
+import { creationDetailPath, creationFromQuery, GLOWBOOK_SPACE_PATH, legacyGlowbookAddress, parseStudioCheckoutQuery, studioCheckoutPath, studioPlansPathFor, studioSectionFromPath } from "./studioUrl";
 
 describe("Studio checkout address", () => {
   it("round-trips a plan, an interval and the surface it was chosen on", () => {
@@ -23,5 +23,27 @@ describe("Studio checkout address", () => {
     expect(studioPlansPathFor("studio_locked")).toBe("/studio-3d/atelier");
     expect(studioPlansPathFor("studio_page")).toBe("/studio-3d");
     expect(studioPlansPathFor("studio_subscribe_page")).toBe("/studio-3d/abonnement");
+  });
+});
+
+describe("My Glowbook in the member space (artist space, 2026-11-17)", () => {
+  it("moves the Studio's former Glowbook section, its tab kept", () => {
+    expect(legacyGlowbookAddress("/studio-3d/atelier/glowbook", "")).toBe(GLOWBOOK_SPACE_PATH);
+    expect(legacyGlowbookAddress("/studio-3d/atelier/glowbook/", "?tab=look")).toBe("/compte/glowbook?tab=look");
+    expect(legacyGlowbookAddress("/studio-3d/atelier", "")).toBeNull();
+    expect(legacyGlowbookAddress("/studio-3d/atelier/mes-creations", "")).toBeNull();
+  });
+
+  it("is no longer a Studio section", () => {
+    expect(studioSectionFromPath("/studio-3d/atelier/glowbook")).toBeNull();
+    expect(studioSectionFromPath("/studio-3d/atelier/mes-creations")).toBe("creations");
+  });
+
+  it("opens a creation's detail in My Creations, from a safe id only", () => {
+    const path = creationDetailPath("0f8e0c2a-1b2c-4d5e-8f90-123456789abc");
+    expect(path).toBe("/studio-3d/atelier/mes-creations?creation=0f8e0c2a-1b2c-4d5e-8f90-123456789abc");
+    expect(creationFromQuery(path.split("?")[1])).toBe("0f8e0c2a-1b2c-4d5e-8f90-123456789abc");
+    expect(creationFromQuery("creation=%3Cscript%3E")).toBeNull();
+    expect(creationFromQuery("")).toBeNull();
   });
 });

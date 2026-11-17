@@ -5,7 +5,9 @@
 --   P2  a member has no row by default, creates it with an upsert (as the
 --       webapp does) and clears it again;
 --   P3  the owner and timestamps are not writable, no row can be forged;
---   P4  another member reads none of it and changes nothing.
+--   P4  another member reads none of it and changes nothing;
+--   P5  the Academy visit (migration 20261115172000) is written on its own by an
+--       upsert that leaves the first-steps dismissal untouched.
 -- ONE transaction, ALWAYS rolled back by raising `ALL MEMBER PREFERENCES TESTS PASSED`.
 -- =============================================================================
 
@@ -86,6 +88,16 @@ begin
   select welcome_dismissed_at into v_at from public.member_preferences where user_id = m1;
   if v_at is null then raise exception 'FAIL P4: another member changed or deleted it'; end if;
   passed := passed || 'P4'::text;
+
+  -- P5 (m1 has a row with welcome_dismissed_at set by P4)
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', m1, 'role', 'authenticated')::text, true);
+  insert into public.member_preferences (academy_visited_at) values (now())
+    on conflict (user_id) do update set academy_visited_at = excluded.academy_visited_at;
+  select count(*) into v_cnt from public.member_preferences
+    where user_id = m1 and academy_visited_at is not null and welcome_dismissed_at is not null;
+  if v_cnt <> 1 then raise exception 'FAIL P5: the Academy visit was not saved on its own'; end if;
+  passed := passed || 'P5'::text;
 
   raise exception 'ALL MEMBER PREFERENCES TESTS PASSED (%)', array_to_string(passed, ', ');
 end;

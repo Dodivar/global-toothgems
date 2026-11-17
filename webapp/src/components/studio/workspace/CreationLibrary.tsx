@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BookOpen, Plus, RotateCw } from "lucide-react";
 import { useNavigate, useSearchParams } from "../../../lib/navigation";
 import { Button } from "../../ui/Button";
 import { useStudio } from "../../../lib/studio3d/store";
-import { studioSectionPath } from "../../../lib/studioUrl";
+import { creationFromQuery, studioSectionPath } from "../../../lib/studioUrl";
+import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import {
   CREATION_FILTERS,
   matchesFilter,
@@ -49,6 +50,20 @@ export function CreationLibrary() {
       },
       { replace: true },
     );
+  // `?creation=<id>` (from My Glowbook, in the member space): that creation's detail opens once the
+  // library is known, then the parameter leaves the address, so a reload or Back does not reopen it.
+  const askedCreation = creationFromQuery(params.toString());
+  useEffect(() => {
+    if (!askedCreation || ws.status !== "ready") return;
+    if (ws.creations.some((c) => c.id === askedCreation)) openWorkspaceDialog({ kind: "creationDetail", creationId: askedCreation });
+    setParams(
+      (prev) => {
+        prev.delete("creation");
+        return prev;
+      },
+      { replace: true },
+    );
+  }, [askedCreation, ws.status, ws.creations, setParams]);
   const inCollection = useMemo(
     () => (collectionId ? creationIdsIn(collectionId, ws.memberships) : null),
     [collectionId, ws.memberships],

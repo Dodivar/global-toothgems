@@ -20,9 +20,11 @@ import { attachDocument } from "../_shared/email/invoicePdf.ts";
 import { orderConfirmationContent, refundContent, shippingContent, type OrderSnapshot } from "../_shared/email/orderContent.ts";
 import type { SendRequest } from "../_shared/email/send.ts";
 import { backInStockContent, stockDigestContent, type StockDigestItem } from "../_shared/email/stockContent.ts";
+import { courseEnrolmentContent } from "../_shared/email/courseContent.ts";
 import {
   abandonedCartContent,
   courseReviewRequestContent,
+  favoritePromoContent,
   loyaltyRewardContent,
   reminderUnsubscribeUrl,
   reviewRequestContent,
@@ -263,6 +265,7 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
       request: {
         ...base, templateKey: "course_enrolment", eventKey: key("course_enrolment"),
         variables: { first_name: "Camille", course_name: "Initiation Tooth Gems" },
+        content: (locale) => courseEnrolmentContent(null, locale, { siteUrl: ctx.siteUrl, slug: "initiation-tooth-gems" }),
       },
     },
     {
@@ -330,6 +333,35 @@ export function buildShowcase(ctx: ShowcaseContext): Sample[] {
         content: (locale) =>
           reviewRequestContent(
             { items: [{ name: ctx.product.name, slug: ctx.product.slug, imagePath: ctx.product.imagePath }] },
+            locale,
+            ctx.siteUrl,
+            ctx.mediaBaseUrl,
+            reminderUnsubscribeUrl(ctx.siteUrl, "EXEMPLE"),
+          ),
+      },
+    },
+    {
+      kind: "template",
+      label: "Promotion sur un favori (avec consentement marketing)",
+      request: {
+        ...base, templateKey: "favorite_promo", eventKey: key("favorite_promo"),
+        variables: { first_name: "Camille" },
+        content: (locale) =>
+          favoritePromoContent(
+            {
+              items: [{
+                productId: "showcase",
+                reductionStartedAt: "2026-01-01T00:00:00Z",
+                currency: "EUR",
+                price: 8,
+                referencePrice: 10,
+                discountPercent: 20,
+                name: ctx.product.name,
+                variant: null,
+                slug: ctx.product.slug,
+                imagePath: ctx.product.imagePath,
+              }],
+            },
             locale,
             ctx.siteUrl,
             ctx.mediaBaseUrl,

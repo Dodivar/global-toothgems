@@ -33,8 +33,8 @@ export function GemGroupCard({ group }: { group: GemGroup }) {
   const { insertGroupInStudio } = useWorkspaceActions();
 
   return (
-    <article className="group/card relative flex flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-sm)] transition-[box-shadow,transform] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
-      <div className="relative aspect-[16/10] overflow-hidden bg-[var(--gt-blue-100)]">
+    <article className="group/card relative flex flex-col rounded-[var(--radius-lg)] has-[[aria-expanded=true]]:z-20 border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-[var(--shadow-sm)] transition-[box-shadow,transform] duration-[var(--duration-normal)] ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
+      <div className="relative aspect-[16/10] overflow-hidden rounded-t-[calc(var(--radius-lg)-1px)] bg-[var(--gt-blue-100)]">
         <GroupThumb
           group={group}
           minWidth={18}

@@ -9,16 +9,25 @@
  *   course_review_request  course_review_request:<completion id>
  *                                                a course completed 3 days ago and not
  *                                                reviewed yet (decision 141 addendum)
+ *   favorite_promo   favorite_promo:<user id>:<hash>
+ *                                                a favourite product just put on sale, only
+ *                                                with marketing consent (SQL decides and
+ *                                                names the key, decision 148); shows the
+ *                                                database's own price, percentage and
+ *                                                reference price
  *
  * Who gets one, and when, is decided in SQL (`pending_*_emails()`, switches in
  * private.email_reminder_settings); sending is exactly-once through the email_log
  * claim. Every reminder carries the address's "stop these reminders" link
  * (`email_reminder_token()` → /rappels/desinscription?token=…) in the footer and in
  * a List-Unsubscribe header. No price is shown: the order's snapshot may be stale
- * (decision 129); the product pages say the current price.
+ * (decision 129); the product pages say the current price. The one exception is the
+ * favourite promotion alert (decision 148), which quotes the database's current price,
+ * reference price and percentage as the shop window does, with the Omnibus mention.
  */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.57.4";
 import { type Block, paragraph, productCard, textLink } from "./components.ts";
+import { formatAmount } from "./format.ts";
 import { chromeLocale } from "./layout.ts";
 import type { EmailContent } from "./render.ts";
 import { type EmailDeps, sendTemplatedEmail, type SendResult } from "./send.ts";
@@ -68,11 +77,35 @@ export interface PendingCourseReviewRequest {
   coverPath: string | null;
 }
 
+export interface FavoritePromoItem extends ReminderItem {
+  productId: string;
+  /** ISO date the reduction series started: with the product, the key of "already announced". */
+  reductionStartedAt: string;
+  currency: string;
+  /** The price now, the lowest price of the 30 days before the reduction, and the percentage the database computed. */
+  price: number;
+  referencePrice: number;
+  discountPercent: number;
+}
+
+export interface PendingFavoritePromo {
+  userId: string;
+  email: string;
+  locale: string;
+  firstName: string;
+  items: FavoritePromoItem[];
+  /** The email_log event key the database checked is still open. */
+  eventKey: string;
+}
+
 export interface ReminderSource {
   abandonedCarts(limit: number): Promise<PendingAbandonedCart[]>;
   reviewRequests(limit: number): Promise<PendingReviewRequest[]>;
   loyaltyRewards(limit: number): Promise<PendingLoyaltyReward[]>;
   courseReviewRequests(limit: number): Promise<PendingCourseReviewRequest[]>;
+  favoritePromos(limit: number): Promise<PendingFavoritePromo[]>;
+  /** Marks the listed series as announced to the member (never again). */
+  recordFavoritePromo(userId: string, items: FavoritePromoItem[]): Promise<void>;
   /** The address's opt-out token (created on first use). */
   unsubscribeToken(email: string): Promise<string>;
 }
@@ -89,6 +122,7 @@ export interface ReminderSweepReport {
   reviewRequest: ReminderReport;
   loyaltyReward: ReminderReport;
   courseReviewRequest: ReminderReport;
+  favoritePromo: ReminderReport;
 }
 
 const LABELS = {
@@ -107,6 +141,11 @@ const LABELS = {
     courseReviewEyebrow: "Votre avis sur la formation",
     courseReviewAction: "Donner mon avis",
     courseReviewOnce: "Nous ne vous écrirons plus au sujet de cette formation.",
+    promoEyebrow: "Vos favoris",
+    promoAction: "Voir mes favoris",
+    promoView: "Voir le produit",
+    promoReference: "Prix de référence (le plus bas des 30 jours précédant la réduction) : {price}",
+    promoOnce: "Vous recevez cet e-mail au plus une fois par semaine, et jamais deux fois pour la même promotion.",
   },
   en: {
     cartEyebrow: "Your cart",
@@ -123,6 +162,11 @@ const LABELS = {
     courseReviewEyebrow: "Your review of the training",
     courseReviewAction: "Write my review",
     courseReviewOnce: "We will not write to you about this training again.",
+    promoEyebrow: "Your favourites",
+    promoAction: "See my favourites",
+    promoView: "View the product",
+    promoReference: "Reference price (lowest price of the 30 days before the reduction): {price}",
+    promoOnce: "You get this e-mail at most once a week, and never twice for the same promotion.",
   },
 } as const;
 
@@ -192,6 +236,43 @@ export function loyaltyRewardContent(locale: string, siteUrl: string, unsubscrib
   };
 }
 
+/** The shop's favourites view in the e-mail's language (`/fr/boutique?favoris=1`, `/en/shop?favoris=1`). */
+export function favoritesUrl(siteUrl: string, locale: string): string {
+  const lang = chromeLocale(locale);
+  return `${trimSlash(siteUrl)}/${lang}/${lang === "fr" ? "boutique" : "shop"}?favoris=1`;
+}
+
+/**
+ * One card per product on sale: the percentage the database computed, the price
+ * now and the Omnibus reference price, exactly as the shop window shows them.
+ */
+export function favoritePromoContent(
+  promo: Pick<PendingFavoritePromo, "items">,
+  locale: string,
+  siteUrl: string,
+  mediaBaseUrl: string | undefined,
+  unsubscribeUrl: string,
+): EmailContent {
+  const lang = chromeLocale(locale);
+  const l = LABELS[lang];
+  const blocks: Block[] = promo.items.map((item) => {
+    const name = item.variant ? `${item.name} — ${item.variant}` : item.name;
+    const link = { label: l.promoView, url: productPageUrl(siteUrl, locale, item.slug) };
+    const price = formatAmount(item.price, item.currency, lang);
+    const reference = l.promoReference.replace("{price}", formatAmount(item.referencePrice, item.currency, lang));
+    const imageUrl = productImageUrl(mediaBaseUrl, item.imagePath);
+    return imageUrl
+      ? productCard({ imageUrl, imageAlt: name, name, price, description: reference, badge: { label: `-${item.discountPercent} %`, tone: "success" }, link })
+      : textLink({ label: `${name} — -${item.discountPercent} % — ${price} (${reference}) — ${l.promoView}`, url: link.url });
+  });
+  return {
+    eyebrow: l.promoEyebrow,
+    primaryAction: { label: l.promoAction, url: favoritesUrl(siteUrl, locale) },
+    blocks: [...blocks, paragraph(l.promoOnce)],
+    unsubscribeUrl,
+  };
+}
+
 /** A course's sales page in the e-mail's language (`localeRoutes.ts`: /fr/academy/formation, /en/academy/course). */
 export function coursePageUrl(siteUrl: string, locale: string, slug: string): string {
   const lang = chromeLocale(locale);
@@ -232,6 +313,8 @@ async function sendEach<T extends { email: string }>(
   source: ReminderSource,
   siteUrl: string,
   log: Log,
+  /** Runs after an e-mail went out (or was already sent), never after a failure. */
+  after?: (row: T) => Promise<void>,
 ): Promise<ReminderReport> {
   const report = emptyReport();
   for (const row of rows) {
@@ -239,6 +322,7 @@ async function sendEach<T extends { email: string }>(
     try {
       const token = await source.unsubscribeToken(row.email);
       const result = await send(row, reminderUnsubscribeUrl(siteUrl, token));
+      if (after && (result.status === "sent" || result.status === "duplicate")) await after(row);
       if (result.status === "sent") report.sent++;
       else if (result.status === "failed") {
         log(`${what} e-mail failed`, { id: idOf(row), error: result.error, retryable: result.retryable });
@@ -343,7 +427,28 @@ export function sendCourseReviewRequestEmails(
   );
 }
 
-/** The four sweeps; one failing (a database error, say) does not stop the others. */
+export function sendFavoritePromoEmails(
+  deps: EmailDeps,
+  source: ReminderSource,
+  options: { limit?: number; log?: Log; mediaBaseUrl?: string } = {},
+): Promise<ReminderReport> {
+  const log = options.log ?? (() => {});
+  const site = deps.layout.siteUrl;
+  return source.favoritePromos(options.limit ?? 25).then((rows) =>
+    sendEach(rows, "favorite promo", (r) => r.userId, (promo, unsubscribeUrl) =>
+      sendTemplatedEmail(deps, {
+        templateKey: "favorite_promo",
+        to: promo.email,
+        locale: promo.locale,
+        variables: { first_name: promo.firstName },
+        eventKey: promo.eventKey,
+        headers: unsubscribeHeaders(unsubscribeUrl),
+        content: (locale) => favoritePromoContent(promo, locale, site, options.mediaBaseUrl, unsubscribeUrl),
+      }), source, site, log, (promo) => source.recordFavoritePromo(promo.userId, promo.items))
+  );
+}
+
+/** The five sweeps; one failing (a database error, say) does not stop the others. */
 export async function sendReminderEmails(
   deps: EmailDeps,
   source: ReminderSource,
@@ -363,6 +468,7 @@ export async function sendReminderEmails(
     reviewRequest: await guard("review request", () => sendReviewRequestEmails(deps, source, { ...options, log })),
     loyaltyReward: await guard("loyalty reward", () => sendLoyaltyRewardEmails(deps, source, { ...options, log })),
     courseReviewRequest: await guard("course review request", () => sendCourseReviewRequestEmails(deps, source, { ...options, log })),
+    favoritePromo: await guard("favorite promo", () => sendFavoritePromoEmails(deps, source, { ...options, log })),
   };
 }
 
@@ -376,6 +482,35 @@ function mapItems(value: unknown): ReminderItem[] {
       slug: String(item.slug),
       imagePath: typeof item.image_path === "string" && item.image_path ? item.image_path : null,
     }));
+}
+
+function mapPromoItems(value: unknown): FavoritePromoItem[] {
+  if (!Array.isArray(value)) return [];
+  const out: FavoritePromoItem[] = [];
+  for (const item of value as Record<string, unknown>[]) {
+    const price = Number(item?.price);
+    const referencePrice = Number(item?.reference_price);
+    const discountPercent = Number(item?.discount_percent);
+    if (
+      typeof item?.slug !== "string" || typeof item?.name !== "string" || typeof item?.product_id !== "string" ||
+      typeof item?.reduction_started_at !== "string" || typeof item?.currency !== "string" ||
+      !Number.isFinite(price) || !Number.isFinite(referencePrice) || !Number.isFinite(discountPercent) ||
+      discountPercent < 1 || referencePrice <= price
+    ) continue;
+    out.push({
+      productId: item.product_id,
+      reductionStartedAt: item.reduction_started_at,
+      currency: item.currency,
+      price,
+      referencePrice,
+      discountPercent,
+      name: item.name,
+      variant: typeof item.variant === "string" && item.variant ? item.variant : null,
+      slug: item.slug,
+      imagePath: typeof item.image_path === "string" && item.image_path ? item.image_path : null,
+    });
+  }
+  return out;
 }
 
 /** Same address as webapp `coverSrc()` (publicCourseMapping.ts): the route serves published covers. */
@@ -445,6 +580,29 @@ export function supabaseReminderSource(db: SupabaseClient): ReminderSource {
           courseSlug: row.course_slug,
           coverPath: coverPath(row.cover_media_id, row.cover_updated_at),
         }));
+    },
+    async favoritePromos(limit) {
+      const rows = await rpc<{ user_id: string; email: string; locale: string; first_name: string; items: unknown; event_key: string }>(
+        "pending_favorite_promo_emails",
+        { p_limit: limit },
+      );
+      return rows
+        .map((row) => ({
+          userId: row.user_id,
+          email: row.email,
+          locale: row.locale,
+          firstName: row.first_name ?? "",
+          eventKey: row.event_key,
+          items: mapPromoItems(row.items),
+        }))
+        .filter((row) => row.items.length > 0);
+    },
+    async recordFavoritePromo(userId, items) {
+      const { error } = await db.rpc("record_favorite_promo_alerts", {
+        p_user_id: userId,
+        p_items: items.map((i) => ({ product_id: i.productId, reduction_started_at: i.reductionStartedAt })),
+      });
+      if (error) throw new Error(`record_favorite_promo_alerts failed: ${error.message}`);
     },
     async unsubscribeToken(email) {
       const { data, error } = await db.rpc("email_reminder_token", { p_email: email });

@@ -59,6 +59,7 @@ Deno.test("a member books: the slot is passed on normalised, then the e-mails le
     handle: "lea.gems",
     startsAt: "2026-11-20T13:00:00.000Z",
     itemId: ITEM,
+    clientCreationId: null,
     name: "Léa Martin",
     phone: "+33 6 12 34 56 78",
     comment: null,
@@ -128,6 +129,16 @@ Deno.test("parseBooking keeps a custom design's comment and drops an empty item"
   assertEquals(parseBooking(body({ item_id: null, comment: "  Une étoile  " }))?.comment, "Une étoile");
   assertEquals(parseBooking(body({ item_id: null }))?.itemId, null);
   assertEquals(parseBooking(body({ locale: "de" }))?.locale, "fr");
+});
+
+Deno.test("parseBooking takes the member's own creation, never with a Glowbook creation", () => {
+  const own = "0f8b6b8e-4f0a-4b5e-9a5b-3f1c2d3e4f50";
+  const parsed = parseBooking(body({ item_id: null, client_creation_id: own.toUpperCase() }));
+  assertEquals(parsed?.clientCreationId, own);
+  assertEquals(parsed?.itemId, null);
+  assertEquals(parseBooking(body({ client_creation_id: own })), null);
+  assertEquals(parseBooking(body({ item_id: null, client_creation_id: "nope" })), null);
+  assertEquals(bookingRefusal({ code: "23514", message: "glowbook_booking: creation_unavailable" }), { code: "creation_unavailable", status: 409 });
 });
 
 Deno.test("CORS preflight and wrong methods", async () => {

@@ -150,6 +150,7 @@ export function piecesKey(pieces: PlacedJewelry[]): string {
       p.normal.z,
       p.rotation,
       p.offset ?? 0,
+      p.locked === true,
     ]),
   );
 }

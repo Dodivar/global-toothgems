@@ -7,7 +7,7 @@
 --   CW1 `course_immediate_access` is an accepted consent purpose: a member
 --       records only their own (42501 for another account);
 --   CW2 the enrolment sweep returns the buyer's latest waiver given before the
---       order (its version and time), and none when the only waiver came after
+--       order (its version and time) and the course's slug, and none when the only waiver came after
 --       the order or belongs to someone else; members cannot call it (42501);
 --   CW3 erasing the account keeps the waiver, without the account's id.
 --
@@ -76,6 +76,8 @@ begin
   if r.consent_version is distinct from 'course-withdrawal-2026-11' or r.consented_at is null then
     raise exception 'FAIL CW2: the waiver given before the order is missing (%)', r;
   end if;
+  -- The e-mail's "Start my course" button opens the learner page, addressed by the course's slug (decision 154).
+  if r.course_slug is distinct from 'cw-test-course' then raise exception 'FAIL CW2: the course slug is missing (%)', r.course_slug; end if;
   select * into r from public.pending_course_enrolment_emails(v_order2, 10);
   if r.entitlement_id is null then raise exception 'FAIL CW2: the second enrolment is not listed'; end if;
   if r.consent_version is not null then raise exception 'FAIL CW2: a waiver given after the order is quoted'; end if;

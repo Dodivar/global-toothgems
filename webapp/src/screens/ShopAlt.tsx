@@ -15,6 +15,7 @@ import { useAuth } from "../lib/auth";
 import { useFavorites } from "../lib/favorites";
 import { isFavoritesView, withFavoritesView } from "../lib/favoritesState";
 import { FavoritesEmpty } from "../components/favorites/FavoritesEmpty";
+import { FavoritePromoOptIn } from "../components/favorites/FavoritePromoOptIn";
 import {
   DEFAULT_SORT,
   FILTER_KEYS,
@@ -367,6 +368,8 @@ export function ShopAlt() {
                 </button>
               </div>
             )}
+
+            {favoritesView && !favoritesBlocked && <FavoritePromoOptIn />}
 
             {status === "error" ? (
               <CatalogError />

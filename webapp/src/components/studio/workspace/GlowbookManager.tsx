@@ -19,15 +19,17 @@ import {
   RotateCw,
   Rows3,
   Send,
+  Sparkles,
   Star,
   Trash2,
   UserRound,
 } from "lucide-react";
 import { Button } from "../../ui/Button";
+import { SectionHeader } from "../../account/SectionHeader";
 import { Link, Navigate, useNavigate } from "../../../lib/navigation";
 import { AGENDA_PATH } from "../../../lib/agendaRoutes";
 import { isLocale, localizedPath } from "../../../lib/localeRoutes";
-import { GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../../lib/studioUrl";
+import { creationDetailPath, GLOWBOOK_INTRO_PATH, studioSectionPath } from "../../../lib/studioUrl";
 import {
   BIO_MAX,
   DISPLAY_NAME_MAX,
@@ -42,9 +44,8 @@ import {
 } from "../../../lib/studioWorkspace/glowbook";
 import { glowbookCounts, glowbookTodos, type GlowbookPanel, type GlowbookTodo } from "../../../lib/studioWorkspace/glowbookDashboard";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
-import { useGlowbookPlan } from "../../../lib/studioAccess";
+import { useBookingsPlan, useGlowbookPlan } from "../../../lib/studioAccess";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
-import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useToast } from "../../../lib/toast";
 import { CreationThumb } from "./CreationCard";
 import { LibrarySkeleton } from "./CreationLibrary";
@@ -56,30 +57,25 @@ import { GlowbookAvatar } from "../../glowbook/GlowbookIdentity";
 import { glowbookThemeStyle } from "../../glowbook/theme";
 import { EmptyState } from "./EmptyState";
 import { SignInPrompt } from "./SignInPrompt";
-import { eyebrow, fieldClass, focusRing, iconButton, useWorkspaceFormat, workspacePage } from "./workspaceStyles";
+import { fieldClass, focusRing, iconButton, useWorkspaceFormat } from "./workspaceStyles";
 
 /**
  * "My Glowbook" (decision 99): the artist's public showcase — its address,
  * name and bio, the creations in it and where each stands
  * in moderation. Creations are added from My Creations (a creation's detail),
- * never from the editor.
+ * never from the editor. Drawn in the member space (`/compte/glowbook`, the
+ * artist space of 2026-11-17), inside its content column.
  */
 export function GlowbookManager() {
   const { t } = useWorkspaceFormat();
   const gb = useGlowbook();
-  // Below the Atelier plan the Glowbook is closed (decision 113): the database refuses its writes,
+  // Below the Artist plan the Glowbook is closed (decisions 113, 153): the database refuses its writes,
   // and the section hands over to the presentation page (`GlowbookIntro`).
   const locked = useGlowbookPlan() === false;
 
   return (
-    <div className={`${workspacePage} gap-6`}>
-      <header className="grid min-w-0 gap-2">
-        <p className={eyebrow}>{t("studio.glowbook.eyebrow")}</p>
-        <h1 className="m-0 text-[clamp(1.6rem,2.6vw,2.25rem)] font-[var(--weight-black)] leading-[1.1] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
-          {t("studio.glowbook.title")}
-        </h1>
-        <p className="m-0 max-w-[62ch] text-[length:var(--text-body-sm)] leading-relaxed text-[var(--text-muted)]">{t("studio.glowbook.sub")}</p>
-      </header>
+    <div className="grid min-w-0 gap-6">
+      <SectionHeader icon={Sparkles} eyebrow={t("account.shell.groupAtelier")} title={t("studio.glowbook.title")} description={t("studio.glowbook.sub")} />
 
       {gb.status === "signedOut" && <SignInPrompt />}
       {/* Below the plan, the member lands on the Glowbook's presentation, which offers the plan. */}
@@ -213,16 +209,16 @@ function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
 
         <div id={`${baseId}-panel`} role="tabpanel" aria-labelledby={`${baseId}-tab-${tab}`} className="min-w-0">
           {tab === "creations" && (
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start [&>*]:min-w-0">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start [&>*]:min-w-0">
               <GlowbookItems />
-              <div className="lg:sticky lg:top-16">
+              <div className="xl:sticky xl:top-16">
                 <GlowbookSections />
               </div>
             </div>
           )}
           {tab === "look" && <GlowbookLookEditor glowbook={glowbook} />}
           {tab === "profile" && (
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start [&>*]:min-w-0">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start [&>*]:min-w-0">
               <GlowbookForm key={form.key} glowbook={glowbook} autoFocus={form.focus} onDone={() => setForm((f) => ({ key: f.key + 1, focus: false }))} />
               <div className="grid gap-6">
                 <GlowbookBadgeCard glowbook={glowbook} />
@@ -231,7 +227,7 @@ function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
             </div>
           )}
           {tab === "share" && (
-            <div className="grid gap-6 lg:grid-cols-2 lg:items-start [&>*]:min-w-0">
+            <div className="grid gap-6 xl:grid-cols-2 xl:items-start [&>*]:min-w-0">
               <GlowbookQr glowbook={glowbook} />
               <div className="grid gap-6">
                 <GlowbookLinkCard glowbook={glowbook} />
@@ -254,6 +250,7 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
   const gb = useGlowbook();
   const url = useGlowbookUrl(glowbook.handle);
   const copy = useCopyLink(url);
+  const bookings = useBookingsPlan() === true;
   const live = glowbook.status === "approved";
   const avatarPath = gb.draftLook?.avatarPath ?? glowbook.look.avatarPath;
   const avatarUrl = avatarPath ? (gb.mediaUrls.get(avatarPath) ?? null) : null;
@@ -261,10 +258,10 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
   return (
     <section
       aria-label={t("studio.glowbook.pageSection")}
-      className="grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-[var(--shadow-sm)] sm:p-5 lg:grid-cols-2 lg:items-center lg:gap-8"
+      className="grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-[var(--shadow-sm)] sm:p-5 xl:grid-cols-2 xl:items-center xl:gap-8"
     >
       <div className="flex min-w-0 items-center gap-3.5">
-        <span style={glowbookThemeStyle(gb.draftLook ?? glowbook.look)} className="contents">
+        <span style={glowbookThemeStyle()} className="contents">
           <GlowbookAvatar name={glowbook.displayName} url={avatarUrl} className="h-14 w-14 text-[18px] sm:h-16 sm:w-16" />
         </span>
         <div className="grid min-w-0 flex-1 gap-1">
@@ -327,7 +324,8 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
             t(`studio.glowbook.page.${glowbook.status}`)
           )}
         </p>
-        {/* The calendar has its own page in the member space (decision 147). */}
+        {/* The calendar has its own page in the member space (decision 147), on the Atelier plan (decision 153). */}
+        {bookings && (
         <Link
           to={AGENDA_PATH}
           className={clsx("inline-flex w-fit items-center gap-1.5 text-[13px] font-bold text-[var(--text-primary)] underline decoration-1 underline-offset-4", focusRing)}
@@ -336,6 +334,7 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
           {t("nav.studioAgenda")}
           <ArrowRight size={14} aria-hidden="true" />
         </Link>
+        )}
       </div>
     </section>
   );
@@ -377,7 +376,7 @@ function GlowbookOverview({ glowbook, items, onGo }: { glowbook: Glowbook; items
   ];
 
   return (
-    <section aria-labelledby="gt-glowbook-overview" className={clsx("grid gap-3", todos.length > 0 && "lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start")}>
+    <section aria-labelledby="gt-glowbook-overview" className={clsx("grid gap-3", todos.length > 0 && "xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] xl:items-start")}>
       <h2 id="gt-glowbook-overview" className="sr-only">
         {t("studio.glowbook.dashboard.overview")}
       </h2>
@@ -697,14 +696,14 @@ function GlowbookItems() {
               key={item.id}
               className="grid grid-cols-[76px_minmax(0,1fr)] items-start gap-x-3 gap-y-2 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3 sm:grid-cols-[104px_minmax(0,1fr)]"
             >
-              <button
-                type="button"
-                onClick={() => openWorkspaceDialog({ kind: "creationDetail", creationId: creation.id })}
+              {/* The creation's own tools (detail, front view, posts) are the 3D Studio's: its detail opens there. */}
+              <Link
+                to={creationDetailPath(creation.id)}
                 aria-label={t("studio.glowbook.items.open", { name: creation.name })}
-                className={clsx("aspect-[4/3] overflow-hidden rounded-[var(--radius-md)] bg-[var(--gt-blue-100)]", focusRing)}
+                className={clsx("block aspect-[4/3] overflow-hidden rounded-[var(--radius-md)] bg-[var(--gt-blue-100)]", focusRing)}
               >
                 <CreationThumb creation={creation} />
-              </button>
+              </Link>
               <div className="grid min-w-0 gap-1.5">
                 <p className="m-0 truncate text-[14.5px] font-bold leading-snug text-[var(--text-primary)]">{creation.name}</p>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

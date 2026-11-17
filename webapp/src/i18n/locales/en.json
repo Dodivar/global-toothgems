@@ -32,12 +32,11 @@
     "signIn": "Sign in",
     "studio": "Studio 3D",
     "atelier": "Workshop",
-    "studioWorkshop": "Open the 3D Studio",
+    "studioWorkshop": "3D Studio",
     "studioWorkshopSub": "Compose a design in 3D",
     "studioGroups": "My groups",
     "studioGlowbook": "Glowbook",
     "studioGlowbookSub": "Your artist showcase, in one link",
-    "studioGlowbookAgenda": "Glowbook & calendar",
     "studioAgenda": "My calendar",
     "studioAgendaSub": "Your appointments, hours and time off",
     "giftCard": "Gift card",
@@ -45,7 +44,11 @@
     "viewAllStudio": "Discover the 3D Studio",
     "mySpace": "My space",
     "studioArtists": "Find an artist",
-    "studioArtistsSub": "Artists near you"
+    "studioArtistsSub": "Artists near you",
+    "studioAppointments": "My appointments",
+    "studioAppointmentsSub": "The appointments you booked with an artist",
+    "openStudioWorkshop": "Open the 3D Studio",
+    "myGlowbook": "My Glowbook"
   },
   "common": {
     "readMore": "Learn more",
@@ -408,10 +411,11 @@
       "signIn": "Sign in",
       "createAccount": "Create an account",
       "openCourses": "Go to my courses",
-      "paidBody": "Your courses are available in your member space.",
+      "paidBody": "Your courses are available in My space.",
       "consentTitle": "Immediate access to the course",
       "consentLabel": "I ask for immediate access to the course and I expressly waive my right of withdrawal: I acknowledge that I lose it as soon as I start following the course.",
-      "consentHint": "As long as no lesson has been opened, you keep 14 days to withdraw."
+      "consentHint": "As long as no lesson has been opened, you keep 14 days to withdraw.",
+      "openCourse": "Start my course"
     },
     "pack": {
       "line": "1 pack per order · course and Studio open on your account"
@@ -1024,8 +1028,8 @@
     "ie": "Ireland"
   },
   "account": {
-    "eyebrow": "Member area",
-    "navLabel": "Member area sections",
+    "eyebrow": "My space",
+    "navLabel": "Sections of my space",
     "navDashboard": "Dashboard",
     "navCertificates": "Certificates",
     "navOrders": "Orders",
@@ -1040,16 +1044,28 @@
       "progress": "{{done}} of {{total}} done",
       "done": "done",
       "steps": {
-        "profile": { "title": "Complete my profile", "text": "Phone and delivery address, to order in two clicks." },
-        "shop": { "title": "Explore the shop", "text": "Add a favourite: we tell you when it goes on sale." },
-        "studio": { "title": "Try the 3D Studio", "text": "A free 48-hour trial to design your smile in 3D." },
-        "academy": { "title": "See the Academy", "text": "Professional training, with a certificate at the end." }
+        "profile": {
+          "title": "Complete my profile",
+          "text": "Phone and delivery address, to order in two clicks."
+        },
+        "shop": {
+          "title": "Explore the shop",
+          "text": "Add a favourite: if you wish, we tell you when it goes on sale."
+        },
+        "studio": {
+          "title": "Try the 3D Studio",
+          "text": "A free 48-hour trial to design your smile in 3D."
+        },
+        "academy": {
+          "title": "See the Academy",
+          "text": "Professional training, with a certificate at the end."
+        }
       }
     },
     "shell": {
-      "openMenu": "Open the member space menu",
+      "openMenu": "Open my space menu",
       "closeMenu": "Close the menu",
-      "menuLabel": "Member space menu",
+      "menuLabel": "My space menu",
       "homeAlt": "Global Toothgems — home",
       "help": "Help",
       "cookies": "Cookies",
@@ -1067,7 +1083,7 @@
         "security": "Security",
         "menu": "Menu",
         "cart": "Cart",
-        "studio": "Workshop",
+        "studio": "3D Studio",
         "creations": "Creations",
         "groups": "Groups",
         "home": "Site home",
@@ -1077,10 +1093,26 @@
         "subscription": "Subscription",
         "glowbook": "Glowbook",
         "appointments": "Bookings",
-        "agenda": "Calendar"
+        "agenda": "Calendar",
+        "course": "Course"
       },
       "groupAtelier": "Atelier",
       "atelierLocked": "With the Atelier plan",
+      "lockedAtelier": {
+        "eyebrow": "With the Atelier plan",
+        "title": "Your calendar is waiting",
+        "body": "With the Atelier plan, clients book straight from your Glowbook and every appointment lands in your calendar. It is the 3D Studio’s most complete plan.",
+        "perks": {
+          "page": "A place in the directory of artists near you",
+          "booking": "Online booking, straight from your page",
+          "agenda": "A calendar synced with Google, Apple or Outlook",
+          "tryOn": "AI try-on: your clients see the design on their own smile"
+        },
+        "cta": "See the Atelier plan",
+        "secondary": "Discover the Glowbook",
+        "note": "Everything opens as soon as the Atelier plan is active on your account."
+      },
+      "lockedEntry": "{{name}} — locked, see why",
       "groupLearning": "Training",
       "groupPurchases": "Purchases",
       "groupAccount": "My account",
@@ -1092,6 +1124,20 @@
         "reviews_other": "{{count}} new items in your reviews",
         "loyalty_one": "Card complete: your reward is waiting",
         "loyalty_other": "{{count}} rewards are waiting"
+      },
+      "artistLocked": "With the Artist plan",
+      "lockedArtist": {
+        "eyebrow": "With the Artist plan",
+        "title": "Your Glowbook is waiting",
+        "body": "The Glowbook is your public artist showcase, made for your Instagram bio: your best creations in 3D and where you work. It opens with the Artist plan.",
+        "perks": {
+          "page": "A public page in your name, approved by our team",
+          "creations": "Your creations in 3D, that clients turn with a fingertip",
+          "map": "Where you work on a map, a QR code and a poster to print"
+        },
+        "cta": "See the Artist plan",
+        "secondary": "Discover the Glowbook",
+        "note": "The Glowbook opens as soon as the Artist or Atelier plan is active on your account."
       }
     },
     "resumeEyebrow": "Resume",
@@ -1286,7 +1332,7 @@
     "certificateDocRefLabel": "Certificate no.",
     "certificateDocSeal": "Completed",
     "certificateDocIssuer": "Issued by",
-    "navStudio": "Studio subscription",
+    "navStudio": "3D Studio subscription",
     "dashboard": {
       "accountEyebrow": "At a glance",
       "accountTitle": "Your account",
@@ -1320,7 +1366,13 @@
       "discoverEyebrow": "Academy",
       "discoverTitle": "Train with Global Toothgems",
       "studioGrantUntil": "Included with your pack until {{date}}."
-    }
+    },
+    "menu": {
+      "open": "Open my space menu",
+      "label": "My space shortcuts",
+      "favorites": "My favourites"
+    },
+    "navMyCourse": "My course"
   },
   "footer": {
     "blurb": "Professional gems, tools and training. Shipped internationally.",
@@ -1531,7 +1583,7 @@
       "openNav": "Open navigation",
       "breadcrumb": "Breadcrumb",
       "viewStore": "View store",
-      "memberSpace": "My member space"
+      "memberSpace": "My space"
     },
     "nav": {
       "primary": "Administration navigation",
@@ -4324,9 +4376,6 @@
       "errorMonths": "The Studio length is 1 to {{max}} months."
     }
   },
-  "community": {
-    "navEntryLocked": "Access with a training"
-  },
   "errors": {
     "actions": {
       "home": "Back to homepage"
@@ -4947,6 +4996,15 @@
       "errorTitle": "Your favourites are temporarily unavailable",
       "errorBody": "We could not load them. Check your connection and try again.",
       "errorCta": "Try again"
+    },
+    "promoAlert": {
+      "title": "Hear about promotions on your favourites",
+      "body": "One e-mail, at most once a week, when one of your favourites goes on sale. You unsubscribe in one click.",
+      "cta": "Yes, keep me posted",
+      "savedTitle": "Noted",
+      "savedBody": "We will write to you when one of your favourites goes on sale.",
+      "errorTitle": "Choice not saved",
+      "errorBody": "Your choice could not be saved. Try again in a moment."
     }
   },
   "siteSearch": {

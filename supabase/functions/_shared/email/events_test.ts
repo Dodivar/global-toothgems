@@ -173,6 +173,18 @@ Deno.test("course enrolment: the waiver ticked before paying is repeated word fo
   assert(!String(without.seen.requests[0].html).includes("immediate access"));
 });
 
+Deno.test("course enrolment: a button opens the course's learner page (decision 154 addendum)", async () => {
+  const withSlug = setup();
+  await sendCourseEnrolmentEmails(withSlug.deps, source({ courseEnrolments: () => Promise.resolve([enrolment({ locale: "fr", courseSlug: "pose-professionnelle" })]) }));
+  const html = String(withSlug.seen.requests[0].html);
+  assert(html.includes("Commencer ma formation"));
+  assert(html.includes(`${SITE}/academy/mes-formations/pose-professionnelle`));
+  // An older function without the slug: no button pointing nowhere.
+  const without = setup();
+  await sendCourseEnrolmentEmails(without.deps, source({ courseEnrolments: () => Promise.resolve([enrolment({ locale: "fr" })]) }));
+  assert(!String(without.seen.requests[0].html).includes("Commencer ma formation"));
+});
+
 Deno.test("course enrolment: no terms of sale, the order confirmation already carried them", async () => {
   const { deps, seen } = setup();
   const report = await sendCourseEnrolmentEmails(deps, source({ courseEnrolments: () => Promise.resolve([enrolment({ locale: "fr" })]) }));

@@ -264,6 +264,21 @@ const DENTITION_STAGE: StageFrame = {
 };
 /** Frames still drawn after the last change, so damped camera and light fades can settle. */
 const SETTLE_FRAMES = 90;
+/**
+ * Device pixels per CSS pixel while the stage moves (orbit, zoom, a piece in
+ * hand): a phone or retina screen shades well under half the pixels then, and
+ * the full count comes back the moment the stage rests. Screens at this ratio
+ * or below never change.
+ */
+const MOTION_PIXEL_RATIO = 1.25;
+/** The stage counts as moving this long (ms) after its last movement. */
+const MOTION_GRACE_MS = 180;
+/** The finishes a piece can wear, one per shader program: drawn once, hidden, as the model arrives (see `warmUpMaterials`). */
+const WARM_UP_LOOKS = [
+  { material: "crystal", color: "#ffffff", effect: "none" },
+  { material: "crystal", color: "#ffffff", effect: "iridescent" },
+  { material: "metal", color: "#d4af37", effect: "none" },
+] as const;
 /** Largest model file accepted for import, in bytes. */
 export const MAX_MODEL_BYTES = 60 * 1024 * 1024;
 
@@ -304,20 +319,57 @@ const _gE1 = new THREE.Vector3(),
   _gE2 = new THREE.Vector3(),
   _gN = new THREE.Vector3();
 function geometricWorldNormal(hit: THREE.Intersection, rayDir: THREE.Vector3): THREE.Vector3 {
-  const g = (hit.object as THREE.Mesh).geometry;
-  const pos = g.attributes.position as THREE.BufferAttribute;
-  const f = hit.face!;
+  if (!windingWorldNormal(hit, _gN)) _gN.copy(hit.face!.normal).transformDirection(hit.object.matrixWorld);
+  if (_gN.dot(rayDir) > 0) _gN.negate();
+  return _gN;
+}
+/**
+ * The hit triangle's world normal as its winding orients it (out of the
+ * surface on a well-formed mesh), not turned toward the ray. Null for a
+ * degenerate triangle.
+ */
+function windingWorldNormal(hit: THREE.Intersection, out: THREE.Vector3): THREE.Vector3 | null {
+  const f = hit.face;
+  if (!f) return null;
+  const pos = (hit.object as THREE.Mesh).geometry.attributes.position as THREE.BufferAttribute;
   _gA.fromBufferAttribute(pos, f.a).applyMatrix4(hit.object.matrixWorld);
   _gB.fromBufferAttribute(pos, f.b).applyMatrix4(hit.object.matrixWorld);
   _gC.fromBufferAttribute(pos, f.c).applyMatrix4(hit.object.matrixWorld);
   _gE1.subVectors(_gB, _gA);
   _gE2.subVectors(_gC, _gA);
-  _gN.crossVectors(_gE1, _gE2);
-  if (_gN.lengthSq() < 1e-12) _gN.copy(f.normal).transformDirection(hit.object.matrixWorld);
-  else _gN.normalize();
-  if (_gN.dot(rayDir) > 0) _gN.negate();
-  return _gN;
+  out.crossVectors(_gE1, _gE2);
+  if (out.lengthSq() < 1e-12) return null;
+  // A mirroring transform turns the winding inside out.
+  if (hit.object.matrixWorld.determinant() < 0) out.negate();
+  return out.normalize();
 }
+/**
+ * Which way the surface faces out at a hit, in world space: its shading
+ * normals when the mesh has them (what lighting trusts, whatever the
+ * triangles' winding), else the winding. Null when neither tells.
+ */
+const _m3 = new THREE.Matrix3();
+function outwardWorldNormal(hit: THREE.Intersection, out: THREE.Vector3): THREE.Vector3 | null {
+  const f = hit.face;
+  const normals = (hit.object as THREE.Mesh).geometry?.attributes.normal as THREE.BufferAttribute | undefined;
+  if (f && normals) {
+    out
+      .fromBufferAttribute(normals, f.a)
+      .add(_gB.fromBufferAttribute(normals, f.b))
+      .add(_gC.fromBufferAttribute(normals, f.c))
+      .applyMatrix3(_m3.getNormalMatrix(hit.object.matrixWorld));
+    if (out.lengthSq() > 1e-12) return out.normalize();
+  }
+  return windingWorldNormal(hit, out);
+}
+const _wn = new THREE.Vector3();
+const _ndc = new THREE.Vector2();
+/** How far either side of a point `snapToSurface` looks for the enamel (world units, ~mm). */
+const SNAP_REACH = 10;
+/** Searching around a spot (free-spot rings, slides toward a contact): the enamel must lie this close, or the spot is off the tooth. */
+const SEARCH_SNAP_REACH = 4;
+/** World units a piece may lie behind the enamel the pointer meets and still be the one picked (rounding only). */
+const PICK_OCCLUSION_SLACK = 0.3;
 /** Near-flush mount gap: the piece's back almost kisses the enamel. */
 function mountGap(scale: number, manualOffset = 0): number {
   return 0.04 + 0.04 * scale + manualOffset;
@@ -451,6 +503,13 @@ export class StudioEngine {
 
   // design check (overlaps, pieces off the teeth)
   private checkedJewels: PlacedJewelry[] | null = null;
+  /**
+   * Each placed piece as a collision blocker, and whether it is seated, by
+   * piece: the store replaces a piece's object on every change, so an entry
+   * never goes stale. Seats depend on the model too: cleared when it changes.
+   */
+  private blockerCache = new WeakMap<PlacedJewelry, Blocker>();
+  private seatCache = new WeakMap<PlacedJewelry, boolean>();
   private issueIds = new Set<string>();
   private issueListener: IssueFramesListener | null = null;
   private lastIssueKey = "";
@@ -498,6 +557,26 @@ export class StudioEngine {
 
   // long press on a piece (see `onLongPress`)
   private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * The latest pointer move not yet handled. Pointers report 120 to 240 moves a
+   * second; hover, drag and placement raycast and test collisions, so only the
+   * newest move is handled, once per frame, just before that frame is drawn.
+   */
+  private pendingMove: PointerEvent | null = null;
+
+  // rendering cost (see `tick`)
+  /** The renderer's own pixel ratio, drawn at rest; `MOTION_PIXEL_RATIO` while moving. */
+  private fullPixelRatio = 1;
+  /** When the stage last moved (`performance.now()`). */
+  private lastMotion = 0;
+  /**
+   * The shadow map is drawn only when what casts shadows changed: a piece
+   * placed, moved, growing or shrinking, the key light moving, another model.
+   * An orbit or a zoom keeps it — the light does not follow the camera.
+   */
+  private shadowsDirty = true;
+  /** The finishes drawn once, hidden, so the first piece of each kind never waits for its shader. */
+  private warmUp: THREE.Group | null = null;
   /** The last press came from a finger: the browser's long-press menu is not a right-click. */
   private touchPress = false;
 
@@ -506,14 +585,20 @@ export class StudioEngine {
     this.store = store;
     this.readOnly = options.readOnly ?? false;
     this.offscreen = options.offscreen ?? false;
+    // Teeth raycasts read the nearest hit only: the hierarchy stops there
+    // instead of collecting every crossing. `snapToSurface` asks for all of them.
+    this.raycaster.firstHitOnly = true;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.fullPixelRatio = Math.min(window.devicePixelRatio, 2);
+    this.renderer.setPixelRatio(this.fullPixelRatio);
     this.renderer.setSize(container.clientWidth || 800, container.clientHeight || 600, false);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // Drawn on demand (see `shadowsDirty`). An export stage moves only its camera, frame after frame: left automatic.
+    this.renderer.shadowMap.autoUpdate = this.offscreen;
     container.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(36, (container.clientWidth || 1) / (container.clientHeight || 1), 2, 700);
@@ -550,6 +635,7 @@ export class StudioEngine {
       container.addEventListener("contextmenu", this.onContextMenu);
       // Wheel zoom and damped orbiting move the camera without a pointer event on us.
       this.controls.addEventListener("change", this.wake);
+      this.controls.addEventListener("change", this.markMotion);
       this.controls.addEventListener("start", this.wake);
       // `start` fires on a press, a wheel or a pinch — the artist's own gestures, never a tween.
       this.controls.addEventListener("start", this.emitCameraGesture);
@@ -964,7 +1050,57 @@ export class StudioEngine {
     if (stageChanged) this.setView("reset");
     // A saved creation opened while the model was loading.
     if (this.store.hasPendingLoad()) this.settlePendingLoad();
+    this.shadowsDirty = true;
+    this.warmUpMaterials();
     this.wake();
+  }
+
+  /**
+   * Prepare every finish's shader before the first piece needs it. A crystal's
+   * program (transmission, dispersion, iridescence, clear coat) takes a
+   * noticeable moment to compile: done at the first drop, the stage froze just
+   * as the piece landed. The programs compile in the background (in parallel
+   * where the browser can), then the finishes are drawn once, a speck at the
+   * stage's centre, so the rest a first crystal brings (the model drawn behind
+   * the glass, for its transparency) is ready too. Never on an export stage.
+   */
+  private warmUpMaterials() {
+    if (this.offscreen || this.warmUp) return;
+    const group = new THREE.Group();
+    const part = getJewelTemplate("round").parts[0];
+    for (const look of WARM_UP_LOOKS) {
+      const m = new THREE.Mesh(part, getJewelMaterial(look));
+      m.castShadow = true;
+      group.add(m);
+    }
+    // The selection outline and the drop ghost: plain finishes, one each side.
+    group.add(new THREE.Mesh(part, new THREE.MeshBasicMaterial({ side: THREE.BackSide, transparent: true, opacity: 0 })));
+    group.add(new THREE.Mesh(part, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })));
+    group.scale.setScalar(0.001);
+    group.position.copy(this.stage.target);
+    group.traverse((o) => {
+      o.raycast = () => {};
+    });
+    this.warmUp = group;
+    this.renderer
+      .compileAsync(group, this.camera, this.scene)
+      .catch(() => undefined)
+      .then(() => {
+        if (this.disposed || this.warmUp !== group) return;
+        this.scene.add(group);
+        // Through the shadow pass too, once.
+        this.shadowsDirty = true;
+        this.wake();
+      });
+  }
+  /**
+   * After the frame that drew the warm-up speck: take it away. Its plain
+   * finishes are kept until the stage closes: three.js deletes a shader once
+   * no material uses it, and the first selection outline would compile it again.
+   */
+  private endWarmUp() {
+    const group = this.warmUp;
+    if (group?.parent) this.scene.remove(group);
   }
 
   /** The Studio's own dentition: the scan, fitted at real size, its crowns known by calibration. */
@@ -1266,10 +1402,7 @@ export class StudioEngine {
 
   private setNDC(e: { clientX: number; clientY: number }) {
     const r = this.renderer.domElement.getBoundingClientRect();
-    this.raycaster.setFromCamera(
-      new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1),
-      this.camera,
-    );
+    this.raycaster.setFromCamera(_ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), this.camera);
   }
   /** Free-mode labelling: which tooth does the current pointer ray point at? */
   private classifyHit(point: THREE.Vector3): string {
@@ -1314,29 +1447,42 @@ export class StudioEngine {
     if (!this.jewelMeshes.length) return null;
     const hits = this.raycaster.intersectObjects(this.jewelMeshes, false);
     if (!hits.length) return null;
+    // A piece behind enamel (on a lower incisor under the upper one, on the far
+    // side of the arch) is not under the pointer: the tooth in front is.
+    const enamel = this.raycaster.intersectObjects(this.toothMeshes, true)[0];
+    if (enamel && enamel.distance + PICK_OCCLUSION_SLACK < hits[0].distance) return null;
     return { jewelId: hits[0].object.userData.jewelId as string };
   }
-  /** Re-snap an arbitrary world point onto the nearest tooth surface along `nrm`.
-       Used by mirroring, layout tools and collision search — tries both directions. */
-  private snapToSurface(point: THREE.Vector3, nrm: THREE.Vector3): SurfaceHit | null {
+  /**
+   * Re-snap a world point onto the tooth surface along `nrm`: the outer
+   * surface nearest the point within `reach` on either side, its normal facing
+   * out along `nrm`. Used by mirroring, layout tools and collision search.
+   * Null when no enamel lies that close (a gap between teeth, the gum) rather
+   * than a surface far behind it; and the nearest surface, not the first one
+   * met, so a spot on a lower incisor stays there even where the upper incisor
+   * overlaps it.
+   */
+  private snapToSurface(point: THREE.Vector3, nrm: THREE.Vector3, reach = SNAP_REACH): SurfaceHit | null {
     const n = nrm.clone().normalize();
-    const tries: [THREE.Vector3, THREE.Vector3][] = [
-      [point.clone().addScaledVector(n, 6), n.clone().negate()],
-      [point.clone().addScaledVector(n, -6), n.clone()],
-    ];
-    for (const [origin, dir] of tries) {
-      this.raycaster.set(origin, dir);
-      this.raycaster.far = 80;
-      const hits = this.raycaster.intersectObjects(this.toothMeshes, true);
-      this.raycaster.far = Infinity;
-      if (hits.length) {
-        const h = hits[0];
-        const gn = geometricWorldNormal(h, dir).clone();
-        const toothId = this.toothOfHit(h);
-        if (toothId) return { toothId, point: h.point.clone(), normal: gn };
-      }
+    const dir = n.clone().negate();
+    this.raycaster.set(point.clone().addScaledVector(n, reach), dir);
+    this.raycaster.far = reach * 2;
+    this.raycaster.firstHitOnly = false;
+    const hits = this.raycaster.intersectObjects(this.toothMeshes, true);
+    this.raycaster.firstHitOnly = true;
+    this.raycaster.far = Infinity;
+    // Where the ray enters the surface (it faces the ray), not where it leaves a
+    // thin crown through its back. A mesh with no telling normals may have no
+    // such hit: then every crossing counts.
+    const entering = hits.filter((h) => (outwardWorldNormal(h, _wn)?.dot(dir) ?? -1) < 0);
+    let best: THREE.Intersection | null = null;
+    for (const h of entering.length ? entering : hits) {
+      if (!best || Math.abs(h.distance - reach) < Math.abs(best.distance - reach)) best = h;
     }
-    return null;
+    if (!best) return null;
+    const toothId = this.toothOfHit(best);
+    if (!toothId) return null;
+    return { toothId, point: best.point.clone(), normal: geometricWorldNormal(best, dir).clone() };
   }
   /** Nearest tooth rig to a world point (fallback for unlabeled free-mode pieces). */
   private nearestRig(p: THREE.Vector3): ToothRig | null {
@@ -1371,11 +1517,16 @@ export class StudioEngine {
     return { center, reach: tpl.reach * maxFaceScale(pose.axes), toWorld, toLocal: toWorld.clone().invert(), footprint: tpl.footprint };
   }
   private jewelBlocker(j: PlacedJewelry): Blocker {
-    return this.blockerAt(
-      new THREE.Vector3(j.position.x, j.position.y, j.position.z),
-      new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z),
-      poseOf(j),
-    );
+    let b = this.blockerCache.get(j);
+    if (!b) {
+      b = this.blockerAt(
+        new THREE.Vector3(j.position.x, j.position.y, j.position.z),
+        new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z),
+        poseOf(j),
+      );
+      this.blockerCache.set(j, b);
+    }
+    return b;
   }
   /** Every placed piece except `exceptIds`, as collision blockers. */
   private blockersFor(exceptIds: Set<string>): Blocker[] {
@@ -1410,7 +1561,7 @@ export class StudioEngine {
           .clone()
           .addScaledVector(t, Math.cos(a) * step)
           .addScaledVector(u, Math.sin(a) * step);
-        const snapped = this.snapToSurface(cand, n);
+        const snapped = this.snapToSurface(cand, n, SEARCH_SNAP_REACH);
         if (!snapped) continue;
         if (!this.hitBlocked(snapped, pose, blockers)) return snapped;
       }
@@ -1432,7 +1583,7 @@ export class StudioEngine {
       const mid = (lo + hi) / 2;
       const p = from.point.clone().lerp(to.point, mid);
       const n = from.normal.clone().lerp(to.normal, mid).normalize();
-      const snapped = this.snapToSurface(p, n);
+      const snapped = this.snapToSurface(p, n, SEARCH_SNAP_REACH);
       if (snapped && accept(snapped)) {
         free = snapped;
         lo = mid;
@@ -1525,7 +1676,7 @@ export class StudioEngine {
   /** Move one piece to a tooth (inspector dropdown) — slides to a free spot. */
   relocateJewelToTooth(id: string, toothId: string): boolean {
     const j = this.store.jewels.find((x) => x.id === id);
-    if (!j || !this.toothRigs.has(toothId)) return false;
+    if (!j || j.locked || !this.toothRigs.has(toothId)) return false;
     const anchor = this.getSurfacePoint(toothId, 0, 0);
     const blockers = this.blockersFor(new Set([id]));
     const free = this.findFreeSpot(anchor, poseOf(j), blockers);
@@ -1576,7 +1727,8 @@ export class StudioEngine {
   }
   /** Mirror the current selection in place (see `mirroredSpot` for each axis). One undo step. */
   mirrorSelection(axis: "h" | "v"): MoveResult | null {
-    const ids = [...this.store.getSnapshot().selectedJewelIds];
+    // Locked pieces stay where they are (and block the others like any piece).
+    const ids = this.store.editableIds(this.store.getSnapshot().selectedJewelIds);
     const affected = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!affected.length) return null;
     const blockers = this.blockersFor(new Set(ids));
@@ -1610,7 +1762,8 @@ export class StudioEngine {
   /** Distribute the selected pieces evenly between the two outermost ones,
        moving each along the arch tangent and re-snapping onto the enamel. */
   distributeSelectionAlongArch(): MoveResult | null {
-    const ids = [...this.store.getSnapshot().selectedJewelIds];
+    // Locked pieces stay where they are (and block the others like any piece).
+    const ids = this.store.editableIds(this.store.getSnapshot().selectedJewelIds);
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (gems.length < 3) return null;
     const centers = this.archCenters();
@@ -1673,7 +1826,8 @@ export class StudioEngine {
    * or taken stays where it is, so the others never end up off the line.
    */
   alignSelectionHorizontally(): MoveResult | null {
-    const ids = [...this.store.getSnapshot().selectedJewelIds];
+    // Locked pieces stay where they are (and block the others like any piece).
+    const ids = this.store.editableIds(this.store.getSnapshot().selectedJewelIds);
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (gems.length < 2) return null;
     const posOf = (j: PlacedJewelry) => new THREE.Vector3(j.position.x, j.position.y, j.position.z);
@@ -1712,7 +1866,8 @@ export class StudioEngine {
    * enamel (hidden behind the other arch), off screen or taken stays put.
    */
   alignSelectionVertically(): MoveResult | null {
-    const ids = [...this.store.getSnapshot().selectedJewelIds];
+    // Locked pieces stay where they are (and block the others like any piece).
+    const ids = this.store.editableIds(this.store.getSnapshot().selectedJewelIds);
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (gems.length < 2) return null;
     this.camera.updateMatrixWorld();
@@ -1827,6 +1982,7 @@ export class StudioEngine {
    * a cluster and keep their spacing (see `centeredOffsets`).
    */
   centerSelectionOnTeeth(ids: string[]): MoveResult | null {
+    ids = this.store.editableIds(ids); // locked pieces stay put
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!gems.length) return null;
     const rigs = new Map<string, ToothRig>();
@@ -2041,6 +2197,7 @@ export class StudioEngine {
     }
   };
   private onStoreChange = () => {
+    this.shadowsDirty = true;
     this.syncJewels();
     this.checkDesign();
     this.wake();
@@ -2051,10 +2208,15 @@ export class StudioEngine {
   private wake = () => {
     this.pendingFrames = SETTLE_FRAMES;
   };
+  /** The camera moved: draw lighter frames for a moment (see `MOTION_PIXEL_RATIO`). */
+  private markMotion = () => {
+    this.lastMotion = performance.now();
+  };
 
   /* ---------- input ---------- */
 
   private onPointerDown = (e: PointerEvent) => {
+    this.flushPointerMove();
     if (this.placing) return;
     this.touchPress = e.pointerType === "touch";
     // One loop at a time: a second finger while drawing must not pinch the camera either.
@@ -2120,18 +2282,37 @@ export class StudioEngine {
   };
 
   private onPointerMove = (e: PointerEvent) => {
+    if (!this.placing && this.lasso) {
+      // Cheap, and every point counts: the loop follows the pointer at once.
+      this.extendLasso(e);
+      return;
+    }
+    this.pendingMove = e;
+  };
+  /** Handle the move waiting since the last frame, if any (see `pendingMove`). */
+  private flushPointerMove() {
+    const e = this.pendingMove;
+    if (!e) return;
+    this.pendingMove = null;
+    this.handlePointerMove(e);
+  }
+  private extendLasso(e: PointerEvent) {
+    const l = this.lasso!;
+    if (e.pointerId !== l.pointerId || l.points.length >= LASSO_MAX_POINTS) return;
+    const p = { x: e.clientX - l.originX, y: e.clientY - l.originY };
+    const last = l.points[l.points.length - 1];
+    if (Math.hypot(p.x - last.x, p.y - last.y) < LASSO_STEP) return;
+    l.points.push(p);
+    this.emitLasso();
+  }
+
+  private handlePointerMove(e: PointerEvent) {
     if (this.placing) {
       this.updatePlacing(e);
       return;
     }
     if (this.lasso) {
-      const l = this.lasso;
-      if (e.pointerId !== l.pointerId || l.points.length >= LASSO_MAX_POINTS) return;
-      const p = { x: e.clientX - l.originX, y: e.clientY - l.originY };
-      const last = l.points[l.points.length - 1];
-      if (Math.hypot(p.x - last.x, p.y - last.y) < LASSO_STEP) return;
-      l.points.push(p);
-      this.emitLasso();
+      this.extendLasso(e);
       return;
     }
     if (!this.press) {
@@ -2142,6 +2323,15 @@ export class StudioEngine {
     if (this.mode === "jewel-press" && moved) {
       this.clearLongPress();
       const rig = this.jewelRigs.get(this.press.jewelId!);
+      if (rig && this.store.isLocked(rig.id)) {
+        // A locked piece is not picked up: the press only selects it, and says why.
+        this.store.selectJewel(rig.id);
+        notify("lockedNoMove", undefined, "info");
+        this.mode = "idle";
+        this.press = null;
+        this.setCursor("not-allowed");
+        return;
+      }
       if (rig) {
         this.store.pushHistory();
         this.beginDrag(rig);
@@ -2183,9 +2373,11 @@ export class StudioEngine {
       this.setCursor("grabbing");
       return;
     }
-  };
+  }
 
   private onPointerUp = (e: PointerEvent) => {
+    // The last move first: the release happens where the pointer last was.
+    this.flushPointerMove();
     if (this.placing) {
       // The browser took the gesture over (a list being scrolled): nothing is placed nor armed.
       if (e.type === "pointercancel") this.cancelPlacing();
@@ -2202,7 +2394,8 @@ export class StudioEngine {
     const quick =
       !!this.press && Math.hypot(e.clientX - this.press.x, e.clientY - this.press.y) < 6 && performance.now() - this.press.t < 450;
     if (this.mode === "drag-jewel" && this.dragJewel) {
-      if (this.dragLastHit) {
+      // Held back the whole time, the pieces are where they were: nothing to record.
+      if (this.dragLastHit && this.dragLastHit !== this.dragStart) {
         // last collision-free pose, for the piece in hand and every piece carried with it
         const spot = (hit: SurfaceHit): Partial<PlacedJewelry> => ({
           toothId: hit.toothId,
@@ -2283,7 +2476,8 @@ export class StudioEngine {
     }
     for (const f of this.store.jewels) {
       const followerRig = this.jewelRigs.get(f.id);
-      if (f.id === rig.id || !followerRig || !sel.includes(f.id)) continue;
+      // Locked pieces of the selection stay behind, and block the group like any other piece.
+      if (f.id === rig.id || !followerRig || !sel.includes(f.id) || f.locked) continue;
       const start = spotOf(f);
       this.dragFollowers.push({ rig: followerRig, pose: poseOf(f), start });
       this.dragFollowerSpots.set(f.id, start);
@@ -2393,7 +2587,8 @@ export class StudioEngine {
     if (jHit) {
       this.hoverJewelId = jHit.jewelId;
       this.setHoverTooth(null);
-      this.setCursor("grab");
+      // A locked piece can be selected, not picked up.
+      this.setCursor(this.store.isLocked(jHit.jewelId) ? "pointer" : "grab");
       return;
     }
     this.hoverJewelId = null;
@@ -2639,10 +2834,15 @@ export class StudioEngine {
       shared by the PNG export and the quote sheet. With `only`, every other
       piece is hidden for the capture and shown again before it returns. */
   captureView(opts: { transparent?: boolean; camera?: THREE.PerspectiveCamera; only?: ReadonlySet<string> } = {}): string {
+    // A capture is never taken at the lighter resolution of a moving stage.
+    if (this.renderer.getPixelRatio() !== this.fullPixelRatio) this.renderer.setPixelRatio(this.fullPixelRatio);
     const url = this.withCleanStage(opts, () => {
+      // The pieces left out of the capture must not leave their shadows in it.
+      this.renderer.shadowMap.needsUpdate = true;
       this.renderer.render(this.scene, opts.camera ?? this.camera);
       return this.renderer.domElement.toDataURL("image/png");
     });
+    this.renderer.shadowMap.needsUpdate = true;
     this.renderer.render(this.scene, this.camera);
     return url;
   }
@@ -2697,8 +2897,9 @@ export class StudioEngine {
     });
     i = 0;
     this.toothRigs.forEach((r) => {
+      const v = emSave[i++] * 0.42;
       r.materials.forEach((m) => {
-        m.emissiveIntensity = emSave[i] * 0.42;
+        m.emissiveIntensity = v;
       });
     });
     if (this.ghost) this.ghost.root.visible = this.ghost.ringRoot.visible = ghostVis;
@@ -3084,6 +3285,7 @@ export class StudioEngine {
    * Overlaps are not prevented here; the design check reports them.
    */
   beginGroupTurn(ids: string[]): GroupTurn | null {
+    ids = this.store.editableIds(ids); // locked pieces neither turn nor follow the group
     const start = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!start.length) return null;
     const pivot = new THREE.Vector3();
@@ -3130,6 +3332,8 @@ export class StudioEngine {
     if (!this.modelReady) return;
     const jewels = this.store.jewels;
     if (!force && jewels === this.checkedJewels) return;
+    // A forced check follows a model change: every seat is to be found again.
+    if (force) this.seatCache = new WeakMap();
     this.checkedJewels = jewels;
     const blockers = jewels.map((j) => this.jewelBlocker(j));
     const overlapping = new Set<string>();
@@ -3152,7 +3356,12 @@ export class StudioEngine {
 
   /** Does the piece rest on the enamel of a tooth — not on gum or socle, not floating off the surface? */
   private isSeated(j: PlacedJewelry): boolean {
-    return this.seatedAt(new THREE.Vector3(j.position.x, j.position.y, j.position.z), new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z));
+    let seated = this.seatCache.get(j);
+    if (seated === undefined) {
+      seated = this.seatedAt(new THREE.Vector3(j.position.x, j.position.y, j.position.z), new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z));
+      this.seatCache.set(j, seated);
+    }
+    return seated;
   }
   /** `isSeated` for a spot: the enamel lies right under it, along its normal. */
   private seatedAt(point: THREE.Vector3, normal: THREE.Vector3): boolean {
@@ -3391,6 +3600,8 @@ export class StudioEngine {
   private tick = () => {
     if (this.disposed) return;
     this.raf = requestAnimationFrame(this.tick);
+    // Before anything is drawn, so the frame shows where the pointer is now.
+    this.flushPointerMove();
     const now = performance.now();
     const snap = this.store.getSnapshot();
     const animating =
@@ -3402,6 +3613,8 @@ export class StudioEngine {
       return;
     }
     this.pendingFrames--;
+    // What casts shadows moving this frame: a piece in hand, arriving, leaving, swelling under the pointer, or the key light.
+    let shadowsMove = this.shadowsDirty || !!this.dragJewel || this.dyingJewels.length > 0;
 
     const tw = this.camTween;
     if (tw) {
@@ -3418,12 +3631,18 @@ export class StudioEngine {
     } else {
       this.controls.update();
     }
+    // After the camera's own update, whose "change" marks an orbit: this very frame is already a light one.
+    if (this.camTween || this.autoRotate || this.dragJewel || this.ghost) this.lastMotion = now;
+    // Lighter frames while the stage moves, every pixel again once it rests (within the settle frames).
+    const ratio = now - this.lastMotion < MOTION_GRACE_MS ? Math.min(this.fullPixelRatio, MOTION_PIXEL_RATIO) : this.fullPixelRatio;
+    if (this.renderer.getPixelRatio() !== ratio) this.renderer.setPixelRatio(ratio);
 
     // lighting preset crossfade (Studio / Chair lamp / Daylight)
     const lt = this.lightTarget,
       L = 0.1;
     this.keyLight.intensity += (lt.key - this.keyLight.intensity) * L;
     this.keyLight.color.lerp(lt.keyColor, L);
+    if (this.keyLight.position.distanceToSquared(lt.keyPos) > 1e-6) shadowsMove = true;
     this.keyLight.position.lerp(lt.keyPos, L);
     this.fillLight.intensity += (lt.fill - this.fillLight.intensity) * L;
     this.fillLight.color.lerp(lt.fillColor, L);
@@ -3445,12 +3664,15 @@ export class StudioEngine {
 
     this.jewelRigs.forEach((rig, id) => {
       let anim = 1;
+      // Its last growing frame included: the shadow then shows the piece at its final size.
+      if (rig.birth) shadowsMove = true;
       if (rig.birth) {
         const t = (now - rig.birth) / 420;
         if (t >= 1) rig.birth = 0;
         else anim = Math.max(0.02, backOut(t));
       }
       const hov = id === this.hoverJewelId ? 1 : 0;
+      if (Math.abs(hov - rig.hoverT) > 1e-3) shadowsMove = true;
       rig.hoverT += (hov - rig.hoverT) * 0.22;
       this.scaleRig(rig, anim * (1 + rig.hoverT * 0.09));
       // A piece with a problem is ringed in red, selected or not.
@@ -3476,7 +3698,10 @@ export class StudioEngine {
       this.ghost.ringMaterial.opacity = 0.35 + 0.4 * p;
       this.ghost.ring.scale.setScalar(this.ghost.ringScale * (1 + 0.05 * p));
     }
+    if (shadowsMove) this.renderer.shadowMap.needsUpdate = true;
+    this.shadowsDirty = false;
     this.renderer.render(this.scene, this.camera);
+    this.endWarmUp();
     this.emitSelectionAnchor();
     this.emitIssueFrames();
   };
@@ -3491,12 +3716,15 @@ export class StudioEngine {
       h = this.container.clientHeight;
     if (!w || !h) return;
     this.wake();
+    // Another screen or a browser zoom changes the device pixel ratio; the next frame applies it.
+    if (!this.offscreen) this.fullPixelRatio = Math.min(window.devicePixelRatio, 2);
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
   dispose() {
     this.disposed = true;
+    this.pendingMove = null;
     this.clearLongPress();
     cancelAnimationFrame(this.raf);
     this.ro?.disconnect();
@@ -3508,6 +3736,7 @@ export class StudioEngine {
     window.removeEventListener("blur", this.onBlur);
     this.renderer.domElement.removeEventListener("dblclick", this.onDblClick);
     this.controls.removeEventListener("change", this.wake);
+    this.controls.removeEventListener("change", this.markMotion);
     this.controls.removeEventListener("start", this.wake);
     this.controls.removeEventListener("start", this.emitCameraGesture);
     this.cameraListeners.clear();
@@ -3516,6 +3745,11 @@ export class StudioEngine {
     this.lassoListener = null;
     this.issueListener = null;
     this.destroyGhost();
+    this.warmUp?.children.forEach((m) => {
+      const mat = (m as THREE.Mesh).material as THREE.Material;
+      // The gem finishes are the shared, cached ones the pieces wear: disposed with the caches.
+      if (mat instanceof THREE.MeshBasicMaterial) mat.dispose();
+    });
     this.controls.dispose();
     if (this.offscreen) {
       // The gem templates and finishes are shared with the editor's stage: leave
