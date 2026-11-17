@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
+import { FREE_TOOTH, sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
 import { sizeKey } from "../gemOptions";
 import type { PieceSpec } from "./gemCatalog";
 import { uid, v3 } from "./math";
@@ -668,6 +668,30 @@ function readActive(input: unknown): ActiveCreation | null {
 /** The one design of this browser tab. Created when the editor chunk first loads. */
 export const studioStore = new DesignStore();
 
+/** The whole design and editor state: the component re-renders on every change. */
 export function useStudio(): StudioSnapshot {
   return useSyncExternalStore(studioStore.subscribe, studioStore.getSnapshot);
+}
+
+/**
+ * One part of the state: the component re-renders only when it changes (a
+ * panel showing the gem armed for placing ignores a piece being moved).
+ * `select` must give the same value for the same state: a snapshot field (the
+ * store replaces a field's array or object only when it changes) or a
+ * primitive, never an object built on the spot.
+ */
+export function useStudioSelector<T>(select: (snap: StudioSnapshot) => T): T {
+  return useSyncExternalStore(studioStore.subscribe, () => select(studioStore.getSnapshot()));
+}
+
+/**
+ * The tooth a gem or a group from the panel goes to without a drag: the
+ * selected tooth, else the tooth of the (first) selected piece, else null.
+ * Pieces off the labelled teeth name none.
+ */
+export function targetToothOf(snap: Pick<StudioSnapshot, "jewels" | "selectedJewelIds" | "selectedToothId">): string | null {
+  if (snap.selectedToothId && snap.selectedToothId !== FREE_TOOTH) return snap.selectedToothId;
+  const first = snap.selectedJewelIds[0];
+  const piece = first ? snap.jewels.find((j) => j.id === first) : undefined;
+  return piece && piece.toothId !== FREE_TOOTH ? piece.toothId : null;
 }
