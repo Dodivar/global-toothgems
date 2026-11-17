@@ -180,5 +180,20 @@
     "successHint": "Rien reçu d’ici quelques minutes ? Regardez dans les spams. Le lien est valable 48 heures.",
     "subscribedTitle": "Vous êtes inscrit·e",
     "subscribedBody": "Merci ! La prochaine newsletter arrivera sur {{email}}. Un lien de désinscription figure dans chaque e-mail."
+  },
+  "member": {
+    "hello": "Bonjour {{name}}",
+    "toSpace": "Mon espace",
+    "orderShipped": "Votre commande est en route",
+    "orderPreparing": "Votre commande est en préparation",
+    "resume": "Reprendre ma formation",
+    "progress": "{{pct}} % terminé",
+    "reward": "Votre récompense fidélité vous attend",
+    "rewardSub": "À utiliser sur votre prochaine commande",
+    "favorites": "Mes favoris",
+    "favoritesSub_one": "{{count}} produit gardé de côté",
+    "favoritesSub_other": "{{count}} produits gardés de côté",
+    "space": "Mon espace",
+    "spaceSub": "Commandes, formations, Atelier"
   }
 }
