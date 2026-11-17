@@ -12,39 +12,40 @@
  *
  * - the biting end: a thin rounded edge, straight across with rounded
  *   corners (incisors); a rounded point with a longer distal slope
- *   (canines); an occlusal table with rounded margins, raised into smooth
- *   cusps around a shallow fossa (premolars and molars);
+ *   (canines); an occlusal table with rounded margins, carved into shallow
+ *   grooves and a fossa between its cusps (premolars and molars) — the cusp
+ *   tips stand level with the margin, so the crown's outline stays smooth;
  * - the body: widest at the contact areas, narrowing toward the gum line;
  * - the cervical end: a rounded dome where the gum would be — the model has
  *   no gum.
  *
- * Every section is cut in its four quadrants at equal arc length, so the
- * labial face, where the gems go, is meshed as finely as the corners. The
+ * Every profile joins the next with a continuous curvature (no quarter
+ * circle meeting a straight wall): on a glossy finish a curvature step shows
+ * as a band in the reflections. Every section is cut in its four quadrants
+ * at even spacing, tightened where the outline turns, so the labial face,
+ * where the gems go, is finely meshed and the corners show no facets. The
  * placement of a gem follows the triangle it lands on, so a face meshed in
  * coarse facets would tilt a gem in steps as it is dragged.
  */
 
 export type CrownKind = "incisor" | "canine" | "premolar" | "molar";
 
-/** A cusp of a premolar or molar: a smooth bump on the occlusal table, in the crown's frame (mm). */
+/** A cusp of a premolar or molar, in the crown's frame (mm): a lobe of the occlusal table, the grooves around it carved below its tip. */
 export interface Cusp {
   x: number;
   z: number;
-  /** How far the cusp tip rises above the table, mm. */
+  /** How far the cusp tip stands above the grooves around it, mm. */
   height: number;
-  /** Spread of the bump (standard deviation), mm. */
+  /** Spread of the lobe (standard deviation), mm. */
   radius: number;
 }
 
 interface CrownCommon {
-  /**
-   * Biting end → gum line: the visible crown, mm. For a premolar or molar,
-   * from its occlusal table (y = 0); the cusps rise past it.
-   */
+  /** Biting end → gum line: the visible crown, mm. */
   crownHeight: number;
   /** The rounded cervical end above the gum line, mm. */
   domeHeight: number;
-  /** Roundness of that dome: 2 = elliptic, lower = more pointed. */
+  /** Roundness of the dome's top: 2 = round, lower = more pointed. */
   domeRoundness: number;
   /** Half the mesiodistal width at the contact areas, mesial and distal side, mm. */
   halfWidthMesial: number;
@@ -97,7 +98,7 @@ export interface PosteriorParams extends CrownCommon {
   contourLabial: number;
   contourLingual: number;
   cusps: Cusp[];
-  /** How deep the central fossa dips below the table, mm. */
+  /** How deep the central fossa sinks below the grooves, mm. */
   fossaDepth: number;
 }
 
@@ -115,7 +116,7 @@ export interface CrownResolution {
   table: number;
 }
 
-export const DEFAULT_CROWN_RESOLUTION: CrownResolution = { around: 56, tip: 12, body: 14, dome: 12, table: 8 };
+export const DEFAULT_CROWN_RESOLUTION: CrownResolution = { around: 60, tip: 12, body: 13, dome: 12, table: 9 };
 
 /** A closed triangle mesh, outward-facing (counter-clockwise seen from outside). */
 export interface CrownMesh {
@@ -134,35 +135,43 @@ export interface CrownSection {
 }
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-const smoothstep = (e0: number, e1: number, x: number) => {
+/** Smootherstep: 0 to 1 between `e0` and `e1`, with level tangents and no curvature at both ends. */
+const smootherstep = (e0: number, e1: number, x: number) => {
   const t = clamp01((x - e0) / (e1 - e0));
-  return t * t * (3 - 2 * t);
+  return t * t * t * (t * (6 * t - 15) + 10);
 };
 /** Smooth minimum of two positive lengths: `a` while it is well below `b`, levelling off at `b`. */
 const smin = (a: number, b: number, k = 4) => (a <= 0 ? 0 : Math.pow(Math.pow(a, -k) + Math.pow(b, -k), -1 / k));
-/** A quarter superellipse: 0 at u = 0, rising to 1 at u = 1 with a level tangent there. */
-const quarter = (u: number, q: number) => (u <= 0 ? 0 : u >= 1 ? 1 : Math.pow(1 - Math.pow(1 - u, q), 1 / q));
-/** A ramp with a soft start: 0 up to u = 0, a quadratic onset over `e`, then straight on (slope 1). */
-const ramp = (u: number, e = 1) => (u <= 0 ? 0 : u < e ? (u * u) / (2 * e) : u - e / 2);
+/** A ramp: 0 up to u = 0, then growing as u³ / (u + ½) — about u² further on; level and without curvature at its start. */
+const ramp = (u: number) => (u <= 0 ? 0 : (u * u * u) / (u + 0.5));
 /** A rounded wedge: a round tip of radius ~`r`, then opening at `slope` (half-extent per mm). */
 const wedge = (y: number, slope: number, r: number) => (y <= 0 ? 0 : Math.sqrt(slope * slope * y * y + 2 * r * y));
-/** A quarter-round margin of radius `r` up to the extent `e`. */
-const margin = (y: number, e: number, r: number) => (y >= r ? e : e - r + Math.sqrt(Math.max(0, r * r - (r - y) * (r - y))));
+/**
+ * A rounded margin of radius ~`r` up to the extent `e`: a superellipse
+ * quarter, whose curvature fades to nothing where it meets the face and the
+ * edge (a quarter circle would meet them with a step in curvature).
+ */
+const FILLET = 2.6;
+const margin = (y: number, e: number, r: number) => {
+  if (y >= r) return e;
+  const t = (r - Math.max(0, y)) / r;
+  return e - r + r * Math.pow(Math.max(0, 1 - Math.pow(t, FILLET)), 1 / FILLET);
+};
+/**
+ * The dome's profile at `t` (0 at the gum line, 1 at the top): flat where it
+ * leaves the body (no curvature step there), closing round at the top.
+ */
+const DOME_SHOULDER = 2.6;
+const domeProfile = (t: number, roundness: number) => (t <= 0 ? 1 : t >= 1 ? 0 : Math.pow(1 - Math.pow(t, DOME_SHOULDER), 1 / roundness));
 
-/** Full height of the crown model, biting end to the top of the dome, mm (cusps excluded). */
+/** Full height of the crown model, biting end to the top of the dome, mm. */
 export function crownLength(p: CrownParams): number {
   return p.crownHeight + p.domeHeight;
 }
 
-/** How far the highest cusp rises past the table (0 for incisors and canines), mm. */
-export function cuspReach(p: CrownParams): number {
-  return p.kind === "premolar" || p.kind === "molar" ? Math.max(0, ...p.cusps.map((c) => c.height)) : 0;
-}
-
-/** The cross-section at height `y` along the crown (before the cusps are raised). */
+/** The cross-section at height `y` along the crown (before the occlusal table is carved). */
 export function crownSection(p: CrownParams, y: number): CrownSection {
-  const length = crownLength(p);
-  const dome = y <= p.crownHeight ? 1 : quarter((length - y) / p.domeHeight, p.domeRoundness);
+  const dome = y <= p.crownHeight ? 1 : domeProfile((y - p.crownHeight) / p.domeHeight, p.domeRoundness);
   // The sides converge from the contact areas toward the gum line, and keep converging into the dome.
   const taperAt = (h: number, share: number) => 1 - ((1 - share) * ramp(h)) / ramp(1);
   const widthTaper = taperAt((y - p.contactLevel) / (p.crownHeight - p.contactLevel), p.cervicalWidth);
@@ -179,13 +188,13 @@ export function crownSection(p: CrownParams, y: number): CrownSection {
     labial = smin(wedge(y, p.slopeLabial, p.tipRadius), p.halfDepthLabial);
     lingual = smin(wedge(y, p.slopeLingual, p.tipRadius), p.halfDepthLingual);
     // A round point, not a square one.
-    squareness = 2 + (p.squareness - 2) * smoothstep(0, 2.5, y);
+    squareness = 2 + (p.squareness - 2) * smootherstep(0, 3, y);
   } else {
     const r = p.marginRadius;
     mesial = margin(y, p.halfWidthMesial, r);
     distal = margin(y, p.halfWidthDistal, r);
     // The labial and lingual faces lean in toward the table, fullest at their height of contour.
-    const lean = (share: number, contour: number) => share + (1 - share) * smoothstep(r, Math.max(contour, r + 0.1), y);
+    const lean = (share: number, contour: number) => share + (1 - share) * smootherstep(0, Math.max(contour, r + 0.1), y);
     labial = margin(y, p.halfDepthLabial * p.occlusalDepthLabial, r) * (lean(p.occlusalDepthLabial, p.contourLabial) / p.occlusalDepthLabial);
     lingual = margin(y, p.halfDepthLingual * p.occlusalDepthLingual, r) * (lean(p.occlusalDepthLingual, p.contourLingual) / p.occlusalDepthLingual);
   }
@@ -202,32 +211,62 @@ export function crownSection(p: CrownParams, y: number): CrownSection {
   };
 }
 
-/** How far the cusps and the fossa move a point of the occlusal table along y (negative: toward the biting side). */
-export function occlusalRelief(p: CrownParams, x: number, z: number): number {
-  if (p.kind !== "premolar" && p.kind !== "molar") return 0;
-  let dy = 0;
+/** The cusp lobes at a point of the table: how far it stands above the grooves (mm, before levelling). */
+function lobes(p: PosteriorParams, x: number, z: number): number {
+  let h = 0;
   for (const c of p.cusps) {
     const d2 = (x - c.x) * (x - c.x) + (z - c.z) * (z - c.z);
-    dy -= c.height * Math.exp(-d2 / (2 * c.radius * c.radius));
+    h += c.height * Math.exp(-d2 / (2 * c.radius * c.radius));
   }
+  return h;
+}
+
+/**
+ * How deep a point of the occlusal table is carved below the margin, mm
+ * (along +y, into the crown): the grooves between the cusps and the central
+ * fossa. The highest cusp tip stays level with the margin, so nothing stands
+ * past the crown's outline; 0 for incisors and canines.
+ */
+export function occlusalRelief(p: CrownParams, x: number, z: number): number {
+  if (p.kind !== "premolar" && p.kind !== "molar") return 0;
+  const top = highestLobe(p);
+  let depth = Math.max(0, top - lobes(p, x, z));
   if (p.fossaDepth) {
     // A shallow basin between the cusps, longer mesiodistally than across.
-    const sx = Math.max(p.halfWidthMesial, p.halfWidthDistal) * 0.55;
-    const sz = Math.max(p.halfDepthLabial, p.halfDepthLingual) * 0.3;
-    dy += p.fossaDepth * Math.exp(-(x * x) / (2 * sx * sx) - (z * z) / (2 * sz * sz));
+    const sx = Math.max(p.halfWidthMesial, p.halfWidthDistal) * 0.5;
+    const sz = Math.max(p.halfDepthLabial, p.halfDepthLingual) * 0.28;
+    depth += p.fossaDepth * Math.exp(-(x * x) / (2 * sx * sx) - (z * z) / (2 * sz * sz));
   }
-  return dy;
+  return depth;
+}
+
+const lobeTops = new WeakMap<PosteriorParams, number>();
+/** The highest the lobes stand anywhere on the table (sampled once per crown). */
+function highestLobe(p: PosteriorParams): number {
+  let top = lobeTops.get(p);
+  if (top !== undefined) return top;
+  top = 0;
+  const s = crownSection(p, 0);
+  for (let i = -20; i <= 20; i++)
+    for (let k = -20; k <= 20; k++) {
+      const x = (i / 20) * (i < 0 ? s.mesial : s.distal);
+      const z = (k / 20) * (k < 0 ? s.lingual : s.labial);
+      top = Math.max(top, lobes(p, x, z));
+    }
+  lobeTops.set(p, top);
+  return top;
 }
 
 /**
  * One quadrant of a section's outline, from its point on the z axis to its
- * point on the x axis, as `count + 1` points at equal arc length. The
- * explicit forms z(x) then x(z) keep the samples evenly spread on both the
- * flat face and the tight corner.
+ * point on the x axis, as `count + 1` points. They are spread by arc length
+ * plus the angle the outline turns through, so a flat face is evenly meshed
+ * and a corner gets the closer points its curvature needs. The explicit
+ * forms z(x) then x(z) sample both the face and the corner finely first.
  */
 function quadrant(ex: number, ez: number, n: number, count: number): [number, number][] {
   const fine: [number, number][] = [];
-  const SAMPLES = 48;
+  const SAMPLES = 64;
   const k = Math.pow(2, -1 / n);
   for (let i = 0; i <= SAMPLES; i++) {
     const x = ex * k * (i / SAMPLES);
@@ -237,16 +276,30 @@ function quadrant(ex: number, ez: number, n: number, count: number): [number, nu
     const z = ez * k * (i / SAMPLES);
     fine.push([ex * Math.pow(Math.max(0, 1 - Math.pow(z / (ez || 1), n)), 1 / n), z]);
   }
-  const lengths = [0];
-  for (let i = 1; i < fine.length; i++) lengths.push(lengths[i - 1] + Math.hypot(fine[i][0] - fine[i - 1][0], fine[i][1] - fine[i - 1][1]));
-  const total = lengths[lengths.length - 1];
+  // How much a turn of the outline counts against its length: a corner of this section takes about two fifths of the points.
+  const turnWeight = 0.28 * (ex + ez);
+  const measure = [0];
+  let heading = Math.atan2(fine[1][1] - fine[0][1], fine[1][0] - fine[0][0]);
+  for (let i = 1; i < fine.length; i++) {
+    const dx = fine[i][0] - fine[i - 1][0],
+      dz = fine[i][1] - fine[i - 1][1];
+    const len = Math.hypot(dx, dz);
+    let turn = 0;
+    if (len > 1e-9) {
+      const h = Math.atan2(dz, dx);
+      turn = Math.abs(Math.atan2(Math.sin(h - heading), Math.cos(h - heading)));
+      heading = h;
+    }
+    measure.push(measure[i - 1] + len + turnWeight * turn);
+  }
+  const total = measure[measure.length - 1];
   const out: [number, number][] = [];
   let j = 1;
   for (let i = 0; i <= count; i++) {
     const target = (total * i) / count;
-    while (j < fine.length - 1 && lengths[j] < target) j++;
-    const span = lengths[j] - lengths[j - 1];
-    const t = span > 0 ? clamp01((target - lengths[j - 1]) / span) : 0;
+    while (j < fine.length - 1 && measure[j] < target) j++;
+    const span = measure[j] - measure[j - 1];
+    const t = span > 0 ? clamp01((target - measure[j - 1]) / span) : 0;
     out.push([fine[j - 1][0] + (fine[j][0] - fine[j - 1][0]) * t, fine[j - 1][1] + (fine[j][1] - fine[j - 1][1]) * t]);
   }
   out[0] = fine[0];
@@ -272,12 +325,13 @@ export function sectionOutline(s: CrownSection, around: number): [number, number
 
 /** Heights of the rings along the crown: dense at the biting end, even over the body, even in angle over the dome. */
 function ringHeights(p: CrownParams, res: CrownResolution): number[] {
-  const tipZone = p.kind === "premolar" || p.kind === "molar" ? p.marginRadius : Math.min(2.6, p.crownHeight * 0.3);
+  const posterior = p.kind === "premolar" || p.kind === "molar";
+  const tipZone = posterior ? p.marginRadius : Math.min(2.6, p.crownHeight * 0.3);
   const ys: number[] = [];
   for (let i = 0; i <= res.tip; i++) {
     const t = i / res.tip;
-    // a quarter turn round a posterior margin; quadratic toward the incisal edge or the cusp tip
-    ys.push(p.kind === "premolar" || p.kind === "molar" ? tipZone * (1 - Math.cos((t * Math.PI) / 2)) : tipZone * t * t);
+    // round a posterior margin evenly; quadratic toward the incisal edge or the cusp tip
+    ys.push(posterior ? tipZone * (1 - Math.cos((t * Math.PI) / 2)) : tipZone * t * t);
   }
   for (let i = 1; i <= res.body; i++) ys.push(tipZone + ((p.crownHeight - tipZone) * i) / res.body);
   for (let i = 1; i <= res.dome; i++) ys.push(p.crownHeight + p.domeHeight * Math.sin(((i / res.dome) * Math.PI) / 2));
@@ -304,25 +358,18 @@ export function buildCrown(p: CrownParams, placement: CrownPlacement = IDENTITY,
   const around = res.around;
   const ys = ringHeights(p, res);
   const posterior = p.kind === "premolar" || p.kind === "molar";
-  const fade = posterior ? p.marginRadius + 2.6 : 0;
   // The rings, as (x, y, z) in the crown's frame, occlusal table first.
   const rings: [number, number, number][][] = [];
   const first = sectionOutline(crownSection(p, 0), around);
   if (posterior) {
     for (let k = 0; k < res.table; k++) {
       const f = k / res.table;
-      rings.push(first.map(([x, z]) => [x * f, 0, z * f]));
+      // carved toward the middle, level with the margin at the rim (a smooth marginal ridge)
+      const w = 1 - smootherstep(0.68, 1, f);
+      rings.push(first.map(([x, z]) => [x * f, occlusalRelief(p, x * f, z * f) * w, z * f]));
     }
   }
   for (const y of ys) rings.push(sectionOutline(crownSection(p, y), around).map(([x, z]) => [x, y, z]));
-  if (posterior) {
-    for (const ring of rings) {
-      for (const v of ring) {
-        const w = 1 - smoothstep(p.marginRadius, fade, v[1]);
-        if (w > 0) v[1] += occlusalRelief(p, v[0], v[2]) * w;
-      }
-    }
-  }
 
   // Weld coincident points (quantised to a micrometre) and set the rest in place.
   const { origin, xAxis, yAxis, zAxis } = placement;

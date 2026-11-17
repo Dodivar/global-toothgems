@@ -137,11 +137,11 @@ describe("the Studio's dentition", () => {
     }
   });
 
-  it("keeps the mouth slightly open: the arches never meet, wider apart at the front", () => {
+  it("keeps the arches just apart, as in a smile: closer at the back than at the front, never meeting", () => {
     const gap = (upper: string, lower: string) => yRange(MESHES.get(upper)!).min - yRange(MESHES.get(lower)!).max;
-    expect(gap("11", "41")).toBeGreaterThan(2);
-    expect(gap("11", "41")).toBeLessThan(3.5);
-    expect(gap("16", "46")).toBeGreaterThan(0.3);
+    expect(gap("11", "41")).toBeGreaterThan(1);
+    expect(gap("11", "41")).toBeLessThan(2.5);
+    expect(gap("16", "46")).toBeGreaterThan(0.1);
     expect(gap("16", "46")).toBeLessThan(gap("11", "41"));
     for (const c of SMILE_CROWNS) {
       if (c.lower) expect(c.top).toBeLessThan(0);
@@ -149,7 +149,7 @@ describe("the Studio's dentition", () => {
     }
   });
 
-  it("sets neighbours side by side, touching without sinking into each other", () => {
+  it("sets neighbours in contact, as real teeth touch, without sinking into each other", () => {
     for (const arch of [UPPER_TEETH, LOWER_TEETH]) {
       for (let i = 0; i + 1 < arch.length; i++) {
         const a = frame(arch[i]),
@@ -159,10 +159,37 @@ describe("the Studio's dentition", () => {
         const reachB = -extentAlong(MESHES.get(b.fdi)!, vec(b.center), axis).min;
         const between = Math.hypot(...sub(vec(b.center), vec(a.center)));
         const gap = between - reachA - reachB;
-        expect(gap, `${a.fdi}–${b.fdi}`).toBeGreaterThan(-0.5);
-        expect(gap, `${a.fdi}–${b.fdi}`).toBeLessThan(1.2);
+        expect(gap, `${a.fdi}–${b.fdi}`).toBeGreaterThan(-0.6);
+        expect(gap, `${a.fdi}–${b.fdi}`).toBeLessThan(0.05);
       }
     }
+  });
+});
+
+describe("a real smile", () => {
+  /** The gap along x between two crowns over a thin horizontal slice at height `y` (negative: they overlap). */
+  function sliceGap(left: string, right: string, y: number) {
+    const reach = (fdi: string, pick: (a: number, b: number) => number, start: number) => {
+      const p = MESHES.get(fdi)!.positions;
+      let v = start;
+      for (let i = 0; i < p.length; i += 3) if (Math.abs(p[i + 1] - y) < 0.25) v = pick(v, p[i]);
+      return v;
+    };
+    return reach(right, Math.min, Infinity) - reach(left, Math.max, -Infinity);
+  }
+
+  it("stands the central incisors upright and side by side: in contact, no gap opening up to the gum line", () => {
+    const c = frame("11");
+    expect(sliceGap("11", "21", c.bottom + 2.6)).toBeLessThan(0.05);
+    expect(sliceGap("11", "21", c.top)).toBeLessThan(1);
+    expect(frame("21").center.x).toBeCloseTo(-frame("11").center.x, 6);
+  });
+
+  it("draws the upper smile line: the laterals a little shorter than the centrals, the canines level with them", () => {
+    const edge = (fdi: string) => yRange(MESHES.get(fdi)!).min;
+    expect(edge("12") - edge("11")).toBeGreaterThan(0.3);
+    expect(edge("12") - edge("11")).toBeLessThan(1);
+    expect(Math.abs(edge("13") - edge("11"))).toBeLessThan(0.3);
   });
 });
 

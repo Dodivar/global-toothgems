@@ -1,7 +1,6 @@
 import { LOWER_TEETH, UPPER_TEETH, toothKeys, type ToothKey, type Vec3 } from "../../data/studioEditor";
 import {
   buildCrown,
-  cuspReach,
   DEFAULT_CROWN_RESOLUTION,
   type CanineParams,
   type CrownMesh,
@@ -15,13 +14,16 @@ import type { CrownFrame } from "./dentition";
 
 /**
  * The Studio's dentition: both arches of smooth, separate crowns, without
- * gum or socle, the mouth slightly open — the brand's reference smile.
+ * gum or socle, the lips apart in a smile — the brand's reference smile,
+ * made as real as a dentition is.
  *
  * The incisors keep the reference drawing's look (broad blades with rounded
  * corners above, narrow shields below, domed where the gum would be). The
  * canines, premolars and molars are shaped like real ones — a pointed cusp,
- * cusps round a fossa — with broad, gently curved labial faces a gem can
- * sit on, where the drawing had rounded pills.
+ * an occlusal table carved round its cusps — with broad, gently curved
+ * labial faces a gem can sit on, where the drawing had rounded pills. Like
+ * a real smile, the crowns stand upright and touch their neighbours, the
+ * upper laterals a little shorter than the centrals, the arches just apart.
  *
  * Everything is at real size, in the Studio's world units (millimetres):
  * average adult crown widths, heights and depths, laid side by side along
@@ -47,116 +49,118 @@ interface ToothDesign {
   inclination: number;
   /** Mesial crown tip: how far the biting end leans toward the midline, degrees. */
   angulation: number;
+  /** How far the biting end stops short of the arch's biting line, toward the root, mm (the upper laterals). */
+  shorter?: number;
 }
 
 /*
  * Average adult crowns (Wheeler's tables, rounded; the lower incisors at the
  * broad end of the range, as the drawing has them). The visible crown runs
  * from the edge or the cusp tips to the gum line; the dome above it stands
- * for the gum, as on the drawing. A premolar's or molar's `crownHeight` is
- * counted from its occlusal table, its cusps rising past it (real crown
- * height = crownHeight + the highest cusp).
+ * for the gum, as on the drawing. A premolar's or molar's cusp tips stand
+ * level with its occlusal margin, the table carved below them.
  */
 const UPPER: Record<ToothKey, ToothDesign> = {
   central: {
     width: 8.6,
     inclination: 10,
-    angulation: 4,
+    angulation: 0,
     crown: incisor({
-      crownHeight: 9.6, domeHeight: 3.4, domeRoundness: 2,
-      halfWidthMesial: 4.3, halfWidthDistal: 4.3, contactLevel: 2.4, cervicalWidth: 0.8,
+      crownHeight: 9.6, domeHeight: 3.2, domeRoundness: 2,
+      halfWidthMesial: 4.3, halfWidthDistal: 4.3, contactLevel: 2.6, cervicalWidth: 0.86,
       halfDepthLabial: 3.0, halfDepthLingual: 3.5, cervicalDepth: 0.92, squareness: 2.6,
-      cornerMesial: 1.1, cornerDistal: 1.9, edgeRadius: 0.35, slopeLabial: 0.42, slopeLingual: 0.62,
+      cornerMesial: 1.0, cornerDistal: 1.8, edgeRadius: 0.35, slopeLabial: 0.42, slopeLingual: 0.62,
     }),
   },
   lateral: {
     width: 6.6,
     inclination: 9,
-    angulation: 7,
+    angulation: 0,
+    shorter: 0.6,
     crown: incisor({
-      crownHeight: 8.6, domeHeight: 3.0, domeRoundness: 1.9,
-      halfWidthMesial: 3.3, halfWidthDistal: 3.3, contactLevel: 2.1, cervicalWidth: 0.78,
+      crownHeight: 8.6, domeHeight: 2.9, domeRoundness: 1.9,
+      halfWidthMesial: 3.3, halfWidthDistal: 3.3, contactLevel: 2.3, cervicalWidth: 0.85,
       halfDepthLabial: 2.7, halfDepthLingual: 3.1, cervicalDepth: 0.92, squareness: 2.5,
-      cornerMesial: 1.1, cornerDistal: 2.1, edgeRadius: 0.33, slopeLabial: 0.42, slopeLingual: 0.6,
+      cornerMesial: 1.0, cornerDistal: 2.0, edgeRadius: 0.33, slopeLabial: 0.42, slopeLingual: 0.6,
     }),
   },
   canine: {
     width: 7.6,
     inclination: 4,
-    angulation: 7,
+    angulation: 2,
     crown: canine({
-      crownHeight: 9.6, domeHeight: 3.0, domeRoundness: 1.9,
-      halfWidthMesial: 3.8, halfWidthDistal: 3.8, contactLevel: 3.6, cervicalWidth: 0.78,
-      halfDepthLabial: 3.7, halfDepthLingual: 4.0, cervicalDepth: 0.9, squareness: 2.7,
+      crownHeight: 9.8, domeHeight: 2.9, domeRoundness: 1.9,
+      halfWidthMesial: 3.8, halfWidthDistal: 3.8, contactLevel: 3.6, cervicalWidth: 0.84,
+      halfDepthLabial: 3.7, halfDepthLingual: 4.0, cervicalDepth: 0.9, squareness: 2.6,
       slopeMesial: 1.5, slopeDistal: 1.1, slopeLabial: 1.25, slopeLingual: 1.15, tipRadius: 0.55,
     }),
   },
   pm1: {
     width: 7.0,
     inclination: 0,
-    angulation: 2,
+    angulation: 0,
     crown: premolar({
-      crownHeight: 7.2, domeHeight: 2.4, domeRoundness: 2,
-      halfWidthMesial: 3.5, halfWidthDistal: 3.5, contactLevel: 2.1, cervicalWidth: 0.78,
-      halfDepthLabial: 4.5, halfDepthLingual: 4.4, cervicalDepth: 0.93, squareness: 3.2,
-      marginRadius: 1.4, occlusalDepthLabial: 0.86, occlusalDepthLingual: 0.74, contourLabial: 4.8, contourLingual: 3.4,
+      crownHeight: 8.5, domeHeight: 2.4, domeRoundness: 2,
+      halfWidthMesial: 3.5, halfWidthDistal: 3.5, contactLevel: 2.9, cervicalWidth: 0.82,
+      halfDepthLabial: 4.5, halfDepthLingual: 4.4, cervicalDepth: 0.93, squareness: 3.0,
+      marginRadius: 1.5, occlusalDepthLabial: 0.86, occlusalDepthLingual: 0.76, contourLabial: 5.8, contourLingual: 4.2,
       cusps: [
-        { x: -0.2, z: 2.3, height: 1.3, radius: 1.7 },
-        { x: 0.3, z: -2.2, height: 0.8, radius: 1.6 },
+        { x: -0.2, z: 1.9, height: 0.75, radius: 1.5 },
+        { x: 0.2, z: -1.6, height: 0.5, radius: 1.4 },
       ],
-      fossaDepth: 0.35,
+      fossaDepth: 0.3,
     }),
   },
   pm2: {
     width: 6.7,
     inclination: 0,
-    angulation: 2,
+    angulation: 0,
     crown: premolar({
-      crownHeight: 7.0, domeHeight: 2.3, domeRoundness: 2,
-      halfWidthMesial: 3.35, halfWidthDistal: 3.35, contactLevel: 2.1, cervicalWidth: 0.78,
-      halfDepthLabial: 4.5, halfDepthLingual: 4.4, cervicalDepth: 0.93, squareness: 3.2,
-      marginRadius: 1.4, occlusalDepthLabial: 0.86, occlusalDepthLingual: 0.76, contourLabial: 4.6, contourLingual: 3.3,
+      crownHeight: 8.0, domeHeight: 2.3, domeRoundness: 2,
+      halfWidthMesial: 3.35, halfWidthDistal: 3.35, contactLevel: 2.8, cervicalWidth: 0.82,
+      halfDepthLabial: 4.5, halfDepthLingual: 4.4, cervicalDepth: 0.93, squareness: 3.0,
+      marginRadius: 1.5, occlusalDepthLabial: 0.86, occlusalDepthLingual: 0.78, contourLabial: 5.5, contourLingual: 4.0,
       cusps: [
-        { x: 0, z: 2.3, height: 1.0, radius: 1.8 },
-        { x: 0, z: -2.2, height: 0.85, radius: 1.7 },
+        { x: 0, z: 1.9, height: 0.6, radius: 1.6 },
+        { x: 0, z: -1.7, height: 0.5, radius: 1.5 },
       ],
-      fossaDepth: 0.3,
+      fossaDepth: 0.25,
     }),
   },
   m1: {
     width: 10.2,
     inclination: 3,
-    angulation: 4,
+    angulation: 0,
     crown: molar({
-      crownHeight: 6.45, domeHeight: 2.4, domeRoundness: 2,
-      halfWidthMesial: 5.1, halfWidthDistal: 5.1, contactLevel: 2.1, cervicalWidth: 0.82,
-      halfDepthLabial: 5.4, halfDepthLingual: 5.6, cervicalDepth: 0.93, squareness: 3.3,
-      marginRadius: 1.7, occlusalDepthLabial: 0.88, occlusalDepthLingual: 0.78, contourLabial: 4.4, contourLingual: 3.0,
+      crownHeight: 7.5, domeHeight: 2.4, domeRoundness: 2,
+      halfWidthMesial: 5.1, halfWidthDistal: 5.1, contactLevel: 2.8, cervicalWidth: 0.84,
+      halfDepthLabial: 5.4, halfDepthLingual: 5.6, cervicalDepth: 0.93, squareness: 3.1,
+      marginRadius: 1.8, occlusalDepthLabial: 0.88, occlusalDepthLingual: 0.8, contourLabial: 5.3, contourLingual: 3.8,
       cusps: [
-        { x: -2.4, z: 2.9, height: 0.95, radius: 1.65 },
-        { x: 2.4, z: 2.9, height: 0.8, radius: 1.6 },
-        { x: -2.0, z: -2.9, height: 1.05, radius: 1.9 },
-        { x: 2.7, z: -2.8, height: 0.6, radius: 1.5 },
+        { x: -2.1, z: 1.9, height: 0.7, radius: 1.5 },
+        { x: 2.1, z: 1.9, height: 0.6, radius: 1.45 },
+        { x: -1.8, z: -1.8, height: 0.75, radius: 1.7 },
+        { x: 2.2, z: -1.7, height: 0.45, radius: 1.35 },
       ],
-      fossaDepth: 0.5,
+      fossaDepth: 0.4,
     }),
   },
   m2: {
     width: 9.2,
     inclination: 3,
-    angulation: 2,
+    angulation: 0,
     crown: molar({
-      crownHeight: 6.0, domeHeight: 2.3, domeRoundness: 2,
-      halfWidthMesial: 4.6, halfWidthDistal: 4.6, contactLevel: 2.0, cervicalWidth: 0.82,
-      halfDepthLabial: 5.4, halfDepthLingual: 5.4, cervicalDepth: 0.93, squareness: 3.3,
-      marginRadius: 1.65, occlusalDepthLabial: 0.88, occlusalDepthLingual: 0.78, contourLabial: 4.1, contourLingual: 2.8,
+      crownHeight: 7.0, domeHeight: 2.3, domeRoundness: 2,
+      halfWidthMesial: 4.6, halfWidthDistal: 4.6, contactLevel: 2.6, cervicalWidth: 0.84,
+      halfDepthLabial: 5.4, halfDepthLingual: 5.4, cervicalDepth: 0.93, squareness: 3.1,
+      marginRadius: 1.75, occlusalDepthLabial: 0.88, occlusalDepthLingual: 0.8, contourLabial: 5.0, contourLingual: 3.6,
       cusps: [
-        { x: -2.1, z: 2.8, height: 0.9, radius: 1.6 },
-        { x: 2.0, z: 2.7, height: 0.65, radius: 1.5 },
-        { x: -1.6, z: -2.8, height: 1.0, radius: 1.8 },
-        { x: 2.3, z: -2.6, height: 0.4, radius: 1.4 },
+        { x: -1.8, z: 1.9, height: 0.65, radius: 1.45 },
+        { x: 1.7, z: 1.8, height: 0.5, radius: 1.35 },
+        { x: -1.4, z: -1.8, height: 0.7, radius: 1.6 },
+        { x: 1.9, z: -1.6, height: 0.3, radius: 1.25 },
       ],
-      fossaDepth: 0.45,
+      fossaDepth: 0.35,
     }),
   },
 };
@@ -167,8 +171,8 @@ const LOWER: Record<ToothKey, ToothDesign> = {
     inclination: 4,
     angulation: 0,
     crown: incisor({
-      crownHeight: 8.2, domeHeight: 2.9, domeRoundness: 1.85,
-      halfWidthMesial: 2.9, halfWidthDistal: 2.9, contactLevel: 1.6, cervicalWidth: 0.74,
+      crownHeight: 8.2, domeHeight: 2.8, domeRoundness: 1.85,
+      halfWidthMesial: 2.9, halfWidthDistal: 2.9, contactLevel: 1.8, cervicalWidth: 0.8,
       halfDepthLabial: 2.6, halfDepthLingual: 3.1, cervicalDepth: 0.92, squareness: 2.5,
       cornerMesial: 0.55, cornerDistal: 0.7, edgeRadius: 0.3, slopeLabial: 0.36, slopeLingual: 0.52,
     }),
@@ -176,10 +180,10 @@ const LOWER: Record<ToothKey, ToothDesign> = {
   lateral: {
     width: 6.2,
     inclination: 4,
-    angulation: 1,
+    angulation: 0,
     crown: incisor({
-      crownHeight: 8.5, domeHeight: 2.9, domeRoundness: 1.85,
-      halfWidthMesial: 3.1, halfWidthDistal: 3.1, contactLevel: 1.7, cervicalWidth: 0.74,
+      crownHeight: 8.5, domeHeight: 2.8, domeRoundness: 1.85,
+      halfWidthMesial: 3.1, halfWidthDistal: 3.1, contactLevel: 1.9, cervicalWidth: 0.8,
       halfDepthLabial: 2.7, halfDepthLingual: 3.2, cervicalDepth: 0.92, squareness: 2.5,
       cornerMesial: 0.6, cornerDistal: 0.95, edgeRadius: 0.3, slopeLabial: 0.36, slopeLingual: 0.52,
     }),
@@ -187,26 +191,26 @@ const LOWER: Record<ToothKey, ToothDesign> = {
   canine: {
     width: 7.0,
     inclination: 2,
-    angulation: 4,
+    angulation: 1,
     crown: canine({
-      crownHeight: 10.0, domeHeight: 3.0, domeRoundness: 1.7,
-      halfWidthMesial: 3.5, halfWidthDistal: 3.5, contactLevel: 3.0, cervicalWidth: 0.74,
-      halfDepthLabial: 3.4, halfDepthLingual: 3.8, cervicalDepth: 0.9, squareness: 2.7,
+      crownHeight: 10.0, domeHeight: 2.8, domeRoundness: 1.8,
+      halfWidthMesial: 3.5, halfWidthDistal: 3.5, contactLevel: 3.0, cervicalWidth: 0.8,
+      halfDepthLabial: 3.4, halfDepthLingual: 3.8, cervicalDepth: 0.9, squareness: 2.6,
       slopeMesial: 1.7, slopeDistal: 1.2, slopeLabial: 1.2, slopeLingual: 1.1, tipRadius: 0.5,
     }),
   },
   pm1: {
     width: 7.0,
     inclination: -6,
-    angulation: 1,
+    angulation: 0,
     crown: premolar({
-      crownHeight: 7.2, domeHeight: 2.3, domeRoundness: 2,
-      halfWidthMesial: 3.5, halfWidthDistal: 3.5, contactLevel: 2.1, cervicalWidth: 0.76,
-      halfDepthLabial: 3.9, halfDepthLingual: 3.6, cervicalDepth: 0.93, squareness: 3.2,
-      marginRadius: 1.3, occlusalDepthLabial: 0.86, occlusalDepthLingual: 0.64, contourLabial: 4.8, contourLingual: 3.8,
+      crownHeight: 8.5, domeHeight: 2.3, domeRoundness: 2,
+      halfWidthMesial: 3.5, halfWidthDistal: 3.5, contactLevel: 2.9, cervicalWidth: 0.8,
+      halfDepthLabial: 3.9, halfDepthLingual: 3.6, cervicalDepth: 0.93, squareness: 3.0,
+      marginRadius: 1.4, occlusalDepthLabial: 0.86, occlusalDepthLingual: 0.66, contourLabial: 5.8, contourLingual: 4.6,
       cusps: [
-        { x: -0.1, z: 1.1, height: 1.3, radius: 1.7 },
-        { x: 0.2, z: -2.0, height: 0.3, radius: 1.2 },
+        { x: -0.1, z: 0.9, height: 0.75, radius: 1.5 },
+        { x: 0.2, z: -1.5, height: 0.25, radius: 1.1 },
       ],
       fossaDepth: 0.2,
     }),
@@ -214,55 +218,55 @@ const LOWER: Record<ToothKey, ToothDesign> = {
   pm2: {
     width: 7.1,
     inclination: -8,
-    angulation: 1,
+    angulation: 0,
     crown: premolar({
-      crownHeight: 7.0, domeHeight: 2.3, domeRoundness: 2,
-      halfWidthMesial: 3.55, halfWidthDistal: 3.55, contactLevel: 2.1, cervicalWidth: 0.78,
-      halfDepthLabial: 4.1, halfDepthLingual: 4.0, cervicalDepth: 0.93, squareness: 3.2,
-      marginRadius: 1.35, occlusalDepthLabial: 0.86, occlusalDepthLingual: 0.7, contourLabial: 4.6, contourLingual: 3.6,
+      crownHeight: 8.0, domeHeight: 2.3, domeRoundness: 2,
+      halfWidthMesial: 3.55, halfWidthDistal: 3.55, contactLevel: 2.8, cervicalWidth: 0.82,
+      halfDepthLabial: 4.1, halfDepthLingual: 4.0, cervicalDepth: 0.93, squareness: 3.0,
+      marginRadius: 1.45, occlusalDepthLabial: 0.86, occlusalDepthLingual: 0.72, contourLabial: 5.5, contourLingual: 4.4,
       cusps: [
-        { x: 0, z: 1.4, height: 1.0, radius: 1.8 },
-        { x: -1.0, z: -2.1, height: 0.6, radius: 1.3 },
-        { x: 1.3, z: -2.0, height: 0.45, radius: 1.2 },
+        { x: 0, z: 1.1, height: 0.6, radius: 1.6 },
+        { x: -0.9, z: -1.5, height: 0.4, radius: 1.2 },
+        { x: 1.1, z: -1.4, height: 0.3, radius: 1.1 },
       ],
-      fossaDepth: 0.25,
+      fossaDepth: 0.2,
     }),
   },
   m1: {
     width: 11.0,
     inclination: -12,
-    angulation: 2,
+    angulation: 0,
     crown: molar({
-      crownHeight: 6.55, domeHeight: 2.4, domeRoundness: 2,
-      halfWidthMesial: 5.5, halfWidthDistal: 5.5, contactLevel: 2.2, cervicalWidth: 0.82,
-      halfDepthLabial: 5.0, halfDepthLingual: 5.2, cervicalDepth: 0.93, squareness: 3.3,
-      marginRadius: 1.6, occlusalDepthLabial: 0.88, occlusalDepthLingual: 0.8, contourLabial: 4.4, contourLingual: 3.6,
+      crownHeight: 7.5, domeHeight: 2.4, domeRoundness: 2,
+      halfWidthMesial: 5.5, halfWidthDistal: 5.5, contactLevel: 2.9, cervicalWidth: 0.84,
+      halfDepthLabial: 5.0, halfDepthLingual: 5.2, cervicalDepth: 0.93, squareness: 3.1,
+      marginRadius: 1.7, occlusalDepthLabial: 0.88, occlusalDepthLingual: 0.82, contourLabial: 5.2, contourLingual: 4.4,
       cusps: [
-        { x: -3.2, z: 2.3, height: 0.8, radius: 1.6 },
-        { x: 0.2, z: 2.6, height: 0.75, radius: 1.55 },
-        { x: 3.6, z: 1.5, height: 0.5, radius: 1.35 },
-        { x: -2.7, z: -2.6, height: 0.95, radius: 1.7 },
-        { x: 2.3, z: -2.6, height: 0.85, radius: 1.65 },
+        { x: -2.8, z: 1.6, height: 0.55, radius: 1.45 },
+        { x: 0.2, z: 1.8, height: 0.5, radius: 1.4 },
+        { x: 3.0, z: 1.0, height: 0.35, radius: 1.2 },
+        { x: -2.4, z: -1.8, height: 0.65, radius: 1.55 },
+        { x: 2.0, z: -1.8, height: 0.6, radius: 1.5 },
       ],
-      fossaDepth: 0.45,
+      fossaDepth: 0.35,
     }),
   },
   m2: {
     width: 10.5,
     inclination: -14,
-    angulation: 2,
+    angulation: 0,
     crown: molar({
-      crownHeight: 6.1, domeHeight: 2.3, domeRoundness: 2,
-      halfWidthMesial: 5.25, halfWidthDistal: 5.25, contactLevel: 2.1, cervicalWidth: 0.82,
-      halfDepthLabial: 4.9, halfDepthLingual: 5.0, cervicalDepth: 0.93, squareness: 3.3,
-      marginRadius: 1.6, occlusalDepthLabial: 0.88, occlusalDepthLingual: 0.8, contourLabial: 4.1, contourLingual: 3.4,
+      crownHeight: 7.0, domeHeight: 2.3, domeRoundness: 2,
+      halfWidthMesial: 5.25, halfWidthDistal: 5.25, contactLevel: 2.7, cervicalWidth: 0.84,
+      halfDepthLabial: 4.9, halfDepthLingual: 5.0, cervicalDepth: 0.93, squareness: 3.1,
+      marginRadius: 1.7, occlusalDepthLabial: 0.88, occlusalDepthLingual: 0.82, contourLabial: 4.9, contourLingual: 4.2,
       cusps: [
-        { x: -2.7, z: 2.3, height: 0.75, radius: 1.6 },
-        { x: 2.4, z: 2.3, height: 0.65, radius: 1.55 },
-        { x: -2.4, z: -2.5, height: 0.9, radius: 1.65 },
-        { x: 2.4, z: -2.4, height: 0.8, radius: 1.6 },
+        { x: -2.3, z: 1.6, height: 0.5, radius: 1.45 },
+        { x: 2.1, z: 1.6, height: 0.45, radius: 1.4 },
+        { x: -2.1, z: -1.7, height: 0.6, radius: 1.5 },
+        { x: 2.1, z: -1.6, height: 0.55, radius: 1.45 },
       ],
-      fossaDepth: 0.4,
+      fossaDepth: 0.3,
     }),
   },
 };
@@ -270,12 +274,20 @@ const LOWER: Record<ToothKey, ToothDesign> = {
 const QUADRANT: ToothKey[] = ["central", "lateral", "canine", "pm1", "pm2", "m1", "m2"];
 
 /**
+ * How far neighbouring crowns press into each other at their contact, mm:
+ * real teeth touch over an area, not at a point, so two convex crowns laid
+ * just edge to edge would leave a slit of light above and below the contact.
+ */
+const CONTACT_OVERLAP = 0.2;
+
+/**
  * An arch, as the curve through the crown centres: its tangent turns from
  * across the face (at the midline) to almost straight back (the molars),
  * `turn(s) = maxTurn · (1 − e^−(s/reach)^shape)` at arc length `s` from the
- * midline. Fitted on real arches with these crown widths: upper canines
- * ~34 mm apart and first molars ~49 mm, ~28 mm behind the incisors; lower
- * canines ~27 mm apart, first molars ~45 mm, ~26 mm behind.
+ * midline. Fitted on real arches with these crown widths, a little broad so
+ * the premolars show in the smile: upper canines ~33 mm apart and first
+ * molars ~53 mm, ~26 mm behind the incisors; lower canines ~28 mm apart,
+ * first molars ~48 mm.
  */
 interface ArchCurve {
   maxTurn: number;
@@ -284,9 +296,9 @@ interface ArchCurve {
   /** Where the curve crosses the midline (z), mm. */
   front: number;
 }
-const UPPER_CURVE: ArchCurve = { maxTurn: 1.595, reach: 30.25, shape: 1.45, front: 0 };
-/** The lower incisors sit a little behind the upper ones, as they do with the mouth slightly open. */
-const LOWER_CURVE: ArchCurve = { maxTurn: 1.545, reach: 26.5, shape: 1.45, front: -1.6 };
+const UPPER_CURVE: ArchCurve = { maxTurn: 1.595, reach: 25.5, shape: 1.25, front: 0 };
+/** The lower incisors sit a little behind the upper ones, as they do in a smile. */
+const LOWER_CURVE: ArchCurve = { maxTurn: 1.53, reach: 21.5, shape: 1.3, front: -1.6 };
 
 /** Where an arch is at `s` mm from the midline (patient's left side, x ≥ 0), and how far its tangent has turned. */
 function archPoint(c: ArchCurve, s: number): { x: number; z: number; turn: number } {
@@ -303,18 +315,18 @@ function archPoint(c: ArchCurve, s: number): { x: number; z: number; turn: numbe
   return { x, z, turn: turnAt(s) };
 }
 
-const smoothstep = (e0: number, e1: number, v: number) => {
+const smootherstep = (e0: number, e1: number, v: number) => {
   const t = Math.min(1, Math.max(0, (v - e0) / (e1 - e0)));
-  return t * t * (3 - 2 * t);
+  return t * t * t * (t * (6 * t - 15) + 10);
 };
 
 /**
- * The height of each arch's biting edges: the mouth slightly open, ~2.7 mm
- * between the incisors closing to ~1.2 mm between the molars, the way a jaw
+ * The height of each arch's biting edges: the lips apart in a smile, ~1.7 mm
+ * between the incisors closing to ~1 mm between the molars, the way a jaw
  * hinged behind the teeth opens.
  */
-const upperBite = (s: number) => 1.35 - 0.35 * smoothstep(20, 50, s);
-const lowerBite = (s: number) => -1.35 + 1.15 * smoothstep(14, 50, s);
+const upperBite = (s: number) => 0.85 - 0.25 * smootherstep(20, 50, s);
+const lowerBite = (s: number) => -0.85 + 0.5 * smootherstep(14, 50, s);
 
 type V3 = [number, number, number];
 const add = (a: V3, b: V3, k = 1): V3 => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
@@ -335,11 +347,12 @@ function layArch(lower: boolean): SmileTooth[] {
   const curve = lower ? LOWER_CURVE : UPPER_CURVE;
   const bite = lower ? lowerBite : upperBite;
   const out: SmileTooth[] = [];
-  let travelled = 0;
+  // Along the arch from the midline: each crown takes its width, less the contact it shares.
+  let travelled = -CONTACT_OVERLAP / 2;
   for (const [i, key] of QUADRANT.entries()) {
     const d = designs[key];
     const s = travelled + d.width / 2;
-    travelled += d.width;
+    travelled += d.width - CONTACT_OVERLAP;
     const at = archPoint(curve, s);
     for (const side of [-1, 1] as const) {
       // side −1: the patient's right (viewer's left), quadrants 1 and 4; +1: the patient's left.
@@ -354,15 +367,14 @@ function layArch(lower: boolean): SmileTooth[] {
       const zAxis = add(scale(root, Math.sin(inc)), outward, Math.cos(inc));
       let xAxis = distal;
       [xAxis, yAxis] = [add(scale(xAxis, Math.cos(ang)), yAxis, -Math.sin(ang)), add(scale(yAxis, Math.cos(ang)), xAxis, Math.sin(ang))];
-      // The visible crown runs from the cusp tips (or the edge, crown y = −reach) to the gum line
-      // (crown y = crownHeight): the tips on the bite height, the crown's middle over the arch.
-      const reach = cuspReach(d.crown);
-      const mid = (d.crown.crownHeight - reach) / 2;
-      const tipLevel = bite(s);
-      const origin: V3 = [side * at.x - yAxis[0] * mid, tipLevel + yAxis[1] * reach, at.z - yAxis[2] * mid];
+      // The visible crown runs from the biting end (crown y = 0) to the gum line (crown y = crownHeight):
+      // the biting end on the arch's biting line (or short of it), the crown's middle over the arch.
+      const mid = d.crown.crownHeight / 2;
+      const tipLevel = bite(s) + (lower ? -1 : 1) * (d.shorter ?? 0);
+      const origin: V3 = [side * at.x - yAxis[0] * mid, tipLevel, at.z - yAxis[2] * mid];
       const center = add(origin, yAxis, mid);
       const tangent: V3 = side < 0 ? scale(distal, -1) : distal; // toward the patient's left, on both sides
-      const gumLevel = tipLevel + yAxis[1] * (d.crown.crownHeight + reach);
+      const gumLevel = tipLevel + yAxis[1] * d.crown.crownHeight;
       out.push({
         fdi,
         lower,
