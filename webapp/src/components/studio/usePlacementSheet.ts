@@ -5,7 +5,7 @@ import { sameSize, type GemSize } from "../../lib/gemOptions";
 import { useFormat } from "../../lib/format";
 import { useLocalized } from "../../lib/localized";
 import dentitionRenderJpeg from "../../assets/studio/dentition-front.jpg";
-import { RENDER_IMAGE, projectPlacementView } from "../../lib/studio3d/renderView";
+import { RENDER_IMAGE, projectRenderView } from "../../lib/studio3d/renderView";
 import { estimateComposition, type EstimateLine } from "../../lib/studio3d/gemCatalog";
 import { useStudioGems } from "../../lib/studio3d/useStudioGems";
 import type { SceneModel } from "../../lib/studioWorkspace/scene";
@@ -54,14 +54,11 @@ export function usePlacementSheet() {
       setStatus("working");
       try {
         const [sheet, files] = await Promise.all([import("../../lib/studio3d/placementSheet"), import("../../lib/saveFile")]);
-        const projection = projectPlacementView(request.pieces, request.model);
+        const projection = projectRenderView(request.pieces, request.model);
         // The front render, embedded in the PDF as it is (JPEG).
-        let render;
-        if (projection.backdrop === "render") {
-          const response = await fetch(dentitionRenderJpeg.src);
-          if (!response.ok) throw new Error(`front render: HTTP ${response.status}`);
-          render = { ...RENDER_IMAGE, jpeg: new Uint8Array(await response.arrayBuffer()) };
-        }
+        const response = await fetch(dentitionRenderJpeg.src);
+        if (!response.ok) throw new Error(`front render: HTTP ${response.status}`);
+        const render = { ...RENDER_IMAGE, jpeg: new Uint8Array(await response.arrayBuffer()) };
         const now = new Date();
         const today = formatDate(now.toISOString());
 

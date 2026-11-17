@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { scaleForSize, type PlacedJewelry } from "../../data/studioEditor";
 import { DENTITION_CROWNS } from "./dentition";
-import { projectFlatView } from "./flatView";
 import { RENDER_IMAGE, projectRenderView } from "./renderView";
 import { buildPlacementSheet, fitText, placementSheetFileName, referenceGroups, toothCell, type PlacementSheetInput } from "./placementSheet";
 
@@ -22,9 +21,10 @@ function piece(id: string, fdi: string, extra: Partial<PlacedJewelry> = {}): Pla
 }
 
 function input(pieces: PlacedJewelry[]): PlacementSheetInput {
-  const projection = projectFlatView(pieces, "dentition");
+  const projection = projectRenderView(pieces, "dentition");
   return {
     projection,
+    render: { ...RENDER_IMAGE, jpeg: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]) },
     name: "Sourire étoilé",
     date: "18 octobre 2026",
     lang: "fr",
@@ -78,14 +78,11 @@ describe("placement sheet", () => {
   });
 
   it("embeds the front render as a JPEG image under the gems", () => {
-    const projection = projectRenderView([piece("a", "11")], "dentition");
-    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
-    const pdf = latin1(buildPlacementSheet({ ...input([]), projection, render: { ...RENDER_IMAGE, jpeg } }));
+    const pdf = latin1(buildPlacementSheet(input([piece("a", "11")])));
     expect(pdf).toContain(`/Width ${RENDER_IMAGE.width} /Height ${RENDER_IMAGE.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length 4`);
     expect(pdf).toMatch(/\/XObject << \/Logo 5 0 R \/Im0 \d+ 0 R >>/);
     expect(pdf).toContain("/Im0 Do");
     expect(pdf).toContain("0.88 0.28 0.61 rg");
-    expect(() => buildPlacementSheet({ ...input([]), projection })).toThrow();
   });
 
   it("flows a long design over several pages", () => {
@@ -96,7 +93,7 @@ describe("placement sheet", () => {
   });
 
   it("groups gems per product, colour and size, keeping their numbers", () => {
-    const view = projectFlatView([piece("a", "11"), piece("b", "21"), piece("c", "12", { size: { ss: 7 } })], "dentition");
+    const view = projectRenderView([piece("a", "11"), piece("b", "21"), piece("c", "12", { size: { ss: 7 } })], "dentition");
     const groups = referenceGroups(view);
     expect(groups).toHaveLength(2);
     expect(groups.find((g) => g.size.ss === 5)!.numbers).toEqual([2, 3]);

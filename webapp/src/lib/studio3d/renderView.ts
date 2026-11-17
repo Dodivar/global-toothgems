@@ -1,6 +1,5 @@
-import { toothKeys, type PlacedJewelry } from "../../data/studioEditor";
+import { toothKeys, type PlacedJewelry, type ToothKey } from "../../data/studioEditor";
 import type { SceneModel } from "../studioWorkspace/scene";
-import { crownWidth, projectFlatView } from "./flatView";
 import { projectOnto, type FrontViewBox, type FrontViewLayout, type FrontViewProjection, type FrontViewTooth } from "./frontView";
 
 /**
@@ -12,9 +11,9 @@ import { projectOnto, type FrontViewBox, type FrontViewLayout, type FrontViewPro
  * The render is a picture in perspective: each tooth below is the box its
  * visible face fills, measured in the picture's pixels, then put in the
  * drawing's millimetres (the scale of an upper central incisor, seen face on).
- * A piece keeps its seat on its tooth (`seatOnTooth`) exactly as on the flat
- * view; on the side teeth, seen at an angle, it is drawn smaller (down to
- * half its size), as the tooth is.
+ * A piece keeps its seat on its tooth (`seatOnTooth`: across and up, as
+ * shares of the crown) and its real size; on the side teeth, seen at an
+ * angle, it is drawn smaller (down to half its size), as the tooth is.
  *
  * The render shows twelve teeth per arch: the second molars (17, 27, 37, 47)
  * are not in it, and a piece on them is listed as "not drawn".
@@ -31,6 +30,11 @@ const ORIGIN = { x: 483, y: 263 };
 const MM_PER_PX = 8.6 / 132;
 /** The smallest a piece is drawn on a tooth seen at an angle. */
 const MIN_SCALE = 0.5;
+/** Real crown widths, mm (average adult dimensions): the measure of each tooth's foreshortening. */
+const CROWN_WIDTH: Record<"upper" | "lower", Record<ToothKey, number>> = {
+  upper: { central: 8.6, lateral: 6.6, canine: 7.6, pm1: 7, pm2: 6.6, m1: 10.2, m2: 9.2 },
+  lower: { central: 5.3, lateral: 5.8, canine: 6.9, pm1: 7, pm2: 7.2, m1: 11, m2: 10.4 },
+};
 
 /**
  * Each visible tooth: FDI, left and right edges, top and bottom, px. Upper
@@ -95,14 +99,13 @@ const renderByFdi = new Map(RENDER_VIEW_TEETH.map((t) => [t.fdi, t]));
 
 /** How much smaller a piece is drawn on `t`: its visible width against the real crown's. */
 export function renderScale(t: FrontViewTooth): number {
-  return Math.min(1, Math.max(MIN_SCALE, (t.x1 - t.x0) / crownWidth(t.lower, t.kind)));
+  return Math.min(1, Math.max(MIN_SCALE, (t.x1 - t.x0) / CROWN_WIDTH[t.lower ? "lower" : "upper"][t.kind]));
 }
 
 const RENDER_LAYOUT: FrontViewLayout = {
   box: RENDER_VIEW_BOX,
   teeth: RENDER_VIEW_TEETH,
-  backdrop: "render",
-  // The flat view's rule (`flatView.ts`): the seat's shares of the crown, on the visible face.
+  // The seat's shares of the calibrated crown (`seatOnTooth`), on the visible face.
   place: (fdi, seat) => {
     const t = renderByFdi.get(fdi);
     if (!t) return null;
@@ -114,19 +117,10 @@ const RENDER_LAYOUT: FrontViewLayout = {
   },
 };
 
-/** Project a design onto the front render: `projectFrontView`'s numbering and placement order. */
+/**
+ * Project a design onto the front render — what the front view panels and the
+ * placement sheet draw: `projectFrontView`'s numbering and placement order.
+ */
 export function projectRenderView(pieces: readonly PlacedJewelry[], model: SceneModel): FrontViewProjection {
   return projectOnto(RENDER_LAYOUT, pieces, model);
-}
-
-/**
- * What the front view panels and the placement sheet draw the teeth with:
- * the front render (`render`), or the flat vector crowns in the same style,
- * without perspective (`flat`, `flatView.ts`).
- */
-export const PLACEMENT_VIEW_STYLE: "render" | "flat" = "render";
-
-/** The design as the front view panels and the placement sheet draw it (`PLACEMENT_VIEW_STYLE`). */
-export function projectPlacementView(pieces: readonly PlacedJewelry[], model: SceneModel): FrontViewProjection {
-  return PLACEMENT_VIEW_STYLE === "render" ? projectRenderView(pieces, model) : projectFlatView(pieces, model);
 }

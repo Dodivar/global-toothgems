@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ALL_TEETH, scaleForSize, type PlacedJewelry } from "../../data/studioEditor";
 import { DENTITION_CROWNS } from "./dentition";
-import { projectFlatView } from "./flatView";
-import { RENDER_VIEW_BOX, RENDER_VIEW_TEETH, projectPlacementView, projectRenderView, renderScale } from "./renderView";
+import { RENDER_VIEW_BOX, RENDER_VIEW_TEETH, projectRenderView, renderScale } from "./renderView";
 
 const tooth = (fdi: string) => RENDER_VIEW_TEETH.find((t) => t.fdi === fdi)!;
 
@@ -62,7 +61,6 @@ describe("projectRenderView", () => {
   it("draws every tooth but the second molars, which are listed as not drawn", () => {
     const pieces = ALL_TEETH.map((fdi) => onDentition(`p${fdi}`, fdi));
     const view = projectRenderView(pieces, "dentition");
-    expect(view.backdrop).toBe("render");
     expect(view.unplaced).toBe(4);
     expect(view.gems.filter((g) => !g.at).map((g) => g.toothId).sort()).toEqual([...SECOND_MOLARS].sort());
     for (const g of view.gems.filter((x) => x.at)) {
@@ -86,14 +84,11 @@ describe("projectRenderView", () => {
     expect(side.r).toBeCloseTo(front.r * 0.5, 6);
   });
 
-  it("numbers the gems as the flat view does", () => {
+  it("numbers in reading order and places from the upper midline outward", () => {
     const pieces = ["21", "11", "41", "13"].map((fdi, i) => onDentition(`p${i}`, fdi));
-    const ids = (v: ReturnType<typeof projectRenderView>) => v.gems.map((g) => [g.id, g.number, g.order]);
-    expect(ids(projectRenderView(pieces, "dentition"))).toEqual(ids(projectFlatView(pieces, "dentition")));
+    const view = projectRenderView(pieces, "dentition");
+    expect(view.gems.map((g) => g.toothId)).toEqual(["13", "11", "21", "41"]);
+    expect(view.gems.map((g) => g.order)).toEqual([3, 1, 2, 4]);
   });
 
-  it("is what the placement view draws", () => {
-    const pieces = [onDentition("a", "11")];
-    expect(projectPlacementView(pieces, "dentition")).toEqual(projectRenderView(pieces, "dentition"));
-  });
 });
