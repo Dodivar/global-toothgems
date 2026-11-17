@@ -971,8 +971,7 @@
     "stickyBuy": "Acheter",
     "offers": {
       "eyebrow": "Formules",
-      "title": "La formation seule, avec le kit, ou le pack complet",
-      "lead": "Démarrez avec la formation seule, ajoutez le kit professionnel pour pratiquer dès la première leçon, ou prenez le pack : formation, kit et accès au Studio 3D pendant 3 mois.",
+      "title": "Choisissez votre formule",
       "courseTitle": "Formation seule",
       "courseCta": "Acheter la formation",
       "kitTitle": "Formation + kit",
@@ -990,8 +989,13 @@
       "account": "Un compte est nécessaire : la formation et le Studio s’ouvrent sur le compte qui passe la commande. Un pack par commande.",
       "studioAlone": "Le Studio 3D seul se prend en abonnement, sur sa propre page.",
       "studioAloneLink": "Voir les formules du Studio 3D",
-      "heroHint": "Aussi avec le kit, ou en pack avec le kit et 3 mois de Studio 3D.",
-      "heroLink": "Voir les formules"
+      "heroLink": "Voir les formules",
+      "lead_one": "La formation seule, avec le kit professionnel, ou le pack complet : formation, matériel et accès au Studio 3D pendant {{count}} mois.",
+      "lead_other": "La formation seule, avec le kit professionnel, ou le pack complet : formation, matériel et accès au Studio 3D pendant {{count}} mois.",
+      "leadPlain": "La formation seule, ou avec le matériel pour pratiquer dès la première leçon : le contenu de chaque formule est détaillé ci-dessous.",
+      "heroHint_one": "Existe aussi en pack : formation, matériel et {{count}} mois de Studio 3D.",
+      "heroHint_other": "Existe aussi en pack : formation, matériel et {{count}} mois de Studio 3D.",
+      "heroHintPlain": "Existe aussi avec le matériel professionnel."
     }
   },
   "lesson": {

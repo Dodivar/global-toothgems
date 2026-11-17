@@ -37,6 +37,7 @@ export function TrainingHero({
   ctaBusy = false,
   onExploreCurriculum,
   onSeeOffers,
+  offersStudioMonths = null,
 }: {
   course: PublicCourse;
   lang: string;
@@ -53,6 +54,8 @@ export function TrainingHero({
   onExploreCurriculum: () => void;
   /** Moves to "Choose your package" (kit, packs with the 3D Studio); absent when the page offers none. */
   onSeeOffers?: () => void;
+  /** Studio months of the course's pack, for that link's sentence; null when no pack opens the Studio. */
+  offersStudioMonths?: number | null;
 }) {
   const { formatMoney, formatDate } = useFormat();
   const { t } = useTranslation();
@@ -212,7 +215,7 @@ export function TrainingHero({
 
             {onSeeOffers && (
               <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
-                {t("training.offers.heroHint")}{" "}
+                {offersStudioMonths ? t("training.offers.heroHint", { count: offersStudioMonths }) : t("training.offers.heroHintPlain")}{" "}
                 <button
                   type="button"
                   onClick={onSeeOffers}

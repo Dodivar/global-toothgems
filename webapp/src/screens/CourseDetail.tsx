@@ -20,7 +20,7 @@ import { OutcomesPanel } from "../components/academy/OutcomesPanel";
 import { FeatureCard, Section, SectionIntro, StepCard } from "../components/academy/TrainingPrimitives";
 import { ReviewsSection } from "../components/reviews/ReviewsSection";
 import { CourseOffers } from "../components/academy/CourseOffers";
-import { NO_COURSE_OFFERS, type CourseOfferProduct, type CourseOffers as Offers, type CoursePackOffer } from "../lib/academy/courseOffers";
+import { NO_COURSE_OFFERS, studioMonths, type CourseOfferProduct, type CourseOffers as Offers, type CoursePackOffer } from "../lib/academy/courseOffers";
 import { pick } from "../data/types";
 import { lessonCount, type PublicCourse } from "../lib/academy/publicCourse";
 import { formatDuration } from "../lib/trainingFilters";
@@ -169,7 +169,8 @@ export function CourseDetail({ course, offers = NO_COURSE_OFFERS }: { course: Pu
   /** The course and the professional kit: two lines, each at its own price. */
   const buyWithKit = (kit: CourseOfferProduct) => {
     if (checkingAccess) return;
-    addLine({
+    // Already chosen: the button only leads to the cart (never a second kit).
+    if (!offersInCart.kit) addLine({
       productId: kit.id,
       dbProductId: kit.dbId,
       name: pick(kit.name, lang),
@@ -251,6 +252,7 @@ export function CourseDetail({ course, offers = NO_COURSE_OFFERS }: { course: Pu
         ctaBusy={checkingAccess}
         onExploreCurriculum={exploreCurriculum}
         onSeeOffers={showOffers ? seeOffers : undefined}
+        offersStudioMonths={studioMonths(offers)}
       />
 
       {/* 1b — Packages: with the kit, and the packs (kit + 3D Studio) */}

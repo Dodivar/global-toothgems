@@ -971,8 +971,7 @@
     "stickyBuy": "Buy",
     "offers": {
       "eyebrow": "Packages",
-      "title": "The course alone, with the kit, or the full pack",
-      "lead": "Start with the course alone, add the professional kit to practise from the first lesson, or take the pack: course, kit and 3 months of 3D Studio access.",
+      "title": "Choose your package",
       "courseTitle": "Course only",
       "courseCta": "Buy the course",
       "kitTitle": "Course + kit",
@@ -990,8 +989,13 @@
       "account": "An account is required: the course and the Studio open on the account that places the order. One pack per order.",
       "studioAlone": "The 3D Studio alone is a subscription, on its own page.",
       "studioAloneLink": "See the 3D Studio plans",
-      "heroHint": "Also with the kit, or as a pack with the kit and 3 months of 3D Studio.",
-      "heroLink": "See the packages"
+      "heroLink": "See the packages",
+      "lead_one": "The course alone, with the professional kit, or the full pack: course, equipment and {{count}} month of 3D Studio access.",
+      "lead_other": "The course alone, with the professional kit, or the full pack: course, equipment and {{count}} months of 3D Studio access.",
+      "leadPlain": "The course alone, or with the equipment to practise from the first lesson: what each package holds is listed below.",
+      "heroHint_one": "Also as a pack: course, equipment and {{count}} month of 3D Studio.",
+      "heroHint_other": "Also as a pack: course, equipment and {{count}} months of 3D Studio.",
+      "heroHintPlain": "Also with the professional equipment."
     }
   },
   "lesson": {

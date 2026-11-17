@@ -66,6 +66,11 @@ function offerProduct(product: Product, book: PriceBook): CourseOfferProduct | n
   };
 }
 
+/** Months of Studio the cheapest pack with Studio opens, for the page's headline; null when no pack opens the Studio. */
+export function studioMonths(offers: CourseOffers): number | null {
+  return offers.packs.find((pack) => pack.studio)?.studio?.months ?? null;
+}
+
 export const sellable = (item: Pick<CourseOfferProduct, "availability">) => item.availability !== "out_of_stock";
 
 /**
