@@ -42,7 +42,7 @@ import {
 } from "../../../lib/studio3d/actions";
 import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
-import { studioStore, type StudioSnapshot } from "../../../lib/studio3d/store";
+import { studioStore, useStudio, type StudioSnapshot } from "../../../lib/studio3d/store";
 import { AddDesignToCart, ShoppingList } from "./ShoppingList";
 import { useFrontView } from "../useFrontView";
 import { FrontViewDialog, FrontViewFigure } from "../FrontViewPanel";
@@ -68,7 +68,8 @@ const miniButton = clsx(
  * The properties panel. What it shows follows the selection: several pieces,
  * one piece, a tooth, or — with nothing selected — the design overview.
  */
-export function EditorInspector({ snap }: { snap: StudioSnapshot }) {
+export function EditorInspector() {
+  const snap = useStudio();
   const selected = snap.jewels.filter((j) => snap.selectedJewelIds.includes(j.id));
   let body: ReactNode;
   if (selected.length > 1) body = <MultiPanel key="multi" selected={selected} />;

@@ -78,7 +78,7 @@ interface DragFollower {
 interface ToothRig {
   id: string;
   mesh: THREE.Object3D;
-  materials: THREE.MeshPhysicalMaterial[];
+  materials: THREE.MeshStandardMaterial[];
   spec: ToothSpec;
   highlight: number;
   imported: boolean;
@@ -289,16 +289,16 @@ const WARM_UP_LOOKS = [
 export const MAX_MODEL_BYTES = 60 * 1024 * 1024;
 
 /**
- * The finish of the Studio's dentition: a smooth, cool porcelain white with
- * a soft clear coat, as on the brand's reference smile. Each crown wears its
- * own copy, so the hover and selection glow lights one tooth only.
+ * The finish of the Studio's dentition: a smooth, cool porcelain white, as
+ * on the brand's reference smile. A standard finish, not a physical one: a
+ * clear coat would add its own lighting pass on every crown, drawn twice a
+ * frame once a crystal is on stage. Each crown wears its own copy, so the
+ * hover and selection glow lights one tooth only.
  */
 const SMILE_ENAMEL = {
   color: 0xcbd6e3,
-  roughness: 0.45,
-  clearcoat: 0.55,
-  clearcoatRoughness: 0.22,
-  envMapIntensity: 0.65,
+  roughness: 0.36,
+  envMapIntensity: 0.7,
 } as const;
 
 /** How the model a design was made on is named in the JSON export. */
@@ -805,7 +805,7 @@ export class StudioEngine {
    */
   private installSmile() {
     const group = new THREE.Group();
-    const enamel = new THREE.MeshPhysicalMaterial({ ...SMILE_ENAMEL, emissive: TOOTH_HIGHLIGHT, emissiveIntensity: 0 });
+    const enamel = new THREE.MeshStandardMaterial({ ...SMILE_ENAMEL, emissive: TOOTH_HIGHLIGHT, emissiveIntensity: 0 });
     const frames = new Map(SMILE_CROWNS.map((c) => [c.fdi, c]));
     for (const { fdi, mesh } of buildSmileMeshes()) {
       const c = frames.get(fdi);
@@ -3178,6 +3178,25 @@ export class StudioEngine {
    * angle, so the arrangement turns rigidly. A single piece spins in place.
    * Overlaps are not prevented here; the design check reports them.
    */
+  /**
+   * Show changes on the stage without committing them: a gesture in progress
+   * (the rotate handle). The pieces are posed as the patches say; the design,
+   * its check and the panels wait for the commit that ends the gesture, and
+   * any commit meanwhile puts the stage back to the design as stored.
+   */
+  previewPatches(updates: { id: string; patch: Partial<PlacedJewelry> }[]) {
+    const byId = new Map(this.store.jewels.map((j) => [j.id, j]));
+    for (const { id, patch } of updates) {
+      const rig = this.jewelRigs.get(id);
+      const j = byId.get(id);
+      if (!rig || !j || this.isDragged(rig)) continue;
+      this.applyPose(rig.group, { ...j, ...patch }, rig.halfDepth);
+    }
+    this.shadowsDirty = true;
+    this.markMotion();
+    this.wake();
+  }
+
   beginGroupTurn(ids: string[]): GroupTurn | null {
     ids = this.store.editableIds(ids); // locked pieces neither turn nor follow the group
     const start = this.store.jewels.filter((j) => ids.includes(j.id));

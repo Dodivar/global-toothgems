@@ -809,6 +809,9 @@
       "invoice": "Facture",
       "creditNote": "Avoir",
       "download": "PDF",
+      "statusPaid": "Payée",
+      "statusFailed": "Échec",
+      "failedHint": "Paiement refusé : mettez à jour votre carte, nous retenterons le prélèvement.",
       "downloadLabel": "Télécharger {{kind}} {{number}} (PDF)",
       "loadError": "Vos factures n’ont pas pu être chargées.",
       "pdfError": "Le PDF n’a pas pu être créé. Réessayez."
@@ -1067,6 +1070,8 @@
     "listToggle_one": "Voir la gemme ({{count}})",
     "listToggle_other": "Voir les {{count}} gemmes",
     "listLabel": "Gemmes numérotées",
+    "numbersToggle": "Numéros",
+    "numbersHint": "Survolez ou touchez une gemme de la liste pour la repérer sur le dessin.",
     "gemNumber": "Gemme {{number}}",
     "order": "Pose n° {{order}}",
     "empty": "Placez une gemme sur une dent : elle apparaîtra ici, numérotée.",

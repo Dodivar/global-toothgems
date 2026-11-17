@@ -20,7 +20,7 @@ import { useToast } from "../lib/toast";
 import { duplicateMirroredPieces, duplicatePieces, removePieces, setPiecesLocked } from "../lib/studio3d/actions";
 import { getEngine } from "../lib/studio3d/engine";
 import { setNoticeHandler } from "../lib/studio3d/notices";
-import { studioStore, useStudio } from "../lib/studio3d/store";
+import { studioStore } from "../lib/studio3d/store";
 import { studioSectionFromPath, type StudioSection } from "../lib/studioUrl";
 import { StudioWorkspaceProvider } from "../lib/studioWorkspace/workspace";
 import { StudioTemplatesProvider } from "../lib/studioWorkspace/templatesStore";
@@ -68,7 +68,8 @@ const SECTION_TITLE: Record<StudioSection, string> = {
 function StudioWorkspace() {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const snap = useStudio();
+  // No subscription to the design here: each panel reads its own part of the
+  // store, so a change re-renders only the panels that show it.
   const { pathname } = useLocation();
   const section = studioSectionFromPath(pathname);
   const dialog = useWorkspaceDialog();
@@ -217,7 +218,7 @@ function StudioWorkspace() {
         {/* The editor stays mounted under a section — hidden but still measured —
             so the engine keeps its canvas, its model and its camera. */}
         <div inert={!!section} className={clsx("flex min-h-0 flex-1 flex-col", section && "invisible")}>
-          <EditorTopBar snap={snap} onOpenMenu={() => setDrawerOpen(true)} />
+          <EditorTopBar onOpenMenu={() => setDrawerOpen(true)} />
           {/* Side by side, the stage always fills the space and the two panels are
               drawers sliding over it (`usePanelPresence`): the 3D canvas is never resized
               when they open or close. A closed drawer is hidden, not unmounted, so its
@@ -234,7 +235,7 @@ function StudioWorkspace() {
           >
             {/* Stage first on small screens: it is what the visitor came for. */}
             <div className="order-1 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] studio-side:absolute studio-side:inset-0">
-              <EditorViewport snap={snap} panels={panels} />
+              <EditorViewport panels={panels} />
             </div>
             <div
               id="gt-editor-library-panel"
@@ -245,7 +246,7 @@ function StudioWorkspace() {
                 library.phase && `gt-editor-side-${library.phase}-left`,
               )}
             >
-              <EditorLibrary snap={snap} />
+              <EditorLibrary />
             </div>
             <div
               id="gt-editor-inspector-panel"
@@ -256,7 +257,7 @@ function StudioWorkspace() {
                 inspector.phase && `gt-editor-side-${inspector.phase}-right`,
               )}
             >
-              <EditorInspector snap={snap} />
+              <EditorInspector />
             </div>
           </div>
         </div>
@@ -276,7 +277,7 @@ function StudioWorkspace() {
       {/* The guided tour follows the editor's own controls, so it is mounted
           beside them and steps aside — without losing its place — whenever a
           section or a dialog is in front of the stage. */}
-      <StudioTour snap={snap} hidden={!!section || !!dialog} />
+      <StudioTour hidden={!!section || !!dialog} />
       <WorkspaceDialogs />
     </div>
   );

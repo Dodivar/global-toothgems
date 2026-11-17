@@ -809,6 +809,9 @@
       "invoice": "Invoice",
       "creditNote": "Credit note",
       "download": "PDF",
+      "statusPaid": "Paid",
+      "statusFailed": "Failed",
+      "failedHint": "Payment declined: update your card and we will try again.",
       "downloadLabel": "Download {{kind}} {{number}} (PDF)",
       "loadError": "Your invoices could not be loaded.",
       "pdfError": "The PDF could not be produced. Please try again."
@@ -1067,6 +1070,8 @@
     "listToggle_one": "Show the gem ({{count}})",
     "listToggle_other": "Show the {{count}} gems",
     "listLabel": "Numbered gems",
+    "numbersToggle": "Numbers",
+    "numbersHint": "Hover or tap a gem in the list to find it on the drawing.",
     "gemNumber": "Gem {{number}}",
     "order": "Place #{{order}}",
     "empty": "Place a gem on a tooth: it will appear here, numbered.",
