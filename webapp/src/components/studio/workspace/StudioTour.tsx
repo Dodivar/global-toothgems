@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { ArrowLeft, ArrowRight, Check, Compass, Sparkles, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getEngine } from "../../../lib/studio3d/engine";
-import type { StudioSnapshot } from "../../../lib/studio3d/store";
+import { useStudio } from "../../../lib/studio3d/store";
 import {
   earnsAutoAdvance,
   exitTour,
@@ -47,7 +47,8 @@ const DOCKED_MAX = 420;
 const CARD_HEIGHT = 250;
 const VIEWPORT = { width: 1280, height: 800 };
 
-export function StudioTour({ snap, hidden }: { snap: StudioSnapshot; hidden: boolean }) {
+export function StudioTour({ hidden }: { hidden: boolean }) {
+  const snap = useStudio();
   const { t } = useTranslation();
   const tour = useTour();
   const step: TourStep | undefined = tour.steps[tour.index];
