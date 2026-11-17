@@ -17,8 +17,9 @@ import { shapeGlyph } from "./editor/pieceGlyphs";
  *
  * Colours are literal (like `ScenePreview`): the drawing is a schematic on a
  * light ground in both themes, and the same markup is rasterised elsewhere.
- * State is never colour alone: every gem carries its number, a gem on the
- * tongue side is dashed, a highlighted gem is ringed.
+ * State is never colour alone: a gem on the tongue side is dashed, a
+ * highlighted gem is ringed, and gems carry their number unless the caller
+ * hides them (the Studio does when many gems would make the badges overlap).
  */
 
 const ENAMEL_TOP = "#fbf8f1";
@@ -36,8 +37,11 @@ const BADGE = 1.25;
 
 interface FrontViewGemsProps {
   projection: FrontViewProjection;
-  /** Number badges beside the gems (default true). */
-  numbered?: boolean;
+  /**
+   * Number badges beside the gems (default true): all of them, none, or only
+   * the gems listed by id (e.g. the one pointed at in the list beside it).
+   */
+  numbered?: boolean | readonly string[];
   /** Gems to ring, e.g. the editor's selection. */
   highlightIds?: readonly string[];
 }
@@ -51,6 +55,8 @@ function FrontViewGems({ projection, numbered = true, highlightIds }: FrontViewG
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const highlighted = new Set(highlightIds ?? []);
   const drawn = projection.gems.filter((g) => g.at);
+  const numberedIds = typeof numbered === "boolean" ? null : new Set(numbered);
+  const labelled = numbered === false ? [] : numberedIds ? drawn.filter((g) => numberedIds.has(g.id)) : drawn;
   return (
     <g>
       <defs>
@@ -83,8 +89,7 @@ function FrontViewGems({ projection, numbered = true, highlightIds }: FrontViewG
           </g>
         );
       })}
-      {numbered &&
-        drawn.map((g) => {
+      {labelled.map((g) => {
           const at = g.at!;
           const reach = at.r * 0.75 + BADGE * 0.75;
           const label = String(g.number);
@@ -104,7 +109,7 @@ function FrontViewGems({ projection, numbered = true, highlightIds }: FrontViewG
               </text>
             </g>
           );
-        })}
+      })}
     </g>
   );
 }

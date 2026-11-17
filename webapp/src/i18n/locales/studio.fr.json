@@ -1069,6 +1069,8 @@
     "listToggle_one": "Voir la gemme ({{count}})",
     "listToggle_other": "Voir les {{count}} gemmes",
     "listLabel": "Gemmes numérotées",
+    "numbersToggle": "Numéros",
+    "numbersHint": "Survolez ou touchez une gemme de la liste pour la repérer sur le dessin.",
     "gemNumber": "Gemme {{number}}",
     "order": "Pose n° {{order}}",
     "empty": "Placez une gemme sur une dent : elle apparaîtra ici, numérotée.",
