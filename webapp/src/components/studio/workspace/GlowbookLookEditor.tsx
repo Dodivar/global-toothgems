@@ -123,9 +123,9 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
         </p>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(300px,400px)] lg:items-start lg:gap-8">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(300px,400px)] xl:items-start xl:gap-8">
         {/* Live preview, drawn like the public page: above the fields on phones, beside them on wide screens. */}
-        <figure className="m-0 grid gap-2 lg:sticky lg:top-16 lg:col-start-2 lg:row-start-1">
+        <figure className="m-0 grid gap-2 xl:sticky xl:top-16 xl:col-start-2 xl:row-start-1">
           <figcaption className="text-[11px] font-bold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-subtle)]">{t("studio.glowbook.look.preview")}</figcaption>
           <div style={glowbookThemeStyle()} className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--gb-page)]">
             <GlowbookTopBar preview {...previewIdentity} />
@@ -135,7 +135,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
           </div>
         </figure>
 
-        <div className="@container grid min-w-0 gap-5 lg:col-start-1 lg:row-start-1">
+        <div className="@container grid min-w-0 gap-5 xl:col-start-1 xl:row-start-1">
           <PictureField kind="avatar" path={draft.avatarPath} waiting={waits("avatarPath")} onChange={(p) => set("avatarPath", p)} />
 
           <div className="grid items-start gap-5 @lg:grid-cols-2">
@@ -194,7 +194,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
           <div
             className={clsx(
               "flex flex-wrap items-center justify-end gap-2 border-t border-[var(--border-subtle)] pt-4",
-              dirty && "max-lg:sticky max-lg:bottom-0 max-lg:z-10 max-lg:-mx-5 max-lg:-mb-5 max-lg:rounded-b-[var(--radius-xl)] max-lg:bg-[var(--surface-card)] max-lg:px-5 max-lg:pb-4 sm:max-lg:-mx-6 sm:max-lg:-mb-6 sm:max-lg:px-6",
+              dirty && "max-xl:sticky max-xl:bottom-0 max-xl:z-10 max-xl:-mx-5 max-xl:-mb-5 max-xl:rounded-b-[var(--radius-xl)] max-xl:bg-[var(--surface-card)] max-xl:px-5 max-xl:pb-4 sm:max-xl:-mx-6 sm:max-xl:-mb-6 sm:max-xl:px-6",
             )}
           >
             {dirty && (

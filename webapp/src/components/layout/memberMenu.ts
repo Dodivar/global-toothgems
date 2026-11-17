@@ -148,6 +148,9 @@ export function accountMenuGroups(rights: AccountMenuRights): MemberMenuGroup[] 
     if (item.plan === "glowbook") return rights.glowbook === true;
     if (item.plan === "bookings") return rights.bookings === true;
     if (item.community) return rights.lounge;
+    // One or the other, as in the header's Atelier menu (owner, 2026-11-16): a member whose plan runs
+    // the calendar reads their week there and has no use for "My appointments" here.
+    if (item.to === "/compte/rendez-vous") return rights.bookings !== true;
     return true;
   };
   const exits = new Set([CLIENT_SPACES.home.to, CLIENT_SPACES.shop.to, CLIENT_SPACES.academy.to]);

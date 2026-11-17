@@ -11,7 +11,7 @@ import { useFavorites } from "../../lib/favorites";
 import { useHydrated } from "../../lib/useHydrated";
 import { ordersOnTheirWay } from "../../lib/memberDashboard";
 import { MEMBER_SPACE_PATH } from "../../lib/memberSpace";
-import { homeShortcuts, type HomeShortcut } from "../../lib/memberHome";
+import { homeBandSettled, homeShortcuts, type HomeShortcut } from "../../lib/memberHome";
 import { pick } from "../../data/types";
 
 const ICONS: Record<HomeShortcut["kind"], LucideIcon> = {
@@ -40,10 +40,10 @@ export function MemberHomeBand() {
   const { signedIn, profile, displayName } = useAuth();
   const { orders, status: ordersStatus } = useOrders();
   const { status: learningStatus, enrolledCourses, progressFor, trainingFor, activeCourseId } = useProgress();
-  const { card } = useLoyalty();
+  const { card, status: loyaltyStatus } = useLoyalty();
   const { favoriteProducts, status: favoritesStatus } = useFavorites();
 
-  const settled = ordersStatus !== "loading" && learningStatus !== "loading" && favoritesStatus !== "loading" && favoritesStatus !== "idle";
+  const settled = homeBandSettled({ orders: ordersStatus, learning: learningStatus, loyalty: loyaltyStatus, favorites: favoritesStatus });
   if (!hydrated || !signedIn || !settled) return null;
 
   const lang = i18n.language;

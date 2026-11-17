@@ -40,3 +40,17 @@ export function homeShortcuts(input: HomeShortcutInput): HomeShortcut[] {
   if (list.length === 0) list.push({ kind: "space", to: MEMBER_SPACE_PATH });
   return list.slice(0, MAX_SHORTCUTS);
 }
+
+/**
+ * Whether every store the band reads has given its answer, so the band appears
+ * once, complete, instead of gaining a card later (owner: no page jump).
+ * - orders, loyalty: their state is derived from the session at once, so only
+ *   "loading" means waiting (loyalty stays "idle" without Supabase: nothing to wait for);
+ * - courses: the live store starts "idle" and turns "loading" in an effect, so
+ *   only "ready" or "error" is an answer (the mock store is "ready" from the start);
+ * - favourites: "idle" means signed out, so only "ready" or "error" is an answer.
+ */
+export function homeBandSettled(status: { orders: string; learning: string; loyalty: string; favorites: string }): boolean {
+  const answered = (s: string) => s === "ready" || s === "error";
+  return status.orders !== "loading" && status.loyalty !== "loading" && answered(status.learning) && answered(status.favorites);
+}

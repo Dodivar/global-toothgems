@@ -209,16 +209,16 @@ function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
 
         <div id={`${baseId}-panel`} role="tabpanel" aria-labelledby={`${baseId}-tab-${tab}`} className="min-w-0">
           {tab === "creations" && (
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start [&>*]:min-w-0">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start [&>*]:min-w-0">
               <GlowbookItems />
-              <div className="lg:sticky lg:top-16">
+              <div className="xl:sticky xl:top-16">
                 <GlowbookSections />
               </div>
             </div>
           )}
           {tab === "look" && <GlowbookLookEditor glowbook={glowbook} />}
           {tab === "profile" && (
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start [&>*]:min-w-0">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start [&>*]:min-w-0">
               <GlowbookForm key={form.key} glowbook={glowbook} autoFocus={form.focus} onDone={() => setForm((f) => ({ key: f.key + 1, focus: false }))} />
               <div className="grid gap-6">
                 <GlowbookBadgeCard glowbook={glowbook} />
@@ -227,7 +227,7 @@ function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
             </div>
           )}
           {tab === "share" && (
-            <div className="grid gap-6 lg:grid-cols-2 lg:items-start [&>*]:min-w-0">
+            <div className="grid gap-6 xl:grid-cols-2 xl:items-start [&>*]:min-w-0">
               <GlowbookQr glowbook={glowbook} />
               <div className="grid gap-6">
                 <GlowbookLinkCard glowbook={glowbook} />
@@ -258,7 +258,7 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
   return (
     <section
       aria-label={t("studio.glowbook.pageSection")}
-      className="grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-[var(--shadow-sm)] sm:p-5 lg:grid-cols-2 lg:items-center lg:gap-8"
+      className="grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-[var(--shadow-sm)] sm:p-5 xl:grid-cols-2 xl:items-center xl:gap-8"
     >
       <div className="flex min-w-0 items-center gap-3.5">
         <span style={glowbookThemeStyle()} className="contents">
@@ -376,7 +376,7 @@ function GlowbookOverview({ glowbook, items, onGo }: { glowbook: Glowbook; items
   ];
 
   return (
-    <section aria-labelledby="gt-glowbook-overview" className={clsx("grid gap-3", todos.length > 0 && "lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start")}>
+    <section aria-labelledby="gt-glowbook-overview" className={clsx("grid gap-3", todos.length > 0 && "xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] xl:items-start")}>
       <h2 id="gt-glowbook-overview" className="sr-only">
         {t("studio.glowbook.dashboard.overview")}
       </h2>

@@ -41,6 +41,14 @@ describe("the header's My space menu", () => {
     expect(artist).toContain("/compte/salons");
   });
 
+  it("shows the calendar or the appointments, never both", () => {
+    const atelier = paths(accountMenuGroups({ glowbook: true, bookings: true, lounge: true }));
+    expect(atelier).toContain("/compte/agenda");
+    expect(atelier).not.toContain("/compte/rendez-vous");
+    const artist = paths(accountMenuGroups({ glowbook: true, bookings: false, lounge: true }));
+    expect(artist).toContain("/compte/rendez-vous");
+  });
+
   it("never draws an empty group", () => {
     for (const group of accountMenuGroups({ glowbook: false, bookings: false, lounge: false })) {
       expect(group.items.length).toBeGreaterThan(0);

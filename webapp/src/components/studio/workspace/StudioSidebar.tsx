@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import monogram from "../../../assets/monogram-blue.png";
 import { useAuth } from "../../../lib/auth";
 import { useFocusTrap } from "../../../lib/useFocusTrap";
-import { GLOWBOOK_SPACE_PATH, STUDIO_PATH, studioSectionPath, type StudioSection } from "../../../lib/studioUrl";
+import { GLOWBOOK_INTRO_PATH, GLOWBOOK_SPACE_PATH, STUDIO_PATH, studioSectionPath, type StudioSection } from "../../../lib/studioUrl";
 import { collectionCounts, studioCollectionPath } from "../../../lib/studioWorkspace/collections";
 import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { CollectionDot, useSortedCollections } from "./Collections";
@@ -20,7 +20,7 @@ interface NavItem {
   key: string;
   /** A page outside the workspace (never current here), in place of a section. */
   to?: string;
-  /** Listed only while the plan includes the Glowbook (Artist and up, decision 153). */
+  /** Leads to the Glowbook's presentation page while the plan lacks it (below Artist, decision 153). */
   glowbookPlan?: boolean;
 }
 
@@ -35,10 +35,10 @@ const NAV: NavItem[] = [
   { section: "help", icon: LifeBuoy, key: "help" },
 ];
 
-/** The rail's entries for this member: My Glowbook only while the plan includes it. */
+/** The rail's entries for this member: My Glowbook, or its presentation page while the plan lacks it. */
 function useNav(): NavItem[] {
   const plan = useGlowbookPlan();
-  return NAV.filter((item) => !item.glowbookPlan || plan === true);
+  return NAV.map((item) => (item.glowbookPlan && plan === false ? { ...item, to: GLOWBOOK_INTRO_PATH } : item));
 }
 
 /**

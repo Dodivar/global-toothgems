@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { homeShortcuts, type HomeShortcutInput } from "./memberHome";
+import { homeBandSettled, homeShortcuts, type HomeShortcutInput } from "./memberHome";
 
 const none: HomeShortcutInput = { onTheirWay: [], resume: null, rewardReady: false, favorites: 0 };
 
@@ -30,5 +30,24 @@ describe("home shortcuts for a signed-in member", () => {
 
   it("says when a parcel is still being prepared", () => {
     expect(homeShortcuts({ ...none, onTheirWay: [{ reference: "GT-7", status: "processing" }] })[0]).toMatchObject({ kind: "order", shipped: false });
+  });
+});
+
+describe("the home band waits for every store", () => {
+  const all = { orders: "ready", learning: "ready", loyalty: "ready", favorites: "ready" };
+  it("appears once each has answered, an error included", () => {
+    expect(homeBandSettled(all)).toBe(true);
+    expect(homeBandSettled({ ...all, learning: "error", favorites: "error", orders: "error", loyalty: "error" })).toBe(true);
+  });
+
+  it("waits for a store still loading, and for courses not yet asked", () => {
+    expect(homeBandSettled({ ...all, orders: "loading" })).toBe(false);
+    expect(homeBandSettled({ ...all, loyalty: "loading" })).toBe(false);
+    expect(homeBandSettled({ ...all, learning: "idle" })).toBe(false);
+    expect(homeBandSettled({ ...all, favorites: "loading" })).toBe(false);
+  });
+
+  it("does not wait for loyalty without Supabase (idle)", () => {
+    expect(homeBandSettled({ ...all, loyalty: "idle" })).toBe(true);
   });
 });
