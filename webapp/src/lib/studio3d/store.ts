@@ -147,6 +147,16 @@ export class DesignStore {
   restored = false;
   private past: string[] = [];
   private future: string[] = [];
+  /**
+   * The design as it was when the change in progress began (`pushHistory`),
+   * kept until the design's pieces are next committed: an undo step then, or
+   * nothing when they came back unchanged (a piece dropped where it was, a
+   * slider pressed and released). While it is pending the pieces have not
+   * changed since it was taken.
+   */
+  private stepBase: string | null = null;
+  /** The pieces of the last commit: a new array is a change of the design. */
+  private committedJewels: PlacedJewelry[];
   private listeners = new Set<() => void>();
   private snap: StudioSnapshot;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -170,6 +180,7 @@ export class DesignStore {
       this.groups = sanitizeScene({ pieces: this.jewels, groups: data.groups }).groups;
       this.active = readActive(data.active);
     }
+    this.committedJewels = this.jewels;
     this.snap = this.buildSnap();
   }
 
@@ -182,6 +193,10 @@ export class DesignStore {
   getSnapshot = (): StudioSnapshot => this.snap;
 
   private commit() {
+    if (this.jewels !== this.committedJewels) {
+      this.settleStep();
+      this.committedJewels = this.jewels;
+    }
     this.snap = this.buildSnap();
     this.listeners.forEach((l) => l());
     if (!this.persist) return;
@@ -210,14 +225,24 @@ export class DesignStore {
     };
   }
 
-  /** Record the current design as one undo step, before a change. */
+  /**
+   * Mark the current design as the start of one undo step, before a change.
+   * The step is recorded with the change's commit, and only if the pieces
+   * then differ: a gesture that ends where it began leaves no empty step, and
+   * nothing is committed (nor re-rendered) here.
+   */
   pushHistory() {
-    const snap = JSON.stringify(this.jewels);
-    if (this.past.length && this.past[this.past.length - 1] === snap && !this.future.length) return;
-    this.past.push(snap);
+    this.stepBase ??= JSON.stringify(this.jewels);
+  }
+  /** Record the step `pushHistory` began, the pieces having just changed — or drop it when they are back as they were. */
+  private settleStep() {
+    const base = this.stepBase;
+    if (base === null) return;
+    this.stepBase = null;
+    if (base === JSON.stringify(this.jewels)) return;
+    this.past.push(base);
     if (this.past.length > HISTORY_LIMIT) this.past.shift();
     this.future = [];
-    this.commit();
   }
   private fixSelection() {
     if (this.selectedJewelIds.length) {
@@ -433,6 +458,7 @@ export class DesignStore {
    * start for undo: the earlier steps hold positions on the old model.
    */
   replaceDesign(jewels: PlacedJewelry[], model: ModelMode) {
+    this.stepBase = null;
     this.jewels = jewels;
     this.designModel = model;
     this.past = [];
@@ -463,6 +489,7 @@ export class DesignStore {
   }
   undo() {
     if (!this.past.length) return;
+    this.stepBase = null;
     this.future.push(JSON.stringify(this.jewels));
     this.jewels = JSON.parse(this.past.pop()!);
     this.fixSelection();
@@ -471,6 +498,7 @@ export class DesignStore {
   }
   redo() {
     if (!this.future.length) return;
+    this.stepBase = null;
     this.past.push(JSON.stringify(this.jewels));
     this.jewels = JSON.parse(this.future.pop()!);
     this.fixSelection();
@@ -535,6 +563,7 @@ export class DesignStore {
     this.jewels = clean.pieces;
     this.groups = clean.groups;
     this.lightPreset = clean.lightPreset;
+    this.stepBase = null;
     this.past = [];
     this.future = [];
     this.selectedJewelIds = [];
@@ -564,6 +593,8 @@ export class DesignStore {
    */
   settleLoadedPieces(updates: { id: string; patch: Partial<PlacedJewelry> }[], model?: ModelMode) {
     if (model) this.designModel = model;
+    // Not an edit: no step may come of it.
+    this.stepBase = null;
     const wasClean = !!this.active && this.active.baselineKey === piecesKey(this.jewels);
     if (updates.length) {
       const map = new Map(updates.map((u) => [u.id, u.patch]));

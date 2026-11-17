@@ -304,20 +304,57 @@ const _gE1 = new THREE.Vector3(),
   _gE2 = new THREE.Vector3(),
   _gN = new THREE.Vector3();
 function geometricWorldNormal(hit: THREE.Intersection, rayDir: THREE.Vector3): THREE.Vector3 {
-  const g = (hit.object as THREE.Mesh).geometry;
-  const pos = g.attributes.position as THREE.BufferAttribute;
-  const f = hit.face!;
+  if (!windingWorldNormal(hit, _gN)) _gN.copy(hit.face!.normal).transformDirection(hit.object.matrixWorld);
+  if (_gN.dot(rayDir) > 0) _gN.negate();
+  return _gN;
+}
+/**
+ * The hit triangle's world normal as its winding orients it (out of the
+ * surface on a well-formed mesh), not turned toward the ray. Null for a
+ * degenerate triangle.
+ */
+function windingWorldNormal(hit: THREE.Intersection, out: THREE.Vector3): THREE.Vector3 | null {
+  const f = hit.face;
+  if (!f) return null;
+  const pos = (hit.object as THREE.Mesh).geometry.attributes.position as THREE.BufferAttribute;
   _gA.fromBufferAttribute(pos, f.a).applyMatrix4(hit.object.matrixWorld);
   _gB.fromBufferAttribute(pos, f.b).applyMatrix4(hit.object.matrixWorld);
   _gC.fromBufferAttribute(pos, f.c).applyMatrix4(hit.object.matrixWorld);
   _gE1.subVectors(_gB, _gA);
   _gE2.subVectors(_gC, _gA);
-  _gN.crossVectors(_gE1, _gE2);
-  if (_gN.lengthSq() < 1e-12) _gN.copy(f.normal).transformDirection(hit.object.matrixWorld);
-  else _gN.normalize();
-  if (_gN.dot(rayDir) > 0) _gN.negate();
-  return _gN;
+  out.crossVectors(_gE1, _gE2);
+  if (out.lengthSq() < 1e-12) return null;
+  // A mirroring transform turns the winding inside out.
+  if (hit.object.matrixWorld.determinant() < 0) out.negate();
+  return out.normalize();
 }
+/**
+ * Which way the surface faces out at a hit, in world space: its shading
+ * normals when the mesh has them (what lighting trusts, whatever the
+ * triangles' winding), else the winding. Null when neither tells.
+ */
+const _m3 = new THREE.Matrix3();
+function outwardWorldNormal(hit: THREE.Intersection, out: THREE.Vector3): THREE.Vector3 | null {
+  const f = hit.face;
+  const normals = (hit.object as THREE.Mesh).geometry?.attributes.normal as THREE.BufferAttribute | undefined;
+  if (f && normals) {
+    out
+      .fromBufferAttribute(normals, f.a)
+      .add(_gB.fromBufferAttribute(normals, f.b))
+      .add(_gC.fromBufferAttribute(normals, f.c))
+      .applyMatrix3(_m3.getNormalMatrix(hit.object.matrixWorld));
+    if (out.lengthSq() > 1e-12) return out.normalize();
+  }
+  return windingWorldNormal(hit, out);
+}
+const _wn = new THREE.Vector3();
+const _ndc = new THREE.Vector2();
+/** How far either side of a point `snapToSurface` looks for the enamel (world units, ~mm). */
+const SNAP_REACH = 10;
+/** Searching around a spot (free-spot rings, slides toward a contact): the enamel must lie this close, or the spot is off the tooth. */
+const SEARCH_SNAP_REACH = 4;
+/** World units a piece may lie behind the enamel the pointer meets and still be the one picked (rounding only). */
+const PICK_OCCLUSION_SLACK = 0.3;
 /** Near-flush mount gap: the piece's back almost kisses the enamel. */
 function mountGap(scale: number, manualOffset = 0): number {
   return 0.04 + 0.04 * scale + manualOffset;
@@ -451,6 +488,13 @@ export class StudioEngine {
 
   // design check (overlaps, pieces off the teeth)
   private checkedJewels: PlacedJewelry[] | null = null;
+  /**
+   * Each placed piece as a collision blocker, and whether it is seated, by
+   * piece: the store replaces a piece's object on every change, so an entry
+   * never goes stale. Seats depend on the model too: cleared when it changes.
+   */
+  private blockerCache = new WeakMap<PlacedJewelry, Blocker>();
+  private seatCache = new WeakMap<PlacedJewelry, boolean>();
   private issueIds = new Set<string>();
   private issueListener: IssueFramesListener | null = null;
   private lastIssueKey = "";
@@ -498,6 +542,12 @@ export class StudioEngine {
 
   // long press on a piece (see `onLongPress`)
   private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * The latest pointer move not yet handled. Pointers report 120 to 240 moves a
+   * second; hover, drag and placement raycast and test collisions, so only the
+   * newest move is handled, once per frame, just before that frame is drawn.
+   */
+  private pendingMove: PointerEvent | null = null;
   /** The last press came from a finger: the browser's long-press menu is not a right-click. */
   private touchPress = false;
 
@@ -506,6 +556,9 @@ export class StudioEngine {
     this.store = store;
     this.readOnly = options.readOnly ?? false;
     this.offscreen = options.offscreen ?? false;
+    // Teeth raycasts read the nearest hit only: the hierarchy stops there
+    // instead of collecting every crossing. `snapToSurface` asks for all of them.
+    this.raycaster.firstHitOnly = true;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(container.clientWidth || 800, container.clientHeight || 600, false);
@@ -1266,10 +1319,7 @@ export class StudioEngine {
 
   private setNDC(e: { clientX: number; clientY: number }) {
     const r = this.renderer.domElement.getBoundingClientRect();
-    this.raycaster.setFromCamera(
-      new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1),
-      this.camera,
-    );
+    this.raycaster.setFromCamera(_ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), this.camera);
   }
   /** Free-mode labelling: which tooth does the current pointer ray point at? */
   private classifyHit(point: THREE.Vector3): string {
@@ -1314,29 +1364,42 @@ export class StudioEngine {
     if (!this.jewelMeshes.length) return null;
     const hits = this.raycaster.intersectObjects(this.jewelMeshes, false);
     if (!hits.length) return null;
+    // A piece behind enamel (on a lower incisor under the upper one, on the far
+    // side of the arch) is not under the pointer: the tooth in front is.
+    const enamel = this.raycaster.intersectObjects(this.toothMeshes, true)[0];
+    if (enamel && enamel.distance + PICK_OCCLUSION_SLACK < hits[0].distance) return null;
     return { jewelId: hits[0].object.userData.jewelId as string };
   }
-  /** Re-snap an arbitrary world point onto the nearest tooth surface along `nrm`.
-       Used by mirroring, layout tools and collision search — tries both directions. */
-  private snapToSurface(point: THREE.Vector3, nrm: THREE.Vector3): SurfaceHit | null {
+  /**
+   * Re-snap a world point onto the tooth surface along `nrm`: the outer
+   * surface nearest the point within `reach` on either side, its normal facing
+   * out along `nrm`. Used by mirroring, layout tools and collision search.
+   * Null when no enamel lies that close (a gap between teeth, the gum) rather
+   * than a surface far behind it; and the nearest surface, not the first one
+   * met, so a spot on a lower incisor stays there even where the upper incisor
+   * overlaps it.
+   */
+  private snapToSurface(point: THREE.Vector3, nrm: THREE.Vector3, reach = SNAP_REACH): SurfaceHit | null {
     const n = nrm.clone().normalize();
-    const tries: [THREE.Vector3, THREE.Vector3][] = [
-      [point.clone().addScaledVector(n, 6), n.clone().negate()],
-      [point.clone().addScaledVector(n, -6), n.clone()],
-    ];
-    for (const [origin, dir] of tries) {
-      this.raycaster.set(origin, dir);
-      this.raycaster.far = 80;
-      const hits = this.raycaster.intersectObjects(this.toothMeshes, true);
-      this.raycaster.far = Infinity;
-      if (hits.length) {
-        const h = hits[0];
-        const gn = geometricWorldNormal(h, dir).clone();
-        const toothId = this.toothOfHit(h);
-        if (toothId) return { toothId, point: h.point.clone(), normal: gn };
-      }
+    const dir = n.clone().negate();
+    this.raycaster.set(point.clone().addScaledVector(n, reach), dir);
+    this.raycaster.far = reach * 2;
+    this.raycaster.firstHitOnly = false;
+    const hits = this.raycaster.intersectObjects(this.toothMeshes, true);
+    this.raycaster.firstHitOnly = true;
+    this.raycaster.far = Infinity;
+    // Where the ray enters the surface (it faces the ray), not where it leaves a
+    // thin crown through its back. A mesh with no telling normals may have no
+    // such hit: then every crossing counts.
+    const entering = hits.filter((h) => (outwardWorldNormal(h, _wn)?.dot(dir) ?? -1) < 0);
+    let best: THREE.Intersection | null = null;
+    for (const h of entering.length ? entering : hits) {
+      if (!best || Math.abs(h.distance - reach) < Math.abs(best.distance - reach)) best = h;
     }
-    return null;
+    if (!best) return null;
+    const toothId = this.toothOfHit(best);
+    if (!toothId) return null;
+    return { toothId, point: best.point.clone(), normal: geometricWorldNormal(best, dir).clone() };
   }
   /** Nearest tooth rig to a world point (fallback for unlabeled free-mode pieces). */
   private nearestRig(p: THREE.Vector3): ToothRig | null {
@@ -1371,11 +1434,16 @@ export class StudioEngine {
     return { center, reach: tpl.reach * maxFaceScale(pose.axes), toWorld, toLocal: toWorld.clone().invert(), footprint: tpl.footprint };
   }
   private jewelBlocker(j: PlacedJewelry): Blocker {
-    return this.blockerAt(
-      new THREE.Vector3(j.position.x, j.position.y, j.position.z),
-      new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z),
-      poseOf(j),
-    );
+    let b = this.blockerCache.get(j);
+    if (!b) {
+      b = this.blockerAt(
+        new THREE.Vector3(j.position.x, j.position.y, j.position.z),
+        new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z),
+        poseOf(j),
+      );
+      this.blockerCache.set(j, b);
+    }
+    return b;
   }
   /** Every placed piece except `exceptIds`, as collision blockers. */
   private blockersFor(exceptIds: Set<string>): Blocker[] {
@@ -1410,7 +1478,7 @@ export class StudioEngine {
           .clone()
           .addScaledVector(t, Math.cos(a) * step)
           .addScaledVector(u, Math.sin(a) * step);
-        const snapped = this.snapToSurface(cand, n);
+        const snapped = this.snapToSurface(cand, n, SEARCH_SNAP_REACH);
         if (!snapped) continue;
         if (!this.hitBlocked(snapped, pose, blockers)) return snapped;
       }
@@ -1432,7 +1500,7 @@ export class StudioEngine {
       const mid = (lo + hi) / 2;
       const p = from.point.clone().lerp(to.point, mid);
       const n = from.normal.clone().lerp(to.normal, mid).normalize();
-      const snapped = this.snapToSurface(p, n);
+      const snapped = this.snapToSurface(p, n, SEARCH_SNAP_REACH);
       if (snapped && accept(snapped)) {
         free = snapped;
         lo = mid;
@@ -2060,6 +2128,7 @@ export class StudioEngine {
   /* ---------- input ---------- */
 
   private onPointerDown = (e: PointerEvent) => {
+    this.flushPointerMove();
     if (this.placing) return;
     this.touchPress = e.pointerType === "touch";
     // One loop at a time: a second finger while drawing must not pinch the camera either.
@@ -2125,18 +2194,37 @@ export class StudioEngine {
   };
 
   private onPointerMove = (e: PointerEvent) => {
+    if (!this.placing && this.lasso) {
+      // Cheap, and every point counts: the loop follows the pointer at once.
+      this.extendLasso(e);
+      return;
+    }
+    this.pendingMove = e;
+  };
+  /** Handle the move waiting since the last frame, if any (see `pendingMove`). */
+  private flushPointerMove() {
+    const e = this.pendingMove;
+    if (!e) return;
+    this.pendingMove = null;
+    this.handlePointerMove(e);
+  }
+  private extendLasso(e: PointerEvent) {
+    const l = this.lasso!;
+    if (e.pointerId !== l.pointerId || l.points.length >= LASSO_MAX_POINTS) return;
+    const p = { x: e.clientX - l.originX, y: e.clientY - l.originY };
+    const last = l.points[l.points.length - 1];
+    if (Math.hypot(p.x - last.x, p.y - last.y) < LASSO_STEP) return;
+    l.points.push(p);
+    this.emitLasso();
+  }
+
+  private handlePointerMove(e: PointerEvent) {
     if (this.placing) {
       this.updatePlacing(e);
       return;
     }
     if (this.lasso) {
-      const l = this.lasso;
-      if (e.pointerId !== l.pointerId || l.points.length >= LASSO_MAX_POINTS) return;
-      const p = { x: e.clientX - l.originX, y: e.clientY - l.originY };
-      const last = l.points[l.points.length - 1];
-      if (Math.hypot(p.x - last.x, p.y - last.y) < LASSO_STEP) return;
-      l.points.push(p);
-      this.emitLasso();
+      this.extendLasso(e);
       return;
     }
     if (!this.press) {
@@ -2197,9 +2285,11 @@ export class StudioEngine {
       this.setCursor("grabbing");
       return;
     }
-  };
+  }
 
   private onPointerUp = (e: PointerEvent) => {
+    // The last move first: the release happens where the pointer last was.
+    this.flushPointerMove();
     if (this.placing) {
       // The browser took the gesture over (a list being scrolled): nothing is placed nor armed.
       if (e.type === "pointercancel") this.cancelPlacing();
@@ -2216,7 +2306,8 @@ export class StudioEngine {
     const quick =
       !!this.press && Math.hypot(e.clientX - this.press.x, e.clientY - this.press.y) < 6 && performance.now() - this.press.t < 450;
     if (this.mode === "drag-jewel" && this.dragJewel) {
-      if (this.dragLastHit) {
+      // Held back the whole time, the pieces are where they were: nothing to record.
+      if (this.dragLastHit && this.dragLastHit !== this.dragStart) {
         // last collision-free pose, for the piece in hand and every piece carried with it
         const spot = (hit: SurfaceHit): Partial<PlacedJewelry> => ({
           toothId: hit.toothId,
@@ -2713,8 +2804,9 @@ export class StudioEngine {
     });
     i = 0;
     this.toothRigs.forEach((r) => {
+      const v = emSave[i++] * 0.42;
       r.materials.forEach((m) => {
-        m.emissiveIntensity = emSave[i] * 0.42;
+        m.emissiveIntensity = v;
       });
     });
     if (this.ghost) this.ghost.root.visible = this.ghost.ringRoot.visible = ghostVis;
@@ -3147,6 +3239,8 @@ export class StudioEngine {
     if (!this.modelReady) return;
     const jewels = this.store.jewels;
     if (!force && jewels === this.checkedJewels) return;
+    // A forced check follows a model change: every seat is to be found again.
+    if (force) this.seatCache = new WeakMap();
     this.checkedJewels = jewels;
     const blockers = jewels.map((j) => this.jewelBlocker(j));
     const overlapping = new Set<string>();
@@ -3169,7 +3263,12 @@ export class StudioEngine {
 
   /** Does the piece rest on the enamel of a tooth — not on gum or socle, not floating off the surface? */
   private isSeated(j: PlacedJewelry): boolean {
-    return this.seatedAt(new THREE.Vector3(j.position.x, j.position.y, j.position.z), new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z));
+    let seated = this.seatCache.get(j);
+    if (seated === undefined) {
+      seated = this.seatedAt(new THREE.Vector3(j.position.x, j.position.y, j.position.z), new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z));
+      this.seatCache.set(j, seated);
+    }
+    return seated;
   }
   /** `isSeated` for a spot: the enamel lies right under it, along its normal. */
   private seatedAt(point: THREE.Vector3, normal: THREE.Vector3): boolean {
@@ -3408,6 +3507,8 @@ export class StudioEngine {
   private tick = () => {
     if (this.disposed) return;
     this.raf = requestAnimationFrame(this.tick);
+    // Before anything is drawn, so the frame shows where the pointer is now.
+    this.flushPointerMove();
     const now = performance.now();
     const snap = this.store.getSnapshot();
     const animating =
@@ -3514,6 +3615,7 @@ export class StudioEngine {
   }
   dispose() {
     this.disposed = true;
+    this.pendingMove = null;
     this.clearLongPress();
     cancelAnimationFrame(this.raf);
     this.ro?.disconnect();
