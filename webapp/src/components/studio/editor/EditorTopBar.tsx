@@ -27,7 +27,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
   const total = useCompositionEstimate(snap.jewels).totalMinor;
   // Importing a 3D model is a staff tool (owner's request 2026-10-28): members work on the Studio's dentition.
   const staff = useStudioStaff();
-  const canReset = snap.modelMode !== "dentition" && !snap.modelLoading;
+  const canReset = snap.modelMode !== "smile" && !snap.modelLoading;
   const modelTools = staff || canReset;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {

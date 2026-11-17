@@ -340,8 +340,7 @@
       "cancelLasso": "Quitter le lasso",
       "hint": "Glissez une pièce sur une dent pour commencer",
       "stage": {
-        "dentition": "Dentition de référence · notation FDI",
-        "studio": "Arcade supérieure simplifiée · notation FDI",
+        "smile": "Dentition de référence · notation FDI",
         "teeth": "Modèle importé · dents identifiées",
         "free": "Modèle importé · mode libre"
       },
@@ -599,7 +598,6 @@
       "shareFailed": "Le partage n’a pas abouti — téléchargez l’image pour la publier",
       "linkCopied": "Lien du Studio copié",
       "linkCopyFailed": "Le lien n’a pas pu être copié",
-      "modelLoadFailed": "La dentition de référence n’a pas pu être chargée — l’arcade simplifiée la remplace. Réessayez avec le bouton « Revenir à la dentition de référence ».",
       "import": {
         "started": "Import de {{name}}…",
         "teeth_one": "Modèle importé — {{count}} dent reconnue",

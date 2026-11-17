@@ -79,3 +79,19 @@ describe("design store history", () => {
     expect(store.getSnapshot().canUndo).toBe(false);
   });
 });
+
+describe("design store model", () => {
+  it("opens on the Studio's dentition, and comes back to it for the next session", () => {
+    const store = new DesignStore({ persist: false });
+    expect(store.modelMode).toBe("smile");
+    store.setModelMode("teeth");
+    store.resetSession();
+    expect(store.modelMode).toBe("smile");
+  });
+
+  it("remembers the model a design was re-seated on", () => {
+    const store = twoPieces();
+    store.replaceDesign(store.jewels, "smile");
+    expect(store.designModel).toBe("smile");
+  });
+});

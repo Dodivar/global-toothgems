@@ -572,8 +572,8 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
             }}
           >
             {jewel.toothId === FREE_TOOTH && <option value={FREE_TOOTH}>{t("studio.editor.freePlacementLong")}</option>}
-            {/* The simplified reference arch and imports carry the upper arch only. */}
-            {(snap.modelMode === "dentition" ? ALL_TEETH : UPPER_TEETH).map((fdi) => (
+            {/* Imports are labelled on the upper arch only. */}
+            {(snap.modelMode === "smile" ? ALL_TEETH : UPPER_TEETH).map((fdi) => (
               <option key={fdi} value={fdi}>
                 {fdi} — {toothShort(fdi)}
               </option>

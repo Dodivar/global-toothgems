@@ -340,8 +340,7 @@
       "cancelLasso": "Leave the lasso",
       "hint": "Drag a piece onto a tooth to start designing",
       "stage": {
-        "dentition": "Reference dentition · FDI notation",
-        "studio": "Simplified upper arch · FDI notation",
+        "smile": "Reference dentition · FDI notation",
         "teeth": "Imported model · FDI mapping",
         "free": "Imported model · free mode"
       },
@@ -599,7 +598,6 @@
       "shareFailed": "Sharing did not go through — download the image to post it",
       "linkCopied": "Studio link copied",
       "linkCopyFailed": "The link could not be copied",
-      "modelLoadFailed": "The reference dentition could not be loaded — the simplified arch stands in. Try again with “Back to the reference dentition”.",
       "import": {
         "started": "Importing {{name}}…",
         "teeth_one": "Model imported — {{count}} tooth recognised",
