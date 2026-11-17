@@ -249,7 +249,7 @@
     "attention_one": "{{count}} message for you",
     "attention_other": "{{count}} messages for you",
     "unread": "New messages",
-    "backToSpace": "Member space",
+    "backToSpace": "My space",
     "backToSpaceHint": "Your account menu",
     "dashboardTitle": "The Members' Lounge",
     "dashboardAttention_one": "{{count}} message is waiting for you",

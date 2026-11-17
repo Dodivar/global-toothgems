@@ -32,7 +32,7 @@
     "signIn": "Se connecter",
     "studio": "Studio 3D",
     "atelier": "Atelier",
-    "studioWorkshop": "Ouvrir le Studio 3D",
+    "studioWorkshop": "Studio 3D",
     "studioWorkshopSub": "Composer un design en 3D",
     "studioGroups": "Mes groupes",
     "studioGlowbook": "Glowbook",
@@ -46,7 +46,9 @@
     "studioArtists": "Trouver un artiste",
     "studioArtistsSub": "Les artistes près de chez vous",
     "studioAppointments": "Mes rendez-vous",
-    "studioAppointmentsSub": "Les rendez-vous pris chez un artiste"
+    "studioAppointmentsSub": "Les rendez-vous pris chez un artiste",
+    "openStudioWorkshop": "Ouvrir le Studio 3D",
+    "myGlowbook": "Mon Glowbook"
   },
   "common": {
     "readMore": "En savoir plus",
@@ -409,10 +411,11 @@
       "signIn": "Se connecter",
       "createAccount": "Créer un compte",
       "openCourses": "Accéder à mes formations",
-      "paidBody": "Vos formations sont disponibles dans votre espace membre.",
+      "paidBody": "Vos formations sont disponibles dans Mon espace.",
       "consentTitle": "Accès immédiat à la formation",
       "consentLabel": "Je demande l’accès immédiat à la formation et je renonce expressément à mon droit de rétractation : je reconnais le perdre dès que je commence à suivre la formation.",
-      "consentHint": "Tant qu’aucune leçon n’est ouverte, vous gardez 14 jours pour vous rétracter."
+      "consentHint": "Tant qu’aucune leçon n’est ouverte, vous gardez 14 jours pour vous rétracter.",
+      "openCourse": "Commencer ma formation"
     },
     "pack": {
       "line": "1 pack par commande · formation et Studio ouverts sur votre compte"
@@ -1025,8 +1028,8 @@
     "ie": "Ireland"
   },
   "account": {
-    "eyebrow": "Espace membre",
-    "navLabel": "Sections de l’espace membre",
+    "eyebrow": "Mon espace",
+    "navLabel": "Sections de mon espace",
     "navDashboard": "Tableau de bord",
     "navCertificates": "Attestations",
     "navOrders": "Commandes",
@@ -1060,9 +1063,9 @@
       }
     },
     "shell": {
-      "openMenu": "Ouvrir le menu de l’espace membre",
+      "openMenu": "Ouvrir le menu de mon espace",
       "closeMenu": "Fermer le menu",
-      "menuLabel": "Menu de l’espace membre",
+      "menuLabel": "Menu de mon espace",
       "homeAlt": "Global Toothgems — accueil",
       "help": "Aide",
       "cookies": "Cookies",
@@ -1080,7 +1083,7 @@
         "security": "Sécurité",
         "menu": "Menu",
         "cart": "Panier",
-        "studio": "Atelier",
+        "studio": "Studio 3D",
         "creations": "Créations",
         "groups": "Groupes",
         "home": "Accueil site",
@@ -1328,7 +1331,7 @@
     "certificateDocRefLabel": "N° d’attestation",
     "certificateDocSeal": "Validée",
     "certificateDocIssuer": "Organisme émetteur",
-    "navStudio": "Abonnement Studio",
+    "navStudio": "Abonnement Studio 3D",
     "dashboard": {
       "accountEyebrow": "En un coup d’œil",
       "accountTitle": "Votre compte",
@@ -1573,7 +1576,7 @@
       "openNav": "Ouvrir la navigation",
       "breadcrumb": "Fil d’Ariane",
       "viewStore": "Voir la boutique",
-      "memberSpace": "Mon espace membre"
+      "memberSpace": "Mon espace"
     },
     "nav": {
       "primary": "Navigation de l’administration",

@@ -146,7 +146,7 @@
     "icsPhone": "Phone: {{phone}}"
   },
   "mine": {
-    "eyebrow": "My account",
+    "eyebrow": "My space",
     "title": "My appointments",
     "nav": "My appointments",
     "description": "The appointments you booked with artists. Cancelling is free until 24 hours before.",

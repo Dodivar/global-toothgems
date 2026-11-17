@@ -34,7 +34,7 @@
     "chip": "Aurora · 18k gold heart"
   },
   "subscribe": {
-    "back": "Back to Studio",
+    "back": "Back to the 3D Studio",
     "title": "Unlock the Global Toothgems 3D Studio.",
     "body": "Your creative space for designing unique tooth jewellery compositions.",
     "signInNote": "Sign in or create your account to subscribe: the subscription belongs to your account, where your creations are saved."
@@ -45,7 +45,7 @@
     "previewNote": "Free during the preview — no card needed.",
     "loading": "Checking your Studio access…",
     "back": "Back",
-    "backToStudioPage": "Back to the Studio page",
+    "backToStudioPage": "Back to the 3D Studio presentation",
     "toAccount": "Go to my account",
     "offer": {
       "eyebrow": "Free trial",
@@ -76,7 +76,7 @@
     },
     "locked": {
       "trialTitle": "Your 48-hour free trial has ended",
-      "endedTitle": "Your Studio subscription has ended",
+      "endedTitle": "Your 3D Studio subscription has ended",
       "pendingTitle": "Your subscription is being set up",
       "body": "Your creations are still here. Choose a plan to unlock the 3D Studio again and continue bringing your ideas to life.",
       "pendingBody": "Your payment is still being confirmed. The Studio unlocks automatically as soon as it is.",
@@ -86,10 +86,10 @@
       "keptNone": "Anything you saved stays in your account and will be waiting for you once a plan is active.",
       "plansTitle": "Choose your plan",
       "pricesNote": "Cancel at any time from your account: the subscription ends at the close of the paid period.",
-      "grantEndedTitle": "The Studio access included with your pack is over"
+      "grantEndedTitle": "The 3D Studio access included with your pack is over"
     },
     "error": {
-      "title": "We couldn’t check your Studio access",
+      "title": "We couldn’t check your 3D Studio access",
       "body": "This is usually a connection problem. Your designs are safe.",
       "retry": "Try again"
     },
@@ -106,7 +106,7 @@
       "ended": "Trial ended"
     },
     "denied": {
-      "title": "Your Studio access has ended",
+      "title": "Your 3D Studio access has ended",
       "body": "This change could not be saved. Your saved designs are kept."
     },
     "checkout": {
@@ -219,7 +219,7 @@
     "documentTitle": "Studio 3D · Workshop",
     "appName": "Studio 3D",
     "loading": "Preparing the studio…",
-    "backToStudio": "Back to the Studio page",
+    "backToStudio": "Back to the 3D Studio presentation",
     "pieceCount_one": "{{count}} piece",
     "pieceCount_other": "{{count}} pieces",
     "estimateShort": "approx. {{total}}",

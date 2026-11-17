@@ -249,7 +249,7 @@
     "attention_one": "{{count}} message pour vous",
     "attention_other": "{{count}} messages pour vous",
     "unread": "Nouveaux messages",
-    "backToSpace": "Espace membre",
+    "backToSpace": "Mon espace",
     "backToSpaceHint": "Menu de votre compte",
     "dashboardTitle": "Le Salon des membres",
     "dashboardAttention_one": "{{count}} message vous attend",

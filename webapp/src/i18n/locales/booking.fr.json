@@ -146,7 +146,7 @@
     "icsPhone": "Téléphone : {{phone}}"
   },
   "mine": {
-    "eyebrow": "Mon compte",
+    "eyebrow": "Mon espace",
     "title": "Mes rendez-vous",
     "nav": "Mes rendez-vous",
     "description": "Les rendez-vous que vous avez pris auprès des artistes. L’annulation est libre jusqu’à 24 heures avant.",

@@ -32,7 +32,7 @@
     "signIn": "Sign in",
     "studio": "Studio 3D",
     "atelier": "Workshop",
-    "studioWorkshop": "Open the 3D Studio",
+    "studioWorkshop": "3D Studio",
     "studioWorkshopSub": "Compose a design in 3D",
     "studioGroups": "My groups",
     "studioGlowbook": "Glowbook",
@@ -46,7 +46,9 @@
     "studioArtists": "Find an artist",
     "studioArtistsSub": "Artists near you",
     "studioAppointments": "My appointments",
-    "studioAppointmentsSub": "The appointments you booked with an artist"
+    "studioAppointmentsSub": "The appointments you booked with an artist",
+    "openStudioWorkshop": "Open the 3D Studio",
+    "myGlowbook": "My Glowbook"
   },
   "common": {
     "readMore": "Learn more",
@@ -409,10 +411,11 @@
       "signIn": "Sign in",
       "createAccount": "Create an account",
       "openCourses": "Go to my courses",
-      "paidBody": "Your courses are available in your member space.",
+      "paidBody": "Your courses are available in My space.",
       "consentTitle": "Immediate access to the course",
       "consentLabel": "I ask for immediate access to the course and I expressly waive my right of withdrawal: I acknowledge that I lose it as soon as I start following the course.",
-      "consentHint": "As long as no lesson has been opened, you keep 14 days to withdraw."
+      "consentHint": "As long as no lesson has been opened, you keep 14 days to withdraw.",
+      "openCourse": "Start my course"
     },
     "pack": {
       "line": "1 pack per order · course and Studio open on your account"
@@ -1025,8 +1028,8 @@
     "ie": "Ireland"
   },
   "account": {
-    "eyebrow": "Member area",
-    "navLabel": "Member area sections",
+    "eyebrow": "My space",
+    "navLabel": "Sections of my space",
     "navDashboard": "Dashboard",
     "navCertificates": "Certificates",
     "navOrders": "Orders",
@@ -1060,9 +1063,9 @@
       }
     },
     "shell": {
-      "openMenu": "Open the member space menu",
+      "openMenu": "Open my space menu",
       "closeMenu": "Close the menu",
-      "menuLabel": "Member space menu",
+      "menuLabel": "My space menu",
       "homeAlt": "Global Toothgems — home",
       "help": "Help",
       "cookies": "Cookies",
@@ -1080,7 +1083,7 @@
         "security": "Security",
         "menu": "Menu",
         "cart": "Cart",
-        "studio": "Workshop",
+        "studio": "3D Studio",
         "creations": "Creations",
         "groups": "Groups",
         "home": "Site home",
@@ -1328,7 +1331,7 @@
     "certificateDocRefLabel": "Certificate no.",
     "certificateDocSeal": "Completed",
     "certificateDocIssuer": "Issued by",
-    "navStudio": "Studio subscription",
+    "navStudio": "3D Studio subscription",
     "dashboard": {
       "accountEyebrow": "At a glance",
       "accountTitle": "Your account",
@@ -1573,7 +1576,7 @@
       "openNav": "Open navigation",
       "breadcrumb": "Breadcrumb",
       "viewStore": "View store",
-      "memberSpace": "My member space"
+      "memberSpace": "My space"
     },
     "nav": {
       "primary": "Administration navigation",

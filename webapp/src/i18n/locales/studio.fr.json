@@ -34,7 +34,7 @@
     "chip": "Aurora · cœur or 18k"
   },
   "subscribe": {
-    "back": "Retour au Studio",
+    "back": "Retour au Studio 3D",
     "title": "Débloquez le Studio 3D Global Toothgems.",
     "body": "Votre espace créatif pour imaginer des compositions de bijoux dentaires uniques.",
     "signInNote": "Connectez-vous ou créez votre compte pour vous abonner : l’abonnement est lié à votre compte, et vos créations y sont enregistrées."
@@ -45,7 +45,7 @@
     "previewNote": "Gratuit pendant l’aperçu — sans carte bancaire.",
     "loading": "Vérification de votre accès au Studio…",
     "back": "Retour",
-    "backToStudioPage": "Retour à la page du Studio",
+    "backToStudioPage": "Retour à la présentation du Studio 3D",
     "toAccount": "Aller à mon espace",
     "offer": {
       "eyebrow": "Essai gratuit",
@@ -76,7 +76,7 @@
     },
     "locked": {
       "trialTitle": "Votre essai gratuit de 48 heures est terminé",
-      "endedTitle": "Votre abonnement au Studio est terminé",
+      "endedTitle": "Votre abonnement au Studio 3D est terminé",
       "pendingTitle": "Votre abonnement est en cours d’activation",
       "body": "Vos créations sont toujours là. Choisissez une formule pour débloquer à nouveau le Studio 3D et continuer à donner vie à vos idées.",
       "pendingBody": "Votre paiement est en cours de confirmation. Le Studio se débloque automatiquement dès qu’il l’est.",
@@ -86,10 +86,10 @@
       "keptNone": "Tout ce que vous avez enregistré reste dans votre compte et vous attendra dès qu’une formule sera active.",
       "plansTitle": "Choisissez votre formule",
       "pricesNote": "Résiliable à tout moment depuis votre compte : l’abonnement prend fin à la fin de la période payée.",
-      "grantEndedTitle": "Votre accès au Studio offert par le pack est terminé"
+      "grantEndedTitle": "Votre accès au Studio 3D offert par le pack est terminé"
     },
     "error": {
-      "title": "Impossible de vérifier votre accès au Studio",
+      "title": "Impossible de vérifier votre accès au Studio 3D",
       "body": "C’est généralement un problème de connexion. Vos designs sont en sécurité.",
       "retry": "Réessayer"
     },
@@ -106,7 +106,7 @@
       "ended": "Essai terminé"
     },
     "denied": {
-      "title": "Votre accès au Studio a pris fin",
+      "title": "Votre accès au Studio 3D a pris fin",
       "body": "Cette modification n’a pas pu être enregistrée. Vos designs enregistrés sont conservés."
     },
     "checkout": {
@@ -219,7 +219,7 @@
     "documentTitle": "Studio 3D · Atelier",
     "appName": "Studio 3D",
     "loading": "Préparation du studio…",
-    "backToStudio": "Retour à la page du Studio",
+    "backToStudio": "Retour à la présentation du Studio 3D",
     "pieceCount_one": "{{count}} pièce",
     "pieceCount_other": "{{count}} pièces",
     "estimateShort": "env. {{total}}",

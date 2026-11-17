@@ -11,9 +11,9 @@
   "favorite": "Ajouter {{name}} aux favoris",
   "unfavorite": "Retirer {{name}} des favoris",
   "nav": {
-    "label": "Espace Studio",
+    "label": "Studio 3D",
     "explore": "Global Toothgems",
-    "open": "Ouvrir le menu du Studio",
+    "open": "Ouvrir le menu du Studio 3D",
     "studio": "Studio 3D",
     "creations": "Mes créations",
     "groups": "Mes groupes de gemmes",
@@ -21,11 +21,11 @@
     "glowbook": "Mon Glowbook",
     "help": "Aide & tutoriel",
     "feedback": "Donner mon avis",
-    "account": "Mon compte",
+    "account": "Mon espace",
     "signedOut": "Non connecté·e",
-    "backToStage": "Studio",
+    "backToStage": "Studio 3D",
     "short": {
-      "studio": "Studio",
+      "studio": "Studio 3D",
       "creations": "Créations",
       "groups": "Groupes",
       "templates": "Modèles",
@@ -43,7 +43,7 @@
       "groups": "Assemblages de gemmes réutilisables",
       "templates": "Créations de l’équipe, prêtes à réutiliser",
       "glowbook": "Votre vitrine publique, à mettre en bio Instagram",
-      "help": "Apprendre le Studio pas à pas",
+      "help": "Apprendre le Studio 3D pas à pas",
       "feedback": "Dites-nous ce que vous en pensez",
       "shop": "Gems, outils et kits",
       "academy": "Les formations",
@@ -179,7 +179,7 @@
     "neverUsed": "Pas encore utilisé",
     "emptyTitle": "Aucun groupe de gemmes",
     "emptyBody": "Dans le Studio, sélectionnez au moins deux gemmes (Maj + clic), puis choisissez « Créer un groupe ». Il apparaîtra ici, prêt à resservir.",
-    "emptyCta": "Aller au Studio",
+    "emptyCta": "Ouvrir le Studio 3D",
     "saveTitle_one": "Enregistrer cette gemme comme groupe réutilisable ?",
     "saveTitle_other": "Enregistrer ces {{count}} gemmes comme groupe réutilisable ?",
     "saveSub": "L’assemblage est conservé à l’identique (espacement, rotation, taille et finition) pour le déposer plus tard sur n’importe quelle dent.",
@@ -712,7 +712,7 @@
       "explore": "Explorer par moi-même"
     },
     "complete": {
-      "title": "Vous savez créer dans le Studio",
+      "title": "Vous savez créer dans le Studio 3D",
       "sub": "La visite est terminée — la suite vous appartient",
       "body": "Vous savez poser une gemme, l’ajuster et revenir en arrière : c’est tout ce qu’il faut pour composer un sourire entier. Ajoutez des gemmes, dupliquez-les en miroir, et quand une composition vous plaît, enregistrez-la dans Mes créations.",
       "again": "Besoin d’un rappel ? « Aide & tutoriel », dans le menu du Studio, relance la visite et réunit les leçons, les questions fréquentes et les raccourcis clavier.",
@@ -791,7 +791,7 @@
     },
     "thanksTitle": "Merci !",
     "thanksBody": "Merci de nous aider à améliorer le Studio.",
-    "backToStudio": "Revenir au Studio"
+    "backToStudio": "Revenir au Studio 3D"
   },
   "toasts": {
     "creationSaved": "Création enregistrée",
@@ -851,7 +851,7 @@
       "stageLabel": "Aperçu 3D de la création partagée",
       "readOnlyNote": "Faites pivoter et zoomez pour l’examiner sous tous les angles. Cette création est en lecture seule.",
       "checkingAccount": "Vérification de votre compte…",
-      "signInTitle": "Connectez-vous pour utiliser le Studio",
+      "signInTitle": "Connectez-vous pour utiliser le Studio 3D",
       "signInBody": "Avec un compte Global Toothgems, reprenez ce design dans l’atelier, modifiez-le, enregistrez vos propres créations et partagez-les à votre tour.",
       "copyTitle": "Envie de le retravailler ?",
       "copyBody": "Ouvrez une copie dans votre Studio : la création partagée reste intacte, et vous enregistrez votre version dans vos créations.",

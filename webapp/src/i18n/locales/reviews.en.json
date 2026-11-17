@@ -278,7 +278,7 @@
     "reviewed": "Reviewed · {{status}}"
   },
   "mine": {
-    "eyebrow": "My account",
+    "eyebrow": "My space",
     "title": "My reviews",
     "description": "The reviews you’ve shared, where each one stands, and what you could still review.",
     "statsLabel": "Your reviews in figures",

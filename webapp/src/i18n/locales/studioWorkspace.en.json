@@ -11,9 +11,9 @@
   "favorite": "Add {{name}} to favourites",
   "unfavorite": "Remove {{name}} from favourites",
   "nav": {
-    "label": "Studio workspace",
+    "label": "3D Studio",
     "explore": "Global Toothgems",
-    "open": "Open the Studio menu",
+    "open": "Open the 3D Studio menu",
     "studio": "3D Studio",
     "creations": "My Creations",
     "groups": "My Gem Groups",
@@ -21,11 +21,11 @@
     "glowbook": "My Glowbook",
     "help": "Help & Tutorial",
     "feedback": "Give feedback",
-    "account": "My account",
+    "account": "My space",
     "signedOut": "Not signed in",
-    "backToStage": "Studio",
+    "backToStage": "3D Studio",
     "short": {
-      "studio": "Studio",
+      "studio": "3D Studio",
       "creations": "Creations",
       "groups": "Groups",
       "templates": "Templates",
@@ -43,7 +43,7 @@
       "groups": "Reusable gem arrangements",
       "templates": "Team designs, ready to reuse",
       "glowbook": "Your public showcase, for your Instagram bio",
-      "help": "Learn the Studio step by step",
+      "help": "Learn the 3D Studio step by step",
       "feedback": "Tell us how it feels",
       "shop": "Gems, tools and kits",
       "academy": "The trainings",
@@ -179,7 +179,7 @@
     "neverUsed": "Not used yet",
     "emptyTitle": "No gem groups yet",
     "emptyBody": "In the Studio, select two or more gems (Shift + click), then choose “Create Gem Group”. It will be here, ready to reuse.",
-    "emptyCta": "Go to the Studio",
+    "emptyCta": "Open the 3D Studio",
     "saveTitle_one": "Save this gem as a reusable group?",
     "saveTitle_other": "Save these {{count}} gems as a reusable group?",
     "saveSub": "The arrangement is kept exactly — spacing, rotation, size and finish — so you can drop it onto any tooth later.",
@@ -712,7 +712,7 @@
       "explore": "Explore on my own"
     },
     "complete": {
-      "title": "You know your way around the Studio",
+      "title": "You know your way around the 3D Studio",
       "sub": "The tour is done — the rest is yours",
       "body": "You can place a gem, adjust it and undo: that is everything you need to compose a whole smile. Add more gems, mirror them across the arch, and once a design pleases you, keep it in My Creations.",
       "again": "Need a reminder? “Help & tutorial”, in the Studio menu, starts the tour again and gathers the lessons, the common questions and the keyboard shortcuts.",
@@ -791,7 +791,7 @@
     },
     "thanksTitle": "Thank you!",
     "thanksBody": "Thank you for helping us improve the Studio.",
-    "backToStudio": "Back to the Studio"
+    "backToStudio": "Back to the 3D Studio"
   },
   "toasts": {
     "creationSaved": "Creation saved",
@@ -851,7 +851,7 @@
       "stageLabel": "3D preview of the shared design",
       "readOnlyNote": "Turn and zoom to look at it from every angle. This design is read-only.",
       "checkingAccount": "Checking your account…",
-      "signInTitle": "Sign in to use the Studio",
+      "signInTitle": "Sign in to use the 3D Studio",
       "signInBody": "With a Global Toothgems account, take this design into the workshop, edit it, save your own creations and share them in turn.",
       "copyTitle": "Want to rework it?",
       "copyBody": "Open a copy in your Studio: the shared design stays as it is, and you save your version to your creations.",
