@@ -143,7 +143,10 @@ describe("the Studio's dentition", () => {
     expect(gap("11", "41")).toBeLessThan(3.5);
     expect(gap("16", "46")).toBeGreaterThan(0.3);
     expect(gap("16", "46")).toBeLessThan(gap("11", "41"));
-    for (const c of SMILE_CROWNS) (c.lower ? expect(c.top).toBeLessThan(0) : expect(c.bottom).toBeGreaterThan(0));
+    for (const c of SMILE_CROWNS) {
+      if (c.lower) expect(c.top).toBeLessThan(0);
+      else expect(c.bottom).toBeGreaterThan(0);
+    }
   });
 
   it("sets neighbours side by side, touching without sinking into each other", () => {
