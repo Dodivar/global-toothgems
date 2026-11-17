@@ -264,6 +264,21 @@ const DENTITION_STAGE: StageFrame = {
 };
 /** Frames still drawn after the last change, so damped camera and light fades can settle. */
 const SETTLE_FRAMES = 90;
+/**
+ * Device pixels per CSS pixel while the stage moves (orbit, zoom, a piece in
+ * hand): a phone or retina screen shades well under half the pixels then, and
+ * the full count comes back the moment the stage rests. Screens at this ratio
+ * or below never change.
+ */
+const MOTION_PIXEL_RATIO = 1.25;
+/** The stage counts as moving this long (ms) after its last movement. */
+const MOTION_GRACE_MS = 180;
+/** The finishes a piece can wear, one per shader program: drawn once, hidden, as the model arrives (see `warmUpMaterials`). */
+const WARM_UP_LOOKS = [
+  { material: "crystal", color: "#ffffff", effect: "none" },
+  { material: "crystal", color: "#ffffff", effect: "iridescent" },
+  { material: "metal", color: "#d4af37", effect: "none" },
+] as const;
 /** Largest model file accepted for import, in bytes. */
 export const MAX_MODEL_BYTES = 60 * 1024 * 1024;
 
@@ -548,6 +563,20 @@ export class StudioEngine {
    * newest move is handled, once per frame, just before that frame is drawn.
    */
   private pendingMove: PointerEvent | null = null;
+
+  // rendering cost (see `tick`)
+  /** The renderer's own pixel ratio, drawn at rest; `MOTION_PIXEL_RATIO` while moving. */
+  private fullPixelRatio = 1;
+  /** When the stage last moved (`performance.now()`). */
+  private lastMotion = 0;
+  /**
+   * The shadow map is drawn only when what casts shadows changed: a piece
+   * placed, moved, growing or shrinking, the key light moving, another model.
+   * An orbit or a zoom keeps it — the light does not follow the camera.
+   */
+  private shadowsDirty = true;
+  /** The finishes drawn once, hidden, so the first piece of each kind never waits for its shader. */
+  private warmUp: THREE.Group | null = null;
   /** The last press came from a finger: the browser's long-press menu is not a right-click. */
   private touchPress = false;
 
@@ -560,13 +589,16 @@ export class StudioEngine {
     // instead of collecting every crossing. `snapToSurface` asks for all of them.
     this.raycaster.firstHitOnly = true;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.fullPixelRatio = Math.min(window.devicePixelRatio, 2);
+    this.renderer.setPixelRatio(this.fullPixelRatio);
     this.renderer.setSize(container.clientWidth || 800, container.clientHeight || 600, false);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // Drawn on demand (see `shadowsDirty`). An export stage moves only its camera, frame after frame: left automatic.
+    this.renderer.shadowMap.autoUpdate = this.offscreen;
     container.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(36, (container.clientWidth || 1) / (container.clientHeight || 1), 2, 700);
@@ -603,6 +635,7 @@ export class StudioEngine {
       container.addEventListener("contextmenu", this.onContextMenu);
       // Wheel zoom and damped orbiting move the camera without a pointer event on us.
       this.controls.addEventListener("change", this.wake);
+      this.controls.addEventListener("change", this.markMotion);
       this.controls.addEventListener("start", this.wake);
       // `start` fires on a press, a wheel or a pinch — the artist's own gestures, never a tween.
       this.controls.addEventListener("start", this.emitCameraGesture);
@@ -1017,7 +1050,57 @@ export class StudioEngine {
     if (stageChanged) this.setView("reset");
     // A saved creation opened while the model was loading.
     if (this.store.hasPendingLoad()) this.settlePendingLoad();
+    this.shadowsDirty = true;
+    this.warmUpMaterials();
     this.wake();
+  }
+
+  /**
+   * Prepare every finish's shader before the first piece needs it. A crystal's
+   * program (transmission, dispersion, iridescence, clear coat) takes a
+   * noticeable moment to compile: done at the first drop, the stage froze just
+   * as the piece landed. The programs compile in the background (in parallel
+   * where the browser can), then the finishes are drawn once, a speck at the
+   * stage's centre, so the rest a first crystal brings (the model drawn behind
+   * the glass, for its transparency) is ready too. Never on an export stage.
+   */
+  private warmUpMaterials() {
+    if (this.offscreen || this.warmUp) return;
+    const group = new THREE.Group();
+    const part = getJewelTemplate("round").parts[0];
+    for (const look of WARM_UP_LOOKS) {
+      const m = new THREE.Mesh(part, getJewelMaterial(look));
+      m.castShadow = true;
+      group.add(m);
+    }
+    // The selection outline and the drop ghost: plain finishes, one each side.
+    group.add(new THREE.Mesh(part, new THREE.MeshBasicMaterial({ side: THREE.BackSide, transparent: true, opacity: 0 })));
+    group.add(new THREE.Mesh(part, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })));
+    group.scale.setScalar(0.001);
+    group.position.copy(this.stage.target);
+    group.traverse((o) => {
+      o.raycast = () => {};
+    });
+    this.warmUp = group;
+    this.renderer
+      .compileAsync(group, this.camera, this.scene)
+      .catch(() => undefined)
+      .then(() => {
+        if (this.disposed || this.warmUp !== group) return;
+        this.scene.add(group);
+        // Through the shadow pass too, once.
+        this.shadowsDirty = true;
+        this.wake();
+      });
+  }
+  /**
+   * After the frame that drew the warm-up speck: take it away. Its plain
+   * finishes are kept until the stage closes: three.js deletes a shader once
+   * no material uses it, and the first selection outline would compile it again.
+   */
+  private endWarmUp() {
+    const group = this.warmUp;
+    if (group?.parent) this.scene.remove(group);
   }
 
   /** The Studio's own dentition: the scan, fitted at real size, its crowns known by calibration. */
@@ -2114,6 +2197,7 @@ export class StudioEngine {
     }
   };
   private onStoreChange = () => {
+    this.shadowsDirty = true;
     this.syncJewels();
     this.checkDesign();
     this.wake();
@@ -2123,6 +2207,10 @@ export class StudioEngine {
   /** Keep drawing for the settle period: something on screen may change. */
   private wake = () => {
     this.pendingFrames = SETTLE_FRAMES;
+  };
+  /** The camera moved: draw lighter frames for a moment (see `MOTION_PIXEL_RATIO`). */
+  private markMotion = () => {
+    this.lastMotion = performance.now();
   };
 
   /* ---------- input ---------- */
@@ -2746,10 +2834,15 @@ export class StudioEngine {
       shared by the PNG export and the quote sheet. With `only`, every other
       piece is hidden for the capture and shown again before it returns. */
   captureView(opts: { transparent?: boolean; camera?: THREE.PerspectiveCamera; only?: ReadonlySet<string> } = {}): string {
+    // A capture is never taken at the lighter resolution of a moving stage.
+    if (this.renderer.getPixelRatio() !== this.fullPixelRatio) this.renderer.setPixelRatio(this.fullPixelRatio);
     const url = this.withCleanStage(opts, () => {
+      // The pieces left out of the capture must not leave their shadows in it.
+      this.renderer.shadowMap.needsUpdate = true;
       this.renderer.render(this.scene, opts.camera ?? this.camera);
       return this.renderer.domElement.toDataURL("image/png");
     });
+    this.renderer.shadowMap.needsUpdate = true;
     this.renderer.render(this.scene, this.camera);
     return url;
   }
@@ -3520,6 +3613,8 @@ export class StudioEngine {
       return;
     }
     this.pendingFrames--;
+    // What casts shadows moving this frame: a piece in hand, arriving, leaving, swelling under the pointer, or the key light.
+    let shadowsMove = this.shadowsDirty || !!this.dragJewel || this.dyingJewels.length > 0;
 
     const tw = this.camTween;
     if (tw) {
@@ -3536,12 +3631,18 @@ export class StudioEngine {
     } else {
       this.controls.update();
     }
+    // After the camera's own update, whose "change" marks an orbit: this very frame is already a light one.
+    if (this.camTween || this.autoRotate || this.dragJewel || this.ghost) this.lastMotion = now;
+    // Lighter frames while the stage moves, every pixel again once it rests (within the settle frames).
+    const ratio = now - this.lastMotion < MOTION_GRACE_MS ? Math.min(this.fullPixelRatio, MOTION_PIXEL_RATIO) : this.fullPixelRatio;
+    if (this.renderer.getPixelRatio() !== ratio) this.renderer.setPixelRatio(ratio);
 
     // lighting preset crossfade (Studio / Chair lamp / Daylight)
     const lt = this.lightTarget,
       L = 0.1;
     this.keyLight.intensity += (lt.key - this.keyLight.intensity) * L;
     this.keyLight.color.lerp(lt.keyColor, L);
+    if (this.keyLight.position.distanceToSquared(lt.keyPos) > 1e-6) shadowsMove = true;
     this.keyLight.position.lerp(lt.keyPos, L);
     this.fillLight.intensity += (lt.fill - this.fillLight.intensity) * L;
     this.fillLight.color.lerp(lt.fillColor, L);
@@ -3563,12 +3664,15 @@ export class StudioEngine {
 
     this.jewelRigs.forEach((rig, id) => {
       let anim = 1;
+      // Its last growing frame included: the shadow then shows the piece at its final size.
+      if (rig.birth) shadowsMove = true;
       if (rig.birth) {
         const t = (now - rig.birth) / 420;
         if (t >= 1) rig.birth = 0;
         else anim = Math.max(0.02, backOut(t));
       }
       const hov = id === this.hoverJewelId ? 1 : 0;
+      if (Math.abs(hov - rig.hoverT) > 1e-3) shadowsMove = true;
       rig.hoverT += (hov - rig.hoverT) * 0.22;
       this.scaleRig(rig, anim * (1 + rig.hoverT * 0.09));
       // A piece with a problem is ringed in red, selected or not.
@@ -3594,7 +3698,10 @@ export class StudioEngine {
       this.ghost.ringMaterial.opacity = 0.35 + 0.4 * p;
       this.ghost.ring.scale.setScalar(this.ghost.ringScale * (1 + 0.05 * p));
     }
+    if (shadowsMove) this.renderer.shadowMap.needsUpdate = true;
+    this.shadowsDirty = false;
     this.renderer.render(this.scene, this.camera);
+    this.endWarmUp();
     this.emitSelectionAnchor();
     this.emitIssueFrames();
   };
@@ -3609,6 +3716,8 @@ export class StudioEngine {
       h = this.container.clientHeight;
     if (!w || !h) return;
     this.wake();
+    // Another screen or a browser zoom changes the device pixel ratio; the next frame applies it.
+    if (!this.offscreen) this.fullPixelRatio = Math.min(window.devicePixelRatio, 2);
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
@@ -3627,6 +3736,7 @@ export class StudioEngine {
     window.removeEventListener("blur", this.onBlur);
     this.renderer.domElement.removeEventListener("dblclick", this.onDblClick);
     this.controls.removeEventListener("change", this.wake);
+    this.controls.removeEventListener("change", this.markMotion);
     this.controls.removeEventListener("start", this.wake);
     this.controls.removeEventListener("start", this.emitCameraGesture);
     this.cameraListeners.clear();
@@ -3635,6 +3745,11 @@ export class StudioEngine {
     this.lassoListener = null;
     this.issueListener = null;
     this.destroyGhost();
+    this.warmUp?.children.forEach((m) => {
+      const mat = (m as THREE.Mesh).material as THREE.Material;
+      // The gem finishes are the shared, cached ones the pieces wear: disposed with the caches.
+      if (mat instanceof THREE.MeshBasicMaterial) mat.dispose();
+    });
     this.controls.dispose();
     if (this.offscreen) {
       // The gem templates and finishes are shared with the editor's stage: leave
