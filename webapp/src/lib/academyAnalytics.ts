@@ -15,7 +15,7 @@ import { captureEvent, captureOnce, type AnalyticsProps } from "./analyticsCore"
 
 export type AcademyEvent =
   | "academy_course_added_to_cart"
-  /** A package chosen on a course's page: the course with the kit, or a pack that opens it. */
+  /** A package chosen on a course's page: a pack that opens the course. */
   | "academy_course_offer_chosen"
   /** The learner opened a course's first lesson (once per course and tab, when nothing was done yet). */
   | "academy_course_started"

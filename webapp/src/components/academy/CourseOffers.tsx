@@ -8,14 +8,14 @@ import { Button } from "../ui/Button";
 import { Link } from "../../lib/navigation";
 import { pick } from "../../data/types";
 import { useFormat } from "../../lib/format";
-import { sellable, studioMonths, type CourseOfferProduct, type CourseOffers as Offers, type CoursePackOffer } from "../../lib/academy/courseOffers";
+import { sellable, studioMonths, type CourseOffers as Offers, type CoursePackOffer } from "../../lib/academy/courseOffers";
 import type { Money } from "../../lib/academy/publicCourse";
 import { SectionIntro } from "./TrainingPrimitives";
 
 /**
- * "Choose your package" on a course's sales page: the course alone, the course
- * with the professional kit, and each pack that opens the course (kit + months
- * of the 3D Studio). Every figure comes from the catalogue (`lib/academy/courseOffers.ts`);
+ * "Choose your package" on a course's sales page: the course alone, and each
+ * pack that opens the course (the GLOBAL™ PRO MASTER PACK: kit + months of the
+ * 3D Studio). Every figure comes from the catalogue (`lib/academy/courseOffers.ts`);
  * the differences shown are plain sums against the course alone, never a
  * reduction claim. An option the shop cannot sell now (out of stock) says so
  * and links to its product page instead of offering a button the checkout
@@ -29,7 +29,6 @@ export function CourseOffers({
   busy,
   inCart,
   onBuyCourse,
-  onBuyWithKit,
   onBuyPack,
 }: {
   id: string;
@@ -38,9 +37,8 @@ export function CourseOffers({
   offers: Offers;
   busy: boolean;
   /** Which option is already in the cart, if any. */
-  inCart: { course: boolean; kit: boolean; packs: ReadonlySet<string> };
+  inCart: { course: boolean; packs: ReadonlySet<string> };
   onBuyCourse: () => void;
-  onBuyWithKit: (kit: CourseOfferProduct) => void;
   onBuyPack: (pack: CoursePackOffer) => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -51,14 +49,13 @@ export function CourseOffers({
     currency === coursePrice.currency && cents > coursePrice.minor
       ? t("training.offers.extra", { amount: money(cents - coursePrice.minor, currency) })
       : null;
-  const kit = offers.kit;
   const months = studioMonths(offers);
 
   return (
     <div className="grid gap-[clamp(20px,3vw,32px)]">
       <SectionIntro id={id} eyebrow={t("training.offers.eyebrow")} title={t("training.offers.title")} lead={months ? t("training.offers.lead", { count: months }) : t("training.offers.leadPlain")} />
 
-      <ul className="m-0 grid list-none gap-4 p-0 lg:grid-cols-3">
+      <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2 lg:max-w-[1040px]">
         {/* 1 — The course alone */}
         <OfferCard
           name={t("training.offers.courseTitle")}
@@ -71,30 +68,7 @@ export function CourseOffers({
           }
         />
 
-        {/* 2 — Course + kit: two lines of the cart, each at its own price */}
-        {kit && (
-          <OfferCard
-            name={t("training.offers.kitTitle")}
-            price={money(coursePrice.minor + kit.priceCents, kit.currency)}
-            extra={extra(coursePrice.minor + kit.priceCents, kit.currency)}
-            items={[
-              { icon: "course", label: title },
-              { icon: "box", label: pick(kit.name, lang), to: `/boutique/${kit.id}` },
-            ]}
-            note={t("training.offers.kitNote")}
-            action={
-              sellable(kit) ? (
-                <Button variant="outline" onClick={() => onBuyWithKit(kit)} loading={busy} disabled={busy} className="w-full">
-                  {inCart.course && inCart.kit ? t("training.ctaInCart") : t("training.offers.kitCta")}
-                </Button>
-              ) : (
-                <SoldOut to={`/boutique/${kit.id}`} label={t("training.offers.kitSoldOut")} />
-              )
-            }
-          />
-        )}
-
-        {/* 3 — Each pack that opens the course */}
+        {/* 2 — Each pack that opens the course */}
         {offers.packs.map((pack) => (
           <OfferCard
             key={pack.id}

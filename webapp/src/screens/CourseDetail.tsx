@@ -20,7 +20,7 @@ import { OutcomesPanel } from "../components/academy/OutcomesPanel";
 import { FeatureCard, Section, SectionIntro, StepCard } from "../components/academy/TrainingPrimitives";
 import { ReviewsSection } from "../components/reviews/ReviewsSection";
 import { CourseOffers } from "../components/academy/CourseOffers";
-import { NO_COURSE_OFFERS, studioMonths, type CourseOfferProduct, type CourseOffers as Offers, type CoursePackOffer } from "../lib/academy/courseOffers";
+import { NO_COURSE_OFFERS, studioMonths, type CourseOffers as Offers, type CoursePackOffer } from "../lib/academy/courseOffers";
 import { pick } from "../data/types";
 import { lessonCount, type PublicCourse } from "../lib/academy/publicCourse";
 import { formatDuration } from "../lib/trainingFilters";
@@ -51,8 +51,8 @@ import { useFormat } from "../lib/format";
  * who holds the course is offered to open it instead. The prototype's courses
  * (mock mode) keep the demo enrolment.
  *
- * Below the hero, "Choose your package" offers the course with the
- * professional kit and each pack that opens it (kit + 3D Studio months), read
+ * Below the hero, "Choose your package" offers the course alone or the
+ * GLOBAL™ PRO MASTER PACK — each pack that opens it (kit + 3D Studio months), read
  * from the catalogue by the server page (`offers`, `lib/academy/courseOffers.ts`).
  * A pack already carries the course, so choosing it takes a lone course line
  * out of the cart, and choosing the course takes this course's packs out: the
@@ -112,11 +112,10 @@ export function CourseDetail({ course, offers = NO_COURSE_OFFERS }: { course: Pu
       ? t("training.ctaResume")
       : t("training.ctaStart");
   const ctaLabel = demo || holder ? startLabel : forSale ? (inCart ? t("training.ctaInCart") : t("training.ctaBuy")) : null;
-  const showOffers = forSale && !holder && (offers.kit !== null || offers.packs.length > 0);
+  const showOffers = forSale && !holder && offers.packs.length > 0;
   const packLineIds = new Map(offers.packs.map((pack) => [pack.id, lineKey({ productId: pack.id })]));
   const offersInCart = {
     course: inCart,
-    kit: offers.kit !== null && lines.some((line) => line.id === lineKey({ productId: offers.kit!.id })),
     packs: new Set(offers.packs.filter((pack) => lines.some((line) => line.id === packLineIds.get(pack.id))).map((pack) => pack.id)),
   };
   const lessons = lessonCount(course);
@@ -164,24 +163,6 @@ export function CourseDetail({ course, offers = NO_COURSE_OFFERS }: { course: Pu
     openCourse(course.id);
     navigate("/academy/lecon");
     showToast(t("academy.toastCourseTitle"), t("academy.toastCourseBody", { title }));
-  };
-
-  /** The course and the professional kit: two lines, each at its own price. */
-  const buyWithKit = (kit: CourseOfferProduct) => {
-    if (checkingAccess) return;
-    // Already chosen: the button only leads to the cart (never a second kit).
-    if (!offersInCart.kit) addLine({
-      productId: kit.id,
-      dbProductId: kit.dbId,
-      name: pick(kit.name, lang),
-      image: kit.image,
-      // Indicative only: the checkout prices every line again.
-      unitPrice: kit.priceCents,
-      currency: kit.currency,
-      qty: 1,
-    });
-    trackAcademy("academy_course_offer_chosen", { course_id: course.id, offer: "kit", product_id: kit.id });
-    start();
   };
 
   /** A pack that opens the course: it replaces a lone course line (the course is in the pack). */
@@ -255,7 +236,7 @@ export function CourseDetail({ course, offers = NO_COURSE_OFFERS }: { course: Pu
         offersStudioMonths={studioMonths(offers)}
       />
 
-      {/* 1b — Packages: with the kit, and the packs (kit + 3D Studio) */}
+      {/* 1b — Packages: the course alone, or the pack (course + kit + 3D Studio) */}
       {showOffers && (
         <section
           id="formules"
@@ -273,7 +254,6 @@ export function CourseDetail({ course, offers = NO_COURSE_OFFERS }: { course: Pu
               busy={checkingAccess}
               inCart={offersInCart}
               onBuyCourse={start}
-              onBuyWithKit={buyWithKit}
               onBuyPack={buyPack}
             />
           </div>

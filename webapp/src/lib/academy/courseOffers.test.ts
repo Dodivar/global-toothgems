@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Product } from "../../data/products";
-import { buildCourseOffers, COURSE_KIT_SLUG, sellable, studioMonths } from "./courseOffers";
+import { buildCourseOffers, sellable, studioMonths } from "./courseOffers";
 import type { PriceBook } from "../catalog/productOffers";
 
 const COURSE = "course-row-id";
@@ -20,7 +20,7 @@ const product = (over: Partial<Product> & Pick<Product, "id" | "dbId">): Product
   ...over,
 });
 
-const kit = product({ id: COURSE_KIT_SLUG, dbId: "kit", price: 340 });
+const kit = product({ id: "global-pro-studio-kit", dbId: "kit", price: 340 });
 const valise = product({ id: "valise", dbId: "valise", price: 49.9, availability: "out_of_stock" });
 const pack = product({
   id: "pro-pack",
@@ -41,24 +41,21 @@ describe("buildCourseOffers", () => {
     const [found] = offers.packs;
     expect(found).toMatchObject({ id: "pro-pack", dbId: "pack", priceCents: 83000, currency: "EUR", availability: "out_of_stock" });
     expect(found.components.map((c) => [c.id, c.priceCents])).toEqual([
-      [COURSE_KIT_SLUG, 34000],
+      ["global-pro-studio-kit", 34000],
       ["valise", 4990],
     ]);
     expect(found.studio).toEqual({ kind: "studio", plan: "artist", months: 3 });
     expect(sellable(found)).toBe(false);
     expect(studioMonths(offers)).toBe(3);
-    expect(studioMonths({ kit: null, packs: [{ ...found, studio: null }] })).toBeNull();
+    expect(studioMonths({ packs: [{ ...found, studio: null }] })).toBeNull();
   });
 
-  it("offers the kit only when a pack of this course holds it", () => {
-    expect(buildCourseOffers(COURSE, [kit, valise, pack], bundles).kit).toMatchObject({ id: COURSE_KIT_SLUG, priceCents: 34000 });
-    expect(buildCourseOffers("another-course", [kit, valise, pack], bundles)).toEqual({ kit: null, packs: [] });
-    expect(buildCourseOffers(COURSE, [kit, valise, pack], new Map([["pack", ["valise"]]])).kit).toBeNull();
+  it("offers nothing for a course no pack opens", () => {
+    expect(buildCourseOffers("another-course", [kit, valise, pack], bundles)).toEqual({ packs: [] });
   });
 
   it("leaves out a component the shop does not sell, and products with variants", () => {
     const offers = buildCourseOffers(COURSE, [valise, pack], bundles);
-    expect(offers.kit).toBeNull();
     expect(offers.packs[0].components.map((c) => c.id)).toEqual(["valise"]);
     const withVariants = { ...pack, variants: [{ id: "v1", name: { fr: "A", en: "A" } }] } as unknown as Product;
     expect(buildCourseOffers(COURSE, [kit, withVariants], bundles).packs).toEqual([]);

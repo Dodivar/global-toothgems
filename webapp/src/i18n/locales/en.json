@@ -971,13 +971,9 @@
     "stickyBuy": "Buy",
     "offers": {
       "eyebrow": "Packages",
-      "title": "Choose your package",
+      "title": "The course alone, or the full pack",
       "courseTitle": "Course only",
       "courseCta": "Buy the course",
-      "kitTitle": "Course + kit",
-      "kitCta": "Add to basket",
-      "kitNote": "The course and the kit go into the basket as two items, each at its own price.",
-      "kitSoldOut": "Kit out of stock for now",
       "packBadge": "Full pack",
       "packCta": "Add the pack to the basket",
       "packNote": "One item: the course and the 3D Studio open on your account once the payment is confirmed, the equipment is delivered to you.",
@@ -989,13 +985,13 @@
       "account": "An account is required: the course and the Studio open on the account that places the order. One pack per order.",
       "studioAlone": "The 3D Studio alone is a subscription, on its own page.",
       "studioAloneLink": "See the 3D Studio plans",
-      "heroLink": "See the packages",
-      "lead_one": "The course alone, with the professional kit, or the full pack: course, equipment and {{count}} month of 3D Studio access.",
-      "lead_other": "The course alone, with the professional kit, or the full pack: course, equipment and {{count}} months of 3D Studio access.",
-      "leadPlain": "The course alone, or with the equipment to practise from the first lesson: what each package holds is listed below.",
-      "heroHint_one": "Also as a pack: course, equipment and {{count}} month of 3D Studio.",
-      "heroHint_other": "Also as a pack: course, equipment and {{count}} months of 3D Studio.",
-      "heroHintPlain": "Also with the professional equipment."
+      "heroLink": "See the pack",
+      "lead_one": "Take the course alone, or the GLOBAL™ PRO MASTER PACK: the course, the professional kit to practise from the first lesson and {{count}} month of 3D Studio access.",
+      "lead_other": "Take the course alone, or the GLOBAL™ PRO MASTER PACK: the course, the professional kit to practise from the first lesson and {{count}} months of 3D Studio access.",
+      "leadPlain": "Take the course alone, or the pack with the professional kit to practise from the first lesson.",
+      "heroHint_one": "Also as a pack: course, kit and {{count}} month of 3D Studio.",
+      "heroHint_other": "Also as a pack: course, kit and {{count}} months of 3D Studio.",
+      "heroHintPlain": "Also as a pack with the professional kit."
     }
   },
   "lesson": {

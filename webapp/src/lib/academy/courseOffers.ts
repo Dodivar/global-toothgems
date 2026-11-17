@@ -4,14 +4,13 @@ import { NO_PRICE_CUTS, productItemOffers, type PriceBook } from "../catalog/pro
 
 /**
  * The ways a course's sales page offers to buy it (owner's request, 2026-11-17):
- * the course alone, the course with the professional kit (two cart lines, each
- * at its own price), and every published pack that opens the course (decision
- * 139: course + kit + months of the 3D Studio, one product).
+ * the course alone, and every published pack that opens the course (decision
+ * 139: course + kit + months of the 3D Studio, one product — the GLOBAL™ PRO
+ * MASTER PACK). The owner chose on 2026-11-17 to pair the course with that pack
+ * only, not with the kit sold on its own.
  *
  * Read from the shop's catalogue, never invented: a pack is a product whose
- * included access names this course; the kit is the pack component the owner
- * pairs with the course (`COURSE_KIT_SLUG`), offered only while a pack of this
- * course holds it and the shop sells it on its own. Prices are the product
+ * included access names this course. Prices are the product
  * pages' (`productItemOffers`, Omnibus reference included); indicative only —
  * the checkout prices every line again in the database.
  *
@@ -19,9 +18,6 @@ import { NO_PRICE_CUTS, productItemOffers, type PriceBook } from "../catalog/pro
  * another seller with their own checkout (decision 135), so the shop's cart
  * only carries Studio months inside a pack.
  */
-
-/** The professional kit paired with the course (agent's reading, to confirm by the owner). */
-export const COURSE_KIT_SLUG = "global-pro-studio-kit";
 
 /** One product of an offer, as the course page shows and adds it. */
 export interface CourseOfferProduct {
@@ -44,11 +40,10 @@ export interface CoursePackOffer extends CourseOfferProduct {
 }
 
 export interface CourseOffers {
-  kit: CourseOfferProduct | null;
   packs: CoursePackOffer[];
 }
 
-export const NO_COURSE_OFFERS: CourseOffers = { kit: null, packs: [] };
+export const NO_COURSE_OFFERS: CourseOffers = { packs: [] };
 
 /** A product without variants, priced as its page; null for a product with variants or no row id. */
 function offerProduct(product: Product, book: PriceBook): CourseOfferProduct | null {
@@ -98,7 +93,5 @@ export function buildCourseOffers(
     packs.push({ ...own, components, studio: studio as CoursePackOffer["studio"] });
   }
   packs.sort((a, b) => a.priceCents - b.priceCents);
-
-  const kitInPack = packs.flatMap((pack) => pack.components).find((component) => component.id === COURSE_KIT_SLUG);
-  return { kit: kitInPack ?? null, packs };
+  return { packs };
 }
