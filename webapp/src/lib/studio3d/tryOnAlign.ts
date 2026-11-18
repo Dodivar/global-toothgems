@@ -11,6 +11,19 @@
  * not steer the match. When no clear match is found, nothing moves (the
  * answer covers the whole crop, as before).
  *
+ * To the pixel (2026-11-18): the paste-back then keeps only the gems
+ * (`tryOnGemBlend.ts`), found and matched pixel by pixel against the photo,
+ * so the answer must line up to about a pixel, not just to the eye. The match
+ * was compared at `ALIGN_WIDTH` (192 px, 8 photo pixels each on a 1536-px
+ * close-up) and any move under half a percent was dropped (7.7 photo pixels
+ * across, 3.3 down): an answer a gem's width off was pasted as it came, and
+ * around every gem the shifted gap, tooth edges and enamel came along (black
+ * edges, rings, a gem cut by its neighbour). The search now goes on at
+ * `ALIGN_FINE_WIDTH` (768 px, half-pixel steps: about a photo pixel), and the
+ * move is kept from about a photo pixel. Whether the match is trusted is
+ * still judged at `ALIGN_WIDTH`, as before (fine edges of a redrawn picture
+ * correlate less).
+ *
  * Pure: it takes the pixels (`Luma`); the drawing is in
  * `components/studio/tryOn/pasteBack.ts`.
  */
@@ -35,8 +48,10 @@ export interface CloseUpFit {
 
 export const IDENTITY_FIT: CloseUpFit = { x: 0, y: 0, scale: 1 };
 
-/** The width the pictures are compared at; the first search runs at a quarter of it. */
+/** The width the match is judged at; the first search runs at a quarter of it. */
 export const ALIGN_WIDTH = 192;
+/** The width the pictures are drawn at for the match: refined up to it, half a pixel at a time. */
+export const ALIGN_FINE_WIDTH = 768;
 /** How far the model may have zoomed: its answer showing 70 % to 110 % of the close-up's width. */
 const SCALE_MIN = 0.7;
 const SCALE_MAX = 1.1;
@@ -44,8 +59,8 @@ const SCALE_MAX = 1.1;
 const MIN_SCORE = 0.35;
 /** ...and better than leaving the answer where it is by at least this much. */
 const MIN_GAIN = 0.03;
-/** Moves smaller than this (share of the close-up) are left alone: the answer already lines up. */
-const NEGLIGIBLE = 0.005;
+/** Moves smaller than this (share of the close-up: under a photo pixel on a 1536-px close-up) are left alone. */
+const NEGLIGIBLE = 0.0005;
 
 /** RGBA pixels → grey levels (Rec. 601). */
 export function lumaOf(rgba: ArrayLike<number>, width: number, height: number): Luma {
@@ -171,17 +186,19 @@ interface AlignResult {
 /**
  * Where the answer goes on the close-up. `original` and `edited`: the
  * close-up cut from the photo and the AI's answer, both at the same size
- * (about `ALIGN_WIDTH` wide). A coarse search at a quarter of that size over
- * every zoom from `SCALE_MIN` to `SCALE_MAX`, then finer ones around the best
- * at half and full size (a few hundred milliseconds on a phone).
+ * (`ALIGN_WIDTH` wide at least, `ALIGN_FINE_WIDTH` for a match to about a
+ * photo pixel). A coarse search at a quarter of `ALIGN_WIDTH` over every zoom
+ * from `SCALE_MIN` to `SCALE_MAX`, then finer ones around the best at each
+ * size twice as large, up to the size given (under a second on a phone).
  */
 export function alignCloseUp(original: Luma, edited: Luma): AlignResult {
-  const half = [halve(original), halve(edited)];
-  const levels = [
-    [edges(halve(half[0])), edges(halve(half[1]))],
-    [edges(half[0]), edges(half[1])],
-    [edges(original), edges(edited)],
-  ];
+  // The sizes, largest first, down to a quarter of ALIGN_WIDTH.
+  const pyramid: [Luma, Luma][] = [[original, edited]];
+  while (pyramid[pyramid.length - 1][0].width > ALIGN_WIDTH / 4 + 1) {
+    const [a, b] = pyramid[pyramid.length - 1];
+    pyramid.push([halve(a), halve(b)]);
+  }
+  const levels = pyramid.reverse().map(([a, b]) => [edges(a), edges(b)] as const);
   const [coarseA, coarseB] = levels[0];
   let best = search(coarseA, coarseB, range(SCALE_MIN, SCALE_MAX, 0.025), (scale) => {
     // The answer's region, with up to 15 % of it outside the close-up on each side.
@@ -192,21 +209,31 @@ export function alignCloseUp(original: Luma, edited: Luma): AlignResult {
       ys: range(-my, (1 - scale) * coarseA.height + my, 1),
     };
   });
-  // Each finer level: around the best, within a pixel and a scale step of the level above.
-  for (const [[a, b], scaleStep, pixelStep] of [
-    [levels[1], 0.01, 1],
-    [levels[2], 0.004, 0.5],
-  ] as const) {
+  // Each finer level: around the best, within a pixel and a scale step of the level above. Above
+  // ALIGN_WIDTH, a narrower window (the level above is already within a pixel of it), to stay fast.
+  let judged: { fit: CloseUpFit; score: number; identityScore: number } | null = null;
+  levels.slice(1).forEach(([a, b], k) => {
+    const level = k + 1;
+    const scaleStep = 0.02 / 2 ** level;
+    const pixelStep = level === 1 ? 1 : 0.5;
+    const fine = a.width > ALIGN_WIDTH + 1;
+    const scaleReach = fine ? 1.5 : 2.5;
+    const pixelReach = fine ? 2 : 3;
     const c = best.fit;
-    best = search(a, b, range(c.scale - 2.5 * scaleStep, c.scale + 2.5 * scaleStep, scaleStep), () => ({
-      xs: range(c.x * a.width - 3 * pixelStep, c.x * a.width + 3 * pixelStep, pixelStep),
-      ys: range(c.y * a.height - 3 * pixelStep, c.y * a.height + 3 * pixelStep, pixelStep),
+    best = search(a, b, range(c.scale - scaleReach * scaleStep, c.scale + scaleReach * scaleStep, scaleStep), () => ({
+      xs: range(c.x * a.width - pixelReach * pixelStep, c.x * a.width + pixelReach * pixelStep, pixelStep),
+      ys: range(c.y * a.height - pixelReach * pixelStep, c.y * a.height + pixelReach * pixelStep, pixelStep),
     }));
-  }
-  const [fineA, fineB] = levels[2];
-  const identityScore = fitScore(fineA, fineB, IDENTITY_FIT);
-  const { fit, score } = best;
+    if (!fine) judged = { ...best, identityScore: fitScore(a, b, IDENTITY_FIT) };
+  });
+  // A real match, judged at ALIGN_WIDTH as before (or the largest size given, when smaller); better than
+  // leaving the answer where it is there, or — a move of a few photo pixels, too small to show at that
+  // size — at the finest size.
+  const [topA, topB] = levels[levels.length - 1];
+  const topIdentity = fitScore(topA, topB, IDENTITY_FIT);
+  const { score, identityScore } = judged ?? { score: best.score, identityScore: topIdentity };
+  const { fit } = best;
   const moved = Math.abs(fit.scale - 1) > NEGLIGIBLE || Math.abs(fit.x) > NEGLIGIBLE || Math.abs(fit.y) > NEGLIGIBLE;
-  const trusted = score >= MIN_SCORE && score - identityScore >= MIN_GAIN;
+  const trusted = score >= MIN_SCORE && (score - identityScore >= MIN_GAIN || best.score - topIdentity >= MIN_GAIN);
   return { fit: moved && trusted ? fit : IDENTITY_FIT, score, identityScore };
 }
