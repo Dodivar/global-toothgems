@@ -336,7 +336,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
           setFailedKey(null);
           const thumbnail = engine ? await engine.captureThumbnail().catch(() => null) : null;
           const saved = await repos.creations.update(c.id, { ...details, scene, thumbnail });
-          studioStore.markSaved({ creationId: saved.id, ownerId: userId, name: saved.name, savedAt: saved.updatedAt }, scene.pieces);
+          studioStore.markSaved({ creationId: saved.id, ownerId: userId, name: saved.name, savedAt: saved.updatedAt }, scene);
           replaceCreation(saved);
           say("changesSaved");
           trackStudio("studio_design_edited", { piece_count: scene.pieces.length, is_new: false });
