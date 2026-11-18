@@ -54,6 +54,14 @@ describe("scene", () => {
     expect(sanitizeScene(JSON.parse(JSON.stringify(scene)))).toEqual(scene);
   });
 
+  it("keeps the model a design was made on, the Studio's dentition included", () => {
+    // A model name the allowlist forgot would come back as "studio" and be re-seated from the wrong frames.
+    for (const model of ["smile", "dentition", "studio", "teeth", "free"] as const) {
+      const scene = createScene({ pieces: [piece()], model });
+      expect(sanitizeScene(JSON.parse(JSON.stringify(scene))).model).toBe(model);
+    }
+  });
+
   it("drops malformed pieces and prunes groups to surviving pieces", () => {
     const scene = sanitizeScene({
       model: "weird",

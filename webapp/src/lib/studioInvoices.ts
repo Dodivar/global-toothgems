@@ -39,6 +39,31 @@ export async function fetchMyStudioDocuments(userId: string): Promise<OrderInvoi
   return newestFirst((data ?? []) as InvoiceRow[]);
 }
 
+/** A subscription payment the bank refused, still unpaid (no legal document exists for it). */
+export interface FailedStudioPayment {
+  id: string;
+  occurredAt: string;
+  amount: number;
+  currency: string;
+}
+
+/**
+ * The member's unpaid subscription invoices. A paid invoice never goes back to
+ * failed (the database keeps it paid), so a retry that succeeds leaves this list.
+ */
+export async function fetchMyFailedStudioPayments(userId: string): Promise<FailedStudioPayment[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("studio_subscription_invoices")
+    .select("stripe_invoice_id, occurred_at, amount, currency")
+    .eq("user_id", userId)
+    .eq("status", "payment_failed")
+    .order("occurred_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return (data ?? []).map((row) => ({ id: row.stripe_invoice_id, occurredAt: row.occurred_at, amount: Number(row.amount), currency: row.currency }));
+}
+
 /** Back office: every Studio document issued in [start, end), for staff to print. */
 export async function fetchStudioDocumentsIssued(range: { start: Date; end: Date }): Promise<OrderInvoice[]> {
   if (!supabase) return [];

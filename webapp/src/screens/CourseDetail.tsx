@@ -19,12 +19,13 @@ import { TrainingHero } from "../components/academy/TrainingHero";
 import { OutcomesPanel } from "../components/academy/OutcomesPanel";
 import { FeatureCard, Section, SectionIntro, StepCard } from "../components/academy/TrainingPrimitives";
 import { ReviewsSection } from "../components/reviews/ReviewsSection";
+import { NO_COURSE_OFFERS, type CourseOffers as Offers } from "../lib/academy/courseOffers";
 import { pick } from "../data/types";
 import { lessonCount, type PublicCourse } from "../lib/academy/publicCourse";
 import { formatDuration } from "../lib/trainingFilters";
 import { useAuth } from "../lib/auth";
 import { useCart } from "../lib/cart";
-import { courseLineId } from "../lib/checkout/cartLines";
+import { courseLineId, lineKey } from "../lib/checkout/cartLines";
 import { useProgress } from "../lib/progress";
 import { learnHref } from "../lib/academyUrl";
 import { useToast } from "../lib/toast";
@@ -49,16 +50,24 @@ import { useFormat } from "../lib/format";
  * who holds the course is offered to open it instead. The prototype's courses
  * (mock mode) keep the demo enrolment.
  *
+ * Beside the price, the hero mentions the pack that also opens the course
+ * (the GLOBAL™ PRO MASTER PACK: kit + 3D Studio months) and links to its
+ * product page, read from the catalogue by the server page (`offers`,
+ * `lib/academy/courseOffers.ts`). Buying the course takes this course's packs
+ * out of the cart (a pack already carries it), and the product page's own
+ * button sells the pack. A member who holds the course is not shown it (a pack
+ * would sell them the course again, decision 139).
+ *
  * The route is open, like `/academy`: this is what sells the training, so gating
  * it would hide the thing it advertises. Only the lesson player is gated.
  */
-export function CourseDetail({ course }: { course: PublicCourse }) {
+export function CourseDetail({ course, offers = NO_COURSE_OFFERS }: { course: PublicCourse; offers?: Offers }) {
   const { formatMoney } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { signedIn, displayName } = useAuth();
   const { openCourse, progressFor, courseFor, status: learningStatus } = useProgress();
-  const { lines, addCourse } = useCart();
+  const { lines, addCourse, removeLine } = useCart();
   const { showToast } = useToast();
   const lang = i18n.language;
   const demo = course.enrolment === "demo";
@@ -101,6 +110,9 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
       ? t("training.ctaResume")
       : t("training.ctaStart");
   const ctaLabel = demo || holder ? startLabel : forSale ? (inCart ? t("training.ctaInCart") : t("training.ctaBuy")) : null;
+  // The cheapest pack that opens this course, shown beside the price for a buyer.
+  const pack = forSale && !holder ? (offers.packs[0] ?? null) : null;
+  const packLineIds = offers.packs.map((offer) => lineKey({ productId: offer.id }));
   const lessons = lessonCount(course);
   const duration = formatDuration(course.minutes, lang);
 
@@ -123,6 +135,8 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
       // Indicative price only: create_order() prices the seat again. An account
       // is asked for in the cart, where the basket waits for the sign-in.
       if (!checkingAccess) {
+        // A pack of this course already in the cart carries the course: one or the other.
+        for (const id of packLineIds) removeLine(id);
         addCourse({
           courseId: course.dbId!,
           productId: course.id,
@@ -185,6 +199,7 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
         ctaLabel={ctaLabel}
         ctaBusy={checkingAccess}
         onExploreCurriculum={exploreCurriculum}
+        pack={pack}
       />
 
       {/* 2 — What you'll experience */}

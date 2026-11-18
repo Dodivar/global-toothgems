@@ -11,7 +11,7 @@ import { SaveStatus } from "../workspace/SaveStatus";
 import { StudioAccessBadge } from "../access/StudioTrialCountdown";
 import { useCompositionEstimate } from "../../../lib/studio3d/useStudioGems";
 import { importModelFile, resetModel } from "../../../lib/studio3d/actions";
-import { studioStore, type StudioSnapshot } from "../../../lib/studio3d/store";
+import { studioStore, useStudioSelector } from "../../../lib/studio3d/store";
 import { useStudioStaff } from "../../../lib/studioAccess";
 
 const toolButton = clsx(
@@ -21,13 +21,20 @@ const toolButton = clsx(
 );
 
 /** The editor's application bar: identity and save state, history, model, quick actions, the Share menu and Save. */
-export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpenMenu: () => void }) {
+export function EditorTopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { t, formatEstimate } = useEditorLabels();
   const fileRef = useRef<HTMLInputElement>(null);
-  const total = useCompositionEstimate(snap.jewels).totalMinor;
+  // Only what the bar shows: selecting a piece or opening its menu does not re-render it.
+  const jewels = useStudioSelector((s) => s.jewels);
+  const modelMode = useStudioSelector((s) => s.modelMode);
+  const modelLoading = useStudioSelector((s) => s.modelLoading);
+  const activeName = useStudioSelector((s) => s.active?.name ?? "");
+  const canUndo = useStudioSelector((s) => s.canUndo);
+  const canRedo = useStudioSelector((s) => s.canRedo);
+  const total = useCompositionEstimate(jewels).totalMinor;
   // Importing a 3D model is a staff tool (owner's request 2026-10-28): members work on the Studio's dentition.
   const staff = useStudioStaff();
-  const canReset = snap.modelMode !== "dentition" && !snap.modelLoading;
+  const canReset = modelMode !== "smile" && !modelLoading;
   const modelTools = staff || canReset;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +56,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
             <span className="flex-none max-sm:sr-only">{t("studio.editor.appName")}</span>
             <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--text-muted)] max-sm:text-[14px] max-sm:font-bold max-sm:text-[var(--text-primary)]">
               <span aria-hidden="true" className="max-sm:hidden">/ </span>
-              {snap.active?.name || t("studio.workspace.untitled")}
+              {activeName || t("studio.workspace.untitled")}
             </span>
           </h1>
           <span className="mt-1 flex min-w-0 items-center gap-0.5">
@@ -67,7 +74,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
         title={t("studio.editor.estimateHint")}
         aria-live="polite"
       >
-        {t("studio.editor.pieceCount", { count: snap.jewels.length })}
+        {t("studio.editor.pieceCount", { count: jewels.length })}
         {total > 0 && (
           <>
             {" · "}
@@ -84,7 +91,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
           className={toolButton}
           aria-label={t("studio.editor.undo")}
           title={t("studio.editor.undoHint")}
-          disabled={!snap.canUndo}
+          disabled={!canUndo}
           onClick={() => studioStore.undo()}
         >
           <Undo2 size={16} aria-hidden="true" />
@@ -95,7 +102,7 @@ export function EditorTopBar({ snap, onOpenMenu }: { snap: StudioSnapshot; onOpe
           className={clsx(toolButton, "max-sm:hidden")}
           aria-label={t("studio.editor.redo")}
           title={t("studio.editor.redoHint")}
-          disabled={!snap.canRedo}
+          disabled={!canRedo}
           onClick={() => studioStore.redo()}
         >
           <Redo2 size={16} aria-hidden="true" />

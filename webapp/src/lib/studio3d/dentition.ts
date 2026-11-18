@@ -1,39 +1,32 @@
 import { toothKeys, type ToothKey, type Vec3 } from "../../data/studioEditor";
 
 /**
- * The Studio's default dentition: the `dentition.glb` scan, both arches in
- * occlusion on their socles, as one merged mesh.
+ * The reference anatomy: where each crown of a real adult dentition sits,
+ * both arches in occlusion — the calibration of the scan the Studio opened
+ * on until 2026-11-17 (`dentition.glb`, since replaced by the procedural
+ * dentition of `smileDentition.ts`; the file is in the repository's history).
  *
- * A merged mesh does not say where one tooth ends and the gum begins, so the
- * crowns are calibrated here, once, on the file itself: where each crown sits
- * on the arch and how high it rises. From that the engine knows which tooth a
- * point of the surface belongs to — or that it is gum, socle or anything else,
- * where no piece belongs.
+ * It stays for two things, both pure numbers:
+ * - the try-on fits this dentition's front projection onto a photo
+ *   (`frontView.ts`, `tryOnRegistration.ts`): real crown widths, heights and
+ *   positions, measured on the scan;
+ * - designs saved on the scan (`model: "dentition"`) are read in these
+ *   frames — the seat of each piece on its tooth — and re-seated on the
+ *   Studio's dentition when they open.
  *
- * Pure numbers, no three.js: the classification is testable on its own.
- * Re-measure this table if the model file changes.
- *
- * The file in `assets/studio3d` is derived from the original scan
- * (14 MB, 500k triangles): the loose artefact in front of the lower socle
- * (the one detached mesh part) removed, then
- * `gltf-transform optimize --compress meshopt --simplify-ratio 0.3 --simplify-error 0.0005`
- * — about 1 MB and 140k triangles, in the scan's own coordinates, which this
- * table uses.
+ * Measured on horizontal slices and front / side views of the scan, in its
+ * own coordinates, then brought to the Studio's world (millimetres).
  */
 
-/** How the file sits in the Studio's world: `world = (model - origin) * scale`. */
-export const DENTITION_FIT = {
-  /**
-   * World units per model unit. The Studio's world unit is the millimetre (a
-   * piece's `scale` is a real radius and drives the price bands), so the scan
-   * is scaled until its upper central incisors are ~8.5 mm wide.
-   */
+/** How the scan sat in the Studio's world: `world = (model - origin) * scale`. */
+const SCAN_FIT = {
+  /** World units (mm) per model unit: the scan's upper central incisors are ~8.5 mm wide. */
   scale: 810,
   /** Model point placed at the world origin: the midline, on the occlusal plane, just behind the front teeth. */
   origin: { x: 0.003, y: 0.034, z: 0.049 },
 } as const;
 
-/** Crown centres (middle of the crown, in the model's own units), measured on horizontal slices of the file. */
+/** Crown centres (middle of the crown, in the scan's own units). */
 const CROWN_CENTERS: Record<string, [x: number, z: number]> = {
   // upper arch, patient's right (viewer's left) then left
   "17": [-0.0325, 0.006],
@@ -67,13 +60,13 @@ const CROWN_CENTERS: Record<string, [x: number, z: number]> = {
   "37": [0.0307, 0.0098],
 };
 
-/** Crown height on the labial side (model units): occlusal edge to gum line, measured on front and side views. */
+/** Crown height on the labial side (scan units): occlusal edge to gum line. */
 const CROWN_BAND: Record<"upper" | "lower", Record<"anterior" | "posterior", [bottom: number, top: number]>> = {
   upper: { anterior: [0.0331, 0.0453], posterior: [0.0333, 0.0441] },
   lower: { anterior: [0.0228, 0.0337], posterior: [0.026, 0.0348] },
 };
 
-/** Half the labio-lingual depth of a crown, in world millimetres, by tooth type. */
+/** Half the labio-lingual depth of a crown, in millimetres, by tooth type. */
 const CROWN_HALF_DEPTH: Record<ToothKey, number> = {
   central: 3.4,
   lateral: 3.2,
@@ -88,40 +81,27 @@ const CROWN_HALF_DEPTH: Record<ToothKey, number> = {
 export const UPPER_ARCH = ["17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27"];
 export const LOWER_ARCH = ["47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37"];
 
-/**
- * How far the last crown of an arch reaches toward the back, in millimetres.
- * The scan carries a few more back crowns than the seven FDI numbers per
- * quadrant; they count as the last molar.
- */
+/** How far the last crown of an arch reaches toward the back, in millimetres. */
 const DISTAL_REACH = 14;
 
-/** Slack around a crown, in millimetres, so a piece on the very edge of the enamel still counts as on it. */
-const EDGE_SLACK = { along: 0.35, height: 0.5, depth: 1.6 };
 /**
- * How far past the halfway point to a neighbour a crown may still claim a
- * point. Each crown measures along its own tangent, and around the arch's
- * curve those disagree; the overlap closes the gaps, and the nearest crown
- * settles the points both claim.
+ * One crown, in world units: the frame a piece's seat on its tooth is
+ * measured in (across: `tangent`, up: world y). Shared by this reference
+ * anatomy and the Studio's dentition (`SMILE_CROWNS`).
  */
-const NEIGHBOUR_OVERLAP = 1.4;
-
-/** One calibrated crown, in world units. */
 export interface CrownFrame {
   fdi: string;
   lower: boolean;
-  /** Middle of the crown. */
+  /** Middle of the visible crown. */
   center: Vec3;
   /** Horizontal, away from the tongue: the labial / buccal direction. */
   outward: Vec3;
   /** Horizontal, along the arch toward the patient's left. */
   tangent: Vec3;
-  /** Extent along the arch toward the previous (`-`) and next (`+`) tooth: half the gap to each neighbour. */
+  /** Extent along the arch toward the patient's right (`-`) and left (`+`). */
   alongMinus: number;
   alongPlus: number;
-  /** How far along the arch the crown claims points, each way (see `NEIGHBOUR_OVERLAP`). */
-  reachMinus: number;
-  reachPlus: number;
-  /** Crown height on the labial side, as world y. */
+  /** The visible crown's height, as world y: biting edge to gum line. */
   bottom: number;
   top: number;
   halfDepth: number;
@@ -135,7 +115,7 @@ const norm2 = (x: number, z: number): Vec3 => {
 };
 
 function toWorld(x: number, y: number, z: number): Vec3 {
-  const { scale, origin } = DENTITION_FIT;
+  const { scale, origin } = SCAN_FIT;
   return { x: (x - origin.x) * scale, y: (y - origin.y) * scale, z: (z - origin.z) * scale };
 }
 
@@ -157,23 +137,18 @@ function archFrames(arch: string[], lower: boolean): CrownFrame[] {
     let outward = norm2(tangent.z, -tangent.x);
     if (dot(outward, sub(c, inside)) < 0) outward = { x: -outward.x, y: 0, z: -outward.z };
     const half = (n: Vec3 | undefined) => (n ? Math.abs(dot(sub(n, c), tangent)) / 2 : DISTAL_REACH);
-    const alongMinus = half(prev);
-    const alongPlus = half(next);
-    const reach = (n: Vec3 | undefined, h: number) => (n ? h * NEIGHBOUR_OVERLAP : h) + EDGE_SLACK.along;
     const key = toothKeys(fdi)!.tooth;
     const anterior = key === "central" || key === "lateral" || key === "canine";
     const [bottom, top] = CROWN_BAND[lower ? "lower" : "upper"][anterior ? "anterior" : "posterior"];
-    const { scale, origin } = DENTITION_FIT;
+    const { scale, origin } = SCAN_FIT;
     return {
       fdi,
       lower,
       center: { x: c.x, y: ((bottom + top) / 2 - origin.y) * scale, z: c.z },
       outward,
       tangent,
-      alongMinus,
-      alongPlus,
-      reachMinus: reach(prev, alongMinus),
-      reachPlus: reach(next, alongPlus),
+      alongMinus: half(prev),
+      alongPlus: half(next),
       bottom: (bottom - origin.y) * scale,
       top: (top - origin.y) * scale,
       halfDepth: CROWN_HALF_DEPTH[key],
@@ -181,28 +156,5 @@ function archFrames(arch: string[], lower: boolean): CrownFrame[] {
   });
 }
 
-/** Every crown of the default dentition, upper arch then lower arch. */
+/** Every crown of the reference anatomy, upper arch then lower arch. */
 export const DENTITION_CROWNS: CrownFrame[] = [...archFrames(UPPER_ARCH, false), ...archFrames(LOWER_ARCH, true)];
-
-/**
- * The tooth a point of the dentition's surface belongs to, or `null` for
- * gum, socle and anything else that is not a crown. Where two crowns could
- * claim a point, the nearest one wins.
- */
-export function crownAt(p: Vec3, crowns: CrownFrame[] = DENTITION_CROWNS): string | null {
-  let best: string | null = null;
-  let bestDistance = Infinity;
-  for (const c of crowns) {
-    if (p.y < c.bottom - EDGE_SLACK.height || p.y > c.top + EDGE_SLACK.height) continue;
-    const rel = sub(p, c.center);
-    const along = dot(rel, c.tangent);
-    if (along < -c.reachMinus || along > c.reachPlus) continue;
-    if (Math.abs(dot(rel, c.outward)) > c.halfDepth + EDGE_SLACK.depth) continue;
-    const distance = Math.hypot(rel.x, rel.z);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      best = c.fdi;
-    }
-  }
-  return best;
-}
