@@ -5,29 +5,19 @@
  * and a gem may land beside its mark, grow, or appear where there was none.
  *
  * So the answer, once lined up with the close-up (`tryOnAlign.ts`), is not
- * pasted whole: only each gem is taken from it, its colours matched to the
- * photo on the tooth just around it; everywhere else the customer's photo
- * stays pixel for pixel. Anything the model drew far from every mark is dropped.
+ * pasted whole: around each mark only, in a soft disc a little larger than
+ * the gem, its colours matched to the photo on a ring just outside; everywhere
+ * else the customer's photo stays pixel for pixel. A gem drawn beside its mark
+ * (found by the change it made near it) is taken whole, not cut; anything the
+ * model drew far from every mark is dropped.
  *
  * Reseated (2026-11-05): a gem drawn beside its mark or too large is not
  * kept where and as the model drew it, but moved back onto its mark at the
- * size of the design: read where it was drawn, scaled down, and laid on the
- * photo at the mark. On the trial of 2026-11-05 the model drew 18 % of the gems more than
+ * size of the design: only the pixels the model changed there (the gem, not
+ * the tooth around it) are read where it was drawn, scaled down, and laid on
+ * the photo at the mark. On the trial of 2026-11-05 the model drew 18 % of the gems more than
  * half a gem off their marks and 20 % more than 30 % larger (hearts up to 1.7
  * times), so the customer did not get the size they had designed.
- *
- * Cut to the gem (2026-11-18): what is taken around a gem is no longer a disc
- * of the answer larger than the gem, but a matte — the gem's centre whole (a
- * clear crystal on white enamel barely changes the tooth), then only the
- * pixels the model changed against the photo, within a disc of the gem's
- * size. A disc used to bring along the answer's own tooth around the gem
- * (a ring of slightly different enamel), the dark gap between two teeth when
- * the gem was drawn against it, and a neighbour gem when a large gem was moved
- * back next to it. "Changed" compares each answer pixel with the photo's
- * nearest look-alike within `SHIFT_TOLERANCE` px, so a tooth edge or a gap
- * the model redrew a pixel or two aside is not taken for a gem. Each pixel
- * belongs to one gem only, the nearest mark (in its half-sizes), both where
- * it is laid and where a moved gem is read.
  *
  * Each gem is also measured (`GemCheck`): whether the model drew something at
  * its mark, how far from it and how large — facts for the analytics, never
@@ -68,7 +58,7 @@ export interface GemCheck {
 }
 
 export interface GemBlend {
-  /** The close-up to paste: the photo, with the answer's gems; null when `masked` is false. */
+  /** The close-up to paste: the photo, with the answer around each gem; null when `masked` is false. */
   data: Uint8ClampedArray | null;
   checks: GemCheck[];
   /** False: the answer could not be cut around the gems; paste it whole. */
@@ -89,6 +79,11 @@ const WINDOW = 3;
 const WINDOW_PAD = 4;
 /** A gem was drawn when this share of its mark's area changed at least. */
 const MIN_FOUND_SHARE = 0.2;
+/** The answer kept around a gem: its half-size times this, plus `KEEP_PAD` px, then a soft edge. */
+const KEEP = 1.35;
+const KEEP_PAD = 2;
+/** A gem drawn this far from its mark (half-sizes) is also kept around where it was drawn (when not moved back). */
+const DRIFT_KEPT = 0.35;
 /**
  * A gem measured this many times its mark's size or more is
  * scaled down to `RESEAT_TARGET` times it: the measure takes in the gem's
@@ -100,15 +95,10 @@ export const RESEAT_DRIFT = 0.5;
 export const RESEAT_TARGET = 1.1;
 /** A gem is moved back only when this share of its drawing's centre changed at least. */
 const RESEAT_DENSITY = 0.6;
-
-/** The gem's centre, taken whole whatever changed: this many times its half-size, fading over `BODY_FADE`. */
-const BODY = 0.6;
-const BODY_FADE = 0.15;
-/** Beyond, only changed pixels, up to this many times its half-size, fading over `LIMIT_FADE`. */
-const LIMIT = 1.1;
-const LIMIT_FADE = 0.15;
-/** "Changed" looks for the photo's nearest look-alike this many pixels around (a redrawn edge a little aside). */
-const SHIFT_TOLERANCE = 2;
+/** A gem moved back: taken whole within this many times its drawn radius of where it was drawn... */
+const GEM_CORE = 1.0;
+/** ...and where the model changed the photo, up to this many times. */
+const GEM_DISC = 1.15;
 
 /**
  * The colour shift is measured on at least this many tooth pixels around the gem; the ring is widened
@@ -126,26 +116,16 @@ function medianOf(values: number[]): number {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
-/**
- * Where a gem is read in the answer and laid on the photo. A point `p` of the
- * photo near the mark reads the answer at `c + (p - mark) * scale`; the gem
- * itself is centred on `c` in the answer, `radius` px in half-size there.
- */
-interface Seat {
-  /** Centre of the gem in the answer. */
-  cx: number;
-  cy: number;
-  /** Where the photo point on the mark reads the answer: the gem's centre when moved back, else the mark (read in place). */
-  ox: number;
-  oy: number;
-  scale: number;
-  /** The gem's half-size in the answer. */
-  radius: number;
-  threshold: number;
+/** A disc kept from the answer: full up to `inner`, fading to nothing at `outer`. */
+interface Disc {
+  x: number;
+  y: number;
+  inner: number;
+  outer: number;
 }
 
 /**
- * The photo with each gem of the answer laid on it, and each gem's check. Both
+ * The photo with the answer kept around each gem, and each gem's check. Both
  * pictures have the same size and are lined up; `marks` are in their pixels.
  */
 export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMark[]): GemBlend {
@@ -184,8 +164,13 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
   const background = Math.round(medianOf(away));
 
   // Each gem: the change near its mark.
+  const discs: { disc: Disc; owner: number }[] = [];
+  /** Per mark: where its gem was drawn and how much larger, read back onto the mark. */
+  const sources: ({ x: number; y: number; scale: number; threshold: number; extent: number } | null)[] = usable.map(() => null);
   const checks: GemCheck[] = marks.map((m) => ({ id: m.id, found: false, drift: null, size: null }));
-  const seats: Seat[] = usable.map((m, k) => {
+  /** Per mark: the change above which a pixel near it is the gem's, not the tooth's. */
+  const thresholds: number[] = usable.map(() => MIN_CHANGE);
+  usable.forEach((m, k) => {
     const w = windowOf(m);
     const x0 = Math.max(0, Math.floor(m.x - w));
     const x1 = Math.min(width - 1, Math.ceil(m.x + w));
@@ -199,7 +184,7 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
       }
     }
     const threshold = Math.max(MIN_CHANGE, NOISE_FACTOR * medianOf(ring) + NOISE_MARGIN);
-    const inPlace: Seat = { cx: m.x, cy: m.y, ox: m.x, oy: m.y, scale: 1, radius: m.r, threshold };
+    thresholds[k] = threshold;
     const changed: { x: number; y: number; weight: number }[] = [];
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
@@ -225,7 +210,10 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
     }
     const [sx, sy] = m.stretch ?? [1, 1];
     const area = Math.PI * m.r * m.r * Math.max(0.1, sx * sy);
-    if (count < Math.max(4, MIN_FOUND_SHARE * area) || mass <= 0) return inPlace;
+    const keep = (r: number) => KEEP * r + KEEP_PAD;
+    const fade = (r: number) => Math.max(3, 0.5 * r);
+    discs.push({ disc: { x: m.x, y: m.y, inner: keep(m.r), outer: keep(m.r) + fade(m.r) }, owner: k });
+    if (count < Math.max(4, MIN_FOUND_SHARE * area) || mass <= 0) return;
     const extent = Math.sqrt(drawnCount / Math.PI);
     const core = Math.sqrt(count / Math.PI);
     const drift = Math.hypot(cx - m.x, cy - m.y) / m.r;
@@ -234,93 +222,53 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
     checks[index] = { id: m.id, found: true, drift: Math.round(drift * 100) / 100, size: Math.round(size * 100) / 100 };
     const scale = size >= RESEAT_SIZE ? size / RESEAT_TARGET : 1;
     // A gem is a dense patch of change; scattered changes (a redrawn tooth edge, a pale crystal that
-    // barely changed the tooth) are not moved: kept as drawn, in place.
+    // barely changed the tooth) are not moved: kept as drawn.
     const dense = changed.filter((c) => Math.hypot(c.x - cx, c.y - cy) <= 0.6 * core).length >= RESEAT_DENSITY * Math.PI * (0.6 * core) ** 2;
     if (dense && (drift > RESEAT_DRIFT || scale > 1)) {
+      // Moved back: the mark's disc reads the answer around where the gem was drawn, scaled.
+      sources[k] = { x: cx, y: cy, scale, threshold, extent: core };
       checks[index].reseated = true;
-      return { cx, cy, ox: cx, oy: cy, scale, radius: m.r * scale, threshold };
+      return;
     }
-    // Kept in place, the gem centred where it was drawn (a little beside its mark at most).
-    return { ...inPlace, cx, cy };
+    // Drawn beside its mark: keep it whole where it was drawn too.
+    if (drift > DRIFT_KEPT) discs.push({ disc: { x: cx, y: cy, inner: Math.min(w, keep(extent)), outer: Math.min(w, keep(extent)) + fade(extent) }, owner: k });
   });
 
   if (background > MAX_BACKGROUND) return { data: null, checks, masked: false, background };
 
-  /** How much an answer pixel differs from the photo around it: the nearest look-alike within `SHIFT_TOLERANCE` px. */
-  const changeMemo = new Float32Array(width * height).fill(-1);
-  const changeAt = (x: number, y: number) => {
-    const p = y * width + x;
-    if (changeMemo[p] >= 0) return changeMemo[p];
-    const i = p * 4;
-    let best = Infinity;
-    for (let dy = -SHIFT_TOLERANCE; dy <= SHIFT_TOLERANCE && best > 0; dy++) {
-      const yy = y + dy;
-      if (yy < 0 || yy >= height) continue;
-      for (let dx = -SHIFT_TOLERANCE; dx <= SHIFT_TOLERANCE; dx++) {
-        const xx = x + dx;
-        if (xx < 0 || xx >= width) continue;
-        const j = (yy * width + xx) * 4;
-        const d = Math.max(Math.abs(E[i] - O[j]), Math.abs(E[i + 1] - O[j + 1]), Math.abs(E[i + 2] - O[j + 2]));
-        if (d < best) best = d;
-      }
-    }
-    changeMemo[p] = best;
-    return best;
-  };
-
-  /** Whose gem an answer point is: the nearest gem centre (in half-sizes) among the gems and the marks. */
-  const readOwner = (x: number, y: number) => {
-    let best = -1;
-    let bestDistance = Infinity;
-    seats.forEach((s, k) => {
-      const d = Math.hypot(x - s.cx, y - s.cy) / s.radius;
-      if (d < bestDistance) {
-        bestDistance = d;
-        best = k;
-      }
-    });
-    return best;
-  };
-
-  /** How much of the answer a point read for gem `k` keeps (0–1). */
-  const matteAt = (k: number, ax: number, ay: number) => {
-    const s = seats[k];
-    const fromCentre = Math.hypot(ax - s.cx, ay - s.cy);
-    const limit = 1 - smooth((fromCentre - LIMIT * s.radius) / (LIMIT_FADE * s.radius));
-    if (limit <= 0) return 0;
-    if (readOwner(ax, ay) !== k) return 0;
-    const body = 1 - smooth((fromCentre - BODY * s.radius) / (BODY_FADE * s.radius));
-    if (body >= 1) return limit;
-    // Changed like a gem, softly from half the gem's threshold. Not widened to the next pixel: beside the
-    // gem's rim, that pixel is the tooth or the gap, and it would be laid on the photo with the gem.
-    const x = Math.round(Math.min(width - 1, Math.max(0, ax)));
-    const y = Math.round(Math.min(height - 1, Math.max(0, ay)));
-    const change = changeAt(x, y);
-    const changed = smooth((change - 0.5 * s.threshold) / (0.5 * s.threshold));
-    return limit * Math.max(body, changed);
-  };
-
-  // Each gem's colour shift: the answer against the photo on the tooth just outside the gem. Only the
+  // Each gem's colour shift: the answer against the photo on the tooth just outside what is kept. Only the
   // tooth: pixels inside any gem's disc, or changed like a gem, are left out — in a tight cluster the ring
   // falls on the neighbouring gems, whose colours (red, or a crystal's grey facets) once tinted the tooth
   // around every gem (a lemon-yellow halo on a heart of small crystals, 2026-11-05). The median, per channel.
-  const gemDiscs = seats.map((s) => ({ x: s.cx, y: s.cy, outer: (LIMIT + LIMIT_FADE) * s.radius }));
-  const shifts = seats.map((s, k) => {
-    const own = gemDiscs[k];
-    const band = Math.max(4, 0.6 * s.radius);
+  const keptDiscs = [
+    ...discs.map((d) => d.disc),
+    ...usable.flatMap((m, k) => {
+      const source = sources[k];
+      return source ? [{ x: source.x, y: source.y, inner: 0, outer: (KEEP * m.r + KEEP_PAD + Math.max(3, 0.5 * m.r)) * source.scale }] : [];
+    }),
+  ];
+  const shifts = usable.map((m, k) => {
+    const source = sources[k];
+    // A gem moved back: its colours are matched where it was drawn, on a ring around its drawing.
+    const own = source
+      ? [{ x: source.x, y: source.y, inner: 0, outer: (KEEP * m.r + KEEP_PAD + Math.max(3, 0.5 * m.r)) * source.scale }]
+      : discs.filter((d) => d.owner === k).map((d) => d.disc);
+    if (source) m = { ...m, x: source.x, y: source.y };
+    const outer = Math.max(...own.map((d) => Math.hypot(d.x - m.x, d.y - m.y) + d.outer));
+    const band = Math.max(4, 0.6 * m.r);
+    const threshold = thresholds[k];
     const read = (reach: number, toothOnly: boolean) => {
       const values: [number[], number[], number[]] = [[], [], []];
-      const r = own.outer + reach;
-      const x0 = Math.max(0, Math.floor(s.cx - r));
-      const x1 = Math.min(width - 1, Math.ceil(s.cx + r));
-      const y0 = Math.max(0, Math.floor(s.cy - r));
-      const y1 = Math.min(height - 1, Math.ceil(s.cy + r));
+      const x0 = Math.max(0, Math.floor(m.x - outer - reach));
+      const x1 = Math.min(width - 1, Math.ceil(m.x + outer + reach));
+      const y0 = Math.max(0, Math.floor(m.y - outer - reach));
+      const y1 = Math.min(height - 1, Math.ceil(m.y + outer + reach));
       for (let y = y0; y <= y1; y++) {
         for (let x = x0; x <= x1; x++) {
-          if (Math.hypot(x - s.cx, y - s.cy) > r) continue;
-          if ((toothOnly ? gemDiscs : [own]).some((d) => Math.hypot(x - d.x, y - d.y) < d.outer)) continue;
+          if (Math.hypot(x - m.x, y - m.y) > outer + reach) continue;
+          if ((toothOnly ? keptDiscs : own).some((d) => Math.hypot(x - d.x, y - d.y) < d.outer)) continue;
           const i = (y * width + x) * 4;
-          if (toothOnly && diffAt(i) > s.threshold) continue;
+          if (toothOnly && diffAt(i) > threshold) continue;
           for (let c = 0; c < 3; c++) values[c].push(E[i + c] - O[i + c]);
         }
       }
@@ -334,6 +282,26 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
     const values = read(band, false);
     return values[0].length ? values.map(medianOf) : [0, 0, 0];
   });
+
+  // How much of the answer each pixel keeps (overlapping discs: the most), and whose colour shift applies.
+  const alpha = new Float32Array(width * height);
+  const shiftOf = new Int16Array(width * height);
+  for (const { disc, owner } of discs) {
+    const x0 = Math.max(0, Math.floor(disc.x - disc.outer));
+    const x1 = Math.min(width - 1, Math.ceil(disc.x + disc.outer));
+    const y0 = Math.max(0, Math.floor(disc.y - disc.outer));
+    const y1 = Math.min(height - 1, Math.ceil(disc.y + disc.outer));
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const a = 1 - smooth((Math.hypot(x - disc.x, y - disc.y) - disc.inner) / Math.max(1e-6, disc.outer - disc.inner));
+        const p = y * width + x;
+        if (a > alpha[p]) {
+          alpha[p] = a;
+          shiftOf[p] = owner;
+        }
+      }
+    }
+  }
 
   // The answer at a point, between pixels (a gem moved back is read where it was drawn).
   const sample = (x: number, y: number, c: number) => {
@@ -349,34 +317,36 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
     return (at(x0, y0) * (1 - tx) + at(x1, y0) * tx) * (1 - ty) + (at(x0, y1) * (1 - tx) + at(x1, y1) * tx) * ty;
   };
 
-  // The photo, with each gem laid on the pixels of its own mark.
+  // The photo, with the answer (its colours matched) where kept.
   const out = new Uint8ClampedArray(O.subarray(0, width * height * 4));
-  usable.forEach((m, k) => {
-    const s = seats[k];
-    const shift = shifts[k];
-    // The gem's disc on the photo: its centre in the answer brought back through the seat.
-    const dx = m.x + (s.cx - s.ox) / s.scale;
-    const dy = m.y + (s.cy - s.oy) / s.scale;
-    const reach = ((LIMIT + LIMIT_FADE) * s.radius) / s.scale + 1;
-    const x0 = Math.max(0, Math.floor(dx - reach));
-    const x1 = Math.min(width - 1, Math.ceil(dx + reach));
-    const y0 = Math.max(0, Math.floor(dy - reach));
-    const y1 = Math.min(height - 1, Math.ceil(dy + reach));
-    for (let y = y0; y <= y1; y++) {
-      for (let x = x0; x <= x1; x++) {
-        if (ownerOf(x, y) !== k) continue;
-        const ax = s.ox + (x - m.x) * s.scale;
-        const ay = s.oy + (y - m.y) * s.scale;
-        const g = matteAt(k, ax, ay);
-        if (g <= 0) continue;
-        const i = (y * width + x) * 4;
-        const inPlace = s.scale === 1 && s.ox === m.x && s.oy === m.y;
-        for (let c = 0; c < 3; c++) {
-          const v = inPlace ? E[i + c] : sample(ax, ay, c);
-          out[i + c] = O[i + c] * (1 - g) + (v - shift[c]) * g;
-        }
-      }
+  for (let p = 0; p < width * height; p++) {
+    const a = alpha[p];
+    if (a <= 0) continue;
+    const owner = shiftOf[p];
+    const shift = shifts[owner];
+    const source = sources[owner];
+    const i = p * 4;
+    if (source) {
+      const m = usable[owner];
+      const x = p % width;
+      const y = (p - x) / width;
+      const sx = source.x + (x - m.x) * source.scale;
+      const sy = source.y + (y - m.y) * source.scale;
+      // Only the gem: where the model changed the photo there, within the gem's own disc (not a tooth's
+      // edge it redrew nearby), softly from half the gem's threshold.
+      const q = Math.round(Math.min(height - 1, Math.max(0, sy))) * width + Math.round(Math.min(width - 1, Math.max(0, sx)));
+      // The gem's body is taken whole (a pale gem on a pale tooth changes few pixels), its rim only where changed.
+      const fromCentre = Math.hypot(sx - source.x, sy - source.y);
+      const body = Math.max(source.extent, m.r * source.scale);
+      const core = 1 - smooth((fromCentre - GEM_CORE * body) / (0.2 * body));
+      const inDisc = 1 - smooth((fromCentre - GEM_DISC * body) / (0.3 * body));
+      const changed = smooth((diffAt(q * 4) - 0.5 * source.threshold) / (0.5 * source.threshold));
+      const g = a * Math.max(core, inDisc * changed);
+      if (g <= 0) continue;
+      for (let c = 0; c < 3; c++) out[i + c] = O[i + c] * (1 - g) + (sample(sx, sy, c) - shift[c]) * g;
+      continue;
     }
-  });
+    for (let c = 0; c < 3; c++) out[i + c] = O[i + c] * (1 - a) + (E[i + c] - shift[c]) * a;
+  }
   return { data: out, checks, masked: true, background };
 }

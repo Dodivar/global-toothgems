@@ -63,10 +63,10 @@ owner's decision):
 3. **Analytics** (`tryOnAnalytics.ts`, events `studio_try_on_photo_refused`, `studio_try_on_placement`,
    `studio_try_on_result` in `docs/studio-trial-analytics.md`): facts only, to tune the values above on real use.
 4. **Only the gems are taken from the AI's answer** (`tryOnGemBlend.ts`, `pasteBack.ts`): around each mark, a soft
-   matte cut to the gem (since 2026-11-18, below), its colours matched to the photo on a ring outside; the rest of the
-   photo stays the customer's, so the model can no longer change the teeth or the lips or add a gem away from the
-   marks. Each gem is measured (drawn or not, drift, size) for the analytics. When the answer differs from the photo
-   everywhere (`MAX_BACKGROUND`), it is pasted whole as before.
+   disc a little larger than the gem, its colours matched to the photo on a ring outside; the rest of the photo stays
+   the customer's, so the model can no longer change the teeth or the lips or add a gem away from the marks. A gem
+   drawn beside its mark is kept whole where it was drawn. Each gem is measured (drawn or not, drift, size) for the
+   analytics. When the answer differs from the photo everywhere (`MAX_BACKGROUND`), it is pasted whole as before.
 
 Review of the trial of 2026-11-05 (the former five test creations — the lower-arch ones of `c36f487` were not run
 yet — on 6 photos; 22 runs with an analysis, 4 of whose photos could be scored). Method: the real midline and
@@ -195,21 +195,6 @@ heart of small crystals set close together, that ring fell on the neighbouring g
 (red, grey facets), and taking it off lightened the tooth around every gem into a lemon-yellow patch (the photo's red
 already at 255, only green and blue rose). The ring now reads the tooth only — outside every gem's disc, without
 the pixels the model changed like a gem — widened until it has 24 of them, with the median per channel.
-
-**The matte cut to the gem** (`tryOnGemBlend.ts`, 2026-11-18, for every customer). A render of the heart and
-lower-teeth design showed three faults of the paste-back, all from taking a disc of the answer larger than the gem:
-the bottom gem of the heart, drawn by the model against the gap between the central incisors and moved back onto its
-mark, brought a black edge of that gap onto the enamel; a lower blue gem moved back cut into the white gem beside it
-(each disc wrote wherever its fade was strongest, whoever's cell it was); and a blue gem kept in place showed a thin
-ring of the answer's own redrawn tooth. Now each gem is a matte: its centre whole (`BODY`, 0.6 half-size — a clear
-crystal on white enamel barely changes the tooth), beyond only the pixels the model changed, within `LIMIT` (1.1)
-half-sizes of the gem as drawn; "changed" compares each answer pixel with the photo's nearest look-alike within
-`SHIFT_TOLERANCE` (2) px, so an edge or a gap redrawn a pixel or two aside is not a gem, and the matte is not widened
-to the next pixel (beside the rim that pixel is the gap or the tooth). Each photo pixel belongs to its nearest mark
-only, and a moved gem reads the answer only nearer its own drawing than any other gem's. Synthetic cases in
-`tryOnGemBlend.test.ts` (gap beside a moved gem, a large gem moved next to a clear one, a tooth redrawn 2 px aside)
-fail with the former code and pass; not yet replayed on real renders — a gap redrawn more than 2 px aside, or a
-gem the model drew darker at its rim, can still show.
 
 **Trial with both flags on** (2026-11-05 11:49, `TRIAL_ARBITER=1`, the same 7 photos × 5 creations as the
 10:44 trial with the arbiter measured only): results 19 → 26, placements too uncertain 11 → 4 (P7 now all five,
