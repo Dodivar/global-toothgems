@@ -334,16 +334,13 @@ Academy courses in the cart (phase D):
 - **After payment.** Access comes from the database once the order is paid; the return page (or the cart when gift
   cards covered everything) reloads the member's courses (`useProgress().reload`) and offers "Go to my courses".
   Order history links a course line to its course page (`course:courses(slug)`).
-- **Packages on the course page** (2026-11-17, owner's request). Under the hero, "Choose your package"
-  (`components/academy/CourseOffers.tsx`, a link from the hero moves there): the course alone and every pack that
-  opens the course (decision 139: the GLOBAL™ PRO MASTER PACK, course + kit + 3 months of Studio Artist, one pack
-  line). No "course + kit sold on its own" option (owner, 2026-11-17: the course is paired with the pack). Read on
-  the server by `loadCourseOffers()` (`serverCatalog.ts`) and derived by `lib/academy/courseOffers.ts`: packs =
-  active products whose included access names the course; prices as on the product pages. Choosing
-  a pack takes a lone course line out of the cart and the reverse, so the course is never bought twice; a member who
-  holds the course does not see the block; an out-of-stock option links to its product page (back-in-stock form).
-  The differences shown are plain sums against the course alone, no "saving" claim. The Studio alone is not
-  offered (another seller, decision 135): a link to the Studio plans.
+- **The pack beside the price** (2026-11-17, owner's request; a full "Choose your package" section was tried the
+  same day and replaced, too large for what it says). Under the hero's buttons, one compact link: "Also as a pack
+  with the kit and 3 months of 3D Studio: GLOBAL™ PRO MASTER PACK · 830 €", to the pack's product page, which sells
+  it (stock, back-in-stock form, the pack's own add-to-cart). The cheapest pack whose included access names the course,
+  read on the server by `loadCourseOffers()` (`serverCatalog.ts`) and derived by `lib/academy/courseOffers.ts`,
+  priced as on the product pages; hidden for a member who holds the course and in mock mode. Buying the course
+  takes this course's packs out of the cart (a pack already carries it).
 
 - **Not deployed.** If `create-checkout-session` does not exist yet (HTTP 404) the cart says payment is unavailable;
   nothing is ever confirmed without the function's answer.

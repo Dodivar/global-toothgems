@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Product } from "../../data/products";
-import { buildCourseOffers, sellable, studioMonths } from "./courseOffers";
+import { buildCourseOffers } from "./courseOffers";
 import type { PriceBook } from "../catalog/productOffers";
 
 const COURSE = "course-row-id";
@@ -45,9 +45,6 @@ describe("buildCourseOffers", () => {
       ["valise", 4990],
     ]);
     expect(found.studio).toEqual({ kind: "studio", plan: "artist", months: 3 });
-    expect(sellable(found)).toBe(false);
-    expect(studioMonths(offers)).toBe(3);
-    expect(studioMonths({ packs: [{ ...found, studio: null }] })).toBeNull();
   });
 
   it("offers nothing for a course no pack opens", () => {

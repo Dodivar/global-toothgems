@@ -969,29 +969,10 @@
     "ctaBuy": "Acheter la formation",
     "ctaInCart": "Voir le panier",
     "stickyBuy": "Acheter",
-    "offers": {
-      "eyebrow": "Formules",
-      "title": "La formation seule, ou le pack complet",
-      "courseTitle": "Formation seule",
-      "courseCta": "Acheter la formation",
-      "packBadge": "Pack complet",
-      "packCta": "Ajouter le pack au panier",
-      "packNote": "Un seul article : la formation et le Studio 3D s’ouvrent sur votre compte dès que le paiement est confirmé, le matériel est livré chez vous.",
-      "packSoldOut": "Pack épuisé pour le moment",
-      "packDetails": "Voir le détail du pack",
-      "notifyMe": "Être prévenu de son retour",
-      "studioHint": "Sans abonnement : rien ne se renouvelle tout seul.",
-      "extra": "soit +{{amount}} par rapport à la formation seule",
-      "account": "Un compte est nécessaire : la formation et le Studio s’ouvrent sur le compte qui passe la commande. Un pack par commande.",
-      "studioAlone": "Le Studio 3D seul se prend en abonnement, sur sa propre page.",
-      "studioAloneLink": "Voir les formules du Studio 3D",
-      "heroLink": "Voir le pack",
-      "lead_one": "Prenez la formation seule, ou le GLOBAL™ PRO MASTER PACK : la formation, le kit professionnel pour pratiquer dès la première leçon et l’accès au Studio 3D pendant {{count}} mois.",
-      "lead_other": "Prenez la formation seule, ou le GLOBAL™ PRO MASTER PACK : la formation, le kit professionnel pour pratiquer dès la première leçon et l’accès au Studio 3D pendant {{count}} mois.",
-      "leadPlain": "Prenez la formation seule, ou le pack avec le kit professionnel pour pratiquer dès la première leçon.",
-      "heroHint_one": "Existe aussi en pack : formation, kit et {{count}} mois de Studio 3D.",
-      "heroHint_other": "Existe aussi en pack : formation, kit et {{count}} mois de Studio 3D.",
-      "heroHintPlain": "Existe aussi en pack avec le kit professionnel."
+    "pack": {
+      "hint_one": "Existe aussi en pack avec le kit et {{count}} mois de Studio 3D :",
+      "hint_other": "Existe aussi en pack avec le kit et {{count}} mois de Studio 3D :",
+      "hintPlain": "Existe aussi en pack avec le kit :"
     }
   },
   "lesson": {

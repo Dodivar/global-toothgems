@@ -3,8 +3,8 @@ import type { Product, ProductInclusion, StockStatus } from "../../data/products
 import { NO_PRICE_CUTS, productItemOffers, type PriceBook } from "../catalog/productOffers";
 
 /**
- * The ways a course's sales page offers to buy it (owner's request, 2026-11-17):
- * the course alone, and every published pack that opens the course (decision
+ * The packs a course's sales page mentions beside its price (owner's request,
+ * 2026-11-17): every published pack that opens the course (decision
  * 139: course + kit + months of the 3D Studio, one product — the GLOBAL™ PRO
  * MASTER PACK). The owner chose on 2026-11-17 to pair the course with that pack
  * only, not with the kit sold on its own.
@@ -60,13 +60,6 @@ function offerProduct(product: Product, book: PriceBook): CourseOfferProduct | n
     availability: item.availability,
   };
 }
-
-/** Months of Studio the cheapest pack with Studio opens, for the page's headline; null when no pack opens the Studio. */
-export function studioMonths(offers: CourseOffers): number | null {
-  return offers.packs.find((pack) => pack.studio)?.studio?.months ?? null;
-}
-
-export const sellable = (item: Pick<CourseOfferProduct, "availability">) => item.availability !== "out_of_stock";
 
 /**
  * The offers of the course `courseDbId` (`courses.id`) in `products`, with

@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "../../lib/navigation";
-import { Award, Check, Clock, GraduationCap, Layers, ListVideo, Lock, PlayCircle, SignalHigh } from "lucide-react";
+import { ArrowRight, Award, Check, Clock, GraduationCap, Layers, ListVideo, Lock, Package, PlayCircle, SignalHigh } from "lucide-react";
 import { Badge } from "../ui/Badge";
 import { Stars } from "../reviews/Stars";
 import { Button } from "../ui/Button";
@@ -10,6 +10,7 @@ import { MetaPill } from "./TrainingPrimitives";
 import { pick } from "../../data/types";
 import { isDiscounted, lessonCount, type PublicCourse } from "../../lib/academy/publicCourse";
 import type { CourseProgress } from "../../lib/progress";
+import type { CoursePackOffer } from "../../lib/academy/courseOffers";
 import { useFormat } from "../../lib/format";
 import { formatDuration } from "../../lib/trainingFilters";
 
@@ -36,8 +37,7 @@ export function TrainingHero({
   ctaLabel,
   ctaBusy = false,
   onExploreCurriculum,
-  onSeeOffers,
-  offersStudioMonths = null,
+  pack = null,
 }: {
   course: PublicCourse;
   lang: string;
@@ -52,10 +52,8 @@ export function TrainingHero({
   /** The member's courses are still being read: the button waits rather than offer a purchase they may not need. */
   ctaBusy?: boolean;
   onExploreCurriculum: () => void;
-  /** Moves to "Choose your package" (kit, packs with the 3D Studio); absent when the page offers none. */
-  onSeeOffers?: () => void;
-  /** Studio months of the course's pack, for that link's sentence; null when no pack opens the Studio. */
-  offersStudioMonths?: number | null;
+  /** The pack that also opens the course, linked beside the price; null: none. */
+  pack?: CoursePackOffer | null;
 }) {
   const { formatMoney, formatDate } = useFormat();
   const { t } = useTranslation();
@@ -213,17 +211,20 @@ export function TrainingHero({
               </div>
             </div>
 
-            {onSeeOffers && (
-              <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">
-                {offersStudioMonths ? t("training.offers.heroHint", { count: offersStudioMonths }) : t("training.offers.heroHintPlain")}{" "}
-                <button
-                  type="button"
-                  onClick={onSeeOffers}
-                  className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-[var(--text-link)] underline decoration-1 underline-offset-4 hover:text-[var(--text-link-hover)]"
-                >
-                  {t("training.offers.heroLink")}
-                </button>
-              </p>
+            {pack && (
+              <Link
+                to={`/boutique/${pack.id}`}
+                className="group flex w-fit max-w-full items-center gap-3 rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-[var(--surface-brand-wash)] px-3.5 py-2.5 text-[length:var(--text-body-sm)] text-[var(--text-body)] no-underline transition-colors hover:border-[var(--gt-blue-500)]"
+              >
+                <Package size={18} aria-hidden="true" className="flex-none text-[var(--gt-blue-700)]" />
+                <span className="min-w-0">
+                  {pack.studio ? t("training.pack.hint", { count: pack.studio.months }) : t("training.pack.hintPlain")}{" "}
+                  <strong className="text-[var(--text-primary)] underline decoration-1 underline-offset-4">
+                    {pick(pack.name, lang)} · {formatMoney(pack.priceCents, pack.currency)}
+                  </strong>
+                </span>
+                <ArrowRight size={16} aria-hidden="true" className="flex-none text-[var(--text-primary)] transition-transform group-hover:translate-x-0.5" />
+              </Link>
             )}
 
             {!signedIn && (
