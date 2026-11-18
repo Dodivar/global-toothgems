@@ -171,9 +171,16 @@ const dot = (a: { x: number; z: number }, b: { x: number; z: number }) => a.x * 
  * another model, but on a drawing it pinned every piece of the crown's top
  * third (beyond 77 % of its half height) on one row: a heart's two lobes
  * came out flat, on the panels and on the map the try-on sends to the AI.
+ * Past the gum line, on the lower half of the Studio's domes
+ * (`DOME_PLACEABLE`, up to ~2.45), a seat is drawn only a little beyond the
+ * drawn crown, its height kept in order but squeezed (`SEAT_V_PAST`): the
+ * drawings have no dome, and pieces there must neither stack on one row nor
+ * float on the drawn gum.
  */
 const SEAT_U_MAX = 1 / 0.6;
-const SEAT_V_MAX = 1 / 0.55;
+const SEAT_V_EDGE = 1 / 0.55;
+const SEAT_V_MAX = 2.5;
+const SEAT_V_PAST = 0.45;
 
 /**
  * Where a piece sits on its tooth, in the frame of the model it was placed
@@ -181,7 +188,10 @@ const SEAT_V_MAX = 1 / 0.55;
  */
 export function seatOnTooth(piece: PlacedJewelry, model: SceneModel): { u: number; v: number; facing: "front" | "back" } | null {
   const clampU = (n: number) => Math.min(SEAT_U_MAX, Math.max(-SEAT_U_MAX, n));
-  const clampV = (n: number) => Math.min(SEAT_V_MAX, Math.max(-SEAT_V_MAX, n));
+  const clampV = (n: number) => {
+    const a = Math.min(SEAT_V_MAX, Math.abs(n));
+    return Math.sign(n) * (a <= SEAT_V_EDGE ? a : SEAT_V_EDGE + (a - SEAT_V_EDGE) * SEAT_V_PAST);
+  };
   const crowns = CROWNS_BY_MODEL[model];
   if (crowns) {
     const c = crowns.get(piece.toothId);

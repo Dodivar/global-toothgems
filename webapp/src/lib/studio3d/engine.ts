@@ -14,7 +14,7 @@ import {
   type Vec3,
 } from "../../data/studioEditor";
 import { DENTITION_CROWNS } from "./dentition";
-import { buildSmileMeshes, SMILE_CROWNS } from "./smileDentition";
+import { buildSmileMeshes, SMILE_CROWNS, SMILE_TEETH } from "./smileDentition";
 import { easeJaw, JAW_HINGE, jawPose, loopOpenness, MOUTH_LOOP, MOUTH_TWEEN_MS } from "./jawMotion";
 import {
   createToothGeometry,
@@ -870,6 +870,7 @@ export class StudioEngine {
     group.add(arches.upper, arches.lower);
     const enamel = new THREE.MeshStandardMaterial({ ...SMILE_ENAMEL, emissive: TOOTH_HIGHLIGHT, emissiveIntensity: 0 });
     const frames = new Map(SMILE_CROWNS.map((c) => [c.fdi, c]));
+    const bands = new Map(SMILE_TEETH.map((t) => [t.fdi, t.band]));
     for (const { fdi, mesh } of buildSmileMeshes()) {
       const c = frames.get(fdi);
       if (!c) continue;
@@ -904,7 +905,7 @@ export class StudioEngine {
         center: new THREE.Vector3(c.center.x, c.center.y, c.center.z),
         outward: new THREE.Vector3(c.outward.x, c.outward.y, c.outward.z),
         tangent: new THREE.Vector3(c.tangent.x, c.tangent.y, c.tangent.z),
-        band: { bottom: c.bottom, top: c.top },
+        band: bands.get(fdi),
       });
     }
     enamel.dispose();

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ALL_TEETH, LOWER_TEETH, UPPER_TEETH, toothKeys, type Vec3 } from "../../data/studioEditor";
 import type { CrownMesh } from "./crownShape";
 import { DENTITION_CROWNS, type CrownFrame } from "./dentition";
-import { buildSmileMeshes, SMILE_CROWNS, SMILE_TEETH } from "./smileDentition";
+import { buildSmileMeshes, DOME_PLACEABLE, SMILE_CROWNS, SMILE_TEETH } from "./smileDentition";
 
 const MESHES = new Map(buildSmileMeshes().map((t) => [t.fdi, t.mesh]));
 const frame = (fdi: string) => SMILE_CROWNS.find((c) => c.fdi === fdi)!;
@@ -194,6 +194,27 @@ describe("a real smile", () => {
 });
 
 describe("seats on the Studio's dentition", () => {
+  it("lets pieces past the gum line onto the lower half of the dome, never its top", () => {
+    for (const t of SMILE_TEETH) {
+      const reach = t.crown.domeHeight * DOME_PLACEABLE * Math.abs(t.placement.yAxis[1]);
+      const dome = t.crown.domeHeight * Math.abs(t.placement.yAxis[1]);
+      if (t.lower) {
+        expect(t.band.top).toBeCloseTo(t.frame.top, 6);
+        expect(t.band.bottom).toBeCloseTo(t.frame.bottom - reach, 6);
+        expect(t.band.bottom).toBeGreaterThan(t.frame.bottom - dome + 0.5);
+      } else {
+        expect(t.band.bottom).toBeCloseTo(t.frame.bottom, 6);
+        expect(t.band.top).toBeCloseTo(t.frame.top + reach, 6);
+        expect(t.band.top).toBeLessThan(t.frame.top + dome - 0.5);
+      }
+    }
+    // the upper centrals: ~1.5 mm more than the visible crown
+    for (const fdi of ["11", "21"]) {
+      const t = SMILE_TEETH.find((x) => x.fdi === fdi)!;
+      expect(t.band.top - t.frame.top).toBeGreaterThan(1.4);
+    }
+  });
+
   it("finds every seat of the visible crown on its own tooth, below the dome", () => {
     for (const c of SMILE_CROWNS) {
       const mesh = MESHES.get(c.fdi)!;
