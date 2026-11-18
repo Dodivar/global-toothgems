@@ -167,3 +167,64 @@ describe("blendGems moving gems back onto their marks", () => {
   });
 });
 
+
+describe("blendGems cutting each gem out of the answer (2026-11-18)", () => {
+  const off = (a: ArrayLike<number>, b: ArrayLike<number>, x: number, y: number) => {
+    const p = pixel(a, x, y);
+    const q = pixel(b, x, y);
+    return Math.max(...p.map((v, c) => Math.abs(q[c] - v)));
+  };
+
+  it("does not bring the dark gap between two teeth onto the tooth when a gem drawn against it is moved back", () => {
+    // A dark gap at x 104–107; the gem's mark at 94, the gem drawn at 99, its edge against the gap.
+    const original = photo();
+    for (let y = 0; y < H; y++) for (let x = 104; x <= 107; x++) original.data.set([20, 15, 15], (y * W + x) * 4);
+    const edited = answer(original, [{ x: 99, y: 60, r: 8 }]);
+    const blend = blendGems(original, edited, [{ id: "g", x: 94, y: 60, r: 8 }]);
+    expect(blend.checks[0].reseated).toBe(true);
+    expect(pixel(blend.data!, 94, 60)[0]).toBeGreaterThan(200);
+    for (let y = 48; y <= 72; y++) {
+      for (let x = 82; x <= 103; x++) expect(Math.max(...pixel(blend.data!, x, y))).toBeGreaterThan(90);
+    }
+  });
+
+  it("never lets a gem moved back cover its neighbour", () => {
+    const original = photo();
+    const marks = [
+      { id: "red", x: 60, y: 60, r: 8 },
+      { id: "pale", x: 78, y: 60, r: 8 },
+    ];
+    // "red" drawn 1.7 times too large (moved back), "pale" a clear crystal on its mark right beside it.
+    const edited = answer(original, [{ x: 60, y: 60, r: 13.6 }]);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) if (Math.hypot(x - 78, y - 60) <= 8) edited.data.set([240, 240, 240], (y * W + x) * 4);
+    }
+    const blend = blendGems(original, edited, marks);
+    expect(blend.checks[0].reseated).toBe(true);
+    for (const x of [72, 73, 74, 78, 82]) {
+      const [r, g, b] = pixel(blend.data!, x, 60);
+      expect(Math.min(r, g, b)).toBeGreaterThan(215);
+    }
+  });
+
+  it("keeps the photo's own tooth around a gem, not the answer's redrawn one", () => {
+    // The answer's tooth shifted 2 px to the right (and brighter), the gem drawn on its mark.
+    const original = photo();
+    const shifted = photo();
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const from = (y * W + Math.max(0, x - 2)) * 4;
+        for (let c = 0; c < 3; c++) shifted.data[(y * W + x) * 4 + c] = original.data[from + c];
+      }
+    }
+    const edited = answer(shifted, [{ x: 100, y: 60, r: 8 }]);
+    const blend = blendGems(original, edited, [{ id: "g", x: 100, y: 60, r: 8 }]);
+    expect(pixel(blend.data!, 100, 60)[0]).toBeGreaterThan(200);
+    for (let a = 0; a < 16; a++) {
+      const t = (a / 16) * 2 * Math.PI;
+      for (const d of [9.5, 11, 12.5]) {
+        expect(off(original.data, blend.data!, Math.round(100 + d * Math.cos(t)), Math.round(60 + d * Math.sin(t)))).toBeLessThanOrEqual(2);
+      }
+    }
+  });
+});
