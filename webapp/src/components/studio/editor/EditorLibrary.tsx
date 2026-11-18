@@ -1,18 +1,17 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import clsx from "clsx";
 import { ChevronDown, ChevronsDownUp, ChevronsUpDown, Gem, Search, X } from "lucide-react";
 import { GemPhoto } from "./PieceIcon";
 import { ShapeGlyph } from "../../ui/ShapeGlyph";
 import { GemGroupPanel } from "../workspace/GemGroupPanel";
 import { useEditorLabels } from "./editorLabels";
-import { FREE_TOOTH } from "../../../data/studioEditor";
 import { shapeName } from "../../../data/products";
 import { useTaxonomy } from "../../../lib/catalog/useTaxonomy";
 import { useLocalized } from "../../../lib/localized";
 import { placeOnTooth } from "../../../lib/studio3d/actions";
 import { getEngine } from "../../../lib/studio3d/engine";
 import { filterSections, librarySections, type LibrarySection } from "../../../lib/studio3d/librarySections";
-import type { StudioSnapshot } from "../../../lib/studio3d/store";
+import { targetToothOf, useStudioSelector } from "../../../lib/studio3d/store";
 import { useStudioGems } from "../../../lib/studio3d/useStudioGems";
 
 /** Where a keyboard placement lands when no tooth is selected: the upper right central incisor. */
@@ -53,7 +52,11 @@ function writeFolded(ids: string[]) {
  * To find a gem fast: the search, one chip per cut (one cut at a time), and
  * sections that fold. A search or a chosen cut unfolds what it shows.
  */
-export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
+/**
+ * The gem library. It reads only the gem armed for placing and the target
+ * tooth, so moving, turning or resizing pieces never re-renders its cards.
+ */
+export const EditorLibrary = memo(function EditorLibrary() {
   const { t, toothName } = useEditorLabels();
   const { status, gems, reload } = useStudioGems();
   const { familyName } = useTaxonomy();
@@ -98,13 +101,8 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
     saveFolded(allFolded ? folded.filter((id) => !shown.some((s) => s.id === id)) : [...new Set([...folded, ...shown.map((s) => s.id)])]);
   const foldLabel = t(allFolded ? "studio.editor.library.unfoldAll" : "studio.editor.library.foldAll");
 
-  const selectedPiece = snap.jewels.find((j) => j.id === snap.selectedJewelIds[0]);
-  const targetTooth =
-    snap.selectedToothId && snap.selectedToothId !== FREE_TOOTH
-      ? snap.selectedToothId
-      : selectedPiece && selectedPiece.toothId !== FREE_TOOTH
-        ? selectedPiece.toothId
-        : DEFAULT_TOOTH;
+  const armedTypeId = useStudioSelector((s) => s.armedTypeId);
+  const targetTooth = useStudioSelector(targetToothOf) ?? DEFAULT_TOOTH;
 
   return (
     <aside
@@ -146,7 +144,7 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
       </div>
       {tab === "groups" && (
         <div id="gt-editor-tabpanel-groups" role="tabpanel" aria-labelledby="gt-editor-tab-groups" className="gt-editor-scroll min-h-0 flex-1 overflow-y-auto px-4 pb-5">
-          <GemGroupPanel snap={snap} />
+          <GemGroupPanel />
         </div>
       )}
       {tab === "gems" && (
@@ -283,7 +281,7 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
                       className="m-0 mb-2 mt-1 grid list-none grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2 p-0 studio-side:grid-cols-2"
                     >
                       {g.items.map((item) => {
-                        const armed = snap.armedTypeId === item.key;
+                        const armed = armedTypeId === item.key;
                         const name = l(item.name);
                         return (
                           <li key={item.key}>
@@ -338,7 +336,7 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
       )}
     </aside>
   );
-}
+});
 
 /** A cut's glyph (the shop's own drawing), a jewel for a family of charms, four dots for "all". */
 function ShapeMedia({ section, size }: { section: LibrarySection | null; size: number }) {

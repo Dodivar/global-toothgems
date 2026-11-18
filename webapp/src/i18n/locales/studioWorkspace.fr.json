@@ -378,7 +378,7 @@
         "body": [
           "Le Studio s’ouvre sur une dentition de référence : les arcades supérieure et inférieure, chaque dent étant identifiée. Toutes les dents sont nommées selon la notation dentaire internationale FDI : le premier chiffre est le quadrant (1 = haut droite, 2 = haut gauche, 3 = bas gauche, 4 = bas droite, du point de vue du patient), le second la dent, de 1 (incisive centrale) à 7 (deuxième molaire). La 11 et la 21 sont donc les deux incisives centrales du haut.",
           "Cliquez sur une dent pour voir son nom, sa notation et les gemmes déjà posées dessus. Quand vous sélectionnez une gemme, le panneau indique aussi où elle se trouve sur la dent : le tiers (incisif, moyen ou cervical, c’est-à-dire près du bord, au milieu ou près de la gencive) et la face (vestibulaire = face visible, palatine = face intérieure…).",
-          "Si la dentition de référence ne peut pas se charger (connexion lente, appareil limité), une arcade supérieure simplifiée la remplace : vous pouvez continuer à travailler, puis revenir à la dentition de référence avec le bouton prévu dans la barre du haut."
+          "La dentition n’a pas de gencive : chaque dent se termine par un dôme arrondi, là où serait la gencive. Les pièces se posent sur la couronne visible, du bord jusqu’à la ligne de la gencive, jamais sur ce dôme."
         ]
       },
       "camera": {
