@@ -393,9 +393,19 @@ export function useTour(): TourState {
  * steps that are about the stage are left out rather than asking for a gesture
  * that cannot happen.
  */
-export function startTour({ withStage = true }: { withStage?: boolean } = {}) {
-  const steps = withStage ? TOUR_STEPS : TOUR_STEPS.filter((s) => !s.needsEngine);
-  set({ running: true, runId: state.runId + 1, index: 0, steps, done: [] });
+/**
+ * The steps left out on a phone: Undo sits in the thumb's reach there (the
+ * bottom sheet) and needs no lesson, and a shorter tour suits a small screen.
+ */
+export const PHONE_SKIPPED_STEPS: readonly string[] = ["refine"];
+
+/** The steps of a run: without the stage's where it could not start, without the phone's skipped ones on a phone. */
+export function tourStepsFor({ withStage = true, phone = false }: { withStage?: boolean; phone?: boolean } = {}): readonly TourStep[] {
+  return TOUR_STEPS.filter((s) => (withStage || !s.needsEngine) && !(phone && PHONE_SKIPPED_STEPS.includes(s.id)));
+}
+
+export function startTour({ withStage = true, phone = false }: { withStage?: boolean; phone?: boolean } = {}) {
+  set({ running: true, runId: state.runId + 1, index: 0, steps: tourStepsFor({ withStage, phone }), done: [] });
 }
 
 /** Leave the tour where it is. The design on the stage is untouched. */

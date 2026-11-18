@@ -1,11 +1,15 @@
 import { useId } from "react";
-import { Link } from "../../lib/navigation";
+import { Link, useLocation } from "../../lib/navigation";
 import { useTranslation } from "react-i18next";
 import { Cookie, SlidersHorizontal } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useCookieConsent } from "../../lib/cookieConsent";
 import { LEGAL_PATHS } from "../../data/legal/routes";
 import { ADVERTISING_ENABLED } from "../../lib/metaPixelConfig";
+import { usePhoneLayout } from "../../lib/studio3d/phoneLayout";
+
+/** The 3D Studio editor's addresses (`/studio-3d/atelier…`), where a phone shows the compact banner. */
+const STUDIO_EDITOR_PREFIX = "/studio-3d/atelier";
 
 /**
  * First-visit cookie banner.
@@ -24,8 +28,42 @@ export function CookieBanner() {
   const { record, known, settingsOpen, acceptAll, rejectAll, openSettings } = useCookieConsent();
   const titleId = useId();
   const bodyId = useId();
+  const { pathname } = useLocation();
+  // Null on the server and on a tablet or a computer: the full banner, exactly as everywhere else.
+  const phone = usePhoneLayout();
 
   if (!known || record || settingsOpen) return null;
+
+  // On a phone, over the 3D Studio editor, the full banner would hide the whole stage: the
+  // same three choices — refusal first, refusal and acceptance alike — in a slim band.
+  if (phone && pathname.startsWith(STUDIO_EDITOR_PREFIX)) {
+    return (
+      <section aria-labelledby={titleId} aria-describedby={bodyId} className="fixed inset-x-2 bottom-2 z-[400] mx-auto max-w-[560px]">
+        <div className="gt-cookie-banner grid gap-2 rounded-[var(--radius-lg)] px-3 py-2.5">
+          <p id={bodyId} className="m-0 text-[11.5px] leading-snug text-[var(--text-body)]">
+            <strong id={titleId} className="font-bold text-[var(--text-primary)]">
+              {t("legal.cookies.bannerCompactTitle")}
+            </strong>{" "}
+            · {t(ADVERTISING_ENABLED ? "legal.cookies.bannerCompactBodyAdvertising" : "legal.cookies.bannerCompactBody")}{" "}
+            <Link to={LEGAL_PATHS.cookies} className="gt-legal-link">
+              {t("legal.cookies.policyLink")}
+            </Link>
+          </p>
+          <div className="grid grid-cols-3 gap-1.5">
+            <Button variant="dark" size="sm" onClick={rejectAll} className="h-10 px-2" aria-label={t("legal.cookies.rejectNonEssential")}>
+              {t("legal.cookies.rejectCompact")}
+            </Button>
+            <Button variant="dark" size="sm" onClick={acceptAll} className="h-10 px-2" aria-label={t("legal.cookies.acceptAll")}>
+              {t("legal.cookies.acceptCompact")}
+            </Button>
+            <Button variant="outline" size="sm" onClick={openSettings} className="h-10 px-2" aria-label={t("legal.cookies.customize")}>
+              {t("legal.cookies.customizeCompact")}
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

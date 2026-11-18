@@ -35,6 +35,7 @@ import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
 import { alignedColumn, alignedHeights, centeredOffsets, type CenterItem } from "./layout";
 import { mirroredRotation, opposingTooth } from "./mirror";
 import { notify } from "./notices";
+import { haptic } from "./phoneLayout";
 import { DEFAULT_MODEL_SHADE, modelShadeSpec, type ModelShade } from "./modelShades";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
 
@@ -378,6 +379,8 @@ const _wn = new THREE.Vector3();
 const _ndc = new THREE.Vector2();
 /** How far either side of a point `snapToSurface` looks for the enamel (world units, ~mm). */
 const SNAP_REACH = 10;
+/** One step of the phone's nudge pad, in model units (millimetres): a fraction of a small gem. */
+const NUDGE_STEP = 0.35;
 /** Searching around a spot (free-spot rings, slides toward a contact): the enamel must lie this close, or the spot is off the tooth. */
 const SEARCH_SNAP_REACH = 4;
 /** World units a piece may lie behind the enamel the pointer meets and still be the one picked (rounding only). */
@@ -464,6 +467,9 @@ interface EngineOptions {
    */
   offscreen?: boolean;
 }
+
+/** Each frame a finger drags on a phone: the canvas just drawn and the finger's point; null when it lifts. */
+export type LoupeListener = (frame: { canvas: HTMLCanvasElement; x: number; y: number; pixelRatio: number } | null) => void;
 
 export class StudioEngine {
   private renderer: THREE.WebGLRenderer;
@@ -617,6 +623,15 @@ export class StudioEngine {
   private warmUp: THREE.Group | null = null;
   /** The last press came from a finger: the browser's long-press menu is not a right-click. */
   private touchPress = false;
+  /**
+   * The phone's touch aids (`setTouchAids`, phones only — `phoneLayout.ts`): the
+   * loupe under a dragging finger, a tooth tap that zooms on it, haptics.
+   */
+  private touchAids = false;
+  /** Where a finger drags a piece or a library gem, in stage pixels: the loupe shows it. */
+  private loupePoint: { x: number; y: number } | null = null;
+  private loupeShown = false;
+  private loupeListener: LoupeListener | null = null;
 
   constructor(container: HTMLElement, store: DesignStore, options: EngineOptions = {}) {
     this.container = container;
@@ -2328,6 +2343,7 @@ export class StudioEngine {
       } else this.mode = "idle";
     }
     if (this.mode === "drag-jewel") {
+      this.trackLoupe(e);
       this.setNDC(e);
       const hit = this.raycastTeeth();
       let blocked = false;
@@ -2367,6 +2383,8 @@ export class StudioEngine {
   private onPointerUp = (e: PointerEvent) => {
     // The last move first: the release happens where the pointer last was.
     this.flushPointerMove();
+    this.loupePoint = null;
+    this.wake();
     if (this.placing) {
       // The browser took the gesture over (a list being scrolled): nothing is placed nor armed.
       if (e.type === "pointercancel") this.cancelPlacing();
@@ -2412,6 +2430,8 @@ export class StudioEngine {
       } else if (hit && this.armedGroup) this.armedGroup(hit.toothId);
     } else if (this.mode === "tooth-press" && quick && this.press?.toothId) {
       this.store.selectTooth(this.press.toothId);
+      // On a phone the tooth is small on screen: a tap brings the camera to it.
+      if (this.touchAids && e.pointerType === "touch") this.focusTooth(this.press.toothId);
     } else if (this.mode === "bg-press" && quick) {
       this.store.deselect();
     }
@@ -2609,6 +2629,76 @@ export class StudioEngine {
     this.renderer.domElement.style.cursor = css;
   }
 
+  /* ---------- the phone's touch aids ---------- */
+
+  /** Phones only (`phoneLayout.ts`): tablets and computers keep the stage as it was. */
+  setTouchAids(on: boolean) {
+    this.touchAids = on;
+    if (!on) this.loupePoint = null;
+  }
+  /** Follow the frames a finger drags through (see `LoupeListener`). */
+  onLoupe(fn: LoupeListener): () => void {
+    this.loupeListener = fn;
+    return () => {
+      if (this.loupeListener === fn) this.loupeListener = null;
+    };
+  }
+  private trackLoupe(e: PointerEvent) {
+    if (!this.touchAids || e.pointerType !== "touch") return;
+    const r = this.container.getBoundingClientRect();
+    this.loupePoint = { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  private emitLoupe() {
+    const fn = this.loupeListener;
+    if (!fn) return;
+    const p = this.loupePoint;
+    if (p) {
+      this.loupeShown = true;
+      fn({ canvas: this.renderer.domElement, x: p.x, y: p.y, pixelRatio: this.renderer.getPixelRatio() });
+    } else if (this.loupeShown) {
+      this.loupeShown = false;
+      fn(null);
+    }
+  }
+  /**
+   * Move the selected pieces a small step across the screen — right, left, up
+   * or down as the camera sees them — each set back onto the enamel. Locked
+   * pieces stay; a step that would leave a tooth or enter another piece is
+   * refused as a whole, so the arrangement keeps its shape. One undo step each.
+   */
+  nudgeSelection(dx: number, dy: number, step = NUDGE_STEP): boolean {
+    if (this.readOnly || this.mouthPosed()) return false;
+    const ids = this.store.editableIds(this.store.getSnapshot().selectedJewelIds);
+    const pieces = this.store.jewels.filter((j) => ids.includes(j.id));
+    if (!pieces.length) return false;
+    this.camera.updateMatrixWorld();
+    const right = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 0);
+    const up = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 1);
+    const delta = right.multiplyScalar(dx * step).addScaledVector(up, dy * step);
+    const blockers = this.blockersFor(new Set(ids));
+    const updates: { id: string; patch: Partial<PlacedJewelry> }[] = [];
+    for (const j of pieces) {
+      const normal = new THREE.Vector3(j.normal.x, j.normal.y, j.normal.z).normalize();
+      const spot = this.snapToSurface(new THREE.Vector3(j.position.x, j.position.y, j.position.z).add(delta), normal);
+      if (!spot || !this.seatedAt(spot.point, spot.normal) || this.hitBlocked(spot, poseOf(j), blockers)) {
+        if (this.touchAids) haptic([18, 40, 18]);
+        notify("nudgeBlocked", undefined, "info");
+        return false;
+      }
+      updates.push({
+        id: j.id,
+        patch: {
+          toothId: spot.toothId,
+          position: v3(spot.point.x, spot.point.y, spot.point.z),
+          normal: v3(spot.normal.x, spot.normal.y, spot.normal.z),
+        },
+      });
+    }
+    this.store.pushHistory();
+    this.store.applyPatches(updates);
+    return true;
+  }
+
   /* ---------- library placement (drag from panel / armed click) ---------- */
 
   /** A Gem Group armed from the panel: the next tap on the model hands it the tooth hit. */
@@ -2640,8 +2730,10 @@ export class StudioEngine {
     if (!overCanvas) {
       if (this.ghost) this.ghost.root.visible = this.ghost.ringRoot.visible = false;
       this.setHoverTooth(null);
+      this.loupePoint = null;
       return;
     }
+    this.trackLoupe(e);
     this.setNDC(e);
     const hit = this.raycastTeeth();
     if (hit) {
@@ -2700,9 +2792,11 @@ export class StudioEngine {
   }
   private placeJewel(spec: PieceSpec, hit: SurfaceHit) {
     if (this.placementBlocked(hit, spec)) {
+      if (this.touchAids) haptic([18, 40, 18]);
       notify("spotTaken", undefined, "warning");
       return;
     }
+    if (this.touchAids) haptic(10);
     this.store.addJewel(spec, hit.toothId, v3(hit.point.x, hit.point.y, hit.point.z), v3(hit.normal.x, hit.normal.y, hit.normal.z));
   }
   private createGhost(spec: PieceSpec) {
@@ -3893,6 +3987,8 @@ export class StudioEngine {
     if (shadowsMove) this.renderer.shadowMap.needsUpdate = true;
     this.shadowsDirty = false;
     this.renderer.render(this.scene, this.camera);
+    // Right after the frame is drawn, while its pixels can still be copied.
+    this.emitLoupe();
     this.endWarmUp();
     this.emitSelectionAnchor();
     this.emitIssueFrames();

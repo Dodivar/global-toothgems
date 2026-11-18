@@ -34,6 +34,7 @@ import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { SearchAndFilters } from "./SearchAndFilters";
 import { useWorkspaceActions } from "./useWorkspaceActions";
 import { eyebrow, focusRing } from "./workspaceStyles";
+import { phoneLayoutNow } from "../../../lib/studio3d/phoneLayout";
 
 /** The six short lessons, each under `studio.workspace.help.tutorials.<id>`. */
 const TUTORIALS: { id: string; icon: LucideIcon; accent?: boolean }[] = [
@@ -86,7 +87,7 @@ export function HelpPanel() {
   // to the stage first, then the walkthrough starts there.
   const replay = () => {
     toEditor();
-    startTour({ withStage: !!getEngine() });
+    startTour({ withStage: !!getEngine(), phone: phoneLayoutNow() !== null });
   };
 
   const showTopic = useCallback((id: HelpTopicId) => {

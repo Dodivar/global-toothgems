@@ -709,7 +709,9 @@
       },
       "length": "{{count}} steps · about 2 minutes · the Studio stays yours to use throughout",
       "start": "Start the tour",
-      "explore": "Explore on my own"
+      "explore": "Explore on my own",
+      "subPhone": "Your first design, in five guided steps",
+      "phoneNote": "On a phone the Studio switches to a simplified mode: the stage stays on top, the gems and the settings in the panel below. For very precise placement a tablet or a computer is still more comfortable — your creations follow you there."
     },
     "complete": {
       "title": "You know your way around the 3D Studio",
@@ -722,20 +724,27 @@
       "title": "Look around the smile",
       "body": "Drag across the stage to turn around the smile; use the wheel or a pinch to come closer. The bar below keeps ready-made views and the opening framing.",
       "task": "Try it: drag across the stage to turn around the smile.",
-      "success": "Lovely. “Views” brings you back to this framing whenever you want."
+      "success": "Lovely. “Views” brings you back to this framing whenever you want.",
+      "bodyPhone": "Drag a finger across the stage to turn around the smile; pinch to come closer. Tap a tooth and the camera comes to it.",
+      "taskPhone": "Try it: drag a finger across the stage."
     },
     "pick": {
       "title": "Choose a gem",
       "body": "The shop's gems, sorted by family and searchable by name. A click takes one in hand; a drag carries it straight to a tooth.",
       "bodyClosed": "The gem library is closed to leave room for the stage. This button opens it again.",
       "task": "Take the gem you like — one click is enough.",
-      "success": "Gem chosen. The rest happens on the stage."
+      "success": "Gem chosen. The rest happens on the stage.",
+      "bodyPhone": "The shop's gems, in the “Gems” tab of the panel below. Tap one: the panel folds away and the gem stays in hand.",
+      "bodyClosedPhone": "Tap “Gems” to open the library in the panel below.",
+      "taskPhone": "Tap the gem you like."
     },
     "place": {
       "title": "Put it on a tooth",
       "body": "With a gem in hand, click the tooth you like: it settles flat on the enamel, where you clicked. Pick it up again to slide it along.",
       "task": "Place your first gem on a tooth.",
-      "success": "Your first gem is on. That is your design beginning."
+      "success": "Your first gem is on. That is your design beginning.",
+      "bodyPhone": "With a gem in hand, tap the tooth you like: it settles where you tapped. Tap more teeth to place more, then “Done”.",
+      "taskPhone": "Tap a tooth to place your first gem."
     },
     "adjust": {
       "title": "Adjust it to taste",
@@ -743,7 +752,10 @@
       "bodyClosed": "A gem's settings live in a panel that is closed. This button opens it: colour, size, rotation and position.",
       "task": "Select your gem, then change its colour or its size.",
       "midway": "Gem selected. Now change its colour, its size or its angle.",
-      "success": "That is it. Every gem is adjusted on its own."
+      "success": "That is it. Every gem is adjusted on its own.",
+      "bodyPhone": "Tap a gem: the quick bar at the foot of the stage turns it, resizes it, duplicates it or moves it finely. Every setting is in the “Settings” tab.",
+      "bodyClosedPhone": "A gem's settings are in the “Settings” tab of the panel below.",
+      "taskPhone": "Tap your gem, then change its colour or its size."
     },
     "refine": {
       "title": "Nothing is final",

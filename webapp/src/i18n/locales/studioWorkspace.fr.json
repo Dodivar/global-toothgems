@@ -709,7 +709,9 @@
       },
       "length": "{{count}} étapes · environ 2 minutes · vous gardez la main sur le Studio pendant toute la visite",
       "start": "Commencer la visite",
-      "explore": "Explorer par moi-même"
+      "explore": "Explorer par moi-même",
+      "subPhone": "Votre première création, en cinq étapes guidées",
+      "phoneNote": "Sur téléphone, le Studio passe en mode simplifié : la scène reste en haut, les gemmes et les réglages dans le panneau du bas. Pour un placement très précis, une tablette ou un ordinateur reste plus confortable — vos créations vous y suivent."
     },
     "complete": {
       "title": "Vous savez créer dans le Studio 3D",
@@ -722,20 +724,27 @@
       "title": "Faites le tour du sourire",
       "body": "Glissez sur la scène pour tourner autour du sourire ; molette ou pincement pour vous rapprocher. La barre en bas garde des vues toutes faites et le cadrage initial.",
       "task": "Essayez : glissez sur la scène pour tourner autour du sourire.",
-      "success": "Parfait. Vous pouvez revenir à ce cadrage à tout moment avec « Vues »."
+      "success": "Parfait. Vous pouvez revenir à ce cadrage à tout moment avec « Vues ».",
+      "bodyPhone": "Glissez un doigt sur la scène pour tourner autour du sourire ; pincez pour vous rapprocher. Touchez une dent : la caméra s’en approche.",
+      "taskPhone": "Essayez : glissez un doigt sur la scène."
     },
     "pick": {
       "title": "Choisissez une gemme",
       "body": "Les gemmes de la boutique, rangées par famille et cherchables par nom. Un clic la prend en main ; un glissé l’emmène directement sur une dent.",
       "bodyClosed": "La bibliothèque des gemmes est refermée pour laisser la place à la scène. Ce bouton la rouvre.",
       "task": "Prenez la gemme qui vous plaît : un clic suffit.",
-      "success": "Gemme choisie. La suite se passe sur la scène."
+      "success": "Gemme choisie. La suite se passe sur la scène.",
+      "bodyPhone": "Les gemmes de la boutique, dans l’onglet « Gemmes » du panneau du bas. Touchez-en une : le panneau se replie et la gemme reste en main.",
+      "bodyClosedPhone": "Touchez « Gemmes » pour ouvrir la bibliothèque dans le panneau du bas.",
+      "taskPhone": "Touchez la gemme qui vous plaît."
     },
     "place": {
       "title": "Posez-la sur une dent",
       "body": "Gemme en main, cliquez la dent de votre choix : elle se pose à plat sur l’émail, là où vous avez cliqué. Reprenez-la ensuite pour la déplacer.",
       "task": "Posez votre première gemme sur une dent.",
-      "success": "Votre première gemme est posée. Voilà votre création qui commence."
+      "success": "Votre première gemme est posée. Voilà votre création qui commence.",
+      "bodyPhone": "Gemme en main, touchez la dent de votre choix : elle se pose là où vous avez touché. Touchez d’autres dents pour en poser encore, puis « Terminé ».",
+      "taskPhone": "Touchez une dent pour poser votre première gemme."
     },
     "adjust": {
       "title": "Ajustez à votre goût",
@@ -743,7 +752,10 @@
       "bodyClosed": "Les réglages d’une gemme vivent dans un panneau refermé. Ce bouton l’ouvre : couleur, taille, rotation et position.",
       "task": "Sélectionnez votre gemme, puis changez sa couleur ou sa taille.",
       "midway": "Gemme sélectionnée. Changez maintenant sa couleur, sa taille ou son angle.",
-      "success": "Exactement ça. Chaque gemme se règle indépendamment."
+      "success": "Exactement ça. Chaque gemme se règle indépendamment.",
+      "bodyPhone": "Touchez une gemme : la barre rapide en bas de la scène la tourne, la redimensionne, la duplique ou la déplace finement. Tous les réglages sont dans l’onglet « Réglages ».",
+      "bodyClosedPhone": "Les réglages d’une gemme sont dans l’onglet « Réglages » du panneau du bas.",
+      "taskPhone": "Touchez votre gemme, puis changez sa couleur ou sa taille."
     },
     "refine": {
       "title": "Rien n’est définitif",

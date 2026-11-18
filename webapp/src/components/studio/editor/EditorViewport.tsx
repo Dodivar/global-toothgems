@@ -2,8 +2,12 @@ import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from "r
 import clsx from "clsx";
 import {
   Aperture,
+  ArrowDown,
   ArrowDownToLine,
+  ArrowLeft,
+  ArrowRight,
   ArrowRightToLine,
+  ArrowUp,
   Camera,
   Check,
   ChevronUp,
@@ -15,7 +19,9 @@ import {
   LassoSelect,
   ListChecks,
   LoaderCircle,
+  Maximize2,
   Minus,
+  Move,
   Orbit,
   PanelLeft,
   PanelRight,
@@ -60,6 +66,8 @@ import { studioStore, useStudio, type ContextMenuState, type LightPreset, type S
 import { GROUP_MIN_PIECES } from "../../../lib/studioWorkspace/gemGroup";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useStudioStaff } from "../../../lib/studioAccess";
+import type { PhoneLayout } from "../../../lib/studio3d/phoneLayout";
+import { LOUPE_SIZE, loupeSource, placeLoupe } from "../../../lib/studio3d/stageLoupe";
 
 /**
  * Centred in the part of the stage the side drawers leave in view, and no wider
@@ -88,13 +96,14 @@ interface PanelControls {
   toggle: (panel: EditorPanel) => void;
 }
 
-export function EditorViewport({ panels }: { panels?: PanelControls }) {
+export function EditorViewport({ panels, phone = null }: { panels?: PanelControls; phone?: PhoneLayout }) {
   const snap = useStudio();
   const { t, pieceName } = useEditorLabels();
   const hostRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [engineReady, setEngineReady] = useState(false);
+  const { ref: stageRef, active: fullscreen, overlay: fullscreenOverlay, toggle: toggleFullscreen } = useStageFullscreen<HTMLElement>();
 
   useEffect(() => {
     const host = hostRef.current;
@@ -115,6 +124,21 @@ export function EditorViewport({ panels }: { panels?: PanelControls }) {
       setEngine(null);
     };
   }, []);
+
+  // A phone's touch aids (loupe, a tooth tap that zooms, haptics): phones only.
+  useEffect(() => {
+    if (engineReady) getEngine()?.setTouchAids(!!phone);
+  }, [engineReady, phone]);
+
+  // On a phone a pinch over the stage's own controls must not zoom the page (iPhone Safari's
+  // `gesturestart`; elsewhere `touch-action: none` on the stage does it).
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || !phone) return;
+    const stop = (e: Event) => e.preventDefault();
+    stage.addEventListener("gesturestart", stop);
+    return () => stage.removeEventListener("gesturestart", stop);
+  }, [phone, stageRef]);
 
   // Drag and drop a .glb model straight onto the stage (staff only, like the import button).
   const staff = useStudioStaff();
@@ -149,7 +173,6 @@ export function EditorViewport({ panels }: { panels?: PanelControls }) {
 
   const armedName = snap.armedTypeId ? pieceName({ productId: snap.armedTypeId }) : null;
   const quick = useQuickActions();
-  const { ref: stageRef, active: fullscreen, overlay: fullscreenOverlay, toggle: toggleFullscreen } = useStageFullscreen<HTMLElement>();
 
   return (
     <section
@@ -158,6 +181,9 @@ export function EditorViewport({ panels }: { panels?: PanelControls }) {
       data-tour="stage"
       className={clsx(
         "gt-editor-stage @container relative isolate h-[58vh] min-h-[380px] min-w-0 overflow-hidden studio-side:h-auto studio-side:min-h-0",
+        // A phone held upright: the stage fills the room the bottom sheet leaves it (`PhoneSheet`).
+        // On any phone, a pinch on the stage is the camera's, never the page's.
+        "studio-phone-portrait:h-full studio-phone-portrait:min-h-0 studio-phone:touch-none",
         // Full screen, the side drawers are out of view: the controls centre on the whole stage.
         fullscreen && "[--gt-lib-open:0px] [--gt-insp-open:0px]",
         fullscreenOverlay && "!fixed inset-0 z-[90] !h-[100dvh] !min-h-0",
@@ -182,7 +208,8 @@ export function EditorViewport({ panels }: { panels?: PanelControls }) {
         />
       )}
 
-      {armedName && (
+      {armedName && phone && <ArmedBanner name={armedName} placed={snap.jewels.length > 0} />}
+      {armedName && !phone && (
         <Pill position="top">
           <span>{t("studio.editor.viewport.armed", { name: armedName })}</span>
           <button
@@ -254,14 +281,14 @@ export function EditorViewport({ panels }: { panels?: PanelControls }) {
       )}
       {snap.jewels.length === 0 && !snap.modelLoading && !snap.placingTypeId && !armedName && !failed && (
         <Pill position="bottom" floating>
-          {t("studio.editor.viewport.hint")}
+          {t(phone ? "studio.editor.viewport.hintPhone" : "studio.editor.viewport.hint")}
         </Pill>
       )}
 
       {engineReady && snap.issues.length > 0 && <IssueFrames />}
       {engineReady && snap.issues.length > 0 && <IssuePanel issues={snap.issues} jewels={snap.jewels} />}
       {engineReady && snap.selectedJewelIds.length > 0 && !snap.contextMenu && !snap.lasso && quick.enabled && quick.actions.length > 0 && (
-        <QuickBar ids={snap.selectedJewelIds} jewels={snap.jewels} actions={quick.actions} />
+        <QuickBar ids={snap.selectedJewelIds} jewels={snap.jewels} actions={quick.actions} docked={!!phone} />
       )}
       {snap.contextMenu && <ContextMenu cm={snap.contextMenu} snap={snap} />}
       {!failed && (
@@ -274,6 +301,8 @@ export function EditorViewport({ panels }: { panels?: PanelControls }) {
         />
       )}
       {panels?.side && !fullscreen && <PanelToggles panels={panels} selectedCount={snap.selectedJewelIds.length} />}
+      {engineReady && phone && <StageLoupe />}
+      {engineReady && phone === "landscape" && !fullscreen && <FullscreenSuggestion onAccept={toggleFullscreen} />}
       <p className="pointer-events-none absolute left-1/2 top-5 z-[3] m-0 hidden -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
         {t(`studio.editor.viewport.stage.${snap.modelMode}`)}
       </p>
@@ -381,6 +410,10 @@ function Pill({ children, position, floating }: { children: React.ReactNode; pos
 /** Touch-sized buttons (42px, 48px with the bar's padding and border), and the bar's gap to the selection. */
 const QUICK_BUTTON = 42;
 const BAR_HEIGHT = 48;
+/** Docked on a phone: the 44px a fingertip is promised, and the bar's distance from the stage's foot (over the camera bar). */
+const QUICK_BUTTON_DOCKED = 44;
+const BAR_HEIGHT_DOCKED = 50;
+const DOCK_BOTTOM = 64;
 const BAR_GAP = 12;
 /** Stage bands the bar stays out of: the tooth chip on top, the camera bar at the foot. */
 const STAGE_TOP_RESERVED = 56;
@@ -432,7 +465,7 @@ const quickButton = clsx(
  * The bar follows the selection as the camera moves and hides while a piece
  * is dragged or off screen.
  */
-function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewelry[]; actions: QuickActionId[] }) {
+function QuickBar({ ids, jewels, actions, docked = false }: { ids: string[]; jewels: PlacedJewelry[]; actions: QuickActionId[]; docked?: boolean }) {
   const { t, sizeName, sizeShort } = useEditorLabels();
   const barRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -445,8 +478,22 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
   const selectionKey = ids.join(",");
   const [colorFor, setColorFor] = useState<string | null>(null);
   const colorOpen = colorFor === selectionKey;
-  const setColorOpen = (open: boolean) => setColorFor(open ? selectionKey : null);
+  const setColorOpen = (open: boolean) => {
+    setColorFor(open ? selectionKey : null);
+    if (open) setNudgeFor(null);
+  };
+  // The phone's nudge pad, open for one selection like the colour panel (and never both at once).
+  const nudgeButtonRef = useRef<HTMLButtonElement>(null);
+  const [nudgeFor, setNudgeFor] = useState<string | null>(null);
+  const nudgeOpen = docked && nudgeFor === selectionKey;
+  const setNudgeOpen = (open: boolean) => {
+    setNudgeFor(open ? selectionKey : null);
+    if (open) setColorFor(null);
+  };
   const panelId = useId();
+  const nudgeId = useId();
+  const buttonSize = docked ? QUICK_BUTTON_DOCKED : QUICK_BUTTON;
+  const barHeight = docked ? BAR_HEIGHT_DOCKED : BAR_HEIGHT;
 
   useEffect(() => {
     const engine = getEngine();
@@ -469,7 +516,7 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
   // The bar's width changes with its buttons and the size readout, the panel comes and goes: stay placed.
   useLayoutEffect(() => {
     if (anchorRef.current) placeBarAndPanel(barRef.current, panelRef.current, anchorRef.current, !!gestureRef.current);
-  }, [actions, size, colorOpen]);
+  }, [actions, size, colorOpen, nudgeOpen, docked]);
 
   // The panel grows when the custom colour wheel opens: place it again.
   useEffect(() => {
@@ -491,6 +538,16 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     window.addEventListener("pointerdown", onDown, true);
     return () => window.removeEventListener("pointerdown", onDown, true);
   }, [colorOpen]);
+  // The nudge pad closes the same way, except while the bar itself is pressed (another action).
+  useEffect(() => {
+    if (!nudgeOpen) return;
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (!panelRef.current?.contains(target) && !nudgeButtonRef.current?.contains(target)) setNudgeFor(null);
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    return () => window.removeEventListener("pointerdown", onDown, true);
+  }, [nudgeOpen]);
 
   const finish = () => {
     const g = gestureRef.current;
@@ -515,6 +572,7 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     setColorOpen(false);
+    setNudgeOpen(false);
     // The pivot is the selection's centre: a group turns around it, a single piece around itself.
     const pivotX = stage.left + a.cx;
     const pivotY = stage.top + a.cy;
@@ -536,7 +594,7 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     const el = barRef.current;
     if (!el) return;
     el.style.left = `${Math.round(x)}px`;
-    el.style.top = `${Math.round(y - BAR_HEIGHT / 2)}px`;
+    el.style.top = `${Math.round(y - el.offsetHeight / 2)}px`;
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -570,7 +628,7 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
       title={label}
       onClick={onClick}
       className={clsx(quickButton, danger && "text-[#ffb4ab]", active && "bg-white/15")}
-      style={{ width: QUICK_BUTTON, height: QUICK_BUTTON }}
+      style={{ width: buttonSize, height: buttonSize }}
     >
       <Icon size={17} aria-hidden="true" />
     </button>
@@ -598,7 +656,7 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
               // Turning: solid white, like the stage's other active toggles.
               turning && "cursor-grabbing bg-white text-[var(--gt-ink-900)] hover:bg-white",
             )}
-            style={{ height: QUICK_BUTTON, minWidth: QUICK_BUTTON }}
+            style={{ height: buttonSize, minWidth: buttonSize }}
           >
             <RotateCw size={17} aria-hidden="true" />
             <span aria-hidden="true" className={clsx("tabular-nums", !turning && "max-sm:hidden")}>
@@ -631,7 +689,7 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
             aria-haspopup="dialog"
             onClick={() => setColorOpen(!colorOpen)}
             className={clsx(quickButton, colorOpen && "bg-white/15")}
-            style={{ width: QUICK_BUTTON, height: QUICK_BUTTON }}
+            style={{ width: buttonSize, height: buttonSize }}
           >
             <span
               aria-hidden="true"
@@ -666,6 +724,23 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     : allLocked
       ? actions.filter((id) => LOCKED_QUICK_ACTIONS.includes(id))
       : actions;
+  // Docked on a phone, the bar also opens the nudge pad: the finger is too coarse for the last millimetre.
+  const nudgeLabel = t("studio.editor.viewport.nudge.open");
+  const nudgeButton = docked && !turning && !allLocked && (
+    <button
+      ref={nudgeButtonRef}
+      type="button"
+      aria-label={nudgeLabel}
+      title={nudgeLabel}
+      aria-expanded={nudgeOpen}
+      aria-controls={nudgeId}
+      onClick={() => setNudgeOpen(!nudgeOpen)}
+      className={clsx(quickButton, nudgeOpen && "bg-white/15")}
+      style={{ width: buttonSize, height: buttonSize }}
+    >
+      <Move size={17} aria-hidden="true" />
+    </button>
+  );
 
   return (
     <>
@@ -688,20 +763,36 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
         ref={barRef}
         role="toolbar"
         aria-label={t("studio.editor.viewport.quick.label", { count })}
+        data-docked={docked ? "true" : undefined}
         className={clsx(
-          "gt-editor-chip gt-editor-scroll-x absolute left-0 top-0 z-[7] flex max-w-[calc(100%-16px)] -translate-x-1/2 items-center gap-0.5 overflow-x-auto rounded-full p-0.5",
+          "gt-editor-chip absolute left-0 top-0 z-[7] flex max-w-[calc(100%-16px)] -translate-x-1/2 items-center gap-0.5 p-0.5",
+          // Docked on a phone every action stays in view: the bar wraps onto a second row
+          // rather than scroll a button out of the thumb's sight.
+          docked ? "w-max flex-wrap justify-center rounded-[26px]" : "gt-editor-scroll-x overflow-x-auto rounded-full",
           stageGlass,
           !visible && "invisible",
         )}
-        style={{ height: BAR_HEIGHT }}
+        style={docked ? { minHeight: barHeight } : { height: barHeight }}
       >
         {shown.map((id, i) => (
           <Fragment key={id}>
-            {i > 0 && sep}
+            {i > 0 && !docked && sep}
             {render(id)}
           </Fragment>
         ))}
+        {nudgeButton}
       </div>
+      {nudgeOpen && !turning && !allLocked && (
+        <NudgePad
+          ref={panelRef}
+          id={nudgeId}
+          hidden={!visible}
+          onClose={() => {
+            setNudgeOpen(false);
+            nudgeButtonRef.current?.focus();
+          }}
+        />
+      )}
       {colorOpen && !turning && !allLocked && actions.includes("color") && (
         <QuickColorPanel
           ref={panelRef}
@@ -744,12 +835,13 @@ function swatchOf(pieces: PlacedJewelry[]): string {
  * covers the quick bar rather than leave the stage.
  */
 function placeColorPanel(panel: HTMLElement, bar: HTMLElement, a: SelectionAnchor) {
+  const barHeight = bar.offsetHeight || BAR_HEIGHT;
   const barTop = parseFloat(bar.style.top) || 0;
   const barCentre = parseFloat(bar.style.left) || 0;
   const w = panel.offsetWidth;
   const h = panel.offsetHeight;
   const maxBottom = a.height - STAGE_BOTTOM_RESERVED;
-  const below = barTop + BAR_HEIGHT + 8;
+  const below = barTop + barHeight + 8;
   const above = barTop - 8 - h;
   let y = barTop >= (a.top + a.bottom) / 2 ? below : above;
   if (y + h > maxBottom) y = above;
@@ -761,7 +853,7 @@ function placeColorPanel(panel: HTMLElement, bar: HTMLElement, a: SelectionAncho
     const side = right + w <= a.width - STAGE_SIDE_MARGIN ? right : left >= STAGE_SIDE_MARGIN ? left : null;
     if (side !== null) {
       panel.style.left = `${Math.round(side)}px`;
-      panel.style.top = `${Math.round(Math.max(STAGE_SIDE_MARGIN, Math.min(barTop + BAR_HEIGHT / 2 - h / 2, maxBottom - h)))}px`;
+      panel.style.top = `${Math.round(Math.max(STAGE_SIDE_MARGIN, Math.min(barTop + barHeight / 2 - h / 2, maxBottom - h)))}px`;
       return;
     }
     y = Math.min(below, maxBottom - h);
@@ -772,8 +864,16 @@ function placeColorPanel(panel: HTMLElement, bar: HTMLElement, a: SelectionAncho
   panel.style.top = `${Math.round(y)}px`;
 }
 
-/** Centre the bar under the selection, above it when the camera bar is in the way, always inside the stage. */
+/**
+ * Centre the bar under the selection, above it when the camera bar is in the way, always inside the stage.
+ * Docked (a phone), it stays at the foot of the stage, over the camera bar, where the thumb is.
+ */
 function placeQuickBar(el: HTMLElement, a: SelectionAnchor) {
+  if (el.dataset.docked === "true") {
+    el.style.left = `${Math.round(a.width / 2)}px`;
+    el.style.top = `${Math.round(Math.max(STAGE_SIDE_MARGIN, a.height - DOCK_BOTTOM - el.offsetHeight))}px`;
+    return;
+  }
   const half = el.offsetWidth / 2 || BAR_HEIGHT;
   // Clear of the side drawers lying over the stage, when the space left allows it.
   const covered = el.offsetParent ? getComputedStyle(el.offsetParent) : null;
@@ -1178,6 +1278,230 @@ function StageMenu({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------ phone aids */
+
+/**
+ * A gem in hand on a phone: a band across the top of the stage naming it, with
+ * a "Done" button big enough for a thumb. The gem stays in hand after each tap
+ * on a tooth, so a row of gems is placed without reopening the library.
+ */
+function ArmedBanner({ name, placed }: { name: string; placed: boolean }) {
+  const { t } = useEditorLabels();
+  return (
+    <div
+      role="status"
+      className={clsx(
+        "absolute left-1/2 top-3 z-[9] flex w-[calc(100%-24px)] max-w-[420px] -translate-x-1/2 items-center gap-3 rounded-[var(--radius-lg)] py-1.5 pl-4 pr-1.5",
+        stageGlass,
+      )}
+    >
+      <span aria-hidden="true" className="gt-editor-pulse h-2 w-2 flex-none rounded-full bg-[var(--gt-emerald-400)]" />
+      <span className="grid min-w-0 flex-1 leading-tight">
+        <span className="truncate text-[12.5px] font-bold">{name}</span>
+        <span className="truncate text-[11.5px] text-white/80">
+          {t(placed ? "studio.editor.viewport.armedTouchMore" : "studio.editor.viewport.armedTouch")}
+        </span>
+      </span>
+      <button
+        type="button"
+        onClick={() => studioStore.setArmed(null)}
+        className="h-11 flex-none rounded-full bg-white px-4 text-[12px] font-bold text-[var(--gt-ink-900)] hover:bg-[var(--gt-blue-50)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      >
+        {t("studio.editor.viewport.armedDone")}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The loupe on a phone: while a finger drags a piece or a gem from the library,
+ * a circle above it shows, magnified, what the fingertip hides. It copies the
+ * frame the engine has just drawn (`onLoupe`), so it costs one small image copy
+ * per frame and nothing at rest.
+ */
+function StageLoupe() {
+  const { t } = useEditorLabels();
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const engine = getEngine();
+    if (!engine) return;
+    return engine.onLoupe((frame) => {
+      const wrap = wrapRef.current;
+      const out = canvasRef.current;
+      if (!wrap || !out) return;
+      if (!frame) {
+        wrap.hidden = true;
+        return;
+      }
+      const stage = wrap.parentElement;
+      const box = placeLoupe(frame.x, frame.y, stage?.clientWidth ?? 0, stage?.clientHeight ?? 0);
+      wrap.style.left = `${box.left}px`;
+      wrap.style.top = `${box.top}px`;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const px = Math.round(LOUPE_SIZE * dpr);
+      if (out.width !== px) out.width = out.height = px;
+      const ctx = out.getContext("2d");
+      if (!ctx) return;
+      const src = loupeSource(frame.x, frame.y, frame.pixelRatio);
+      ctx.fillStyle = "#e9eef5";
+      ctx.fillRect(0, 0, px, px);
+      ctx.drawImage(frame.canvas, src.sx, src.sy, src.side, src.side, 0, 0, px, px);
+      wrap.hidden = false;
+    });
+  }, []);
+  return (
+    <div
+      ref={wrapRef}
+      hidden
+      aria-hidden="true"
+      title={t("studio.editor.viewport.loupe")}
+      className="pointer-events-none absolute z-[12] overflow-hidden rounded-full border-[3px] border-white shadow-[0_6px_22px_rgba(17,17,17,.35)]"
+      style={{ width: LOUPE_SIZE, height: LOUPE_SIZE }}
+    >
+      <canvas ref={canvasRef} className="block h-full w-full" />
+      <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--gt-emerald-400)] shadow-[0_0_0_1px_rgba(17,17,17,.4)]" />
+    </div>
+  );
+}
+
+const FULLSCREEN_SUGGESTED_KEY = "gt-studio3d-fullscreen-suggested";
+
+/**
+ * A phone held sideways leaves the stage little height: after the artist's
+ * first camera gesture, once per browser session, the stage offers to fill the
+ * screen. The button is the user gesture full screen needs.
+ */
+function FullscreenSuggestion({ onAccept }: { onAccept: () => void }) {
+  const { t } = useEditorLabels();
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    let seen = true;
+    try {
+      seen = sessionStorage.getItem(FULLSCREEN_SUGGESTED_KEY) !== null;
+    } catch {
+      /* storage blocked: never nag */
+    }
+    if (seen) return;
+    return getEngine()?.onCameraGesture(() => setShow(true));
+  }, []);
+  const dismiss = () => {
+    setShow(false);
+    try {
+      sessionStorage.setItem(FULLSCREEN_SUGGESTED_KEY, "1");
+    } catch {
+      /* the suggestion lasts for this visit */
+    }
+  };
+  if (!show) return null;
+  return (
+    // Centred between the two panel switches of the stage's top corners.
+    <div role="status" className={clsx("absolute top-3 z-[9] flex -translate-x-1/2 items-center gap-1.5 rounded-full py-1 pl-3.5 pr-1 text-[12px] font-semibold", stageCentre, stageGlass)}>
+      <span className="whitespace-nowrap">{t("studio.editor.viewport.fullscreenSuggest")}</span>
+      <button
+        type="button"
+        onClick={() => {
+          dismiss();
+          onAccept();
+        }}
+        className="inline-flex h-10 items-center gap-1.5 rounded-full bg-white px-3.5 text-[12px] font-bold text-[var(--gt-ink-900)] hover:bg-[var(--gt-blue-50)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      >
+        <Maximize2 size={14} aria-hidden="true" />
+        {t("studio.editor.viewport.fullscreenSuggestGo")}
+      </button>
+      <button
+        type="button"
+        aria-label={t("studio.editor.viewport.fullscreenSuggestDismiss")}
+        title={t("studio.editor.viewport.fullscreenSuggestDismiss")}
+        onClick={dismiss}
+        className="grid h-10 w-10 place-items-center rounded-full text-white/85 hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white"
+      >
+        <X size={15} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+/** A held arrow repeats after this long, then every `NUDGE_REPEAT_MS`. */
+const NUDGE_HOLD_MS = 380;
+const NUDGE_REPEAT_MS = 110;
+
+/**
+ * The phone's nudge pad, beside the docked quick bar: four arrows moving the
+ * selection a fraction of a millimetre across the screen (`nudgeSelection`), in
+ * the directions the camera sees. A tap is one step; held, it keeps going.
+ */
+function NudgePad({ ref, id, hidden, onClose }: { ref: React.Ref<HTMLDivElement>; id: string; hidden: boolean; onClose: () => void }) {
+  const { t } = useEditorLabels();
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stop = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+  useEffect(() => stop, []);
+  const start = (dx: number, dy: number) => (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    stop();
+    if (!getEngine()?.nudgeSelection(dx, dy)) return;
+    const repeat = () => {
+      if (!getEngine()?.nudgeSelection(dx, dy)) return stop();
+      timer.current = setTimeout(repeat, NUDGE_REPEAT_MS);
+    };
+    timer.current = setTimeout(repeat, NUDGE_HOLD_MS);
+  };
+  const arrow = (label: string, Icon: typeof Copy, dx: number, dy: number, area: string) => (
+    <button
+      style={{ gridArea: area }}
+      type="button"
+      aria-label={label}
+      title={label}
+      onPointerDown={start(dx, dy)}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      onContextMenu={(e) => e.preventDefault()}
+      // A keyboard (or a switch device) moves one step per press.
+      onKeyDown={(e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        getEngine()?.nudgeSelection(dx, dy);
+      }}
+      className={clsx(
+        "grid h-11 w-11 touch-none select-none place-items-center rounded-full bg-[var(--gt-ink-100)] text-[var(--gt-ink-800)] [-webkit-touch-callout:none]",
+        "active:bg-[var(--gt-ink-900)] active:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+      )}
+    >
+      <Icon size={18} aria-hidden="true" />
+    </button>
+  );
+  return (
+    <div
+      ref={ref}
+      id={id}
+      role="dialog"
+      aria-label={t("studio.editor.viewport.nudge.label")}
+      onKeyDown={(e) => {
+        if (e.key !== "Escape") return;
+        e.preventDefault();
+        onClose();
+      }}
+      className={clsx(
+        "absolute left-0 top-0 z-[9] grid w-[172px] justify-items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-2.5 shadow-[var(--shadow-lg)] motion-safe:animate-[gt-menu-in_var(--duration-fast)_var(--ease-out-soft)_both]",
+        hidden && "invisible",
+      )}
+    >
+      <div className="grid grid-cols-3 grid-rows-3 gap-1" style={{ gridTemplateAreas: '". up ." "left . right" ". down ."' }}>
+        {arrow(t("studio.editor.viewport.nudge.up"), ArrowUp, 0, 1, "up")}
+        {arrow(t("studio.editor.viewport.nudge.left"), ArrowLeft, -1, 0, "left")}
+        {arrow(t("studio.editor.viewport.nudge.right"), ArrowRight, 1, 0, "right")}
+        {arrow(t("studio.editor.viewport.nudge.down"), ArrowDown, 0, -1, "down")}
+      </div>
+      <p className="m-0 text-center text-[10.5px] leading-snug text-[var(--text-muted)]">{t("studio.editor.viewport.nudge.hint")}</p>
     </div>
   );
 }

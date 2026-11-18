@@ -364,7 +364,24 @@
       "selectIdentical": "+ Identiques",
       "selectIdenticalHint": "Ajouter toutes les gemmes identiques (même gemme, couleur et taille)",
       "lassoActiveAdd": "Entourez les pièces à ajouter à la sélection",
-      "multiPrompt": "Touchez les gemmes à ajouter"
+      "multiPrompt": "Touchez les gemmes à ajouter",
+      "armedTouch": "Touchez une dent pour la poser",
+      "armedTouchMore": "Touchez d’autres dents pour en poser encore",
+      "armedDone": "Terminé",
+      "hintPhone": "Ouvrez « Gemmes », touchez une gemme, puis une dent",
+      "loupe": "Loupe sous votre doigt",
+      "fullscreenSuggest": "Plus de place pour la scène ?",
+      "fullscreenSuggestGo": "Plein écran",
+      "fullscreenSuggestDismiss": "Non merci",
+      "nudge": {
+        "open": "Déplacer finement",
+        "label": "Déplacer finement la sélection",
+        "left": "Déplacer vers la gauche",
+        "right": "Déplacer vers la droite",
+        "up": "Déplacer vers le haut",
+        "down": "Déplacer vers le bas",
+        "hint": "Un appui : un petit pas. Maintenu : en continu."
+      }
     },
     "views": {
       "label": "Caméra",
@@ -637,7 +654,8 @@
       "addedToCart_other": "{{count}} articles ajoutés au panier",
       "lockedNoMove": "Cette pièce est verrouillée — déverrouillez-la pour la déplacer",
       "lockedKept_one": "{{count}} pièce verrouillée n’a pas été supprimée",
-      "lockedKept_other": "{{count}} pièces verrouillées n’ont pas été supprimées"
+      "lockedKept_other": "{{count}} pièces verrouillées n’ont pas été supprimées",
+      "nudgeBlocked": "Impossible d’aller plus loin : la pièce quitterait la dent ou toucherait une autre pièce"
     },
     "pieceUnavailable": "Gemme retirée de la boutique",
     "shopPrice": "Prix boutique : {{price}}",
@@ -677,6 +695,16 @@
       "added": "Ajouté à votre panier.",
       "viewCart": "Voir le panier",
       "noneAvailable": "Aucun produit disponible"
+    },
+    "phoneSheet": {
+      "label": "Panneau du Studio",
+      "expand": "Agrandir le panneau",
+      "collapse": "Réduire le panneau",
+      "handle": "Poignée du panneau : touchez pour l’ouvrir ou le réduire, glissez pour l’ajuster",
+      "tabsLabel": "Contenu du panneau",
+      "selected_one": "{{count}} pièce sélectionnée",
+      "selected_other": "{{count}} pièces sélectionnées",
+      "tooth": "Une dent est sélectionnée"
     }
   },
   "account": {

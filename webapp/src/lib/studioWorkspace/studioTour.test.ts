@@ -15,6 +15,7 @@ import {
   startTour,
   tourBaseline,
   TOUR_STEPS,
+  tourStepsFor,
   visibleStage,
   type TourStepId,
 } from "./studioTour";
@@ -99,7 +100,16 @@ describe("the guided tour's steps", () => {
     expect(stepOf("pick").anchor).toBe("library");
   });
 
-  it("every panel step names the switch that brings its panel back", () => {
+  it("is shorter on a phone, where Undo sits in the thumb's reach, and the same elsewhere", () => {
+    expect(tourStepsFor({ phone: true }).map((s) => s.id)).toEqual(["stage", "pick", "place", "adjust", "keep"]);
+    expect(tourStepsFor({ phone: false })).toEqual(TOUR_STEPS);
+    expect(tourStepsFor({ withStage: false, phone: true }).some((s) => s.needsEngine)).toBe(false);
+    startTour({ phone: true });
+    expect(getTour().steps.map((s) => s.id)).not.toContain("refine");
+    exitTour();
+  });
+
+    it("every panel step names the switch that brings its panel back", () => {
     for (const step of TOUR_STEPS) {
       if (step.anchor === "library" || step.anchor === "inspector") expect(step.fallback).toBeTruthy();
     }

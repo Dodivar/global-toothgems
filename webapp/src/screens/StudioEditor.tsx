@@ -8,6 +8,8 @@ import { EditorLibrary } from "../components/studio/editor/EditorLibrary";
 import { EditorViewport } from "../components/studio/editor/EditorViewport";
 import { EditorInspector } from "../components/studio/editor/EditorInspector";
 import { useEditorPanels, usePanelPresence } from "../components/studio/editor/useEditorPanels";
+import { PhoneEditorLayout } from "../components/studio/editor/PhoneSheet";
+import { usePhoneLayout, usePhoneLayoutAttribute } from "../lib/studio3d/phoneLayout";
 import { StudioSidebar } from "../components/studio/workspace/StudioSidebar";
 import { WorkspaceDialogs } from "../components/studio/workspace/WorkspaceDialogs";
 import { CreationLibrary } from "../components/studio/workspace/CreationLibrary";
@@ -76,6 +78,9 @@ function StudioWorkspace() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { save } = useWorkspaceActions();
   const panels = useEditorPanels();
+  // A phone, and only a phone, gets its own layout and touch aids (`phoneLayout.ts`).
+  const phone = usePhoneLayout();
+  usePhoneLayoutAttribute(phone);
   const library = usePanelPresence(panels.open.library);
   const inspector = usePanelPresence(panels.open.inspector);
   // Read by the keyboard handler, which is registered once.
@@ -108,9 +113,10 @@ function StudioWorkspace() {
   }, [showToast, t]);
 
   // Opened on a phone: say once per session that a tablet or a computer is far more comfortable.
-  // It goes first; the welcome below then waits for it (and is opened by it when it closes).
+  // On a first visit the welcome below says it itself (one window, not two); otherwise the notice
+  // goes first and alone.
   useEffect(() => {
-    if (!isPhoneDevice() || phoneNoticeSeen()) return;
+    if (!isPhoneDevice() || phoneNoticeSeen() || !onboardingSeen()) return;
     if (!getWorkspaceDialog()) openWorkspaceDialog({ kind: "phoneNotice" });
   }, []);
 
@@ -212,7 +218,13 @@ function StudioWorkspace() {
   }, []);
 
   return (
-    <div className="gt-editor flex min-h-[100dvh] overflow-x-clip bg-[var(--surface-page)] studio-side:h-[100dvh] studio-side:min-h-0">
+    <div
+      className={clsx(
+        "gt-editor flex min-h-[100dvh] overflow-x-clip bg-[var(--surface-page)] studio-side:h-[100dvh] studio-side:min-h-0",
+        // A phone held upright: one screen, nothing scrolls — the stage on top, the sheet below.
+        "studio-phone-portrait:h-[100dvh] studio-phone-portrait:min-h-0 studio-phone-portrait:overflow-hidden studio-phone-portrait:overscroll-none",
+      )}
+    >
       <StudioSidebar section={section} drawerOpen={drawerOpen} onCloseDrawer={() => setDrawerOpen(false)} />
       <div className="relative flex min-w-0 flex-1 flex-col">
         {/* The editor stays mounted under a section — hidden but still measured —
@@ -225,6 +237,9 @@ function StudioWorkspace() {
               search, tab and scroll are still there when it comes back. The width a drawer
               covers (`--gt-lib-open`, `--gt-insp-open`) keeps the stage's own controls in
               the part still in view. Stacked (a phone held upright), the panels follow the stage. */}
+          {phone === "portrait" ? (
+            <PhoneEditorLayout stage={<EditorViewport panels={panels} phone={phone} />} library={<EditorLibrary />} inspector={<EditorInspector />} />
+          ) : (
           <div
             className={clsx(
               "flex min-h-0 flex-1 flex-col studio-side:relative studio-side:block",
@@ -235,7 +250,7 @@ function StudioWorkspace() {
           >
             {/* Stage first on small screens: it is what the visitor came for. */}
             <div className="order-1 grid min-h-0 min-w-0 grid-cols-[minmax(0,1fr)] studio-side:absolute studio-side:inset-0">
-              <EditorViewport panels={panels} />
+              <EditorViewport panels={panels} phone={phone} />
             </div>
             <div
               id="gt-editor-library-panel"
@@ -260,6 +275,7 @@ function StudioWorkspace() {
               <EditorInspector />
             </div>
           </div>
+          )}
         </div>
         {section && (
           <main key={section} className="gt-ws-section fixed inset-0 z-30 flex min-w-0 flex-col overflow-hidden bg-[var(--surface-page)] lg:absolute">

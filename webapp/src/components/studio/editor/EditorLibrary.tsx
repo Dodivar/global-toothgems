@@ -108,14 +108,20 @@ export const EditorLibrary = memo(function EditorLibrary() {
     <aside
       aria-labelledby="gt-editor-library"
       data-tour="library"
-      className="flex min-h-0 flex-col border-b border-[var(--border-subtle)] bg-[var(--surface-card)] studio-side:border-b-0 studio-side:border-r"
+      className="flex min-h-0 flex-col border-b border-[var(--border-subtle)] bg-[var(--surface-card)] studio-side:border-b-0 studio-side:border-r studio-phone-portrait:border-0"
     >
-      {/* On a phone held sideways every line of height counts: the title is left to screen readers. */}
-      <div className="grid gap-1 px-4 pb-3 pt-4 studio-short:p-0 studio-short:pt-2.5">
-        <h2 id="gt-editor-library" className="m-0 text-[length:var(--text-body-md)] font-[var(--weight-black)] text-[var(--text-primary)] studio-short:sr-only">
+      {/* On a phone held sideways every line of height counts: the title is left to screen readers.
+          In the phone's bottom sheet, its tab already names it. */}
+      <div className="grid gap-1 px-4 pb-3 pt-4 studio-short:p-0 studio-short:pt-2.5 studio-phone-portrait:p-0 studio-phone-portrait:pt-1">
+        <h2
+          id="gt-editor-library"
+          className="m-0 text-[length:var(--text-body-md)] font-[var(--weight-black)] text-[var(--text-primary)] studio-short:sr-only studio-phone-portrait:sr-only"
+        >
           {t("studio.editor.library.title")}
         </h2>
-        {tab === "gems" && <p className="m-0 text-[12px] leading-snug text-[var(--text-muted)] studio-short:hidden">{t("studio.editor.library.sub")}</p>}
+        {tab === "gems" && (
+          <p className="m-0 text-[12px] leading-snug text-[var(--text-muted)] studio-short:hidden studio-phone-portrait:hidden">{t("studio.editor.library.sub")}</p>
+        )}
       </div>
       {/* Single gems, or the account's saved Gem Groups: two sources, one placement model. */}
       <div

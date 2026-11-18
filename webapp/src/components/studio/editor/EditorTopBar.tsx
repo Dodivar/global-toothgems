@@ -44,7 +44,7 @@ export function EditorTopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
   };
 
   return (
-    <header className="relative z-30 flex h-14 min-w-0 studio-short:h-12 items-center gap-1 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-2 sm:gap-2 sm:px-3">
+    <header className="relative z-30 flex h-14 min-w-0 studio-short:h-12 studio-phone-landscape:h-11 studio-phone-landscape:gap-1 items-center gap-1 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] px-2 sm:gap-2 sm:px-3">
       {/* Below `lg` the workspace navigation lives in a drawer; on desktop it is the rail. */}
       <button type="button" className={clsx(toolButton, "lg:hidden")} aria-label={t("studio.workspace.nav.open")} title={t("studio.workspace.nav.open")} onClick={onOpenMenu}>
         <Menu size={18} aria-hidden="true" />
@@ -84,8 +84,9 @@ export function EditorTopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
       </p>
 
       <span aria-hidden="true" className="mx-0.5 hidden h-5 w-px bg-[var(--border-subtle)] sm:block" />
-      {/* Undo and Redo travel together: the guided tour points at the pair (`data-tour`). */}
-      <div data-tour="history" className="flex flex-none items-center gap-1 sm:gap-2">
+      {/* Undo and Redo travel together: the guided tour points at the pair (`data-tour`).
+          On a phone held upright they move to the bottom sheet, within the thumb's reach (`PhoneSheet`). */}
+      <div data-tour="history" className="flex flex-none items-center gap-1 sm:gap-2 studio-phone-portrait:hidden">
         <button
           type="button"
           className={toolButton}

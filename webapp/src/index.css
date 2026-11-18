@@ -14,6 +14,11 @@
   }
 }
 @custom-variant studio-short (@media (orientation: landscape) and (max-height: 560px));
+/* The 3D Studio on a phone, and only a phone (`lib/studio3d/phoneLayout.ts`, written on
+   `<html data-studio-phone>` while the editor is open): tablets and desktops never match. */
+@custom-variant studio-phone (&:where([data-studio-phone] *));
+@custom-variant studio-phone-portrait (&:where([data-studio-phone="portrait"] *));
+@custom-variant studio-phone-landscape (&:where([data-studio-phone="landscape"] *));
 
 :root {
   /* Colors */

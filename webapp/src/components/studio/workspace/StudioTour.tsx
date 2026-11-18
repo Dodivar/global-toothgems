@@ -21,6 +21,7 @@ import {
 } from "../../../lib/studioWorkspace/studioTour";
 import { openWorkspaceDialog, rememberOnboarding } from "../../../lib/studioWorkspace/workspaceUi";
 import { StageGestures } from "./TourArt";
+import { usePhoneLayout } from "../../../lib/studio3d/phoneLayout";
 import { focusRing } from "./workspaceStyles";
 
 /**
@@ -51,7 +52,10 @@ export function StudioTour({ hidden }: { hidden: boolean }) {
   const snap = useStudio();
   const { t } = useTranslation();
   const tour = useTour();
+  const phone = usePhoneLayout();
   const step: TourStep | undefined = tour.steps[tour.index];
+  // On a phone a step speaks of taps and of the bottom sheet, where it has its own words.
+  const words = (key: string) => (phone ? t(`${key}Phone`, { defaultValue: t(key) }) : t(key));
   const cardRef = useRef<HTMLDivElement>(null);
   const [anchor, setAnchor] = useState<{ box: Box; which: TourAnchor } | null>(null);
   const [card, setCard] = useState({ width: CARD_WIDTH, height: CARD_HEIGHT });
@@ -107,14 +111,15 @@ export function StudioTour({ hidden }: { hidden: boolean }) {
 
   /* -- stacked layout (a phone held upright): bring the control into view once -- */
   useEffect(() => {
-    if (!live || !step) return;
+    // A phone held upright scrolls nothing: its panels are in the bottom sheet.
+    if (!live || !step || phone === "portrait") return;
     const el = document.querySelector<HTMLElement>(`[data-tour="${step.anchor}"]`);
     const box = el?.getBoundingClientRect();
     if (!el || !box || box.height === 0) return;
     if (box.top >= 0 && box.bottom <= window.innerHeight) return;
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     el.scrollIntoView({ block: "center", behavior: still ? "auto" : "smooth" });
-  }, [live, step]);
+  }, [live, step, phone]);
 
   /* -- the goal, read from the editor's own state -- */
   // A step measuring from the one before reads that step's baseline, so a
@@ -268,7 +273,7 @@ export function StudioTour({ hidden }: { hidden: boolean }) {
         <Trail index={tour.index} total={total} steps={tour.steps} done={tour.done} label={t("studio.workspace.onboarding.trail")} />
 
         <p id="gt-tour-body" className="m-0 text-[13px] leading-relaxed text-[var(--text-body)]">
-          {t(`studio.workspace.onboarding.${bodyKey}`)}
+          {words(`studio.workspace.onboarding.${bodyKey}`)}
         </p>
 
         {step.id === "stage" && !met && <StageGestures />}
@@ -286,7 +291,7 @@ export function StudioTour({ hidden }: { hidden: boolean }) {
           ) : (
             <Sparkles size={14} aria-hidden="true" className="mt-px flex-none" />
           )}
-          <span>{t(`studio.workspace.onboarding.${step.id}.${taskKey}`)}</span>
+          <span>{words(`studio.workspace.onboarding.${step.id}.${taskKey}`)}</span>
         </p>
 
         <div className="flex items-center gap-2">
@@ -431,5 +436,7 @@ function boxOf(which: TourAnchor): Box | null {
   if (!el) return null;
   const r = el.getBoundingClientRect();
   if (r.width === 0 || r.height === 0) return null;
+  // A panel kept mounted but hidden (the phone's bottom sheet shows one tab at a time) is not on screen.
+  if (getComputedStyle(el).visibility === "hidden") return null;
   return { left: r.left, top: r.top, width: r.width, height: r.height };
 }

@@ -364,7 +364,24 @@
       "selectIdentical": "+ Identical",
       "selectIdenticalHint": "Add every identical gem (same gem, colour and size)",
       "lassoActiveAdd": "Draw around the pieces to add to the selection",
-      "multiPrompt": "Tap the gems to add"
+      "multiPrompt": "Tap the gems to add",
+      "armedTouch": "Tap a tooth to place it",
+      "armedTouchMore": "Tap more teeth to place more",
+      "armedDone": "Done",
+      "hintPhone": "Open “Gems”, tap a gem, then a tooth",
+      "loupe": "Loupe under your finger",
+      "fullscreenSuggest": "More room for the stage?",
+      "fullscreenSuggestGo": "Full screen",
+      "fullscreenSuggestDismiss": "No thanks",
+      "nudge": {
+        "open": "Fine move",
+        "label": "Move the selection finely",
+        "left": "Move left",
+        "right": "Move right",
+        "up": "Move up",
+        "down": "Move down",
+        "hint": "One tap: a small step. Hold: keeps moving."
+      }
     },
     "views": {
       "label": "Camera",
@@ -637,7 +654,8 @@
       "addedToCart_other": "{{count}} items added to your cart",
       "lockedNoMove": "This piece is locked — unlock it to move it",
       "lockedKept_one": "{{count}} locked piece was not deleted",
-      "lockedKept_other": "{{count}} locked pieces were not deleted"
+      "lockedKept_other": "{{count}} locked pieces were not deleted",
+      "nudgeBlocked": "Cannot go further: the piece would leave the tooth or touch another piece"
     },
     "pieceUnavailable": "Gem no longer in the shop",
     "shopPrice": "Shop price: {{price}}",
@@ -677,6 +695,16 @@
       "added": "Added to your cart.",
       "viewCart": "View cart",
       "noneAvailable": "No product available"
+    },
+    "phoneSheet": {
+      "label": "Studio panel",
+      "expand": "Expand the panel",
+      "collapse": "Collapse the panel",
+      "handle": "Panel handle: tap to open or collapse it, drag to adjust it",
+      "tabsLabel": "Panel content",
+      "selected_one": "{{count}} piece selected",
+      "selected_other": "{{count}} pieces selected",
+      "tooth": "A tooth is selected"
     }
   },
   "account": {

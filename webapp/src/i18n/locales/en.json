@@ -4841,7 +4841,13 @@
         "allowed": "Allowed",
         "refused": "Refused",
         "undecided": "Not chosen"
-      }
+      },
+      "bannerCompactTitle": "Cookies",
+      "bannerCompactBody": "Optional cookies (audience measurement) are only set with your consent.",
+      "bannerCompactBodyAdvertising": "Optional cookies (audience measurement, advertising) are only set with your consent.",
+      "rejectCompact": "Reject",
+      "acceptCompact": "Accept",
+      "customizeCompact": "Choose"
     },
     "faq": {
       "eyebrow": "Help centre",

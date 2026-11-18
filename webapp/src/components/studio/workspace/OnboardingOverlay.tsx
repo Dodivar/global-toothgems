@@ -1,10 +1,12 @@
-import { ArrowRight, Compass, Gem, MousePointer2, PartyPopper, Sliders, Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowRight, Compass, Gem, MousePointer2, PartyPopper, Sliders, Smartphone, Sparkles, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "../../ui/Dialog";
 import { Button } from "../../ui/Button";
 import { getEngine } from "../../../lib/studio3d/engine";
-import { startTour, TOUR_STEPS } from "../../../lib/studioWorkspace/studioTour";
+import { startTour, tourStepsFor } from "../../../lib/studioWorkspace/studioTour";
 import { rememberOnboarding } from "../../../lib/studioWorkspace/workspaceUi";
+import { rememberPhoneNotice } from "../../../lib/studioWorkspace/phoneNotice";
+import { usePhoneLayout } from "../../../lib/studio3d/phoneLayout";
 import { TourCelebration, TourHero } from "./TourArt";
 
 /**
@@ -26,19 +28,27 @@ const PROMISES: { id: string; icon: LucideIcon }[] = [
 
 export function OnboardingOverlay({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
+  // On a phone the welcome also carries the "bigger screen" notice: one window on arrival, not two.
+  const phone = usePhoneLayout() !== null;
+  const steps = tourStepsFor({ phone });
+
+  const close = () => {
+    if (phone) rememberPhoneNotice();
+    onClose();
+  };
 
   const explore = () => {
     rememberOnboarding("skipped");
-    onClose();
+    close();
   };
 
   const begin = () => {
     // The welcome asks once: taking the tour answers it, whether or not the
     // tour is seen through (the compass and Help replay it afterwards).
     rememberOnboarding("started");
-    onClose();
+    close();
     // Without a 3D stage (WebGL refused) the tour leaves out the steps that need one.
-    startTour({ withStage: !!getEngine() });
+    startTour({ withStage: !!getEngine(), phone });
   };
 
   return (
@@ -46,7 +56,7 @@ export function OnboardingOverlay({ onClose }: { onClose: () => void }) {
       open
       onClose={explore}
       title={t("studio.workspace.onboarding.welcome.title")}
-      description={t("studio.workspace.onboarding.welcome.sub")}
+      description={t(phone ? "studio.workspace.onboarding.welcome.subPhone" : "studio.workspace.onboarding.welcome.sub")}
       icon={<Sparkles size={17} />}
       closeLabel={t("studio.workspace.onboarding.close")}
       footer={
@@ -76,8 +86,14 @@ export function OnboardingOverlay({ onClose }: { onClose: () => void }) {
             </li>
           ))}
         </ul>
+        {phone && (
+          <p className="m-0 flex items-start gap-2.5 rounded-[var(--radius-md)] bg-[var(--surface-brand-wash)] px-3 py-2.5 text-[12.5px] leading-relaxed text-[var(--gt-blue-700)]">
+            <Smartphone size={15} aria-hidden="true" className="mt-0.5 flex-none" />
+            <span>{t("studio.workspace.onboarding.welcome.phoneNote")}</span>
+          </p>
+        )}
         <p className="m-0 text-[11.5px] font-semibold text-[var(--text-subtle)]">
-          {t("studio.workspace.onboarding.welcome.length", { count: TOUR_STEPS.length })}
+          {t("studio.workspace.onboarding.welcome.length", { count: steps.length })}
         </p>
       </div>
     </Dialog>
