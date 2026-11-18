@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FRONT_VIEW_TEETH, type FrontViewGem, type FrontViewPoint } from "./frontView";
 import {
   applySimilarity,
+  estimateViewYaw,
   fitArches,
   fitSimilarity,
   LOWER_OVERBITE_MM,
@@ -280,5 +281,47 @@ describe("the teeth's numbers", () => {
     });
     expect(reg.midlineError).toBeNull();
     expect(reg.reliable).toBe(true);
+  });
+});
+
+describe("view angle", () => {
+  const front = ["14", "13", "12", "11", "21", "22", "23", "24"];
+  /** Widths a camera turned `view` degrees would see: the reference width times cos(yaw - view) / cos(yaw). */
+  const seen = (view: number) =>
+    front.map((fdi) => {
+      const ref = tooth(fdi);
+      const yaw = ref.yaw!;
+      return { ref, width: (ref.x1 - ref.x0) * 20 * (Math.cos(yaw - (view * Math.PI) / 180) / Math.cos(yaw)) };
+    });
+
+  it("reads 0 from teeth seen straight on", () => {
+    expect(estimateViewYaw(seen(0), 20)).toBe(0);
+  });
+
+  it("finds the side the camera leans toward, with the sign of the camera's azimuth", () => {
+    const right = estimateViewYaw(seen(15), 20);
+    const left = estimateViewYaw(seen(-15), 20);
+    expect(right).toBeGreaterThan(5);
+    expect(left).toBeLessThan(-5);
+  });
+
+  it("does not guess from too few teeth", () => {
+    expect(estimateViewYaw(seen(15).slice(0, 3), 20)).toBe(0);
+  });
+
+  it("registers the angle and leans the gems of the side teeth, not of the central incisors", () => {
+    const normalOf = (fdi: string) => {
+      const yaw = tooth(fdi).yaw!;
+      return { x: Math.sin(yaw), y: 0, z: Math.cos(yaw) };
+    };
+    const reg = registerDesign(
+      { teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11", { normal: normalOf("11") }), gem("b", "23", { normal: normalOf("23") })] },
+      photoTeeth(UPPER_FRONT, 20, 600, 300),
+    );
+    const byId = new Map(reg.gems.map((g) => [g.id, g]));
+    expect(byId.get("a")!.squash?.k ?? 1).toBeGreaterThan(0.97);
+    const side = byId.get("b")!.squash!;
+    expect(side.k).toBeLessThan(0.95);
+    expect(side.k).toBeGreaterThan(0.2);
   });
 });

@@ -12,11 +12,12 @@ const SIZE = { width: 1280, height: 800 };
  * come from the guide, never from this picture. Null when the browser cannot
  * draw it (no WebGL, model not loaded).
  */
-export async function renderDesignImage(creation: TryOnCreation): Promise<Blob | null> {
+export async function renderDesignImage(creation: TryOnCreation, viewYaw = 0): Promise<Blob | null> {
   let stage: ExportStage | null = null;
   try {
     stage = await ExportStage.open(creation.scene);
-    return await stage.stageStill(SIZE);
+    // Seen from the photo's angle when it is clearly off the front (degrees, positive: from the viewer's right).
+    return await stage.stageStill(SIZE, "jpeg", Math.abs(viewYaw) >= 2 ? (viewYaw * Math.PI) / 180 : null);
   } catch {
     return null;
   } finally {

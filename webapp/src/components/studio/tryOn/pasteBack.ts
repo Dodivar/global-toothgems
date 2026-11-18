@@ -87,7 +87,7 @@ function pasteAroundGems(
   const blend = blendGems(
     before,
     after,
-    marks.map((m) => ({ id: m.id, x: m.x * sx, y: m.y * sy, r: m.r * scale, stretch: m.stretch })),
+    marks.map((m) => ({ id: m.id, x: m.x * sx, y: m.y * sy, r: m.r * scale, stretch: m.squash ? [m.stretch[0], m.stretch[1] * m.squash.k] : m.stretch })),
   );
   if (!blend.masked || !blend.data) return { canvas: null, checks: blend.checks };
   before.data.set(blend.data);

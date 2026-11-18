@@ -1,5 +1,5 @@
 import type { StudioShape } from "../../data/studioEditor";
-import type { FrontViewProjection, FrontViewTooth } from "./frontView";
+import { gemSquash, type FrontViewProjection, type FrontViewTooth, type Squash } from "./frontView";
 
 /**
  * The computed placement of a try-on (decision 111 (k), 2026-11-01): where
@@ -102,6 +102,12 @@ export interface RegisteredGem {
   /** Turn on screen, degrees, clockwise: its own, plus the smile's tilt. */
   rotation: number;
   /**
+   * How the curve of the arch turns the gem away from the camera: its outline
+   * pressed along the direction it leans toward (`gemSquash`, the angle already
+   * includes the smile's tilt); null when it faces the camera.
+   */
+  squash?: Squash | null;
+  /**
    * `found`: on a tooth found on the photo, inside its visible part; `fitted`:
    * its tooth was only expected there by the fit; `hidden`: its tooth was found
    * but its place is outside the part that shows (behind a lip or the upper teeth).
@@ -132,6 +138,8 @@ export interface Registration {
   transform: { scale: number; angle: number; tx: number; ty: number } | null;
   /** How far down the lower arch sits from where the reference (teeth closed) puts it, mm, before `transform`: the mouth's opening. */
   lowerOffset: number;
+  /** Degrees the photo is taken from, around the vertical axis: 0 in front of the smile, positive from the viewer's right (see `estimateViewYaw`). */
+  viewYaw: number;
   /** Places each arch's numbers were moved by (positive: toward the image's right); 0 when the function's numbers were kept. */
   renumbered: { upper: number; lower: number };
   /** Distance between the fitted midline and the photo check's central incisors, in central incisor widths; null when not measured. */
@@ -462,6 +470,62 @@ function numberingCost(solution: Solution | null, total: number, centrals: Close
   return { cost: (place + width) / Math.max(1, total) + (midline === null ? 0 : MIDLINE_WEIGHT * Math.min(1.5, midline) ** 2), midline };
 }
 
+/** The photo's angle is looked for within this many degrees either side of the front. */
+export const MAX_VIEW_YAW = 25;
+/** Fewest teeth that tell the photo's angle. */
+const MIN_YAW_TEETH = 4;
+/** The estimate is kept at this share (the widths of found boxes are noisy). */
+const YAW_SHRINK = 0.7;
+/** A angle is taken only if it lowers the width disagreement by this much (log units squared, summed)... */
+const YAW_MIN_GAIN = 0.02;
+/** ...and by this share of the disagreement straight on. */
+const YAW_MIN_GAIN_RATIO = 0.25;
+
+/**
+ * The angle the photo was taken from, around the vertical axis (degrees,
+ * positive: from the viewer's right), read from the teeth's widths. The
+ * reference widths are those seen straight on; a tooth whose outer face looks
+ * `yaw` away from the front shows `cos(yaw - view) / cos(yaw)` of it from a
+ * camera turned by `view`, so the side the camera leans toward looks wider.
+ * Found by a search over `±MAX_VIEW_YAW` for the angle that makes the found
+ * widths agree best with the reference (the fitted scale is free). 0 when the
+ * teeth cannot tell: few of them, all facing the camera, or no clear gain.
+ */
+export function estimateViewYaw(teeth: readonly { ref: FrontViewTooth; width: number }[], scale: number): number {
+  const usable = teeth.filter((t) => t.ref.yaw !== undefined && t.width > 0 && widthOf(t.ref) > 0);
+  if (usable.length < MIN_YAW_TEETH || !(scale > 0)) return 0;
+  const rad = Math.PI / 180;
+  const cost = (view: number) => {
+    const logs = usable.map((t) => {
+      const yaw = t.ref.yaw!;
+      const shown = Math.cos(yaw - view * rad) / Math.cos(yaw);
+      return shown > 0.05 ? Math.log(t.width / (widthOf(t.ref) * shown)) : NaN;
+    });
+    if (logs.some((l) => Number.isNaN(l))) return Infinity;
+    const mean = logs.reduce((s, l) => s + l, 0) / logs.length;
+    return logs.reduce((s, l) => s + (l - mean) ** 2, 0);
+  };
+  const straight = cost(0);
+  let best = 0;
+  let bestCost = straight;
+  for (let view = -MAX_VIEW_YAW; view <= MAX_VIEW_YAW; view += 1) {
+    const c = cost(view);
+    if (c < bestCost) {
+      best = view;
+      bestCost = c;
+    }
+  }
+  const gain = straight - bestCost;
+  if (best === 0 || gain < YAW_MIN_GAIN || gain < YAW_MIN_GAIN_RATIO * straight) return 0;
+  return Math.round(best * YAW_SHRINK * 10) / 10;
+}
+
+/** A gem's lean as seen on the photo: from its normal, the photo's angle, and the smile's tilt (the lean turns with it). */
+function squashOnPhoto(normal: { x: number; y: number; z: number } | undefined, viewYaw: number, tilt: number): Squash | null {
+  const s = gemSquash(normal, viewYaw);
+  return s ? { ...s, angle: s.angle + tilt } : null;
+}
+
 /**
  * Place the creation's gems on the photo from the teeth found on it (see the
  * module comment). `found` comes from the function, already checked; teeth the
@@ -482,6 +546,7 @@ export function registerDesign(
   const empty = (issues: RegistrationIssue[]): Registration => ({
     transform: null,
     lowerOffset: 0,
+    viewYaw: 0,
     renumbered: { upper: 0, lower: 0 },
     midlineError: null,
     teeth: [],
@@ -533,6 +598,7 @@ export function registerDesign(
   }
 
   // 3b–5. The gems on their teeth, at their real size.
+  const viewYaw = estimateViewYaw(kept.map((p) => ({ ref: p.ref, width: p.found.width })), t.scale);
   const a = (t.angle * Math.PI) / 180;
   const gems: RegisteredGem[] = front.flatMap((g): RegisteredGem[] => {
     const ref = refByFdi.get(g.toothId);
@@ -563,6 +629,7 @@ export function registerDesign(
         r: at.r * t.scale,
         stretch: at.stretch,
         rotation: at.rotation + t.angle,
+        squash: squashOnPhoto(at.normal, viewYaw, t.angle),
         tooth: !box ? "fitted" : x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height ? "found" : "hidden",
       },
     ];
@@ -594,6 +661,7 @@ export function registerDesign(
   return {
     transform: t,
     lowerOffset: Math.round(fit.lowerOffset * 100) / 100,
+    viewYaw,
     renumbered: { upper: chosen.upper, lower: chosen.lower },
     midlineError: chosen.midline === null ? null : Math.round(chosen.midline * 1000) / 1000,
     teeth,

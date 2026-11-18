@@ -66,6 +66,12 @@ export interface FrontViewTooth {
   pointed: boolean;
   /** The tooth's type: what its crown looks like. */
   kind: ToothKey;
+  /**
+   * Which way its outer face looks, radians around the vertical axis: 0 straight
+   * at the viewer (the central incisors), positive toward the viewer's right.
+   * The try-on reads it to see how much the photo's angle changes the tooth's width.
+   */
+  yaw?: number;
 }
 
 /** Where a piece is drawn. */
@@ -92,6 +98,8 @@ export interface FrontViewPoint {
   v: number;
   /** `back`: the piece sits on the tongue side of its tooth — hidden from the front. */
   facing: "front" | "back";
+  /** The way the piece's face looks, world frame (x to the viewer's right, y up, z toward the viewer), unit length: how far it is turned from the front. */
+  normal?: { x: number; y: number; z: number };
 }
 
 export interface FrontViewGem {
@@ -139,6 +147,7 @@ function toothOf(c: CrownFrame): FrontViewTooth {
     incisal: c.lower ? -c.top : -c.bottom,
     pointed: key === "canine",
     kind: key ?? "central",
+    yaw: Math.atan2(c.outward.x, c.outward.z),
   };
 }
 
@@ -236,7 +245,13 @@ function pointOf(piece: PlacedJewelry, model: SceneModel, layout: FrontViewLayou
     u: seat.u,
     v: seat.v,
     facing: seat.facing,
+    normal: unitNormal(piece.normal),
   };
+}
+
+function unitNormal(n: { x: number; y: number; z: number }): { x: number; y: number; z: number } | undefined {
+  const len = Math.hypot(n.x, n.y, n.z);
+  return len > 1e-6 ? { x: n.x / len, y: n.y / len, z: n.z / len } : undefined;
 }
 
 /** Position of a tooth in reading order (upper arch left → right, then lower), for pieces that are not drawn. */
@@ -437,23 +452,62 @@ export function glyphStretch(shape: StudioShape, size: GemSize): [number, number
 }
 
 /**
+ * A gem seen at an angle: its outline is pressed by `k` (0..1) along the
+ * on-screen direction `angle` (degrees, clockwise, y down) it leans toward.
+ */
+export interface Squash {
+  angle: number;
+  k: number;
+}
+
+/**
+ * How a gem whose face looks along `normal` (unit, world frame: x right, y up,
+ * z toward the viewer) is seen from a camera turned `yawDeg` degrees around the
+ * vertical axis (0: straight in front; positive: toward the viewer's right).
+ * Orthographic: a disc seen at an angle becomes an ellipse pressed by the
+ * cosine of the angle along the direction its face leans toward. Null when it
+ * faces the camera, or faces away.
+ */
+export function gemSquash(normal: { x: number; y: number; z: number } | undefined, yawDeg = 0): Squash | null {
+  if (!normal) return null;
+  const a = (yawDeg * Math.PI) / 180;
+  const toward = normal.x * Math.sin(a) + normal.z * Math.cos(a);
+  const right = normal.x * Math.cos(a) - normal.z * Math.sin(a);
+  if (toward <= 0.05 || toward >= 0.9995) return null;
+  return { angle: (Math.atan2(-normal.y, right) * 180) / Math.PI, k: toward };
+}
+
+/**
  * A gem's silhouette placed on the drawing: the 16-unit outline centred on
  * the gem, turned by its rotation and scaled to its real size (per axis, by
  * `stretch` when given).
  */
 export function gemOutline(
   shape: StudioShape,
-  at: Pick<FrontViewPoint, "x" | "y" | "r" | "rotation"> & { stretch?: readonly [number, number] },
+  at: Pick<FrontViewPoint, "x" | "y" | "r" | "rotation"> & { stretch?: readonly [number, number]; squash?: Squash | null },
 ): FrontViewPathCommand[] {
   const s = (at.r * 2) / GLYPH_SPAN;
   const [kx, ky] = at.stretch ?? [1, 1];
   const a = (at.rotation * Math.PI) / 180;
   const cos = Math.cos(a);
   const sin = Math.sin(a);
+  const sq = at.squash && at.squash.k < 1 ? at.squash : null;
+  const sa = sq ? (sq.angle * Math.PI) / 180 : 0;
+  const dx = Math.cos(sa);
+  const dy = Math.sin(sa);
   const map = (gx: number, gy: number): [number, number] => {
     const lx = (gx - 8) * s * kx;
     const ly = (gy - 8) * s * ky;
-    return [at.x + lx * cos - ly * sin, at.y + lx * sin + ly * cos];
+    let px = lx * cos - ly * sin;
+    let py = lx * sin + ly * cos;
+    if (sq) {
+      // Seen at an angle, the outline shrinks along the direction the gem leans toward.
+      const along = px * dx + py * dy;
+      const pull = (sq.k - 1) * along;
+      px += pull * dx;
+      py += pull * dy;
+    }
+    return [at.x + px, at.y + py];
   };
   return (SHAPE_OUTLINES[shape] ?? SHAPE_OUTLINES.round).map((cmd): FrontViewPathCommand => {
     if (cmd[0] === "Z") return cmd;
