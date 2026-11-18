@@ -1,0 +1,198 @@
+{
+ "name": "Étoile halo",
+ "description": "Étoile en or blanc sur la 21 avec 5 cristaux AB dans ses creux et 5 au-delà de ses pointes ; sur la 22 un bras de 4 cristaux le long du bord qui remonte ; sur la 23 un crochet (colonne de 3 + arc de 4).",
+ "motif": "Composition « étoile et crochets » vue de trois-quarts gauche (photo prise du côté gauche de la patiente, inclinée d'environ 30°). 21 : grande étoile métal argent, un cristal dans chacun de ses 5 creux et un cristal juste au-delà de chacune de ses 5 pointes (deux pentagones décalés de 36°). 22 : un bras en L de 4 cristaux — 3 le long du bord incisif, le 4e remonte le bord distal. 23 : un crochet qui répond au bras de la 22 — colonne de 3 cristaux près du bord mésial, coiffée d'un arc de 4 qui part vers la droite et redescend côté distal, comme une queue de scorpion. Les deux crochets doivent avoir le même pas et la même taille de pierre.",
+ "photoView": {
+  "yaw": 35,
+  "pitch": -8
+ },
+ "photo": {
+  "file": "reference-2.webp",
+  "teeth": {
+   "21": [
+    [
+     205,
+     605
+    ],
+    [
+     372,
+     505
+    ],
+    [
+     318,
+     392
+    ],
+    [
+     158,
+     425
+    ]
+   ],
+   "22": [
+    [
+     350,
+     485
+    ],
+    [
+     463,
+     400
+    ],
+    [
+     413,
+     295
+    ],
+    [
+     300,
+     380
+    ]
+   ],
+   "23": [
+    [
+     448,
+     377
+    ],
+    [
+     550,
+     332
+    ],
+    [
+     548,
+     222
+    ],
+    [
+     392,
+     212
+    ]
+   ]
+  }
+ },
+ "pieces": [
+  {
+   "gem": "starWhiteGold",
+   "size": "4mm",
+   "tooth": "21",
+   "at": [
+    -0.2,
+    4.9
+   ],
+   "rot": -195,
+   "label": "étoile (centre et orientation lus sur la photo : bras vers le bord incisif, à -105°)"
+  },
+  {
+   "arc": {
+    "tooth": "21",
+    "center": [
+     -0.2,
+     4.9
+    ],
+    "radius": 2.15,
+    "from": -69,
+    "to": 291,
+    "count": 5
+   },
+   "gem": "crystalAB",
+   "size": "ss5",
+   "label": "creux"
+  },
+  {
+   "arc": {
+    "tooth": "21",
+    "center": [
+     -0.2,
+     4.9
+    ],
+    "radius": [
+     3.0,
+     3.25
+    ],
+    "from": -105,
+    "to": 255,
+    "count": 5
+   },
+   "gem": "crystalAB",
+   "size": "ss5",
+   "label": "pointes"
+  },
+  {
+   "points": {
+    "tooth": "22",
+    "px": [
+     [
+      380,
+      447
+     ],
+     [
+      406,
+      429
+     ],
+     [
+      425,
+      404
+     ],
+     [
+      440,
+      375
+     ]
+    ]
+   },
+   "gem": "crystalAB",
+   "size": "ss5",
+   "label": "bras 22"
+  },
+  {
+   "points": {
+    "tooth": "23",
+    "px": [
+     [
+      450,
+      327
+     ],
+     [
+      439,
+      289
+     ],
+     [
+      434,
+      247
+     ]
+    ]
+   },
+   "gem": "crystalAB",
+   "size": "ss5",
+   "label": "crochet 23 colonne",
+   "shift": [
+    0.9,
+    0
+   ]
+  },
+  {
+   "points": {
+    "tooth": "23",
+    "px": [
+     [
+      441,
+      215
+     ],
+     [
+      474,
+      215
+     ],
+     [
+      505,
+      230
+     ],
+     [
+      527,
+      250
+     ]
+    ]
+   },
+   "gem": "crystalAB",
+   "size": "ss5",
+   "label": "crochet 23 arc",
+   "shift": [
+    0.5,
+    0
+   ]
+  }
+ ]
+}
