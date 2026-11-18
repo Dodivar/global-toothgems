@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ALL_TEETH, scaleForSize, type PlacedJewelry } from "../../data/studioEditor";
 import { DENTITION_CROWNS } from "./dentition";
 import { RENDER_VIEW_BOX, RENDER_VIEW_TEETH, projectRenderView, renderScale } from "./renderView";
-import { SMILE_CROWNS } from "./smileDentition";
+import { SMILE_CROWNS, SMILE_TEETH } from "./smileDentition";
 
 const tooth = (fdi: string) => RENDER_VIEW_TEETH.find((t) => t.fdi === fdi)!;
 
@@ -74,12 +74,12 @@ describe("projectRenderView", () => {
   it("keeps the seat's height: toward the neck on a lower tooth is toward the bottom of the picture", () => {
     const low = projectRenderView([onDentition("a", "41", -2)], "dentition").gems[0].at!;
     const high = projectRenderView([onDentition("a", "41", 2)], "dentition").gems[0].at!;
-    expect(low.y).toBeGreaterThan(high.y);
-    const t = tooth("41");
-    expect(low.y).toBeGreaterThan((t.cervical + t.incisal) / 2);
+    const mid = projectRenderView([onDentition("a", "41", 0)], "dentition").gems[0].at!;
+    expect(low.y).toBeGreaterThan(mid.y);
+    expect(mid.y).toBeGreaterThan(high.y);
   });
 
-  it("keeps pieces near a crown's gum line and sides apart, in the crown's own proportions", () => {
+  it("keeps pieces near a crown's gum line and sides apart, at the height the editor shows them on the tooth", () => {
     // A heart's lobes sit in the top third of the crown, past the engine's ±1.4 seat: they must not end up on one row.
     const c = SMILE_CROWNS.find((x) => x.fdi === "11")!;
     const halfH = (c.top - c.bottom) / 2;
@@ -97,18 +97,24 @@ describe("projectRenderView", () => {
       return projectRenderView([piece], "smile").gems[0].at!;
     };
     const t = tooth("11");
-    const midY = (t.cervical + t.incisal) / 2;
-    const drawnHalfH = Math.abs(t.incisal - t.cervical) / 2;
-    for (const share of [0.6, 0.8, 0.95]) expect((midY - on(0, share * halfH).y) / drawnHalfH).toBeCloseTo(share, 6);
+    const drawnH = Math.abs(t.incisal - t.cervical);
+    // Up: the share of the tooth as the editor shows it, biting edge to the top of the dome (the render's tooth spans it too).
+    const s11 = SMILE_TEETH.find((x) => x.fdi === "11")!.crown;
+    const crownShare = s11.crownHeight / (s11.crownHeight + s11.domeHeight);
+    const drawnGum = t.incisal - crownShare * drawnH;
+    const ups = [0.6, 0.8, 0.95].map((share) => on(0, share * halfH).y);
+    for (const [i, share] of [0.6, 0.8, 0.95].entries()) expect((t.incisal - ups[i]) / drawnH).toBeCloseTo(((1 + share) / 2) * crownShare, 6);
+    expect(ups[1]).toBeLessThan(ups[0]);
+    expect(ups[2]).toBeLessThan(ups[1]);
     const midX = (t.x0 + t.x1) / 2;
     const drawnHalfW = (t.x1 - t.x0) / 2;
     for (const share of [-0.95, -0.8, 0.8, 0.95]) expect(Math.abs(on(share * halfW, 0).x - midX) / drawnHalfW).toBeCloseTo(Math.abs(share), 6);
-    // Past the gum line (the lower half of the dome): a little beyond the drawn gum line, in order, never far.
+    // Past the gum line (the lower half of the dome): on the drawn dome, in order, never off the tooth.
     const past = [0.5, 1, 1.5].map((mm) => on(0, halfH + mm).y);
-    expect(past[0]).toBeLessThan(t.cervical);
+    expect(past[0]).toBeLessThan(drawnGum);
     expect(past[1]).toBeLessThan(past[0]);
     expect(past[2]).toBeLessThan(past[1]);
-    expect(t.cervical - on(0, halfH + 5).y).toBeLessThan(drawnHalfH * 0.2);
+    expect(on(0, halfH + 5).y).toBeGreaterThan(t.cervical);
   });
 
   it("shrinks a piece with its tooth's foreshortening", () => {

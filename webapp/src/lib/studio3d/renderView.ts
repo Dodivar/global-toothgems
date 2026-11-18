@@ -1,6 +1,6 @@
 import { toothKeys, type PlacedJewelry, type ToothKey } from "../../data/studioEditor";
 import type { SceneModel } from "../studioWorkspace/scene";
-import { projectOnto, type FrontViewBox, type FrontViewLayout, type FrontViewProjection, type FrontViewTooth } from "./frontView";
+import { projectOnto, visibleToothShare, type FrontViewBox, type FrontViewLayout, type FrontViewProjection, type FrontViewTooth } from "./frontView";
 
 /**
  * The render view of a design: the gems over the brand's front render of the
@@ -105,13 +105,14 @@ export function renderScale(t: FrontViewTooth): number {
 const RENDER_LAYOUT: FrontViewLayout = {
   box: RENDER_VIEW_BOX,
   teeth: RENDER_VIEW_TEETH,
-  // The seat's shares of the calibrated crown (`seatOnTooth`), on the visible face.
+  // Across: the seat's share of the crown's width. Up: its share of the tooth as the editor shows it,
+  // dome included (`visibleToothShare`) — each tooth of the render spans its dome too.
   place: (fdi, seat) => {
     const t = renderByFdi.get(fdi);
     if (!t) return null;
     return {
       x: (t.x0 + t.x1) / 2 + seat.u * 0.6 * ((t.x1 - t.x0) / 2),
-      y: (t.cervical + t.incisal) / 2 - seat.v * 0.55 * (Math.abs(t.incisal - t.cervical) / 2),
+      y: t.incisal + visibleToothShare(fdi, seat.v) * (t.cervical - t.incisal),
       scale: renderScale(t),
     };
   },

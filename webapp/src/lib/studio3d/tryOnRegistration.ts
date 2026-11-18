@@ -1,5 +1,5 @@
 import type { StudioShape } from "../../data/studioEditor";
-import { gemSquash, type FrontViewProjection, type FrontViewTooth, type Squash } from "./frontView";
+import { gemSquash, visibleToothShare, type FrontViewProjection, type FrontViewTooth, type Squash } from "./frontView";
 
 /**
  * The computed placement of a try-on (decision 111 (k), 2026-11-01): where
@@ -28,8 +28,13 @@ import { gemSquash, type FrontViewProjection, type FrontViewTooth, type Squash }
  *    than a lateral one) and with the photo check's central incisors (the
  *    midline, a tie-breaker). Another numbering is taken only when clearly better.
  * 3. Each gem is put on its own tooth: across it, at its share of the found
- *    box's width (the customer's own tooth); up from its biting edge, at its
- *    real distance in millimetres times the fitted scale. A design tooth that
+ *    box's width (the customer's own tooth); up from its biting edge, on an
+ *    upper tooth at its share of the tooth as the editor shows it, dome
+ *    included (`visibleToothShare`), on the found box's height (held within
+ *    `VERTICAL_SCALE_BOUND` of the fitted scale; 2026-11-18 — in real
+ *    millimetres, a gem in the middle of the tooth on screen landed near the
+ *    customer's gum), on a lower tooth (its box usually cut by the lower lip)
+ *    at its real distance times the fitted scale. A design tooth that
  *    was not found, or was set aside, takes the fitted reference tooth.
  * 4. Its size is physical (owner's decision, 2026-11-01): its real size in
  *    millimetres times the fitted scale — a 2 mm gem stays 2 mm, whatever the
@@ -202,6 +207,12 @@ const WIDTH_WEIGHT = 4;
 const MIDLINE_WEIGHT = 0.3;
 /** A lower tooth's top within this distance (mm) of the upper teeth's edge above it is cut by them. */
 const COVERED_TOLERANCE_MM = 0.6;
+/**
+ * How far an upper tooth's found height may differ from the fitted reference
+ * before it stops setting its gems' height: a lip cutting the box must not
+ * pull the gems onto the biting edge.
+ */
+const VERTICAL_SCALE_BOUND = 1.4;
 /** The fitted scale and the teeth's widths may disagree by this factor before it is an issue. */
 const SCALE_TOLERANCE = 1.25;
 
@@ -608,11 +619,16 @@ export function registerDesign(
     let x: number;
     let y: number;
     if (box) {
-      // Across: its share of the customer's tooth; up: its real distance from the biting edge.
+      // Across: its share of the customer's tooth. Up: on an upper tooth, its share of the tooth as the
+      // editor shows it (`visibleToothShare`) on the customer's, biting edge to the top of the box (held
+      // near the fitted scale, for a lip cutting the box); on a lower one, whose box the lower lip
+      // usually cuts, its real distance from the biting edge.
       const across = (at.x - ref.x0) / widthOf(ref) - 0.5;
       const edge = edgeOf(box, ref.lower);
       const dx = across * box.width;
-      const dy = (at.y - ref.incisal) * t.scale;
+      const fitted = heightOf(ref) * t.scale;
+      const crownPx = Math.min(fitted * VERTICAL_SCALE_BOUND, Math.max(fitted / VERTICAL_SCALE_BOUND, edge.y - box.y));
+      const dy = ref.lower ? (at.y - ref.incisal) * t.scale : -visibleToothShare(g.toothId, at.v) * crownPx;
       x = edge.x + dx * Math.cos(a) - dy * Math.sin(a);
       y = edge.y + dx * Math.sin(a) + dy * Math.cos(a);
     } else {

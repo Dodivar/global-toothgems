@@ -15,7 +15,7 @@ import type { SceneModel } from "../studioWorkspace/scene";
 import { ARCH_FRAME_BY_ID } from "./archLayout";
 import { DENTITION_CROWNS, type CrownFrame } from "./dentition";
 import { longAxis } from "./pieceScale";
-import { SMILE_CROWNS } from "./smileDentition";
+import { SMILE_CROWNS, SMILE_TEETH } from "./smileDentition";
 
 /**
  * The front projection of a design: both arches as seen from in front of the
@@ -227,6 +227,26 @@ export function seatOnTooth(piece: PlacedJewelry, model: SceneModel): { u: numbe
 
 /** A piece's seat on its tooth, as `seatOnTooth` measures it. */
 export type FrontViewSeat = NonNullable<ReturnType<typeof seatOnTooth>>;
+
+/** Each tooth of the Studio's dentition: the share of its visible height (biting edge → top of the dome) that is the crown. */
+const CROWN_SHARE = new Map(SMILE_TEETH.map((t) => [t.fdi, t.crown.crownHeight / (t.crown.crownHeight + t.crown.domeHeight)]));
+
+/**
+ * How high a seat sits on its tooth as the editor shows it: 0 at the biting
+ * edge, 1 at the top of the dome (2026-11-18). The editor draws no gum, so
+ * people read the whole white tooth, dome included, as the tooth; the seat's
+ * `v` measures the crown only (biting edge → gum line). Pictures of a tooth
+ * — the front render's teeth, a photo's — span the tooth people see, so a
+ * piece is put on them at this share: measured on the crown alone, a gem in
+ * the middle of the tooth on screen was drawn in its upper third, and on
+ * the photo it landed near the gum.
+ */
+export function visibleToothShare(fdi: string, v: number): number {
+  const crown = CROWN_SHARE.get(fdi) ?? 1;
+  // `v` is world up: toward the gum on an upper tooth, toward the biting edge on a lower one.
+  const towardGum = isLowerTooth(fdi) ? -v : v;
+  return ((1 + towardGum * 0.55) / 2) * crown;
+}
 
 /**
  * A drawing of the dentition a design can be projected onto: its frame, its
