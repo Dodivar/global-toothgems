@@ -5,7 +5,7 @@ import { ArrowRight, Component } from "lucide-react";
 import { Link } from "../../../lib/navigation";
 import { FREE_TOOTH } from "../../../data/studioEditor";
 import { getEngine } from "../../../lib/studio3d/engine";
-import type { StudioSnapshot } from "../../../lib/studio3d/store";
+import { targetToothOf, useStudioSelector } from "../../../lib/studio3d/store";
 import { studioSectionPath } from "../../../lib/studioUrl";
 import { queryGroups } from "../../../lib/studioWorkspace/library";
 import type { GemGroup } from "../../../lib/studioWorkspace/types";
@@ -33,7 +33,7 @@ interface DragState {
  * tooth it will land on before letting go. The engine does the placing, so a
  * group follows the same collision rules as a single gem.
  */
-export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
+export function GemGroupPanel() {
   const { t, price } = useWorkspaceFormat();
   const { toothName } = useEditorLabels();
   const ws = useWorkspace();
@@ -48,15 +48,9 @@ export function GemGroupPanel({ snap }: { snap: StudioSnapshot }) {
   // Touch: a tap arms a group, the next tap on the model places it (like an armed gem).
   const [armedId, setArmedId] = useState<string | null>(null);
   // Arming a single gem takes over from an armed group.
-  const armedGroup = snap.armedTypeId ? null : (ws.groups.find((g) => g.id === armedId) ?? null);
-
-  const selectedPiece = snap.jewels.find((j) => j.id === snap.selectedJewelIds[0]);
-  const selectedTooth =
-    snap.selectedToothId && snap.selectedToothId !== FREE_TOOTH
-      ? snap.selectedToothId
-      : selectedPiece && selectedPiece.toothId !== FREE_TOOTH
-        ? selectedPiece.toothId
-        : null;
+  const gemArmed = useStudioSelector((s) => s.armedTypeId !== null);
+  const armedGroup = gemArmed ? null : (ws.groups.find((g) => g.id === armedId) ?? null);
+  const selectedTooth = useStudioSelector(targetToothOf);
 
   // Leaving the panel mid-drag must not leave a tooth lit, nor a group armed.
   useEffect(

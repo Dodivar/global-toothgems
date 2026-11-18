@@ -15,25 +15,26 @@ import type { SceneModel } from "../studioWorkspace/scene";
 import { ARCH_FRAME_BY_ID } from "./archLayout";
 import { DENTITION_CROWNS, type CrownFrame } from "./dentition";
 import { longAxis } from "./pieceScale";
+import { SMILE_CROWNS } from "./smileDentition";
 
 /**
  * The front projection of a design: both arches as seen from in front of the
  * patient, with every piece at its place on its tooth — what the try-on fits
  * onto a photo (`tryOnRegistration.ts`). The drawing people read (the "front
- * view" panels, the placement sheet) is the flat view of `flatView.ts`, which
+ * view" panels, the placement sheet) is the front render of `renderView.ts`, which
  * shares this module's seats, numbering and gem outlines.
  *
- * The teeth are the Studio's default dentition (`DENTITION_CROWNS`) in a
- * front orthographic projection: each crown spans its calibrated width along
- * the arch, foreshortened by how much it faces the viewer, and its calibrated
- * height. Every piece is expressed as a seat on its tooth — across and up,
- * as fractions of the crown, the engine's own `captureSeats` — in the frame
- * of the model it was placed on (the dentition, or the procedural reference
- * arch `ARCH_FRAMES`, upper arch only), then put on the same drawn crown. On
- * the dentition's front teeth that is the orthographic projection itself
- * (world x → right, world y → up). Pieces on an
- * imported model, or off the labelled teeth, have no known tooth frame: they
- * are numbered and listed, never drawn at a guessed place.
+ * The teeth are the reference anatomy (`DENTITION_CROWNS`: a real adult
+ * dentition, measured on the scan the Studio used before its procedural
+ * dentition) in a front orthographic projection: each crown spans its
+ * calibrated width along the arch, foreshortened by how much it faces the
+ * viewer, and its calibrated height. Every piece is expressed as a seat on
+ * its tooth — across and up, as fractions of the crown, the engine's own
+ * `captureSeats` — in the frame of the model it was placed on (the Studio's
+ * dentition `SMILE_CROWNS`, the scan, or the procedural reference arch
+ * `ARCH_FRAMES`, upper arch only), then put on the same drawn crown. Pieces
+ * on an imported model, or off the labelled teeth, have no known tooth frame:
+ * they are numbered and listed, never drawn at a guessed place.
  *
  * Coordinates: millimetres in the drawing's frame, x to the viewer's right
  * (the patient's left), y DOWN (SVG convention). `box` is the frame around
@@ -124,6 +125,11 @@ export interface FrontViewProjection {
 const MARGIN = 2;
 
 const byFdi = new Map(DENTITION_CROWNS.map((c) => [c.fdi, c]));
+/** The crown frames of each built-in model whose crowns are calibrated: where a piece's seat is measured. */
+const CROWNS_BY_MODEL: Partial<Record<SceneModel, Map<string, CrownFrame>>> = {
+  smile: new Map(SMILE_CROWNS.map((c) => [c.fdi, c])),
+  dentition: byFdi,
+};
 const halfWidth = (c: CrownFrame) => (c.alongMinus + c.alongPlus) / 2;
 const halfHeight = (c: CrownFrame) => (c.top - c.bottom) / 2;
 
@@ -159,18 +165,41 @@ export const FRONT_VIEW_BOX: FrontViewBox = (() => {
 const dot = (a: { x: number; z: number }, b: { x: number; z: number }) => a.x * b.x + a.z * b.z;
 
 /**
+ * Bounds of a seat for the drawings: the crown's own edges (a seat of
+ * 1 / 0.6 across is its side, 1 / 0.55 up its gum line or biting edge).
+ * The engine's `captureSeats` stops at ±1.4 — enough to move a piece to
+ * another model, but on a drawing it pinned every piece of the crown's top
+ * third (beyond 77 % of its half height) on one row: a heart's two lobes
+ * came out flat, on the panels and on the map the try-on sends to the AI.
+ * Past the gum line, on the lower half of the Studio's domes
+ * (`DOME_PLACEABLE`, up to ~2.45), a seat is drawn only a little beyond the
+ * drawn crown, its height kept in order but squeezed (`SEAT_V_PAST`): the
+ * drawings have no dome, and pieces there must neither stack on one row nor
+ * float on the drawn gum.
+ */
+const SEAT_U_MAX = 1 / 0.6;
+const SEAT_V_EDGE = 1 / 0.55;
+const SEAT_V_MAX = 2.5;
+const SEAT_V_PAST = 0.45;
+
+/**
  * Where a piece sits on its tooth, in the frame of the model it was placed
  * on — the engine's `captureSeats`, without three.js. Null: no known frame.
  */
 export function seatOnTooth(piece: PlacedJewelry, model: SceneModel): { u: number; v: number; facing: "front" | "back" } | null {
-  const clamp = (n: number) => Math.min(1.4, Math.max(-1.4, n));
-  if (model === "dentition") {
-    const c = byFdi.get(piece.toothId);
+  const clampU = (n: number) => Math.min(SEAT_U_MAX, Math.max(-SEAT_U_MAX, n));
+  const clampV = (n: number) => {
+    const a = Math.min(SEAT_V_MAX, Math.abs(n));
+    return Math.sign(n) * (a <= SEAT_V_EDGE ? a : SEAT_V_EDGE + (a - SEAT_V_EDGE) * SEAT_V_PAST);
+  };
+  const crowns = CROWNS_BY_MODEL[model];
+  if (crowns) {
+    const c = crowns.get(piece.toothId);
     if (!c) return null;
     const rel = { x: piece.position.x - c.center.x, y: piece.position.y - c.center.y, z: piece.position.z - c.center.z };
     return {
-      u: clamp(dot(rel, c.tangent) / (halfWidth(c) * 0.6)),
-      v: clamp(rel.y / (halfHeight(c) * 0.55)),
+      u: clampU(dot(rel, c.tangent) / (halfWidth(c) * 0.6)),
+      v: clampV(rel.y / (halfHeight(c) * 0.55)),
       facing: dot(piece.normal, c.outward) < 0 ? "back" : "front",
     };
   }
@@ -179,8 +208,8 @@ export function seatOnTooth(piece: PlacedJewelry, model: SceneModel): { u: numbe
     if (!f) return null;
     const rel = { x: piece.position.x - f.center.x, y: piece.position.y - f.center.y, z: piece.position.z - f.center.z };
     return {
-      u: clamp(dot(rel, f.tangent) / (f.spec.wHalf * 0.6)),
-      v: clamp(rel.y / (f.spec.hHalf * 0.55)),
+      u: clampU(dot(rel, f.tangent) / (f.spec.wHalf * 0.6)),
+      v: clampV(rel.y / (f.spec.hHalf * 0.55)),
       facing: dot(piece.normal, f.outward) < 0 ? "back" : "front",
     };
   }
@@ -197,7 +226,8 @@ export type FrontViewSeat = NonNullable<ReturnType<typeof seatOnTooth>>;
 export interface FrontViewLayout {
   box: FrontViewBox;
   teeth: FrontViewTooth[];
-  place: (fdi: string, seat: FrontViewSeat) => { x: number; y: number } | null;
+  /** `scale`: the piece's size on this tooth (default 1), below 1 on a drawn tooth seen at an angle. */
+  place: (fdi: string, seat: FrontViewSeat) => { x: number; y: number; scale?: number } | null;
 }
 
 /**
@@ -222,7 +252,7 @@ function pointOf(piece: PlacedJewelry, model: SceneModel, layout: FrontViewLayou
   const point = seat ? layout.place(piece.toothId, seat) : null;
   if (!seat || !point) return null;
   const { x, y } = point;
-  const r = piece.scale;
+  const r = piece.scale * (point.scale ?? 1);
   const box = layout.box;
   return {
     x,
@@ -269,7 +299,7 @@ export function projectFrontView(pieces: readonly PlacedJewelry[], model: SceneM
   return projectOnto(FRONT_LAYOUT, pieces, model);
 }
 
-/** `projectFrontView` on another drawing of the dentition (the flat view, `flatView.ts`): same numbering and order rules. */
+/** `projectFrontView` on another drawing of the dentition (the front render, `renderView.ts`): same numbering and order rules. */
 export function projectOnto(layout: FrontViewLayout, pieces: readonly PlacedJewelry[], model: SceneModel): FrontViewProjection {
   const entries = pieces.map((piece) => ({ piece, at: pointOf(piece, model, layout) }));
   const tieBreak = (a: PlacedJewelry, b: PlacedJewelry) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
