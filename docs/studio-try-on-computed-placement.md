@@ -231,5 +231,6 @@ mark and 20 % more than 30 % larger or smaller (worst on hearts and navettes) â€
 
 Known limits: the teeth model sometimes numbers the teeth one tooth off (seen on one trial photo: the whole design
 then moves one tooth, with a high confidence, since the fit stays consistent; since 2026-11-04 the renumbering above
-catches a whole arch off by one, a single misnamed tooth is still only set aside); a mirrored selfie puts the person's
+catches a whole arch off by one, a single misnamed tooth is still only set aside â€” since 2026-11-18 a tooth missed
+or set aside between two kept neighbours is inferred in the space between them and its gems are drawn); a mirrored selfie puts the person's
 left teeth on the image's left; lower teeth are often partly hidden by the upper ones.
