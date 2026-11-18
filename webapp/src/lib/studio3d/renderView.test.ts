@@ -103,8 +103,12 @@ describe("projectRenderView", () => {
     const midX = (t.x0 + t.x1) / 2;
     const drawnHalfW = (t.x1 - t.x0) / 2;
     for (const share of [-0.95, -0.8, 0.8, 0.95]) expect(Math.abs(on(share * halfW, 0).x - midX) / drawnHalfW).toBeCloseTo(Math.abs(share), 6);
-    // Past the gum line: on the drawn gum line, never beyond.
-    expect(on(0, halfH + 2).y).toBeCloseTo(t.cervical, 6);
+    // Past the gum line (the lower half of the dome): a little beyond the drawn gum line, in order, never far.
+    const past = [0.5, 1, 1.5].map((mm) => on(0, halfH + mm).y);
+    expect(past[0]).toBeLessThan(t.cervical);
+    expect(past[1]).toBeLessThan(past[0]);
+    expect(past[2]).toBeLessThan(past[1]);
+    expect(t.cervical - on(0, halfH + 5).y).toBeLessThan(drawnHalfH * 0.2);
   });
 
   it("shrinks a piece with its tooth's foreshortening", () => {

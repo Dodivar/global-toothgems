@@ -57,7 +57,8 @@ interface ToothDesign {
  * Average adult crowns (Wheeler's tables, rounded; the lower incisors at the
  * broad end of the range, as the drawing has them). The visible crown runs
  * from the edge or the cusp tips to the gum line; the dome above it stands
- * for the gum, as on the drawing. A premolar's or molar's cusp tips stand
+ * for the gum, as on the drawing (pieces may still sit on its lower half,
+ * `DOME_PLACEABLE`). A premolar's or molar's cusp tips stand
  * level with its occlusal margin, the table carved below them.
  */
 const UPPER: Record<ToothKey, ToothDesign> = {
@@ -340,7 +341,23 @@ export interface SmileTooth {
   crown: CrownParams;
   placement: CrownPlacement;
   frame: CrownFrame;
+  /**
+   * Where a piece may sit, as world y: the visible crown (`frame.bottom` →
+   * `frame.top`) and the lower part of the dome beyond its gum line
+   * (`DOME_PLACEABLE`). The frame stays the crown itself: drawings and the
+   * re-seating of designs measure shares of it.
+   */
+  band: { bottom: number; top: number };
 }
+
+/**
+ * Share of the dome, from the gum line, a piece may still sit on. With no
+ * gum drawn the dome reads as enamel, and the owner asked (2026-11-18) for
+ * gems placed higher on the upper incisors; the dome keeps ~95 % of the
+ * crown's section up to about half its height (`domeProfile`), then turns
+ * over, so a piece placed further would lean visibly off the surface.
+ */
+export const DOME_PLACEABLE = 0.5;
 
 function layArch(lower: boolean): SmileTooth[] {
   const designs = lower ? LOWER : UPPER;
@@ -375,11 +392,13 @@ function layArch(lower: boolean): SmileTooth[] {
       const center = add(origin, yAxis, mid);
       const tangent: V3 = side < 0 ? scale(distal, -1) : distal; // toward the patient's left, on both sides
       const gumLevel = tipLevel + yAxis[1] * d.crown.crownHeight;
+      const reachLevel = gumLevel + yAxis[1] * d.crown.domeHeight * DOME_PLACEABLE;
       out.push({
         fdi,
         lower,
         crown: d.crown,
         placement: { origin, xAxis, yAxis, zAxis },
+        band: { bottom: Math.min(tipLevel, reachLevel), top: Math.max(tipLevel, reachLevel) },
         frame: {
           fdi,
           lower,

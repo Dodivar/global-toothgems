@@ -324,7 +324,24 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   const updateCreationDetails = useCallback(
     async (c: Creation, details: RecordDetails) => {
       if (!repos) return false;
+      // Editing the creation that is open on the stage saves the stage with it, so the
+      // details and the 3D design never drift apart.
+      const active = studioStore.active;
+      const withScene = !!userId && active?.creationId === c.id && studioStore.jewels.length > 0;
       try {
+        if (withScene && active && userId) {
+          const engine = getEngine();
+          const scene = studioStore.toScene({ model: engine?.modelKind() ?? "studio", camera: engine?.getCameraState() ?? null });
+          setSaving(true);
+          setFailedKey(null);
+          const thumbnail = engine ? await engine.captureThumbnail().catch(() => null) : null;
+          const saved = await repos.creations.update(c.id, { ...details, scene, thumbnail });
+          studioStore.markSaved({ creationId: saved.id, ownerId: userId, name: saved.name, savedAt: saved.updatedAt }, scene.pieces);
+          replaceCreation(saved);
+          say("changesSaved");
+          trackStudio("studio_design_edited", { piece_count: scene.pieces.length, is_new: false });
+          return true;
+        }
         const saved = await repos.creations.update(c.id, details);
         setCreations((list) => list.map((x) => (x.id === c.id ? saved : x)));
         if (studioStore.active?.creationId === c.id) studioStore.renameActive(saved.name);
@@ -333,9 +350,11 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         fail(err);
         return false;
+      } finally {
+        if (withScene) setSaving(false);
       }
     },
-    [repos, say, fail, setCreations],
+    [repos, userId, say, fail, setCreations, replaceCreation],
   );
 
   const duplicateCreation = useCallback(
