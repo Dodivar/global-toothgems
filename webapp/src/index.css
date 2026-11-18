@@ -2551,3 +2551,34 @@ html[data-gt-focus] .gt-storefront-chrome { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .gt-map-marker-face { transition: none !important; }
 }
+
+/* ---------------------------------------------------------------------------
+   3D Studio editor: toasts and the try-on pill leave the foot of the stage
+   (the camera bar and quick actions live there) for the top, under the bar,
+   centred in the part of the stage the open drawers leave in view. Stacked
+   (a phone held upright) there is no drawer: they span the stage's width.
+   --------------------------------------------------------------------------- */
+:root {
+  --gt-lib: 236px;
+  --gt-insp: 296px;
+  --gt-editor-bar: 56px;
+}
+@media (min-width: 1024px) { :root { --gt-lib: 264px; --gt-insp: 316px; } }
+@media (min-width: 1280px) { :root { --gt-lib: 288px; --gt-insp: 332px; } }
+@media (orientation: landscape) and (max-height: 560px) { :root { --gt-editor-bar: 48px; } }
+
+body:has(.gt-editor):not(:has(.gt-ws-section)) .gt-toast-region {
+  top: calc(var(--gt-editor-bar) + 10px);
+  bottom: auto;
+  padding-inline: 12px;
+}
+body:has(.gt-editor):not(:has(.gt-ws-section)) .gt-toast-region > * { max-width: min(380px, 100%); }
+@media (min-width: 1024px), ((orientation: landscape) and (min-width: 640px)) {
+  body:has(.gt-editor):not(:has(.gt-ws-section)) .gt-toast-region { transition: left var(--duration-fast), right var(--duration-fast); }
+  body:has(#gt-editor-library-panel:not(.hidden)):has(.gt-editor):not(:has(.gt-ws-section)) .gt-toast-region { left: var(--gt-lib); }
+  body:has(#gt-editor-inspector-panel:not(.hidden)):has(.gt-editor):not(:has(.gt-ws-section)) .gt-toast-region { right: var(--gt-insp); }
+  /* The try-on pill sits above the camera bar, centred like the stage's controls. */
+  body:has(.gt-editor):not(:has(.gt-ws-section)) .gt-tryon-pill { bottom: calc(78px + env(safe-area-inset-bottom)); }
+  body:has(#gt-editor-library-panel:not(.hidden)):has(.gt-editor) .gt-tryon-pill { left: var(--gt-lib); }
+  body:has(#gt-editor-inspector-panel:not(.hidden)):has(.gt-editor) .gt-tryon-pill { right: var(--gt-insp); }
+}
