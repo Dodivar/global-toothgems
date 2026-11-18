@@ -165,19 +165,31 @@ export const FRONT_VIEW_BOX: FrontViewBox = (() => {
 const dot = (a: { x: number; z: number }, b: { x: number; z: number }) => a.x * b.x + a.z * b.z;
 
 /**
+ * Bounds of a seat for the drawings: the crown's own edges (a seat of
+ * 1 / 0.6 across is its side, 1 / 0.55 up its gum line or biting edge).
+ * The engine's `captureSeats` stops at ±1.4 — enough to move a piece to
+ * another model, but on a drawing it pinned every piece of the crown's top
+ * third (beyond 77 % of its half height) on one row: a heart's two lobes
+ * came out flat, on the panels and on the map the try-on sends to the AI.
+ */
+const SEAT_U_MAX = 1 / 0.6;
+const SEAT_V_MAX = 1 / 0.55;
+
+/**
  * Where a piece sits on its tooth, in the frame of the model it was placed
  * on — the engine's `captureSeats`, without three.js. Null: no known frame.
  */
 export function seatOnTooth(piece: PlacedJewelry, model: SceneModel): { u: number; v: number; facing: "front" | "back" } | null {
-  const clamp = (n: number) => Math.min(1.4, Math.max(-1.4, n));
+  const clampU = (n: number) => Math.min(SEAT_U_MAX, Math.max(-SEAT_U_MAX, n));
+  const clampV = (n: number) => Math.min(SEAT_V_MAX, Math.max(-SEAT_V_MAX, n));
   const crowns = CROWNS_BY_MODEL[model];
   if (crowns) {
     const c = crowns.get(piece.toothId);
     if (!c) return null;
     const rel = { x: piece.position.x - c.center.x, y: piece.position.y - c.center.y, z: piece.position.z - c.center.z };
     return {
-      u: clamp(dot(rel, c.tangent) / (halfWidth(c) * 0.6)),
-      v: clamp(rel.y / (halfHeight(c) * 0.55)),
+      u: clampU(dot(rel, c.tangent) / (halfWidth(c) * 0.6)),
+      v: clampV(rel.y / (halfHeight(c) * 0.55)),
       facing: dot(piece.normal, c.outward) < 0 ? "back" : "front",
     };
   }
@@ -186,8 +198,8 @@ export function seatOnTooth(piece: PlacedJewelry, model: SceneModel): { u: numbe
     if (!f) return null;
     const rel = { x: piece.position.x - f.center.x, y: piece.position.y - f.center.y, z: piece.position.z - f.center.z };
     return {
-      u: clamp(dot(rel, f.tangent) / (f.spec.wHalf * 0.6)),
-      v: clamp(rel.y / (f.spec.hHalf * 0.55)),
+      u: clampU(dot(rel, f.tangent) / (f.spec.wHalf * 0.6)),
+      v: clampV(rel.y / (f.spec.hHalf * 0.55)),
       facing: dot(piece.normal, f.outward) < 0 ? "back" : "front",
     };
   }

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCrown,
   crownSection,
-  cuspReach,
+  occlusalRelief,
   sectionOutline,
   type CanineParams,
   type CrownMesh,
@@ -111,11 +111,14 @@ describe("crown mesh", () => {
     expect(max[2] - min[2]).toBeLessThan(INCISOR.halfDepthLabial + INCISOR.halfDepthLingual + 0.01);
   });
 
-  it("raises a molar's cusps past its occlusal table", () => {
+  it("carves a molar's table between its cusps, nothing standing past the margin", () => {
+    // The outline seen from the side stays the smooth margin: no cusp sticks out below it.
     const { min } = bounds(buildCrown(MOLAR));
-    expect(cuspReach(MOLAR)).toBe(1.05);
-    expect(min[1]).toBeLessThan(-0.8);
-    expect(min[1]).toBeGreaterThan(-cuspReach(MOLAR) - 0.01);
+    expect(min[1]).toBeGreaterThan(-1e-3);
+    // the fossa sinks in the middle, the highest cusp tip stays level with the margin
+    expect(occlusalRelief(MOLAR, 0, 0)).toBeGreaterThan(0.4);
+    const tip = MOLAR.cusps[2];
+    expect(occlusalRelief(MOLAR, tip.x, tip.z)).toBeLessThan(0.15);
   });
 });
 
@@ -144,25 +147,28 @@ describe("crown profiles", () => {
 });
 
 describe("section outline", () => {
-  it("spaces its points evenly across the labial face, where the gems go", () => {
-    const outline = sectionOutline(crownSection(INCISOR, 6), 56);
-    // the labial quadrants: from the distal point (index 0) through the labial one (14) to the mesial one (28)
-    const steps: number[] = [];
-    for (let i = 0; i < 28; i++) steps.push(Math.hypot(outline[i + 1][0] - outline[i][0], outline[i + 1][1] - outline[i][1]));
-    const distal = steps.slice(0, 14),
-      mesial = steps.slice(14);
-    for (const quadrant of [distal, mesial]) {
-      const mean = quadrant.reduce((a, b) => a + b, 0) / quadrant.length;
-      for (const s of quadrant) expect(Math.abs(s - mean) / mean).toBeLessThan(0.05);
-    }
+  it("turns smoothly all round, the corners meshed as finely as the faces", () => {
+    // A step in the outline's direction shows as a crease in the reflections and tilts a dragged gem in a jump.
+    const largestTurn = (outline: [number, number][]) => {
+      let largest = 0;
+      for (let i = 0; i < outline.length; i++) {
+        const [a, b, c] = [outline[i], outline[(i + 1) % outline.length], outline[(i + 2) % outline.length]];
+        const turn = Math.atan2(c[1] - b[1], c[0] - b[0]) - Math.atan2(b[1] - a[1], b[0] - a[0]);
+        largest = Math.max(largest, Math.abs(Math.atan2(Math.sin(turn), Math.cos(turn))));
+      }
+      return (largest * 180) / Math.PI;
+    };
+    // 60 points round a full turn: 6° each at best
+    expect(largestTurn(sectionOutline(crownSection(MOLAR, 4), 60))).toBeLessThan(10);
+    expect(largestTurn(sectionOutline(crownSection(INCISOR, 6), 60))).toBeLessThan(10);
   });
 
   it("turns from distal through labial to mesial and lingual", () => {
-    const outline = sectionOutline(crownSection(MOLAR, 3), 56);
-    expect(outline).toHaveLength(56);
+    const outline = sectionOutline(crownSection(MOLAR, 3), 60);
+    expect(outline).toHaveLength(60);
     expect(outline[0][0]).toBeGreaterThan(4); // distal
-    expect(outline[14][1]).toBeGreaterThan(4); // labial
-    expect(outline[28][0]).toBeLessThan(-4); // mesial
-    expect(outline[42][1]).toBeLessThan(-4); // lingual
+    expect(outline[15][1]).toBeGreaterThan(4); // labial
+    expect(outline[30][0]).toBeLessThan(-4); // mesial
+    expect(outline[45][1]).toBeLessThan(-4); // lingual
   });
 });

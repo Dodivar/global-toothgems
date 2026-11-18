@@ -79,6 +79,34 @@ describe("projectRenderView", () => {
     expect(low.y).toBeGreaterThan((t.cervical + t.incisal) / 2);
   });
 
+  it("keeps pieces near a crown's gum line and sides apart, in the crown's own proportions", () => {
+    // A heart's lobes sit in the top third of the crown, past the engine's ±1.4 seat: they must not end up on one row.
+    const c = SMILE_CROWNS.find((x) => x.fdi === "11")!;
+    const halfH = (c.top - c.bottom) / 2;
+    const halfW = (c.alongMinus + c.alongPlus) / 2;
+    const on = (across: number, up: number) => {
+      const piece = {
+        ...onDentition("s", "11"),
+        position: {
+          x: c.center.x + c.tangent.x * across + c.outward.x * c.halfDepth,
+          y: c.center.y + up,
+          z: c.center.z + c.tangent.z * across + c.outward.z * c.halfDepth,
+        },
+        normal: { ...c.outward },
+      };
+      return projectRenderView([piece], "smile").gems[0].at!;
+    };
+    const t = tooth("11");
+    const midY = (t.cervical + t.incisal) / 2;
+    const drawnHalfH = Math.abs(t.incisal - t.cervical) / 2;
+    for (const share of [0.6, 0.8, 0.95]) expect((midY - on(0, share * halfH).y) / drawnHalfH).toBeCloseTo(share, 6);
+    const midX = (t.x0 + t.x1) / 2;
+    const drawnHalfW = (t.x1 - t.x0) / 2;
+    for (const share of [-0.95, -0.8, 0.8, 0.95]) expect(Math.abs(on(share * halfW, 0).x - midX) / drawnHalfW).toBeCloseTo(Math.abs(share), 6);
+    // Past the gum line: on the drawn gum line, never beyond.
+    expect(on(0, halfH + 2).y).toBeCloseTo(t.cervical, 6);
+  });
+
   it("shrinks a piece with its tooth's foreshortening", () => {
     const front = projectRenderView([onDentition("a", "11")], "dentition").gems[0].at!;
     const side = projectRenderView([onDentition("a", "16")], "dentition").gems[0].at!;

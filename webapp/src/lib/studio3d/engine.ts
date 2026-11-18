@@ -34,6 +34,7 @@ import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
 import { alignedColumn, alignedHeights, centeredOffsets, type CenterItem } from "./layout";
 import { mirroredRotation, opposingTooth } from "./mirror";
 import { notify } from "./notices";
+import { DEFAULT_MODEL_SHADE, modelShadeSpec, type ModelShade } from "./modelShades";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
 
 /**
@@ -293,7 +294,8 @@ export const MAX_MODEL_BYTES = 60 * 1024 * 1024;
  * on the brand's reference smile. A standard finish, not a physical one: a
  * clear coat would add its own lighting pass on every crown, drawn twice a
  * frame once a crystal is on stage. Each crown wears its own copy, so the
- * hover and selection glow lights one tooth only.
+ * hover and selection glow lights one tooth only. The colour here is the
+ * default one; the design's own (`modelShades.ts`) is painted by `paintSmile`.
  */
 const SMILE_ENAMEL = {
   color: 0xcbd6e3,
@@ -460,6 +462,8 @@ export class StudioEngine {
   private raycaster = new THREE.Raycaster();
   private container: HTMLElement;
   private dentitionGroup: THREE.Group = new THREE.Group();
+  /** Colour of the Studio's dentition (`modelShades.ts`); an imported model keeps its own. */
+  private modelShade: ModelShade = DEFAULT_MODEL_SHADE;
   private archAnchors = new Map<string, { center: THREE.Vector3; outward: THREE.Vector3; tangent: THREE.Vector3 }>();
   private toothRigs = new Map<string, ToothRig>();
   private toothMeshes: THREE.Object3D[] = [];
@@ -589,6 +593,7 @@ export class StudioEngine {
   constructor(container: HTMLElement, store: DesignStore, options: EngineOptions = {}) {
     this.container = container;
     this.store = store;
+    this.modelShade = store.modelShade;
     this.readOnly = options.readOnly ?? false;
     this.offscreen = options.offscreen ?? false;
     // Teeth raycasts read the nearest hit only: the hierarchy stops there
@@ -729,6 +734,22 @@ export class StudioEngine {
     this.scene.add(this.floor);
   }
 
+  /** The colour of the Studio's dentition; an imported model keeps its own. */
+  setModelShade(shade: ModelShade) {
+    if (shade === this.modelShade) return;
+    this.modelShade = shade;
+    if (this.modelMode === "smile") this.paintSmile(this.dentitionGroup);
+    this.wake();
+  }
+  /** Every crown of the Studio's dentition in the current colour (each wears its own material, for the hover glow). */
+  private paintSmile(group: THREE.Object3D) {
+    const color = modelShadeSpec(this.modelShade).model;
+    group.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh) (m.material as THREE.MeshStandardMaterial).color.setHex(color);
+    });
+  }
+
   /** Lighting presets — smoothly crossfaded in the frame loop. */
   setLightPreset(p: LightPreset) {
     this.wake();
@@ -846,6 +867,7 @@ export class StudioEngine {
     }
     enamel.dispose();
     this.dentitionGroup = group;
+    this.paintSmile(group);
     this.scene.add(group);
     this.toothMeshes.push(group);
   }
@@ -1079,9 +1101,11 @@ export class StudioEngine {
     return seats;
   }
 
-  /** The pieces re-seated on the model on stage, each on its tooth, sliding aside where a neighbour took the spot. */
-  private reseat(jewels: PlacedJewelry[], seats: Map<string, Seat>): PlacedJewelry[] {
-    const blockers: Blocker[] = [];
+  /**
+   * The pieces re-seated on the model on stage, each on its tooth, sliding
+   * aside where a neighbour (or one of `blockers`) took the spot.
+   */
+  private reseat(jewels: PlacedJewelry[], seats: Map<string, Seat>, blockers: Blocker[] = []): PlacedJewelry[] {
     return jewels.map((j) => {
       const seat = seats.get(j.id);
       if (!seat || !this.toothRigs.has(j.toothId)) return j; // no such tooth here: left as is, and reported
@@ -1098,19 +1122,50 @@ export class StudioEngine {
     });
   }
 
-  /** A design restored from storage, made on another model: re-seated here when that model's teeth are known. */
+  /**
+   * A design restored from storage: made on another model, re-seated here
+   * when that model's teeth are known; made on this one, its strays put back
+   * on the enamel (`reseatStrays`).
+   */
   private adoptStoredDesign() {
     const from = this.store.designModel;
-    if (from === this.modelMode) return;
+    if (from === this.modelMode) {
+      const healed = this.reseatStrays(this.store.jewels);
+      if (healed !== this.store.jewels) this.store.replaceDesign(healed, this.modelMode);
+      return;
+    }
     const seats = this.captureSeats(this.store.jewels, (id) => this.frameOf(from, id));
     this.store.replaceDesign(seats.size ? this.reseat(this.store.jewels, seats) : this.store.jewels, this.modelMode);
   }
 
   /** Pieces saved on the model `from` (a preset of the customer's), adapted to the model on stage. */
   adaptDesign(jewels: PlacedJewelry[], from: ModelMode): PlacedJewelry[] {
-    if (from === this.modelMode || !this.modelReady) return jewels;
+    if (!this.modelReady) return jewels;
+    if (from === this.modelMode) return this.reseatStrays(jewels);
     const seats = this.captureSeats(jewels, (id) => this.frameOf(from, id));
     return seats.size ? this.reseat(jewels, seats) : jewels;
+  }
+
+  /**
+   * Pieces of a design saved on the model on stage that no longer rest on
+   * its enamel: the Studio's dentition is built in code and its crowns can
+   * move a little from one release to the next. Each is re-seated at the
+   * same place of its tooth (its seat in the tooth's frame), the pieces
+   * still seated staying put and blocking. Placing never leaves a piece off
+   * the enamel, so nothing an artist did is undone. The same array when
+   * every piece is seated.
+   */
+  private reseatStrays(jewels: PlacedJewelry[]): PlacedJewelry[] {
+    this.seatCache = new WeakMap();
+    const strays = new Set(jewels.filter((j) => this.toothRigs.has(j.toothId) && !this.isSeated(j)).map((j) => j.id));
+    if (!strays.size) return jewels;
+    const seats = this.captureSeats(
+      jewels.filter((j) => strays.has(j.id)),
+      (id) => this.frameOf(this.modelMode, id),
+    );
+    if (!seats.size) return jewels;
+    const kept = jewels.filter((j) => !strays.has(j.id)).map((j) => this.jewelBlocker(j));
+    return this.reseat(jewels, seats, kept);
   }
 
   /** The model on stage, as saved with a design. */
@@ -3019,6 +3074,7 @@ export class StudioEngine {
     }
     this.store.settleLoadedPieces(updates, this.modelMode);
     this.setLightPreset(this.store.lightPreset);
+    this.setModelShade(this.store.modelShade);
     // A camera saved on another model frames another stage: start from the default view there.
     if (load.camera && load.model === this.modelMode) {
       const [px, py, pz] = load.camera.position;

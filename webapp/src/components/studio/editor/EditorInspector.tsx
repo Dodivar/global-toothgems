@@ -43,6 +43,7 @@ import {
 import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
 import { studioStore, useStudio, type StudioSnapshot } from "../../../lib/studio3d/store";
+import { MODEL_SHADES, type ModelShade } from "../../../lib/studio3d/modelShades";
 import { AddDesignToCart, ShoppingList } from "./ShoppingList";
 import { useFrontView } from "../useFrontView";
 import { FrontViewDialog, FrontViewFigure } from "../FrontViewPanel";
@@ -662,6 +663,7 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
       )}
 
       <FrontViewSection snap={snap} />
+      <ModelShadeSection snap={snap} />
 
       {/* Keyboard and mouse shortcuts mean nothing on a touch screen; folded until asked for. */}
       <details className="group mt-5 max-lg:hidden">
@@ -802,6 +804,56 @@ function FrontViewSection({ snap }: { snap: StudioSnapshot }) {
         </>
       ) : (
         <Hint>{t("studio.frontView.empty")}</Hint>
+      )}
+    </>
+  );
+}
+
+/**
+ * The dentition's colour: porcelain, or a pastel so the cast reads as a
+ * display stand rather than real teeth. Saved with the design, open to every
+ * plan; an imported model keeps its own colours.
+ */
+function ModelShadeSection({ snap }: { snap: StudioSnapshot }) {
+  const { t } = useEditorLabels();
+  const imported = snap.modelMode === "teeth" || snap.modelMode === "free";
+  const pick = (shade: ModelShade) => {
+    getEngine()?.setModelShade(shade);
+    studioStore.setModelShade(shade);
+  };
+  return (
+    <>
+      <SectionLabel info={t("studio.editor.modelShade.hint")}>{t("studio.editor.modelShade.title")}</SectionLabel>
+      {imported ? (
+        <Hint>{t("studio.editor.modelShade.imported")}</Hint>
+      ) : (
+        <>
+          <div role="group" aria-label={t("studio.editor.modelShade.title")} className="flex flex-wrap gap-2">
+            {MODEL_SHADES.map((s) => {
+              const on = snap.modelShade === s.id;
+              const name = t(`studio.editor.modelShade.items.${s.id}`);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  aria-pressed={on}
+                  aria-label={name}
+                  title={name}
+                  onClick={() => pick(s.id)}
+                  style={{ background: s.swatch }}
+                  className={clsx(
+                    "h-8 w-8 rounded-full border-2 shadow-[inset_0_1px_3px_rgba(0,0,0,.14)] transition-transform hover:-translate-y-px motion-reduce:transition-none",
+                    focusRing,
+                    on ? "border-[var(--gt-ink-900)] ring-2 ring-[var(--gt-blue-300)] ring-offset-2" : "border-black/10",
+                  )}
+                />
+              );
+            })}
+          </div>
+          <p className="m-0 mt-2 text-[11.5px] text-[var(--text-muted)]">
+            {t("studio.editor.modelShade.current", { name: t(`studio.editor.modelShade.items.${snap.modelShade}`) })}
+          </p>
+        </>
       )}
     </>
   );
