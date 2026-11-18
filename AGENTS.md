@@ -42,6 +42,7 @@ Read only what the task needs (`guidelines/` below = `global-toothgems-llm-guide
 | Production operations, release order, load and monitoring | `docs/production-readiness.md` |
 | Translations, copy, SEO | `guidelines/08-content-and-localization.md` |
 | Schema, migrations, RPC, Storage, Edge Functions | `guidelines/09-supabase-workflow.md`, `supabase/README.md` (Migrations, Data model, Deliberate decisions) |
+| A new gem **cut** (outline) in the 3D Studio — not a new colour of an existing cut | skill `.claude/skills/studio-new-gem-cut/SKILL.md` |
 | Pro artist module (showroom, booking with deposit, client file) — **study only, nothing decided** | `docs/pro-artist-erp-study.md` |
 | How to plan, report, commit | `guidelines/10-agent-workflow.md`, §14 below |
 | A given screen or store | the matching `webapp/README.md` section, then the code |
