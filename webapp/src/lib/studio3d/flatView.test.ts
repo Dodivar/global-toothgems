@@ -158,6 +158,35 @@ describe("projectFlatView", () => {
     expect(down.y).toBeGreaterThan((tooth("41").cervical + tooth("41").incisal) / 2);
   });
 
+  it("keeps pieces near the gum line apart, in the same proportions as on the crown", () => {
+    // A heart's lobes: pieces 3, 4 and 4.6 mm above the middle of a ~9.9 mm crown, beyond the engine's ±1.4 seat.
+    const c = DENTITION_CROWNS.find((x) => x.fdi === "11")!;
+    const half = (c.top - c.bottom) / 2;
+    const ups = [3, 4, 4.6].filter((u) => u <= half);
+    const ys = ups.map((u, i) => projectFlatView([onDentition(`h${i}`, "11", 0, u)], "dentition").gems[0].at!.y);
+    for (let i = 1; i < ys.length; i++) expect(ys[i]).toBeLessThan(ys[i - 1] - 0.5);
+    const t = tooth("11");
+    const mid = (t.cervical + t.incisal) / 2;
+    const drawnHalf = Math.abs(t.incisal - t.cervical) / 2;
+    ys.forEach((y, i) => expect((mid - y) / drawnHalf).toBeCloseTo(ups[i] / half, 6));
+    // At the gum line, the drawn gum line; never past it.
+    const top = projectFlatView([onDentition("top", "11", 0, half + 2)], "dentition").gems[0].at!;
+    expect(top.y).toBeCloseTo(t.cervical, 6);
+  });
+
+  it("keeps pieces near a crown's side apart, in the same proportions as on the crown", () => {
+    const c = DENTITION_CROWNS.find((x) => x.fdi === "11")!;
+    const halfW = (c.alongMinus + c.alongPlus) / 2;
+    const t = tooth("11");
+    const mid = (t.x0 + t.x1) / 2;
+    const drawnHalf = (t.x1 - t.x0) / 2;
+    for (const across of [-0.95, -0.7, 0.7, 0.95]) {
+      const at = projectFlatView([onDentition("s", "11", across * halfW)], "dentition").gems[0].at!;
+      // Tooth 11 is on the patient's right: toward their left (+tangent) is the viewer's right.
+      expect((at.x - mid) / drawnHalf).toBeCloseTo(across, 6);
+    }
+  });
+
   it("draws pieces on the side teeth on their own crown, apart from each other", () => {
     const view = projectFlatView([onDentition("m", "26"), onDentition("p", "25"), onDentition("n", "27")], "dentition");
     for (const g of view.gems) {
