@@ -32,6 +32,7 @@ import { anchorToothOf, groupToWorld, piecesToGroup, type Frame, type GemGroupDa
 import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
 import { alignedColumn, alignedHeights, centeredOffsets, type CenterItem } from "./layout";
 import { mirroredRotation, opposingTooth } from "./mirror";
+import { groupBox, groupDuplicateMoves } from "./groupDuplicate";
 import { notify } from "./notices";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
 
@@ -158,6 +159,12 @@ const OVERLAP_DEPTH = 1.5;
 const ALIGN_MAX_DRIFT = 3;
 /** Aligning on screen may seat a piece this far past the edge of the facet it rests on (world units, ~mm). */
 const ALIGN_FACET_SLACK = 0.5;
+/**
+ * How much a copied group may open up, tried in order. Pieces set edge to edge
+ * would otherwise bump into each other on a crown curved a little more than
+ * theirs; a few per cent keeps the shape and the copies apart.
+ */
+const GROUP_SPREADS = [1, 1.06, 1.12];
 function poseOf(j: PlacedJewelry): GemPose {
   return { shape: j.look.shape, scale: j.scale, axes: scaleAxes(j.look.shape, j.size), offset: j.offset ?? 0, rotation: j.rotation };
 }
@@ -1595,11 +1602,20 @@ export class StudioEngine {
   private placementBlocked(hit: SurfaceHit, spec: PieceSpec): boolean {
     return this.hitBlocked(hit, specPose(spec), this.blockersFor(new Set()));
   }
-  /** Collision-aware duplication: each copy slides to the nearest free spot. */
+  /**
+   * Collision-aware duplication. Several pieces are copied as one rigid group,
+   * keeping their shape (see `groupDuplicate.ts` for the spots tried); a single
+   * piece, or a group that fits nowhere whole, has each copy slide to the
+   * nearest free spot.
+   */
   duplicateSelection(ids: string[]): number {
     const srcs = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!srcs.length) return 0;
     const blockers = this.blockersFor(new Set()); // every existing piece blocks the copies
+    if (srcs.length > 1) {
+      const group = this.duplicateAsGroup(srcs, blockers);
+      if (group) return this.store.insertJewels(group);
+    }
     const copies: PlacedJewelry[] = [];
     for (const src of srcs) {
       const nrm = new THREE.Vector3(src.normal.x, src.normal.y, src.normal.z).normalize();
@@ -1625,6 +1641,100 @@ export class StudioEngine {
       blockers.push(this.jewelBlocker(copy));
     }
     return this.store.insertJewels(copies);
+  }
+  /**
+   * The pieces copied as one rigid group: their offsets from the group's centre
+   * in the anchor crown's frame (across the arch, up, outward) are kept as they
+   * are, and the group is set down whole at the first spot where every copy
+   * lands on enamel without overlapping a piece or another copy. Null when no
+   * spot takes the whole group.
+   */
+  private duplicateAsGroup(srcs: PlacedJewelry[], blockers: Blocker[]): PlacedJewelry[] | null {
+    const centroid = new THREE.Vector3();
+    for (const s of srcs) centroid.add(new THREE.Vector3(s.position.x, s.position.y, s.position.z));
+    centroid.divideScalar(srcs.length);
+    // The crown most of the pieces sit on, else the one nearest the group's centre.
+    const counts = new Map<string, number>();
+    for (const s of srcs) if (this.toothRigs.has(s.toothId)) counts.set(s.toothId, (counts.get(s.toothId) ?? 0) + 1);
+    let anchor: ToothRig | null = null;
+    let most = 0;
+    counts.forEach((n, id) => {
+      if (n > most) {
+        most = n;
+        anchor = this.toothRigs.get(id) ?? null;
+      }
+    });
+    anchor ??= this.nearestRig(centroid);
+    if (!anchor) return null;
+    const a: ToothRig = anchor;
+    const seat = centroid.clone().sub(a.center);
+    const seatAlong = seat.dot(a.tangent),
+      seatUp = seat.y,
+      seatOut = seat.dot(a.outward);
+    const pieces = srcs.map((s) => {
+      const rel = new THREE.Vector3(s.position.x, s.position.y, s.position.z).sub(centroid);
+      return { src: s, along: rel.dot(a.tangent), up: rel.y, out: rel.dot(a.outward), reach: this.jewelBlocker(s).reach };
+    });
+    const box = groupBox(pieces);
+    const moves = groupDuplicateMoves(a.id, box, {
+      // Toward the crown's middle first: that is where the room is.
+      alongRoom: seatAlong > 0 ? -1 : 1,
+      upRoom: seatUp > 0 ? -1 : 1,
+    });
+    for (const move of moves) {
+      const dst = move.kind === "tooth" ? this.toothRigs.get(move.toothId) : a;
+      if (!dst) continue;
+      // A crown's tangent may run either way round the arch: keep the group's left and right.
+      const s = dst.tangent.dot(a.tangent) < 0 ? -1 : 1;
+      const da = move.kind === "shift" ? move.along : 0;
+      const du = move.kind === "shift" ? move.up : 0;
+      for (const spread of GROUP_SPREADS) {
+        const placed = this.placeGroupAt(pieces, dst, s, seatAlong + da, seatUp + du, seatOut, spread, blockers);
+        if (placed) return placed;
+      }
+    }
+    return null;
+  }
+  /**
+   * The group set down on `dst` with its centre at the given seat and its
+   * offsets opened up by `spread`, or null if one copy does not fit.
+   */
+  private placeGroupAt(
+    pieces: { src: PlacedJewelry; along: number; up: number; out: number }[],
+    dst: ToothRig,
+    sign: number,
+    seatAlong: number,
+    seatUp: number,
+    seatOut: number,
+    spread: number,
+    blockers: Blocker[],
+  ): PlacedJewelry[] | null {
+    const taken = [...blockers];
+    const copies: PlacedJewelry[] = [];
+    for (const p of pieces) {
+      const point = dst.center
+        .clone()
+        .addScaledVector(dst.tangent, sign * (seatAlong + p.along * spread))
+        .addScaledVector(_UP, seatUp + p.up * spread)
+        .addScaledVector(dst.outward, seatOut + p.out);
+      // Straight along the crown's outward direction, the same for every copy:
+      // snapping along each piece's own (tilted) normal would slide the outer
+      // copies sideways, toward each other, on a crown curved unlike theirs.
+      const hit = this.snapToSurface(point, dst.outward, SEARCH_SNAP_REACH);
+      if (!hit) return null;
+      const pose = poseOf(p.src);
+      if (this.hitBlocked(hit, pose, taken)) return null;
+      const copy: PlacedJewelry = {
+        ...p.src,
+        id: uid(),
+        toothId: hit.toothId,
+        position: v3(hit.point.x, hit.point.y, hit.point.z),
+        normal: v3(hit.normal.x, hit.normal.y, hit.normal.z),
+      };
+      copies.push(copy);
+      taken.push(this.blockerAt(hit.point, hit.normal, pose));
+    }
+    return copies;
   }
   /**
    * Duplicate each piece straight to its mirror image, turned like a
