@@ -3,7 +3,8 @@ import { FREE_TOOTH, sanitizeJewels, type PlacedJewelry, type Vec3 } from "../..
 import { sizeKey } from "../gemOptions";
 import type { PieceSpec } from "./gemCatalog";
 import { uid, v3 } from "./math";
-import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGroupRef, type StudioScene } from "../studioWorkspace/scene";
+import { DEFAULT_MODEL_SHADE, isModelShade, type ModelShade } from "./modelShades";
+import { designKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGroupRef, type StudioScene } from "../studioWorkspace/scene";
 
 /**
  * State of the design being composed in the 3D Studio.
@@ -48,7 +49,7 @@ export interface ActiveCreation {
   /** Account the creation belongs to; the link is dropped for anyone else. */
   ownerId: string;
   name: string;
-  /** `piecesKey` of the pieces as last saved. */
+  /** `designKey` of the pieces and model colour as last saved. */
   baselineKey: string;
   /** ISO time of the last successful save or load. */
   savedAt: string;
@@ -90,6 +91,8 @@ export interface StudioSnapshot {
   modelLoading: boolean;
   issues: DesignIssue[];
   lightPreset: LightPreset;
+  /** Colour of the dental model, saved with the design. */
+  modelShade: ModelShade;
   clientName: string;
   contextMenu: ContextMenuState | null;
   canUndo: boolean;
@@ -141,6 +144,7 @@ export class DesignStore {
    */
   designModel: ModelMode = "studio";
   lightPreset: LightPreset = "studio";
+  modelShade: ModelShade = DEFAULT_MODEL_SHADE;
   clientName = "";
   contextMenu: ContextMenuState | null = null;
   groups: SceneGroupRef[] = [];
@@ -172,12 +176,14 @@ export class DesignStore {
       jewels?: unknown;
       clientName?: unknown;
       model?: unknown;
+      modelShade?: unknown;
       groups?: unknown;
       active?: unknown;
     } | null;
     if (data && typeof data === "object") {
       this.jewels = sanitizeJewels(data.jewels);
       if (isModelMode(data.model)) this.designModel = data.model;
+      if (isModelShade(data.modelShade)) this.modelShade = data.modelShade;
       this.restored = this.jewels.length > 0;
       if (typeof data.clientName === "string") this.clientName = data.clientName.slice(0, CLIENT_NAME_MAX);
       this.groups = sanitizeScene({ pieces: this.jewels, groups: data.groups }).groups;
@@ -221,6 +227,7 @@ export class DesignStore {
       modelLoading: this.modelLoading,
       issues: this.issues,
       lightPreset: this.lightPreset,
+      modelShade: this.modelShade,
       clientName: this.clientName,
       contextMenu: this.contextMenu,
       canUndo: this.past.length > 0,
@@ -476,6 +483,13 @@ export class DesignStore {
       this.commit();
     }
   }
+  /** Not an edit of the pieces: no undo step, but a change to save. */
+  setModelShade(shade: ModelShade) {
+    if (this.modelShade !== shade) {
+      this.modelShade = shade;
+      this.commit();
+    }
+  }
   setClientName(n: string) {
     this.clientName = n.slice(0, CLIENT_NAME_MAX);
     this.commit();
@@ -536,6 +550,7 @@ export class DesignStore {
       jewels: this.jewels,
       clientName: this.clientName,
       model: this.designModel,
+      modelShade: this.modelShade,
       groups: pruneGroups(this.groups, this.jewels),
       active: this.active,
     });
@@ -550,6 +565,7 @@ export class DesignStore {
       model: extra.model,
 
       lightPreset: this.lightPreset,
+      modelShade: this.modelShade,
       camera: extra.camera,
       pieces: structuredClone(this.jewels),
       groups: pruneGroups(structuredClone(this.groups), this.jewels),
@@ -566,6 +582,7 @@ export class DesignStore {
     this.jewels = clean.pieces;
     this.groups = clean.groups;
     this.lightPreset = clean.lightPreset;
+    this.modelShade = clean.modelShade;
     this.stepBase = null;
     this.past = [];
     this.future = [];
@@ -573,7 +590,7 @@ export class DesignStore {
     this.selectedToothId = null;
     this.armedTypeId = null;
     this.contextMenu = null;
-    this.active = active ? { ...active, baselineKey: piecesKey(this.jewels) } : null;
+    this.active = active ? { ...active, baselineKey: designKey(this.jewels, this.modelShade) } : null;
     this.designModel = clean.model;
     this.pendingLoad = { camera: clean.camera, model: clean.model };
     this.restored = false;
@@ -598,7 +615,7 @@ export class DesignStore {
     if (model) this.designModel = model;
     // Not an edit: no step may come of it.
     this.stepBase = null;
-    const wasClean = !!this.active && this.active.baselineKey === piecesKey(this.jewels);
+    const wasClean = !!this.active && this.active.baselineKey === designKey(this.jewels, this.modelShade);
     if (updates.length) {
       const map = new Map(updates.map((u) => [u.id, u.patch]));
       this.jewels = this.jewels.map((j) => {
@@ -606,13 +623,13 @@ export class DesignStore {
         return patch ? { ...j, ...patch } : j;
       });
     }
-    if (wasClean && this.active) this.active = { ...this.active, baselineKey: piecesKey(this.jewels) };
+    if (wasClean && this.active) this.active = { ...this.active, baselineKey: designKey(this.jewels, this.modelShade) };
     this.commit();
   }
 
   /** Link the stage to a creation that was just saved with exactly these pieces. */
-  markSaved(active: Omit<ActiveCreation, "baselineKey">, savedPieces: PlacedJewelry[]) {
-    this.active = { ...active, baselineKey: piecesKey(savedPieces) };
+  markSaved(active: Omit<ActiveCreation, "baselineKey">, saved: Pick<StudioScene, "pieces" | "modelShade">) {
+    this.active = { ...active, baselineKey: designKey(saved.pieces, saved.modelShade) };
     this.commit();
     this.saveNow();
   }
