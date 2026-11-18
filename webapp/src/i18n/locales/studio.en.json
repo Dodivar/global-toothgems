@@ -340,8 +340,7 @@
       "cancelLasso": "Leave the lasso",
       "hint": "Drag a piece onto a tooth to start designing",
       "stage": {
-        "dentition": "Reference dentition · FDI notation",
-        "studio": "Simplified upper arch · FDI notation",
+        "smile": "Reference dentition · FDI notation",
         "teeth": "Imported model · FDI mapping",
         "free": "Imported model · free mode"
       },
@@ -379,11 +378,11 @@
     "zoomOut": "Zoom out",
     "modelShade": {
       "title": "Model colour",
-      "hint": "Tint the dentition to set off the gems: natural, or a pastel that makes it a display stand rather than real teeth. The colour is saved with the creation and shows in posts, share links and the Glowbook.",
+      "hint": "Tint the dentition to set off the gems: porcelain, or a pastel that makes it a display stand rather than real teeth. The colour is saved with the creation and shows in posts, share links and the Glowbook.",
       "current": "Colour: {{name}}",
       "imported": "An imported model keeps its own colours.",
       "items": {
-        "natural": "Natural",
+        "porcelain": "Porcelain",
         "glacier": "Glacier",
         "rose": "Powder pink",
         "mint": "Mint",
@@ -614,7 +613,6 @@
       "shareFailed": "Sharing did not go through — download the image to post it",
       "linkCopied": "Studio link copied",
       "linkCopyFailed": "The link could not be copied",
-      "modelLoadFailed": "The reference dentition could not be loaded — the simplified arch stands in. Try again with “Back to the reference dentition”.",
       "import": {
         "started": "Importing {{name}}…",
         "teeth_one": "Model imported — {{count}} tooth recognised",
@@ -703,6 +701,8 @@
     "trialUntil": "Your free trial gives you access to the Studio until {{date}}.",
     "noPlan": "Choose a plan to use the 3D Studio. Your creations stay in your account.",
     "staffNote": "Your team account opens the Studio without a subscription.",
+    "staffPlansTitle": "The plans offered to artists",
+    "staffPlansBody": "For information only: your team account already has every right of the Atelier plan, so you do not need to subscribe.",
     "trialPlansTitle": "Subscribe now",
     "trialPlansBody": "Choose a plan to subscribe right away. Your free trial then ends and your subscription starts at once; nothing is lost, your creations stay in your account.",
     "choosePlan": "Choose a plan",
@@ -826,6 +826,9 @@
       "invoice": "Invoice",
       "creditNote": "Credit note",
       "download": "PDF",
+      "statusPaid": "Paid",
+      "statusFailed": "Failed",
+      "failedHint": "Payment declined: update your card and we will try again.",
       "downloadLabel": "Download {{kind}} {{number}} (PDF)",
       "loadError": "Your invoices could not be loaded.",
       "pdfError": "The PDF could not be produced. Please try again."
@@ -1084,6 +1087,8 @@
     "listToggle_one": "Show the gem ({{count}})",
     "listToggle_other": "Show the {{count}} gems",
     "listLabel": "Numbered gems",
+    "numbersToggle": "Numbers",
+    "numbersHint": "Hover or tap a gem in the list to find it on the drawing.",
     "gemNumber": "Gem {{number}}",
     "order": "Place #{{order}}",
     "empty": "Place a gem on a tooth: it will appear here, numbered.",

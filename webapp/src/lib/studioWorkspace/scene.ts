@@ -25,11 +25,13 @@ const SCENE_MAX_PIECES = 200;
 
 /**
  * Which dentition the pieces were placed on — the editor's own model names
- * (`ModelMode`): the default scan, the procedural reference arch, or an
- * imported model (not stored, only named). On load, a design made on another
- * built-in model is re-seated tooth by tooth by the engine.
+ * (`ModelMode`): the Studio's dentition (`smile`, since 2026-11-17), the
+ * former default scan (`dentition`), the procedural reference arch
+ * (`studio`), or an imported model (not stored, only named). On load, a
+ * design made on another built-in model is re-seated tooth by tooth by the
+ * engine.
  */
-export type SceneModel = "dentition" | "studio" | "teeth" | "free";
+export type SceneModel = "smile" | "dentition" | "studio" | "teeth" | "free";
 export type SceneLight = "studio" | "lamp" | "daylight";
 
 export interface SceneCamera {
@@ -50,14 +52,14 @@ export interface StudioScene {
   version: typeof SCENE_VERSION;
   model: SceneModel;
   lightPreset: SceneLight;
-  /** Colour of the dental model (`lib/studio3d/modelShades.ts`); rows saved before it read as "natural". */
+  /** Colour of the dental model (`lib/studio3d/modelShades.ts`); rows saved before it read as "porcelain". */
   modelShade: ModelShade;
   camera: SceneCamera | null;
   pieces: PlacedJewelry[];
   groups: SceneGroupRef[];
 }
 
-const MODELS: SceneModel[] = ["dentition", "studio", "teeth", "free"];
+const MODELS: SceneModel[] = ["smile", "dentition", "studio", "teeth", "free"];
 const LIGHTS: SceneLight[] = ["studio", "lamp", "daylight"];
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const isTriple = (v: unknown): v is [number, number, number] => Array.isArray(v) && v.length === 3 && v.every(isNum);
@@ -163,7 +165,7 @@ export function piecesKey(pieces: PlacedJewelry[]): string {
 
 /**
  * `piecesKey` plus the model's colour: what "unsaved changes" compares, so a
- * new colour is something to save. The natural colour adds nothing, so keys
+ * new colour is something to save. The default porcelain adds nothing, so keys
  * taken before colours existed (local drafts) still match.
  */
 export function designKey(pieces: PlacedJewelry[], shade: ModelShade): string {

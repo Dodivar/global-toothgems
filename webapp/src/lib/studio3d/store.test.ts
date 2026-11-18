@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { PlacedJewelry } from "../../data/studioEditor";
+import { FREE_TOOTH, type PlacedJewelry } from "../../data/studioEditor";
 import { createScene } from "../studioWorkspace/scene";
-import { DesignStore } from "./store";
+import { DesignStore, targetToothOf } from "./store";
 
 /** The undo history: one step per change, and none for a change that changed nothing. */
 
@@ -77,5 +77,34 @@ describe("design store history", () => {
     store.pushHistory();
     store.settleLoadedPieces([{ id: "a", patch: { position: { x: -4.1, y: 0.5, z: 3 } } }]);
     expect(store.getSnapshot().canUndo).toBe(false);
+  });
+});
+
+describe("design store model", () => {
+  it("opens on the Studio's dentition, and comes back to it for the next session", () => {
+    const store = new DesignStore({ persist: false });
+    expect(store.modelMode).toBe("smile");
+    store.setModelMode("teeth");
+    store.resetSession();
+    expect(store.modelMode).toBe("smile");
+  });
+
+  it("remembers the model a design was re-seated on", () => {
+    const store = twoPieces();
+    store.replaceDesign(store.jewels, "smile");
+    expect(store.designModel).toBe("smile");
+  });
+});
+
+describe("target tooth", () => {
+  const jewels = [piece(), piece({ id: "b", toothId: FREE_TOOTH })];
+  it("is the selected tooth, else the selected piece's tooth", () => {
+    expect(targetToothOf({ jewels, selectedJewelIds: [], selectedToothId: "21" })).toBe("21");
+    expect(targetToothOf({ jewels, selectedJewelIds: ["a"], selectedToothId: null })).toBe("11");
+  });
+  it("names no tooth for nothing selected or a piece off the labelled teeth", () => {
+    expect(targetToothOf({ jewels, selectedJewelIds: [], selectedToothId: null })).toBeNull();
+    expect(targetToothOf({ jewels, selectedJewelIds: ["b"], selectedToothId: null })).toBeNull();
+    expect(targetToothOf({ jewels, selectedJewelIds: [], selectedToothId: FREE_TOOTH })).toBeNull();
   });
 });

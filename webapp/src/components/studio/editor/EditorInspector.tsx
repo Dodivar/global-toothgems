@@ -42,7 +42,7 @@ import {
 } from "../../../lib/studio3d/actions";
 import { getEngine } from "../../../lib/studio3d/engine";
 import { notify } from "../../../lib/studio3d/notices";
-import { studioStore, type StudioSnapshot } from "../../../lib/studio3d/store";
+import { studioStore, useStudio, type StudioSnapshot } from "../../../lib/studio3d/store";
 import { MODEL_SHADES, type ModelShade } from "../../../lib/studio3d/modelShades";
 import { AddDesignToCart, ShoppingList } from "./ShoppingList";
 import { useFrontView } from "../useFrontView";
@@ -69,7 +69,8 @@ const miniButton = clsx(
  * The properties panel. What it shows follows the selection: several pieces,
  * one piece, a tooth, or — with nothing selected — the design overview.
  */
-export function EditorInspector({ snap }: { snap: StudioSnapshot }) {
+export function EditorInspector() {
+  const snap = useStudio();
   const selected = snap.jewels.filter((j) => snap.selectedJewelIds.includes(j.id));
   let body: ReactNode;
   if (selected.length > 1) body = <MultiPanel key="multi" selected={selected} />;
@@ -573,8 +574,8 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
             }}
           >
             {jewel.toothId === FREE_TOOTH && <option value={FREE_TOOTH}>{t("studio.editor.freePlacementLong")}</option>}
-            {/* The simplified reference arch and imports carry the upper arch only. */}
-            {(snap.modelMode === "dentition" ? ALL_TEETH : UPPER_TEETH).map((fdi) => (
+            {/* Imports are labelled on the upper arch only. */}
+            {(snap.modelMode === "smile" ? ALL_TEETH : UPPER_TEETH).map((fdi) => (
               <option key={fdi} value={fdi}>
                 {fdi} — {toothShort(fdi)}
               </option>
@@ -809,7 +810,7 @@ function FrontViewSection({ snap }: { snap: StudioSnapshot }) {
 }
 
 /**
- * The dental model's colour: natural, or a pastel so the cast reads as a
+ * The dentition's colour: porcelain, or a pastel so the cast reads as a
  * display stand rather than real teeth. Saved with the design, open to every
  * plan; an imported model keeps its own colours.
  */

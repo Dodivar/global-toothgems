@@ -79,26 +79,26 @@ describe("design store and saved creations", () => {
 
   it("counts a new model colour as a change to save, without an undo step", () => {
     const store = loaded();
-    expect(store.modelShade).toBe("natural");
+    expect(store.modelShade).toBe("porcelain");
     store.setModelShade("glacier");
     expect(clean(store)).toBe(false);
     expect(store.getSnapshot().canUndo).toBe(false);
     expect(store.toScene({ model: "dentition", camera: null }).modelShade).toBe("glacier");
     store.markSaved({ ...link, savedAt: "2026-09-27T11:00:00.000Z" }, { pieces: store.jewels, modelShade: store.modelShade });
     expect(clean(store)).toBe(true);
-    store.setModelShade("natural");
+    store.setModelShade("porcelain");
     expect(clean(store)).toBe(false);
   });
 
-  it("loads the saved model colour, and reads older scenes as natural", () => {
+  it("loads the saved model colour, and reads older scenes as porcelain", () => {
     const store = new DesignStore();
     store.loadScene(createScene({ pieces: [piece()], modelShade: "rose" }), link);
     expect(store.modelShade).toBe("rose");
     expect(clean(store)).toBe(true);
-    expect(sanitizeScene({ pieces: [] }).modelShade).toBe("natural");
-    expect(sanitizeScene({ pieces: [], modelShade: "neon" }).modelShade).toBe("natural");
-    // The natural colour keeps the keys taken before colours existed.
-    expect(designKey([piece()], "natural")).toBe(piecesKey([piece()]));
+    expect(sanitizeScene({ pieces: [] }).modelShade).toBe("porcelain");
+    expect(sanitizeScene({ pieces: [], modelShade: "neon" }).modelShade).toBe("porcelain");
+    // The porcelain colour keeps the keys taken before colours existed.
+    expect(designKey([piece()], "porcelain")).toBe(piecesKey([piece()]));
   });
 
   it("starts a new, unlinked design that can be undone", () => {

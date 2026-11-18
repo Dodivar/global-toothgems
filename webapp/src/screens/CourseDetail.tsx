@@ -19,12 +19,14 @@ import { TrainingHero } from "../components/academy/TrainingHero";
 import { OutcomesPanel } from "../components/academy/OutcomesPanel";
 import { FeatureCard, Section, SectionIntro, StepCard } from "../components/academy/TrainingPrimitives";
 import { ReviewsSection } from "../components/reviews/ReviewsSection";
+import { CourseOffers } from "../components/academy/CourseOffers";
+import { NO_COURSE_OFFERS, studioMonths, type CourseOffers as Offers, type CoursePackOffer } from "../lib/academy/courseOffers";
 import { pick } from "../data/types";
 import { lessonCount, type PublicCourse } from "../lib/academy/publicCourse";
 import { formatDuration } from "../lib/trainingFilters";
 import { useAuth } from "../lib/auth";
 import { useCart } from "../lib/cart";
-import { courseLineId } from "../lib/checkout/cartLines";
+import { courseLineId, lineKey } from "../lib/checkout/cartLines";
 import { useProgress } from "../lib/progress";
 import { learnHref } from "../lib/academyUrl";
 import { useToast } from "../lib/toast";
@@ -49,22 +51,31 @@ import { useFormat } from "../lib/format";
  * who holds the course is offered to open it instead. The prototype's courses
  * (mock mode) keep the demo enrolment.
  *
+ * Below the hero, "Choose your package" offers the course alone or the
+ * GLOBAL™ PRO MASTER PACK — each pack that opens it (kit + 3D Studio months), read
+ * from the catalogue by the server page (`offers`, `lib/academy/courseOffers.ts`).
+ * A pack already carries the course, so choosing it takes a lone course line
+ * out of the cart, and choosing the course takes this course's packs out: the
+ * course is never bought twice in one order. A member who holds the course is
+ * not offered them (a pack would sell them the course again, decision 139).
+ *
  * The route is open, like `/academy`: this is what sells the training, so gating
  * it would hide the thing it advertises. Only the lesson player is gated.
  */
-export function CourseDetail({ course }: { course: PublicCourse }) {
+export function CourseDetail({ course, offers = NO_COURSE_OFFERS }: { course: PublicCourse; offers?: Offers }) {
   const { formatMoney } = useFormat();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { signedIn, displayName } = useAuth();
   const { openCourse, progressFor, courseFor, status: learningStatus } = useProgress();
-  const { lines, addCourse } = useCart();
+  const { lines, addCourse, addLine, removeLine } = useCart();
   const { showToast } = useToast();
   const lang = i18n.language;
   const demo = course.enrolment === "demo";
   const forSale = course.enrolment === "sale" && Boolean(course.dbId);
 
   const curriculumRef = useRef<HTMLElement>(null);
+  const offersRef = useRef<HTMLElement>(null);
   const heroCtaRef = useRef<HTMLDivElement>(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
 
@@ -101,6 +112,12 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
       ? t("training.ctaResume")
       : t("training.ctaStart");
   const ctaLabel = demo || holder ? startLabel : forSale ? (inCart ? t("training.ctaInCart") : t("training.ctaBuy")) : null;
+  const showOffers = forSale && !holder && offers.packs.length > 0;
+  const packLineIds = new Map(offers.packs.map((pack) => [pack.id, lineKey({ productId: pack.id })]));
+  const offersInCart = {
+    course: inCart,
+    packs: new Set(offers.packs.filter((pack) => lines.some((line) => line.id === packLineIds.get(pack.id))).map((pack) => pack.id)),
+  };
   const lessons = lessonCount(course);
   const duration = formatDuration(course.minutes, lang);
 
@@ -123,6 +140,8 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
       // Indicative price only: create_order() prices the seat again. An account
       // is asked for in the cart, where the basket waits for the sign-in.
       if (!checkingAccess) {
+        // A pack of this course already in the cart carries the course: one or the other.
+        for (const id of packLineIds.values()) removeLine(id);
         addCourse({
           courseId: course.dbId!,
           productId: course.id,
@@ -144,6 +163,34 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
     openCourse(course.id);
     navigate("/academy/lecon");
     showToast(t("academy.toastCourseTitle"), t("academy.toastCourseBody", { title }));
+  };
+
+  /** A pack that opens the course: it replaces a lone course line (the course is in the pack). */
+  const buyPack = (pack: CoursePackOffer) => {
+    if (checkingAccess) return;
+    if (forSale) removeLine(courseLineId(course.dbId!));
+    if (!offersInCart.packs.has(pack.id)) {
+      addLine({
+        productId: pack.id,
+        dbProductId: pack.dbId,
+        name: pick(pack.name, lang),
+        image: pack.image,
+        unitPrice: pack.priceCents,
+        currency: pack.currency,
+        qty: 1,
+        pack: { course: true },
+      });
+    }
+    trackAcademy("academy_course_offer_chosen", { course_id: course.id, offer: "pack", product_id: pack.id });
+    navigate("/panier");
+  };
+
+  const seeOffers = () => {
+    const el = offersRef.current;
+    if (!el) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    el.focus({ preventScroll: true });
   };
 
   /** Moves the reader to the curriculum and puts the keyboard there with them. */
@@ -185,7 +232,33 @@ export function CourseDetail({ course }: { course: PublicCourse }) {
         ctaLabel={ctaLabel}
         ctaBusy={checkingAccess}
         onExploreCurriculum={exploreCurriculum}
+        onSeeOffers={showOffers ? seeOffers : undefined}
+        offersStudioMonths={studioMonths(offers)}
       />
+
+      {/* 1b — Packages: the course alone, or the pack (course + kit + 3D Studio) */}
+      {showOffers && (
+        <section
+          id="formules"
+          ref={offersRef}
+          tabIndex={-1}
+          aria-labelledby="training-offers"
+          className="scroll-mt-6 bg-[var(--surface-brand-wash)] px-[clamp(16px,4vw,72px)] py-[clamp(40px,5vw,72px)]"
+        >
+          <div className="mx-auto max-w-[1760px]">
+            <CourseOffers
+              id="training-offers"
+              title={title}
+              coursePrice={course.currentPrice}
+              offers={offers}
+              busy={checkingAccess}
+              inCart={offersInCart}
+              onBuyCourse={start}
+              onBuyPack={buyPack}
+            />
+          </div>
+        </section>
+      )}
 
       {/* 2 — What you'll experience */}
       <Section labelledBy="training-experience">
