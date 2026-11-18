@@ -66,6 +66,8 @@ export interface StudioGem {
   family: string | null;
   /** The shop's shape, which groups the library ("Hearts", "Navettes"…). */
   shopShape: GemShape | null;
+  /** The shop's colour (`gem_colors.slug`), which the library's colour filter reads; null = none. */
+  colorSlug: string | null;
   shape: StudioShape;
   /** At least one. */
   finishes: StudioGemFinish[];
@@ -196,6 +198,7 @@ export function buildStudioGems(products: Product[], appearances: GemAppearanceR
       image: product.image,
       family: product.family,
       shopShape: product.shape ?? null,
+      colorSlug: product.color ?? null,
       shape: base.shape,
       finishes,
       sizes: sizes.length ? sizes : base.shape === "round" ? DEFAULT_ROUND_SIZES : DEFAULT_SHAPED_SIZES,

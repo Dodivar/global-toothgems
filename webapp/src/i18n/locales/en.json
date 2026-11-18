@@ -499,8 +499,8 @@
     "lastName": "Last name",
     "email": "Email",
     "password": "Password",
-    "newsletter": "Send me new releases and course dates",
-    "newsletterDescription": "One email a month, unsubscribe in one click.",
+    "newsletter": "Receive the newsletter",
+    "newsletterDescription": "Stay up to date with our latest news, offers and reminders (cart, favourites) by email. Unsubscribe in one click.",
     "submitSignIn": "Sign in",
     "guestNote": "Gems, tools and kits can be bought without an account.",
     "guestCta": "Continue to the shop",
@@ -968,7 +968,12 @@
     "moduleValidationNoCheck": "Average score required {{score}}%",
     "ctaBuy": "Buy this course",
     "ctaInCart": "View basket",
-    "stickyBuy": "Buy"
+    "stickyBuy": "Buy",
+    "pack": {
+      "hint_one": "Also as a pack with the kit and {{count}} month of 3D Studio:",
+      "hint_other": "Also as a pack with the kit and {{count}} months of 3D Studio:",
+      "hintPlain": "Also as a pack with the kit:"
+    }
   },
   "lesson": {
     "eyebrow": "Course in progress",

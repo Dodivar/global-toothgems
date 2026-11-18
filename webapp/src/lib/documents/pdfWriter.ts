@@ -21,6 +21,8 @@ export type PdfOp =
   | { kind: "rect"; x: number; y: number; w: number; h: number; fill: string }
   | { kind: "line"; x1: number; y1: number; x2: number; y2: number; color: string; width: number }
   | { kind: "logo"; x: number; y: number; w: number; h: number }
+  /** One of the `images` given to `writePdf`, by its index. */
+  | { kind: "image"; image: number; x: number; y: number; w: number; h: number }
   | { kind: "path"; commands: PdfPathCommand[]; fill?: string; stroke?: string; width?: number; dash?: number[] };
 
 /** A path segment, in points from the top-left corner: move, line, cubic Bézier, close. */
@@ -29,6 +31,13 @@ export type PdfPathCommand =
   | ["L", number, number]
   | ["C", number, number, number, number, number, number]
   | ["Z"];
+
+/** A picture embedded once and drawn by `image` operations: a baseline JPEG (RGB), kept as it is. */
+export interface PdfImage {
+  width: number;
+  height: number;
+  jpeg: Uint8Array;
+}
 
 export interface PdfInfo {
   title: string;
@@ -106,6 +115,8 @@ export function contentStream(ops: PdfOp[], pageHeight: number = A4.height): str
       out.push(`q ${paint.join(" ")} ${segments.join(" ")} ${op.fill && op.stroke ? "B" : op.fill ? "f" : "S"} Q`);
     } else if (op.kind === "logo") {
       out.push(`q ${num(op.w)} 0 0 ${num(op.h)} ${num(op.x)} ${num(pageHeight - op.y - op.h)} cm /Logo Do Q`);
+    } else if (op.kind === "image") {
+      out.push(`q ${num(op.w)} 0 0 ${num(op.h)} ${num(op.x)} ${num(pageHeight - op.y - op.h)} cm /Im${op.image} Do Q`);
     } else {
       const font = op.weight === "bold" ? "/F2" : "/F1";
       out.push(`BT ${rgb(op.color)} rg ${font} ${num(op.size)} Tf ${num(op.x)} ${num(pageHeight - op.y)} Td ${literal(op.text)} Tj ET`);
@@ -114,7 +125,7 @@ export function contentStream(ops: PdfOp[], pageHeight: number = A4.height): str
   return out.join("\n");
 }
 
-export function writePdf(pages: PdfOp[][], info: PdfInfo): Uint8Array {
+export function writePdf(pages: PdfOp[][], info: PdfInfo, images: readonly PdfImage[] = []): Uint8Array {
   if (pages.length === 0) throw new Error("a document needs a page");
   const chunks: Uint8Array[] = [];
   const offsets: number[] = [];
@@ -133,9 +144,11 @@ export function writePdf(pages: PdfOp[][], info: PdfInfo): Uint8Array {
     push("\nendobj\n");
   };
 
-  // Fixed objects: 1 catalog, 2 page tree, 3–4 fonts, 5 logo, 6 logo mask, 7 info; then page + content pairs.
+  // Fixed objects: 1 catalog, 2 page tree, 3–4 fonts, 5 logo, 6 logo mask, 7 info; then page + content pairs, then the images.
   const INFO = 7;
   const pageId = (index: number) => 8 + index * 2;
+  const imageId = (index: number) => pageId(pages.length) + index;
+  const imageRefs = images.map((_, i) => ` /Im${i} ${imageId(i)} 0 R`).join("");
   const ink = base64Bytes(WORDMARK.ink);
   const mask = base64Bytes(WORDMARK.mask);
 
@@ -167,11 +180,21 @@ export function writePdf(pages: PdfOp[][], info: PdfInfo): Uint8Array {
   pages.forEach((ops, index) => {
     object(pageId(index), () =>
       push(
-        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${A4.width} ${A4.height}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Logo 5 0 R >> >> /Contents ${pageId(index) + 1} 0 R >>`,
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${A4.width} ${A4.height}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Logo 5 0 R${imageRefs} >> >> /Contents ${pageId(index) + 1} 0 R >>`,
       ),
     );
     const content = contentStream(ops);
     object(pageId(index) + 1, () => push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`));
+  });
+
+  images.forEach((img, index) => {
+    object(imageId(index), () => {
+      push(
+        `<< /Type /XObject /Subtype /Image /Width ${img.width} /Height ${img.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.jpeg.length} >>\nstream\n`,
+      );
+      push(img.jpeg);
+      push("\nendstream");
+    });
   });
 
   const xref = length;
