@@ -41,15 +41,14 @@ export function CreationLibrary() {
   const requested = params.get(COLLECTION_PARAM);
   // A collection that no longer exists (deleted, another account) shows the whole library.
   const collectionId = requested && ws.collections.some((c) => c.id === requested) ? requested : null;
+  // Each choice is a history entry (no `replace`), so the browser's Back button climbs out of a folder
+  // to the library root instead of leaving the page.
   const selectCollection = (id: string | null) =>
-    setParams(
-      (prev) => {
-        if (id) prev.set(COLLECTION_PARAM, id);
-        else prev.delete(COLLECTION_PARAM);
-        return prev;
-      },
-      { replace: true },
-    );
+    setParams((prev) => {
+      if (id) prev.set(COLLECTION_PARAM, id);
+      else prev.delete(COLLECTION_PARAM);
+      return prev;
+    });
   // `?creation=<id>` (from My Glowbook, in the member space): that creation's detail opens once the
   // library is known, then the parameter leaves the address, so a reload or Back does not reopen it.
   const askedCreation = creationFromQuery(params.toString());
