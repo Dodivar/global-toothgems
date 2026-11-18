@@ -339,6 +339,7 @@
       "lassoActive": "Draw around the pieces to select — hold Shift to add to the selection",
       "cancelLasso": "Leave the lasso",
       "hint": "Drag a piece onto a tooth to start designing",
+      "stageHelp": "What does FDI notation mean? Open the help",
       "stage": {
         "dentition": "Reference dentition · FDI notation",
         "studio": "Simplified upper arch · FDI notation",

@@ -339,6 +339,7 @@
       "lassoActive": "Entourez les pièces à sélectionner — Maj pour ajouter à la sélection",
       "cancelLasso": "Quitter le lasso",
       "hint": "Glissez une pièce sur une dent pour commencer",
+      "stageHelp": "Que signifie la notation FDI ? Ouvrir l’aide",
       "stage": {
         "dentition": "Dentition de référence · notation FDI",
         "studio": "Arcade supérieure simplifiée · notation FDI",
