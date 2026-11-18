@@ -19,6 +19,76 @@ export function matKeyFor(look: LookMaterial): string {
   return `${look.material}|${look.color}|${look.effect}`;
 }
 
+/**
+ * The room the jewels mirror: a jeweller's photo booth rather than the
+ * Studio's bright, even room. Charcoal walls, a few large softboxes and a
+ * scatter of pin-point lamps — so a facet reads either near black or white,
+ * the contrast a real stone shows on a photo, instead of the soft grey that
+ * makes a crystal look like plastic. Painted on the CPU as a small
+ * equirectangular half-float picture: every renderer (editor, read-only
+ * viewer, export stage) converts it in its own WebGL context, so the shared
+ * materials never hold one context's texture.
+ */
+let jewelEnv: THREE.DataTexture | null = null;
+export function jewelEnvironment(): THREE.DataTexture {
+  if (jewelEnv) return jewelEnv;
+  const W = 512,
+    H = 256;
+  const data = new Uint16Array(W * H * 4);
+  // softboxes: centre (azimuth°, elevation°), half size (°), brightness; azimuth 90° is towards the camera (+z)
+  const boxes = [
+    [55, 28, 26, 16, 7],
+    [125, 22, 22, 18, 6],
+    [90, 72, 46, 12, 9],
+    // a broad, softer light just above the lens: what the foil sends back to the eye head-on
+    [90, 6, 30, 8, 3.5],
+    [10, 40, 18, 14, 5],
+    [170, 38, 18, 14, 5],
+    [270, 30, 34, 20, 4],
+    [215, 8, 14, 18, 3],
+    [325, 8, 14, 18, 3],
+  ];
+  const spots: number[][] = [];
+  for (let i = 0; i < 48; i++) {
+    // a golden-angle scatter over the upper hemisphere and a little below the horizon
+    const el = Math.asin(1 - ((i + 0.5) / 48) * 1.25) * (180 / Math.PI);
+    // bright enough to glint on a facet, not to flash across the whole stone as it turns
+    spots.push([(i * 137.508) % 360, el, i % 3 ? 20 : 45]);
+  }
+  const soft = (d: number, half: number) => 1 - THREE.MathUtils.smoothstep(d, half * 0.82, half);
+  const angle = (a: number, b: number) => {
+    const d = Math.abs(a - b) % 360;
+    return d > 180 ? 360 - d : d;
+  };
+  for (let r = 0; r < H; r++) {
+    const el = ((r + 0.5) / H) * 180 - 90;
+    // charcoal, a little lighter overhead, darkest on the floor
+    const base = el > 0 ? 0.012 + 0.03 * (el / 90) : 0.008;
+    for (let q = 0; q < W; q++) {
+      // three.js maps +z (azimuth 90° here) to three quarters across an equirectangular picture
+      const az = ((q + 0.5) / W) * 360 + 180;
+      let v = base;
+      for (const [baz, bel, haz, hel, k] of boxes) v += k * soft(angle(az, baz), haz) * soft(Math.abs(el - bel), hel);
+      for (const [saz, sel, k] of spots) {
+        const d2 = (angle(az, saz) * Math.cos((el * Math.PI) / 180)) ** 2 + (el - sel) ** 2;
+        if (d2 < 9) v += k * Math.exp(-d2 / 1.2);
+      }
+      const o = (r * W + q) * 4;
+      // a faintly warm light, cool shadows
+      data[o] = THREE.DataUtils.toHalfFloat(v * (v > 1 ? 1 : 0.94));
+      data[o + 1] = THREE.DataUtils.toHalfFloat(v * (v > 1 ? 0.98 : 0.97));
+      data[o + 2] = THREE.DataUtils.toHalfFloat(v * (v > 1 ? 0.94 : 1.04));
+      data[o + 3] = THREE.DataUtils.toHalfFloat(1);
+    }
+  }
+  jewelEnv = new THREE.DataTexture(data, W, H, THREE.RGBAFormat, THREE.HalfFloatType);
+  jewelEnv.mapping = THREE.EquirectangularReflectionMapping;
+  jewelEnv.magFilter = THREE.LinearFilter;
+  jewelEnv.minFilter = THREE.LinearFilter;
+  jewelEnv.needsUpdate = true;
+  return jewelEnv;
+}
+
 const materialCache = new Map<string, THREE.MeshPhysicalMaterial>();
 export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial {
   const key = matKeyFor(look);
@@ -35,31 +105,36 @@ export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial
           metalness: 1,
           // white gold and chrome read better a touch less glossy than yellow gold
           roughness: hsl.s < 0.2 ? 0.22 : 0.15,
+          envMap: jewelEnvironment(),
           envMapIntensity: 1.7,
         })
       : new THREE.MeshPhysicalMaterial({
           color: body,
           metalness: 0,
           roughness: 0.02,
-          // a little less see-through than glass: the facets, not the tooth behind, make the stone
-          transmission: 0.86,
+          // see-through: what is behind shows through the glass, blended with the foil's light (`foilBack`)
+          transmission: 1,
           thickness: 1.2,
           ior: 2.3,
           // the "fire" of a lead crystal: white light split into colour along the facet edges
           dispersion: iridescent ? 0.45 : 0.28,
           attenuationColor: new THREE.Color(body),
-          attenuationDistance: 1.3,
-          envMapIntensity: 3.2,
+          // short enough that the light crossing the stone comes out in its full colour
+          attenuationDistance: 0.85,
+          envMap: jewelEnvironment(),
+          // the room's reflection over the colour: strong enough to glitter, not to wash the stone white
+          envMapIntensity: 2.1,
           specularIntensity: 1,
           specularColor: new THREE.Color(0xffffff),
-          clearcoat: 1,
+          // a light clear coat: a full one mirrors the room a second time over every facet
+          clearcoat: 0.35,
           clearcoatRoughness: 0.02,
           // a faint rainbow film even on plain stones, strong on AB / Shimmer / Vitrail
           iridescence: iridescent ? 1 : 0.22,
           iridescenceIOR: iridescent ? 1.9 : 1.6,
           iridescenceThicknessRange: (iridescent ? [220, 520] : [180, 620]) as [number, number],
         });
-  if (iridescent) coatFacets(m);
+  if (look.material !== "metal") crystalShader(m, iridescent);
   materialCache.set(key, m);
   return m;
 }
@@ -77,59 +152,146 @@ export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial
  * diamond reads from contrast first and colour second.
  */
 function coatFacets(m: THREE.MeshPhysicalMaterial) {
-  m.transmission = 0.48;
-  m.envMapIntensity = 2.6;
+  m.transmission = 0.75;
+  m.envMapIntensity = 1.8;
   // the tint below colours the reflections; a full-strength film and a white clear coat would wash it out
   m.iridescence = 0.5;
-  m.clearcoat = 0.25;
-  m.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vFacetNormal;\nvarying vec3 vStonePos;")
-      .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\n\tvFacetNormal = normal;\n\tvStonePos = position;");
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        "#include <common>",
-        `#include <common>
+  m.clearcoat = 0.15;
+}
+function coatShader(shader: THREE.WebGLProgramParametersWithUniforms) {
+  shader.vertexShader = shader.vertexShader
+    .replace("#include <common>", "#include <common>\nvarying vec3 vFacetNormal;\nvarying vec3 vStonePos;")
+    .replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\n\tvFacetNormal = normal;\n\tvStonePos = position;");
+  shader.fragmentShader = shader.fragmentShader
+    .replace(
+      "#include <common>",
+      `#include <common>
 varying vec3 vFacetNormal;
 varying vec3 vStonePos;
 // the coating's palette, cycling: ice blue, clear, peach, pale gold, sky blue
 vec3 gtCoatTint( float t ) {
-  const vec3 ICE = vec3( 0.32, 0.68, 0.96 );
-  const vec3 CLEAR = vec3( 1.0 );
-  const vec3 PEACH = vec3( 1.0, 0.66, 0.5 );
-  const vec3 GOLD = vec3( 1.0, 0.9, 0.62 );
-  const vec3 SKY = vec3( 0.66, 0.88, 1.0 );
-  t = fract( t ) * 5.0;
-  if ( t < 1.0 ) return mix( ICE, CLEAR, smoothstep( 0.0, 1.0, t ) );
-  if ( t < 2.0 ) return mix( CLEAR, PEACH, smoothstep( 1.0, 2.0, t ) );
-  if ( t < 3.0 ) return mix( PEACH, GOLD, smoothstep( 2.0, 3.0, t ) );
-  if ( t < 4.0 ) return mix( GOLD, SKY, smoothstep( 3.0, 4.0, t ) );
-  return mix( SKY, ICE, smoothstep( 4.0, 5.0, t ) );
+const vec3 ICE = vec3( 0.32, 0.68, 0.96 );
+const vec3 CLEAR = vec3( 1.0 );
+const vec3 PEACH = vec3( 1.0, 0.66, 0.5 );
+const vec3 GOLD = vec3( 1.0, 0.9, 0.62 );
+const vec3 SKY = vec3( 0.66, 0.88, 1.0 );
+t = fract( t ) * 5.0;
+if ( t < 1.0 ) return mix( ICE, CLEAR, smoothstep( 0.0, 1.0, t ) );
+if ( t < 2.0 ) return mix( CLEAR, PEACH, smoothstep( 1.0, 2.0, t ) );
+if ( t < 3.0 ) return mix( PEACH, GOLD, smoothstep( 2.0, 3.0, t ) );
+if ( t < 4.0 ) return mix( GOLD, SKY, smoothstep( 3.0, 4.0, t ) );
+return mix( SKY, ICE, smoothstep( 4.0, 5.0, t ) );
 }`,
-      )
-      .replace(
-        "#include <color_fragment>",
-        `#include <color_fragment>
+    )
+    .replace(
+      "#include <color_fragment>",
+      `#include <color_fragment>
 	vec3 gtFacet = normalize( vFacetNormal );
 	vec3 gtView = normalize( vNormal );
 	float gtPhase = fract( dot( gtFacet, vec3( 1.3, 1.7, 0.5 ) ) * 0.7 + dot( vStonePos, vec3( 0.45, 0.6, 0.0 ) ) * 0.55 + dot( gtView, vec3( 0.8, 1.2, 0.0 ) ) * 0.7 );
 	float gtShade = 0.5 + 0.5 * sin( 6.28318 * ( dot( gtFacet, vec3( 2.1, -1.4, 0.6 ) ) * 0.8 + dot( vStonePos, vec3( -0.3, 0.4, 0.0 ) ) * 0.6 + dot( gtView, vec3( 1.0, -0.6, 0.0 ) ) * 0.6 ) );
 	vec3 gtTint = gtCoatTint( gtPhase ) * mix( 0.55, 1.0, gtShade );
 	diffuseColor.rgb *= gtTint;`,
-      )
-      .replace(
-        "#include <lights_fragment_end>",
-        // the film colours what the stone mirrors; the lamps' pin-point sparkles stay nearly white
-        `#include <lights_fragment_end>
+    )
+    .replace(
+      "#include <lights_fragment_end>",
+      // the film colours what the stone mirrors; the lamps' pin-point sparkles stay nearly white
+      `#include <lights_fragment_end>
 	reflectedLight.indirectSpecular *= gtTint;
 	reflectedLight.directSpecular *= mix( vec3( 1.0 ), gtTint, 0.4 );`,
-      )
-      .replace(
-        "material.iridescenceThickness = iridescenceThicknessMaximum;",
-        "material.iridescenceThickness = mix( iridescenceThicknessMinimum, iridescenceThicknessMaximum, gtPhase );",
-      );
+    )
+    .replace(
+      "material.iridescenceThickness = iridescenceThicknessMaximum;",
+      "material.iridescenceThickness = mix( iridescenceThicknessMinimum, iridescenceThicknessMaximum, gtPhase );",
+    );
+}
+
+/**
+ * The foil of a flat-back crystal. A rhinestone is lit from within: light
+ * enters through one crown facet, bounces off the mirror foil on its glued
+ * back, and leaves through the facet across the stone — so each facet shows a
+ * different, sharp piece of the room, and the pieces swap as the stone turns.
+ * That path is computed per pixel (refract, reflect on the back plane, refract
+ * out, falling back to a second bounce on total internal reflection) and the
+ * room it lands on read from the jewel environment, once per colour channel
+ * with a slightly different index: the stone's "fire". It is blended with the
+ * transmission, so what is behind the stone still shows through the glass.
+ */
+const FOIL_IOR = 1.9;
+/** The stone's axis and one side in view space, and the point on the stone, for `foilShader`. */
+const FOIL_VARYINGS = "varying vec3 vGtBack;\nvarying vec3 vGtSide;\nvarying vec3 vGtPos;";
+function foilShader(shader: THREE.WebGLProgramParametersWithUniforms, amount: number, spread: number) {
+  const f = (x: number) => x.toFixed(3);
+  shader.vertexShader = shader.vertexShader
+    .replace("#include <common>", `#include <common>\n${FOIL_VARYINGS}`)
+    .replace(
+      "#include <beginnormal_vertex>",
+      `#include <beginnormal_vertex>
+	vGtBack = normalize( normalMatrix * vec3( 0.0, 0.0, 1.0 ) );
+	vGtSide = normalize( normalMatrix * vec3( 1.0, 0.0, 0.0 ) );
+	vGtPos = position;`,
+    );
+  shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>\n${FOIL_VARYINGS}`).replace(
+    "#include <transmission_fragment>",
+    `#include <transmission_fragment>
+#if defined( ENVMAP_TYPE_CUBE_UV )
+	{
+		vec3 gtN = normalize( geometryNormal );
+		vec3 gtB = normalize( vGtBack );
+		vec3 gtI = - geometryViewDir;
+		// the facet the light leaves by: this one turned 137.5° round the stone's axis. The facet right
+		// across would send every ray back the way it came (a plain mirror); an off-axis one scatters
+		// each facet's view to a different part of the room, and they shuffle as the stone tilts
+		const float GT_EXIT = 2.4;
+		vec3 gtNe = gtN * cos( GT_EXIT ) + cross( gtB, gtN ) * sin( GT_EXIT ) + gtB * dot( gtB, gtN ) * ( 1.0 - cos( GT_EXIT ) );
+		// under the table (square to the axis, which no turn changes) the light comes back from the
+		// crown facets around it: one per sixteenth of a turn, tilted alternately more and less, so
+		// the table shows the star a real stone's foil draws there
+		if ( dot( gtN, gtB ) > 0.97 ) {
+			float gtSector = floor( atan( vGtPos.y, vGtPos.x ) / 0.3927 );
+			float gtMid = ( gtSector + 0.5 ) * 0.3927;
+			float gtTilt = mod( gtSector, 2.0 ) < 1.0 ? 0.62 : 0.95;
+			vec3 gtX = normalize( vGtSide );
+			vec3 gtDir = gtX * cos( gtMid ) + cross( gtB, gtX ) * sin( gtMid );
+			gtNe = normalize( gtB * cos( gtTilt ) + gtDir * sin( gtTilt ) );
+		}
+		vec3 gtFoil;
+		for ( int c = 0; c < 3; c ++ ) {
+			float eta = ${f(FOIL_IOR)} + ( float( c ) - 1.0 ) * ${f(spread)};
+			vec3 t = refract( gtI, gtN, 1.0 / eta );
+			vec3 r = reflect( t, gtB );
+			vec3 o = refract( r, - gtNe, eta );
+			if ( dot( o, o ) < 0.5 ) o = reflect( reflect( r, - gtNe ), gtB );
+			vec3 w = inverseTransformDirection( normalize( o ), viewMatrix );
+			gtFoil[ c ] = textureCubeUV( envMap, envMapRotation * w, 0.0 )[ c ];
+		}
+		// coloured by the glass it crossed, a little richer than the base colour: on a real stone the
+		// light comes back from the foil saturated by two crossings of the glass
+		vec3 gtBody = diffuseColor.rgb;
+		gtBody = max( mix( vec3( dot( gtBody, vec3( 0.2126, 0.7152, 0.0722 ) ) ), gtBody, 1.3 ), 0.0 );
+		// a mirror gathers light from the whole room: its bright pieces glow (capped, so a lamp caught by
+		// the foil glints instead of flashing the whole facet white), its dark ones never go black
+		gtFoil = min( gtFoil * 2.6, vec3( 5.0 ) ) + 0.16;
+		totalDiffuse = mix( totalDiffuse, gtFoil * gtBody, ${f(amount)} );
+		// depth, the cue that reads as glass rather than a solid colour: facets square to the eye open
+		// into the stone, light and clear; the steep ones near the girdle cross more glass and deepen
+		float gtFacing = clamp( dot( gtN, geometryViewDir ), 0.0, 1.0 );
+		totalDiffuse *= mix( 0.62, 1.0, gtFacing );
+		totalDiffuse = mix( totalDiffuse, totalDiffuse + gtBody * 0.28 + 0.05, gtFacing * gtFacing * 0.5 );
+	}
+#endif`,
+  );
+}
+
+/** Every crystal gets the foil; AB / Shimmer / Vitrail the coating too. */
+function crystalShader(m: THREE.MeshPhysicalMaterial, iridescent: boolean) {
+  if (iridescent) coatFacets(m);
+  m.onBeforeCompile = (shader) => {
+    // part foil, part glass: the tooth behind shows through, so the stone reads transparent, not solid
+    foilShader(shader, iridescent ? 0.45 : 0.55, iridescent ? 0.06 : 0.035);
+    if (iridescent) coatShader(shader);
   };
-  m.customProgramCacheKey = () => "gt-coated-facets";
+  m.customProgramCacheKey = () => (iridescent ? "gt-crystal-coated" : "gt-crystal");
 }
 
 export function createToothGeometry(spec: ToothSpec): THREE.BufferGeometry {
@@ -487,6 +649,44 @@ const OPEN_HEART_HOLE = [
   [-0.563, 0.602],
 ];
 
+/**
+ * Round flat back (Swarovski 2058 and the shop's other round stones): the
+ * crown of a brilliant — an octagonal flat table, eight star facets around it,
+ * eight kite-shaped bezel facets running down to the girdle and sixteen upper
+ * girdle facets — on a 16-sided girdle. Real facets in the real layout, not a
+ * faceted dome: each catches the light at its own angle, and the large table
+ * lets the eye into the stone, down to its foil (`foilBack`).
+ */
+function brilliantCut(): THREE.BufferGeometry {
+  const SIDES = 16;
+  const tableR = 0.53,
+    tableZ = 0.5;
+  // the star points sit on the bezel's plane, so each kite stays flat
+  const starR = 0.8;
+  const starZ = (tableZ * (1 - starR * Math.cos(Math.PI / 8))) / (1 - tableR);
+  const polar = (a: number, r: number, z: number) => new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r, z);
+  const rim = Array.from({ length: SIDES }, (_, k) => new THREE.Vector2(Math.cos((k * 2 * Math.PI) / SIDES), Math.sin((k * 2 * Math.PI) / SIDES)));
+  return facetMesh(rim, 0.13, (push) => {
+    const step = Math.PI / 4;
+    const table = Array.from({ length: 8 }, (_, i) => polar(i * step, tableR, tableZ));
+    const star = Array.from({ length: 8 }, (_, i) => polar((i + 0.5) * step, starR, starZ));
+    const g = (k: number) => at(rim[k % SIDES], 0);
+    const top = new THREE.Vector3(0, 0, tableZ);
+    for (let i = 0; i < 8; i++) {
+      const j = (i + 1) % 8,
+        h = (i + 7) % 8;
+      push(table[i], table[j], top); // the table
+      push(table[i], star[i], table[j]); // star facet
+      // bezel (kite): the table's corner, the star points either side, the girdle point below
+      push(g(2 * i), star[i], table[i]);
+      push(g(2 * i), table[i], star[h]);
+      // two upper girdle facets under each star point
+      push(g(2 * i), g(2 * i + 1), star[i]);
+      push(g(2 * i + 1), g(2 * i + 2), star[i]);
+    }
+  });
+}
+
 /** Step cut: two flat steps of crown facets around a large flat table, as on the navette's photo. */
 function navetteCut(): THREE.BufferGeometry {
   const rim = mirrored(NAVETTE_HALF);
@@ -804,8 +1004,7 @@ function starPath(outer: number, inner: number, z = 0): THREE.Vector3[] {
 function buildParts(shape: StudioShape): THREE.BufferGeometry[] {
   switch (shape) {
     case "round":
-      // faceted dome on a flat base, cut just behind the girdle
-      return [flattenBack(new THREE.IcosahedronGeometry(0.8, 1).scale(1, 1, 0.62), -0.06)];
+      return [brilliantCut()];
     case "baguette":
       // a 1:2 step-cut rectangle with barely clipped corners
       return [crystalCut(new THREE.Shape(v2([[0.42, 1], [-0.42, 1], [-0.5, 0.92], [-0.5, -0.92], [-0.42, -1], [0.42, -1], [0.5, -0.92], [0.5, 0.92]])))];
@@ -880,6 +1079,8 @@ export function getJewelTemplate(shape: StudioShape): JewelTemplate {
 export function disposeGeometryCaches() {
   materialCache.forEach((m) => m.dispose());
   materialCache.clear();
+  jewelEnv?.dispose();
+  jewelEnv = null;
   templateCache.forEach((tpl) => tpl.parts.forEach((g) => g.dispose()));
   templateCache.clear();
 }

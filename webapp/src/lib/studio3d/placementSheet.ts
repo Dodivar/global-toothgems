@@ -1,7 +1,6 @@
-import { A4, writePdf, type PdfOp, type PdfPathCommand } from "../documents/pdfWriter";
+import { A4, writePdf, type PdfImage, type PdfOp, type PdfPathCommand } from "../documents/pdfWriter";
 import { DOC_INK } from "../documents/template";
 import { textWidth, type FontWeight } from "../documents/text";
-import { crownDetails, crownOutline, gumOutline } from "./flatView";
 import { circleOutline, gemOutline, type FrontViewPathCommand, type FrontViewProjection } from "./frontView";
 import { sizeKey, type GemSize } from "../gemOptions";
 
@@ -41,6 +40,8 @@ export interface PlacementSheetTotal {
 
 export interface PlacementSheetInput {
   projection: FrontViewProjection;
+  /** The front render as a JPEG on the sheet's ground (`dentition-front.jpg`), drawn under the gems. */
+  render: PdfImage;
   name: string;
   /** Formatted date of the design (or of the sheet). */
   date: string;
@@ -76,9 +77,7 @@ export interface PlacementSheetInput {
 const M = { x: 40, top: 40, bottom: 44 };
 const WIDTH = A4.width - M.x * 2;
 const LOGO = { w: 110, ratio: 1400 / 375 };
-const ENAMEL = "#fbf8f1";
-const ENAMEL_EDGE = "#b9ab95";
-const GUM = "#efc2c7";
+/** The ground: `scripts/dentition-render.py` lays the render's JPEG on it. */
 const STAGE = "#f4f8fc";
 const GEM_EDGE = "#263c52";
 const ROW = 15;
@@ -119,15 +118,7 @@ function drawFigure(ops: PdfOp[], input: PlacementSheetInput, top: number): numb
   const k = WIDTH / box.width;
   const map = (x: number, y: number): [number, number] => [M.x + (x - box.x) * k, top + (y - box.y) * k];
   ops.push({ kind: "rect", x: M.x, y: top, w: WIDTH, h: height, fill: STAGE });
-  // Gums: behind each arch's crowns, which cut the gum line.
-  for (const lower of [false, true]) {
-    const gum = gumOutline(projection.teeth.filter((t) => t.lower === lower), box);
-    if (gum.length) ops.push({ kind: "path", commands: toPage(gum, map), fill: GUM });
-  }
-  for (const t of projection.teeth) {
-    ops.push({ kind: "path", commands: toPage(crownOutline(t), map), fill: ENAMEL, stroke: ENAMEL_EDGE, width: 0.45 });
-    for (const line of crownDetails(t)) ops.push({ kind: "path", commands: toPage(line, map), stroke: ENAMEL_EDGE, width: 0.4 });
-  }
+  ops.push({ kind: "image", image: 0, x: M.x, y: top, w: WIDTH, h: height });
   // Which side is which: an artist faces the patient.
   text(ops, M.x + 6, top + 11, input.labels.patientRight, "bold", 6.4, DOC_INK.muted);
   text(ops, M.x + WIDTH - 6, top + 11, input.labels.patientLeft, "bold", 6.4, DOC_INK.muted, "end");
@@ -285,7 +276,7 @@ export function buildPlacementSheet(input: PlacementSheetInput, createdAt: Date 
     text(page, A4.width - M.x, top, labels.page(i + 1, pages.length), "regular", 6.8, DOC_INK.muted, "end");
   });
 
-  return writePdf(pages, { title: `${labels.title} · ${input.name}`, author: labels.author, lang: input.lang, createdAt });
+  return writePdf(pages, { title: `${labels.title} · ${input.name}`, author: labels.author, lang: input.lang, createdAt }, [input.render]);
 }
 
 /** "fiche-de-pose-my-design-2026-10-18.pdf": the file name, ASCII only. */

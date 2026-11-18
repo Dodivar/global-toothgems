@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { pastePlacement } from "./tryOnComposite";
-import { alignCloseUp, ALIGN_WIDTH, IDENTITY_FIT, type Luma } from "./tryOnAlign";
+import { alignCloseUp, ALIGN_FINE_WIDTH, ALIGN_WIDTH, IDENTITY_FIT, type Luma } from "./tryOnAlign";
 
 /**
  * A drawn smile on the close-up's own coordinates (0–1 across, 0–1 down):
@@ -71,5 +71,34 @@ describe("lining the AI's close-up up with the photo", () => {
     const crop = { x: 100, y: 600, width: 1400, height: 600, photoWidth: 1536, photoHeight: 2048 };
     const place = pastePlacement(crop, { width: 1536, height: 2048 }, { x: 0.1, y: 0.1, scale: 0.8 });
     expect(place).toMatchObject({ x: 240, y: 660, width: 1120, height: 480 });
+  });
+});
+
+describe("lining the AI's close-up up to the photo pixel (2026-11-18)", () => {
+  // A 1536 × 658 close-up (as the function cuts it), drawn at ALIGN_FINE_WIDTH like the paste-back does;
+  // the answer shifted by a few photo pixels and redrawn (grain added).
+  const CW = 1536;
+  const CH = 658;
+  const FW = ALIGN_FINE_WIDTH;
+  const FH = Math.round((FW * CH) / CW);
+  const grain = (u: number, v: number) => 40 * ((((Math.sin(u * 9898 + v * 78233) * 43758.5453) % 1) + 1) % 1 - 0.5);
+  const shifted = (dx: number, dy: number) => (u: number, v: number) => smile(u - dx / CW, v - dy / CH) + grain(u, v);
+  const original = draw(smile, FW, FH);
+
+  it.each([
+    [3, 0],
+    [6, 0],
+    [-5, 3],
+    [2, 2],
+  ])("moves an answer %i, %i photo pixels off back onto the photo, within a photo pixel", (dx, dy) => {
+    const { fit } = alignCloseUp(original, draw(shifted(dx, dy), FW, FH));
+    expect(fit).not.toEqual(IDENTITY_FIT);
+    expect(Math.abs(dx + fit.x * CW)).toBeLessThanOrEqual(1);
+    expect(Math.abs(dy + fit.y * CH)).toBeLessThanOrEqual(1);
+    expect(Math.abs(fit.scale - 1)).toBeLessThan(0.002);
+  });
+
+  it("still leaves an answer that lines up where it is", () => {
+    expect(alignCloseUp(original, draw(shifted(0, 0), FW, FH)).fit).toEqual(IDENTITY_FIT);
   });
 });

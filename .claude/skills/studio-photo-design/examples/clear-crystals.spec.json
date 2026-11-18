@@ -1,0 +1,14 @@
+{
+  "name": "Cristaux minimalistes",
+  "description": "Cristaux clairs : colonne de 4 sur la 12, diagonale de 5 sur la 22, solitaire sur la 23 et un cristal sur chacune des 43, 42, 41 et 31.",
+  "motif": "Style minimaliste « points de lumière » : lignes régulières de petits cristaux clairs au même pas (colonne verticale près du bord distal de la 12, diagonale qui monte du bord incisif mésial vers le collet distal sur la 22) et solitaires centrés au milieu de la face sur la canine 23 et sur quatre dents du bas. Toutes les pierres sont du cristal clair ; les solitaires de la 23 et de la 31 sont un peu plus gros.",
+  "pieces": [
+    { "line": { "tooth": "12", "from": [-1.3, 1.3], "to": [-1.0, 7.1], "count": 4 }, "gem": "crystal", "size": "ss5", "label": "colonne 12" },
+    { "line": { "tooth": "22", "from": [-1.9, 1.0], "to": [1.9, 7.6], "count": 5 }, "gem": "crystal", "size": "ss5", "label": "diagonale 22" },
+    { "gem": "crystal", "size": "ss7", "tooth": "23", "at": [-0.4, 4.9], "label": "solitaire" },
+    { "gem": "crystal", "size": "ss5", "tooth": "43", "at": [-0.5, 5.0], "label": "solitaire bas" },
+    { "gem": "crystal", "size": "ss5", "tooth": "42", "at": [0, 4.2], "label": "solitaire bas" },
+    { "gem": "crystal", "size": "ss5", "tooth": "41", "at": [0, 4.1], "label": "solitaire bas" },
+    { "gem": "crystal", "size": "ss7", "tooth": "31", "at": [0.2, 4.1], "label": "solitaire bas" }
+  ]
+}
