@@ -52,7 +52,8 @@ export function jewelEnvironment(): THREE.DataTexture {
   for (let i = 0; i < 48; i++) {
     // a golden-angle scatter over the upper hemisphere and a little below the horizon
     const el = Math.asin(1 - ((i + 0.5) / 48) * 1.25) * (180 / Math.PI);
-    spots.push([(i * 137.508) % 360, el, i % 3 ? 40 : 90]);
+    // bright enough to glint on a facet, not to flash across the whole stone as it turns
+    spots.push([(i * 137.508) % 360, el, i % 3 ? 20 : 45]);
   }
   const soft = (d: number, half: number) => 1 - THREE.MathUtils.smoothstep(d, half * 0.82, half);
   const angle = (a: number, b: number) => {
@@ -118,12 +119,15 @@ export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial
           // the "fire" of a lead crystal: white light split into colour along the facet edges
           dispersion: iridescent ? 0.45 : 0.28,
           attenuationColor: new THREE.Color(body),
-          attenuationDistance: 1.3,
+          // short enough that the light crossing the stone comes out in its full colour
+          attenuationDistance: 0.85,
           envMap: jewelEnvironment(),
-          envMapIntensity: 3.2,
+          // the room's reflection over the colour: strong enough to glitter, not to wash the stone white
+          envMapIntensity: 2.1,
           specularIntensity: 1,
           specularColor: new THREE.Color(0xffffff),
-          clearcoat: 1,
+          // a light clear coat: a full one mirrors the room a second time over every facet
+          clearcoat: 0.35,
           clearcoatRoughness: 0.02,
           // a faint rainbow film even on plain stones, strong on AB / Shimmer / Vitrail
           iridescence: iridescent ? 1 : 0.22,
@@ -148,11 +152,11 @@ export function getJewelMaterial(look: LookMaterial): THREE.MeshPhysicalMaterial
  * diamond reads from contrast first and colour second.
  */
 function coatFacets(m: THREE.MeshPhysicalMaterial) {
-  m.transmission = 0.62;
-  m.envMapIntensity = 2.6;
+  m.transmission = 0.75;
+  m.envMapIntensity = 1.8;
   // the tint below colours the reflections; a full-strength film and a white clear coat would wash it out
   m.iridescence = 0.5;
-  m.clearcoat = 0.25;
+  m.clearcoat = 0.15;
 }
 function coatShader(shader: THREE.WebGLProgramParametersWithUniforms) {
   shader.vertexShader = shader.vertexShader
@@ -261,11 +265,19 @@ function foilShader(shader: THREE.WebGLProgramParametersWithUniforms, amount: nu
 			vec3 w = inverseTransformDirection( normalize( o ), viewMatrix );
 			gtFoil[ c ] = textureCubeUV( envMap, envMapRotation * w, 0.0 )[ c ];
 		}
-		// coloured by the glass it crossed (the transmission adds its own attenuation on top)
+		// coloured by the glass it crossed, a little richer than the base colour: on a real stone the
+		// light comes back from the foil saturated by two crossings of the glass
 		vec3 gtBody = diffuseColor.rgb;
-		// a mirror gathers light from the whole room: its bright pieces bloom, its dark ones never go black
-		gtFoil = gtFoil * envMapIntensity * 1.5 + 0.09;
-		totalDiffuse = mix( totalDiffuse, gtFoil * gtBody, ${f(amount)} ); 
+		gtBody = max( mix( vec3( dot( gtBody, vec3( 0.2126, 0.7152, 0.0722 ) ) ), gtBody, 1.3 ), 0.0 );
+		// a mirror gathers light from the whole room: its bright pieces glow (capped, so a lamp caught by
+		// the foil glints instead of flashing the whole facet white), its dark ones never go black
+		gtFoil = min( gtFoil * 2.6, vec3( 5.0 ) ) + 0.16;
+		totalDiffuse = mix( totalDiffuse, gtFoil * gtBody, ${f(amount)} );
+		// depth, the cue that reads as glass rather than a solid colour: facets square to the eye open
+		// into the stone, light and clear; the steep ones near the girdle cross more glass and deepen
+		float gtFacing = clamp( dot( gtN, geometryViewDir ), 0.0, 1.0 );
+		totalDiffuse *= mix( 0.62, 1.0, gtFacing );
+		totalDiffuse = mix( totalDiffuse, totalDiffuse + gtBody * 0.28 + 0.05, gtFacing * gtFacing * 0.5 );
 	}
 #endif`,
   );
@@ -275,7 +287,8 @@ function foilShader(shader: THREE.WebGLProgramParametersWithUniforms, amount: nu
 function crystalShader(m: THREE.MeshPhysicalMaterial, iridescent: boolean) {
   if (iridescent) coatFacets(m);
   m.onBeforeCompile = (shader) => {
-    foilShader(shader, iridescent ? 0.66 : 0.86, iridescent ? 0.06 : 0.035);
+    // part foil, part glass: the tooth behind shows through, so the stone reads transparent, not solid
+    foilShader(shader, iridescent ? 0.45 : 0.55, iridescent ? 0.06 : 0.035);
     if (iridescent) coatShader(shader);
   };
   m.customProgramCacheKey = () => (iridescent ? "gt-crystal-coated" : "gt-crystal");
