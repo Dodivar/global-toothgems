@@ -5,7 +5,8 @@ import type { Registration } from "./tryOnRegistration";
 
 const registration: Registration = {
   transform: { scale: 20, angle: 1, tx: 0, ty: 0 },
-  lowerOffset: 6.5,
+  viewYaw: 0,
+    lowerOffset: 6.5,
   renumbered: { upper: 1, lower: 0 },
   midlineError: 0.12,
   teeth: [

@@ -7,6 +7,7 @@ import {
   Camera,
   Check,
   ChevronUp,
+  CircleHelp,
   Copy,
   FlipHorizontal2,
   FlipVertical2,
@@ -56,10 +57,12 @@ import { useStageFullscreen } from "../../../lib/studio3d/stageFullscreen";
 import { StageFullscreenButton } from "../StageFullscreenButton";
 import type { Point2 } from "../../../lib/studio3d/math";
 import { useQuickActions, type QuickActionId } from "../../../lib/studio3d/quickActions";
-import { studioStore, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
+import { studioStore, useStudio, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
 import { GROUP_MIN_PIECES } from "../../../lib/studioWorkspace/gemGroup";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useStudioStaff } from "../../../lib/studioAccess";
+import { studioHelpPath } from "../../../lib/studioWorkspace/helpTopics";
+import { useOpenStudioHelp } from "../workspace/useOpenStudioHelp";
 
 /**
  * Centred in the part of the stage the side drawers leave in view, and no wider
@@ -88,7 +91,8 @@ interface PanelControls {
   toggle: (panel: EditorPanel) => void;
 }
 
-export function EditorViewport({ snap, panels }: { snap: StudioSnapshot; panels?: PanelControls }) {
+export function EditorViewport({ panels }: { panels?: PanelControls }) {
+  const snap = useStudio();
   const { t, pieceName } = useEditorLabels();
   const hostRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
@@ -273,10 +277,36 @@ export function EditorViewport({ snap, panels }: { snap: StudioSnapshot; panels?
         />
       )}
       {panels?.side && !fullscreen && <PanelToggles panels={panels} selectedCount={snap.selectedJewelIds.length} />}
-      <p className="pointer-events-none absolute left-1/2 top-5 z-[3] m-0 hidden -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 xl:block">
-        {t(`studio.editor.viewport.stage.${snap.modelMode}`)}
-      </p>
+      <StageCaption mode={snap.modelMode} />
     </section>
+  );
+}
+
+/**
+ * The caption at the top of the stage (which model is shown, FDI numbering).
+ * It is a link to the help topic that explains it, so nobody has to guess what
+ * "FDI" means.
+ */
+function StageCaption({ mode }: { mode: StudioSnapshot["modelMode"] }) {
+  const { t } = useEditorLabels();
+  const openHelp = useOpenStudioHelp();
+  return (
+    <div className="pointer-events-none absolute left-1/2 top-5 z-[3] hidden -translate-x-1/2 xl:block">
+      <a
+        href={studioHelpPath("dentition")}
+        title={t("studio.editor.viewport.stageHelp")}
+        onClick={(event) => {
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          event.preventDefault();
+          openHelp("dentition");
+        }}
+        className="pointer-events-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-[4px] text-[9px] font-bold uppercase tracking-[.24em] text-[var(--gt-blue-700)]/70 underline-offset-2 hover:text-[var(--gt-blue-700)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+      >
+        {t(`studio.editor.viewport.stage.${mode}`)}
+        <CircleHelp size={12} aria-hidden="true" />
+        <span className="sr-only">{t("studio.editor.viewport.stageHelp")}</span>
+      </a>
+    </div>
   );
 }
 
@@ -556,7 +586,7 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     const dir = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
     if (!dir) return;
     e.preventDefault();
-    beginRotation(ids).set(dir * (e.shiftKey ? KEY_STEP_LARGE : KEY_STEP));
+    rotatePieces(ids, dir * (e.shiftKey ? KEY_STEP_LARGE : KEY_STEP));
   };
 
   const turning = dial !== null;

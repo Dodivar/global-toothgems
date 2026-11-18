@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { FRONT_VIEW_TEETH, type FrontViewGem, type FrontViewPoint } from "./frontView";
+import { FRONT_VIEW_TEETH, visibleToothShare, type FrontViewGem, type FrontViewPoint } from "./frontView";
 import {
   applySimilarity,
+  estimateViewYaw,
   fitArches,
   fitSimilarity,
   LOWER_OVERBITE_MM,
@@ -75,7 +76,8 @@ describe("registerDesign", () => {
     const t11 = tooth("11");
     const a = reg.gems.find((g) => g.id === "a")!;
     expect(a.x).toBeCloseTo(((t11.x0 + t11.x1) / 2) * 20 + 600, 3);
-    expect(a.y).toBeCloseTo(((t11.cervical + t11.incisal) / 2) * 20 + 300, 3);
+    // Up: at the crown's middle, its share of the tooth as the editor shows it (dome included), on the photo's tooth.
+    expect(a.y).toBeCloseTo((t11.incisal - visibleToothShare("11", 0) * (t11.incisal - t11.cervical)) * 20 + 300, 3);
     // Physical size: 1 mm half-size × 20 px/mm; 1.5 mm × 20.
     expect(a.r).toBeCloseTo(20, 4);
     expect(reg.gems.find((g) => g.id === "b")!.r).toBeCloseTo(30, 4);
@@ -83,6 +85,22 @@ describe("registerDesign", () => {
     expect(reg.issues).toEqual([]);
     expect(reg.reliable).toBe(true);
     expect(reg.confidence).toBeGreaterThanOrEqual(RELIABLE_CONFIDENCE);
+  });
+
+  it("puts a gem on an upper tooth at the height the editor shows it, on the customer's own tooth", () => {
+    const found = photoTeeth(UPPER_FRONT, 20, 600, 300);
+    // A customer's central a little shorter than the reference: the box's top (the gum) comes down.
+    const t11 = found.find((t) => t.fdi === "11")!;
+    const cut = t11.height * 0.15;
+    t11.y += cut;
+    t11.height -= cut;
+    const edge = t11.y + t11.height;
+    const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11", { v: 1 })] }, found);
+    expect(reg.gems[0].y).toBeCloseTo(edge - visibleToothShare("11", 1) * t11.height, 3);
+    // Below the box's top, the gum: at the crown's gum line in the editor (v = 1 / 0.55) it stays on the enamel.
+    const atGum = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11", { v: 1 / 0.55 })] }, found).gems[0];
+    expect(atGum.y).toBeGreaterThan(t11.y + t11.height * 0.15);
+    expect(atGum.tooth).toBe("found");
   });
 
   it("follows the customer's own tooth across, not the reference's", () => {
@@ -280,5 +298,47 @@ describe("the teeth's numbers", () => {
     });
     expect(reg.midlineError).toBeNull();
     expect(reg.reliable).toBe(true);
+  });
+});
+
+describe("view angle", () => {
+  const front = ["14", "13", "12", "11", "21", "22", "23", "24"];
+  /** Widths a camera turned `view` degrees would see: the reference width times cos(yaw - view) / cos(yaw). */
+  const seen = (view: number) =>
+    front.map((fdi) => {
+      const ref = tooth(fdi);
+      const yaw = ref.yaw!;
+      return { ref, width: (ref.x1 - ref.x0) * 20 * (Math.cos(yaw - (view * Math.PI) / 180) / Math.cos(yaw)) };
+    });
+
+  it("reads 0 from teeth seen straight on", () => {
+    expect(estimateViewYaw(seen(0), 20)).toBe(0);
+  });
+
+  it("finds the side the camera leans toward, with the sign of the camera's azimuth", () => {
+    const right = estimateViewYaw(seen(15), 20);
+    const left = estimateViewYaw(seen(-15), 20);
+    expect(right).toBeGreaterThan(5);
+    expect(left).toBeLessThan(-5);
+  });
+
+  it("does not guess from too few teeth", () => {
+    expect(estimateViewYaw(seen(15).slice(0, 3), 20)).toBe(0);
+  });
+
+  it("registers the angle and leans the gems of the side teeth, not of the central incisors", () => {
+    const normalOf = (fdi: string) => {
+      const yaw = tooth(fdi).yaw!;
+      return { x: Math.sin(yaw), y: 0, z: Math.cos(yaw) };
+    };
+    const reg = registerDesign(
+      { teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11", { normal: normalOf("11") }), gem("b", "23", { normal: normalOf("23") })] },
+      photoTeeth(UPPER_FRONT, 20, 600, 300),
+    );
+    const byId = new Map(reg.gems.map((g) => [g.id, g]));
+    expect(byId.get("a")!.squash?.k ?? 1).toBeGreaterThan(0.97);
+    const side = byId.get("b")!.squash!;
+    expect(side.k).toBeLessThan(0.95);
+    expect(side.k).toBeGreaterThan(0.2);
   });
 });

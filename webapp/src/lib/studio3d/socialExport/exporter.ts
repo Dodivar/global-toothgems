@@ -126,11 +126,13 @@ export class ExportStage {
   /**
    * The design alone on its model, the still's framing (in front of the
    * smile, slightly above), no texts and no mark: the design picture sent to
-   * the smile try-on's AI (decision 111): the gems' cut, colour and turn.
+   * the smile try-on's AI (decision 111): the gems' cut, colour and turn. With
+   * `azimuth`, seen from that angle instead (the photo's, `Registration.viewYaw`).
    */
-  stageStill(size: FormatSize, type: ImageType = "jpeg"): Promise<Blob> {
+  stageStill(size: FormatSize, type: ImageType = "jpeg", azimuth: number | null = null): Promise<Blob> {
     const { canvas, ctx } = this.target(size);
-    const render = this.engine.renderExportFrame({ ...size, azimuth: null, transparent: false });
+    // `azimuth` (radians, 0 = the front): the camera swung around the gems, as the customer's photo was taken.
+    const render = this.engine.renderExportFrame({ ...size, azimuth, transparent: false, orbit: "front" });
     ctx.drawImage(render, 0, 0, size.width, size.height);
     return canvasBlob(canvas, type === "png" ? "image/png" : "image/jpeg", type === "jpeg" ? 0.92 : undefined);
   }

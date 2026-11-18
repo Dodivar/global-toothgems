@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FREE_TOOTH, scaleForSize, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
 import { approxLabialPoint } from "./archLayout";
 import { DENTITION_CROWNS } from "./dentition";
-import { FRONT_VIEW_BOX, FRONT_VIEW_TEETH, gemOutline, projectFrontView, seatOnTooth } from "./frontView";
+import { FRONT_VIEW_BOX, FRONT_VIEW_TEETH, gemOutline, gemSquash, projectFrontView, seatOnTooth } from "./frontView";
 
 const crown = (fdi: string) => DENTITION_CROWNS.find((c) => c.fdi === fdi)!;
 
@@ -155,5 +155,35 @@ describe("gemOutline", () => {
     const xs = pts.map((p) => p[0]);
     expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo((12 * 2.6) / 13, 6);
     expect((Math.max(...xs) + Math.min(...xs)) / 2).toBeCloseTo(10, 6);
+  });
+});
+
+describe("gemSquash", () => {
+  it("leaves a gem that faces the camera alone", () => {
+    expect(gemSquash({ x: 0, y: 0, z: 1 })).toBeNull();
+    expect(gemSquash(undefined)).toBeNull();
+  });
+
+  it("presses a gem turned 45° to the right by cos 45°, along the horizontal", () => {
+    const s = gemSquash({ x: Math.SQRT1_2, y: 0, z: Math.SQRT1_2 })!;
+    expect(s.k).toBeCloseTo(Math.SQRT1_2, 6);
+    expect(Math.abs(Math.cos((s.angle * Math.PI) / 180))).toBeCloseTo(1, 6);
+  });
+
+  it("follows a camera turned toward the gem: it faces it again", () => {
+    expect(gemSquash({ x: Math.sin(0.5), y: 0, z: Math.cos(0.5) }, (0.5 * 180) / Math.PI)).toBeNull();
+  });
+
+  it("gives up on a gem facing away", () => {
+    expect(gemSquash({ x: 1, y: 0, z: -0.2 })).toBeNull();
+  });
+
+  it("narrows the outline of the gem along its lean and keeps the other side", () => {
+    const flat = gemOutline("round", { x: 0, y: 0, r: 2, rotation: 0 });
+    const squashed = gemOutline("round", { x: 0, y: 0, r: 2, rotation: 0, squash: { angle: 0, k: 0.5 } });
+    const xs = (cmds: typeof flat) => cmds.flatMap((c) => (c[0] === "Z" ? [] : [c[1] as number]));
+    const ys = (cmds: typeof flat) => cmds.flatMap((c) => (c[0] === "Z" ? [] : [c[2] as number]));
+    expect(Math.max(...xs(squashed))).toBeCloseTo(Math.max(...xs(flat)) * 0.5, 6);
+    expect(Math.max(...ys(squashed))).toBeCloseTo(Math.max(...ys(flat)), 6);
   });
 });

@@ -1,4 +1,4 @@
-import { ALIGN_WIDTH, alignCloseUp, IDENTITY_FIT, lumaOf, type CloseUpFit, type Luma } from "../../../lib/studio3d/tryOnAlign";
+import { ALIGN_FINE_WIDTH, alignCloseUp, IDENTITY_FIT, lumaOf, type CloseUpFit, type Luma } from "../../../lib/studio3d/tryOnAlign";
 import { pastePlacement, type TryOnCrop } from "../../../lib/studio3d/tryOnComposite";
 import { blendGems, type GemCheck } from "../../../lib/studio3d/tryOnGemBlend";
 import type { GuideMark } from "../../../lib/studio3d/tryOnGuide";
@@ -32,12 +32,14 @@ function lumaAt(source: CanvasImageSource, region: [number, number, number, numb
 
 /**
  * Where the AI's answer lines up on the crop (`tryOnAlign.ts`): both drawn
- * small, side by side, and compared. The whole crop when it cannot be measured.
+ * at `ALIGN_FINE_WIDTH` (or the crop's own width, when smaller), side by side,
+ * and compared — to about a photo pixel, since the gems are then cut out of
+ * the answer pixel by pixel. The whole crop when it cannot be measured.
  */
 function measureFit(base: ImageBitmap | HTMLImageElement, edit: ImageBitmap | HTMLImageElement, crop: TryOnCrop): CloseUpFit {
   const place = pastePlacement(crop, { width: base.width, height: base.height });
-  const width = ALIGN_WIDTH;
-  const height = Math.max(8, Math.round((ALIGN_WIDTH * place.height) / place.width));
+  const width = Math.max(1, Math.min(ALIGN_FINE_WIDTH, Math.round(place.width)));
+  const height = Math.max(8, Math.round((width * place.height) / place.width));
   const original = lumaAt(base, [place.x, place.y, place.width, place.height], width, height);
   const edited = lumaAt(edit, [0, 0, edit.width, edit.height], width, height);
   return original && edited ? alignCloseUp(original, edited).fit : IDENTITY_FIT;
@@ -87,7 +89,7 @@ function pasteAroundGems(
   const blend = blendGems(
     before,
     after,
-    marks.map((m) => ({ id: m.id, x: m.x * sx, y: m.y * sy, r: m.r * scale, stretch: m.stretch })),
+    marks.map((m) => ({ id: m.id, x: m.x * sx, y: m.y * sy, r: m.r * scale, stretch: m.squash ? [m.stretch[0], m.stretch[1] * m.squash.k] : m.stretch })),
   );
   if (!blend.masked || !blend.data) return { canvas: null, checks: blend.checks };
   before.data.set(blend.data);

@@ -78,7 +78,7 @@ export async function runTryOn(
   });
   if (!usable) return { kind: "error", code: "photo_unsuitable", reasons: ["placement_uncertain"], stage: "checking" };
   onStage("rendering");
-  const [design, guide] = await Promise.all([renderDesignImage(creation), renderPlacementGuide(photo, crop, marks)]);
+  const [design, guide] = await Promise.all([renderDesignImage(creation, registration.viewYaw), renderPlacementGuide(photo, crop, marks)]);
   if (aborted()) return { kind: "aborted" };
   if (!design || !guide) return { kind: "error", code: "failed", stage: "rendering" };
 

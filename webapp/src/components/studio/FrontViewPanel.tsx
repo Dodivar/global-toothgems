@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
-import { ChevronDown, FileDown, Lock, Smile } from "lucide-react";
+import { ChevronDown, FileDown, Hash, Lock, Smile } from "lucide-react";
 import type { PlacedJewelry } from "../../data/studioEditor";
 import type { FrontViewProjection } from "../../lib/studio3d/frontView";
 import type { SceneModel } from "../../lib/studioWorkspace/scene";
@@ -16,10 +16,18 @@ import { lowestPlanWith } from "../../lib/studioEntitlements";
 import { openWorkspaceDialog } from "../../lib/studioWorkspace/workspaceUi";
 
 /**
+ * Above this many drawn gems the badges start to overlap: the drawing opens
+ * without numbers, and the list (or the toggle) brings them back.
+ */
+export const FRONT_VIEW_NUMBERS_LIMIT = 8;
+
+/**
  * The front view as the Studio shows it: the drawing (named and described for
  * assistive technologies), a note for the gems it cannot draw, and the
  * numbered list of gems in words — the same numbers as on the drawing and on
- * the placement sheet.
+ * the placement sheet. With many gems the drawing hides its numbers (they
+ * would cover the gems); pointing at a row of the list rings its gem and
+ * shows its number alone, and a toggle shows them all again.
  */
 export function FrontViewFigure({
   projection,
@@ -35,17 +43,42 @@ export function FrontViewFigure({
 }) {
   const { t } = useFrontViewLabels();
   const count = projection.gems.length;
+  const drawnCount = projection.gems.filter((g) => g.at).length;
+  // null = the default for this many gems; a choice made with the toggle wins.
+  const [numbersChoice, setNumbersChoice] = useState<boolean | null>(null);
+  const [pointedId, setPointedId] = useState<string | null>(null);
+  const showNumbers = numbersChoice ?? drawnCount <= FRONT_VIEW_NUMBERS_LIMIT;
+  const numbered = showNumbers ? true : pointedId ? [pointedId] : false;
+  const rings = pointedId ? [...(highlightIds ?? []), pointedId] : highlightIds;
+  const listProps = { projection, pointedId, onPoint: setPointedId };
   return (
     <figure className={clsx("m-0 grid gap-2.5", className)}>
       <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
         <FrontView
           projection={projection}
-          highlightIds={highlightIds}
+          highlightIds={rings}
+          numbered={numbered}
           title={t("studio.frontView.svgTitle")}
           description={t("studio.frontView.svgDescription", { count })}
           sideLabels={{ patientRight: t("studio.frontView.patientRight"), patientLeft: t("studio.frontView.patientLeft") }}
         />
       </div>
+      {drawnCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <button
+            type="button"
+            aria-pressed={showNumbers}
+            onClick={() => setNumbersChoice(!showNumbers)}
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-card)] px-3 text-[11.5px] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--gt-blue-400)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] aria-pressed:border-[var(--gt-blue-400)] aria-pressed:bg-[var(--gt-blue-50)]"
+          >
+            <Hash size={13} aria-hidden="true" />
+            {t("studio.frontView.numbersToggle")}
+          </button>
+          {!showNumbers && list !== false && (
+            <span className="text-[11px] leading-snug text-[var(--text-muted)]">{t("studio.frontView.numbersHint")}</span>
+          )}
+        </div>
+      )}
       {projection.unplaced > 0 && (
         <figcaption className="text-[11.5px] leading-relaxed text-[var(--text-muted)]">
           {t("studio.frontView.unplaced", { count: projection.unplaced })}
@@ -58,27 +91,53 @@ export function FrontViewFigure({
               {t("studio.frontView.listToggle", { count })}
             </summary>
             <div className="mt-2">
-              <FrontViewList projection={projection} />
+              <FrontViewList {...listProps} />
             </div>
           </details>
         )
       ) : (
-        list && <FrontViewList projection={projection} />
+        list && <FrontViewList {...listProps} />
       )}
     </figure>
   );
 }
 
-/** The gems in words, numbered like the drawing. */
-function FrontViewList({ projection }: { projection: FrontViewProjection }) {
+/**
+ * The gems in words, numbered like the drawing. Hovering, focusing or tapping
+ * a row points at its gem on the drawing (`onPoint`).
+ */
+function FrontViewList({
+  projection,
+  pointedId = null,
+  onPoint,
+}: {
+  projection: FrontViewProjection;
+  pointedId?: string | null;
+  onPoint?: (id: string | null) => void;
+}) {
   const { t, describe } = useFrontViewLabels();
   if (!projection.gems.length) return <p className="m-0 text-[11.5px] leading-relaxed text-[var(--text-muted)]">{t("studio.frontView.empty")}</p>;
   return (
-    <ol aria-label={t("studio.frontView.listLabel")} className="m-0 grid list-none gap-1 p-0">
+    <ol aria-label={t("studio.frontView.listLabel")} className="m-0 grid list-none gap-1 p-0" onMouseLeave={onPoint && (() => onPoint(null))}>
       {projection.gems.map((g) => {
         const d = describe(g);
+        const pointable = Boolean(onPoint && g.at);
+        const pointed = pointable && pointedId === g.id;
         return (
-          <li key={g.id} className="flex items-start gap-2.5 rounded-[var(--radius-sm)] bg-[var(--surface-page)] px-2.5 py-1.5 text-[11.5px] leading-snug">
+          <li
+            key={g.id}
+            tabIndex={pointable ? 0 : undefined}
+            onMouseEnter={pointable ? () => onPoint!(g.id) : undefined}
+            onFocus={pointable ? () => onPoint!(g.id) : undefined}
+            onBlur={pointable ? () => onPoint!(null) : undefined}
+            onClick={pointable ? () => onPoint!(pointed ? null : g.id) : undefined}
+            className={clsx(
+              "flex items-start gap-2.5 rounded-[var(--radius-sm)] border px-2.5 py-1.5 text-[11.5px] leading-snug",
+              pointed ? "border-[var(--gt-blue-400)] bg-[var(--gt-blue-50)]" : "border-transparent bg-[var(--surface-page)]",
+              pointable &&
+                "cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
+            )}
+          >
             <span
               aria-hidden="true"
               className="grid h-5 min-w-5 flex-none place-items-center rounded-full border border-[var(--gt-ink-900)] bg-[var(--surface-card)] px-1 text-[10.5px] font-black tabular-nums text-[var(--text-primary)]"

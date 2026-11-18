@@ -35,10 +35,17 @@ function sectionIdOf(gem: StudioGem): string {
  * name or its section's name, ignoring case): cuts first, alphabetically,
  * then the families of charms.
  */
-export function librarySections(gems: readonly StudioGem[], labels: LibraryLabels, query: string): LibrarySection[] {
+export function librarySections(
+  gems: readonly StudioGem[],
+  labels: LibraryLabels,
+  query: string,
+  /** Colour filter (`gem_colors.slug`): only gems of that colour; null = every colour. */
+  color: string | null = null,
+): LibrarySection[] {
   const q = query.trim().toLocaleLowerCase();
   const byId = new Map<string, LibrarySection>();
   for (const gem of gems) {
+    if (color && gem.colorSlug !== color) continue;
     const id = sectionIdOf(gem);
     let section = byId.get(id);
     if (!section) {
@@ -52,6 +59,18 @@ export function librarySections(gems: readonly StudioGem[], labels: LibraryLabel
   return [...byId.values()]
     .filter((s) => s.items.length)
     .sort((a, b) => Number(b.byShape) - Number(a.byShape) || a.label.localeCompare(b.label));
+}
+
+/**
+ * The colours of the gems in `sections`, in the shop's colour order, with how
+ * many gems each holds. Fed with the sections as the search and the cut leave
+ * them (not narrowed by a colour), so every colour of the combo stays visible.
+ */
+export function colorCounts<T extends { slug: string }>(sections: readonly LibrarySection[], colors: readonly T[]): { color: T; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const section of sections)
+    for (const gem of section.items) if (gem.colorSlug) counts.set(gem.colorSlug, (counts.get(gem.colorSlug) ?? 0) + 1);
+  return colors.filter((c) => counts.has(c.slug)).map((c) => ({ color: c, count: counts.get(c.slug)! }));
 }
 
 /** The sections a chip leaves on screen: all of them, or the chosen one. */
