@@ -71,20 +71,3 @@ export function MediaPlaceholder({
     </figure>
   );
 }
-
-/**
- * The hero's media area: the same placeholder inside a premium window frame,
- * so the page reads as a product showcase rather than an empty box.
- */
-export function HeroMediaPlaceholder({ copy, icon }: { copy: PlaceholderCopy; icon: LucideIcon }) {
-  return (
-    <div className="gt-studio-b-frame rounded-[var(--radius-xl)] border border-white/70 p-2.5 sm:p-3">
-      <div aria-hidden="true" className="flex items-center gap-1.5 px-2 pb-2.5 pt-1">
-        <span className="h-2 w-2 rounded-full bg-[var(--gt-blue-300)]" />
-        <span className="h-2 w-2 rounded-full bg-[var(--gt-blue-200)]" />
-        <span className="h-2 w-2 rounded-full bg-[var(--gt-ink-200)]" />
-      </div>
-      <MediaPlaceholder copy={copy} icon={icon} play ratio="aspect-[16/10] sm:aspect-[16/9]" />
-    </div>
-  );
-}

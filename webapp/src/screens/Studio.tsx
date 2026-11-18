@@ -2,9 +2,10 @@
 
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowDown, ArrowRight, BadgeCheck, Camera, Eye, Film, Fingerprint, Image as ImageIcon, Images, MonitorPlay, Quote, Shuffle, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, BadgeCheck, Camera, Eye, Fingerprint, Image as ImageIcon, Images, MonitorPlay, Quote, Shuffle, Sparkles } from "lucide-react";
 import { Button } from "../components/ui/Button";
-import { HeroMediaPlaceholder, MediaPlaceholder, type PlaceholderCopy } from "../components/studio/MediaPlaceholder";
+import { MediaPlaceholder, type PlaceholderCopy } from "../components/studio/MediaPlaceholder";
+import { HeroVideo } from "../components/studio/HeroVideo";
 import { StudioPlans } from "../components/studio/StudioPlans";
 import { StudioFaq } from "../components/studio/StudioFaq";
 import { useNavigate } from "../lib/navigation";
@@ -23,7 +24,7 @@ import { STUDIO_PREVIEW } from "../lib/studioAccess";
  * the artists' own words, then the offers, a closing call and the questions.
  *
  * What it does not do: invent anything. Plan names, amounts and the trial's
- * length come from `data/studio.ts`; the media that does not exist yet is
+ * length come from `data/studio.ts`; the hero plays the Studio film (`HeroVideo`), the other media that does not exist yet is
  * drawn as a labelled placeholder; no testimonial, rating or figure is made
  * up; the buttons behave as follows: while the Studio is in
  * free preview (`studioAccess`) "start" opens the editor, otherwise it leads
@@ -135,7 +136,7 @@ export function Studio() {
           </div>
 
           <div className="relative min-w-0">
-            <HeroMediaPlaceholder copy={copy("studioPage.hero.media")} icon={Film} />
+            <HeroVideo />
           </div>
         </div>
       </section>

@@ -13,10 +13,10 @@
     "ctaSecondary": "Découvrir l’expérience",
     "reassurance_one": "{{count}} jour pour explorer, puis la formule de votre choix, dès {{price}} / mois.",
     "reassurance_other": "{{count}} jours pour explorer, puis la formule de votre choix, dès {{price}} / mois.",
-    "media": {
-      "title": "Capture d’écran animée du Studio 3D",
-      "body": "Une composition de bijoux dentaires créée puis pivotée en temps réel dans le Studio.",
-      "caption": "Film de démonstration · 16:9 · à remplacer par l’enregistrement définitif."
+    "video": {
+      "description": "Démonstration du Studio 3D, sans son : un cœur de cristaux se pose gemme par gemme, la caméra tourne autour d’une étoile irisée, plusieurs gemmes changent de couleur en même temps, un éclair doré est déplacé puis pivoté sur sa dent, la dentition change de teinte et de lumière, puis la bouche s’ouvre avec les bijoux du bas.",
+      "pause": "Mettre la vidéo en pause",
+      "play": "Lire la vidéo"
     }
   },
   "benefits": {
