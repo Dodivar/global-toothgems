@@ -38,7 +38,7 @@ export function SaveCreationDialog({
 }) {
   const { t, price } = useWorkspaceFormat();
   const snap = useStudio();
-  const { saveDesign, updateCreationDetails, addToCollections, creations, memberships, collectionsStatus } = useWorkspace();
+  const { saveDesign, updateCreationDetails, addToCollections, creations, memberships, collectionsStatus, dirty } = useWorkspace();
   const { exposureFor } = useGlowbook();
   const source = mode === "saveAsNew" ? creations.find((c) => c.id === snap.active?.creationId) : undefined;
 
@@ -75,7 +75,9 @@ export function SaveCreationDialog({
     setBusy(true);
     let ok: boolean;
     if (mode === "edit" && creation) {
-      const changed = details.name.trim() !== creation.name || details.description.trim() !== creation.description;
+      // The stage's unsaved edits are saved with the details, so they count as a change too.
+      const sceneSaved = snap.active?.creationId === creation.id && snap.jewels.length > 0 && dirty;
+      const changed = sceneSaved || details.name.trim() !== creation.name || details.description.trim() !== creation.description;
       const exposure = changed ? await exposureFor(creation.id, creation) : null;
       if (exposure) {
         // The warning takes this dialog's place; cancelling it brings the fields back as typed.

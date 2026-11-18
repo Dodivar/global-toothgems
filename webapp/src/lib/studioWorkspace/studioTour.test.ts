@@ -51,6 +51,7 @@ function snapshot(over: Partial<StudioSnapshot> = {}): StudioSnapshot {
     modelLoading: false,
     issues: [],
     lightPreset: "studio",
+    modelShade: "porcelain",
     clientName: "",
     contextMenu: null,
     canUndo: false,

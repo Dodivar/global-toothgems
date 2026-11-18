@@ -1,0 +1,5 @@
+[
+ {"key":"crystal","productId":"cf7b9298-5816-4a4f-ab43-0e1f0254a606","variantId":null,"name":"SWAROVSKI® 2058 - CRYSTAL","look":{"shape":"round","material":"crystal","color":"#ffffff","effect":"none"},"sizes":[{"ss":5},{"ss":7}]},
+ {"key":"crystalAB","productId":"faff209f-2907-4839-90ff-11434f2fe730","variantId":null,"name":"SWAROVSKI® 2058 - CRYSTAL AB","look":{"shape":"round","material":"crystal","color":"#f1f3ff","effect":"iridescent"},"sizes":[{"ss":5},{"ss":7}]},
+ {"key":"starWhiteGold","productId":"b50b953a-688f-4d43-bff4-d5406f1d2adf","variantId":"5b134a6a-22ca-43d2-9eac-6a52dc9c3e84","name":"Étoile halo en or 18 carats — Or blanc","look":{"shape":"halo-star","material":"metal","color":"#e3e6ea","effect":"none"},"sizes":[{"mm":[3]},{"mm":[4]},{"mm":[5]}]}
+]

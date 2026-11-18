@@ -15,7 +15,8 @@ const SIZE = { width: 1280, height: 800 };
 export async function renderDesignImage(creation: TryOnCreation, viewYaw = 0): Promise<Blob | null> {
   let stage: ExportStage | null = null;
   try {
-    stage = await ExportStage.open(creation.scene);
+    // Always in the default porcelain: a coloured dentition could lead the image model to tint the client's teeth.
+    stage = await ExportStage.open({ ...creation.scene, modelShade: "porcelain" });
     // Seen from the photo's angle when it is clearly off the front (degrees, positive: from the viewer's right).
     return await stage.stageStill(SIZE, "jpeg", Math.abs(viewYaw) >= 2 ? (viewYaw * Math.PI) / 180 : null);
   } catch {
