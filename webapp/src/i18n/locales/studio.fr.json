@@ -514,6 +514,16 @@
         "proximal": "face proximale"
       }
     },
+    "mouth": {
+      "title": "Ouverture de la bouche",
+      "info": "La mâchoire du bas s'ouvre et se referme comme une vraie bouche, avec les gemmes posées dessus : pratique pour vérifier qu'une pièce reste visible et ne gêne pas quand la cliente parle ou sourit.",
+      "open": "Ouvrir la bouche",
+      "close": "Fermer la bouche",
+      "loop": "Animer",
+      "stopLoop": "Arrêter",
+      "loopLabel": "Ouvrir et fermer la bouche en boucle",
+      "hint": "Seule la caméra bouge bouche ouverte : sélectionner une pièce la referme."
+    },
     "shortcuts": {
       "title": "Raccourcis",
       "undoRedo": "Annuler / rétablir",

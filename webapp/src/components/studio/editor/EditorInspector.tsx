@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import clsx from "clsx";
 import {
   AlignCenterHorizontal,
@@ -15,6 +15,9 @@ import {
   Lock,
   LockOpen,
   Maximize2,
+  Pause,
+  Play,
+  Smile,
   RotateCcw,
   RotateCw,
   SquareSplitHorizontal,
@@ -40,7 +43,8 @@ import {
   rotatePieces,
   setPiecesLocked,
 } from "../../../lib/studio3d/actions";
-import { getEngine } from "../../../lib/studio3d/engine";
+import { getEngine, type MouthState } from "../../../lib/studio3d/engine";
+import { usePrefersReducedMotion } from "../../homeAlt/usePrefersReducedMotion";
 import { notify } from "../../../lib/studio3d/notices";
 import { studioStore, useStudio, type StudioSnapshot } from "../../../lib/studio3d/store";
 import { MODEL_SHADES, type ModelShade } from "../../../lib/studio3d/modelShades";
@@ -665,6 +669,8 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
       <FrontViewSection snap={snap} />
       <ModelShadeSection snap={snap} />
 
+      <MouthSection />
+
       {/* Keyboard and mouse shortcuts mean nothing on a touch screen; folded until asked for. */}
       <details className="group mt-5 max-lg:hidden">
         <summary
@@ -855,6 +861,52 @@ function ModelShadeSection({ snap }: { snap: StudioSnapshot }) {
           </p>
         </>
       )}
+    </>
+  );
+}
+
+const MOUTH_CLOSED: MouthState = { available: false, open: false, looping: false };
+const noSubscription = () => () => {};
+
+/**
+ * Open and close the mouth (the default dentition only): the lower jaw swings
+ * like a real one, its gems with it. A view — nothing is saved, and selecting a
+ * piece closes it again (the engine sees to that).
+ */
+function MouthSection() {
+  const { t } = useEditorLabels();
+  const engine = getEngine();
+  const subscribe = useCallback((fn: () => void) => (engine ? engine.onMouthChange(fn) : noSubscription()), [engine]);
+  const mouth = useSyncExternalStore(
+    subscribe,
+    () => engine?.getMouthState() ?? MOUTH_CLOSED,
+    () => MOUTH_CLOSED,
+  );
+  // Less motion asked for: the button still opens and closes (at once), the loop is not offered.
+  const reduced = usePrefersReducedMotion();
+  if (!engine || !mouth.available) return null;
+  return (
+    <>
+      <SectionLabel info={t("studio.editor.mouth.info")}>{t("studio.editor.mouth.title")}</SectionLabel>
+      <div className="flex gap-2">
+        <button type="button" className={miniButton} aria-pressed={mouth.open} onClick={() => engine.setMouthOpen(!mouth.open)}>
+          <Smile size={13} aria-hidden="true" />
+          {t(mouth.open ? "studio.editor.mouth.close" : "studio.editor.mouth.open")}
+        </button>
+        {!reduced && (
+          <button
+            type="button"
+            className={miniButton}
+            aria-pressed={mouth.looping}
+            aria-label={t("studio.editor.mouth.loopLabel")}
+            onClick={() => engine.setMouthLoop(!mouth.looping)}
+          >
+            {mouth.looping ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />}
+            {t(mouth.looping ? "studio.editor.mouth.stopLoop" : "studio.editor.mouth.loop")}
+          </button>
+        )}
+      </div>
+      <Hint className="mt-2">{t("studio.editor.mouth.hint")}</Hint>
     </>
   );
 }

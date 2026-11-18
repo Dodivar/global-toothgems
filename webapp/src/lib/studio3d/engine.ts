@@ -15,6 +15,7 @@ import {
 } from "../../data/studioEditor";
 import { DENTITION_CROWNS } from "./dentition";
 import { buildSmileMeshes, SMILE_CROWNS } from "./smileDentition";
+import { easeJaw, JAW_HINGE, jawPose, loopOpenness, MOUTH_LOOP, MOUTH_TWEEN_MS } from "./jawMotion";
 import {
   createToothGeometry,
   disposeGeometryCaches,
@@ -198,6 +199,7 @@ const _n = new THREE.Vector3(),
   _nn = new THREE.Vector3();
 const _sa = new THREE.Vector3(),
   _sb = new THREE.Vector3();
+const _jawCorner = new THREE.Vector3();
 const _q1 = new THREE.Quaternion(),
   _q2 = new THREE.Quaternion(),
   _q3 = new THREE.Quaternion();
@@ -385,6 +387,15 @@ function mountGap(scale: number, manualOffset = 0): number {
   return 0.04 + 0.04 * scale + manualOffset;
 }
 
+/** The mouth opening, for the inspector: offered on the default dentition only. */
+export interface MouthState {
+  available: boolean;
+  /** Open, or opening (not the loop). */
+  open: boolean;
+  /** The open-and-close loop is playing. */
+  looping: boolean;
+}
+
 /**
  * Where the current selection sits on the canvas, in CSS pixels from the
  * stage's top-left corner: the screen box around the selected pieces. `null`
@@ -554,6 +565,23 @@ export class StudioEngine {
     null;
   private autoRotate = false;
 
+  // the mouth opening (default dentition only; see `jawMotion.ts`)
+  /** The lower arch's mesh, which swings; null when the model has no separate lower arch. */
+  private lowerJaw: THREE.Object3D | null = null;
+  /** Its local matrix when closed, as the file gives it. */
+  private lowerJawRest = new THREE.Matrix4();
+  /** The lower arch's bounding box corners, closed, in world units: the floor follows the lowest. */
+  private lowerJawCorners: THREE.Vector3[] = [];
+  /** Pieces on lower teeth: drawn in this group, which carries the jaw's motion. */
+  private lowerJewels = new THREE.Group();
+  /** 0 closed … 1 wide open, as drawn. */
+  private mouthValue = 0;
+  private mouthTween: { from: number; to: number; start: number; dur: number } | null = null;
+  /** When the open-and-close loop started, or null when it is not playing. */
+  private mouthLoopStart: number | null = null;
+  private mouthListeners = new Set<() => void>();
+  private mouthState: MouthState = { available: false, open: false, looping: false };
+
   // floating selection controls (see `onSelectionAnchor`)
   private anchorListener: SelectionAnchorListener | null = null;
   private lastAnchorKey = "";
@@ -632,6 +660,8 @@ export class StudioEngine {
     // The pieces wait, hidden, until the dentition they sit on is on stage.
     this.jewelsGroup.visible = false;
     this.scene.add(this.jewelsGroup);
+    this.lowerJewels.matrixAutoUpdate = false;
+    this.jewelsGroup.add(this.lowerJewels);
 
     if (this.offscreen) this.controls.enabled = false;
     else {
@@ -826,6 +856,11 @@ export class StudioEngine {
    */
   private installSmile() {
     const group = new THREE.Group();
+    // The two arches in their own groups: the lower one swings when the mouth opens (`installLowerJaw`).
+    const arches = { upper: new THREE.Group(), lower: new THREE.Group() };
+    arches.upper.name = "upper";
+    arches.lower.name = "lower";
+    group.add(arches.upper, arches.lower);
     const enamel = new THREE.MeshStandardMaterial({ ...SMILE_ENAMEL, emissive: TOOTH_HIGHLIGHT, emissiveIntensity: 0 });
     const frames = new Map(SMILE_CROWNS.map((c) => [c.fdi, c]));
     for (const { fdi, mesh } of buildSmileMeshes()) {
@@ -842,7 +877,7 @@ export class StudioEngine {
       crown.castShadow = true;
       crown.receiveShadow = true;
       crown.userData.toothId = fdi;
-      group.add(crown);
+      (c.lower ? arches.lower : arches.upper).add(crown);
       this.toothRigs.set(fdi, {
         id: fdi,
         mesh: crown,
@@ -870,6 +905,7 @@ export class StudioEngine {
     this.paintSmile(group);
     this.scene.add(group);
     this.toothMeshes.push(group);
+    this.installLowerJaw(group);
   }
 
   /* ---------- models: the Studio's dentition, imports (.glb) ---------- */
@@ -898,6 +934,7 @@ export class StudioEngine {
       });
     }
     this.dentitionGroup = new THREE.Group();
+    this.resetMouth();
     this.toothRigs.clear();
     this.toothMeshes.length = 0;
     // arch anchors are kept: they are the reference frame for GLB classification
@@ -2120,7 +2157,6 @@ export class StudioEngine {
       if (!rig) {
         rig = this.createJewelRig(j);
         this.jewelRigs.set(j.id, rig);
-        this.jewelsGroup.add(rig.group);
         rig.birth = performance.now();
       } else if (rig.shape !== j.look.shape) {
         this.buildRigContent(rig, j);
@@ -2134,6 +2170,9 @@ export class StudioEngine {
       }
       rig.sizeScale = j.scale;
       rig.sizeAxes = scaleAxes(j.look.shape, j.size);
+      // On a lower tooth the piece rides with the jaw when the mouth opens.
+      const parent = this.toothRigs.get(j.toothId)?.lower && this.lowerJaw ? this.lowerJewels : this.jewelsGroup;
+      if (rig.group.parent !== parent) parent.add(rig.group);
       if (!this.isDragged(rig)) this.applyPose(rig.group, j, rig.halfDepth);
     }
     for (const [id, rig] of Array.from(this.jewelRigs)) {
@@ -2147,6 +2186,7 @@ export class StudioEngine {
   };
   private onStoreChange = () => {
     this.shadowsDirty = true;
+    this.closeMouthForEditing();
     this.syncJewels();
     this.checkDesign();
     this.wake();
@@ -2178,8 +2218,8 @@ export class StudioEngine {
       this.controls.enabled = true;
       this.controls.update();
     }
-    // Viewing only: every press belongs to the camera.
-    if (this.readOnly) return;
+    // Viewing only, or the mouth open (a view, not a pose to edit in): every press belongs to the camera.
+    if (this.readOnly || this.mouthPosed()) return;
     if (e.button === 0 && this.store.getSnapshot().lasso) {
       // Before the piece test: a loop may well start on a piece, and must not drag it.
       e.stopPropagation();
@@ -2484,7 +2524,7 @@ export class StudioEngine {
   /** Right-click on a piece → context menu. Empty right-clicks fall through
       to OrbitControls (pan) as before. */
   private onContextMenu = (e: MouseEvent) => {
-    if (this.readOnly || e.target !== this.renderer.domElement) return;
+    if (this.readOnly || this.mouthPosed() || e.target !== this.renderer.domElement) return;
     // A finger held on the stage (Android sends it as a context menu) is the long press above.
     if (this.touchPress) {
       e.preventDefault();
@@ -2511,8 +2551,12 @@ export class StudioEngine {
   };
 
   private updateHover(e: PointerEvent) {
-    // Nothing on a viewed design can be picked up: no hover swell, no grab cursor.
+    // Nothing on a viewed design can be picked up: no hover swell, no grab cursor. Nor with the mouth open.
     if (this.readOnly) return;
+    if (this.mouthPosed()) {
+      this.clearHover();
+      return;
+    }
     const before = this.hoverJewelId;
     this.updateHoverTargets(e);
     // A piece's hover glow is drawn by the engine alone (no store change), so it wakes the loop itself.
@@ -2576,6 +2620,8 @@ export class StudioEngine {
 
   beginPlacing(gemKey: string, e: { clientX: number; clientY: number; preventDefault: () => void }) {
     if (this.placing) return;
+    // A piece is placed on the closed mouth: the drop raycasts the teeth where they rest.
+    this.snapMouthClosed();
     e.preventDefault();
     this.placing = { gemKey, startX: e.clientX, startY: e.clientY, started: false };
   }
@@ -2762,8 +2808,175 @@ export class StudioEngine {
   getAutoRotate(): boolean {
     return this.autoRotate;
   }
+
+  /* ---------- the mouth opening (see `jawMotion.ts`) ---------- */
+
+  /** Find the lower arch of the Studio's dentition, its group `lower` beside `upper`. */
+  private installLowerJaw(root: THREE.Group) {
+    const lower = root.getObjectByName("lower");
+    if (!lower || !root.getObjectByName("upper")) return;
+    root.updateMatrixWorld(true);
+    lower.updateMatrix();
+    this.lowerJaw = lower;
+    this.lowerJawRest.copy(lower.matrix);
+    lower.matrixAutoUpdate = false;
+    const box = new THREE.Box3().setFromObject(lower);
+    this.lowerJawCorners = [];
+    for (const x of [box.min.x, box.max.x])
+      for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) this.lowerJawCorners.push(new THREE.Vector3(x, y, z));
+    this.emitMouth();
+  }
+  /** The model changes: the mouth is closed and the new model decides whether it opens. */
+  private resetMouth() {
+    this.mouthTween = null;
+    this.mouthLoopStart = null;
+    this.applyMouth(0);
+    this.lowerJaw = null;
+    this.lowerJawCorners = [];
+    // Pieces on lower teeth go back to the plain group; `syncJewels` sorts them again for the next model.
+    for (const child of [...this.lowerJewels.children]) this.jewelsGroup.add(child);
+    this.emitMouth();
+  }
+  /** True while the mouth is not at rest, closed: only the camera moves then. */
+  private mouthPosed() {
+    return this.mouthValue > 0 || !!this.mouthTween || this.mouthLoopStart !== null;
+  }
+  /** Draw the jaw at this openness: the lower arch, the pieces on it, and the floor under the lowest point. */
+  private applyMouth(value: number) {
+    this.mouthValue = value;
+    const { angle, glide } = jawPose(value);
+    const { pivot } = JAW_HINGE;
+    const jaw = new THREE.Matrix4()
+      .makeTranslation(pivot.x, pivot.y, pivot.z + glide)
+      .multiply(new THREE.Matrix4().makeRotationX(angle))
+      .multiply(new THREE.Matrix4().makeTranslation(-pivot.x, -pivot.y, -pivot.z));
+    this.lowerJewels.matrix.copy(jaw);
+    this.lowerJewels.matrixWorldNeedsUpdate = true;
+    const lower = this.lowerJaw;
+    if (lower?.parent) {
+      // The jaw's motion is in world units; the mesh sits under the scaled root: local = parent⁻¹ · jaw · parent · rest.
+      const parent = lower.parent.matrixWorld;
+      lower.matrix.copy(parent).invert().multiply(jaw).multiply(parent).multiply(this.lowerJawRest);
+      lower.matrixWorldNeedsUpdate = true;
+    }
+    let drop = 0;
+    if (this.lowerJawCorners.length && value > 0) {
+      let closed = Infinity,
+        open = Infinity;
+      for (const c of this.lowerJawCorners) {
+        closed = Math.min(closed, c.y);
+        open = Math.min(open, _jawCorner.copy(c).applyMatrix4(jaw).y);
+      }
+      drop = Math.max(0, closed - open);
+    }
+    this.floor.position.y = this.stage.floorY - drop;
+  }
+  /** Advance the opening for this frame; true when the jaw moved. */
+  private stepMouth(now: number): boolean {
+    let value = this.mouthValue;
+    if (this.mouthLoopStart !== null) value = loopOpenness(now - this.mouthLoopStart);
+    else if (this.mouthTween) {
+      const tw = this.mouthTween;
+      const k = tw.dur > 0 ? Math.min(1, (now - tw.start) / tw.dur) : 1;
+      value = tw.from + (tw.to - tw.from) * easeJaw(k);
+      if (k >= 1) {
+        value = tw.to;
+        this.mouthTween = null;
+      }
+    }
+    if (value === this.mouthValue) return false;
+    this.applyMouth(value);
+    // Closed again: the design check skipped while it was open runs now.
+    if (!this.mouthPosed()) this.checkDesign();
+    return true;
+  }
+  private animateMouthTo(to: number) {
+    this.mouthLoopStart = null;
+    const from = this.mouthValue;
+    if (prefersReducedMotion() || from === to) {
+      this.mouthTween = null;
+      this.applyMouth(to);
+      if (!this.mouthPosed()) this.checkDesign();
+    } else {
+      this.mouthTween = { from, to, start: performance.now(), dur: MOUTH_TWEEN_MS * Math.abs(to - from) };
+    }
+    this.shadowsDirty = true;
+    this.wake();
+    this.emitMouth();
+  }
+  /** Something to edit was asked for (a selection, the lasso, a piece to place): the mouth closes first. */
+  private closeMouthForEditing() {
+    if (!this.mouthPosed() || this.mouthTarget() === 0) return;
+    const snap = this.store.getSnapshot();
+    if (snap.selectedJewelIds.length || snap.selectedToothId || snap.lasso || snap.placingTypeId || snap.armedTypeId) this.animateMouthTo(0);
+  }
+  /** Closed at once: a drop needs the teeth where they rest. */
+  private snapMouthClosed() {
+    if (!this.mouthPosed()) return;
+    this.mouthTween = null;
+    this.mouthLoopStart = null;
+    this.applyMouth(0);
+    this.checkDesign();
+    this.shadowsDirty = true;
+    this.wake();
+    this.emitMouth();
+  }
+  /** Where the jaw is heading: 1 open, 0 closed (the loop counts as open). */
+  private mouthTarget() {
+    if (this.mouthLoopStart !== null) return 1;
+    return this.mouthTween ? this.mouthTween.to : this.mouthValue > 0 ? 1 : 0;
+  }
+  private emitMouth() {
+    const next: MouthState = {
+      available: !!this.lowerJaw,
+      open: this.mouthLoopStart === null && this.mouthTarget() === 1,
+      looping: this.mouthLoopStart !== null,
+    };
+    const prev = this.mouthState;
+    if (prev.available === next.available && prev.open === next.open && prev.looping === next.looping) return;
+    this.mouthState = next;
+    this.mouthListeners.forEach((fn) => fn());
+  }
+  /** Whether the mouth can open on this model, and what it is doing (a stable object between changes). */
+  getMouthState(): MouthState {
+    return this.mouthState;
+  }
+  onMouthChange(fn: () => void): () => void {
+    this.mouthListeners.add(fn);
+    return () => {
+      this.mouthListeners.delete(fn);
+    };
+  }
+  /** Open or close the mouth, as a jaw would. */
+  setMouthOpen(open: boolean) {
+    if (!this.lowerJaw) return;
+    if (open) {
+      // Nothing stays selected on an open mouth: the pieces are not where they can be edited.
+      this.cancelInteraction();
+      this.store.deselect();
+    }
+    this.animateMouthTo(open ? 1 : 0);
+  }
+  /** Play the mouth opening and closing again and again, or stop it (it then closes). */
+  setMouthLoop(on: boolean) {
+    if (!this.lowerJaw) return;
+    if (!on) {
+      if (this.mouthLoopStart !== null) this.animateMouthTo(0);
+      return;
+    }
+    if (prefersReducedMotion()) return;
+    this.cancelInteraction();
+    this.store.deselect();
+    this.mouthTween = null;
+    // Start where the jaw is: from the closed mouth, or partway if it was already open.
+    const start = performance.now();
+    this.mouthLoopStart = this.mouthValue > 0 ? start - MOUTH_LOOP.open * this.mouthValue : start;
+    this.wake();
+    this.emitMouth();
+  }
   private onDblClick = (e: MouseEvent) => {
     if (this.store.getSnapshot().lasso) return; // two quick loops are not a request to focus a tooth
+    if (this.mouthPosed()) return; // the teeth are not where their frames say
     this.setNDC(e);
     const jHit = this.raycastJewels();
     if (jHit) {
@@ -2932,7 +3145,7 @@ export class StudioEngine {
       rig.outlineMaterial.opacity = 0;
       rig.outline.visible = false;
     });
-    for (const rig of this.dyingJewels) this.jewelsGroup.remove(rig.group);
+    for (const rig of this.dyingJewels) rig.group.removeFromParent();
     this.dyingJewels = [];
   }
 
@@ -3299,6 +3512,8 @@ export class StudioEngine {
    */
   private checkDesign(force = false) {
     if (!this.modelReady) return;
+    // Seats are found on the closed mouth; the check runs again once it is closed.
+    if (this.mouthPosed()) return;
     const jewels = this.store.jewels;
     if (!force && jewels === this.checkedJewels) return;
     // A forced check follows a model change: every seat is to be found again.
@@ -3574,7 +3789,14 @@ export class StudioEngine {
     const now = performance.now();
     const snap = this.store.getSnapshot();
     const animating =
-      !!this.camTween || this.autoRotate || !!this.dragJewel || !!this.ghost || this.dyingJewels.length > 0 || this.hasBirths();
+      !!this.camTween ||
+      this.autoRotate ||
+      !!this.dragJewel ||
+      !!this.ghost ||
+      this.dyingJewels.length > 0 ||
+      this.hasBirths() ||
+      !!this.mouthTween ||
+      this.mouthLoopStart !== null;
     if (animating) this.pendingFrames = SETTLE_FRAMES;
     if (this.pendingFrames <= 0) {
       // Idle: nothing moved. Damped controls still need their update to report a drag.
@@ -3584,6 +3806,7 @@ export class StudioEngine {
     this.pendingFrames--;
     // What casts shadows moving this frame: a piece in hand, arriving, leaving, swelling under the pointer, or the key light.
     let shadowsMove = this.shadowsDirty || !!this.dragJewel || this.dyingJewels.length > 0;
+    if (this.stepMouth(now)) shadowsMove = true;
 
     const tw = this.camTween;
     if (tw) {
@@ -3655,7 +3878,7 @@ export class StudioEngine {
       const rig = this.dyingJewels[i];
       const t = (now - rig.death) / 200;
       if (t >= 1) {
-        this.jewelsGroup.remove(rig.group);
+        rig.group.removeFromParent();
         rig.outlineMaterial.dispose(); // jewel materials are cached+shared — not disposed here
         this.dyingJewels.splice(i, 1);
       } else {
@@ -3693,6 +3916,7 @@ export class StudioEngine {
   }
   dispose() {
     this.disposed = true;
+    this.mouthListeners.clear();
     this.pendingMove = null;
     this.clearLongPress();
     cancelAnimationFrame(this.raf);

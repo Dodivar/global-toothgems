@@ -514,6 +514,16 @@
         "proximal": "proximal surface"
       }
     },
+    "mouth": {
+      "title": "Mouth opening",
+      "info": "The lower jaw opens and closes like a real mouth, gems included: a quick way to check a piece stays visible and does not get in the way when the client talks or smiles.",
+      "open": "Open the mouth",
+      "close": "Close the mouth",
+      "loop": "Animate",
+      "stopLoop": "Stop",
+      "loopLabel": "Open and close the mouth on a loop",
+      "hint": "Only the camera moves while the mouth is open: selecting a piece closes it."
+    },
     "shortcuts": {
       "title": "Shortcuts",
       "undoRedo": "Undo / redo",
