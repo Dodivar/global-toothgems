@@ -1,5 +1,5 @@
 import type { PlacedJewelry } from "../../data/studioEditor";
-import { gemOutline, pathToSvg } from "./frontView";
+import { gemOutline, pathToSvg, type Squash } from "./frontView";
 import type { Registration, RegisteredGem } from "./tryOnRegistration";
 
 /**
@@ -27,6 +27,8 @@ export interface GuideMark {
   r: number;
   stretch: readonly [number, number];
   rotation: number;
+  /** The gem seen at an angle on the curved arch: its outline pressed along the lean (see `RegisteredGem.squash`). */
+  squash?: Squash | null;
   /** `#rrggbb`. */
   color: string;
 }
@@ -39,7 +41,7 @@ export function guideMarks(registration: Pick<Registration, "gems">, pieces: rea
   const marks = registration.gems.flatMap((g): GuideMark[] => {
     if (g.tooth !== "found" || !(g.r > 0)) return [];
     const color = pieceById.get(g.id)?.look.color ?? "";
-    return [{ id: g.id, shape: g.shape, x: g.x, y: g.y, r: g.r, stretch: g.stretch, rotation: g.rotation, color: HEX.test(color) ? color : "#ffffff" }];
+    return [{ id: g.id, shape: g.shape, x: g.x, y: g.y, r: g.r, stretch: g.stretch, rotation: g.rotation, squash: g.squash, color: HEX.test(color) ? color : "#ffffff" }];
   });
   return { marks, leftOut: registration.gems.length - marks.length };
 }
@@ -54,7 +56,7 @@ const round = (n: number) => Math.round(n * 100) / 100;
 export function placementGuideSvg(marks: readonly GuideMark[], width: number, height: number): string {
   const body = marks
     .map((m) => {
-      const d = pathToSvg(gemOutline(m.shape, { x: m.x, y: m.y, r: m.r, rotation: m.rotation, stretch: m.stretch }));
+      const d = pathToSvg(gemOutline(m.shape, { x: m.x, y: m.y, r: m.r, rotation: m.rotation, stretch: m.stretch, squash: m.squash }));
       const edge = round(Math.max(0.6, m.r * 0.08));
       const shine = round(m.r * 0.28);
       return (

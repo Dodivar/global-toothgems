@@ -378,7 +378,7 @@
         "body": [
           "The Studio opens on a reference dentition: the upper and lower arches, every tooth identified. Teeth are named with the international FDI dental notation: the first digit is the quadrant (1 = upper right, 2 = upper left, 3 = lower left, 4 = lower right, from the patient’s point of view), the second the tooth, from 1 (central incisor) to 7 (second molar). 11 and 21 are therefore the two upper central incisors.",
           "Click a tooth to see its name, its number and the gems already on it. When you select a gem, the panel also says where it sits on the tooth: the third (incisal, middle or cervical, i.e. near the edge, in the middle or near the gum) and the surface (labial = the visible face, palatal = the inner face…).",
-          "If the reference dentition cannot load (slow connection, limited device), a simplified upper arch replaces it: keep working, then return to the reference dentition with the button in the top bar."
+          "The dentition has no gum: each tooth ends in a rounded dome where the gum would be. Pieces go on the visible crown, from the edge to the gum line, never on that dome."
         ]
       },
       "camera": {

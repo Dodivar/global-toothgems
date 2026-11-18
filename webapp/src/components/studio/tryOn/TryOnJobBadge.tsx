@@ -16,7 +16,7 @@ export function TryOnJobBadge({ job, onOpen, onDismiss }: { job: TryOnJob; onOpe
   const label = t(`studio.tryOn.job.${kind}`, { name: job.creation.name });
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(16px+env(safe-area-inset-bottom))] z-[450] flex justify-center px-4">
+    <div className="gt-tryon-pill pointer-events-none fixed inset-x-0 bottom-[calc(16px+env(safe-area-inset-bottom))] z-[450] flex justify-center px-4">
       <div
         role="status"
         className="pointer-events-auto flex max-w-full items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--gt-ink-900)] py-1 pl-1 pr-1 text-white shadow-[var(--shadow-lg)]"

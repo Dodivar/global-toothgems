@@ -312,7 +312,10 @@
       "foldAll": "Replier toutes les formes",
       "unfoldAll": "Déplier toutes les formes",
       "showAllShapes": "Voir toutes les formes",
-      "shapeLabel": "Forme"
+      "shapeLabel": "Forme",
+      "colorLabel": "Couleur",
+      "colorsLabel": "Filtrer par couleur",
+      "showAllColors": "Voir toutes les couleurs"
     },
     "viewport": {
       "label": "Vue 3D de l’arcade dentaire",
@@ -341,8 +344,7 @@
       "hint": "Glissez une pièce sur une dent pour commencer",
       "stageHelp": "Que signifie la notation FDI ? Ouvrir l’aide",
       "stage": {
-        "dentition": "Dentition de référence · notation FDI",
-        "studio": "Arcade supérieure simplifiée · notation FDI",
+        "smile": "Dentition de référence · notation FDI",
         "teeth": "Modèle importé · dents identifiées",
         "free": "Modèle importé · mode libre"
       },
@@ -378,6 +380,21 @@
     },
     "zoomIn": "Zoomer",
     "zoomOut": "Dézoomer",
+    "modelShade": {
+      "title": "Couleur du modèle",
+      "hint": "Teintez la dentition pour mettre les gemmes en valeur : porcelaine, ou un pastel qui en fait un présentoir plutôt que de vraies dents. La couleur est enregistrée avec la création et se retrouve dans les posts, les liens de partage et le Glowbook.",
+      "current": "Couleur : {{name}}",
+      "imported": "Un modèle importé garde ses propres couleurs.",
+      "items": {
+        "porcelain": "Porcelaine",
+        "glacier": "Glacier",
+        "rose": "Rose poudré",
+        "mint": "Menthe",
+        "lavender": "Lavande",
+        "peach": "Pêche",
+        "pearl": "Perle"
+      }
+    },
     "lights": {
       "label": "Éclairage",
       "studio": "Studio",
@@ -501,6 +518,16 @@
         "proximal": "face proximale"
       }
     },
+    "mouth": {
+      "title": "Ouverture de la bouche",
+      "info": "La mâchoire du bas s'ouvre et se referme comme une vraie bouche, avec les gemmes posées dessus : pratique pour vérifier qu'une pièce reste visible et ne gêne pas quand la cliente parle ou sourit.",
+      "open": "Ouvrir la bouche",
+      "close": "Fermer la bouche",
+      "loop": "Animer",
+      "stopLoop": "Arrêter",
+      "loopLabel": "Ouvrir et fermer la bouche en boucle",
+      "hint": "Seule la caméra bouge bouche ouverte : sélectionner une pièce la referme."
+    },
     "shortcuts": {
       "title": "Raccourcis",
       "undoRedo": "Annuler / rétablir",
@@ -600,7 +627,6 @@
       "shareFailed": "Le partage n’a pas abouti — téléchargez l’image pour la publier",
       "linkCopied": "Lien du Studio copié",
       "linkCopyFailed": "Le lien n’a pas pu être copié",
-      "modelLoadFailed": "La dentition de référence n’a pas pu être chargée — l’arcade simplifiée la remplace. Réessayez avec le bouton « Revenir à la dentition de référence ».",
       "import": {
         "started": "Import de {{name}}…",
         "teeth_one": "Modèle importé — {{count}} dent reconnue",
@@ -689,6 +715,8 @@
     "trialUntil": "Votre essai gratuit vous donne accès au Studio jusqu’au {{date}}.",
     "noPlan": "Choisissez une formule pour utiliser le Studio 3D. Vos créations restent dans votre compte.",
     "staffNote": "Votre compte d’équipe ouvre le Studio sans abonnement.",
+    "staffPlansTitle": "Les formules proposées aux artistes",
+    "staffPlansBody": "Pour information uniquement : votre compte d’équipe a déjà tous les droits de la formule Atelier, vous n’avez pas besoin de vous abonner.",
     "trialPlansTitle": "S’abonner dès maintenant",
     "trialPlansBody": "Choisissez une formule pour vous abonner tout de suite. Votre essai gratuit prend alors fin et votre abonnement commence immédiatement ; rien n’est perdu, vos créations restent dans votre compte.",
     "choosePlan": "Choisir une formule",
@@ -812,6 +840,9 @@
       "invoice": "Facture",
       "creditNote": "Avoir",
       "download": "PDF",
+      "statusPaid": "Payée",
+      "statusFailed": "Échec",
+      "failedHint": "Paiement refusé : mettez à jour votre carte, nous retenterons le prélèvement.",
       "downloadLabel": "Télécharger {{kind}} {{number}} (PDF)",
       "loadError": "Vos factures n’ont pas pu être chargées.",
       "pdfError": "Le PDF n’a pas pu être créé. Réessayez."
@@ -1070,6 +1101,8 @@
     "listToggle_one": "Voir la gemme ({{count}})",
     "listToggle_other": "Voir les {{count}} gemmes",
     "listLabel": "Gemmes numérotées",
+    "numbersToggle": "Numéros",
+    "numbersHint": "Survolez ou touchez une gemme de la liste pour la repérer sur le dessin.",
     "gemNumber": "Gemme {{number}}",
     "order": "Pose n° {{order}}",
     "empty": "Placez une gemme sur une dent : elle apparaîtra ici, numérotée.",

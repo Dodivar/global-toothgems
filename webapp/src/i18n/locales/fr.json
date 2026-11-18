@@ -499,8 +499,8 @@
     "lastName": "Nom",
     "email": "E-mail",
     "password": "Mot de passe",
-    "newsletter": "Recevoir les nouveautés et dates de formation",
-    "newsletterDescription": "Un e-mail par mois, désinscription en un clic.",
+    "newsletter": "Recevoir la newsletter",
+    "newsletterDescription": "Restez informé des dernières nouveautés, offres et rappels (panier, favoris) par e-mail. Désinscription en un clic.",
     "submitSignIn": "Se connecter",
     "guestNote": "Les gems, outils et kits s’achètent sans compte.",
     "guestCta": "Continuer vers la boutique",
@@ -968,7 +968,12 @@
     "moduleValidationNoCheck": "Score moyen requis {{score}} %",
     "ctaBuy": "Acheter la formation",
     "ctaInCart": "Voir le panier",
-    "stickyBuy": "Acheter"
+    "stickyBuy": "Acheter",
+    "pack": {
+      "hint_one": "Existe aussi en pack avec le kit et {{count}} mois de Studio 3D :",
+      "hint_other": "Existe aussi en pack avec le kit et {{count}} mois de Studio 3D :",
+      "hintPlain": "Existe aussi en pack avec le kit :"
+    }
   },
   "lesson": {
     "eyebrow": "Formation en cours",

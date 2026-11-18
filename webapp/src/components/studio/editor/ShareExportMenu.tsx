@@ -45,14 +45,14 @@ const inputClass =
  * The editor's one Share menu (owner's request 2026-10-28: Export and Share
  * were two menus that overlapped). In order:
  *
- * - Share: the render through the system share sheet where the browser offers
- *   one (the member picks the app), then the creation's READ-ONLY LINK to copy
- *   — whoever opens it sees the design in 3D and cannot change it. No list of
- *   networks (owner's choice 2026-11-06): the member posts from their own app.
- * - Images: the PNG on the Studio backdrop with the Global Toothgems logo,
- *   and without a background from the Artist plan up.
- * - Prepare the appointment: the estimate sheet, the placement sheet and the
- *   AI smile try-on (Atelier).
+ * - Prepare the appointment (first, owner's request 2026-11-18): the AI smile
+ *   try-on (Atelier), the placement sheet, then the estimate sheet.
+ * - Images: the render through the system share sheet where the browser offers
+ *   one (the member picks the app), the PNG on the Studio backdrop with the
+ *   Global Toothgems logo, and without a background from the Artist plan up.
+ * - Share link: the creation's READ-ONLY LINK to copy — whoever opens it sees
+ *   the design in 3D and cannot change it. No list of networks (owner's choice
+ *   2026-11-06): the member posts from their own app.
  * - Team only: the raw JSON.
  *
  * A feature below the member's plan stays listed, locked, "With the … plan",
@@ -245,17 +245,98 @@ export function ShareExportMenu() {
         </button>
       )}
     >
+      <PopoverLabel>{t("studio.editor.export.prepareSection")}</PopoverLabel>
+      {tryOnAllowed === false ? (
+        <PopoverItem locked icon={<ScanFace size={14} />} label={t("studio.tryOn.action")} sub={withPlan("tryOn")} onClick={() => showLocked("tryOn")} />
+      ) : tryOnAllowed && !saved ? (
+        // Try-on renders the saved creation (read by the function from the database): shown greyed until then.
+        <PopoverItem
+          icon={<ScanFace size={14} />}
+          label={t("studio.tryOn.action")}
+          notice={t(snap.jewels.length === 0 ? "studio.tryOn.editorNoticeEmpty" : "studio.tryOn.editorNoticeSave")}
+          onClick={() => {}}
+        />
+      ) : (
+        tryOnAllowed &&
+        saved && (
+          <PopoverItem
+            icon={<ScanFace size={14} />}
+            label={t("studio.tryOn.action")}
+            sub={t("studio.tryOn.editorSub")}
+            onClick={() => {
+              close();
+              openWorkspaceDialog({ kind: "tryOn", creation: saved });
+            }}
+          />
+        )
+      )}
+      <PlacementSheetMenuItem onDone={close} />
+      {quoting ? (
+        <form
+          className="flex gap-1.5 p-1.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void doQuote();
+          }}
+        >
+          <input
+            autoFocus
+            aria-label={t("studio.editor.export.clientLabel")}
+            placeholder={t("studio.editor.export.clientPlaceholder")}
+            value={client}
+            maxLength={CLIENT_NAME_MAX}
+            onChange={(e) => setClient(e.target.value)}
+            className={inputClass}
+          />
+          <Button type="submit" variant="dark" size="sm">
+            {t("studio.editor.export.quoteAction")}
+          </Button>
+        </form>
+      ) : (
+        <PopoverItem
+          icon={<ReceiptText size={14} />}
+          label={t("studio.editor.export.quote")}
+          sub={t("studio.editor.export.quoteSub")}
+          onClick={() => setQuoting(true)}
+        />
+      )}
+
+      <PopoverSeparator />
+      <PopoverLabel>{t("studio.editor.export.images")}</PopoverLabel>
       {sheet && snap.jewels.length > 0 && (
-        <>
           <PopoverItem
             icon={image ? <Share size={14} /> : <LoaderCircle size={14} className="motion-safe:animate-spin" />}
             label={t("studio.editor.share.native")}
             sub={t("studio.editor.share.nativeSub")}
             onClick={() => image && shareImage(image)}
           />
-          <PopoverSeparator />
-        </>
       )}
+      <PopoverItem
+        icon={<ImageIcon size={14} />}
+        label={t("studio.editor.export.png")}
+        sub={t("studio.editor.export.pngSub")}
+        onClick={() => void exportPng(false)}
+      />
+      {transparentAllowed === false ? (
+        <PopoverItem
+          locked
+          icon={<SquareDashed size={14} />}
+          label={t("studio.editor.export.transparent")}
+          sub={withPlan("transparentExport")}
+          onClick={() => showLocked("transparentExport")}
+        />
+      ) : (
+        transparentAllowed && (
+          <PopoverItem
+            icon={<SquareDashed size={14} />}
+            label={t("studio.editor.export.transparent")}
+            sub={t("studio.editor.export.transparentSub")}
+            onClick={() => void exportPng(true)}
+          />
+        )
+      )}
+
+      <PopoverSeparator />
       <PopoverLabel>{t("studio.editor.share.linkSection")}</PopoverLabel>
       {linksAllowed === false ? (
         <PopoverItem
@@ -299,90 +380,6 @@ export function ShareExportMenu() {
       )}
       {linked && ws.dirty && linksAllowed !== false && <p className="m-0 px-2.5 pb-1 text-[11.5px] leading-snug text-[var(--text-muted)]">{t("studio.editor.share.unsavedHint")}</p>}
 
-      <PopoverSeparator />
-      <PopoverLabel>{t("studio.editor.export.images")}</PopoverLabel>
-      <PopoverItem
-        icon={<ImageIcon size={14} />}
-        label={t("studio.editor.export.png")}
-        sub={t("studio.editor.export.pngSub")}
-        onClick={() => void exportPng(false)}
-      />
-      {transparentAllowed === false ? (
-        <PopoverItem
-          locked
-          icon={<SquareDashed size={14} />}
-          label={t("studio.editor.export.transparent")}
-          sub={withPlan("transparentExport")}
-          onClick={() => showLocked("transparentExport")}
-        />
-      ) : (
-        transparentAllowed && (
-          <PopoverItem
-            icon={<SquareDashed size={14} />}
-            label={t("studio.editor.export.transparent")}
-            sub={t("studio.editor.export.transparentSub")}
-            onClick={() => void exportPng(true)}
-          />
-        )
-      )}
-
-      <PopoverSeparator />
-      <PopoverLabel>{t("studio.editor.export.prepareSection")}</PopoverLabel>
-      {quoting ? (
-        <form
-          className="flex gap-1.5 p-1.5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void doQuote();
-          }}
-        >
-          <input
-            autoFocus
-            aria-label={t("studio.editor.export.clientLabel")}
-            placeholder={t("studio.editor.export.clientPlaceholder")}
-            value={client}
-            maxLength={CLIENT_NAME_MAX}
-            onChange={(e) => setClient(e.target.value)}
-            className={inputClass}
-          />
-          <Button type="submit" variant="dark" size="sm">
-            {t("studio.editor.export.quoteAction")}
-          </Button>
-        </form>
-      ) : (
-        <PopoverItem
-          icon={<ReceiptText size={14} />}
-          label={t("studio.editor.export.quote")}
-          sub={t("studio.editor.export.quoteSub")}
-          onClick={() => setQuoting(true)}
-        />
-      )}
-      <PlacementSheetMenuItem onDone={close} />
-      {tryOnAllowed === false ? (
-        <PopoverItem locked icon={<ScanFace size={14} />} label={t("studio.tryOn.action")} sub={withPlan("tryOn")} onClick={() => showLocked("tryOn")} />
-      ) : tryOnAllowed && !saved ? (
-        // Try-on renders the saved creation (read by the function from the database): shown greyed until then.
-        <PopoverItem
-          icon={<ScanFace size={14} />}
-          label={t("studio.tryOn.action")}
-          notice={t(snap.jewels.length === 0 ? "studio.tryOn.editorNoticeEmpty" : "studio.tryOn.editorNoticeSave")}
-          onClick={() => {}}
-        />
-      ) : (
-        tryOnAllowed &&
-        saved && (
-          <PopoverItem
-            icon={<ScanFace size={14} />}
-            label={t("studio.tryOn.action")}
-            sub={t("studio.tryOn.editorSub")}
-            onClick={() => {
-              close();
-              openWorkspaceDialog({ kind: "tryOn", creation: saved });
-            }}
-          />
-        )
-      )}
-
       {bookArtist && (
         <>
           <PopoverSeparator />
@@ -401,7 +398,6 @@ export function ShareExportMenu() {
           />
         </>
       )}
-
       {staff && (
         <>
           <PopoverSeparator />

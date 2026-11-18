@@ -15,25 +15,26 @@ import type { SceneModel } from "../studioWorkspace/scene";
 import { ARCH_FRAME_BY_ID } from "./archLayout";
 import { DENTITION_CROWNS, type CrownFrame } from "./dentition";
 import { longAxis } from "./pieceScale";
+import { SMILE_CROWNS, SMILE_TEETH } from "./smileDentition";
 
 /**
  * The front projection of a design: both arches as seen from in front of the
  * patient, with every piece at its place on its tooth — what the try-on fits
  * onto a photo (`tryOnRegistration.ts`). The drawing people read (the "front
- * view" panels, the placement sheet) is the flat view of `flatView.ts`, which
+ * view" panels, the placement sheet) is the front render of `renderView.ts`, which
  * shares this module's seats, numbering and gem outlines.
  *
- * The teeth are the Studio's default dentition (`DENTITION_CROWNS`) in a
- * front orthographic projection: each crown spans its calibrated width along
- * the arch, foreshortened by how much it faces the viewer, and its calibrated
- * height. Every piece is expressed as a seat on its tooth — across and up,
- * as fractions of the crown, the engine's own `captureSeats` — in the frame
- * of the model it was placed on (the dentition, or the procedural reference
- * arch `ARCH_FRAMES`, upper arch only), then put on the same drawn crown. On
- * the dentition's front teeth that is the orthographic projection itself
- * (world x → right, world y → up). Pieces on an
- * imported model, or off the labelled teeth, have no known tooth frame: they
- * are numbered and listed, never drawn at a guessed place.
+ * The teeth are the reference anatomy (`DENTITION_CROWNS`: a real adult
+ * dentition, measured on the scan the Studio used before its procedural
+ * dentition) in a front orthographic projection: each crown spans its
+ * calibrated width along the arch, foreshortened by how much it faces the
+ * viewer, and its calibrated height. Every piece is expressed as a seat on
+ * its tooth — across and up, as fractions of the crown, the engine's own
+ * `captureSeats` — in the frame of the model it was placed on (the Studio's
+ * dentition `SMILE_CROWNS`, the scan, or the procedural reference arch
+ * `ARCH_FRAMES`, upper arch only), then put on the same drawn crown. Pieces
+ * on an imported model, or off the labelled teeth, have no known tooth frame:
+ * they are numbered and listed, never drawn at a guessed place.
  *
  * Coordinates: millimetres in the drawing's frame, x to the viewer's right
  * (the patient's left), y DOWN (SVG convention). `box` is the frame around
@@ -66,6 +67,12 @@ export interface FrontViewTooth {
   pointed: boolean;
   /** The tooth's type: what its crown looks like. */
   kind: ToothKey;
+  /**
+   * Which way its outer face looks, radians around the vertical axis: 0 straight
+   * at the viewer (the central incisors), positive toward the viewer's right.
+   * The try-on reads it to see how much the photo's angle changes the tooth's width.
+   */
+  yaw?: number;
 }
 
 /** Where a piece is drawn. */
@@ -92,6 +99,8 @@ export interface FrontViewPoint {
   v: number;
   /** `back`: the piece sits on the tongue side of its tooth — hidden from the front. */
   facing: "front" | "back";
+  /** The way the piece's face looks, world frame (x to the viewer's right, y up, z toward the viewer), unit length: how far it is turned from the front. */
+  normal?: { x: number; y: number; z: number };
 }
 
 export interface FrontViewGem {
@@ -124,6 +133,11 @@ export interface FrontViewProjection {
 const MARGIN = 2;
 
 const byFdi = new Map(DENTITION_CROWNS.map((c) => [c.fdi, c]));
+/** The crown frames of each built-in model whose crowns are calibrated: where a piece's seat is measured. */
+const CROWNS_BY_MODEL: Partial<Record<SceneModel, Map<string, CrownFrame>>> = {
+  smile: new Map(SMILE_CROWNS.map((c) => [c.fdi, c])),
+  dentition: byFdi,
+};
 const halfWidth = (c: CrownFrame) => (c.alongMinus + c.alongPlus) / 2;
 const halfHeight = (c: CrownFrame) => (c.top - c.bottom) / 2;
 
@@ -139,6 +153,7 @@ function toothOf(c: CrownFrame): FrontViewTooth {
     incisal: c.lower ? -c.top : -c.bottom,
     pointed: key === "canine",
     kind: key ?? "central",
+    yaw: Math.atan2(c.outward.x, c.outward.z),
   };
 }
 
@@ -159,18 +174,41 @@ export const FRONT_VIEW_BOX: FrontViewBox = (() => {
 const dot = (a: { x: number; z: number }, b: { x: number; z: number }) => a.x * b.x + a.z * b.z;
 
 /**
+ * Bounds of a seat for the drawings: the crown's own edges (a seat of
+ * 1 / 0.6 across is its side, 1 / 0.55 up its gum line or biting edge).
+ * The engine's `captureSeats` stops at ±1.4 — enough to move a piece to
+ * another model, but on a drawing it pinned every piece of the crown's top
+ * third (beyond 77 % of its half height) on one row: a heart's two lobes
+ * came out flat, on the panels and on the map the try-on sends to the AI.
+ * Past the gum line, on the lower half of the Studio's domes
+ * (`DOME_PLACEABLE`, up to ~2.45), a seat is drawn only a little beyond the
+ * drawn crown, its height kept in order but squeezed (`SEAT_V_PAST`): the
+ * drawings have no dome, and pieces there must neither stack on one row nor
+ * float on the drawn gum.
+ */
+const SEAT_U_MAX = 1 / 0.6;
+const SEAT_V_EDGE = 1 / 0.55;
+const SEAT_V_MAX = 2.5;
+const SEAT_V_PAST = 0.45;
+
+/**
  * Where a piece sits on its tooth, in the frame of the model it was placed
  * on — the engine's `captureSeats`, without three.js. Null: no known frame.
  */
 export function seatOnTooth(piece: PlacedJewelry, model: SceneModel): { u: number; v: number; facing: "front" | "back" } | null {
-  const clamp = (n: number) => Math.min(1.4, Math.max(-1.4, n));
-  if (model === "dentition") {
-    const c = byFdi.get(piece.toothId);
+  const clampU = (n: number) => Math.min(SEAT_U_MAX, Math.max(-SEAT_U_MAX, n));
+  const clampV = (n: number) => {
+    const a = Math.min(SEAT_V_MAX, Math.abs(n));
+    return Math.sign(n) * (a <= SEAT_V_EDGE ? a : SEAT_V_EDGE + (a - SEAT_V_EDGE) * SEAT_V_PAST);
+  };
+  const crowns = CROWNS_BY_MODEL[model];
+  if (crowns) {
+    const c = crowns.get(piece.toothId);
     if (!c) return null;
     const rel = { x: piece.position.x - c.center.x, y: piece.position.y - c.center.y, z: piece.position.z - c.center.z };
     return {
-      u: clamp(dot(rel, c.tangent) / (halfWidth(c) * 0.6)),
-      v: clamp(rel.y / (halfHeight(c) * 0.55)),
+      u: clampU(dot(rel, c.tangent) / (halfWidth(c) * 0.6)),
+      v: clampV(rel.y / (halfHeight(c) * 0.55)),
       facing: dot(piece.normal, c.outward) < 0 ? "back" : "front",
     };
   }
@@ -179,8 +217,8 @@ export function seatOnTooth(piece: PlacedJewelry, model: SceneModel): { u: numbe
     if (!f) return null;
     const rel = { x: piece.position.x - f.center.x, y: piece.position.y - f.center.y, z: piece.position.z - f.center.z };
     return {
-      u: clamp(dot(rel, f.tangent) / (f.spec.wHalf * 0.6)),
-      v: clamp(rel.y / (f.spec.hHalf * 0.55)),
+      u: clampU(dot(rel, f.tangent) / (f.spec.wHalf * 0.6)),
+      v: clampV(rel.y / (f.spec.hHalf * 0.55)),
       facing: dot(piece.normal, f.outward) < 0 ? "back" : "front",
     };
   }
@@ -190,6 +228,26 @@ export function seatOnTooth(piece: PlacedJewelry, model: SceneModel): { u: numbe
 /** A piece's seat on its tooth, as `seatOnTooth` measures it. */
 export type FrontViewSeat = NonNullable<ReturnType<typeof seatOnTooth>>;
 
+/** Each tooth of the Studio's dentition: the share of its visible height (biting edge → top of the dome) that is the crown. */
+const CROWN_SHARE = new Map(SMILE_TEETH.map((t) => [t.fdi, t.crown.crownHeight / (t.crown.crownHeight + t.crown.domeHeight)]));
+
+/**
+ * How high a seat sits on its tooth as the editor shows it: 0 at the biting
+ * edge, 1 at the top of the dome (2026-11-18). The editor draws no gum, so
+ * people read the whole white tooth, dome included, as the tooth; the seat's
+ * `v` measures the crown only (biting edge → gum line). Pictures of a tooth
+ * — the front render's teeth, a photo's — span the tooth people see, so a
+ * piece is put on them at this share: measured on the crown alone, a gem in
+ * the middle of the tooth on screen was drawn in its upper third, and on
+ * the photo it landed near the gum.
+ */
+export function visibleToothShare(fdi: string, v: number): number {
+  const crown = CROWN_SHARE.get(fdi) ?? 1;
+  // `v` is world up: toward the gum on an upper tooth, toward the biting edge on a lower one.
+  const towardGum = isLowerTooth(fdi) ? -v : v;
+  return ((1 + towardGum * 0.55) / 2) * crown;
+}
+
 /**
  * A drawing of the dentition a design can be projected onto: its frame, its
  * teeth, and where a seat on a tooth lands (mm, y down; null: tooth not drawn).
@@ -197,7 +255,8 @@ export type FrontViewSeat = NonNullable<ReturnType<typeof seatOnTooth>>;
 export interface FrontViewLayout {
   box: FrontViewBox;
   teeth: FrontViewTooth[];
-  place: (fdi: string, seat: FrontViewSeat) => { x: number; y: number } | null;
+  /** `scale`: the piece's size on this tooth (default 1), below 1 on a drawn tooth seen at an angle. */
+  place: (fdi: string, seat: FrontViewSeat) => { x: number; y: number; scale?: number } | null;
 }
 
 /**
@@ -222,7 +281,7 @@ function pointOf(piece: PlacedJewelry, model: SceneModel, layout: FrontViewLayou
   const point = seat ? layout.place(piece.toothId, seat) : null;
   if (!seat || !point) return null;
   const { x, y } = point;
-  const r = piece.scale;
+  const r = piece.scale * (point.scale ?? 1);
   const box = layout.box;
   return {
     x,
@@ -236,7 +295,13 @@ function pointOf(piece: PlacedJewelry, model: SceneModel, layout: FrontViewLayou
     u: seat.u,
     v: seat.v,
     facing: seat.facing,
+    normal: unitNormal(piece.normal),
   };
+}
+
+function unitNormal(n: { x: number; y: number; z: number }): { x: number; y: number; z: number } | undefined {
+  const len = Math.hypot(n.x, n.y, n.z);
+  return len > 1e-6 ? { x: n.x / len, y: n.y / len, z: n.z / len } : undefined;
 }
 
 /** Position of a tooth in reading order (upper arch left → right, then lower), for pieces that are not drawn. */
@@ -269,7 +334,7 @@ export function projectFrontView(pieces: readonly PlacedJewelry[], model: SceneM
   return projectOnto(FRONT_LAYOUT, pieces, model);
 }
 
-/** `projectFrontView` on another drawing of the dentition (the flat view, `flatView.ts`): same numbering and order rules. */
+/** `projectFrontView` on another drawing of the dentition (the front render, `renderView.ts`): same numbering and order rules. */
 export function projectOnto(layout: FrontViewLayout, pieces: readonly PlacedJewelry[], model: SceneModel): FrontViewProjection {
   const entries = pieces.map((piece) => ({ piece, at: pointOf(piece, model, layout) }));
   const tieBreak = (a: PlacedJewelry, b: PlacedJewelry) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
@@ -437,23 +502,62 @@ export function glyphStretch(shape: StudioShape, size: GemSize): [number, number
 }
 
 /**
+ * A gem seen at an angle: its outline is pressed by `k` (0..1) along the
+ * on-screen direction `angle` (degrees, clockwise, y down) it leans toward.
+ */
+export interface Squash {
+  angle: number;
+  k: number;
+}
+
+/**
+ * How a gem whose face looks along `normal` (unit, world frame: x right, y up,
+ * z toward the viewer) is seen from a camera turned `yawDeg` degrees around the
+ * vertical axis (0: straight in front; positive: toward the viewer's right).
+ * Orthographic: a disc seen at an angle becomes an ellipse pressed by the
+ * cosine of the angle along the direction its face leans toward. Null when it
+ * faces the camera, or faces away.
+ */
+export function gemSquash(normal: { x: number; y: number; z: number } | undefined, yawDeg = 0): Squash | null {
+  if (!normal) return null;
+  const a = (yawDeg * Math.PI) / 180;
+  const toward = normal.x * Math.sin(a) + normal.z * Math.cos(a);
+  const right = normal.x * Math.cos(a) - normal.z * Math.sin(a);
+  if (toward <= 0.05 || toward >= 0.9995) return null;
+  return { angle: (Math.atan2(-normal.y, right) * 180) / Math.PI, k: toward };
+}
+
+/**
  * A gem's silhouette placed on the drawing: the 16-unit outline centred on
  * the gem, turned by its rotation and scaled to its real size (per axis, by
  * `stretch` when given).
  */
 export function gemOutline(
   shape: StudioShape,
-  at: Pick<FrontViewPoint, "x" | "y" | "r" | "rotation"> & { stretch?: readonly [number, number] },
+  at: Pick<FrontViewPoint, "x" | "y" | "r" | "rotation"> & { stretch?: readonly [number, number]; squash?: Squash | null },
 ): FrontViewPathCommand[] {
   const s = (at.r * 2) / GLYPH_SPAN;
   const [kx, ky] = at.stretch ?? [1, 1];
   const a = (at.rotation * Math.PI) / 180;
   const cos = Math.cos(a);
   const sin = Math.sin(a);
+  const sq = at.squash && at.squash.k < 1 ? at.squash : null;
+  const sa = sq ? (sq.angle * Math.PI) / 180 : 0;
+  const dx = Math.cos(sa);
+  const dy = Math.sin(sa);
   const map = (gx: number, gy: number): [number, number] => {
     const lx = (gx - 8) * s * kx;
     const ly = (gy - 8) * s * ky;
-    return [at.x + lx * cos - ly * sin, at.y + lx * sin + ly * cos];
+    let px = lx * cos - ly * sin;
+    let py = lx * sin + ly * cos;
+    if (sq) {
+      // Seen at an angle, the outline shrinks along the direction the gem leans toward.
+      const along = px * dx + py * dy;
+      const pull = (sq.k - 1) * along;
+      px += pull * dx;
+      py += pull * dy;
+    }
+    return [at.x + px, at.y + py];
   };
   return (SHAPE_OUTLINES[shape] ?? SHAPE_OUTLINES.round).map((cmd): FrontViewPathCommand => {
     if (cmd[0] === "Z") return cmd;
