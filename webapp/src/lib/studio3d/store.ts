@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from "react";
-import { sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
+import { FREE_TOOTH, sanitizeJewels, type PlacedJewelry, type Vec3 } from "../../data/studioEditor";
 import { sizeKey } from "../gemOptions";
 import type { PieceSpec } from "./gemCatalog";
 import { uid, v3 } from "./math";
-import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGroupRef, type StudioScene } from "../studioWorkspace/scene";
+import { DEFAULT_MODEL_SHADE, isModelShade, type ModelShade } from "./modelShades";
+import { designKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGroupRef, type StudioScene } from "../studioWorkspace/scene";
 
 /**
  * State of the design being composed in the 3D Studio.
@@ -20,11 +21,14 @@ import { piecesKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGrou
  */
 
 /**
- * The model on stage: the default dentition scan, the procedural reference
- * arch (its fallback), or an imported model with separate teeth / merged.
+ * A model a design is placed on. On stage: the Studio's dentition (`smile`,
+ * `smileDentition.ts`), or an imported model with separate teeth / merged.
+ * Designs saved earlier name the model they were made on and are re-seated
+ * tooth by tooth when they open: the former default scan (`dentition`, until
+ * 2026-11-17) and the procedural reference arch before it (`studio`).
  */
-export type ModelMode = "dentition" | "studio" | "teeth" | "free";
-const MODEL_MODES: ModelMode[] = ["dentition", "studio", "teeth", "free"];
+export type ModelMode = "smile" | "dentition" | "studio" | "teeth" | "free";
+const MODEL_MODES: ModelMode[] = ["smile", "dentition", "studio", "teeth", "free"];
 const isModelMode = (v: unknown): v is ModelMode => MODEL_MODES.includes(v as ModelMode);
 export type LightPreset = "studio" | "lamp" | "daylight";
 
@@ -45,7 +49,7 @@ export interface ActiveCreation {
   /** Account the creation belongs to; the link is dropped for anyone else. */
   ownerId: string;
   name: string;
-  /** `piecesKey` of the pieces as last saved. */
+  /** `designKey` of the pieces and model colour as last saved. */
   baselineKey: string;
   /** ISO time of the last successful save or load. */
   savedAt: string;
@@ -87,6 +91,8 @@ export interface StudioSnapshot {
   modelLoading: boolean;
   issues: DesignIssue[];
   lightPreset: LightPreset;
+  /** Colour of the dental model, saved with the design. */
+  modelShade: ModelShade;
   clientName: string;
   contextMenu: ContextMenuState | null;
   canUndo: boolean;
@@ -129,7 +135,7 @@ export class DesignStore {
   placingTypeId: string | null = null;
   lasso = false;
   multiSelect = false;
-  modelMode: ModelMode = "dentition";
+  modelMode: ModelMode = "smile";
   modelLoading = true;
   issues: DesignIssue[] = [];
   /**
@@ -138,6 +144,7 @@ export class DesignStore {
    */
   designModel: ModelMode = "studio";
   lightPreset: LightPreset = "studio";
+  modelShade: ModelShade = DEFAULT_MODEL_SHADE;
   clientName = "";
   contextMenu: ContextMenuState | null = null;
   groups: SceneGroupRef[] = [];
@@ -169,12 +176,14 @@ export class DesignStore {
       jewels?: unknown;
       clientName?: unknown;
       model?: unknown;
+      modelShade?: unknown;
       groups?: unknown;
       active?: unknown;
     } | null;
     if (data && typeof data === "object") {
       this.jewels = sanitizeJewels(data.jewels);
       if (isModelMode(data.model)) this.designModel = data.model;
+      if (isModelShade(data.modelShade)) this.modelShade = data.modelShade;
       this.restored = this.jewels.length > 0;
       if (typeof data.clientName === "string") this.clientName = data.clientName.slice(0, CLIENT_NAME_MAX);
       this.groups = sanitizeScene({ pieces: this.jewels, groups: data.groups }).groups;
@@ -218,6 +227,7 @@ export class DesignStore {
       modelLoading: this.modelLoading,
       issues: this.issues,
       lightPreset: this.lightPreset,
+      modelShade: this.modelShade,
       clientName: this.clientName,
       contextMenu: this.contextMenu,
       canUndo: this.past.length > 0,
@@ -473,6 +483,13 @@ export class DesignStore {
       this.commit();
     }
   }
+  /** Not an edit of the pieces: no undo step, but a change to save. */
+  setModelShade(shade: ModelShade) {
+    if (this.modelShade !== shade) {
+      this.modelShade = shade;
+      this.commit();
+    }
+  }
   setClientName(n: string) {
     this.clientName = n.slice(0, CLIENT_NAME_MAX);
     this.commit();
@@ -519,7 +536,7 @@ export class DesignStore {
     this.multiSelect = false;
     this.contextMenu = null;
     // The next editor session loads the default dentition afresh.
-    this.modelMode = "dentition";
+    this.modelMode = "smile";
     this.modelLoading = true;
     this.issues = [];
     this.commit();
@@ -533,6 +550,7 @@ export class DesignStore {
       jewels: this.jewels,
       clientName: this.clientName,
       model: this.designModel,
+      modelShade: this.modelShade,
       groups: pruneGroups(this.groups, this.jewels),
       active: this.active,
     });
@@ -547,6 +565,7 @@ export class DesignStore {
       model: extra.model,
 
       lightPreset: this.lightPreset,
+      modelShade: this.modelShade,
       camera: extra.camera,
       pieces: structuredClone(this.jewels),
       groups: pruneGroups(structuredClone(this.groups), this.jewels),
@@ -563,6 +582,7 @@ export class DesignStore {
     this.jewels = clean.pieces;
     this.groups = clean.groups;
     this.lightPreset = clean.lightPreset;
+    this.modelShade = clean.modelShade;
     this.stepBase = null;
     this.past = [];
     this.future = [];
@@ -570,7 +590,7 @@ export class DesignStore {
     this.selectedToothId = null;
     this.armedTypeId = null;
     this.contextMenu = null;
-    this.active = active ? { ...active, baselineKey: piecesKey(this.jewels) } : null;
+    this.active = active ? { ...active, baselineKey: designKey(this.jewels, this.modelShade) } : null;
     this.designModel = clean.model;
     this.pendingLoad = { camera: clean.camera, model: clean.model };
     this.restored = false;
@@ -595,7 +615,7 @@ export class DesignStore {
     if (model) this.designModel = model;
     // Not an edit: no step may come of it.
     this.stepBase = null;
-    const wasClean = !!this.active && this.active.baselineKey === piecesKey(this.jewels);
+    const wasClean = !!this.active && this.active.baselineKey === designKey(this.jewels, this.modelShade);
     if (updates.length) {
       const map = new Map(updates.map((u) => [u.id, u.patch]));
       this.jewels = this.jewels.map((j) => {
@@ -603,13 +623,13 @@ export class DesignStore {
         return patch ? { ...j, ...patch } : j;
       });
     }
-    if (wasClean && this.active) this.active = { ...this.active, baselineKey: piecesKey(this.jewels) };
+    if (wasClean && this.active) this.active = { ...this.active, baselineKey: designKey(this.jewels, this.modelShade) };
     this.commit();
   }
 
   /** Link the stage to a creation that was just saved with exactly these pieces. */
-  markSaved(active: Omit<ActiveCreation, "baselineKey">, savedPieces: PlacedJewelry[]) {
-    this.active = { ...active, baselineKey: piecesKey(savedPieces) };
+  markSaved(active: Omit<ActiveCreation, "baselineKey">, saved: Pick<StudioScene, "pieces" | "modelShade">) {
+    this.active = { ...active, baselineKey: designKey(saved.pieces, saved.modelShade) };
     this.commit();
     this.saveNow();
   }
@@ -668,6 +688,30 @@ function readActive(input: unknown): ActiveCreation | null {
 /** The one design of this browser tab. Created when the editor chunk first loads. */
 export const studioStore = new DesignStore();
 
+/** The whole design and editor state: the component re-renders on every change. */
 export function useStudio(): StudioSnapshot {
   return useSyncExternalStore(studioStore.subscribe, studioStore.getSnapshot);
+}
+
+/**
+ * One part of the state: the component re-renders only when it changes (a
+ * panel showing the gem armed for placing ignores a piece being moved).
+ * `select` must give the same value for the same state: a snapshot field (the
+ * store replaces a field's array or object only when it changes) or a
+ * primitive, never an object built on the spot.
+ */
+export function useStudioSelector<T>(select: (snap: StudioSnapshot) => T): T {
+  return useSyncExternalStore(studioStore.subscribe, () => select(studioStore.getSnapshot()));
+}
+
+/**
+ * The tooth a gem or a group from the panel goes to without a drag: the
+ * selected tooth, else the tooth of the (first) selected piece, else null.
+ * Pieces off the labelled teeth name none.
+ */
+export function targetToothOf(snap: Pick<StudioSnapshot, "jewels" | "selectedJewelIds" | "selectedToothId">): string | null {
+  if (snap.selectedToothId && snap.selectedToothId !== FREE_TOOTH) return snap.selectedToothId;
+  const first = snap.selectedJewelIds[0];
+  const piece = first ? snap.jewels.find((j) => j.id === first) : undefined;
+  return piece && piece.toothId !== FREE_TOOTH ? piece.toothId : null;
 }

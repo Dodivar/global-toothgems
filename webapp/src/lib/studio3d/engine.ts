@@ -13,7 +13,9 @@ import {
   type ToothSpec,
   type Vec3,
 } from "../../data/studioEditor";
-import { crownAt, DENTITION_CROWNS, DENTITION_FIT } from "./dentition";
+import { DENTITION_CROWNS } from "./dentition";
+import { buildSmileMeshes, SMILE_CROWNS, SMILE_TEETH } from "./smileDentition";
+import { easeJaw, JAW_HINGE, jawPose, loopOpenness, MOUTH_LOOP, MOUTH_TWEEN_MS } from "./jawMotion";
 import {
   createToothGeometry,
   disposeGeometryCaches,
@@ -26,38 +28,37 @@ import {
 import { pieceSpec, type PieceSpec } from "./gemCatalog";
 import { maxFaceScale, scaleAxes, type ScaleAxes } from "./pieceScale";
 import { currentEstimate, studioGem } from "./gemRegistry";
-import { ARCH_K, backOut, clamp, easeInOutCubic, pointInPolygon, seeded, ss01, uid, v3, xForArc, type Point2 } from "./math";
+import { backOut, clamp, easeInOutCubic, pointInPolygon, uid, v3, type Point2 } from "./math";
 import { ARCH_FRAMES } from "./archLayout";
 import { anchorToothOf, groupToWorld, piecesToGroup, type Frame, type GemGroupData } from "../studioWorkspace/gemGroup";
 import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
 import { alignedColumn, alignedHeights, centeredOffsets, type CenterItem } from "./layout";
 import { mirroredRotation, opposingTooth } from "./mirror";
+import { groupBox, groupDuplicateMoves } from "./groupDuplicate";
 import { notify } from "./notices";
+import { DEFAULT_MODEL_SHADE, modelShadeSpec, type ModelShade } from "./modelShades";
 import type { DesignIssue, DesignStore, LightPreset, ModelMode } from "./store";
-
-/* An asset URL both bundlers resolve and fingerprint (Vite's `?url` suffix is
-   not understood by Next.js). */
-const dentitionUrl = new URL("../../assets/studio3d/dentition.glb", import.meta.url).href;
 
 /**
  * The 3D Studio's renderer and interaction controller.
  *
- * Owns one WebGL canvas: the scene (the default dentition scan, the
- * procedural reference arch as a fallback, or an imported model), the camera
- * rig, the placement / drag / collision logic, the design check and the
- * exports. It reads and writes the design only through the `DesignStore`, and
- * reports to the customer only through `notify` (translation keys), so it
- * holds no copy and no UI of its own.
+ * Owns one WebGL canvas: the scene (the Studio's dentition, built in the
+ * browser by `smileDentition.ts`, or an imported model), the camera rig, the
+ * placement / drag / collision logic, the design check and the exports. It
+ * reads and writes the design only through the `DesignStore`, and reports to
+ * the customer only through `notify` (translation keys), so it holds no copy
+ * and no UI of its own.
  *
  * Rendering is on demand: a frame is drawn while something moves (camera,
  * lights, animations, a drag) and for a short settle period after, then the
  * loop idles instead of redrawing an unchanged scene sixty times a second.
  */
 
-/* Scanned dentitions run to hundreds of thousands of triangles, and placement
-   raycasts them hundreds of times per gesture (collision search, snapping).
-   A bounding-volume hierarchy turns each of those rays from ~18 ms into a few
-   microseconds. Meshes without a hierarchy (the pieces) raycast as before. */
+/* Dentitions run to a hundred thousand triangles and more (an imported scan
+   to several hundred thousand), and placement raycasts them hundreds of times
+   per gesture (collision search, snapping). A bounding-volume hierarchy turns
+   each of those rays from milliseconds into a few microseconds. Meshes
+   without a hierarchy (the pieces) raycast as before. */
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -80,7 +81,7 @@ interface DragFollower {
 interface ToothRig {
   id: string;
   mesh: THREE.Object3D;
-  materials: THREE.MeshPhysicalMaterial[];
+  materials: THREE.MeshStandardMaterial[];
   spec: ToothSpec;
   highlight: number;
   imported: boolean;
@@ -89,6 +90,12 @@ interface ToothRig {
   center: THREE.Vector3;
   outward: THREE.Vector3;
   tangent: THREE.Vector3;
+  /**
+   * The visible crown, as world y (biting edge to gum line), where its mesh
+   * goes on past the gum line: the Studio's dentition, whose crowns end in a
+   * dome where the gum would be. A piece never sits on that dome.
+   */
+  band?: { bottom: number; top: number };
 }
 interface JewelRig {
   id: string;
@@ -158,6 +165,12 @@ const OVERLAP_DEPTH = 1.5;
 const ALIGN_MAX_DRIFT = 3;
 /** Aligning on screen may seat a piece this far past the edge of the facet it rests on (world units, ~mm). */
 const ALIGN_FACET_SLACK = 0.5;
+/**
+ * How much a copied group may open up, tried in order. Pieces set edge to edge
+ * would otherwise bump into each other on a crown curved a little more than
+ * theirs; a few per cent keeps the shape and the copies apart.
+ */
+const GROUP_SPREADS = [1, 1.06, 1.12];
 function poseOf(j: PlacedJewelry): GemPose {
   return { shape: j.look.shape, scale: j.scale, axes: scaleAxes(j.look.shape, j.size), offset: j.offset ?? 0, rotation: j.rotation };
 }
@@ -193,6 +206,7 @@ const _n = new THREE.Vector3(),
   _nn = new THREE.Vector3();
 const _sa = new THREE.Vector3(),
   _sb = new THREE.Vector3();
+const _jawCorner = new THREE.Vector3();
 const _q1 = new THREE.Quaternion(),
   _q2 = new THREE.Quaternion(),
   _q3 = new THREE.Quaternion();
@@ -234,7 +248,7 @@ interface StageFrame {
   floorY: number;
   views: Record<"front" | "top" | "side" | "reset", THREE.Vector3>;
 }
-/** The procedural reference arch, and imported models fitted to its size. */
+/** Imported models, fitted to the size of the procedural reference arch (`GLB_FIT`). */
 const ARCH_STAGE: StageFrame = {
   target: new THREE.Vector3(0, 0.5, -6),
   halfWidth: 31,
@@ -247,14 +261,16 @@ const ARCH_STAGE: StageFrame = {
   },
 };
 /**
- * The default dentition, at real size: both arches in occlusion around the
- * origin, socles above and below. The upper socle hides the teeth from
- * straight above, so "top" is the highest view that still sees the crowns.
+ * The Studio's dentition, at real size: both arches slightly apart around
+ * the origin, from the upper domes (~14 mm up) to the lower ones (~14.5 mm
+ * down), the second molars' buccal faces ~38 mm either side of the midline.
+ * Straight above, the upper crowns' domes hide their faces, so "top" is a
+ * high view that still sees the crowns.
  */
-const DENTITION_STAGE: StageFrame = {
+const SMILE_STAGE: StageFrame = {
   target: new THREE.Vector3(0, 0, -9),
-  halfWidth: 38,
-  floorY: -DENTITION_FIT.origin.y * DENTITION_FIT.scale - 0.05,
+  halfWidth: 40,
+  floorY: -15.5,
   views: {
     front: new THREE.Vector3(0, 2, 88),
     top: new THREE.Vector3(0, 40, 78),
@@ -282,23 +298,24 @@ const WARM_UP_LOOKS = [
 /** Largest model file accepted for import, in bytes. */
 export const MAX_MODEL_BYTES = 60 * 1024 * 1024;
 
-/** The default dentition file, fetched once per page and kept for "reset". */
-let dentitionBuffer: Promise<ArrayBuffer> | null = null;
-function fetchDentition(): Promise<ArrayBuffer> {
-  dentitionBuffer ??= fetch(dentitionUrl).then((r) => {
-    if (!r.ok) throw new Error(`dentition ${r.status}`);
-    return r.arrayBuffer();
-  });
-  // A failed fetch is not cached: the next attempt retries.
-  dentitionBuffer.catch(() => {
-    dentitionBuffer = null;
-  });
-  return dentitionBuffer;
-}
+/**
+ * The finish of the Studio's dentition: a smooth, cool porcelain white, as
+ * on the brand's reference smile. A standard finish, not a physical one: a
+ * clear coat would add its own lighting pass on every crown, drawn twice a
+ * frame once a crystal is on stage. Each crown wears its own copy, so the
+ * hover and selection glow lights one tooth only. The colour here is the
+ * default one; the design's own (`modelShades.ts`) is painted by `paintSmile`.
+ */
+const SMILE_ENAMEL = {
+  color: 0xcbd6e3,
+  roughness: 0.36,
+  envMapIntensity: 0.7,
+} as const;
 
 /** How the model a design was made on is named in the JSON export. */
 const EXPORT_MODEL_NAMES: Record<ModelMode, string> = {
-  dentition: "default-dentition",
+  smile: "default-dentition",
+  dentition: "scan-dentition",
   studio: "studio-arch",
   teeth: "custom-teeth",
   free: "custom-free",
@@ -306,6 +323,8 @@ const EXPORT_MODEL_NAMES: Record<ModelMode, string> = {
 
 /** A piece counts as seated when the surface is found this close to its stored contact point, in mm. */
 const SEAT_TOLERANCE = 0.6;
+/** How far past its visible crown (`ToothRig.band`) a point still counts as on the tooth, in mm. */
+const CROWN_BAND_SLACK = 0.4;
 
 const prefersReducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -373,6 +392,15 @@ const PICK_OCCLUSION_SLACK = 0.3;
 /** Near-flush mount gap: the piece's back almost kisses the enamel. */
 function mountGap(scale: number, manualOffset = 0): number {
   return 0.04 + 0.04 * scale + manualOffset;
+}
+
+/** The mouth opening, for the inspector: offered on the default dentition only. */
+export interface MouthState {
+  available: boolean;
+  /** Open, or opening (not the loop). */
+  open: boolean;
+  /** The open-and-close loop is playing. */
+  looping: boolean;
 }
 
 /**
@@ -452,6 +480,8 @@ export class StudioEngine {
   private raycaster = new THREE.Raycaster();
   private container: HTMLElement;
   private dentitionGroup: THREE.Group = new THREE.Group();
+  /** Colour of the Studio's dentition (`modelShades.ts`); an imported model keeps its own. */
+  private modelShade: ModelShade = DEFAULT_MODEL_SHADE;
   private archAnchors = new Map<string, { center: THREE.Vector3; outward: THREE.Vector3; tangent: THREE.Vector3 }>();
   private toothRigs = new Map<string, ToothRig>();
   private toothMeshes: THREE.Object3D[] = [];
@@ -489,8 +519,8 @@ export class StudioEngine {
   };
 
   // model state
-  private modelMode: ModelMode = "dentition";
-  private stage: StageFrame = DENTITION_STAGE;
+  private modelMode: ModelMode = "smile";
+  private stage: StageFrame = SMILE_STAGE;
   /** False until the first model is on stage: the pieces wait for it. */
   private modelReady = false;
   /** Bumped on every model change, so a slower load that lost the race is dropped. */
@@ -498,8 +528,6 @@ export class StudioEngine {
   private mergedMode = false;
   private proxyMeshes: THREE.Mesh[] = []; // invisible reference teeth (free-mode labelling)
   private proxyGroup: THREE.Group | null = null;
-  /** Default dentition: its surface is one mesh, so crowns are told apart by calibration. */
-  private calibrated = false;
 
   // design check (overlaps, pieces off the teeth)
   private checkedJewels: PlacedJewelry[] | null = null;
@@ -544,6 +572,23 @@ export class StudioEngine {
     null;
   private autoRotate = false;
 
+  // the mouth opening (default dentition only; see `jawMotion.ts`)
+  /** The lower arch's mesh, which swings; null when the model has no separate lower arch. */
+  private lowerJaw: THREE.Object3D | null = null;
+  /** Its local matrix when closed, as the file gives it. */
+  private lowerJawRest = new THREE.Matrix4();
+  /** The lower arch's bounding box corners, closed, in world units: the floor follows the lowest. */
+  private lowerJawCorners: THREE.Vector3[] = [];
+  /** Pieces on lower teeth: drawn in this group, which carries the jaw's motion. */
+  private lowerJewels = new THREE.Group();
+  /** 0 closed … 1 wide open, as drawn. */
+  private mouthValue = 0;
+  private mouthTween: { from: number; to: number; start: number; dur: number } | null = null;
+  /** When the open-and-close loop started, or null when it is not playing. */
+  private mouthLoopStart: number | null = null;
+  private mouthListeners = new Set<() => void>();
+  private mouthState: MouthState = { available: false, open: false, looping: false };
+
   // floating selection controls (see `onSelectionAnchor`)
   private anchorListener: SelectionAnchorListener | null = null;
   private lastAnchorKey = "";
@@ -583,6 +628,7 @@ export class StudioEngine {
   constructor(container: HTMLElement, store: DesignStore, options: EngineOptions = {}) {
     this.container = container;
     this.store = store;
+    this.modelShade = store.modelShade;
     this.readOnly = options.readOnly ?? false;
     this.offscreen = options.offscreen ?? false;
     // Teeth raycasts read the nearest hit only: the hierarchy stops there
@@ -621,6 +667,8 @@ export class StudioEngine {
     // The pieces wait, hidden, until the dentition they sit on is on stage.
     this.jewelsGroup.visible = false;
     this.scene.add(this.jewelsGroup);
+    this.lowerJewels.matrixAutoUpdate = false;
+    this.jewelsGroup.add(this.lowerJewels);
 
     if (this.offscreen) this.controls.enabled = false;
     else {
@@ -723,6 +771,22 @@ export class StudioEngine {
     this.scene.add(this.floor);
   }
 
+  /** The colour of the Studio's dentition; an imported model keeps its own. */
+  setModelShade(shade: ModelShade) {
+    if (shade === this.modelShade) return;
+    this.modelShade = shade;
+    if (this.modelMode === "smile") this.paintSmile(this.dentitionGroup);
+    this.wake();
+  }
+  /** Every crown of the Studio's dentition in the current colour (each wears its own material, for the hover glow). */
+  private paintSmile(group: THREE.Object3D) {
+    const color = modelShadeSpec(this.modelShade).model;
+    group.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh) (m.material as THREE.MeshStandardMaterial).color.setHex(color);
+    });
+  }
+
   /** Lighting presets — smoothly crossfaded in the frame loop. */
   setLightPreset(p: LightPreset) {
     this.wake();
@@ -793,121 +857,66 @@ export class StudioEngine {
     });
   }
 
-  /** The procedural reference arch: the fallback when the dentition file cannot be loaded. */
-  private buildDentition() {
+  /**
+   * The Studio's dentition: one mesh per crown, each its own tooth (picked by
+   * `toothId`, lit on its own when hovered or selected), at real size.
+   */
+  private installSmile() {
     const group = new THREE.Group();
-    this.dentitionGroup = group;
-    const baseEnamel = new THREE.MeshPhysicalMaterial({
-      color: 0xf6f0e4,
-      roughness: 0.3,
-      clearcoat: 0.55,
-      clearcoatRoughness: 0.3,
-      envMapIntensity: 0.85,
-      emissive: TOOTH_HIGHLIGHT,
-      emissiveIntensity: 0,
-    });
-    this.forEachArchTooth((fdi, spec, pos, outward, tangent) => {
-      const geo = createToothGeometry(spec);
-      const mat = baseEnamel.clone();
-      mat.color.offsetHSL((seeded(fdi, 1) - 0.5) * 0.012, (seeded(fdi, 2) - 0.5) * 0.03, (seeded(fdi, 3) - 0.5) * 0.035);
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.rotation.order = "YXZ";
-      mesh.rotation.set(THREE.MathUtils.degToRad(spec.procline), Math.atan2(outward.x, outward.z), 0);
-      mesh.position.copy(pos);
-      mesh.scale.setScalar(1 + (seeded(fdi, 5) - 0.5) * 0.05);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.userData.toothId = fdi;
-      group.add(mesh);
-      this.toothMeshes.push(mesh);
+    // The two arches in their own groups: the lower one swings when the mouth opens (`installLowerJaw`).
+    const arches = { upper: new THREE.Group(), lower: new THREE.Group() };
+    arches.upper.name = "upper";
+    arches.lower.name = "lower";
+    group.add(arches.upper, arches.lower);
+    const enamel = new THREE.MeshStandardMaterial({ ...SMILE_ENAMEL, emissive: TOOTH_HIGHLIGHT, emissiveIntensity: 0 });
+    const frames = new Map(SMILE_CROWNS.map((c) => [c.fdi, c]));
+    const bands = new Map(SMILE_TEETH.map((t) => [t.fdi, t.band]));
+    for (const { fdi, mesh } of buildSmileMeshes()) {
+      const c = frames.get(fdi);
+      if (!c) continue;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(mesh.positions, 3));
+      geo.setAttribute("normal", new THREE.BufferAttribute(mesh.normals, 3));
+      geo.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
+      geo.computeBoundingSphere();
+      geo.computeBoundsTree();
+      const material = enamel.clone();
+      const crown = new THREE.Mesh(geo, material);
+      crown.castShadow = true;
+      crown.receiveShadow = true;
+      crown.userData.toothId = fdi;
+      (c.lower ? arches.lower : arches.upper).add(crown);
       this.toothRigs.set(fdi, {
         id: fdi,
-        mesh,
-        materials: [mat],
-        spec,
+        mesh: crown,
+        materials: [material],
+        spec: {
+          wHalf: (c.alongMinus + c.alongPlus) / 2,
+          hHalf: (c.top - c.bottom) / 2,
+          dHalf: c.halfDepth,
+          p: 5,
+          cervical: 0.2,
+          procline: 0,
+        },
         highlight: 0,
-        imported: false,
-        lower: false,
-        center: pos.clone(),
-        outward: outward.clone(),
-        tangent: tangent.clone(),
+        // Seated through its frame (`getSurfacePoint`): the geometry is built in world space.
+        imported: true,
+        lower: c.lower,
+        center: new THREE.Vector3(c.center.x, c.center.y, c.center.z),
+        outward: new THREE.Vector3(c.outward.x, c.outward.y, c.outward.z),
+        tangent: new THREE.Vector3(c.tangent.x, c.tangent.y, c.tangent.z),
+        band: bands.get(fdi),
       });
-    });
-    const gum = this.buildGum(this.archCenters());
-    gum.castShadow = true;
-    gum.receiveShadow = true;
-    group.add(gum);
-    this.scene.add(group);
-    this.scene.updateMatrixWorld(true);
-  }
-
-  private buildGum(centers: number[]): THREE.Mesh {
-    const hw = 2.65,
-      hh = 3.8,
-      r = 1.8,
-      segs = 6;
-    const outline: [number, number][] = [];
-    const corners = [
-      [hw - r, hh - r, 0],
-      [-hw + r, hh - r, Math.PI / 2],
-      [-hw + r, -hh + r, Math.PI],
-      [hw - r, -hh + r, (3 * Math.PI) / 2],
-    ];
-    for (const [cx, cy, a0] of corners)
-      for (let k = 0; k <= segs; k++) {
-        const a = a0 + (k / segs) * (Math.PI / 2);
-        outline.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
-      }
-    const M = outline.length;
-    const AC = -0.5,
-      BC = 4.0;
-    const S_END = centers[6] + 5.5;
-    const STATIONS = 150;
-    const positions: number[] = [],
-      indices: number[] = [];
-    for (let i = 0; i <= STATIONS; i++) {
-      const f = i / STATIONS;
-      const s = -S_END + f * S_END * 2;
-      const x = xForArc(Math.abs(s)) * (s < 0 ? -1 : 1);
-      const z = -(x * x) / ARCH_K;
-      const nl = Math.hypot((2 * x) / ARCH_K, 1);
-      const nx = (2 * x) / ARCH_K / nl,
-        nz = 1 / nl;
-      const closeEnd = ss01((Math.abs(s) - (S_END - 3)) / 3);
-      const shrink = 0.12 + 0.88 * (1 - closeEnd);
-      for (let j = 0; j < M; j++) {
-        let a = AC + outline[j][0],
-          b = BC + outline[j][1];
-        a = AC + (a - AC) * shrink;
-        b = BC + (b - BC) * shrink;
-        positions.push(x + nx * a, b, z + nz * a);
-      }
     }
-    for (let i = 0; i < STATIONS; i++)
-      for (let j = 0; j < M; j++) {
-        const j2 = (j + 1) % M;
-        const a = i * M + j,
-          b = i * M + j2,
-          c = (i + 1) * M + j2,
-          d = (i + 1) * M + j;
-        indices.push(a, c, d, a, b, c);
-      }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    geo.setIndex(indices);
-    geo.computeVertexNormals();
-    const mat = new THREE.MeshPhysicalMaterial({
-      color: 0xb96f7a,
-      roughness: 0.42,
-      clearcoat: 0.45,
-      clearcoatRoughness: 0.35,
-      envMapIntensity: 0.7,
-      side: THREE.DoubleSide,
-    });
-    return new THREE.Mesh(geo, mat);
+    enamel.dispose();
+    this.dentitionGroup = group;
+    this.paintSmile(group);
+    this.scene.add(group);
+    this.toothMeshes.push(group);
+    this.installLowerJaw(group);
   }
 
-  /* ---------- models: the default dentition, the fallback arch, imports (.glb) ---------- */
+  /* ---------- models: the Studio's dentition, imports (.glb) ---------- */
 
   private matchToothName(name: string): string | null {
     const m = (name || "").match(/(?:^|[^0-9])(1[1-7]|2[1-7])(?:$|[^0-9])/);
@@ -933,9 +942,9 @@ export class StudioEngine {
       });
     }
     this.dentitionGroup = new THREE.Group();
+    this.resetMouth();
     this.toothRigs.clear();
     this.toothMeshes.length = 0;
-    this.calibrated = false;
     // arch anchors are kept: they are the reference frame for GLB classification
   }
   private clearCustomModel() {
@@ -962,27 +971,23 @@ export class StudioEngine {
   }
 
   /**
-   * Load the default dentition (also the "reset" of an imported model). If
-   * the file cannot be fetched on the first load, the procedural reference
-   * arch takes its place, so the Studio still works; a failed reset keeps the
-   * model on stage.
+   * Put the Studio's dentition on stage (also the "reset" of an imported
+   * model). It is built in the browser (`smileDentition.ts`, a few dozen
+   * milliseconds): nothing to download, nothing that can fail to arrive.
    */
   async loadDefaultModel(): Promise<boolean> {
     const token = ++this.modelToken;
     this.cancelInteraction();
     this.store.setModelLoading(true);
+    // After the caller's turn, as a downloaded model would arrive: a design restored meanwhile is adopted by `swapModel`.
+    await Promise.resolve();
+    if (this.disposed || token !== this.modelToken) return false;
     try {
-      const root = await this.parseModel(await fetchDentition());
-      if (this.disposed || token !== this.modelToken) return false;
-      this.swapModel(() => this.installDentition(root), "dentition");
-      return true;
-    } catch {
-      if (this.disposed || token !== this.modelToken) return false;
-      if (!this.modelReady) this.swapModel(() => this.buildDentition(), "studio");
-      else this.store.setModelLoading(false);
-      notify("modelLoadFailed", undefined, "warning");
-      return false;
+      this.swapModel(() => this.installSmile(), "smile");
+    } finally {
+      if (!this.modelReady) this.store.setModelLoading(false);
     }
+    return true;
   }
 
   /** Parse a glTF file into a scene, with every mesh ready for fast raycasting. */
@@ -1034,7 +1039,7 @@ export class StudioEngine {
     this.removeDentition();
     install();
     this.scene.updateMatrixWorld(true);
-    const stage = mode === "dentition" ? DENTITION_STAGE : ARCH_STAGE;
+    const stage = mode === "smile" ? SMILE_STAGE : ARCH_STAGE;
     const stageChanged = !this.modelReady || stage !== this.stage;
     this.modelMode = mode;
     this.stage = stage;
@@ -1103,60 +1108,13 @@ export class StudioEngine {
     if (group?.parent) this.scene.remove(group);
   }
 
-  /** The Studio's own dentition: the scan, fitted at real size, its crowns known by calibration. */
-  private installDentition(root: THREE.Group) {
-    const { scale, origin } = DENTITION_FIT;
-    root.scale.setScalar(scale);
-    root.position.set(-origin.x * scale, -origin.y * scale, -origin.z * scale);
-    // One resin-like finish for the whole cast, seen from inside too where the socles are open.
-    const material = new THREE.MeshPhysicalMaterial({
-      color: 0xf3ede2,
-      roughness: 0.4,
-      clearcoat: 0.4,
-      clearcoatRoughness: 0.35,
-      envMapIntensity: 0.8,
-      side: THREE.DoubleSide,
-    });
-    root.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (!m.isMesh) return;
-      const old = Array.isArray(m.material) ? m.material : [m.material];
-      old.forEach((x) => x.dispose());
-      m.material = material;
-    });
-    this.dentitionGroup = root;
-    this.scene.add(root);
-    this.calibrated = true;
-    this.toothMeshes.push(root);
-    for (const c of DENTITION_CROWNS) {
-      this.toothRigs.set(c.fdi, {
-        id: c.fdi,
-        mesh: root,
-        materials: [],
-        spec: {
-          wHalf: (c.alongMinus + c.alongPlus) / 2,
-          hHalf: (c.top - c.bottom) / 2,
-          dHalf: c.halfDepth,
-          p: 5,
-          cervical: 0.2,
-          procline: 0,
-        },
-        highlight: 0,
-        imported: true,
-        lower: c.lower,
-        center: new THREE.Vector3(c.center.x, c.center.y, c.center.z),
-        outward: new THREE.Vector3(c.outward.x, c.outward.y, c.outward.z),
-        tangent: new THREE.Vector3(c.tangent.x, c.tangent.y, c.tangent.z),
-      });
-    }
-  }
-
   /* ---------- keeping a design on its teeth across models ---------- */
 
-  /** Tooth frame of a model that is not on stage: known for the two built-in dentitions only. */
+  /** Tooth frame of a model that is not on stage: known for the built-in dentitions only. */
   private frameOf(model: ModelMode, toothId: string): SeatFrame | null {
-    if (model === "dentition") {
-      const c = DENTITION_CROWNS.find((x) => x.fdi === toothId);
+    const crowns = model === "smile" ? SMILE_CROWNS : model === "dentition" ? DENTITION_CROWNS : null;
+    if (crowns) {
+      const c = crowns.find((x) => x.fdi === toothId);
       if (!c) return null;
       return {
         center: new THREE.Vector3(c.center.x, c.center.y, c.center.z),
@@ -1188,9 +1146,11 @@ export class StudioEngine {
     return seats;
   }
 
-  /** The pieces re-seated on the model on stage, each on its tooth, sliding aside where a neighbour took the spot. */
-  private reseat(jewels: PlacedJewelry[], seats: Map<string, Seat>): PlacedJewelry[] {
-    const blockers: Blocker[] = [];
+  /**
+   * The pieces re-seated on the model on stage, each on its tooth, sliding
+   * aside where a neighbour (or one of `blockers`) took the spot.
+   */
+  private reseat(jewels: PlacedJewelry[], seats: Map<string, Seat>, blockers: Blocker[] = []): PlacedJewelry[] {
     return jewels.map((j) => {
       const seat = seats.get(j.id);
       if (!seat || !this.toothRigs.has(j.toothId)) return j; // no such tooth here: left as is, and reported
@@ -1207,19 +1167,50 @@ export class StudioEngine {
     });
   }
 
-  /** A design restored from storage, made on another model: re-seated here when that model's teeth are known. */
+  /**
+   * A design restored from storage: made on another model, re-seated here
+   * when that model's teeth are known; made on this one, its strays put back
+   * on the enamel (`reseatStrays`).
+   */
   private adoptStoredDesign() {
     const from = this.store.designModel;
-    if (from === this.modelMode) return;
+    if (from === this.modelMode) {
+      const healed = this.reseatStrays(this.store.jewels);
+      if (healed !== this.store.jewels) this.store.replaceDesign(healed, this.modelMode);
+      return;
+    }
     const seats = this.captureSeats(this.store.jewels, (id) => this.frameOf(from, id));
     this.store.replaceDesign(seats.size ? this.reseat(this.store.jewels, seats) : this.store.jewels, this.modelMode);
   }
 
   /** Pieces saved on the model `from` (a preset of the customer's), adapted to the model on stage. */
   adaptDesign(jewels: PlacedJewelry[], from: ModelMode): PlacedJewelry[] {
-    if (from === this.modelMode || !this.modelReady) return jewels;
+    if (!this.modelReady) return jewels;
+    if (from === this.modelMode) return this.reseatStrays(jewels);
     const seats = this.captureSeats(jewels, (id) => this.frameOf(from, id));
     return seats.size ? this.reseat(jewels, seats) : jewels;
+  }
+
+  /**
+   * Pieces of a design saved on the model on stage that no longer rest on
+   * its enamel: the Studio's dentition is built in code and its crowns can
+   * move a little from one release to the next. Each is re-seated at the
+   * same place of its tooth (its seat in the tooth's frame), the pieces
+   * still seated staying put and blocking. Placing never leaves a piece off
+   * the enamel, so nothing an artist did is undone. The same array when
+   * every piece is seated.
+   */
+  private reseatStrays(jewels: PlacedJewelry[]): PlacedJewelry[] {
+    this.seatCache = new WeakMap();
+    const strays = new Set(jewels.filter((j) => this.toothRigs.has(j.toothId) && !this.isSeated(j)).map((j) => j.id));
+    if (!strays.size) return jewels;
+    const seats = this.captureSeats(
+      jewels.filter((j) => strays.has(j.id)),
+      (id) => this.frameOf(this.modelMode, id),
+    );
+    if (!seats.size) return jewels;
+    const kept = jewels.filter((j) => !strays.has(j.id)).map((j) => this.jewelBlocker(j));
+    return this.reseat(jewels, seats, kept);
   }
 
   /** The model on stage, as saved with a design. */
@@ -1424,15 +1415,18 @@ export class StudioEngine {
     return best;
   }
   /**
-   * The tooth a surface hit belongs to, or null where no piece belongs (gum,
-   * socle): the calibrated crowns on the default dentition, the tooth meshes
-   * on the reference arch and tooth-mode imports. A free-mode import cannot
-   * tell, so every surface of it counts, labelled by its nearest tooth.
+   * The tooth a surface hit belongs to, or null where no piece belongs: the
+   * crown meshes of the Studio's dentition and of tooth-mode imports know
+   * their tooth, anything else (an imported gum, a socle, the dome above a
+   * crown's gum line) is no tooth. A free-mode import cannot tell, so every
+   * surface of it counts, labelled by its nearest tooth.
    */
   private toothOfHit(h: THREE.Intersection): string | null {
-    if (this.calibrated) return crownAt(h.point);
     if (this.mergedMode) return this.classifyHit(h.point);
-    return toothIdFromObject(h.object);
+    const id = toothIdFromObject(h.object);
+    const band = id ? this.toothRigs.get(id)?.band : undefined;
+    if (band && (h.point.y < band.bottom - CROWN_BAND_SLACK || h.point.y > band.top + CROWN_BAND_SLACK)) return null;
+    return id;
   }
   private raycastTeeth(): SurfaceHit | null {
     const hits = this.raycaster.intersectObjects(this.toothMeshes, true);
@@ -1595,11 +1589,20 @@ export class StudioEngine {
   private placementBlocked(hit: SurfaceHit, spec: PieceSpec): boolean {
     return this.hitBlocked(hit, specPose(spec), this.blockersFor(new Set()));
   }
-  /** Collision-aware duplication: each copy slides to the nearest free spot. */
+  /**
+   * Collision-aware duplication. Several pieces are copied as one rigid group,
+   * keeping their shape (see `groupDuplicate.ts` for the spots tried); a single
+   * piece, or a group that fits nowhere whole, has each copy slide to the
+   * nearest free spot.
+   */
   duplicateSelection(ids: string[]): number {
     const srcs = this.store.jewels.filter((j) => ids.includes(j.id));
     if (!srcs.length) return 0;
     const blockers = this.blockersFor(new Set()); // every existing piece blocks the copies
+    if (srcs.length > 1) {
+      const group = this.duplicateAsGroup(srcs, blockers);
+      if (group) return this.store.insertJewels(group);
+    }
     const copies: PlacedJewelry[] = [];
     for (const src of srcs) {
       const nrm = new THREE.Vector3(src.normal.x, src.normal.y, src.normal.z).normalize();
@@ -1625,6 +1628,100 @@ export class StudioEngine {
       blockers.push(this.jewelBlocker(copy));
     }
     return this.store.insertJewels(copies);
+  }
+  /**
+   * The pieces copied as one rigid group: their offsets from the group's centre
+   * in the anchor crown's frame (across the arch, up, outward) are kept as they
+   * are, and the group is set down whole at the first spot where every copy
+   * lands on enamel without overlapping a piece or another copy. Null when no
+   * spot takes the whole group.
+   */
+  private duplicateAsGroup(srcs: PlacedJewelry[], blockers: Blocker[]): PlacedJewelry[] | null {
+    const centroid = new THREE.Vector3();
+    for (const s of srcs) centroid.add(new THREE.Vector3(s.position.x, s.position.y, s.position.z));
+    centroid.divideScalar(srcs.length);
+    // The crown most of the pieces sit on, else the one nearest the group's centre.
+    const counts = new Map<string, number>();
+    for (const s of srcs) if (this.toothRigs.has(s.toothId)) counts.set(s.toothId, (counts.get(s.toothId) ?? 0) + 1);
+    let anchor: ToothRig | null = null;
+    let most = 0;
+    counts.forEach((n, id) => {
+      if (n > most) {
+        most = n;
+        anchor = this.toothRigs.get(id) ?? null;
+      }
+    });
+    anchor ??= this.nearestRig(centroid);
+    if (!anchor) return null;
+    const a: ToothRig = anchor;
+    const seat = centroid.clone().sub(a.center);
+    const seatAlong = seat.dot(a.tangent),
+      seatUp = seat.y,
+      seatOut = seat.dot(a.outward);
+    const pieces = srcs.map((s) => {
+      const rel = new THREE.Vector3(s.position.x, s.position.y, s.position.z).sub(centroid);
+      return { src: s, along: rel.dot(a.tangent), up: rel.y, out: rel.dot(a.outward), reach: this.jewelBlocker(s).reach };
+    });
+    const box = groupBox(pieces);
+    const moves = groupDuplicateMoves(a.id, box, {
+      // Toward the crown's middle first: that is where the room is.
+      alongRoom: seatAlong > 0 ? -1 : 1,
+      upRoom: seatUp > 0 ? -1 : 1,
+    });
+    for (const move of moves) {
+      const dst = move.kind === "tooth" ? this.toothRigs.get(move.toothId) : a;
+      if (!dst) continue;
+      // A crown's tangent may run either way round the arch: keep the group's left and right.
+      const s = dst.tangent.dot(a.tangent) < 0 ? -1 : 1;
+      const da = move.kind === "shift" ? move.along : 0;
+      const du = move.kind === "shift" ? move.up : 0;
+      for (const spread of GROUP_SPREADS) {
+        const placed = this.placeGroupAt(pieces, dst, s, seatAlong + da, seatUp + du, seatOut, spread, blockers);
+        if (placed) return placed;
+      }
+    }
+    return null;
+  }
+  /**
+   * The group set down on `dst` with its centre at the given seat and its
+   * offsets opened up by `spread`, or null if one copy does not fit.
+   */
+  private placeGroupAt(
+    pieces: { src: PlacedJewelry; along: number; up: number; out: number }[],
+    dst: ToothRig,
+    sign: number,
+    seatAlong: number,
+    seatUp: number,
+    seatOut: number,
+    spread: number,
+    blockers: Blocker[],
+  ): PlacedJewelry[] | null {
+    const taken = [...blockers];
+    const copies: PlacedJewelry[] = [];
+    for (const p of pieces) {
+      const point = dst.center
+        .clone()
+        .addScaledVector(dst.tangent, sign * (seatAlong + p.along * spread))
+        .addScaledVector(_UP, seatUp + p.up * spread)
+        .addScaledVector(dst.outward, seatOut + p.out);
+      // Straight along the crown's outward direction, the same for every copy:
+      // snapping along each piece's own (tilted) normal would slide the outer
+      // copies sideways, toward each other, on a crown curved unlike theirs.
+      const hit = this.snapToSurface(point, dst.outward, SEARCH_SNAP_REACH);
+      if (!hit) return null;
+      const pose = poseOf(p.src);
+      if (this.hitBlocked(hit, pose, taken)) return null;
+      const copy: PlacedJewelry = {
+        ...p.src,
+        id: uid(),
+        toothId: hit.toothId,
+        position: v3(hit.point.x, hit.point.y, hit.point.z),
+        normal: v3(hit.normal.x, hit.normal.y, hit.normal.z),
+      };
+      copies.push(copy);
+      taken.push(this.blockerAt(hit.point, hit.normal, pose));
+    }
+    return copies;
   }
   /**
    * Duplicate each piece straight to its mirror image, turned like a
@@ -2171,7 +2268,6 @@ export class StudioEngine {
       if (!rig) {
         rig = this.createJewelRig(j);
         this.jewelRigs.set(j.id, rig);
-        this.jewelsGroup.add(rig.group);
         rig.birth = performance.now();
       } else if (rig.shape !== j.look.shape) {
         this.buildRigContent(rig, j);
@@ -2185,6 +2281,9 @@ export class StudioEngine {
       }
       rig.sizeScale = j.scale;
       rig.sizeAxes = scaleAxes(j.look.shape, j.size);
+      // On a lower tooth the piece rides with the jaw when the mouth opens.
+      const parent = this.toothRigs.get(j.toothId)?.lower && this.lowerJaw ? this.lowerJewels : this.jewelsGroup;
+      if (rig.group.parent !== parent) parent.add(rig.group);
       if (!this.isDragged(rig)) this.applyPose(rig.group, j, rig.halfDepth);
     }
     for (const [id, rig] of Array.from(this.jewelRigs)) {
@@ -2198,6 +2297,7 @@ export class StudioEngine {
   };
   private onStoreChange = () => {
     this.shadowsDirty = true;
+    this.closeMouthForEditing();
     this.syncJewels();
     this.checkDesign();
     this.wake();
@@ -2229,8 +2329,8 @@ export class StudioEngine {
       this.controls.enabled = true;
       this.controls.update();
     }
-    // Viewing only: every press belongs to the camera.
-    if (this.readOnly) return;
+    // Viewing only, or the mouth open (a view, not a pose to edit in): every press belongs to the camera.
+    if (this.readOnly || this.mouthPosed()) return;
     if (e.button === 0 && this.store.getSnapshot().lasso) {
       // Before the piece test: a loop may well start on a piece, and must not drag it.
       e.stopPropagation();
@@ -2535,7 +2635,7 @@ export class StudioEngine {
   /** Right-click on a piece → context menu. Empty right-clicks fall through
       to OrbitControls (pan) as before. */
   private onContextMenu = (e: MouseEvent) => {
-    if (this.readOnly || e.target !== this.renderer.domElement) return;
+    if (this.readOnly || this.mouthPosed() || e.target !== this.renderer.domElement) return;
     // A finger held on the stage (Android sends it as a context menu) is the long press above.
     if (this.touchPress) {
       e.preventDefault();
@@ -2562,8 +2662,12 @@ export class StudioEngine {
   };
 
   private updateHover(e: PointerEvent) {
-    // Nothing on a viewed design can be picked up: no hover swell, no grab cursor.
+    // Nothing on a viewed design can be picked up: no hover swell, no grab cursor. Nor with the mouth open.
     if (this.readOnly) return;
+    if (this.mouthPosed()) {
+      this.clearHover();
+      return;
+    }
     const before = this.hoverJewelId;
     this.updateHoverTargets(e);
     // A piece's hover glow is drawn by the engine alone (no store change), so it wakes the loop itself.
@@ -2627,6 +2731,8 @@ export class StudioEngine {
 
   beginPlacing(gemKey: string, e: { clientX: number; clientY: number; preventDefault: () => void }) {
     if (this.placing) return;
+    // A piece is placed on the closed mouth: the drop raycasts the teeth where they rest.
+    this.snapMouthClosed();
     e.preventDefault();
     this.placing = { gemKey, startX: e.clientX, startY: e.clientY, started: false };
   }
@@ -2813,8 +2919,175 @@ export class StudioEngine {
   getAutoRotate(): boolean {
     return this.autoRotate;
   }
+
+  /* ---------- the mouth opening (see `jawMotion.ts`) ---------- */
+
+  /** Find the lower arch of the Studio's dentition, its group `lower` beside `upper`. */
+  private installLowerJaw(root: THREE.Group) {
+    const lower = root.getObjectByName("lower");
+    if (!lower || !root.getObjectByName("upper")) return;
+    root.updateMatrixWorld(true);
+    lower.updateMatrix();
+    this.lowerJaw = lower;
+    this.lowerJawRest.copy(lower.matrix);
+    lower.matrixAutoUpdate = false;
+    const box = new THREE.Box3().setFromObject(lower);
+    this.lowerJawCorners = [];
+    for (const x of [box.min.x, box.max.x])
+      for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) this.lowerJawCorners.push(new THREE.Vector3(x, y, z));
+    this.emitMouth();
+  }
+  /** The model changes: the mouth is closed and the new model decides whether it opens. */
+  private resetMouth() {
+    this.mouthTween = null;
+    this.mouthLoopStart = null;
+    this.applyMouth(0);
+    this.lowerJaw = null;
+    this.lowerJawCorners = [];
+    // Pieces on lower teeth go back to the plain group; `syncJewels` sorts them again for the next model.
+    for (const child of [...this.lowerJewels.children]) this.jewelsGroup.add(child);
+    this.emitMouth();
+  }
+  /** True while the mouth is not at rest, closed: only the camera moves then. */
+  private mouthPosed() {
+    return this.mouthValue > 0 || !!this.mouthTween || this.mouthLoopStart !== null;
+  }
+  /** Draw the jaw at this openness: the lower arch, the pieces on it, and the floor under the lowest point. */
+  private applyMouth(value: number) {
+    this.mouthValue = value;
+    const { angle, glide } = jawPose(value);
+    const { pivot } = JAW_HINGE;
+    const jaw = new THREE.Matrix4()
+      .makeTranslation(pivot.x, pivot.y, pivot.z + glide)
+      .multiply(new THREE.Matrix4().makeRotationX(angle))
+      .multiply(new THREE.Matrix4().makeTranslation(-pivot.x, -pivot.y, -pivot.z));
+    this.lowerJewels.matrix.copy(jaw);
+    this.lowerJewels.matrixWorldNeedsUpdate = true;
+    const lower = this.lowerJaw;
+    if (lower?.parent) {
+      // The jaw's motion is in world units; the mesh sits under the scaled root: local = parent⁻¹ · jaw · parent · rest.
+      const parent = lower.parent.matrixWorld;
+      lower.matrix.copy(parent).invert().multiply(jaw).multiply(parent).multiply(this.lowerJawRest);
+      lower.matrixWorldNeedsUpdate = true;
+    }
+    let drop = 0;
+    if (this.lowerJawCorners.length && value > 0) {
+      let closed = Infinity,
+        open = Infinity;
+      for (const c of this.lowerJawCorners) {
+        closed = Math.min(closed, c.y);
+        open = Math.min(open, _jawCorner.copy(c).applyMatrix4(jaw).y);
+      }
+      drop = Math.max(0, closed - open);
+    }
+    this.floor.position.y = this.stage.floorY - drop;
+  }
+  /** Advance the opening for this frame; true when the jaw moved. */
+  private stepMouth(now: number): boolean {
+    let value = this.mouthValue;
+    if (this.mouthLoopStart !== null) value = loopOpenness(now - this.mouthLoopStart);
+    else if (this.mouthTween) {
+      const tw = this.mouthTween;
+      const k = tw.dur > 0 ? Math.min(1, (now - tw.start) / tw.dur) : 1;
+      value = tw.from + (tw.to - tw.from) * easeJaw(k);
+      if (k >= 1) {
+        value = tw.to;
+        this.mouthTween = null;
+      }
+    }
+    if (value === this.mouthValue) return false;
+    this.applyMouth(value);
+    // Closed again: the design check skipped while it was open runs now.
+    if (!this.mouthPosed()) this.checkDesign();
+    return true;
+  }
+  private animateMouthTo(to: number) {
+    this.mouthLoopStart = null;
+    const from = this.mouthValue;
+    if (prefersReducedMotion() || from === to) {
+      this.mouthTween = null;
+      this.applyMouth(to);
+      if (!this.mouthPosed()) this.checkDesign();
+    } else {
+      this.mouthTween = { from, to, start: performance.now(), dur: MOUTH_TWEEN_MS * Math.abs(to - from) };
+    }
+    this.shadowsDirty = true;
+    this.wake();
+    this.emitMouth();
+  }
+  /** Something to edit was asked for (a selection, the lasso, a piece to place): the mouth closes first. */
+  private closeMouthForEditing() {
+    if (!this.mouthPosed() || this.mouthTarget() === 0) return;
+    const snap = this.store.getSnapshot();
+    if (snap.selectedJewelIds.length || snap.selectedToothId || snap.lasso || snap.placingTypeId || snap.armedTypeId) this.animateMouthTo(0);
+  }
+  /** Closed at once: a drop needs the teeth where they rest. */
+  private snapMouthClosed() {
+    if (!this.mouthPosed()) return;
+    this.mouthTween = null;
+    this.mouthLoopStart = null;
+    this.applyMouth(0);
+    this.checkDesign();
+    this.shadowsDirty = true;
+    this.wake();
+    this.emitMouth();
+  }
+  /** Where the jaw is heading: 1 open, 0 closed (the loop counts as open). */
+  private mouthTarget() {
+    if (this.mouthLoopStart !== null) return 1;
+    return this.mouthTween ? this.mouthTween.to : this.mouthValue > 0 ? 1 : 0;
+  }
+  private emitMouth() {
+    const next: MouthState = {
+      available: !!this.lowerJaw,
+      open: this.mouthLoopStart === null && this.mouthTarget() === 1,
+      looping: this.mouthLoopStart !== null,
+    };
+    const prev = this.mouthState;
+    if (prev.available === next.available && prev.open === next.open && prev.looping === next.looping) return;
+    this.mouthState = next;
+    this.mouthListeners.forEach((fn) => fn());
+  }
+  /** Whether the mouth can open on this model, and what it is doing (a stable object between changes). */
+  getMouthState(): MouthState {
+    return this.mouthState;
+  }
+  onMouthChange(fn: () => void): () => void {
+    this.mouthListeners.add(fn);
+    return () => {
+      this.mouthListeners.delete(fn);
+    };
+  }
+  /** Open or close the mouth, as a jaw would. */
+  setMouthOpen(open: boolean) {
+    if (!this.lowerJaw) return;
+    if (open) {
+      // Nothing stays selected on an open mouth: the pieces are not where they can be edited.
+      this.cancelInteraction();
+      this.store.deselect();
+    }
+    this.animateMouthTo(open ? 1 : 0);
+  }
+  /** Play the mouth opening and closing again and again, or stop it (it then closes). */
+  setMouthLoop(on: boolean) {
+    if (!this.lowerJaw) return;
+    if (!on) {
+      if (this.mouthLoopStart !== null) this.animateMouthTo(0);
+      return;
+    }
+    if (prefersReducedMotion()) return;
+    this.cancelInteraction();
+    this.store.deselect();
+    this.mouthTween = null;
+    // Start where the jaw is: from the closed mouth, or partway if it was already open.
+    const start = performance.now();
+    this.mouthLoopStart = this.mouthValue > 0 ? start - MOUTH_LOOP.open * this.mouthValue : start;
+    this.wake();
+    this.emitMouth();
+  }
   private onDblClick = (e: MouseEvent) => {
     if (this.store.getSnapshot().lasso) return; // two quick loops are not a request to focus a tooth
+    if (this.mouthPosed()) return; // the teeth are not where their frames say
     this.setNDC(e);
     const jHit = this.raycastJewels();
     if (jHit) {
@@ -2983,7 +3256,7 @@ export class StudioEngine {
       rig.outlineMaterial.opacity = 0;
       rig.outline.visible = false;
     });
-    for (const rig of this.dyingJewels) this.jewelsGroup.remove(rig.group);
+    for (const rig of this.dyingJewels) rig.group.removeFromParent();
     this.dyingJewels = [];
   }
 
@@ -3125,6 +3398,7 @@ export class StudioEngine {
     }
     this.store.settleLoadedPieces(updates, this.modelMode);
     this.setLightPreset(this.store.lightPreset);
+    this.setModelShade(this.store.modelShade);
     // A camera saved on another model frames another stage: start from the default view there.
     if (load.camera && load.model === this.modelMode) {
       const [px, py, pz] = load.camera.position;
@@ -3284,6 +3558,25 @@ export class StudioEngine {
    * angle, so the arrangement turns rigidly. A single piece spins in place.
    * Overlaps are not prevented here; the design check reports them.
    */
+  /**
+   * Show changes on the stage without committing them: a gesture in progress
+   * (the rotate handle). The pieces are posed as the patches say; the design,
+   * its check and the panels wait for the commit that ends the gesture, and
+   * any commit meanwhile puts the stage back to the design as stored.
+   */
+  previewPatches(updates: { id: string; patch: Partial<PlacedJewelry> }[]) {
+    const byId = new Map(this.store.jewels.map((j) => [j.id, j]));
+    for (const { id, patch } of updates) {
+      const rig = this.jewelRigs.get(id);
+      const j = byId.get(id);
+      if (!rig || !j || this.isDragged(rig)) continue;
+      this.applyPose(rig.group, { ...j, ...patch }, rig.halfDepth);
+    }
+    this.shadowsDirty = true;
+    this.markMotion();
+    this.wake();
+  }
+
   beginGroupTurn(ids: string[]): GroupTurn | null {
     ids = this.store.editableIds(ids); // locked pieces neither turn nor follow the group
     const start = this.store.jewels.filter((j) => ids.includes(j.id));
@@ -3330,6 +3623,8 @@ export class StudioEngine {
    */
   private checkDesign(force = false) {
     if (!this.modelReady) return;
+    // Seats are found on the closed mouth; the check runs again once it is closed.
+    if (this.mouthPosed()) return;
     const jewels = this.store.jewels;
     if (!force && jewels === this.checkedJewels) return;
     // A forced check follows a model change: every seat is to be found again.
@@ -3605,7 +3900,14 @@ export class StudioEngine {
     const now = performance.now();
     const snap = this.store.getSnapshot();
     const animating =
-      !!this.camTween || this.autoRotate || !!this.dragJewel || !!this.ghost || this.dyingJewels.length > 0 || this.hasBirths();
+      !!this.camTween ||
+      this.autoRotate ||
+      !!this.dragJewel ||
+      !!this.ghost ||
+      this.dyingJewels.length > 0 ||
+      this.hasBirths() ||
+      !!this.mouthTween ||
+      this.mouthLoopStart !== null;
     if (animating) this.pendingFrames = SETTLE_FRAMES;
     if (this.pendingFrames <= 0) {
       // Idle: nothing moved. Damped controls still need their update to report a drag.
@@ -3615,6 +3917,7 @@ export class StudioEngine {
     this.pendingFrames--;
     // What casts shadows moving this frame: a piece in hand, arriving, leaving, swelling under the pointer, or the key light.
     let shadowsMove = this.shadowsDirty || !!this.dragJewel || this.dyingJewels.length > 0;
+    if (this.stepMouth(now)) shadowsMove = true;
 
     const tw = this.camTween;
     if (tw) {
@@ -3686,7 +3989,7 @@ export class StudioEngine {
       const rig = this.dyingJewels[i];
       const t = (now - rig.death) / 200;
       if (t >= 1) {
-        this.jewelsGroup.remove(rig.group);
+        rig.group.removeFromParent();
         rig.outlineMaterial.dispose(); // jewel materials are cached+shared — not disposed here
         this.dyingJewels.splice(i, 1);
       } else {
@@ -3724,6 +4027,7 @@ export class StudioEngine {
   }
   dispose() {
     this.disposed = true;
+    this.mouthListeners.clear();
     this.pendingMove = null;
     this.clearLongPress();
     cancelAnimationFrame(this.raf);

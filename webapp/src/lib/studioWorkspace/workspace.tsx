@@ -11,7 +11,7 @@ import { supabase } from "../supabase/client";
 import { withMemberships, withoutMemberships } from "./collections";
 import { createLocalRepositories, type KeyValueStorage } from "./localRepository";
 import { limitKind, StudioStoreError, type StudioRepositories } from "./repository";
-import { piecesKey } from "./scene";
+import { designKey } from "./scene";
 import type { ShareLink } from "./share";
 import { createSupabaseRepositories } from "./supabaseRepository";
 import {
@@ -168,7 +168,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
     status !== "ready" ? status : collectionsLocked ? "locked" : current?.collections ? "ready" : "error";
   const libraryView = collectionsLocked ? "grid" : (current?.preferences.libraryView ?? DEFAULT_PREFERENCES.libraryView);
   const [saving, setSaving] = useState(false);
-  /** `piecesKey` of the design whose save failed; editing it again clears the failure. */
+  /** `designKey` of the design whose save failed; editing it again clears the failure. */
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
 
@@ -248,7 +248,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
   }, [userId, status, creations]);
 
   // Dirty is measured by content, not by history: sliders commit without an undo step.
-  const currentKey = useMemo(() => piecesKey(snap.jewels), [snap.jewels]);
+  const currentKey = useMemo(() => designKey(snap.jewels, snap.modelShade), [snap.jewels, snap.modelShade]);
   const dirty = snap.active ? currentKey !== snap.active.baselineKey : snap.jewels.length > 0;
   const saveState: SaveState = saving
     ? "saving"
@@ -274,7 +274,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
       if (mode === "new" && !details) return null;
       const engine = getEngine();
       const scene = studioStore.toScene({ model: engine?.modelKind() ?? "studio", camera: engine?.getCameraState() ?? null });
-      const savedKey = piecesKey(scene.pieces);
+      const savedKey = designKey(scene.pieces, scene.modelShade);
       setSaving(true);
       setFailedKey(null);
       try {
@@ -283,7 +283,7 @@ export function StudioWorkspaceProvider({ children }: { children: ReactNode }) {
           mode === "update" && active
             ? await repos.creations.update(active.creationId, { scene, thumbnail })
             : await repos.creations.create({ ...details!, scene, thumbnail });
-        studioStore.markSaved({ creationId: saved.id, ownerId: userId, name: saved.name, savedAt: saved.updatedAt }, scene.pieces);
+        studioStore.markSaved({ creationId: saved.id, ownerId: userId, name: saved.name, savedAt: saved.updatedAt }, scene);
         replaceCreation(saved);
         say(mode === "update" ? "changesSaved" : "creationSaved");
         const counts = { piece_count: scene.pieces.length, is_new: mode === "new" };

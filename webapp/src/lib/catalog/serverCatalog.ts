@@ -10,6 +10,7 @@ import type { CatalogSeed } from "./CatalogProvider";
 import { findProductByKey, type SluggedProduct } from "./productSlugs";
 import { buildPriceBook, NO_PRICE_CUTS, type PriceBook } from "./productOffers";
 import { fetchPriceCutSources } from "../storefrontOffersApi";
+import { buildCourseOffers, NO_COURSE_OFFERS, type CourseOffers } from "../academy/courseOffers";
 
 /*
  * The catalogue as the server reads it for public pages: from Supabase with
@@ -108,6 +109,22 @@ export const loadPriceBook = cache(async (): Promise<PriceBook> => {
   } catch (error) {
     console.warn("[catalog] price cuts unavailable", error);
     return NO_PRICE_CUTS;
+  }
+});
+
+/**
+ * How a course's page offers to buy it besides the course alone: the kit and
+ * the packs that open it (`lib/academy/courseOffers.ts`). Nothing in mock mode
+ * or when the read fails (the page then sells the course alone, as before).
+ */
+export const loadCourseOffers = cache(async (courseDbId: string | undefined): Promise<CourseOffers> => {
+  if (!isSupabaseConfigured || !courseDbId) return NO_COURSE_OFFERS;
+  try {
+    const [products, bundles, book] = await Promise.all([readProducts(), readBundles(), loadPriceBook()]);
+    return buildCourseOffers(courseDbId, products, new Map(bundles), book);
+  } catch (error) {
+    console.warn("[catalog] course offers unavailable", error);
+    return NO_COURSE_OFFERS;
   }
 });
 

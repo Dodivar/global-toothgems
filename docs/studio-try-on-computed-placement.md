@@ -196,6 +196,16 @@ heart of small crystals set close together, that ring fell on the neighbouring g
 already at 255, only green and blue rose). The ring now reads the tooth only — outside every gem's disc, without
 the pixels the model changed like a gem — widened until it has 24 of them, with the median per channel.
 
+**Lined up to the photo pixel** (`tryOnAlign.ts`, 2026-11-18). `blendGems` finds each gem, its colour shift and its
+moved-back drawing by comparing the answer with the photo pixel by pixel, but the alignment compared them at 192 px
+wide (8 photo pixels each on a 1536-px close-up) and dropped any move under 0.5 % (7.7 photo px across, 3.3 down):
+an answer a gem's width off was blended as it came, and the shifted gap and tooth edges were read as the gem's
+(black edges by the gap between the incisors, rings of tooth, a gem cut by a neighbour, on a recette render of
+2026-11-18). The match is now refined up to 768 px in half-pixel steps and kept from about a photo pixel, trusted
+as before at 192 px. A synthetic answer 2 to 6 photo px off comes back within a pixel (it was left as it came).
+A first attempt the same day, a matte cut to each gem's changed pixels (`417b0a9`), assumed this alignment and made
+the render worse; it was reverted.
+
 **Trial with both flags on** (2026-11-05 11:49, `TRIAL_ARBITER=1`, the same 7 photos × 5 creations as the
 10:44 trial with the arbiter measured only): results 19 → 26, placements too uncertain 11 → 4 (P7 now all five,
 P5 one of five), photo refused unchanged (P1). By eye on the sheets, the gems of P2, P3, P4, P6 and P7 are on

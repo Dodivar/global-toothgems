@@ -56,7 +56,7 @@ import { useStageFullscreen } from "../../../lib/studio3d/stageFullscreen";
 import { StageFullscreenButton } from "../StageFullscreenButton";
 import type { Point2 } from "../../../lib/studio3d/math";
 import { useQuickActions, type QuickActionId } from "../../../lib/studio3d/quickActions";
-import { studioStore, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
+import { studioStore, useStudio, type ContextMenuState, type LightPreset, type StudioSnapshot } from "../../../lib/studio3d/store";
 import { GROUP_MIN_PIECES } from "../../../lib/studioWorkspace/gemGroup";
 import { openWorkspaceDialog } from "../../../lib/studioWorkspace/workspaceUi";
 import { useStudioStaff } from "../../../lib/studioAccess";
@@ -88,7 +88,8 @@ interface PanelControls {
   toggle: (panel: EditorPanel) => void;
 }
 
-export function EditorViewport({ snap, panels }: { snap: StudioSnapshot; panels?: PanelControls }) {
+export function EditorViewport({ panels }: { panels?: PanelControls }) {
+  const snap = useStudio();
   const { t, pieceName } = useEditorLabels();
   const hostRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
@@ -556,7 +557,7 @@ function QuickBar({ ids, jewels, actions }: { ids: string[]; jewels: PlacedJewel
     const dir = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
     if (!dir) return;
     e.preventDefault();
-    beginRotation(ids).set(dir * (e.shiftKey ? KEY_STEP_LARGE : KEY_STEP));
+    rotatePieces(ids, dir * (e.shiftKey ? KEY_STEP_LARGE : KEY_STEP));
   };
 
   const turning = dial !== null;
