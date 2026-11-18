@@ -19,7 +19,7 @@ import { DesignStore, studioStore } from "../lib/studio3d/store";
 import type { TryOnSource } from "../lib/studio3d/tryOn";
 import { tryOnExhausted, useTryOnStatus } from "../lib/studio3d/useTryOnStatus";
 import { STUDIO_EDITOR_PATH, STUDIO_PATH } from "../lib/studioUrl";
-import { piecesKey } from "../lib/studioWorkspace/scene";
+import { designKey } from "../lib/studioWorkspace/scene";
 import { supabase } from "../lib/supabase/client";
 import { decodeSharedDesign, type SharedDesign } from "../lib/studioWorkspace/share";
 import { fetchBookingCreation, fetchGlowbookCreation, fetchSharedCreation } from "../lib/studioWorkspace/supabaseRepository";
@@ -258,7 +258,7 @@ function SharedDesignView({
 
   /** The recipient's own stage has work that opening a copy would replace. */
   const stageHasWork = () =>
-    studioStore.jewels.length > 0 && (!studioStore.active || piecesKey(studioStore.jewels) !== studioStore.active.baselineKey);
+    studioStore.jewels.length > 0 && (!studioStore.active || designKey(studioStore.jewels, studioStore.modelShade) !== studioStore.active.baselineKey);
 
   const openCopy = () => {
     // A new, unsaved design on their own stage: saving it makes it theirs.

@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import clsx from "clsx";
 import {
   AlignCenterHorizontal,
@@ -15,6 +15,9 @@ import {
   Lock,
   LockOpen,
   Maximize2,
+  Pause,
+  Play,
+  Smile,
   RotateCcw,
   RotateCw,
   SquareSplitHorizontal,
@@ -40,9 +43,11 @@ import {
   rotatePieces,
   setPiecesLocked,
 } from "../../../lib/studio3d/actions";
-import { getEngine } from "../../../lib/studio3d/engine";
+import { getEngine, type MouthState } from "../../../lib/studio3d/engine";
+import { usePrefersReducedMotion } from "../../homeAlt/usePrefersReducedMotion";
 import { notify } from "../../../lib/studio3d/notices";
-import { studioStore, type StudioSnapshot } from "../../../lib/studio3d/store";
+import { studioStore, useStudio, type StudioSnapshot } from "../../../lib/studio3d/store";
+import { MODEL_SHADES, type ModelShade } from "../../../lib/studio3d/modelShades";
 import { AddDesignToCart, ShoppingList } from "./ShoppingList";
 import { useFrontView } from "../useFrontView";
 import { FrontViewDialog, FrontViewFigure } from "../FrontViewPanel";
@@ -68,7 +73,8 @@ const miniButton = clsx(
  * The properties panel. What it shows follows the selection: several pieces,
  * one piece, a tooth, or — with nothing selected — the design overview.
  */
-export function EditorInspector({ snap }: { snap: StudioSnapshot }) {
+export function EditorInspector() {
+  const snap = useStudio();
   const selected = snap.jewels.filter((j) => snap.selectedJewelIds.includes(j.id));
   let body: ReactNode;
   if (selected.length > 1) body = <MultiPanel key="multi" selected={selected} />;
@@ -572,8 +578,8 @@ function SinglePanel({ jewel, snap }: { jewel: PlacedJewelry; snap: StudioSnapsh
             }}
           >
             {jewel.toothId === FREE_TOOTH && <option value={FREE_TOOTH}>{t("studio.editor.freePlacementLong")}</option>}
-            {/* The simplified reference arch and imports carry the upper arch only. */}
-            {(snap.modelMode === "dentition" ? ALL_TEETH : UPPER_TEETH).map((fdi) => (
+            {/* Imports are labelled on the upper arch only. */}
+            {(snap.modelMode === "smile" ? ALL_TEETH : UPPER_TEETH).map((fdi) => (
               <option key={fdi} value={fdi}>
                 {fdi} — {toothShort(fdi)}
               </option>
@@ -661,6 +667,9 @@ function OverviewPanel({ snap }: { snap: StudioSnapshot }) {
       )}
 
       <FrontViewSection snap={snap} />
+      <ModelShadeSection snap={snap} />
+
+      <MouthSection />
 
       {/* Keyboard and mouse shortcuts mean nothing on a touch screen; folded until asked for. */}
       <details className="group mt-5 max-lg:hidden">
@@ -802,6 +811,102 @@ function FrontViewSection({ snap }: { snap: StudioSnapshot }) {
       ) : (
         <Hint>{t("studio.frontView.empty")}</Hint>
       )}
+    </>
+  );
+}
+
+/**
+ * The dentition's colour: porcelain, or a pastel so the cast reads as a
+ * display stand rather than real teeth. Saved with the design, open to every
+ * plan; an imported model keeps its own colours.
+ */
+function ModelShadeSection({ snap }: { snap: StudioSnapshot }) {
+  const { t } = useEditorLabels();
+  const imported = snap.modelMode === "teeth" || snap.modelMode === "free";
+  const pick = (shade: ModelShade) => {
+    getEngine()?.setModelShade(shade);
+    studioStore.setModelShade(shade);
+  };
+  return (
+    <>
+      <SectionLabel info={t("studio.editor.modelShade.hint")}>{t("studio.editor.modelShade.title")}</SectionLabel>
+      {imported ? (
+        <Hint>{t("studio.editor.modelShade.imported")}</Hint>
+      ) : (
+        <>
+          <div role="group" aria-label={t("studio.editor.modelShade.title")} className="flex flex-wrap gap-2">
+            {MODEL_SHADES.map((s) => {
+              const on = snap.modelShade === s.id;
+              const name = t(`studio.editor.modelShade.items.${s.id}`);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  aria-pressed={on}
+                  aria-label={name}
+                  title={name}
+                  onClick={() => pick(s.id)}
+                  style={{ background: s.swatch }}
+                  className={clsx(
+                    "h-8 w-8 rounded-full border-2 shadow-[inset_0_1px_3px_rgba(0,0,0,.14)] transition-transform hover:-translate-y-px motion-reduce:transition-none",
+                    focusRing,
+                    on ? "border-[var(--gt-ink-900)] ring-2 ring-[var(--gt-blue-300)] ring-offset-2" : "border-black/10",
+                  )}
+                />
+              );
+            })}
+          </div>
+          <p className="m-0 mt-2 text-[11.5px] text-[var(--text-muted)]">
+            {t("studio.editor.modelShade.current", { name: t(`studio.editor.modelShade.items.${snap.modelShade}`) })}
+          </p>
+        </>
+      )}
+    </>
+  );
+}
+
+const MOUTH_CLOSED: MouthState = { available: false, open: false, looping: false };
+const noSubscription = () => () => {};
+
+/**
+ * Open and close the mouth (the default dentition only): the lower jaw swings
+ * like a real one, its gems with it. A view — nothing is saved, and selecting a
+ * piece closes it again (the engine sees to that).
+ */
+function MouthSection() {
+  const { t } = useEditorLabels();
+  const engine = getEngine();
+  const subscribe = useCallback((fn: () => void) => (engine ? engine.onMouthChange(fn) : noSubscription()), [engine]);
+  const mouth = useSyncExternalStore(
+    subscribe,
+    () => engine?.getMouthState() ?? MOUTH_CLOSED,
+    () => MOUTH_CLOSED,
+  );
+  // Less motion asked for: the button still opens and closes (at once), the loop is not offered.
+  const reduced = usePrefersReducedMotion();
+  if (!engine || !mouth.available) return null;
+  return (
+    <>
+      <SectionLabel info={t("studio.editor.mouth.info")}>{t("studio.editor.mouth.title")}</SectionLabel>
+      <div className="flex gap-2">
+        <button type="button" className={miniButton} aria-pressed={mouth.open} onClick={() => engine.setMouthOpen(!mouth.open)}>
+          <Smile size={13} aria-hidden="true" />
+          {t(mouth.open ? "studio.editor.mouth.close" : "studio.editor.mouth.open")}
+        </button>
+        {!reduced && (
+          <button
+            type="button"
+            className={miniButton}
+            aria-pressed={mouth.looping}
+            aria-label={t("studio.editor.mouth.loopLabel")}
+            onClick={() => engine.setMouthLoop(!mouth.looping)}
+          >
+            {mouth.looping ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />}
+            {t(mouth.looping ? "studio.editor.mouth.stopLoop" : "studio.editor.mouth.loop")}
+          </button>
+        )}
+      </div>
+      <Hint className="mt-2">{t("studio.editor.mouth.hint")}</Hint>
     </>
   );
 }

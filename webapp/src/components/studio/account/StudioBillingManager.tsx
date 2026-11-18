@@ -15,7 +15,8 @@ import { invoiceDocument, invoiceFileName } from "../../../lib/documents/invoice
 import type { OrderInvoice } from "../../../lib/documents/invoiceModel";
 import { useDocumentDownload } from "../../../lib/documents/useDocumentDownload";
 import { useDocumentFormat } from "../../../lib/documents/useDocumentFormat";
-import { creditedInvoice, fetchMyStudioDocuments } from "../../../lib/studioInvoices";
+import { Badge } from "../../ui/Badge";
+import { creditedInvoice, fetchMyFailedStudioPayments, fetchMyStudioDocuments, type FailedStudioPayment } from "../../../lib/studioInvoices";
 import {
   cancelStudioSubscription,
   changeStudioPlan,
@@ -356,15 +357,18 @@ function Invoices() {
   const fmt = useDocumentFormat();
   const { status, download } = useDocumentDownload();
   const [documents, setDocuments] = useState<OrderInvoice[] | null>(null);
+  const [unpaid, setUnpaid] = useState<FailedStudioPayment[]>([]);
   const [failed, setFailed] = useState(false);
   const k = "studio.account.invoices";
 
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
-    fetchMyStudioDocuments(userId).then(
-      (rows) => {
-        if (!cancelled) setDocuments(rows);
+    Promise.all([fetchMyStudioDocuments(userId), fetchMyFailedStudioPayments(userId)]).then(
+      ([rows, refused]) => {
+        if (cancelled) return;
+        setDocuments(rows);
+        setUnpaid(refused);
       },
       () => {
         if (!cancelled) setFailed(true);
@@ -382,7 +386,7 @@ function Invoices() {
       </Panel>
     );
   }
-  if (!documents || documents.length === 0) return null;
+  if (!documents || (documents.length === 0 && unpaid.length === 0)) return null;
 
   const save = (doc: OrderInvoice) =>
     void download(async () => ({ document: invoiceDocument(doc, t, fmt, creditedInvoice(documents, doc)), fileName: invoiceFileName(doc, t) }));
@@ -393,6 +397,18 @@ function Invoices() {
         <p role="alert" className="m-0 text-[length:var(--text-body-sm)] font-medium text-[var(--status-error-fg)]">{t(`${k}.pdfError`)}</p>
       )}
       <ul className="m-0 grid list-none gap-0 p-0">
+        {unpaid.map((payment) => (
+          <li key={payment.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-[var(--border-subtle)] py-2.5 last:border-b-0">
+            <span className="grid gap-0.5">
+              <span className="text-[length:var(--text-body-sm)] font-semibold text-[var(--text-primary)]">{formatDate(payment.occurredAt)}</span>
+              <span className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t(`${k}.failedHint`)}</span>
+            </span>
+            <span className="flex flex-wrap items-center gap-3">
+              <span className="tabular-nums text-[length:var(--text-body-sm)] text-[var(--text-primary)]">{formatMoney(payment.amount, payment.currency)}</span>
+              <Badge tone="error" size="sm" icon={CircleAlert}>{t(`${k}.statusFailed`)}</Badge>
+            </span>
+          </li>
+        ))}
         {documents.map((doc) => {
           const kind = t(doc.kind === "creditNote" ? `${k}.creditNote` : `${k}.invoice`);
           return (
@@ -408,6 +424,9 @@ function Invoices() {
                   {doc.kind === "creditNote" ? "− " : ""}
                   {formatMoney(doc.totalIncl, doc.currency)}
                 </span>
+                {doc.kind === "invoice" && (
+                  <Badge tone="success" size="sm" icon={CircleCheck}>{t(`${k}.statusPaid`)}</Badge>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
