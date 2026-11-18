@@ -13,10 +13,10 @@
     "ctaSecondary": "Discover the experience",
     "reassurance_one": "{{count}} day to explore, then the plan you choose, from {{price}} / month.",
     "reassurance_other": "{{count}} days to explore, then the plan you choose, from {{price}} / month.",
-    "media": {
-      "title": "Screen recording of the 3D Studio",
-      "body": "A tooth jewellery composition being created and rotated in real time in the Studio.",
-      "caption": "Demonstration film · 16:9 · to be replaced by the final recording."
+    "video": {
+      "description": "Silent demonstration of the 3D Studio: a crystal heart is placed gem by gem, the camera circles an iridescent star, several gems change colour at once, a gold lightning bolt is moved then turned on its tooth, the teeth change shade and light, then the mouth opens with the lower jewellery.",
+      "pause": "Pause the video",
+      "play": "Play the video"
     }
   },
   "benefits": {
