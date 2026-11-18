@@ -6,12 +6,14 @@ import { ShapeGlyph } from "../../ui/ShapeGlyph";
 import { GemGroupPanel } from "../workspace/GemGroupPanel";
 import { useEditorLabels } from "./editorLabels";
 import { FREE_TOOTH } from "../../../data/studioEditor";
+import { ColorSwatch } from "../../ui/ColorSwatch";
 import { shapeName } from "../../../data/products";
+import { useCatalog } from "../../../lib/catalog/CatalogProvider";
 import { useTaxonomy } from "../../../lib/catalog/useTaxonomy";
 import { useLocalized } from "../../../lib/localized";
 import { placeOnTooth } from "../../../lib/studio3d/actions";
 import { getEngine } from "../../../lib/studio3d/engine";
-import { filterSections, librarySections, type LibrarySection } from "../../../lib/studio3d/librarySections";
+import { colorCounts, filterSections, librarySections, type LibrarySection } from "../../../lib/studio3d/librarySections";
 import type { StudioSnapshot } from "../../../lib/studio3d/store";
 import { useStudioGems } from "../../../lib/studio3d/useStudioGems";
 
@@ -65,7 +67,12 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
   // The editor renders in the browser only (`zoneScreen`): storage can be read at once.
   const [folded, setFolded] = useState<string[]>(readFolded);
 
-  const sections = useMemo(
+  const { colors: colorDefs } = useCatalog();
+  const [color, setColor] = useState<string | null>(null);
+
+  // Sections as the search leaves them, whatever the colour: the shape and colour
+  // filters combine, and each one's counts come from the other's choice.
+  const allSections = useMemo(
     () =>
       librarySections(
         gems,
@@ -79,15 +86,34 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
       ),
     [gems, q, t, familyName, l],
   );
+  const sections = useMemo(
+    () =>
+      color
+        ? librarySections(
+            gems,
+            { shape: shapeName, family: familyName, other: t("studio.editor.library.otherGems"), gemName: (gem) => l(gem.name) },
+            q,
+            color,
+          )
+        : allSections,
+    [gems, q, t, familyName, l, color, allSections],
+  );
+  const colorChoices = useMemo(() => colorCounts(filterSections(allSections, chosen), colorDefs), [allSections, chosen, colorDefs]);
   const shown = filterSections(sections, chosen);
-  const chosenSection = sections.find((s) => s.id === chosen) ?? null;
+  // A cut the colour leaves empty keeps its name on the button (with a count of 0).
+  const chosenSection =
+    sections.find((s) => s.id === chosen) ??
+    (() => {
+      const hidden = allSections.find((s) => s.id === chosen);
+      return hidden ? { ...hidden, items: [] } : null;
+    })();
   const choose = (id: string | null) => {
     setChosen(id);
     setPickerOpen(false);
   };
   const total = sections.reduce((n, s) => n + s.items.length, 0);
   // What the artist asked to see is never folded away.
-  const unfoldAll = !!q.trim() || !!chosen;
+  const unfoldAll = !!q.trim() || !!chosen || !!color;
   const isFolded = (id: string) => !unfoldAll && folded.includes(id);
   const saveFolded = (ids: string[]) => {
     setFolded(ids);
@@ -215,6 +241,53 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
               )}
             </div>
           )}
+          {/* The shop's colour filter, under the cuts: a cut and a colour combine. */}
+          {!pickerOpen && colorChoices.length > 0 && (
+            <div className="mb-1 mt-1 flex-none px-4">
+              <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-[var(--text-subtle)]">
+                <span className="min-w-0 flex-1 truncate">
+                  {t("studio.editor.library.colorLabel")}
+                  {color && (
+                    <span className="text-[var(--text-primary)]"> · {l(colorDefs.find((c) => c.slug === color)?.name ?? { fr: color, en: color })}</span>
+                  )}
+                </span>
+                {color && (
+                  <button
+                    type="button"
+                    onClick={() => setColor(null)}
+                    aria-label={t("studio.editor.library.showAllColors")}
+                    title={t("studio.editor.library.showAllColors")}
+                    className={clsx("grid h-6 w-6 flex-none place-items-center rounded-full text-[var(--gt-ink-600)] hover:bg-[var(--gt-ink-100)]", focusRing)}
+                  >
+                    <X size={13} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+              <div role="group" aria-label={t("studio.editor.library.colorsLabel")} className="flex flex-wrap gap-1.5">
+                {colorChoices.map(({ color: def, count }) => {
+                  const on = color === def.slug;
+                  const name = l(def.name);
+                  return (
+                    <button
+                      key={def.slug}
+                      type="button"
+                      aria-pressed={on}
+                      aria-label={`${name} (${count})`}
+                      title={`${name} · ${count}`}
+                      onClick={() => setColor(on ? null : def.slug)}
+                      className={clsx(
+                        "grid h-8 w-8 place-items-center rounded-full border transition-colors",
+                        focusRing,
+                        on ? "border-[var(--gt-ink-900)] bg-[var(--surface-brand-wash)]" : "border-transparent hover:border-[var(--gt-blue-300)]",
+                      )}
+                    >
+                      <ColorSwatch color={def} size={20} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <p id="gt-editor-library-keys" className="sr-only">
             {t("studio.editor.library.keyboardHint", { tooth: toothName(targetTooth), fdi: targetTooth })}
           </p>
@@ -322,10 +395,13 @@ export function EditorLibrary({ snap }: { snap: StudioSnapshot }) {
             {status === "ready" && !pickerOpen && !shown.length && (
               <div className="grid gap-2 py-3">
                 <p className="m-0 text-[12px] text-[var(--text-muted)]">{t("studio.editor.library.empty")}</p>
-                {chosen && sections.length > 0 && (
+                {(chosen || color) && (
                   <button
                     type="button"
-                    onClick={() => setChosen(null)}
+                    onClick={() => {
+                      setChosen(null);
+                      setColor(null);
+                    }}
                     className="h-8 justify-self-start rounded-[var(--radius-pill)] border border-[var(--border-default)] px-3 text-[11px] font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
                   >
                     {t("studio.editor.library.showAllShapes")}

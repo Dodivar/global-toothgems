@@ -312,7 +312,10 @@
       "foldAll": "Collapse every shape",
       "unfoldAll": "Expand every shape",
       "showAllShapes": "Show every shape",
-      "shapeLabel": "Shape"
+      "shapeLabel": "Shape",
+      "colorLabel": "Colour",
+      "colorsLabel": "Filter by colour",
+      "showAllColors": "Show every colour"
     },
     "viewport": {
       "label": "3D view of the dental arch",

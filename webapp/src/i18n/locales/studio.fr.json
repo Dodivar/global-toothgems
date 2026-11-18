@@ -312,7 +312,10 @@
       "foldAll": "Replier toutes les formes",
       "unfoldAll": "Déplier toutes les formes",
       "showAllShapes": "Voir toutes les formes",
-      "shapeLabel": "Forme"
+      "shapeLabel": "Forme",
+      "colorLabel": "Couleur",
+      "colorsLabel": "Filtrer par couleur",
+      "showAllColors": "Voir toutes les couleurs"
     },
     "viewport": {
       "label": "Vue 3D de l’arcade dentaire",
