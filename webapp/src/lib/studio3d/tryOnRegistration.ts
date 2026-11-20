@@ -35,7 +35,11 @@ import { gemSquash, visibleToothShare, type FrontViewProjection, type FrontViewT
  *    millimetres, a gem in the middle of the tooth on screen landed near the
  *    customer's gum), on a lower tooth (its box usually cut by the lower lip)
  *    at its real distance times the fitted scale. A design tooth that
- *    was not found, or was set aside, takes the fitted reference tooth.
+ *    was not found, or was set aside, but whose two neighbours on its arch
+ *    were kept, is inferred (2026-11-18): it must show between them, so its
+ *    box is the space between theirs (`inferBetween`) and its gems are placed
+ *    and drawn on it as on a found tooth. Any other design tooth not kept
+ *    takes the fitted reference tooth, and its gems are not drawn.
  * 4. Its size is physical (owner's decision, 2026-11-01): its real size in
  *    millimetres times the fitted scale — a 2 mm gem stays 2 mm, whatever the
  *    width of the customer's teeth.
@@ -83,10 +87,12 @@ export interface RegisteredTooth {
   height: number;
   /**
    * `found`: the function's box, used for the gems; `outlier`: found but set
-   * aside (it disagrees with the other teeth); `fitted`: not found, the
-   * reference tooth put where the fit expects it (only for teeth carrying gems).
+   * aside (it disagrees with the other teeth); `inferred`: not kept, but both
+   * its neighbours on the arch were, so it is the space between them;
+   * `fitted`: not found, the reference tooth put where the fit expects it
+   * (only for teeth carrying gems).
    */
-  source: "found" | "outlier" | "fitted";
+  source: "found" | "outlier" | "inferred" | "fitted";
   /** Distance between where it was found and where the fit expects it, as a share of the tooth's width; null when fitted. */
   residual: number | null;
 }
@@ -113,11 +119,13 @@ export interface RegisteredGem {
    */
   squash?: Squash | null;
   /**
-   * `found`: on a tooth found on the photo, inside its visible part; `fitted`:
-   * its tooth was only expected there by the fit; `hidden`: its tooth was found
-   * but its place is outside the part that shows (behind a lip or the upper teeth).
+   * `found`: on a tooth found on the photo, inside its visible part;
+   * `inferred`: the same, on a tooth inferred between its two kept neighbours
+   * (drawn like `found`); `fitted`: its tooth was only expected there by the
+   * fit; `hidden`: its tooth was found but its place is outside the part that
+   * shows (behind a lip or the upper teeth).
    */
-  tooth: "found" | "fitted" | "hidden";
+  tooth: "found" | "inferred" | "fitted" | "hidden";
 }
 
 export type RegistrationIssue =
@@ -233,6 +241,37 @@ const widthOf = (t: FrontViewTooth) => t.x1 - t.x0;
 const heightOf = (t: FrontViewTooth) => Math.abs(t.incisal - t.cervical);
 /** The biting-edge centre of a reference tooth, mm. */
 const refEdge = (t: FrontViewTooth): Point => ({ x: (t.x0 + t.x1) / 2, y: t.incisal });
+/** An inferred tooth's space between its neighbours is at least this share of its fitted width; narrower, it is not inferred. */
+const MIN_INFERRED_WIDTH = 0.5;
+
+/**
+ * A tooth the photo must show between its two neighbours on the arch, both
+ * kept (2026-11-18): its box spans the space between theirs, from the higher
+ * top to the lower bottom of the two. Null when one neighbour was not kept,
+ * or the space is narrower than `MIN_INFERRED_WIDTH` of `expectedWidth`
+ * (pixels) — the neighbours touch: the tooth is not where they say.
+ *
+ * Why: the teeth model sometimes misses a tooth, or names it so that it is
+ * set aside, on a photo where it plainly shows (a creation's seven gems on
+ * the 11, 2026-11-18). Its gems were then left out, the result saying their
+ * spot was hidden by a lip.
+ */
+export function inferBetween(fdi: string, kept: ReadonlyMap<string, FoundTooth>, expectedWidth: number): FoundTooth | null {
+  const row = UPPER_ROW.includes(fdi) ? UPPER_ROW : LOWER_ROW.includes(fdi) ? LOWER_ROW : null;
+  if (!row) return null;
+  const i = row.indexOf(fdi);
+  const a = kept.get(row[i - 1] ?? "");
+  const b = kept.get(row[i + 1] ?? "");
+  if (!a || !b) return null;
+  const [left, right] = a.x <= b.x ? [a, b] : [b, a];
+  const x0 = left.x + left.width;
+  const x1 = right.x;
+  if (!(x1 - x0 >= MIN_INFERRED_WIDTH * expectedWidth)) return null;
+  const y0 = Math.min(left.y, right.y);
+  const y1 = Math.max(left.y + left.height, right.y + right.height);
+  return { fdi, x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+}
+
 /**
  * The biting-edge centre of a found tooth: the bottom of an upper tooth's box,
  * the top of a lower one's — moved up by the overbite when the upper teeth
@@ -598,10 +637,18 @@ export function registerDesign(
     residual: residualOf(p),
   }));
   const keptByFdi = new Map(kept.map((p) => [p.found.fdi, p.found]));
+  /** Design teeth not kept but inferred between their kept neighbours: their box, used for their gems like a found one. */
+  const inferredByFdi = new Map<string, FoundTooth>();
   for (const fdi of designTeeth) {
     if (keptByFdi.has(fdi)) continue;
     const ref = refByFdi.get(fdi);
     if (!ref) continue;
+    const inferred = inferBetween(fdi, keptByFdi, widthOf(ref) * t.scale);
+    if (inferred) {
+      inferredByFdi.set(fdi, inferred);
+      teeth.push({ fdi, lower: ref.lower, x: inferred.x, y: inferred.y, width: inferred.width, height: inferred.height, source: "inferred", residual: null });
+      continue;
+    }
     const centre = placeRef(fit, { x: (ref.x0 + ref.x1) / 2, y: (ref.cervical + ref.incisal) / 2 }, ref.lower);
     const width = widthOf(ref) * t.scale;
     const height = heightOf(ref) * t.scale;
@@ -615,7 +662,8 @@ export function registerDesign(
     const ref = refByFdi.get(g.toothId);
     const at = g.at!;
     if (!ref) return [];
-    const box = keptByFdi.get(g.toothId);
+    const inferred = inferredByFdi.get(g.toothId);
+    const box = keptByFdi.get(g.toothId) ?? inferred;
     let x: number;
     let y: number;
     if (box) {
@@ -646,7 +694,7 @@ export function registerDesign(
         stretch: at.stretch,
         rotation: at.rotation + t.angle,
         squash: squashOnPhoto(at.normal, viewYaw, t.angle),
-        tooth: !box ? "fitted" : x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height ? "found" : "hidden",
+        tooth: !box ? "fitted" : x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height ? (inferred ? "inferred" : "found") : "hidden",
       },
     ];
   });

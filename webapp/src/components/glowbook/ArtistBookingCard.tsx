@@ -8,7 +8,7 @@ import { STATUS_TONE } from "./bookingStatus";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { blockClient, cancelBooking, markBooking } from "../../lib/glowbookBooking";
-import { type ArtistBooking, formatWhen } from "../../lib/glowbookBookingMapping";
+import { type ArtistBooking, formatHour, formatWhen } from "../../lib/glowbookBookingMapping";
 import { useToast } from "../../lib/toast";
 import type { AppointmentEvent } from "../../lib/glowbookIcs";
 import { AddToCalendarMenu } from "./AddToCalendarMenu";
@@ -26,9 +26,12 @@ export function ArtistBookingCard({
   booking,
   onChanged,
   creation,
+  timeOnly = false,
 }: {
   booking: ArtistBooking;
   onChanged: () => void;
+  /** The date is shown beside the card (timeline): only the hour heads it. */
+  timeOnly?: boolean;
   /** The chosen creation's signed picture and public 3D view, when known. */
   creation?: { imageUrl: string | null; viewUrl: string | null };
 }) {
@@ -82,7 +85,7 @@ export function ArtistBookingCard({
     <article className="grid gap-3 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="grid gap-0.5">
-          <p className="m-0 text-[15px] font-[var(--weight-black)] text-[var(--text-primary)]">{formatWhen(booking.startsAt, booking.timezone, lang)}</p>
+          <p className="m-0 text-[15px] font-[var(--weight-black)] text-[var(--text-primary)]">{timeOnly ? formatHour(booking.startsAt, booking.timezone, lang) : formatWhen(booking.startsAt, booking.timezone, lang)}</p>
           <p className="m-0 inline-flex items-center gap-1.5 text-[13px] text-[var(--text-muted)]">
             {booking.designKind === "custom" ? <Sparkles size={13} aria-hidden="true" /> : null}
             {booking.designKind === "custom" ? t("booking.design.custom") : (booking.creationName ?? "—")}

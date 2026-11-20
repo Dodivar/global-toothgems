@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useId, useRef, useState, type ChangeEvent } from "react";
 import clsx from "clsx";
 import { useTranslation } from "react-i18next";
 import { Check, Clock3, Film, ImagePlus, LoaderCircle, Palette, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
@@ -16,15 +16,14 @@ import {
 import type { Glowbook } from "../../../lib/studioWorkspace/glowbook";
 import { certifiedTitles } from "../../../lib/studioWorkspace/glowbookSections";
 import { useGlowbook } from "../../../lib/studioWorkspace/glowbookStore";
-import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { useToast } from "../../../lib/toast";
 import { usePrefersReducedMotion } from "../../homeAlt/usePrefersReducedMotion";
 import { GlowbookPlaceField } from "./GlowbookPlaceField";
 import { fieldClass } from "./workspaceStyles";
 
 /**
- * "Customise my page" (decision 100): the artist's picture, spotlight
- * creation, city and place, with a live preview drawn by the same component
+ * "Customise my page" (decision 100): the artist's picture, city and place
+ * (the spotlight creation is chosen in the Creations tab since 2026-11-20), with a live preview drawn by the same component
  * as the public page. The colours and the layout are the same for every page
  * since decision 150. Spotlight, city and place (decision 108) are
  * public as soon as they are saved; a new picture waits for a moderator while the page keeps
@@ -37,13 +36,12 @@ import { fieldClass } from "./workspaceStyles";
 export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
   const { t, i18n } = useTranslation();
   const gb = useGlowbook();
-  const ws = useWorkspace();
   const base = gb.draftLook!;
   const badge = glowbook.showCertification && gb.certification ? certifiedTitles(gb.certification, i18n.language) : [];
   const [draft, setDraft] = useState<GlowbookLook>(base);
   const [problem, setProblem] = useState<LookProblem | null>(null);
   const [busy, setBusy] = useState(false);
-  const ids = { location: useId(), featured: useId(), error: useId() };
+  const ids = { location: useId(), error: useId() };
 
   // Back to what is stored whenever the store changes it (after a save, a reload).
   const [seen, setSeen] = useState(base);
@@ -56,17 +54,6 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
   const set = <K extends keyof GlowbookLook>(key: K, value: GlowbookLook[K]) => setDraft((d) => ({ ...d, [key]: value }));
   const waits = (key: "avatarPath" | "bannerPath") =>
     !!draft[key] && draft[key] !== glowbook.look[key];
-
-  const approvedItems = useMemo(
-    () =>
-      gb.items
-        .filter((i) => i.status === "approved")
-        .flatMap((i) => {
-          const creation = ws.creations.find((c) => c.id === i.creationId);
-          return creation ? [{ id: i.id, name: creation.name }] : [];
-        }),
-    [gb.items, ws.creations],
-  );
 
   const save = async () => {
     const next: GlowbookLook = {
@@ -138,43 +125,19 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
         <div className="@container grid min-w-0 gap-5 xl:col-start-1 xl:row-start-1">
           <PictureField kind="avatar" path={draft.avatarPath} waiting={waits("avatarPath")} onChange={(p) => set("avatarPath", p)} />
 
-          <div className="grid items-start gap-5 @lg:grid-cols-2">
-            <div className="grid gap-1.5">
-              <label htmlFor={ids.featured} className="text-[12.5px] font-bold text-[var(--text-primary)]">
-                {t("studio.glowbook.look.featured")}
-              </label>
-              <select
-                id={ids.featured}
-                value={draft.featuredItemId ?? ""}
-                onChange={(e) => set("featuredItemId", e.target.value || null)}
-                className={fieldClass}
-              >
-                <option value="">{t("studio.glowbook.look.featuredNone")}</option>
-                {approvedItems.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.name}
-                  </option>
-                ))}
-              </select>
-              <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.featuredHint")}</p>
-              {draft.featuredItemId !== base.featuredItemId
-                ? draft.featuredItemId && <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.look.spotlight.saveFirst")}</p>
-                : base.featuredItemId && <SpotlightVideoPanel />}
-            </div>
-            <div className="grid gap-1.5">
-              <label htmlFor={ids.location} className="text-[12.5px] font-bold text-[var(--text-primary)]">
-                {t("studio.glowbook.look.location")}
-              </label>
-              <input
-                id={ids.location}
-                value={draft.location ?? ""}
-                maxLength={LOCATION_MAX}
-                placeholder={t("studio.glowbook.look.locationPlaceholder")}
-                aria-invalid={problem === "locationLength"}
-                onChange={(e) => set("location", e.target.value || null)}
-                className={fieldClass}
-              />
-            </div>
+          <div className="grid gap-1.5">
+            <label htmlFor={ids.location} className="text-[12.5px] font-bold text-[var(--text-primary)]">
+              {t("studio.glowbook.look.location")}
+            </label>
+            <input
+              id={ids.location}
+              value={draft.location ?? ""}
+              maxLength={LOCATION_MAX}
+              placeholder={t("studio.glowbook.look.locationPlaceholder")}
+              aria-invalid={problem === "locationLength"}
+              onChange={(e) => set("location", e.target.value || null)}
+              className={fieldClass}
+            />
           </div>
 
           <GlowbookPlaceField
@@ -213,7 +176,7 @@ export function GlowbookLookEditor({ glowbook }: { glowbook: Glowbook }) {
 }
 
 /** The spotlight video (decisions 103 and 105): its state, a preview and a way to record it again. Its length is fixed. */
-function SpotlightVideoPanel() {
+export function SpotlightVideoPanel() {
   const { t } = useTranslation();
   const { spotlight } = useGlowbook();
   const { state, job, videoUrl, record } = spotlight;

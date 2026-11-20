@@ -49,9 +49,9 @@ import { useWorkspace } from "../../../lib/studioWorkspace/workspace";
 import { useToast } from "../../../lib/toast";
 import { CreationThumb } from "./CreationCard";
 import { LibrarySkeleton } from "./CreationLibrary";
-import { GlowbookLookEditor } from "./GlowbookLookEditor";
+import { GlowbookLookEditor, SpotlightVideoPanel } from "./GlowbookLookEditor";
 import { GlowbookSections } from "./GlowbookSections";
-import { GlowbookBadgeCard, GlowbookDirectoryCard, GlowbookQrCard } from "./GlowbookShare";
+import { GlowbookBadgeCard, GlowbookDirectoryCard, GlowbookDirectorySwitch, GlowbookQrCard } from "./GlowbookShare";
 import { ModerationBadge } from "./GlowbookStatus";
 import { GlowbookAvatar } from "../../glowbook/GlowbookIdentity";
 import { glowbookThemeStyle } from "../../glowbook/theme";
@@ -163,7 +163,7 @@ function GlowbookDashboard({ glowbook }: { glowbook: Glowbook }) {
 
   return (
     <>
-      <GlowbookHero glowbook={glowbook} onEdit={() => fix("profile")} />
+      <GlowbookHero glowbook={glowbook} hasApprovedCreation={items.some((item) => item.status === "approved")} onEdit={() => fix("profile")} />
       <GlowbookOverview glowbook={glowbook} items={items} onGo={fix} />
 
       <div className="grid min-w-0 gap-5">
@@ -245,7 +245,7 @@ const statLabel = "text-[10.5px] font-bold uppercase tracking-[var(--tracking-ey
 const card = "grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-5 shadow-[var(--shadow-sm)] sm:p-6";
 
 /** The page's identity card: picture, name, handle, status, and its address to copy or open. */
-function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => void }) {
+function GlowbookHero({ glowbook, hasApprovedCreation, onEdit }: { glowbook: Glowbook; hasApprovedCreation: boolean; onEdit: () => void }) {
   const { t } = useTranslation();
   const gb = useGlowbook();
   const url = useGlowbookUrl(glowbook.handle);
@@ -260,6 +260,7 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
       aria-label={t("studio.glowbook.pageSection")}
       className="grid gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4 shadow-[var(--shadow-sm)] sm:p-5 xl:grid-cols-2 xl:items-center xl:gap-8"
     >
+      <div className="grid min-w-0 gap-3.5">
       <div className="flex min-w-0 items-center gap-3.5">
         <span style={glowbookThemeStyle()} className="contents">
           <GlowbookAvatar name={glowbook.displayName} url={avatarUrl} className="h-14 w-14 text-[18px] sm:h-16 sm:w-16" />
@@ -286,6 +287,8 @@ function GlowbookHero({ glowbook, onEdit }: { glowbook: Glowbook; onEdit: () => 
         <Button variant="outline" size="sm" iconLeft={PencilLine} className="flex-none max-sm:hidden" onClick={onEdit}>
           {t("studio.glowbook.edit")}
         </Button>
+      </div>
+      <GlowbookDirectorySwitch glowbook={glowbook} hasApprovedCreation={hasApprovedCreation} />
       </div>
 
       <div className="grid min-w-0 gap-2">
@@ -672,6 +675,15 @@ function GlowbookItems() {
     const creation = ws.creations.find((c) => c.id === item.creationId);
     return creation ? [{ item, creation }] : [];
   });
+  // The spotlight creation is chosen here (2026-11-20): published as soon as saved, approved creations only.
+  const featuredId = gb.glowbook?.look.featuredItemId ?? null;
+  const [featuring, setFeaturing] = useState(false);
+  const toggleFeatured = async (itemId: string) => {
+    if (!gb.draftLook || featuring) return;
+    setFeaturing(true);
+    await gb.saveLook({ ...gb.draftLook, featuredItemId: featuredId === itemId ? null : itemId });
+    setFeaturing(false);
+  };
 
   return (
     <section aria-labelledby="gt-glowbook-items" className="grid gap-4">
@@ -681,6 +693,7 @@ function GlowbookItems() {
             {t("studio.glowbook.items.title", { count: rows.length })}
           </h2>
           <p className="m-0 text-[13px] text-[var(--text-muted)]">{t("studio.glowbook.items.howTo")}</p>
+          {rows.length > 0 && <p className="m-0 text-[13px] text-[var(--text-muted)]">{t("studio.glowbook.items.featuredHint")}</p>}
         </div>
         <Button variant="outline" size="sm" iconLeft={LayoutGrid} onClick={() => navigate(studioSectionPath("creations"))}>
           {t("studio.glowbook.items.toCreations")}
@@ -708,6 +721,12 @@ function GlowbookItems() {
                 <p className="m-0 truncate text-[14.5px] font-bold leading-snug text-[var(--text-primary)]">{creation.name}</p>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <ModerationBadge status={item.status} kind="item" />
+                  {featuredId === item.id && (
+                    <span className="inline-flex items-center gap-1 rounded-[var(--radius-pill)] bg-[var(--gt-blue-100)] px-2 py-0.5 text-[10.5px] font-bold text-[var(--gt-blue-700,var(--text-primary))]">
+                      <Star size={11} aria-hidden="true" className="fill-current" />
+                      {t("studio.glowbook.items.featuredBadge")}
+                    </span>
+                  )}
                   <span className="text-[12px] text-[var(--text-muted)]">{t("studio.workspace.gems", { count: creation.elementCount })}</span>
                 </div>
                 <div className="flex min-w-0 items-center gap-1">
@@ -729,6 +748,17 @@ function GlowbookItems() {
                     </label>
                   )}
                   <span className="ml-auto flex flex-none items-center">
+                    <button
+                      type="button"
+                      className={clsx(iconButton, featuredId === item.id && "text-[var(--gt-blue-600)]")}
+                      disabled={featuring || (item.status !== "approved" && featuredId !== item.id)}
+                      aria-pressed={featuredId === item.id}
+                      aria-label={t(featuredId === item.id ? "studio.glowbook.items.unfeature" : "studio.glowbook.items.feature", { name: creation.name })}
+                      title={item.status !== "approved" && featuredId !== item.id ? t("studio.glowbook.items.featureNeedsApproval") : t(featuredId === item.id ? "studio.glowbook.items.unfeature" : "studio.glowbook.items.feature", { name: creation.name })}
+                      onClick={() => void toggleFeatured(item.id)}
+                    >
+                      <Star size={16} aria-hidden="true" className={clsx(featuredId === item.id && "fill-current")} />
+                    </button>
                     <button
                       type="button"
                       className={iconButton}
@@ -761,6 +791,11 @@ function GlowbookItems() {
                   </span>
                 </div>
               </div>
+              {featuredId === item.id && (
+                <div className="col-span-2">
+                  <SpotlightVideoPanel />
+                </div>
+              )}
               {item.status === "rejected" && (
                 <div className="col-span-2 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] bg-[var(--status-error-bg)] px-3 py-2">
                   <p className="m-0 min-w-0 flex-1 basis-[160px] text-[12.5px] text-[var(--status-error-fg)]">

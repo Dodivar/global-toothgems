@@ -72,7 +72,12 @@
     "emptyBody": "Open a creation in My Creations and add it to your Glowbook: it is published once approved.",
     "open": "View the creation “{{name}}”",
     "moveUp": "Move “{{name}}” up",
-    "moveDown": "Move “{{name}}” down"
+    "moveDown": "Move “{{name}}” down",
+    "feature": "Make “{{name}}” the spotlight",
+    "unfeature": "Remove “{{name}}” from the spotlight",
+    "featureNeedsApproval": "A creation can be the spotlight once the team has approved it.",
+    "featuredBadge": "Spotlight",
+    "featuredHint": "The star picks the creation that opens your page, large, in a short video (approved creations only)."
   },
   "control": {
     "title": "My Glowbook",
@@ -228,14 +233,11 @@
   },
   "look": {
     "title": "Customise my page",
-    "sub": "Your picture, the creation that opens your page and where you work. The spotlight, city and place are published when you save; a new picture is reviewed by the team first.",
+    "sub": "Your picture and where you work. The city and place are published when you save; a new picture is reviewed by the team first.",
     "pendingNote": "Some pictures wait for the team’s review: your page shows the previous ones meanwhile.",
     "rejectedNote": "Your latest pictures were not approved.",
     "rejectedNoteReason": "Your latest pictures were not approved. Reason: {{note}}",
     "preview": "Preview",
-    "featured": "Creation in the spotlight",
-    "featuredNone": "None",
-    "featuredHint": "It opens your page, large, in a short video moving in front of the smile from left to right (published creations only).",
     "location": "City or studio",
     "locationPlaceholder": "e.g. Lyon, Studio Rivoli",
     "errors": {
@@ -260,7 +262,6 @@
     },
     "spotlight": {
       "title": "Spotlight video",
-      "saveFirst": "Save the look: the video of this creation will be prepared next.",
       "preparing": "Preparing the video… It is recorded right here, in your browser; your page shows the creation’s picture meanwhile.",
       "recording": "Recording the video… {{percent}}%",
       "keepOpen": "Keep this tab open and visible for a few seconds.",
@@ -305,6 +306,7 @@
     "title": "“Find an artist” directory",
     "body": "Appear in the public artist directory: your name, your city, your salon or area (~1 km, as on your map), your profile picture, one of your designs and your badge if you show it, with a link to your Glowbook.",
     "toggle": "Appear in the directory",
+    "switchAbove": "The setting is at the top of the page, beside your profile.",
     "listed": "Your Glowbook appears in the directory.",
     "waiting": "Your Glowbook will appear in the directory as soon as:",
     "missing": {

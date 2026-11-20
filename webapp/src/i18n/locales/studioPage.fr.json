@@ -1,8 +1,4 @@
 {
-  "placeholder": {
-    "label": "Emplacement média",
-    "note": "Visuel à fournir avant la mise en ligne."
-  },
   "hero": {
     "eyebrow": "Votre créativité, en 3D",
     "title": "Imaginez-le. Dessinez-le. Il est à vous.",
@@ -13,10 +9,10 @@
     "ctaSecondary": "Découvrir l’expérience",
     "reassurance_one": "{{count}} jour pour explorer, puis la formule de votre choix, dès {{price}} / mois.",
     "reassurance_other": "{{count}} jours pour explorer, puis la formule de votre choix, dès {{price}} / mois.",
-    "media": {
-      "title": "Capture d’écran animée du Studio 3D",
-      "body": "Une composition de bijoux dentaires créée puis pivotée en temps réel dans le Studio.",
-      "caption": "Film de démonstration · 16:9 · à remplacer par l’enregistrement définitif."
+    "video": {
+      "description": "Démonstration du Studio 3D, sans son : un cœur de cristaux se pose gemme par gemme, la caméra tourne autour d’une étoile irisée, plusieurs gemmes changent de couleur en même temps, un éclair doré est déplacé puis pivoté sur sa dent, la dentition change de teinte et de lumière, puis la bouche s’ouvre avec les bijoux du bas.",
+      "pause": "Mettre la vidéo en pause",
+      "play": "Lire la vidéo"
     }
   },
   "benefits": {
@@ -26,38 +22,40 @@
     "items": {
       "visualize": {
         "title": "Visualisez avant de créer",
-        "body": "Posez une gemme sur une dent, tournez autour, regardez la lumière accrocher les facettes : vous voyez le rendu avant de poser quoi que ce soit.",
+        "body": "Posez une gemme sur une dent, tournez autour, changez d’angle : vous voyez la composition en 3D, sur une dentition, avant de poser quoi que ce soit.",
         "media": {
-          "title": "Gros plan d’une composition dans le Studio",
-          "body": "Une dent, deux ou trois pièces, la lumière qui accroche les facettes.",
-          "caption": "Image ou court film · format portrait."
+          "alt": "L’espace de travail du Studio 3D sur ordinateur : la bibliothèque de gemmes de la boutique à gauche, au centre la dentition ornée d’un cœur avec une gemme sélectionnée et sa barre d’outils, à droite les réglages de la gemme (couleur, taille, rotation, miroir, position).",
+          "caption": "Une gemme posée sur la dentition, la bibliothèque et les réglages à portée de main."
         }
       },
       "experiment": {
         "title": "Expérimentez sans limite",
-        "body": "Déplacez, redimensionnez, échangez gemmes, formes et couleurs en quelques secondes, et gardez les pistes qui vous parlent.",
+        "body": "Le Scorpion est parti d’une seule gemme rouge. Chaque pièce se pose, se déplace, change de taille ou de couleur en quelques secondes : essayez, défaites, recommencez.",
         "media": {
-          "title": "Galerie de compositions créées dans le Studio",
-          "body": "Plusieurs esthétiques différentes, du minimal au statement, présentées ensemble.",
-          "caption": "Six visuels · même cadrage, même lumière."
-        }
+          "alt": "Le Scorpion terminé dans le Studio 3D : une ligne de cristaux rouges sur les deux incisives, trois navettes rouges pour les pinces et le dard, et de petits cristaux roses tout autour.",
+          "caption": "« Scorpion », une création de l’équipe composée dans le Studio."
+        },
+        "stepsTitle": "Sa création, étape par étape",
+        "steps": [
+          "Une gemme rouge",
+          "Le corps",
+          "Les pinces et le dard"
+        ]
       },
       "signature": {
         "title": "Construisez votre signature",
-        "body": "Enregistrez vos créations, rangez-les en collections et repérez les combinaisons qui reviennent : votre style devient reconnaissable.",
+        "body": "Même dentition, même lumière : comparez vos créations côte à côte, rangez-les en collections et repérez les combinaisons qui reviennent.",
         "media": {
-          "title": "Vos créations rangées en collections dans le Studio",
-          "body": "Une bibliothèque de looks enregistrés, classés par dossiers et collections.",
-          "caption": "Capture · Mes créations."
+          "alt": "Six compositions créées dans le Studio, sur la même dentition et sous la même lumière : un cœur rose et rouge, une étoile irisée et son halo, des cristaux dorés et un éclair, un scorpion rouge, deux navettes bleues avec un teckel et un serpent dorés, et des lignes de cristaux minimalistes.",
+          "caption": "Six créations, même cadrage, même lumière."
         }
       },
       "confidence": {
         "title": "Créez avec plus de certitude",
-        "body": "Vue de face, fiche de placement, liste des gemmes à acheter : vous arrivez au rendez-vous avec un design décidé.",
+        "body": "Vue de face, fiche de placement, liste des gemmes à acheter : vous arrivez au rendez-vous avec un design décidé, pas une intuition.",
         "media": {
-          "title": "Capture de l’interface complète du Studio",
-          "body": "L’espace de travail dans son ensemble : la dentition, la bibliothèque, les outils.",
-          "caption": "Capture large · écran d’ordinateur."
+          "alt": "Un design de l’équipe Global Toothgems dans le Studio : une étoile irisée et son halo sur les dents.",
+          "caption": "Un design de l’équipe, prêt à être posé : la vue de face et la fiche de placement le décrivent pièce par pièce."
         }
       }
     }
@@ -65,7 +63,7 @@
   "proof": {
     "eyebrow": "Les artistes",
     "title": "Fait pour les artistes qui voient des possibilités partout.",
-    "body": "Cet espace accueillera les retours et les créations des artistes qui utilisent le Studio. Rien n’y sera affiché tant que nous n’aurons pas leur accord.",
+    "body": "Voici quelques créations de l’équipe Global Toothgems, composées dans le Studio. Les mots et les créations des artistes qui l’utilisent viendront les rejoindre, publiés uniquement avec leur accord.",
     "testimonialsTitle": "Témoignages",
     "testimonial": {
       "title": "Témoignage d’une utilisatrice du Studio",
@@ -74,9 +72,21 @@
     },
     "galleryTitle": "Créations",
     "gallery": {
-      "title": "Composition terminée, créée dans le Studio",
-      "body": "Exemple réel, partagé avec l’accord de son autrice.",
-      "caption": "Visuel carré."
+      "caption": "Créations de l’équipe Global Toothgems, composées dans le Studio.",
+      "items": {
+        "heart": {
+          "name": "Cœur",
+          "alt": "Composition « Cœur » vue de trois quarts : un cœur de cristaux roses et rouges sur les deux incisives du haut, une ligne de cristaux bleus et blancs en bas."
+        },
+        "star": {
+          "name": "Étoile halo",
+          "alt": "Composition « Étoile halo » vue de côté : une étoile irisée entourée de cristaux, prolongée par un arc de cristaux qui court jusqu’à la canine."
+        },
+        "gold": {
+          "name": "Doré",
+          "alt": "Composition « Doré » vue de trois quarts : deux colonnes de cristaux dorés et un éclair doré sur les incisives du haut, deux navettes dorées en bas."
+        }
+      }
     }
   },
   "plans": {

@@ -44,6 +44,7 @@ import {
   weekToRules,
   zonedInstant,
 } from "../../lib/glowbookBookingMapping";
+import { groupByPeriod } from "../../lib/agendaTimeline";
 import { AGENDA_TABS, agendaTab, type AgendaTab } from "../../lib/agendaRoutes";
 import { bookingCreationPath, GLOWBOOK_INTRO_PATH, glowbookCreationPath, GLOWBOOK_SPACE_PATH } from "../../lib/studioUrl";
 import { Link } from "../../lib/navigation";
@@ -292,7 +293,7 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
 
   const hasAppointments = upcoming.length > 0 || toMark.length > 0;
   const appointments = (
-    <AppointmentLists upcoming={upcoming} toMark={toMark} onChanged={() => void load(true)} creationOf={creationOf} />
+    <AppointmentLists upcoming={upcoming} toMark={toMark} today={localDay(new Date().toISOString(), tz)} onChanged={() => void load(true)} creationOf={creationOf} />
   );
 
   // No Glowbook page: nothing to book yet — unless appointments are left to handle.
@@ -546,30 +547,63 @@ export function ArtistAgenda({ plan }: { plan: boolean | null }) {
   );
 }
 
-/** The appointments to record (past, outcome missing) and those to come. */
+/** The appointments to record (past, outcome missing) and those to come, as a timeline by period. */
 function AppointmentLists({
   upcoming,
   toMark,
+  today,
   onChanged,
   creationOf,
 }: {
   upcoming: ArtistCalendar["bookings"];
   toMark: ArtistCalendar["bookings"];
+  today: string;
   onChanged: () => void;
   creationOf: CreationOf;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language?.startsWith("en") ? "en" : "fr";
   const ids = { mark: useId(), coming: useId() };
+  const groups = useMemo(() => groupByPeriod(upcoming, today), [upcoming, today]);
+  const marked = useMemo(
+    () => [...toMark].sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)).map((booking) => ({ booking, day: localDay(booking.startsAt, booking.timezone) })),
+    [toMark],
+  );
+
+  const tile = (day: string, tone: "today" | "soon" | "plain" | "past") => {
+    const date = new Date(`${day}T12:00:00Z`);
+    const part = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(lang === "fr" ? "fr-FR" : "en-GB", { timeZone: "UTC", ...opts }).format(date).replace(".", "");
+    return (
+      <div
+        aria-hidden="true"
+        className={clsx(
+          "grid w-[64px] flex-none place-items-center self-start rounded-[var(--radius-lg)] border px-1 py-2 text-center leading-none",
+          tone === "today" && "border-[var(--gt-ink-900)] bg-[var(--gt-ink-900)] text-white",
+          tone === "soon" && "border-[var(--gt-blue-200)] bg-[var(--gt-blue-100)] text-[var(--gt-blue-700)]",
+          tone === "plain" && "border-[var(--border-subtle)] bg-[var(--surface-page)] text-[var(--text-primary)]",
+          tone === "past" && "border-[var(--border-subtle)] bg-[var(--surface-sunken)] text-[var(--text-muted)]",
+        )}
+      >
+        <span className="text-[11px] font-bold uppercase tracking-[var(--tracking-eyebrow)]">{part({ weekday: "short" })}</span>
+        <span className="my-1 text-[24px] font-[var(--weight-black)] tabular-nums">{part({ day: "numeric" })}</span>
+        <span className="text-[11px] font-semibold uppercase">{part({ month: "short" })}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="grid gap-6">
-      {toMark.length > 0 && (
+      {marked.length > 0 && (
         <section aria-labelledby={ids.mark} className={card}>
-          <h2 id={ids.mark} className={cardTitle}>{t("booking.agenda.toMark", { count: toMark.length })}</h2>
+          <h2 id={ids.mark} className={cardTitle}>{t("booking.agenda.toMark", { count: marked.length })}</h2>
           <p className={small}>{t("booking.agenda.toMarkHint")}</p>
-          <ul className="m-0 grid list-none gap-3 p-0 lg:grid-cols-2">
-            {toMark.map((b) => (
-              <li key={b.id}>
-                <ArtistBookingCard booking={b} creation={creationOf(b)} onChanged={onChanged} />
+          <ul className="m-0 grid list-none gap-3 p-0">
+            {marked.map(({ booking, day }) => (
+              <li key={booking.id} className="flex items-start gap-3">
+                {tile(day, "past")}
+                <div className="min-w-0 flex-1">
+                  <ArtistBookingCard booking={booking} creation={creationOf(booking)} onChanged={onChanged} timeOnly />
+                </div>
               </li>
             ))}
           </ul>
@@ -577,16 +611,39 @@ function AppointmentLists({
       )}
       <section aria-labelledby={ids.coming} className={card}>
         <h2 id={ids.coming} className={cardTitle}>{t("booking.agenda.upcoming", { count: upcoming.length })}</h2>
-        {upcoming.length === 0 ? (
+        {groups.length === 0 ? (
           <p className={small}>{t("booking.agenda.noneUpcoming")}</p>
         ) : (
-          <ul className="m-0 grid list-none gap-3 p-0 lg:grid-cols-2">
-            {upcoming.map((b) => (
-              <li key={b.id}>
-                <ArtistBookingCard booking={b} creation={creationOf(b)} onChanged={onChanged} />
-              </li>
+          <div className="grid gap-6">
+            {groups.map((group) => (
+              <div key={group.period} className="grid gap-3">
+                <h3
+                  className={clsx(
+                    "m-0 flex items-center gap-2 text-[12px] font-bold uppercase tracking-[var(--tracking-eyebrow)]",
+                    group.period === "today" ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]",
+                  )}
+                >
+                  {group.period === "today" && <span aria-hidden="true" className="h-2 w-2 rounded-full bg-[var(--gt-ink-900)]" />}
+                  {t(`booking.agenda.period.${group.period}`)}
+                  <span className="rounded-[var(--radius-pill)] bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[11px] tabular-nums normal-case tracking-normal text-[var(--text-muted)]">{group.items.length}</span>
+                  <span aria-hidden="true" className="h-px flex-1 bg-[var(--border-subtle)]" />
+                </h3>
+                <ul className="m-0 grid list-none gap-3 p-0">
+                  {group.items.map(({ booking, day, inDays }) => (
+                    <li key={booking.id} className="flex items-start gap-3">
+                      {tile(day, inDays <= 0 ? "today" : inDays === 1 ? "soon" : "plain")}
+                      <div className="grid min-w-0 flex-1 gap-1.5">
+                        <p className="m-0 text-[12.5px] font-bold text-[var(--text-muted)]">
+                          {inDays <= 0 ? t("booking.agenda.relative.today") : inDays === 1 ? t("booking.agenda.relative.tomorrow") : t("booking.agenda.relative.inDays", { count: inDays })}
+                        </p>
+                        <ArtistBookingCard booking={booking} creation={creationOf(booking)} onChanged={onChanged} timeOnly />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
         <p className={small}>{t("booking.agenda.pastHint")}</p>
       </section>
