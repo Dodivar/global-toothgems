@@ -22,7 +22,7 @@ const PUBLIC_ROUTES: { path: string; heading: RegExp }[] = [
   { path: "/confirmation-compte", heading: /Ce lien n’est plus valable/ },
   { path: "/fr/fidelite", heading: /Vos récompenses/ },
   { path: "/fr/carte-cadeau", heading: /Offrez l’éclat d’un sourire/ },
-  { path: "/fr/studio-3d", heading: /Imaginez-le\. Dessinez-le\. Il est à vous\./ },
+  { path: "/fr/studio-3d", heading: /Lasso, alignement, miroir : vos designs au millimètre\./ },
   { path: "/fr/studio-3d/abonnement", heading: /Débloquez le Studio 3D/ },
   { path: "/fr/glowbook", heading: /Toutes vos créations, en un seul lien\./ },
   // The artist directory (decision 145): empty in mock mode, its empty state still renders.
@@ -128,12 +128,12 @@ test("a visit from a campaign link sees the Studio pages without the storefront'
   const nav = page.getByRole("navigation", { name: "Navigation principale" });
   // An ordinary visit keeps the storefront chrome.
   await open(page, "/fr/studio-3d");
-  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Imaginez-le\. Dessinez-le\. Il est à vous\./);
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Lasso, alignement, miroir : vos designs au millimètre\./);
   await expect(nav.first()).toBeVisible();
 
   // A tagged link (social network, ad) hides it, and the page is the same.
   await open(page, "/fr/studio-3d?utm_source=instagram&utm_medium=paid&utm_campaign=studio");
-  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Imaginez-le\. Dessinez-le\. Il est à vous\./);
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(/Lasso, alignement, miroir : vos designs au millimètre\./);
   await expect(page.getByRole("button", { name: "Se connecter" })).toBeVisible();
   await expect(nav).toBeHidden();
   await expect(page.getByRole("link", { name: "Mentions légales" })).toBeVisible();

@@ -1,22 +1,16 @@
 {
-  "placeholder": {
-    "label": "Media placeholder",
-    "note": "Visual to be supplied before this page goes live."
-  },
   "hero": {
-    "eyebrow": "Your creativity, in 3D",
-    "title": "Imagine it. Design it. Make it yours.",
-    "body": "Bring your tooth jewellery ideas to life in an immersive 3D studio made for artists who want to explore new combinations, refine their creativity and visualise their next signature look.",
+    "eyebrow": "The 3D Studio's tools",
+    "title": "Lasso, align, mirror: your designs, down to the millimetre.",
+    "body": "Lasso your gems, align them, space them evenly and mirror them onto the other side of the smile. Recolour them in one go, tint the teeth, open the mouth: check your design in 3D before placing a single gem.",
     "ctaPrimary_one": "Try the Studio free for {{count}} day",
     "ctaPrimary_other": "Try the Studio free for {{count}} days",
     "ctaOpen": "Open the Studio",
     "ctaSecondary": "Discover the experience",
     "reassurance_one": "{{count}} day to explore, then the plan you choose, from {{price}} / month.",
     "reassurance_other": "{{count}} days to explore, then the plan you choose, from {{price}} / month.",
-    "media": {
-      "title": "Screen recording of the 3D Studio",
-      "body": "A tooth jewellery composition being created and rotated in real time in the Studio.",
-      "caption": "Demonstration film · 16:9 · to be replaced by the final recording."
+    "video": {
+      "description": "Silent demonstration of the 3D Studio's tools on the team's designs: a column of crystals lassoed, aligned vertically, then mirrored with its canine gem; the lower crystals lassoed, aligned, then spaced evenly; the Scorpion's red body lassoed and recoloured sapphire, then gold; a turn round the Star halo; finally the Heart smile opens and closes while the teeth change colour."
     }
   },
   "benefits": {
@@ -26,51 +20,40 @@
     "items": {
       "visualize": {
         "title": "Visualise before you create",
-        "body": "See how a composition could look before you commit to a creative direction."
+        "body": "Place a gem on a tooth, turn around it, change the angle: you see the composition in 3D, on a dentition, before you place anything.",
+        "media": {
+          "description": "Demonstration of the 3D Studio editor, without sound: five fuchsia gems placed on a lateral incisor, lassoed and aligned vertically, then mirror-copied to the other side; a sapphire gem placed on the canine, made larger and mirror-copied; the two lowest gems copied vertically onto the lower arch and turned gold; one gem duplicated and mirror-copied, then the four lower gems aligned, spaced evenly and centred on their teeth; finally the panels close on the finished smile.",
+          "caption": "“Cristaux minimalistes” rebuilt in colour from a blank smile: filmed in the Studio, sped up."
+        }
       },
       "experiment": {
         "title": "Experiment without limits",
-        "body": "Try other directions, other combinations, other styles, in a space built for exploring."
+        "body": "The Scorpion started as a single red gem. Every piece is placed, moved, resized or recoloured in seconds: try, undo, start again.",
+        "media": {
+          "alt": "The finished Scorpion in the 3D Studio: a line of red crystals across the two incisors, three red navettes for the claws and the sting, and small pink crystals all around.",
+          "caption": "“Scorpion”, a team design composed in the Studio."
+        },
+        "stepsTitle": "How it was made, step by step",
+        "steps": [
+          "One red gem",
+          "The body",
+          "The claws and the sting"
+        ]
       },
       "signature": {
         "title": "Develop your signature style",
-        "body": "Explore your ideas, find unexpected combinations and build a recognisable artistic identity."
+        "body": "Same dentition, same light: compare your creations side by side, file them into collections and spot the combinations that keep coming back.",
+        "media": {
+          "alt": "Six designs created in the Studio, on the same dentition under the same light: a pink and red heart, an iridescent star with its halo, gold crystals and a lightning bolt, a red scorpion, two blue navettes with a gold dachshund and snake, and minimal lines of crystals.",
+          "caption": "Six designs, same framing, same light."
+        }
       },
       "confidence": {
         "title": "Create with more confidence",
-        "body": "Give your ideas a clearer visual form and make better informed creative decisions."
-      }
-    }
-  },
-  "showcase": {
-    "eyebrow": "The experience",
-    "title": "Let the Studio speak for itself.",
-    "items": {
-      "idea": {
-        "title": "Every detail starts with an idea",
-        "body": "One instinct placed as a single gem, then moved, resized, swapped — until it becomes the composition you had in mind.",
+        "body": "Front view, placement sheet, shopping list of gems: you arrive at the appointment with a decided design, not just an instinct.",
         "media": {
-          "title": "Close-up of a composition in the Studio",
-          "body": "One tooth, two or three pieces, light catching the facets.",
-          "caption": "Image or short film · portrait or square."
-        }
-      },
-      "signature": {
-        "title": "Explore your next signature look",
-        "body": "Minimal or statement, symmetrical or free: change register in seconds and keep the directions that speak to you.",
-        "media": {
-          "title": "Gallery of compositions created in the Studio",
-          "body": "Several different aesthetics, shown together.",
-          "caption": "Six visuals · same framing, same light."
-        }
-      },
-      "space": {
-        "title": "A creative space made for you",
-        "body": "A place of your own for tooth jewellery ideas, open whenever inspiration comes, on a computer as on a phone.",
-        "media": {
-          "title": "Screenshot of the full Studio interface",
-          "body": "The whole workspace: the dentition, the library, the tools.",
-          "caption": "Wide screenshot · desktop screen."
+          "alt": "A Global Toothgems team design in the Studio: an iridescent star and its halo on the teeth.",
+          "caption": "A team design, ready to place: the front view and the placement sheet describe it piece by piece."
         }
       }
     }
@@ -78,7 +61,7 @@
   "proof": {
     "eyebrow": "The artists",
     "title": "Made for artists who see possibilities everywhere.",
-    "body": "This space will hold the words and the work of the artists who use the Studio. Nothing appears here until they have agreed to it.",
+    "body": "Here are a few designs by the Global Toothgems team, composed in the Studio. The words and the work of the artists who use it will join them, published only with their agreement.",
     "testimonialsTitle": "Testimonials",
     "testimonial": {
       "title": "Testimonial from a Studio user",
@@ -87,9 +70,21 @@
     },
     "galleryTitle": "Creations",
     "gallery": {
-      "title": "Finished composition created in the Studio",
-      "body": "A real example, shared with its author's agreement.",
-      "caption": "Square visual."
+      "caption": "Designs by the Global Toothgems team, composed in the Studio.",
+      "items": {
+        "heart": {
+          "name": "Heart",
+          "alt": "The “Heart” design seen at an angle: a heart of pink and red crystals across the two upper incisors, a line of blue and white crystals below."
+        },
+        "star": {
+          "name": "Star halo",
+          "alt": "The “Star halo” design seen from the side: an iridescent star ringed with crystals, followed by an arc of crystals running to the canine."
+        },
+        "gold": {
+          "name": "Gold",
+          "alt": "The “Gold” design seen at an angle: two columns of gold crystals and a gold lightning bolt on the upper incisors, two gold navettes below."
+        }
+      }
     }
   },
   "plans": {
@@ -193,5 +188,9 @@
         "answer": "No. You pick a piece, place it on a tooth and move it with the mouse, a finger or the keyboard; the view turns with a drag. A help page comes with the editor."
       }
     ]
+  },
+  "video": {
+    "pause": "Pause the video",
+    "play": "Play the video"
   }
 }

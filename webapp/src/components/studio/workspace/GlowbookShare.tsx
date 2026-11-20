@@ -183,6 +183,62 @@ export function GlowbookBadgeCard({ glowbook }: { glowbook: Glowbook }) {
 }
 
 /**
+ * The directory's on/off switch, in the page's header beside the profile
+ * (2026-11-20; it was a checkbox in the Share tab). Off by default. Below the
+ * Atelier plan it is offered only to turn an existing listing off.
+ */
+export function GlowbookDirectorySwitch({ glowbook, hasApprovedCreation }: { glowbook: Glowbook; hasApprovedCreation: boolean }) {
+  const { t } = useTranslation();
+  const gb = useGlowbook();
+  const id = useId();
+  const [busy, setBusy] = useState(false);
+  const planLocked = useBookingsPlan() === false;
+  if (planLocked && !glowbook.inDirectory) return null;
+  const missing = [glowbook.status !== "approved" && "page", !glowbook.look.place && "place", !hasApprovedCreation && "creation"].filter((m): m is string => !!m);
+  const caption = !glowbook.inDirectory
+    ? t("studio.glowbook.directory.off")
+    : missing.length
+      ? `${t("studio.glowbook.directory.waiting")} ${missing.map((m) => t(`studio.glowbook.directory.missing.${m}`)).join(" · ")}`
+      : t("studio.glowbook.directory.listed");
+  return (
+    <div className="flex min-w-0 items-start gap-3">
+      <label htmlFor={id} className="relative mt-0.5 inline-flex flex-none cursor-pointer items-center">
+        <input
+          id={id}
+          type="checkbox"
+          role="switch"
+          checked={glowbook.inDirectory}
+          disabled={busy}
+          aria-describedby={`${id}-caption`}
+          onChange={async (e) => {
+            setBusy(true);
+            await gb.setInDirectory(e.target.checked);
+            setBusy(false);
+          }}
+          className="peer sr-only"
+        />
+        <span
+          aria-hidden="true"
+          className="block h-6 w-11 rounded-[var(--radius-pill)] bg-[var(--gt-ink-300)] transition-colors peer-checked:bg-[var(--gt-emerald-500)] peer-disabled:opacity-45 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--focus-ring)]"
+        />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-[var(--gt-white)] shadow-[var(--shadow-xs)] transition-transform peer-checked:translate-x-5"
+        />
+      </label>
+      <div className="grid min-w-0 gap-0.5">
+        <label htmlFor={id} className="cursor-pointer text-[13px] font-bold text-[var(--text-primary)]">
+          {t("studio.glowbook.directory.toggle")}
+        </label>
+        <p id={`${id}-caption`} className="m-0 text-[12px] leading-snug text-[var(--text-subtle)]">
+          {caption}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
  * "Find an artist" directory (decision 145): the artist's own switch, off by
  * default (owner's decision, 2026-11-14) — the directory shows their place of
  * work to people who never visited their page. Says what the directory shows
@@ -193,9 +249,6 @@ export function GlowbookBadgeCard({ glowbook }: { glowbook: Glowbook }) {
  */
 export function GlowbookDirectoryCard({ glowbook, hasApprovedCreation }: { glowbook: Glowbook; hasApprovedCreation: boolean }) {
   const { t } = useTranslation();
-  const gb = useGlowbook();
-  const toggleId = useId();
-  const [busy, setBusy] = useState(false);
   const planLocked = useBookingsPlan() === false;
   const missing = [
     glowbook.status !== "approved" && "page",
@@ -221,22 +274,9 @@ export function GlowbookDirectoryCard({ glowbook, hasApprovedCreation }: { glowb
           </span>
         </p>
       )}
+      {/* The switch itself sits in the page's header, beside the profile. */}
       {(!planLocked || glowbook.inDirectory) && (
-      <label htmlFor={toggleId} className="inline-flex w-fit cursor-pointer items-center gap-2 text-[13px] font-semibold text-[var(--text-primary)]">
-        <input
-          id={toggleId}
-          type="checkbox"
-          checked={glowbook.inDirectory}
-          disabled={busy}
-          onChange={async (e) => {
-            setBusy(true);
-            await gb.setInDirectory(e.target.checked);
-            setBusy(false);
-          }}
-          className="h-4 w-4 accent-[var(--gt-ink-900)]"
-        />
-        {t("studio.glowbook.directory.toggle")}
-      </label>
+        <p className="m-0 text-[12.5px] font-semibold text-[var(--text-primary)]">{t("studio.glowbook.directory.switchAbove")}</p>
       )}
       {planLocked ? null : !glowbook.inDirectory ? (
         <p className="m-0 text-[12px] text-[var(--text-subtle)]">{t("studio.glowbook.directory.off")}</p>

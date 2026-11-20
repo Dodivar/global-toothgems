@@ -1,10 +1,11 @@
 import "server-only";
+import { headers } from "next/headers";
 import { connection } from "next/server";
 import { cache } from "react";
 import { isSupabaseConfigured } from "../supabase/env";
 import { createPublicServerSupabase } from "../supabase/publicServer";
 import { BUCKETS } from "../supabase/storage";
-import { toDirectoryArtists, type DirectoryEntry } from "../glowbookDirectory";
+import { approximateOriginFromHeaders, toDirectoryArtists, usableApproximateOrigin, type ApproximateOrigin, type DirectoryEntry } from "../glowbookDirectory";
 
 /**
  * The artist directory as the server reads it (decision 145):
@@ -46,3 +47,22 @@ export const listDirectoryArtists = cache(async (): Promise<DirectoryEntry[]> =>
     coverUrl: coverPath ? (covers.get(coverPath) ?? null) : null,
   }));
 });
+
+/**
+ * Decision 145 (j), to confirm (owner's request 2026-11-20, "target where the
+ * visitor is"): the main page sorts from the approximate area the host
+ * derives from the visitor's IP address. Read from the request headers on
+ * the server, used for this response only, never stored or logged. Set to
+ * false to go back to the list sorted by name until the visitor searches.
+ */
+export const SORT_FROM_APPROXIMATE_AREA = true;
+
+/** The visitor's approximate area for this request, when known and near at least one listed artist. */
+export async function approximateVisitorOrigin(artists: readonly DirectoryEntry[]): Promise<ApproximateOrigin | null> {
+  if (!SORT_FROM_APPROXIMATE_AREA || !artists.length) return null;
+  const list = await headers();
+  return usableApproximateOrigin(
+    approximateOriginFromHeaders((name) => list.get(name)),
+    artists,
+  );
+}

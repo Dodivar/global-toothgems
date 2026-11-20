@@ -32,7 +32,7 @@ import { backOut, clamp, easeInOutCubic, pointInPolygon, uid, v3, type Point2 } 
 import { ARCH_FRAMES } from "./archLayout";
 import { anchorToothOf, groupToWorld, piecesToGroup, type Frame, type GemGroupData } from "../studioWorkspace/gemGroup";
 import type { SceneCamera, SceneModel } from "../studioWorkspace/scene";
-import { alignedColumn, alignedHeights, centeredOffsets, type CenterItem } from "./layout";
+import { alignedColumn, alignedHeights, archDistances, centeredOffsets, type CenterItem } from "./layout";
 import { mirroredRotation, opposingTooth } from "./mirror";
 import { groupBox, groupDuplicateMoves } from "./groupDuplicate";
 import { notify } from "./notices";
@@ -1863,6 +1863,9 @@ export class StudioEngine {
     const ids = this.store.editableIds(this.store.getSnapshot().selectedJewelIds);
     const gems = this.store.jewels.filter((j) => ids.includes(j.id));
     if (gems.length < 3) return null;
+    // Each tooth's place along its own arch, measured on the crowns themselves:
+    // the reference widths are the upper arch's, far too wide for the lower incisors.
+    const along = archDistances([...this.toothRigs.values()].map((r) => ({ id: r.id, x: r.center.x, y: r.center.y, z: r.center.z })));
     const centers = this.archCenters();
     const keyed = gems
       .map((j) => {
@@ -1873,7 +1876,7 @@ export class StudioEngine {
         if (rig) {
           const idx = parseInt(rig.id[1], 10) - 1;
           const side = rig.id[0] === "1" || rig.id[0] === "4" ? -1 : 1; // patient's right: viewer's left
-          key = centers[idx] * side + p.clone().sub(rig.center).dot(rig.tangent);
+          key = (along.get(rig.id) ?? centers[idx]) * side + p.clone().sub(rig.center).dot(rig.tangent);
           tangent = rig.tangent;
         }
         return { j, key, tangent };

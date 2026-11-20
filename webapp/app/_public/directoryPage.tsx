@@ -5,7 +5,7 @@ import { directoryCities, type DirectoryEntry } from "../../src/lib/glowbookDire
 import { localizedPath, parsePath, type Locale } from "../../src/lib/localeRoutes";
 import { pageMeta, SITE_NAME, uiText } from "../../src/lib/pageMeta";
 import { siteUrl } from "../../src/lib/siteUrl";
-import { listDirectoryArtists } from "../../src/lib/studioWorkspace/serverDirectory";
+import { approximateVisitorOrigin, listDirectoryArtists } from "../../src/lib/studioWorkspace/serverDirectory";
 import { ArtistDirectory } from "../../src/screens/ArtistDirectory";
 import { publicPageMetadata } from "./metadata";
 
@@ -13,8 +13,9 @@ import { publicPageMetadata } from "./metadata";
  * The artist directory (decision 145): `/fr/artistes` · `/en/artists`, and
  * one page per city, `/fr/artistes/<city>` · `/en/artists/<city>` (same slug
  * in both languages). The server reads the listed artists on every request
- * (`serverDirectory.ts`) and renders the list; the map and the distance
- * sorting are the browser's. A city nobody lists answers 404; a slug written
+ * (`serverDirectory.ts`) and renders the list — on the main page sorted from
+ * the visitor's approximate area when the host knows it (decision 145 (j));
+ * the map and the precise distance sorting are the browser's. A city nobody lists answers 404; a slug written
  * with capitals moves (308) to its lower-case address.
  *
  * JSON-LD: an `ItemList` of the artists' Glowbook pages — no address data,
@@ -61,12 +62,13 @@ export async function directoryMetadata(locale: Locale): Promise<Metadata> {
 
 export async function DirectoryPage({ locale }: { locale: Locale }) {
   const artists = await listDirectoryArtists();
+  const approxOrigin = await approximateVisitorOrigin(artists);
   return (
     <>
       {artists.length > 0 && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(itemList(artists, locale, uiText(locale, "directory.title"))) }} />
       )}
-      <ArtistDirectory artists={artists} cities={directoryCities(artists)} city={null} />
+      <ArtistDirectory artists={artists} cities={directoryCities(artists)} city={null} approxOrigin={approxOrigin} />
     </>
   );
 }

@@ -5,6 +5,8 @@
   },
   "eyebrow": "Annuaire des artistes",
   "title": "Trouver un artiste tooth gems près de chez vous",
+  "privacySummary": "Comment votre position est-elle utilisée ?",
+  "privacyNoteApprox": "Nous trions les artistes depuis votre secteur approximatif, déduit de votre adresse IP par notre hébergeur au moment de la visite : il n’est pas enregistré.",
   "privacyNote": "« Près de moi » utilise la position de votre appareil uniquement dans votre navigateur : elle n’est ni envoyée ni enregistrée. Une ville inconnue de l’annuaire est recherchée sur OpenStreetMap.",
   "results_one": "{{count}} artiste",
   "results_other": "{{count}} artistes",
@@ -12,7 +14,9 @@
     "name": "Classées par nom",
     "nearMe": "Classées par distance depuis votre position",
     "city": "Classées par distance depuis {{place}}",
-    "clear": "Effacer"
+    "clear": "Effacer",
+    "approx": "Classées par distance autour de {{place}} (position approximative)",
+    "approxUnknown": "Classées par distance autour de votre position approximative"
   },
   "search": {
     "label": "Ville ou code postal",
@@ -29,10 +33,18 @@
   },
   "map": {
     "title": "Sur la carte",
-    "note": "Une épingle est un salon ; une photo dans un halo bleu est un secteur approximatif (~1 km), l’adresse de l’artiste n’est pas publiée.",
+    "note": "Un chiffre regroupe plusieurs artistes proches : touchez-le pour zoomer. Une épingle est un salon ; une photo dans un halo bleu est un secteur approximatif (~1 km), l’adresse de l’artiste n’est pas publiée.",
     "open": "Voir son Glowbook",
     "pin": "{{name}} : voir sur la carte",
-    "close": "Fermer"
+    "close": "Fermer",
+    "cluster_one": "{{count}} artiste ici : zoomer pour la voir",
+    "cluster_other": "{{count}} artistes ici : zoomer pour les voir",
+    "clusterTip_one": "{{count}} artiste · Zoomer",
+    "clusterTip_other": "{{count}} artistes · Zoomer",
+    "clusterList_one": "{{count}} artiste à cet endroit",
+    "clusterList_other": "{{count}} artistes à cet endroit",
+    "origin": "Le point depuis lequel la liste est classée",
+    "toList": "Voir la liste"
   },
   "cities": {
     "title": "Par ville",
@@ -68,5 +80,24 @@
     "title": "Vous êtes artiste ?",
     "body": "Avec votre Glowbook, présentez vos créations sur une page à votre nom et apparaissez dans cet annuaire pour être trouvée par des clientes près de chez vous.",
     "cta": "Découvrir le Glowbook"
+  },
+  "groups": {
+    "band": {
+      "near": "À moins de 10 km",
+      "close": "Entre 10 et 30 km",
+      "region": "Entre 30 et 100 km",
+      "far": "À plus de 100 km"
+    },
+    "other": "Autres secteurs",
+    "count_one": "{{count}} artiste",
+    "count_other": "{{count}} artistes",
+    "seeAll": "Tout voir ({{count}})",
+    "cityPage": "Voir la page"
+  },
+  "more": {
+    "button": "Afficher plus d’artistes",
+    "progress": "{{shown}} sur {{total}} artistes",
+    "cities_one": "Afficher {{count}} ville de plus",
+    "cities_other": "Afficher {{count}} villes de plus"
   }
 }

@@ -246,6 +246,8 @@
     },
     "upcoming_one": "{{count}} rendez-vous à venir",
     "upcoming_other": "{{count}} rendez-vous à venir",
+    "period": { "today": "Aujourd’hui", "tomorrow": "Demain", "thisWeek": "Cette semaine", "nextWeek": "La semaine prochaine", "later": "Plus tard" },
+    "relative": { "today": "Aujourd’hui", "tomorrow": "Demain", "inDays_one": "Dans {{count}} jour", "inDays_other": "Dans {{count}} jours" },
     "noneUpcoming": "Aucun rendez-vous à venir.",
     "pastHint": "Après l’heure, le rendez-vous passe dans « Rendez-vous passés à noter » : indiquez si le client est venu.",
     "blocks": "Clients que vous n’acceptez plus",

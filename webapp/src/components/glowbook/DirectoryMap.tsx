@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import clsx from "clsx";
 import { MapPin } from "lucide-react";
 import type { DirectoryMapCanvasProps } from "./DirectoryMapCanvas";
 
@@ -10,7 +11,8 @@ import type { DirectoryMapCanvasProps } from "./DirectoryMapCanvas";
  * choice, 2026-11-14: same behaviour), MapLibre and the tiles load by
  * themselves once the frame comes within a screen of the viewport; a visitor
  * who stays on the list downloads neither. The frame is drawn from the start,
- * on the server too, so nothing shifts.
+ * on the server too, so nothing shifts. The page gives it the site's whole
+ * width, like the Glowbook's place band (owner's request, 2026-11-20).
  */
 const Canvas = dynamic(() => import("./DirectoryMapCanvas"), { ssr: false, loading: () => <Placeholder /> });
 
@@ -22,7 +24,7 @@ function Placeholder() {
   );
 }
 
-export function DirectoryMap(props: DirectoryMapCanvasProps) {
+export function DirectoryMap({ frameClassName, ...props }: Omit<DirectoryMapCanvasProps, "className"> & { frameClassName?: string }) {
   const [show, setShow] = useState(false);
   const frame = useRef<HTMLDivElement>(null);
 
@@ -35,7 +37,7 @@ export function DirectoryMap(props: DirectoryMapCanvasProps) {
   }, [show]);
 
   return (
-    <div ref={frame} className="relative h-[min(60vh,420px)] overflow-hidden rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--surface-sunken)]">
+    <div ref={frame} className={clsx("relative overflow-hidden bg-[var(--surface-sunken)]", frameClassName)}>
       {show ? <Canvas {...props} className="h-full w-full" /> : <Placeholder />}
     </div>
   );
