@@ -44,11 +44,17 @@
     "items": {
       "idea": {
         "title": "Every detail starts with an idea",
-        "body": "One instinct placed as a single gem, then moved, resized, swapped — until it becomes the composition you had in mind.",
+        "body": "The Scorpion started as a single red gem. A line of crystals for the body, navettes for the claws and the sting, then touches of pink: every piece is placed, moved, resized or recoloured until it becomes the composition you had in mind.",
         "media": {
-          "alt": "Close-up of an incisor in the 3D Studio: three gold crystals in a row and a gold metal lightning bolt, light catching their facets.",
-          "caption": "“Gold”, a design composed in the Studio."
-        }
+          "alt": "The finished Scorpion in the 3D Studio: a line of red crystals across the two incisors, three red navettes for the claws and the sting, and small pink crystals all around.",
+          "caption": "“Scorpion”, a team design composed in the Studio."
+        },
+        "stepsTitle": "How it was made, step by step",
+        "steps": [
+          "One red gem",
+          "The body",
+          "The claws and the sting"
+        ]
       },
       "signature": {
         "title": "Explore your next signature look",
@@ -90,9 +96,9 @@
           "name": "Star halo",
           "alt": "The “Star halo” design seen from the side: an iridescent star ringed with crystals, followed by an arc of crystals running to the canine."
         },
-        "scorpion": {
-          "name": "Scorpion",
-          "alt": "The “Scorpion” design: a scorpion of red and pink crystals, with navettes for the claws and tail, across three upper teeth."
+        "gold": {
+          "name": "Gold",
+          "alt": "The “Gold” design seen at an angle: two columns of gold crystals and a gold lightning bolt on the upper incisors, two gold navettes below."
         }
       }
     }

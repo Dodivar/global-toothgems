@@ -44,11 +44,17 @@
     "items": {
       "idea": {
         "title": "Chaque détail part d’une idée",
-        "body": "Une intuition posée en une gemme, puis déplacée, redimensionnée, échangée — jusqu’à la composition que vous aviez en tête.",
+        "body": "Le Scorpion est parti d’une seule gemme rouge. Une ligne de cristaux pour le corps, des navettes pour les pinces et le dard, puis des touches de rose : chaque pièce se pose, se déplace, change de taille ou de couleur, jusqu’à la composition que vous aviez en tête.",
         "media": {
-          "alt": "Gros plan d’une incisive dans le Studio 3D : trois cristaux dorés alignés et un éclair en métal doré, la lumière accroche leurs facettes.",
-          "caption": "« Doré », une création composée dans le Studio."
-        }
+          "alt": "Le Scorpion terminé dans le Studio 3D : une ligne de cristaux rouges sur les deux incisives, trois navettes rouges pour les pinces et le dard, et de petits cristaux roses tout autour.",
+          "caption": "« Scorpion », une création de l’équipe composée dans le Studio."
+        },
+        "stepsTitle": "Sa création, étape par étape",
+        "steps": [
+          "Une gemme rouge",
+          "Le corps",
+          "Les pinces et le dard"
+        ]
       },
       "signature": {
         "title": "Cherchez votre prochaine signature",
@@ -90,9 +96,9 @@
           "name": "Étoile halo",
           "alt": "Composition « Étoile halo » vue de côté : une étoile irisée entourée de cristaux, prolongée par un arc de cristaux qui court jusqu’à la canine."
         },
-        "scorpion": {
-          "name": "Scorpion",
-          "alt": "Composition « Scorpion » : un scorpion de cristaux rouges et roses, avec des navettes pour les pinces et la queue, sur trois dents du haut."
+        "gold": {
+          "name": "Doré",
+          "alt": "Composition « Doré » vue de trois quarts : deux colonnes de cristaux dorés et un éclair doré sur les incisives du haut, deux navettes dorées en bas."
         }
       }
     }

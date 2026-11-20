@@ -48,26 +48,30 @@ const BENEFITS = [
 ] as const;
 
 const STILLS = "/images/studio-page";
-/** Half the content width on wide screens, the screen less its gutters on phones. */
-const HALF_WIDTH = "(min-width: 1024px) 600px, calc(100vw - 32px)";
+/** The media column (two thirds of the content) on wide screens, the screen less its gutters on phones. */
+const MEDIA_WIDTH = "(min-width: 1024px) 800px, calc(100vw - 32px)";
 
 /**
- * The showcase's stills: a close-up of "Doré" (one tooth, a few pieces), six
- * designs under one camera and one light (a single picture whose gaps are
- * transparent), and the editor itself — a screenshot per language, since it
- * shows the interface's words.
+ * The showcase's stills: the Scorpion as it was made (finished, with the three
+ * steps before it, all under one camera), six designs under one camera and one
+ * light (a single picture whose gaps are transparent), and the editor itself —
+ * a screenshot per language, since it shows the interface's words.
  */
 const SHOWCASE = [
-  { key: "idea", still: { base: `${STILLS}/idea-doree`, width: 800, height: 1000 }, sizes: "(min-width: 1024px) 460px, calc(100vw - 32px)", look: "photo" },
-  { key: "signature", still: { base: `${STILLS}/signatures`, width: 800, height: 600 }, sizes: HALF_WIDTH, look: "grid" },
-  { key: "space", still: { base: `${STILLS}/workspace-{lang}`, width: 800, height: 500 }, sizes: HALF_WIDTH, look: "window" },
+  { key: "idea", still: { base: `${STILLS}/scorpion`, width: 960, height: 720 }, look: "steps" },
+  { key: "signature", still: { base: `${STILLS}/signatures`, width: 800, height: 600 }, look: "grid" },
+  { key: "space", still: { base: `${STILLS}/workspace-{lang}`, width: 800, height: 500 }, look: "window" },
 ] as const;
+
+/** The Scorpion before it was finished: one gem, the body, then the claws and the sting. */
+const SCORPION_STEPS: StudioStill[] = [1, 2, 3].map((n) => ({ base: `${STILLS}/scorpion-step-${n}`, width: 480, height: 360 }));
+const STEP_SIZES = "(min-width: 1024px) 260px, calc((100vw - 56px) / 3)";
 
 /** Three finished designs of the team for the artists' section, square. */
 const GALLERY: { key: string; still: StudioStill }[] = [
   { key: "heart", still: { base: `${STILLS}/creation-coeur`, width: 600, height: 600 } },
   { key: "star", still: { base: `${STILLS}/creation-etoile-halo`, width: 600, height: 600 } },
-  { key: "scorpion", still: { base: `${STILLS}/creation-scorpion`, width: 600, height: 600 } },
+  { key: "gold", still: { base: `${STILLS}/creation-doree`, width: 600, height: 600 } },
 ];
 const GALLERY_SIZES = "(min-width: 1024px) 410px, (min-width: 640px) 30vw, calc(100vw - 32px)";
 
@@ -81,6 +85,43 @@ function WindowFrame({ children }: { children: ReactNode }) {
         <span className="h-2 w-2 rounded-full bg-[var(--gt-ink-200)]" />
       </div>
       <div className="overflow-hidden rounded-[var(--radius-md)]">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * The first showcase block's media: the finished Scorpion, large, then the
+ * three steps that led to it, numbered, each named by its caption (the
+ * pictures themselves are decorative next to it).
+ */
+function ScorpionStory({ finished }: { finished: StudioStill }) {
+  const { t } = useTranslation();
+  const steps = t("studioPage.showcase.items.idea.steps", { returnObjects: true }) as string[];
+  return (
+    <div className="grid gap-4">
+      <StudioPageImage
+        still={finished}
+        alt={t("studioPage.showcase.items.idea.media.alt")}
+        caption={t("studioPage.showcase.items.idea.media.caption")}
+        sizes={MEDIA_WIDTH}
+        imageClassName="rounded-[var(--radius-xl)] border border-white/70 shadow-[var(--shadow-md)]"
+      />
+      <div className="grid gap-2.5">
+        <p className="m-0 text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">{t("studioPage.showcase.items.idea.stepsTitle")}</p>
+        <ol className="m-0 grid list-none grid-cols-3 gap-2 p-0 sm:gap-3">
+          {SCORPION_STEPS.map((still, index) => (
+            <li key={still.base}>
+              <StudioPageImage
+                still={still}
+                alt=""
+                caption={`${index + 1}. ${steps[index] ?? ""}`}
+                sizes={STEP_SIZES}
+                imageClassName="rounded-[var(--radius-md)] border border-[var(--border-subtle)]"
+              />
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }
@@ -208,8 +249,14 @@ export function Studio() {
       >
         <div className="mx-auto grid max-w-[var(--max-width-content)] gap-10 lg:gap-14">
           <SectionHeading id="gt-studio-b-showcase" eyebrow={t("studioPage.showcase.eyebrow")} title={t("studioPage.showcase.title")} />
-          {SHOWCASE.map(({ key, still, sizes, look }, index) => (
-            <article key={key} className="grid grid-cols-1 items-center gap-6 lg:grid-cols-2 lg:gap-14">
+          {SHOWCASE.map(({ key, still, look }, index) => (
+            <article
+              key={key}
+              className={clsx(
+                "grid grid-cols-1 items-center gap-6 lg:gap-12",
+                index % 2 === 1 ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]",
+              )}
+            >
               <div className={clsx("grid min-w-0 content-start gap-3", index % 2 === 1 && "lg:order-2")}>
                 <h3 className="text-[clamp(24px,5vw,34px)] font-[var(--weight-black)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)]">
                   {t(`studioPage.showcase.items.${key}.title`)}
@@ -220,18 +267,18 @@ export function Studio() {
                 {look === "window" ? (
                   <figure className="m-0 grid gap-2.5">
                     <WindowFrame>
-                      <StudioPageImage still={{ ...still, base: still.base.replace("{lang}", lang) }} alt={t(`studioPage.showcase.items.${key}.media.alt`)} sizes={sizes} />
+                      <StudioPageImage still={{ ...still, base: still.base.replace("{lang}", lang) }} alt={t(`studioPage.showcase.items.${key}.media.alt`)} sizes={MEDIA_WIDTH} />
                     </WindowFrame>
                     <figcaption className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t(`studioPage.showcase.items.${key}.media.caption`)}</figcaption>
                   </figure>
+                ) : look === "steps" ? (
+                  <ScorpionStory finished={still} />
                 ) : (
                   <StudioPageImage
                     still={still}
                     alt={t(`studioPage.showcase.items.${key}.media.alt`)}
                     caption={t(`studioPage.showcase.items.${key}.media.caption`)}
-                    sizes={sizes}
-                    className={clsx(look === "photo" && "mx-auto w-full max-w-[460px]")}
-                    imageClassName={clsx(look === "photo" && "rounded-[var(--radius-xl)] border border-white/70 shadow-[var(--shadow-md)]")}
+                    sizes={MEDIA_WIDTH}
                   />
                 )}
               </div>
