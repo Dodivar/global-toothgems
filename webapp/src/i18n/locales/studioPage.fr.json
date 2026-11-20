@@ -26,47 +26,34 @@
     "items": {
       "visualize": {
         "title": "Visualisez avant de créer",
-        "body": "Regardez à quoi une composition pourrait ressembler avant d’arrêter votre direction créative."
-      },
-      "experiment": {
-        "title": "Expérimentez sans limite",
-        "body": "Essayez d’autres directions, d’autres associations, d’autres styles, dans un espace fait pour chercher."
-      },
-      "signature": {
-        "title": "Construisez votre signature",
-        "body": "Explorez vos idées, découvrez des combinaisons inattendues et installez une identité reconnaissable."
-      },
-      "confidence": {
-        "title": "Créez avec plus de certitude",
-        "body": "Donnez à vos intuitions une forme visible et prenez des décisions créatives mieux informées."
-      }
-    }
-  },
-  "showcase": {
-    "eyebrow": "L’expérience",
-    "title": "Le Studio parle mieux que nous.",
-    "items": {
-      "idea": {
-        "title": "Chaque détail part d’une idée",
-        "body": "Une intuition posée en une gemme, puis déplacée, redimensionnée, échangée — jusqu’à la composition que vous aviez en tête.",
+        "body": "Posez une gemme sur une dent, tournez autour, regardez la lumière accrocher les facettes : vous voyez le rendu avant de poser quoi que ce soit.",
         "media": {
           "title": "Gros plan d’une composition dans le Studio",
           "body": "Une dent, deux ou trois pièces, la lumière qui accroche les facettes.",
-          "caption": "Image ou court film · format portrait ou carré."
+          "caption": "Image ou court film · format portrait."
         }
       },
-      "signature": {
-        "title": "Cherchez votre prochaine signature",
-        "body": "Minimal ou statement, symétrique ou libre : changez de registre en quelques secondes et gardez les pistes qui vous parlent.",
+      "experiment": {
+        "title": "Expérimentez sans limite",
+        "body": "Déplacez, redimensionnez, échangez gemmes, formes et couleurs en quelques secondes, et gardez les pistes qui vous parlent.",
         "media": {
           "title": "Galerie de compositions créées dans le Studio",
-          "body": "Plusieurs esthétiques différentes, présentées ensemble.",
+          "body": "Plusieurs esthétiques différentes, du minimal au statement, présentées ensemble.",
           "caption": "Six visuels · même cadrage, même lumière."
         }
       },
-      "space": {
-        "title": "Un espace créatif qui vous appartient",
-        "body": "Un lieu dédié à vos idées de bijoux dentaires, ouvert quand l’envie vient, sur ordinateur comme sur mobile.",
+      "signature": {
+        "title": "Construisez votre signature",
+        "body": "Enregistrez vos créations, rangez-les en collections et repérez les combinaisons qui reviennent : votre style devient reconnaissable.",
+        "media": {
+          "title": "Vos créations rangées en collections dans le Studio",
+          "body": "Une bibliothèque de looks enregistrés, classés par dossiers et collections.",
+          "caption": "Capture · Mes créations."
+        }
+      },
+      "confidence": {
+        "title": "Créez avec plus de certitude",
+        "body": "Vue de face, fiche de placement, liste des gemmes à acheter : vous arrivez au rendez-vous avec un design décidé.",
         "media": {
           "title": "Capture de l’interface complète du Studio",
           "body": "L’espace de travail dans son ensemble : la dentition, la bibliothèque, les outils.",

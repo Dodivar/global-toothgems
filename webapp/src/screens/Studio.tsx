@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowDown, ArrowRight, BadgeCheck, Camera, Eye, Film, Fingerprint, Image as ImageIcon, Images, MonitorPlay, Quote, Shuffle, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, Camera, Film, Fingerprint, Image as ImageIcon, Images, MonitorPlay, Quote, Sparkles } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { HeroMediaPlaceholder, MediaPlaceholder, type PlaceholderCopy } from "../components/studio/MediaPlaceholder";
 import { StudioPlans } from "../components/studio/StudioPlans";
@@ -19,7 +19,7 @@ import { STUDIO_PREVIEW } from "../lib/studioAccess";
  * The 3D Studio's public presentation page (`/studio-3d`, `/en/3d-studio`).
  * It replaced the first design on 2026-10-17, the owner having preferred this
  * one. It sells the creative experience before the
- * tool — an editorial hero, four benefits, three showcase blocks, room for
+ * tool — an editorial hero, four benefits shown beside their visuals, room for
  * the artists' own words, then the offers, a closing call and the questions.
  *
  * What it does not do: invent anything. Plan names, amounts and the trial's
@@ -36,16 +36,10 @@ const EXPERIENCE_ID = "studio-b-experience";
 const PLANS_ID = "studio-b-formules";
 
 const BENEFITS = [
-  { key: "visualize", icon: Eye },
-  { key: "experiment", icon: Shuffle },
-  { key: "signature", icon: Fingerprint },
-  { key: "confidence", icon: BadgeCheck },
-] as const;
-
-const SHOWCASE = [
-  { key: "idea", icon: ImageIcon, ratio: "aspect-[4/5]" },
-  { key: "signature", icon: Images, ratio: "aspect-[4/3]" },
-  { key: "space", icon: MonitorPlay, ratio: "aspect-[16/10]" },
+  { key: "visualize", icon: ImageIcon, ratio: "aspect-[4/5]" },
+  { key: "experiment", icon: Images, ratio: "aspect-[4/3]" },
+  { key: "signature", icon: Fingerprint, ratio: "aspect-[4/3]" },
+  { key: "confidence", icon: MonitorPlay, ratio: "aspect-[16/10]" },
 ] as const;
 
 /** Scrolls to a section of this page, respecting the reader's motion setting. */
@@ -84,7 +78,6 @@ export function Studio() {
   const start = () => navigate(STUDIO_EDITOR_PATH);
   const startLabel = access.granted ? t("studioPage.hero.ctaOpen") : t("studioPage.hero.ctaPrimary", { count: STUDIO_TRIAL_DAYS });
 
-  const benefitsRef = useReveal<HTMLElement>();
   const showcaseRef = useReveal<HTMLElement>();
   const proofRef = useReveal<HTMLElement>();
   const plansRef = useReveal<HTMLElement>();
@@ -140,48 +133,30 @@ export function Studio() {
         </div>
       </section>
 
-      {/* ------------------------------------------------------------ Benefits */}
-      <section ref={benefitsRef} aria-labelledby="gt-studio-b-benefits" className={clsx("gt-reveal py-[var(--section-y)]", SECTION_X)}>
-        <div className="mx-auto grid max-w-[var(--max-width-content)] gap-9">
+      {/* ------------------------------------------------- Benefits + experience */}
+      <section
+        id={EXPERIENCE_ID}
+        ref={showcaseRef}
+        aria-labelledby="gt-studio-b-benefits"
+        className={clsx("gt-reveal scroll-mt-20 bg-[var(--surface-sunken)] py-[var(--section-y)]", SECTION_X)}
+      >
+        <div className="mx-auto grid max-w-[var(--max-width-content)] gap-10 lg:gap-14">
           <SectionHeading
             id="gt-studio-b-benefits"
             eyebrow={t("studioPage.benefits.eyebrow")}
             title={t("studioPage.benefits.title")}
             body={t("studioPage.benefits.body")}
           />
-          <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-4">
-            {BENEFITS.map(({ key, icon: Icon }) => (
-              <li key={key} className="gt-studio-b-card grid content-start gap-4 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] p-5 sm:p-6">
-                <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-[var(--radius-md)] border border-[var(--gt-blue-200)] bg-white text-[var(--gt-blue-700)]">
-                  <Icon size={19} />
-                </span>
-                <h3 className="text-[length:var(--text-h4)]">{t(`studioPage.benefits.items.${key}.title`)}</h3>
-                <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t(`studioPage.benefits.items.${key}.body`)}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------ Showcase */}
-      <section
-        id={EXPERIENCE_ID}
-        ref={showcaseRef}
-        aria-labelledby="gt-studio-b-showcase"
-        className={clsx("gt-reveal scroll-mt-20 bg-[var(--surface-sunken)] py-[var(--section-y)]", SECTION_X)}
-      >
-        <div className="mx-auto grid max-w-[var(--max-width-content)] gap-10 lg:gap-14">
-          <SectionHeading id="gt-studio-b-showcase" eyebrow={t("studioPage.showcase.eyebrow")} title={t("studioPage.showcase.title")} />
-          {SHOWCASE.map(({ key, icon, ratio }, index) => (
+          {BENEFITS.map(({ key, icon, ratio }, index) => (
             <article key={key} className="grid grid-cols-1 items-center gap-6 lg:grid-cols-2 lg:gap-14">
               <div className={clsx("grid min-w-0 content-start gap-3", index % 2 === 1 && "lg:order-2")}>
                 <h3 className="text-[clamp(24px,5vw,34px)] font-[var(--weight-black)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)]">
-                  {t(`studioPage.showcase.items.${key}.title`)}
+                  {t(`studioPage.benefits.items.${key}.title`)}
                 </h3>
-                <p className="m-0 max-w-[52ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t(`studioPage.showcase.items.${key}.body`)}</p>
+                <p className="m-0 max-w-[52ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t(`studioPage.benefits.items.${key}.body`)}</p>
               </div>
               <div className={clsx("min-w-0", index % 2 === 1 && "lg:order-1")}>
-                <MediaPlaceholder copy={copy(`studioPage.showcase.items.${key}.media`)} icon={icon} ratio={ratio} />
+                <MediaPlaceholder copy={copy(`studioPage.benefits.items.${key}.media`)} icon={icon} ratio={ratio} />
               </div>
             </article>
           ))}
