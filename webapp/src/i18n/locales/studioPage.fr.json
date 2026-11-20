@@ -20,29 +20,15 @@
     "items": {
       "visualize": {
         "title": "Visualisez avant de créer",
-        "body": "Regardez à quoi une composition pourrait ressembler avant d’arrêter votre direction créative."
+        "body": "Posez une gemme sur une dent, tournez autour, changez d’angle : vous voyez la composition en 3D, sur une dentition, avant de poser quoi que ce soit.",
+        "media": {
+          "description": "Démonstration de l’éditeur du Studio 3D, sans son : cinq gemmes fuchsia posées sur une incisive latérale, sélectionnées au lasso et alignées verticalement, puis copiées en miroir de l’autre côté ; une gemme saphir posée sur la canine, agrandie et copiée en miroir ; les deux gemmes les plus basses copiées verticalement sur l’arcade du bas et passées en doré ; une gemme dupliquée et copiée en miroir, puis les quatre gemmes du bas alignées, espacées et centrées sur leurs dents ; enfin les panneaux se ferment sur le sourire terminé.",
+          "caption": "« Cristaux minimalistes » recréé en couleur à partir d’un sourire vierge : filmé dans le Studio, accéléré."
+        }
       },
       "experiment": {
         "title": "Expérimentez sans limite",
-        "body": "Essayez d’autres directions, d’autres associations, d’autres styles, dans un espace fait pour chercher."
-      },
-      "signature": {
-        "title": "Construisez votre signature",
-        "body": "Explorez vos idées, découvrez des combinaisons inattendues et installez une identité reconnaissable."
-      },
-      "confidence": {
-        "title": "Créez avec plus de certitude",
-        "body": "Donnez à vos intuitions une forme visible et prenez des décisions créatives mieux informées."
-      }
-    }
-  },
-  "showcase": {
-    "eyebrow": "L’expérience",
-    "title": "Le Studio parle mieux que nous.",
-    "items": {
-      "idea": {
-        "title": "Chaque détail part d’une idée",
-        "body": "Le Scorpion est parti d’une seule gemme rouge. Une ligne de cristaux pour le corps, des navettes pour les pinces et le dard, puis des touches de rose : chaque pièce se pose, se déplace, change de taille ou de couleur, jusqu’à la composition que vous aviez en tête.",
+        "body": "Le Scorpion est parti d’une seule gemme rouge. Chaque pièce se pose, se déplace, change de taille ou de couleur en quelques secondes : essayez, défaites, recommencez.",
         "media": {
           "alt": "Le Scorpion terminé dans le Studio 3D : une ligne de cristaux rouges sur les deux incisives, trois navettes rouges pour les pinces et le dard, et de petits cristaux roses tout autour.",
           "caption": "« Scorpion », une création de l’équipe composée dans le Studio."
@@ -55,19 +41,19 @@
         ]
       },
       "signature": {
-        "title": "Cherchez votre prochaine signature",
-        "body": "Minimal ou statement, symétrique ou libre : changez de registre en quelques secondes et gardez les pistes qui vous parlent.",
+        "title": "Construisez votre signature",
+        "body": "Même dentition, même lumière : comparez vos créations côte à côte, rangez-les en collections et repérez les combinaisons qui reviennent.",
         "media": {
           "alt": "Six compositions créées dans le Studio, sur la même dentition et sous la même lumière : un cœur rose et rouge, une étoile irisée et son halo, des cristaux dorés et un éclair, un scorpion rouge, deux navettes bleues avec un teckel et un serpent dorés, et des lignes de cristaux minimalistes.",
           "caption": "Six créations, même cadrage, même lumière."
         }
       },
-      "space": {
-        "title": "Des outils aussi rapides que vos idées",
-        "body": "Poser, aligner, copier en miroir, dupliquer, espacer, changer de couleur : en quelques gestes, le design « Cristaux minimalistes » se reconstruit à partir d’un sourire vierge.",
+      "confidence": {
+        "title": "Créez avec plus de certitude",
+        "body": "Vue de face, fiche de placement, liste des gemmes à acheter : vous arrivez au rendez-vous avec un design décidé, pas une intuition.",
         "media": {
-          "description": "Démonstration de l’éditeur du Studio 3D, sans son : cinq gemmes fuchsia posées sur une incisive latérale, sélectionnées au lasso et alignées verticalement, puis copiées en miroir de l’autre côté ; une gemme saphir posée sur la canine, agrandie et copiée en miroir ; les deux gemmes les plus basses copiées verticalement sur l’arcade du bas et passées en doré ; une gemme dupliquée et copiée en miroir, puis les quatre gemmes du bas alignées, espacées et centrées sur leurs dents ; enfin les panneaux se ferment sur le sourire terminé.",
-          "caption": "Filmé dans le Studio et accéléré : du sourire vierge au design terminé."
+          "alt": "Un design de l’équipe Global Toothgems dans le Studio : une étoile irisée et son halo sur les dents.",
+          "caption": "Un design de l’équipe, prêt à être posé : la vue de face et la fiche de placement le décrivent pièce par pièce."
         }
       }
     }

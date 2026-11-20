@@ -20,29 +20,15 @@
     "items": {
       "visualize": {
         "title": "Visualise before you create",
-        "body": "See how a composition could look before you commit to a creative direction."
+        "body": "Place a gem on a tooth, turn around it, change the angle: you see the composition in 3D, on a dentition, before you place anything.",
+        "media": {
+          "description": "Demonstration of the 3D Studio editor, without sound: five fuchsia gems placed on a lateral incisor, lassoed and aligned vertically, then mirror-copied to the other side; a sapphire gem placed on the canine, made larger and mirror-copied; the two lowest gems copied vertically onto the lower arch and turned gold; one gem duplicated and mirror-copied, then the four lower gems aligned, spaced evenly and centred on their teeth; finally the panels close on the finished smile.",
+          "caption": "“Cristaux minimalistes” rebuilt in colour from a blank smile: filmed in the Studio, sped up."
+        }
       },
       "experiment": {
         "title": "Experiment without limits",
-        "body": "Try other directions, other combinations, other styles, in a space built for exploring."
-      },
-      "signature": {
-        "title": "Develop your signature style",
-        "body": "Explore your ideas, find unexpected combinations and build a recognisable artistic identity."
-      },
-      "confidence": {
-        "title": "Create with more confidence",
-        "body": "Give your ideas a clearer visual form and make better informed creative decisions."
-      }
-    }
-  },
-  "showcase": {
-    "eyebrow": "The experience",
-    "title": "Let the Studio speak for itself.",
-    "items": {
-      "idea": {
-        "title": "Every detail starts with an idea",
-        "body": "The Scorpion started as a single red gem. A line of crystals for the body, navettes for the claws and the sting, then touches of pink: every piece is placed, moved, resized or recoloured until it becomes the composition you had in mind.",
+        "body": "The Scorpion started as a single red gem. Every piece is placed, moved, resized or recoloured in seconds: try, undo, start again.",
         "media": {
           "alt": "The finished Scorpion in the 3D Studio: a line of red crystals across the two incisors, three red navettes for the claws and the sting, and small pink crystals all around.",
           "caption": "“Scorpion”, a team design composed in the Studio."
@@ -55,19 +41,19 @@
         ]
       },
       "signature": {
-        "title": "Explore your next signature look",
-        "body": "Minimal or statement, symmetrical or free: change register in seconds and keep the directions that speak to you.",
+        "title": "Develop your signature style",
+        "body": "Same dentition, same light: compare your creations side by side, file them into collections and spot the combinations that keep coming back.",
         "media": {
           "alt": "Six designs created in the Studio, on the same dentition under the same light: a pink and red heart, an iridescent star with its halo, gold crystals and a lightning bolt, a red scorpion, two blue navettes with a gold dachshund and snake, and minimal lines of crystals.",
           "caption": "Six designs, same framing, same light."
         }
       },
-      "space": {
-        "title": "Tools as quick as your ideas",
-        "body": "Place, align, mirror-copy, duplicate, space evenly, recolour: in a few moves, the “Cristaux minimalistes” design is rebuilt from a blank smile.",
+      "confidence": {
+        "title": "Create with more confidence",
+        "body": "Front view, placement sheet, shopping list of gems: you arrive at the appointment with a decided design, not just an instinct.",
         "media": {
-          "description": "Demonstration of the 3D Studio editor, without sound: five fuchsia gems placed on a lateral incisor, lassoed and aligned vertically, then mirror-copied to the other side; a sapphire gem placed on the canine, made larger and mirror-copied; the two lowest gems copied vertically onto the lower arch and turned gold; one gem duplicated and mirror-copied, then the four lower gems aligned, spaced evenly and centred on their teeth; finally the panels close on the finished smile.",
-          "caption": "Filmed in the Studio and sped up: from a blank smile to the finished design."
+          "alt": "A Global Toothgems team design in the Studio: an iridescent star and its halo on the teeth.",
+          "caption": "A team design, ready to place: the front view and the placement sheet describe it piece by piece."
         }
       }
     }

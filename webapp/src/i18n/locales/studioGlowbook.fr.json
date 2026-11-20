@@ -72,7 +72,12 @@
     "emptyBody": "Ouvrez une création dans Mes créations et ajoutez-la à votre Glowbook : elle sera publiée après validation.",
     "open": "Voir la création « {{name}} »",
     "moveUp": "Monter « {{name}} »",
-    "moveDown": "Descendre « {{name}} »"
+    "moveDown": "Descendre « {{name}} »",
+    "feature": "Mettre « {{name}} » à la une",
+    "unfeature": "Retirer « {{name}} » de la une",
+    "featureNeedsApproval": "Une création peut être à la une une fois validée par l’équipe.",
+    "featuredBadge": "À la une",
+    "featuredHint": "L’étoile choisit la création qui ouvre votre page, en grand, dans une courte vidéo (créations validées uniquement)."
   },
   "control": {
     "title": "Mon Glowbook",
@@ -228,14 +233,11 @@
   },
   "look": {
     "title": "Personnaliser ma page",
-    "sub": "Votre photo, la création qui ouvre votre page et l’endroit où vous travaillez. La création à la une, la ville et le lieu sont publiés dès l’enregistrement ; une nouvelle photo est d’abord validée par l’équipe.",
+    "sub": "Votre photo et l’endroit où vous travaillez. La ville et le lieu sont publiés dès l’enregistrement ; une nouvelle photo est d’abord validée par l’équipe.",
     "pendingNote": "Des images attendent la validation de l’équipe : votre page montre les précédentes en attendant.",
     "rejectedNote": "Vos dernières images n’ont pas été validées.",
     "rejectedNoteReason": "Vos dernières images n’ont pas été validées. Motif : {{note}}",
     "preview": "Aperçu",
-    "featured": "Création à la une",
-    "featuredNone": "Aucune",
-    "featuredHint": "Elle ouvre votre page, en grand, dans une courte vidéo qui passe devant le sourire de gauche à droite (créations publiées uniquement).",
     "location": "Ville ou studio",
     "locationPlaceholder": "Ex. Lyon, Studio Rivoli",
     "errors": {
@@ -260,7 +262,6 @@
     },
     "spotlight": {
       "title": "Vidéo à la une",
-      "saveFirst": "Enregistrez l’apparence : la vidéo de cette création sera préparée ensuite.",
       "preparing": "Préparation de la vidéo… Elle est enregistrée ici même, dans votre navigateur ; votre page montre l’image de la création en attendant.",
       "recording": "Enregistrement de la vidéo… {{percent}} %",
       "keepOpen": "Gardez cet onglet ouvert et visible quelques secondes.",
@@ -305,6 +306,7 @@
     "title": "Annuaire « Trouver un artiste »",
     "body": "Apparaissez dans l’annuaire public des artistes : votre nom, votre ville, votre salon ou votre secteur (~1 km, comme sur votre carte), votre photo de profil, une de vos créations et votre badge si vous l’affichez, avec un lien vers votre Glowbook.",
     "toggle": "Apparaître dans l’annuaire",
+    "switchAbove": "Le réglage est en haut de la page, à côté de votre profil.",
     "listed": "Votre Glowbook apparaît dans l’annuaire.",
     "waiting": "Votre Glowbook apparaîtra dans l’annuaire dès que :",
     "missing": {
