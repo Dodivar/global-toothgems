@@ -176,3 +176,132 @@ export function centreOf(artists: readonly { place: GlowbookPlace }[]): Point | 
     lng: artists.reduce((s, a) => s + a.place.lng, 0) / artists.length,
   };
 }
+
+/* ------------------------------------------------- the visitor's position */
+
+/**
+ * Where the list is sorted from: a city typed by the visitor, the device's
+ * position ("near me", or already allowed on an earlier visit), or the
+ * approximate area the host derives from the IP address (`approx`, the
+ * default on the main page when known — decision 145 (j)).
+ */
+export type OriginKind = "city" | "nearMe" | "approx";
+
+export interface ApproximateOrigin extends Point {
+  /** The city the host names, when it gives one. */
+  label: string | null;
+}
+
+/** Beyond this, an IP area says nothing useful about the listed artists (another country). */
+export const APPROXIMATE_ORIGIN_MAX_KM = 1000;
+
+/**
+ * Reads the approximate visitor area the host gives with each request
+ * (Vercel: `x-vercel-ip-latitude`, `x-vercel-ip-longitude`, the city
+ * URL-encoded in `x-vercel-ip-city`). Rounded to 2 decimals (~1 km): it is a
+ * guess from the IP address, not a position. Null when missing (local
+ * development) or malformed.
+ */
+export function approximateOriginFromHeaders(get: (name: string) => string | null | undefined): ApproximateOrigin | null {
+  const lat = Number.parseFloat(get("x-vercel-ip-latitude") ?? "");
+  const lng = Number.parseFloat(get("x-vercel-ip-longitude") ?? "");
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  let label: string | null = null;
+  const raw = get("x-vercel-ip-city");
+  if (raw) {
+    try {
+      label = decodeURIComponent(raw).trim().slice(0, 80) || null;
+    } catch {
+      label = null;
+    }
+  }
+  return { lat: Math.round(lat * 100) / 100, lng: Math.round(lng * 100) / 100, label };
+}
+
+/** The approximate origin when at least one listed artist is within reach of it, else null. */
+export function usableApproximateOrigin(origin: ApproximateOrigin | null, artists: readonly { place: GlowbookPlace }[]): ApproximateOrigin | null {
+  if (!origin || !artists.length) return null;
+  return artists.some((a) => distanceKm(origin, a.place) <= APPROXIMATE_ORIGIN_MAX_KM) ? origin : null;
+}
+
+/* ------------------------------------------------- grouping and pages */
+
+/** Cards revealed at a time ("Show more"). The first batch is rendered on the server. */
+export const DIRECTORY_PAGE_SIZE = 12;
+/** Cards per city on the main page; the city page shows them all. */
+export const CITY_RAIL_SIZE = 6;
+/** Cities revealed at a time on the main page. */
+export const CITY_GROUPS_PAGE_SIZE = 4;
+
+export type DistanceBand = "near" | "close" | "region" | "far";
+
+/** < 10 km, 10–30 km, 30–100 km, beyond. */
+export function distanceBand(km: number): DistanceBand {
+  if (km < 10) return "near";
+  if (km < 30) return "close";
+  if (km < 100) return "region";
+  return "far";
+}
+
+export interface BandGroup<T> {
+  band: DistanceBand;
+  items: T[];
+}
+
+/**
+ * The list sorted by distance, cut into its distance bands, keeping the
+ * order. Only the first `limit` artists are taken ("Show more" raises it);
+ * a band is never empty.
+ */
+export function groupByDistance<T extends { distanceKm: number | null }>(sorted: readonly T[], limit: number): BandGroup<T>[] {
+  const groups: BandGroup<T>[] = [];
+  for (const item of sorted.slice(0, Math.max(0, limit))) {
+    const band = distanceBand(item.distanceKm ?? Number.POSITIVE_INFINITY);
+    const last = groups[groups.length - 1];
+    if (last && last.band === band) last.items.push(item);
+    else groups.push({ band, items: [item] });
+  }
+  return groups;
+}
+
+export interface CityGroup<T> {
+  /** Null for the artists without a city ("Other areas"), always last. */
+  city: DirectoryCity | null;
+  /** The first `perCity` of the city, in the order given; every one for the artists without a city (no page lists them elsewhere). */
+  items: T[];
+  total: number;
+}
+
+/**
+ * The main page without a search: one row per city, the most represented
+ * first (the order of `cities`), then the artists without a city. A city's
+ * row holds at most `perCity` artists; its city page lists them all.
+ */
+export function groupByCity<T extends { citySlug: string | null }>(artists: readonly T[], cities: readonly DirectoryCity[], perCity = CITY_RAIL_SIZE): CityGroup<T>[] {
+  const bySlug = new Map<string, T[]>();
+  const other: T[] = [];
+  for (const a of artists) {
+    if (!a.citySlug) {
+      other.push(a);
+      continue;
+    }
+    const list = bySlug.get(a.citySlug) ?? [];
+    list.push(a);
+    bySlug.set(a.citySlug, list);
+  }
+  const groups: CityGroup<T>[] = cities.flatMap((city) => {
+    const list = bySlug.get(city.slug);
+    return list?.length ? [{ city, items: list.slice(0, perCity), total: list.length }] : [];
+  });
+  if (other.length) groups.push({ city: null, items: other, total: other.length });
+  return groups;
+}
+
+/**
+ * Whether the main page shows city rows rather than one grid: only when there
+ * are more artists than one page and they live in at least two places —
+ * a handful of artists reads better as a single grid.
+ */
+export function showsCityRows(artistCount: number, groupCount: number): boolean {
+  return artistCount > DIRECTORY_PAGE_SIZE && groupCount >= 2;
+}

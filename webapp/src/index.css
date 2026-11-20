@@ -2536,8 +2536,18 @@ html[data-gt-focus] .gt-storefront-chrome { display: none; }
 .gt-map-marker:focus-visible .gt-map-marker-face { transform: scale(1.08); }
 .gt-map-marker:focus-visible { outline: none; }
 .gt-map-marker:focus-visible .gt-map-marker-face { box-shadow: 0 0 0 3px var(--focus-ring); }
+/* A group of artists: the count is always shown; the "· Zoom in" label is an extra on hover / focus. */
+.gt-map-cluster:hover .gt-map-marker-face,
+.gt-map-cluster:focus-visible .gt-map-marker-face { transform: scale(1.08); }
+.gt-map-cluster:focus-visible { outline: none; }
+.gt-map-cluster:focus-visible .gt-map-marker-face { box-shadow: 0 0 0 3px var(--focus-ring); }
+.gt-map-cluster-tip { opacity: 0; transform: translate(-50%, -2px); transition: opacity .15s ease, transform .15s ease; }
+.gt-map-cluster:hover .gt-map-cluster-tip,
+.gt-map-cluster:focus-visible .gt-map-cluster-tip { opacity: 1; transform: translate(-50%, 0); }
+.maplibregl-marker:has(.gt-map-cluster:hover),
+.maplibregl-marker:has(.gt-map-cluster:focus-visible) { z-index: 2; }
 @media (prefers-reduced-motion: reduce) {
-  .gt-map-marker-face { transition: none !important; }
+  .gt-map-marker-face, .gt-map-cluster-tip { transition: none !important; }
 }
 
 /* ---------------------------------------------------------------------------

@@ -1,13 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
+  approximateOriginFromHeaders,
   centreOf,
+  CITY_RAIL_SIZE,
   citySlug,
+  DIRECTORY_PAGE_SIZE,
   directoryCities,
+  distanceBand,
   distanceKm,
+  groupByCity,
+  groupByDistance,
   matchListedCity,
+  showsCityRows,
   shownDistance,
   sortByDistance,
   toDirectoryArtists,
+  usableApproximateOrigin,
 } from "./glowbookDirectory";
 
 const row = (over: Record<string, unknown> = {}) => ({
@@ -112,5 +120,83 @@ describe("matchListedCity", () => {
   it("centres a city page", () => {
     expect(centreOf([])).toBeNull();
     expect(centreOf(artists)?.lat).toBeCloseTo(48.85);
+  });
+});
+
+/* A directory at scale: 60 artists in 6 cities, plus 4 without a city. */
+const CITIES: [string, number, number, number][] = [
+  ["Paris", 48.86, 2.35, 20],
+  ["Lyon", 45.76, 4.84, 12],
+  ["Marseille", 43.3, 5.37, 10],
+  ["Bordeaux", 44.84, -0.58, 8],
+  ["Lille", 50.63, 3.06, 6],
+  ["Nantes", 47.22, -1.55, 4],
+];
+const many = toDirectoryArtists([
+  ...CITIES.flatMap(([city, lat, lng, n]) =>
+    Array.from({ length: n }, (_, i) => row({ handle: `${city}-${i}`, location: city, place: { mode: "area", label: city, lat: lat + i * 0.01, lng } })),
+  ),
+  ...Array.from({ length: 4 }, (_, i) => row({ handle: `nocity-${i}`, location: null, place: { mode: "area", label: "Somewhere", lat: 46 + i, lng: 2 } })),
+]);
+
+describe("approximate origin", () => {
+  const headers = (h: Record<string, string>) => (name: string) => h[name] ?? null;
+  it("reads Vercel's geo headers, rounded, with the city decoded", () => {
+    expect(approximateOriginFromHeaders(headers({ "x-vercel-ip-latitude": "45.7578", "x-vercel-ip-longitude": "4.8351", "x-vercel-ip-city": "Saint-%C3%89tienne" }))).toEqual({
+      lat: 45.76,
+      lng: 4.84,
+      label: "Saint-Étienne",
+    });
+  });
+  it("answers null without headers (local development) or with nonsense", () => {
+    expect(approximateOriginFromHeaders(headers({}))).toBeNull();
+    expect(approximateOriginFromHeaders(headers({ "x-vercel-ip-latitude": "abc", "x-vercel-ip-longitude": "2" }))).toBeNull();
+    expect(approximateOriginFromHeaders(headers({ "x-vercel-ip-latitude": "95", "x-vercel-ip-longitude": "2" }))).toBeNull();
+  });
+  it("keeps the position without a city, and survives a badly encoded one", () => {
+    expect(approximateOriginFromHeaders(headers({ "x-vercel-ip-latitude": "48.8", "x-vercel-ip-longitude": "2.3", "x-vercel-ip-city": "%E0%A4%A" }))).toEqual({ lat: 48.8, lng: 2.3, label: null });
+  });
+  it("is used only near at least one listed artist", () => {
+    const lyon = { lat: 45.76, lng: 4.84, label: "Lyon" };
+    const newYork = { lat: 40.71, lng: -74, label: "New York" };
+    expect(usableApproximateOrigin(lyon, many)).toEqual(lyon);
+    expect(usableApproximateOrigin(newYork, many)).toBeNull();
+    expect(usableApproximateOrigin(lyon, [])).toBeNull();
+    expect(usableApproximateOrigin(null, many)).toBeNull();
+  });
+});
+
+describe("grouping by distance", () => {
+  it("cuts the bands at 10, 30 and 100 km", () => {
+    expect([0, 9.9, 10, 29.9, 30, 99, 100, 800].map(distanceBand)).toEqual(["near", "near", "close", "close", "region", "region", "far", "far"]);
+  });
+  it("keeps the sorted order, takes one page and never makes an empty band", () => {
+    const sorted = sortByDistance(many, { lat: 45.76, lng: 4.84 });
+    const groups = groupByDistance(sorted, DIRECTORY_PAGE_SIZE);
+    expect(groups.flatMap((g) => g.items)).toEqual(sorted.slice(0, DIRECTORY_PAGE_SIZE));
+    expect(groups.every((g) => g.items.length > 0)).toBe(true);
+    expect(groups[0].band).toBe("near");
+    expect(groups[0].items.every((a) => a.location === "Lyon")).toBe(true);
+    expect(groupByDistance(sorted, 1000).flatMap((g) => g.items)).toHaveLength(many.length);
+  });
+});
+
+describe("grouping by city", () => {
+  const cities = directoryCities(many);
+  const groups = groupByCity(many, cities);
+  it("orders the rows like the cities, the artists without a city last", () => {
+    expect(groups.map((g) => g.city?.slug ?? null)).toEqual(["paris", "lyon", "marseille", "bordeaux", "lille", "nantes", null]);
+  });
+  it("caps a city's row and counts the rest; no artist without a city is hidden", () => {
+    expect(groups[0]).toMatchObject({ total: 20 });
+    expect(groups[0].items).toHaveLength(CITY_RAIL_SIZE);
+    expect(groups[5].items).toHaveLength(4);
+    expect(groups[6]).toMatchObject({ city: null, total: 4 });
+    expect(groups[6].items).toHaveLength(4);
+  });
+  it("shows rows only beyond one page and two places", () => {
+    expect(showsCityRows(many.length, groups.length)).toBe(true);
+    expect(showsCityRows(DIRECTORY_PAGE_SIZE, 5)).toBe(false);
+    expect(showsCityRows(40, 1)).toBe(false);
   });
 });

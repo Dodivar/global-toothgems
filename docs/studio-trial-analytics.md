@@ -72,7 +72,7 @@ searched, the visitor's position, a distance or an artist's handle.
 | --- | --- | --- |
 | `artist_directory_viewed` | The directory or a city page is shown (once per tab and kind) | `city_page`, `artist_count` |
 | `artist_directory_searched` | A city search or "near me" ends | `method` (`city` / `near_me`), `outcome` (`ok` / `not_found` / `denied` / `unavailable` / `failed`), `listed_city` |
-| `artist_directory_artist_opened` | A card is opened | `position`, `sorted_by_distance`, `via` |
+| `artist_directory_artist_opened` | A card is opened | `position`, `sorted_by_distance`, `sort_origin` (`approx`: the IP area, the main page's default since decision 156 / `device` / `city` / `none`), `via` |
 
 ## Metrics
 
