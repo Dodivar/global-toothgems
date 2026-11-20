@@ -6,7 +6,8 @@
   "eyebrow": "Artist directory",
   "title": "Find a tooth gem artist near you",
   "privacySummary": "How is your position used?",
-  "privacyNote": "We sort the artists from your approximate area, which our host derives from your IP address during the visit: it is not stored. “Near me” uses your device’s position in your browser only: it is never sent or stored. A city the directory does not know is looked up on OpenStreetMap.",
+  "privacyNoteApprox": "We sort the artists from your approximate area, which our host derives from your IP address during the visit: it is not stored.",
+  "privacyNote": "“Near me” uses your device’s position in your browser only: it is never sent or stored. A city the directory does not know is looked up on OpenStreetMap.",
   "results_one": "{{count}} artist",
   "results_other": "{{count}} artists",
   "sorted": {

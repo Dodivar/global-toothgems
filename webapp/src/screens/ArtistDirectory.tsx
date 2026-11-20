@@ -28,7 +28,7 @@ import {
 } from "../lib/glowbookDirectory";
 import { geocoderSearchUrl, parseGeocoderResults } from "../lib/studioWorkspace/glowbookPlace";
 import { GLOWBOOK_INTRO_PATH } from "../lib/studioUrl";
-import { trackDirectoryArtistOpened, trackDirectorySearched, trackDirectoryViewed, type DirectorySearchOutcome } from "../lib/directoryAnalytics";
+import { trackDirectoryArtistOpened, trackDirectorySearched, trackDirectoryViewed, type DirectorySearchOutcome, type DirectorySortOrigin } from "../lib/directoryAnalytics";
 
 /**
  * "Find an artist near me" (decision 145): `/fr/artistes`, `/en/artists` and
@@ -140,8 +140,9 @@ export function ArtistDirectory({ artists, cities, city, approxOrigin = null }: 
       })),
     [artists, resolve],
   );
-  const openedOnMap = (handle: string) => trackDirectoryArtistOpened(positionOf.get(handle) ?? 0, origin !== null, "map");
-  const openedInList = (handle: string) => trackDirectoryArtistOpened(positionOf.get(handle) ?? 0, origin !== null, "list");
+  const sortOrigin: DirectorySortOrigin = !origin ? "none" : origin.kind === "nearMe" ? "device" : origin.kind;
+  const openedOnMap = (handle: string) => trackDirectoryArtistOpened(positionOf.get(handle) ?? 0, sortOrigin, "map");
+  const openedInList = (handle: string) => trackDirectoryArtistOpened(positionOf.get(handle) ?? 0, sortOrigin, "list");
 
   const fail = (method: "city" | "near_me", outcome: DirectorySearchOutcome, key: string) => {
     trackDirectorySearched(method, outcome);
@@ -297,7 +298,7 @@ export function ArtistDirectory({ artists, cities, city, approxOrigin = null }: 
                 {t("directory.privacySummary")}
                 <ChevronDown size={13} aria-hidden="true" className="transition-transform group-open:rotate-180 motion-reduce:transition-none" />
               </summary>
-              <p className="m-0 mt-1.5 max-w-[70ch]">{t("directory.privacyNote")}</p>
+              <p className="m-0 mt-1.5 max-w-[70ch]">{approxOrigin ? `${t("directory.privacyNoteApprox")} ${t("directory.privacyNote")}` : t("directory.privacyNote")}</p>
             </details>
           )}
         </div>

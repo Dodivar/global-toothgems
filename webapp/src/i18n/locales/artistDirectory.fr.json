@@ -6,7 +6,8 @@
   "eyebrow": "Annuaire des artistes",
   "title": "Trouver un artiste tooth gems près de chez vous",
   "privacySummary": "Comment votre position est-elle utilisée ?",
-  "privacyNote": "Nous trions les artistes depuis votre secteur approximatif, déduit de votre adresse IP par notre hébergeur au moment de la visite : il n’est pas enregistré. « Près de moi » utilise la position de votre appareil uniquement dans votre navigateur : elle n’est ni envoyée ni enregistrée. Une ville inconnue de l’annuaire est recherchée sur OpenStreetMap.",
+  "privacyNoteApprox": "Nous trions les artistes depuis votre secteur approximatif, déduit de votre adresse IP par notre hébergeur au moment de la visite : il n’est pas enregistré.",
+  "privacyNote": "« Près de moi » utilise la position de votre appareil uniquement dans votre navigateur : elle n’est ni envoyée ni enregistrée. Une ville inconnue de l’annuaire est recherchée sur OpenStreetMap.",
   "results_one": "{{count}} artiste",
   "results_other": "{{count}} artistes",
   "sorted": {

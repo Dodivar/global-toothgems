@@ -17,6 +17,9 @@ export function trackDirectorySearched(method: "city" | "near_me", outcome: Dire
   captureEvent("artist_directory_searched", { method, outcome, listed_city: listedCity });
 }
 
-export function trackDirectoryArtistOpened(position: number, sortedByDistance: boolean, via: "list" | "map") {
-  captureEvent("artist_directory_artist_opened", { position, sorted_by_distance: sortedByDistance, via });
+/** Where the list was sorted from when a card was opened: the IP area, the device, a typed city, or nothing (by name). */
+export type DirectorySortOrigin = "approx" | "device" | "city" | "none";
+
+export function trackDirectoryArtistOpened(position: number, origin: DirectorySortOrigin, via: "list" | "map") {
+  captureEvent("artist_directory_artist_opened", { position, sorted_by_distance: origin !== "none", sort_origin: origin, via });
 }
