@@ -1,8 +1,8 @@
 {
   "hero": {
-    "eyebrow": "Votre créativité, en 3D",
-    "title": "Imaginez-le. Dessinez-le. Il est à vous.",
-    "body": "Donnez vie à vos idées de bijoux dentaires dans un studio 3D immersif, pensé pour les artistes qui veulent explorer de nouvelles combinaisons, affiner leur créativité et visualiser leur prochaine signature.",
+    "eyebrow": "Les outils du Studio 3D",
+    "title": "Lasso, alignement, miroir : vos designs au millimètre.",
+    "body": "Entourez vos gemmes au lasso, alignez-les, espacez-les régulièrement et copiez-les en miroir de l’autre côté du sourire. Changez leur couleur d’un geste, teintez la dentition, ouvrez la bouche : votre création se vérifie en 3D avant la pose.",
     "ctaPrimary_one": "Essayer le Studio {{count}} jour gratuitement",
     "ctaPrimary_other": "Essayer le Studio {{count}} jours gratuitement",
     "ctaOpen": "Ouvrir le Studio",
@@ -10,7 +10,7 @@
     "reassurance_one": "{{count}} jour pour explorer, puis la formule de votre choix, dès {{price}} / mois.",
     "reassurance_other": "{{count}} jours pour explorer, puis la formule de votre choix, dès {{price}} / mois.",
     "video": {
-      "description": "Démonstration du Studio 3D, sans son : un cœur de cristaux se pose gemme par gemme, la caméra tourne autour d’une étoile irisée, plusieurs gemmes changent de couleur en même temps, un éclair doré est déplacé puis pivoté sur sa dent, la dentition change de teinte et de lumière, puis la bouche s’ouvre avec les bijoux du bas."
+      "description": "Démonstration sans son des outils du Studio 3D sur les créations de l’équipe : une colonne de cristaux entourée au lasso, alignée verticalement puis copiée en miroir avec sa gemme de canine ; les cristaux du bas entourés au lasso, alignés puis espacés régulièrement ; le corps rouge du Scorpion sélectionné au lasso, passé en saphir puis en doré ; un tour autour de l’Étoile halo ; enfin le sourire Cœur s’ouvre et se referme pendant que la dentition change de couleur."
     }
   },
   "benefits": {

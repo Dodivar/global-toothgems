@@ -1,8 +1,8 @@
 {
   "hero": {
-    "eyebrow": "Your creativity, in 3D",
-    "title": "Imagine it. Design it. Make it yours.",
-    "body": "Bring your tooth jewellery ideas to life in an immersive 3D studio made for artists who want to explore new combinations, refine their creativity and visualise their next signature look.",
+    "eyebrow": "The 3D Studio's tools",
+    "title": "Lasso, align, mirror: your designs, down to the millimetre.",
+    "body": "Lasso your gems, align them, space them evenly and mirror them onto the other side of the smile. Recolour them in one go, tint the teeth, open the mouth: check your design in 3D before placing a single gem.",
     "ctaPrimary_one": "Try the Studio free for {{count}} day",
     "ctaPrimary_other": "Try the Studio free for {{count}} days",
     "ctaOpen": "Open the Studio",
@@ -10,7 +10,7 @@
     "reassurance_one": "{{count}} day to explore, then the plan you choose, from {{price}} / month.",
     "reassurance_other": "{{count}} days to explore, then the plan you choose, from {{price}} / month.",
     "video": {
-      "description": "Silent demonstration of the 3D Studio: a crystal heart is placed gem by gem, the camera circles an iridescent star, several gems change colour at once, a gold lightning bolt is moved then turned on its tooth, the teeth change shade and light, then the mouth opens with the lower jewellery."
+      "description": "Silent demonstration of the 3D Studio's tools on the team's designs: a column of crystals lassoed, aligned vertically, then mirrored with its canine gem; the lower crystals lassoed, aligned, then spaced evenly; the Scorpion's red body lassoed and recoloured sapphire, then gold; a turn round the Star halo; finally the Heart smile opens and closes while the teeth change colour."
     }
   },
   "benefits": {

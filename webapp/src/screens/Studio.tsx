@@ -170,18 +170,26 @@ export function Studio() {
         <div aria-hidden="true" className="gt-studio-b-aurora pointer-events-none absolute -right-24 -top-24 h-[420px] w-[420px] rounded-full opacity-70" />
         <div aria-hidden="true" className="gt-studio-b-aurora--blush pointer-events-none absolute -left-32 top-1/2 h-[320px] w-[320px] rounded-full" />
 
-        <div className="relative mx-auto grid max-w-[var(--max-width-content)] grid-cols-1 items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
-          <div className="grid min-w-0 justify-items-start gap-5">
+        {/* Phones: the title, then the film, large, then the text and the calls. Wide screens: the film beside both. */}
+        <div className="relative mx-auto grid max-w-[var(--max-width-content)] grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-rows-[1fr_auto_auto_1fr] lg:gap-x-14 lg:gap-y-6">
+          <div className="grid min-w-0 justify-items-start gap-4 sm:gap-5 lg:row-start-2">
             <span className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--gt-blue-200)] bg-white/75 py-1 pl-2.5 pr-3 text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--gt-blue-700)] backdrop-blur">
               <Sparkles size={13} aria-hidden="true" />
               {t("studioPage.hero.eyebrow")}
             </span>
             <h1
               id="gt-studio-b-title"
-              className="text-[clamp(34px,9vw,44px)] font-[var(--weight-black)] leading-[0.98] tracking-[var(--tracking-display)] text-[var(--gt-ink-900)] sm:text-[length:var(--text-display-1)]"
+              className="text-[clamp(34px,9vw,44px)] font-[var(--weight-black)] leading-[0.98] tracking-[var(--tracking-display)] text-[var(--gt-ink-900)] sm:text-[length:var(--text-display-1)] lg:text-[length:var(--text-display-2)]"
             >
               {t("studioPage.hero.title")}
             </h1>
+          </div>
+
+          <div className="relative mx-auto w-full min-w-0 max-w-[560px] lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:max-w-[min(100%,calc(100svh-210px))] lg:self-center">
+            <HeroVideo />
+          </div>
+
+          <div className="grid min-w-0 justify-items-start gap-5 lg:row-start-3">
             <p className="m-0 max-w-[52ch] text-[length:var(--text-body-md)] text-[var(--text-body)] sm:text-[length:var(--text-body-lg)]">{t("studioPage.hero.body")}</p>
 
             <div className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
@@ -202,10 +210,6 @@ export function Studio() {
                 {t("studio.access.previewNote")}
               </p>
             )}
-          </div>
-
-          <div className="relative min-w-0">
-            <HeroVideo />
           </div>
         </div>
       </section>

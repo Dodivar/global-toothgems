@@ -4,8 +4,9 @@ import clsx from "clsx";
 import { Pause, Play } from "lucide-react";
 
 /**
- * A silent looping film of the Studio presentation page, in the page's window
- * frame: the hero's film and the editor demonstration.
+ * A silent looping film of the Studio presentation page: the editor
+ * demonstration in the page's window frame, the hero's film on its own (the
+ * 3D alone, no interface around it).
  *
  * Phones get a lighter file. A film starts on its own only once the page is
  * hydrated, while it is on screen and when the reader has not asked for less
@@ -29,6 +30,7 @@ export function StudioLoopVideo({
   preload = "none",
   aspectClassName = "aspect-[16/10]",
   buttonSide = "right",
+  framed = true,
 }: {
   film: LoopFilm;
   /** What the film shows, read by screen readers. */
@@ -37,6 +39,8 @@ export function StudioLoopVideo({
   aspectClassName?: string;
   /** The corner of the pause button, away from what the film shows. */
   buttonSide?: "left" | "right";
+  /** In the page's window frame (title-bar dots); unframed, the film alone, its corners rounded. */
+  framed?: boolean;
 }) {
   const { t } = useTranslation();
   const video = useRef<HTMLVideoElement>(null);
@@ -80,6 +84,46 @@ export function StudioLoopVideo({
   const label = playing ? t("studioPage.video.pause") : t("studioPage.video.play");
   const Icon = playing ? Pause : Play;
 
+  const media = (
+    <div
+      className={clsx(
+        "relative w-full overflow-hidden bg-[var(--gt-blue-50)]",
+        framed ? "rounded-[var(--radius-lg)]" : "rounded-[var(--radius-xl)] shadow-[var(--shadow-lg)]",
+        aspectClassName,
+      )}
+    >
+      <video
+        ref={video}
+        className="absolute inset-0 block h-full w-full object-cover"
+        poster={film.poster}
+        muted
+        loop
+        playsInline
+        preload={preload}
+        disablePictureInPicture
+        aria-describedby={descriptionId}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+      >
+        <source src={film.mobileSrc} type="video/mp4" media="(max-width: 767px)" />
+        <source src={film.src} type="video/mp4" />
+      </video>
+      <p id={descriptionId} className="sr-only">
+        {description}
+      </p>
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={label}
+        title={label}
+        className={clsx("absolute bottom-3 grid", buttonSide === "left" ? "left-3" : "right-3", "h-10 w-10 place-items-center rounded-full border border-white/70 bg-white/85 text-[var(--gt-blue-700)] shadow-[var(--shadow-sm)] backdrop-blur transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gt-blue-500)]")}
+      >
+        <Icon size={16} fill="currentColor" strokeWidth={0} />
+      </button>
+    </div>
+  );
+
+  if (!framed) return media;
   return (
     <div className="gt-studio-b-frame rounded-[var(--radius-xl)] border border-white/70 p-2.5 sm:p-3">
       <div aria-hidden="true" className="flex items-center gap-1.5 px-2 pb-2.5 pt-1">
@@ -87,36 +131,7 @@ export function StudioLoopVideo({
         <span className="h-2 w-2 rounded-full bg-[var(--gt-blue-200)]" />
         <span className="h-2 w-2 rounded-full bg-[var(--gt-ink-200)]" />
       </div>
-      <div className={clsx("relative w-full overflow-hidden rounded-[var(--radius-lg)] bg-[var(--gt-blue-50)]", aspectClassName)}>
-        <video
-          ref={video}
-          className="absolute inset-0 block h-full w-full object-cover"
-          poster={film.poster}
-          muted
-          loop
-          playsInline
-          preload={preload}
-          disablePictureInPicture
-          aria-describedby={descriptionId}
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-        >
-          <source src={film.mobileSrc} type="video/mp4" media="(max-width: 767px)" />
-          <source src={film.src} type="video/mp4" />
-        </video>
-        <p id={descriptionId} className="sr-only">
-          {description}
-        </p>
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={label}
-          title={label}
-          className={clsx("absolute bottom-3 grid", buttonSide === "left" ? "left-3" : "right-3", "h-10 w-10 place-items-center rounded-full border border-white/70 bg-white/85 text-[var(--gt-blue-700)] shadow-[var(--shadow-sm)] backdrop-blur transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gt-blue-500)]")}
-        >
-          <Icon size={16} fill="currentColor" strokeWidth={0} />
-        </button>
-      </div>
+      {media}
     </div>
   );
 }
