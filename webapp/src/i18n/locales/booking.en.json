@@ -246,6 +246,8 @@
     },
     "upcoming_one": "{{count}} upcoming appointment",
     "upcoming_other": "{{count}} upcoming appointments",
+    "period": { "today": "Today", "tomorrow": "Tomorrow", "thisWeek": "This week", "nextWeek": "Next week", "later": "Later" },
+    "relative": { "today": "Today", "tomorrow": "Tomorrow", "inDays_one": "In {{count}} day", "inDays_other": "In {{count}} days" },
     "noneUpcoming": "No upcoming appointment.",
     "pastHint": "After the hour, the appointment moves to “Past appointments to record”: say whether the client came.",
     "blocks": "Clients you no longer accept",

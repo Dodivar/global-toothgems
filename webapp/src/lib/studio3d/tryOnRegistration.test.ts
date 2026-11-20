@@ -5,6 +5,7 @@ import {
   estimateViewYaw,
   fitArches,
   fitSimilarity,
+  inferBetween,
   LOWER_OVERBITE_MM,
   MAX_CENTRALS_SPAN,
   registerDesign,
@@ -127,19 +128,49 @@ describe("registerDesign", () => {
     expect(reg.gems[0].rotation).toBeCloseTo(38, 3);
   });
 
-  it("sets aside a tooth with a wrong number and still places its gem from the fit", () => {
+  it("sets aside a tooth with a wrong number and places its gem between its kept neighbours", () => {
     const found = photoTeeth(UPPER_FRONT, 20, 600, 300);
     // "12" reported on the other side of the smile.
     const t12 = found.find((t) => t.fdi === "12")!;
     t12.x += 300;
     const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "12")] }, found);
     expect(reg.teeth.find((t) => t.fdi === "12" && t.source === "outlier")).toBeTruthy();
-    expect(reg.teeth.find((t) => t.fdi === "12" && t.source === "fitted")).toBeTruthy();
+    expect(reg.teeth.find((t) => t.fdi === "12" && t.source === "inferred")).toBeTruthy();
     const ref = tooth("12");
-    expect(reg.gems[0].tooth).toBe("fitted");
-    expect(reg.gems[0].x).toBeCloseTo(((ref.x0 + ref.x1) / 2) * 20 + 600, 1);
+    expect(reg.gems[0].tooth).toBe("inferred");
+    expect(Math.abs(reg.gems[0].x - ((ref.x0 + ref.x1) / 2) * 20 - 600)).toBeLessThan(10);
     expect(reg.issues).toEqual(expect.arrayContaining(["outliers", "design_teeth_missing", "out_of_order"]));
     expect(reg.reliable).toBe(false);
+  });
+
+  it("infers a tooth the function missed between its two kept neighbours, and draws its gems there", () => {
+    // The 11 missing from the analysis, 12 and 21 found on either side (a creation's seven gems on the 11, 2026-11-18).
+    const gems = [gem("a", "11"), gem("b", "11", { u: 0.8, v: 0.6 }), gem("c", "21")];
+    const all = photoTeeth(UPPER_FRONT, 20, 600, 300);
+    const clean = registerDesign({ teeth: FRONT_VIEW_TEETH, gems }, all);
+    const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems }, all.filter((t) => t.fdi !== "11"));
+    expect(reg.teeth.find((t) => t.fdi === "11")?.source).toBe("inferred");
+    expect(reg.gems.map((g) => g.tooth)).toEqual(["inferred", "inferred", "found"]);
+    // Where they land with the 11 found, within a few pixels (the space between the neighbours is the tooth plus its contacts).
+    reg.gems.forEach((g, i) => {
+      expect(Math.abs(g.x - clean.gems[i].x)).toBeLessThan(6);
+      expect(Math.abs(g.y - clean.gems[i].y)).toBeLessThan(6);
+    });
+    expect(reg.issues).toContain("design_teeth_missing");
+    expect(reg.reliable).toBe(true);
+  });
+
+  it("does not infer a tooth whose neighbours touch, nor one with a single kept neighbour", () => {
+    const kept = new Map(
+      [
+        { fdi: "12", x: 0, y: 0, width: 100, height: 150 },
+        { fdi: "21", x: 140, y: 0, width: 120, height: 160 },
+      ].map((t) => [t.fdi, t]),
+    );
+    expect(inferBetween("11", kept, 150)).toBeNull(); // 40 px between them, a tooth of 150 expected
+    expect(inferBetween("11", kept, 70)).toEqual({ fdi: "11", x: 100, y: 0, width: 40, height: 160 });
+    expect(inferBetween("22", kept, 100)).toBeNull(); // 23 not kept
+    expect(inferBetween("99", kept, 100)).toBeNull();
   });
 
   it("places a gem on a tooth that was not found, from its neighbours", () => {

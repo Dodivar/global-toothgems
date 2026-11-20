@@ -161,7 +161,9 @@ function NewFolderTile() {
  * My Creations as folders. At the top level the collections come first, then
  * the creations filed nowhere; a folder opens on its creations, with a trail
  * back. The open folder is the address's `?collection=` (the same one the
- * grid filters on), so back, reload and switching layouts keep it.
+ * grid filters on), so back, reload and switching layouts keep it. Every
+ * grid here has a `minmax(0,1fr)` column: an `auto` one grows to a long
+ * folder name and pushes the cards off a phone screen.
  */
 export function CreationExplorer({
   query,
@@ -227,7 +229,7 @@ export function CreationExplorer({
 
   if (folder) {
     return (
-      <section aria-labelledby="gt-explorer-folder" className="grid gap-5">
+      <section aria-labelledby="gt-explorer-folder" className="grid grid-cols-[minmax(0,1fr)] gap-5">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -283,9 +285,9 @@ export function CreationExplorer({
   }
 
   return (
-    <div className="grid gap-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8">
       {(!root.searching || root.folders.length > 0) && (
-        <section aria-labelledby="gt-explorer-folders" className="grid gap-3">
+        <section aria-labelledby="gt-explorer-folders" className="grid grid-cols-[minmax(0,1fr)] gap-3">
           <h2 id="gt-explorer-folders" className={sectionTitle}>
             {t("studio.workspace.collections.label")}{" "}
             <span className="tabular-nums">({root.folders.length})</span>
@@ -308,7 +310,7 @@ export function CreationExplorer({
         </section>
       )}
 
-      <section aria-labelledby="gt-explorer-loose" className="grid gap-3">
+      <section aria-labelledby="gt-explorer-loose" className="grid grid-cols-[minmax(0,1fr)] gap-3">
         <h2 id="gt-explorer-loose" className={sectionTitle}>
           {t(root.searching ? "studio.workspace.explorer.results" : "studio.workspace.explorer.loose")}{" "}
           <span className="tabular-nums">({root.creations.length})</span>

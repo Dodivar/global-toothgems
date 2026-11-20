@@ -1,8 +1,4 @@
 {
-  "placeholder": {
-    "label": "Media placeholder",
-    "note": "Visual to be supplied before this page goes live."
-  },
   "hero": {
     "eyebrow": "Your creativity, in 3D",
     "title": "Imagine it. Design it. Make it yours.",
@@ -13,10 +9,10 @@
     "ctaSecondary": "Discover the experience",
     "reassurance_one": "{{count}} day to explore, then the plan you choose, from {{price}} / month.",
     "reassurance_other": "{{count}} days to explore, then the plan you choose, from {{price}} / month.",
-    "media": {
-      "title": "Screen recording of the 3D Studio",
-      "body": "A tooth jewellery composition being created and rotated in real time in the Studio.",
-      "caption": "Demonstration film · 16:9 · to be replaced by the final recording."
+    "video": {
+      "description": "Silent demonstration of the 3D Studio: a crystal heart is placed gem by gem, the camera circles an iridescent star, several gems change colour at once, a gold lightning bolt is moved then turned on its tooth, the teeth change shade and light, then the mouth opens with the lower jewellery.",
+      "pause": "Pause the video",
+      "play": "Play the video"
     }
   },
   "benefits": {
@@ -48,29 +44,32 @@
     "items": {
       "idea": {
         "title": "Every detail starts with an idea",
-        "body": "One instinct placed as a single gem, then moved, resized, swapped — until it becomes the composition you had in mind.",
+        "body": "The Scorpion started as a single red gem. A line of crystals for the body, navettes for the claws and the sting, then touches of pink: every piece is placed, moved, resized or recoloured until it becomes the composition you had in mind.",
         "media": {
-          "title": "Close-up of a composition in the Studio",
-          "body": "One tooth, two or three pieces, light catching the facets.",
-          "caption": "Image or short film · portrait or square."
-        }
+          "alt": "The finished Scorpion in the 3D Studio: a line of red crystals across the two incisors, three red navettes for the claws and the sting, and small pink crystals all around.",
+          "caption": "“Scorpion”, a team design composed in the Studio."
+        },
+        "stepsTitle": "How it was made, step by step",
+        "steps": [
+          "One red gem",
+          "The body",
+          "The claws and the sting"
+        ]
       },
       "signature": {
         "title": "Explore your next signature look",
         "body": "Minimal or statement, symmetrical or free: change register in seconds and keep the directions that speak to you.",
         "media": {
-          "title": "Gallery of compositions created in the Studio",
-          "body": "Several different aesthetics, shown together.",
-          "caption": "Six visuals · same framing, same light."
+          "alt": "Six designs created in the Studio, on the same dentition under the same light: a pink and red heart, an iridescent star with its halo, gold crystals and a lightning bolt, a red scorpion, two blue navettes with a gold dachshund and snake, and minimal lines of crystals.",
+          "caption": "Six designs, same framing, same light."
         }
       },
       "space": {
         "title": "A creative space made for you",
         "body": "A place of your own for tooth jewellery ideas, open whenever inspiration comes, on a computer as on a phone.",
         "media": {
-          "title": "Screenshot of the full Studio interface",
-          "body": "The whole workspace: the dentition, the library, the tools.",
-          "caption": "Wide screenshot · desktop screen."
+          "alt": "The 3D Studio workspace on a computer: the shop’s gem library on the left, in the centre the dentition with a heart and a selected gem with its toolbar, on the right the gem’s settings (colour, size, rotation, mirror, position).",
+          "caption": "The whole workspace: the dentition, the library, the tools."
         }
       }
     }
@@ -78,7 +77,7 @@
   "proof": {
     "eyebrow": "The artists",
     "title": "Made for artists who see possibilities everywhere.",
-    "body": "This space will hold the words and the work of the artists who use the Studio. Nothing appears here until they have agreed to it.",
+    "body": "Here are a few designs by the Global Toothgems team, composed in the Studio. The words and the work of the artists who use it will join them, published only with their agreement.",
     "testimonialsTitle": "Testimonials",
     "testimonial": {
       "title": "Testimonial from a Studio user",
@@ -87,9 +86,21 @@
     },
     "galleryTitle": "Creations",
     "gallery": {
-      "title": "Finished composition created in the Studio",
-      "body": "A real example, shared with its author's agreement.",
-      "caption": "Square visual."
+      "caption": "Designs by the Global Toothgems team, composed in the Studio.",
+      "items": {
+        "heart": {
+          "name": "Heart",
+          "alt": "The “Heart” design seen at an angle: a heart of pink and red crystals across the two upper incisors, a line of blue and white crystals below."
+        },
+        "star": {
+          "name": "Star halo",
+          "alt": "The “Star halo” design seen from the side: an iridescent star ringed with crystals, followed by an arc of crystals running to the canine."
+        },
+        "gold": {
+          "name": "Gold",
+          "alt": "The “Gold” design seen at an angle: two columns of gold crystals and a gold lightning bolt on the upper incisors, two gold navettes below."
+        }
+      }
     }
   },
   "plans": {

@@ -1,10 +1,12 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowDown, ArrowRight, BadgeCheck, Camera, Eye, Film, Fingerprint, Image as ImageIcon, Images, MonitorPlay, Quote, Shuffle, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, BadgeCheck, Camera, Eye, Fingerprint, Quote, Shuffle, Sparkles } from "lucide-react";
 import { Button } from "../components/ui/Button";
-import { HeroMediaPlaceholder, MediaPlaceholder, type PlaceholderCopy } from "../components/studio/MediaPlaceholder";
+import { StudioPageImage, type StudioStill } from "../components/studio/StudioPageImage";
+import { HeroVideo } from "../components/studio/HeroVideo";
 import { StudioPlans } from "../components/studio/StudioPlans";
 import { StudioFaq } from "../components/studio/StudioFaq";
 import { useNavigate } from "../lib/navigation";
@@ -23,9 +25,12 @@ import { STUDIO_PREVIEW } from "../lib/studioAccess";
  * the artists' own words, then the offers, a closing call and the questions.
  *
  * What it does not do: invent anything. Plan names, amounts and the trial's
- * length come from `data/studio.ts`; the media that does not exist yet is
- * drawn as a labelled placeholder; no testimonial, rating or figure is made
- * up; the buttons behave as follows: while the Studio is in
+ * length come from `data/studio.ts`; the hero plays the Studio film (`HeroVideo`); the showcase and the
+ * artists' gallery show stills rendered by the editor's own engine from the
+ * Global Toothgems team's designs, and a screenshot of the editor
+ * (`StudioPageImage`, `public/images/studio-page/`); the testimonials stay
+ * labelled placeholders until the owner supplies real ones, and no
+ * testimonial, rating or figure is made up; the buttons behave as follows: while the Studio is in
  * free preview (`studioAccess`) "start" opens the editor, otherwise it leads
  * to the subscription page, and nothing here activates a trial or takes a
  * payment.
@@ -42,11 +47,84 @@ const BENEFITS = [
   { key: "confidence", icon: BadgeCheck },
 ] as const;
 
+const STILLS = "/images/studio-page";
+/** The media column (two thirds of the content) on wide screens, the screen less its gutters on phones. */
+const MEDIA_WIDTH = "(min-width: 1024px) 800px, calc(100vw - 32px)";
+
+/**
+ * The showcase's stills: the Scorpion as it was made (finished, with the three
+ * steps before it, all under one camera), six designs under one camera and one
+ * light (a single picture whose gaps are transparent), and the editor itself —
+ * a screenshot per language, since it shows the interface's words.
+ */
 const SHOWCASE = [
-  { key: "idea", icon: ImageIcon, ratio: "aspect-[4/5]" },
-  { key: "signature", icon: Images, ratio: "aspect-[4/3]" },
-  { key: "space", icon: MonitorPlay, ratio: "aspect-[16/10]" },
+  { key: "idea", still: { base: `${STILLS}/scorpion`, width: 960, height: 720 }, look: "steps" },
+  { key: "signature", still: { base: `${STILLS}/signatures`, width: 800, height: 600 }, look: "grid" },
+  { key: "space", still: { base: `${STILLS}/workspace-{lang}`, width: 800, height: 500 }, look: "window" },
 ] as const;
+
+/** The Scorpion before it was finished: one gem, the body, then the claws and the sting. */
+const SCORPION_STEPS: StudioStill[] = [1, 2, 3].map((n) => ({ base: `${STILLS}/scorpion-step-${n}`, width: 480, height: 360 }));
+const STEP_SIZES = "(min-width: 1024px) 260px, calc((100vw - 56px) / 3)";
+
+/** Three finished designs of the team for the artists' section, square. */
+const GALLERY: { key: string; still: StudioStill }[] = [
+  { key: "heart", still: { base: `${STILLS}/creation-coeur`, width: 600, height: 600 } },
+  { key: "star", still: { base: `${STILLS}/creation-etoile-halo`, width: 600, height: 600 } },
+  { key: "gold", still: { base: `${STILLS}/creation-doree`, width: 600, height: 600 } },
+];
+const GALLERY_SIZES = "(min-width: 1024px) 410px, (min-width: 640px) 30vw, calc(100vw - 32px)";
+
+/** The window frame of the hero, around the editor's screenshot. */
+function WindowFrame({ children }: { children: ReactNode }) {
+  return (
+    <div className="gt-studio-b-frame rounded-[var(--radius-xl)] border border-white/70 p-2 sm:p-2.5">
+      <div aria-hidden="true" className="flex items-center gap-1.5 px-2 pb-2 pt-0.5">
+        <span className="h-2 w-2 rounded-full bg-[var(--gt-blue-300)]" />
+        <span className="h-2 w-2 rounded-full bg-[var(--gt-blue-200)]" />
+        <span className="h-2 w-2 rounded-full bg-[var(--gt-ink-200)]" />
+      </div>
+      <div className="overflow-hidden rounded-[var(--radius-md)]">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * The first showcase block's media: the finished Scorpion, large, then the
+ * three steps that led to it, numbered, each named by its caption (the
+ * pictures themselves are decorative next to it).
+ */
+function ScorpionStory({ finished }: { finished: StudioStill }) {
+  const { t } = useTranslation();
+  const steps = t("studioPage.showcase.items.idea.steps", { returnObjects: true }) as string[];
+  return (
+    <div className="grid gap-4">
+      <StudioPageImage
+        still={finished}
+        alt={t("studioPage.showcase.items.idea.media.alt")}
+        caption={t("studioPage.showcase.items.idea.media.caption")}
+        sizes={MEDIA_WIDTH}
+        imageClassName="rounded-[var(--radius-xl)] border border-white/70 shadow-[var(--shadow-md)]"
+      />
+      <div className="grid gap-2.5">
+        <p className="m-0 text-[11px] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-[var(--text-muted)]">{t("studioPage.showcase.items.idea.stepsTitle")}</p>
+        <ol className="m-0 grid list-none grid-cols-3 gap-2 p-0 sm:gap-3">
+          {SCORPION_STEPS.map((still, index) => (
+            <li key={still.base}>
+              <StudioPageImage
+                still={still}
+                alt=""
+                caption={`${index + 1}. ${steps[index] ?? ""}`}
+                sizes={STEP_SIZES}
+                imageClassName="rounded-[var(--radius-md)] border border-[var(--border-subtle)]"
+              />
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
+}
 
 /** Scrolls to a section of this page, respecting the reader's motion setting. */
 function scrollToSection(id: string) {
@@ -73,7 +151,8 @@ function SectionHeading({ id, eyebrow, title, body }: { id: string; eyebrow: str
 }
 
 export function Studio() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language.startsWith("en") ? "en" : "fr";
   const vatNotice = vatNoticeKey(useStudioVatFranchise());
   const { formatMoney } = useFormat();
   const navigate = useNavigate();
@@ -90,8 +169,6 @@ export function Studio() {
   const plansRef = useReveal<HTMLElement>();
   const closingRef = useReveal<HTMLElement>();
   const faqRef = useReveal<HTMLElement>();
-
-  const copy = (key: string) => t(key, { returnObjects: true }) as PlaceholderCopy;
 
   return (
     <div className="gt-studio-alt overflow-x-clip">
@@ -135,7 +212,7 @@ export function Studio() {
           </div>
 
           <div className="relative min-w-0">
-            <HeroMediaPlaceholder copy={copy("studioPage.hero.media")} icon={Film} />
+            <HeroVideo />
           </div>
         </div>
       </section>
@@ -172,8 +249,14 @@ export function Studio() {
       >
         <div className="mx-auto grid max-w-[var(--max-width-content)] gap-10 lg:gap-14">
           <SectionHeading id="gt-studio-b-showcase" eyebrow={t("studioPage.showcase.eyebrow")} title={t("studioPage.showcase.title")} />
-          {SHOWCASE.map(({ key, icon, ratio }, index) => (
-            <article key={key} className="grid grid-cols-1 items-center gap-6 lg:grid-cols-2 lg:gap-14">
+          {SHOWCASE.map(({ key, still, look }, index) => (
+            <article
+              key={key}
+              className={clsx(
+                "grid grid-cols-1 items-center gap-6 lg:gap-12",
+                index % 2 === 1 ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]",
+              )}
+            >
               <div className={clsx("grid min-w-0 content-start gap-3", index % 2 === 1 && "lg:order-2")}>
                 <h3 className="text-[clamp(24px,5vw,34px)] font-[var(--weight-black)] leading-[var(--leading-tight)] tracking-[var(--tracking-display)]">
                   {t(`studioPage.showcase.items.${key}.title`)}
@@ -181,7 +264,23 @@ export function Studio() {
                 <p className="m-0 max-w-[52ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t(`studioPage.showcase.items.${key}.body`)}</p>
               </div>
               <div className={clsx("min-w-0", index % 2 === 1 && "lg:order-1")}>
-                <MediaPlaceholder copy={copy(`studioPage.showcase.items.${key}.media`)} icon={icon} ratio={ratio} />
+                {look === "window" ? (
+                  <figure className="m-0 grid gap-2.5">
+                    <WindowFrame>
+                      <StudioPageImage still={{ ...still, base: still.base.replace("{lang}", lang) }} alt={t(`studioPage.showcase.items.${key}.media.alt`)} sizes={MEDIA_WIDTH} />
+                    </WindowFrame>
+                    <figcaption className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t(`studioPage.showcase.items.${key}.media.caption`)}</figcaption>
+                  </figure>
+                ) : look === "steps" ? (
+                  <ScorpionStory finished={still} />
+                ) : (
+                  <StudioPageImage
+                    still={still}
+                    alt={t(`studioPage.showcase.items.${key}.media.alt`)}
+                    caption={t(`studioPage.showcase.items.${key}.media.caption`)}
+                    sizes={MEDIA_WIDTH}
+                  />
+                )}
               </div>
             </article>
           ))}
@@ -211,13 +310,22 @@ export function Studio() {
           </ul>
 
           <h3 className="sr-only">{t("studioPage.proof.galleryTitle")}</h3>
-          <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-3">
-            {[0, 1, 2].map((slot) => (
-              <li key={slot}>
-                <MediaPlaceholder copy={copy("studioPage.proof.gallery")} icon={ImageIcon} ratio="aspect-square" />
-              </li>
-            ))}
-          </ul>
+          <div className="grid gap-3">
+            <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-3">
+              {GALLERY.map(({ key, still }) => (
+                <li key={key}>
+                  <StudioPageImage
+                    still={still}
+                    alt={t(`studioPage.proof.gallery.items.${key}.alt`)}
+                    caption={t(`studioPage.proof.gallery.items.${key}.name`)}
+                    sizes={GALLERY_SIZES}
+                    imageClassName="rounded-[var(--radius-lg)] border border-[var(--border-subtle)]"
+                  />
+                </li>
+              ))}
+            </ul>
+            <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">{t("studioPage.proof.gallery.caption")}</p>
+          </div>
         </div>
       </section>
 

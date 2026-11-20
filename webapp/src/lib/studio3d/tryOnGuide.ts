@@ -39,7 +39,7 @@ const HEX = /^#[0-9a-f]{6}$/i;
 export function guideMarks(registration: Pick<Registration, "gems">, pieces: readonly PlacedJewelry[]): { marks: GuideMark[]; leftOut: number } {
   const pieceById = new Map(pieces.map((p) => [p.id, p]));
   const marks = registration.gems.flatMap((g): GuideMark[] => {
-    if (g.tooth !== "found" || !(g.r > 0)) return [];
+    if ((g.tooth !== "found" && g.tooth !== "inferred") || !(g.r > 0)) return [];
     const color = pieceById.get(g.id)?.look.color ?? "";
     return [{ id: g.id, shape: g.shape, x: g.x, y: g.y, r: g.r, stretch: g.stretch, rotation: g.rotation, squash: g.squash, color: HEX.test(color) ? color : "#ffffff" }];
   });
