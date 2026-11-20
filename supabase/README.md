@@ -2261,6 +2261,13 @@ The owner asked an agent to settle the pending "to confirm" points. Outcome:
   the consumer mediator of the seller and of the publisher (decisions 126, 135, "later": a legal launch blocker, still
   shown as "to supply"). Since 2026-11-13: **Sign in with Apple** (decision 138: coded, hidden by
   `APPLE_SIGN_IN_ENABLED = false`; not a priority, the Apple Developer Program costs $99 a year).
+- **Production data and AI (2026-11-20, owner's request):** the owner may analyse production data to make statistics
+  and improve the site (legitimate interest, now a purpose in the privacy policy). Agents and AI tools never receive
+  personal data (`AGENTS.md` §15): aggregates, pseudonymous identifiers or test data only. Not built, to decide
+  later: a read-only database role limited to analysis views without personal columns (small groups of at least 5);
+  a lawyer should confirm the wording and, if an AI provider ever receives personal data, the processing agreement,
+  the transfer framework and the recipients list. Supabase logs (IP, user agent, e-mails in auth logs) count as
+  personal data: keep them short, never export them to an AI.
 - **Open questions to the owner** (business facts only they hold):
   1. Supplier evidence for the "sans plomb" / "hypoallergénique" product claims (decision 116), else remove them.
   2. Final Studio prices before the live Prices are created (decision 94).
