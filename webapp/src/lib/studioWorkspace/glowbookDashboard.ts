@@ -31,7 +31,7 @@ export type GlowbookTodo =
   | { code: "noItems"; panel: "creations" }
   | { code: "itemsRejected"; panel: "creations"; count: number }
   | { code: "changesRejected"; panel: "look" }
-  | { code: "noSpotlight"; panel: "look" }
+  | { code: "noSpotlight"; panel: "creations" }
   | { code: "unfiled"; panel: "creations"; count: number };
 
 /** What needs the artist's attention, most blocking first. Waiting for a moderator is not a to-do: the figures show it. */
@@ -45,7 +45,7 @@ export function glowbookTodos(glowbook: Glowbook, items: readonly GlowbookItem[]
     todos.push({ code: "changesRejected", panel: "look" });
   }
   const spotlightLive = items.some((i) => i.id === glowbook.look.featuredItemId && i.status === "approved");
-  if (counts.approved > 0 && !spotlightLive) todos.push({ code: "noSpotlight", panel: "look" });
+  if (counts.approved > 0 && !spotlightLive) todos.push({ code: "noSpotlight", panel: "creations" });
   if (counts.unfiled > 0) todos.push({ code: "unfiled", panel: "creations", count: counts.unfiled });
   return todos;
 }
