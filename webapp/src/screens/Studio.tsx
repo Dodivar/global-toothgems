@@ -1,12 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { ArrowDown, ArrowRight, BadgeCheck, Camera, Eye, Fingerprint, Quote, Shuffle, Sparkles } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { StudioPageImage, type StudioStill } from "../components/studio/StudioPageImage";
 import { HeroVideo } from "../components/studio/HeroVideo";
+import { StudioLoopVideo, type LoopFilm } from "../components/studio/StudioLoopVideo";
 import { StudioPlans } from "../components/studio/StudioPlans";
 import { StudioFaq } from "../components/studio/StudioFaq";
 import { useNavigate } from "../lib/navigation";
@@ -52,16 +52,29 @@ const STILLS = "/images/studio-page";
 const MEDIA_WIDTH = "(min-width: 1024px) 800px, calc(100vw - 32px)";
 
 /**
- * The showcase's stills: the Scorpion as it was made (finished, with the three
+ * The showcase's media: the Scorpion as it was made (finished, with the three
  * steps before it, all under one camera), six designs under one camera and one
- * light (a single picture whose gaps are transparent), and the editor itself —
- * a screenshot per language, since it shows the interface's words.
+ * light (a single picture whose gaps are transparent), and the editor at work
+ * — a film per language, since it shows the interface's words.
  */
 const SHOWCASE = [
   { key: "idea", still: { base: `${STILLS}/scorpion`, width: 960, height: 720 }, look: "steps" },
   { key: "signature", still: { base: `${STILLS}/signatures`, width: 800, height: 600 }, look: "grid" },
-  { key: "space", still: { base: `${STILLS}/workspace-{lang}`, width: 800, height: 500 }, look: "window" },
+  { key: "space", still: null, look: "film" },
 ] as const;
+
+/**
+ * The editor demonstration (`/videos/studio-3d-demo-<lang>*`): the team's
+ * "Cristaux minimalistes" rebuilt from a blank smile in the real editor, in
+ * colour — placed, lassoed, aligned, mirror-copied, copied to the lower arch,
+ * recoloured, duplicated, spaced evenly and centred — in about 15 seconds
+ * (recorded live, played 1.5 times faster).
+ */
+const demoFilm = (lang: "fr" | "en"): LoopFilm => ({
+  src: `/videos/studio-3d-demo-${lang}.mp4`,
+  mobileSrc: `/videos/studio-3d-demo-${lang}-mobile.mp4`,
+  poster: `/videos/studio-3d-demo-${lang}-poster.webp`,
+});
 
 /** The Scorpion before it was finished: one gem, the body, then the claws and the sting. */
 const SCORPION_STEPS: StudioStill[] = [1, 2, 3].map((n) => ({ base: `${STILLS}/scorpion-step-${n}`, width: 480, height: 360 }));
@@ -74,20 +87,6 @@ const GALLERY: { key: string; still: StudioStill }[] = [
   { key: "gold", still: { base: `${STILLS}/creation-doree`, width: 600, height: 600 } },
 ];
 const GALLERY_SIZES = "(min-width: 1024px) 410px, (min-width: 640px) 30vw, calc(100vw - 32px)";
-
-/** The window frame of the hero, around the editor's screenshot. */
-function WindowFrame({ children }: { children: ReactNode }) {
-  return (
-    <div className="gt-studio-b-frame rounded-[var(--radius-xl)] border border-white/70 p-2 sm:p-2.5">
-      <div aria-hidden="true" className="flex items-center gap-1.5 px-2 pb-2 pt-0.5">
-        <span className="h-2 w-2 rounded-full bg-[var(--gt-blue-300)]" />
-        <span className="h-2 w-2 rounded-full bg-[var(--gt-blue-200)]" />
-        <span className="h-2 w-2 rounded-full bg-[var(--gt-ink-200)]" />
-      </div>
-      <div className="overflow-hidden rounded-[var(--radius-md)]">{children}</div>
-    </div>
-  );
-}
 
 /**
  * The first showcase block's media: the finished Scorpion, large, then the
@@ -264,11 +263,9 @@ export function Studio() {
                 <p className="m-0 max-w-[52ch] text-[length:var(--text-body-md)] text-[var(--text-body)]">{t(`studioPage.showcase.items.${key}.body`)}</p>
               </div>
               <div className={clsx("min-w-0", index % 2 === 1 && "lg:order-1")}>
-                {look === "window" ? (
+                {look === "film" ? (
                   <figure className="m-0 grid gap-2.5">
-                    <WindowFrame>
-                      <StudioPageImage still={{ ...still, base: still.base.replace("{lang}", lang) }} alt={t(`studioPage.showcase.items.${key}.media.alt`)} sizes={MEDIA_WIDTH} />
-                    </WindowFrame>
+                    <StudioLoopVideo film={demoFilm(lang)} description={t(`studioPage.showcase.items.${key}.media.description`)} buttonSide="left" />
                     <figcaption className="text-[length:var(--text-caption)] text-[var(--text-muted)]">{t(`studioPage.showcase.items.${key}.media.caption`)}</figcaption>
                   </figure>
                 ) : look === "steps" ? (

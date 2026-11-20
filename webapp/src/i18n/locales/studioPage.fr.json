@@ -10,9 +10,7 @@
     "reassurance_one": "{{count}} jour pour explorer, puis la formule de votre choix, dès {{price}} / mois.",
     "reassurance_other": "{{count}} jours pour explorer, puis la formule de votre choix, dès {{price}} / mois.",
     "video": {
-      "description": "Démonstration du Studio 3D, sans son : un cœur de cristaux se pose gemme par gemme, la caméra tourne autour d’une étoile irisée, plusieurs gemmes changent de couleur en même temps, un éclair doré est déplacé puis pivoté sur sa dent, la dentition change de teinte et de lumière, puis la bouche s’ouvre avec les bijoux du bas.",
-      "pause": "Mettre la vidéo en pause",
-      "play": "Lire la vidéo"
+      "description": "Démonstration du Studio 3D, sans son : un cœur de cristaux se pose gemme par gemme, la caméra tourne autour d’une étoile irisée, plusieurs gemmes changent de couleur en même temps, un éclair doré est déplacé puis pivoté sur sa dent, la dentition change de teinte et de lumière, puis la bouche s’ouvre avec les bijoux du bas."
     }
   },
   "benefits": {
@@ -65,11 +63,11 @@
         }
       },
       "space": {
-        "title": "Un espace créatif qui vous appartient",
-        "body": "Un lieu dédié à vos idées de bijoux dentaires, ouvert quand l’envie vient, sur ordinateur comme sur mobile.",
+        "title": "Des outils aussi rapides que vos idées",
+        "body": "Poser, aligner, copier en miroir, dupliquer, espacer, changer de couleur : en quelques gestes, le design « Cristaux minimalistes » se reconstruit à partir d’un sourire vierge.",
         "media": {
-          "alt": "L’espace de travail du Studio 3D sur ordinateur : la bibliothèque de gemmes de la boutique à gauche, au centre la dentition ornée d’un cœur avec une gemme sélectionnée et sa barre d’outils, à droite les réglages de la gemme (couleur, taille, rotation, miroir, position).",
-          "caption": "L’atelier complet : la dentition, la bibliothèque, les outils."
+          "description": "Démonstration de l’éditeur du Studio 3D, sans son : cinq gemmes fuchsia posées sur une incisive latérale, sélectionnées au lasso et alignées verticalement, puis copiées en miroir de l’autre côté ; une gemme saphir posée sur la canine, agrandie et copiée en miroir ; les deux gemmes les plus basses copiées verticalement sur l’arcade du bas et passées en doré ; une gemme dupliquée et copiée en miroir, puis les quatre gemmes du bas alignées, espacées et centrées sur leurs dents ; enfin les panneaux se ferment sur le sourire terminé.",
+          "caption": "Filmé dans le Studio et accéléré : du sourire vierge au design terminé."
         }
       }
     }
@@ -204,5 +202,9 @@
         "answer": "Non. Vous choisissez une pièce, vous la posez sur une dent, vous la déplacez à la souris, au doigt ou au clavier ; la vue tourne d’un glissement. Une page d’aide accompagne l’éditeur."
       }
     ]
+  },
+  "video": {
+    "pause": "Mettre la vidéo en pause",
+    "play": "Lire la vidéo"
   }
 }

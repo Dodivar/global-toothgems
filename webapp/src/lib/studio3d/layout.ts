@@ -61,3 +61,46 @@ export function centeredOffsets(items: CenterItem[]): Map<string, number> {
   }
   return out;
 }
+
+/** A tooth's centre, by FDI number (`"11"` … `"48"`). */
+export interface ToothCentre {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+}
+
+/**
+ * How far along its own arch each tooth's centre lies from the midline, from
+ * the crowns as they stand: half the gap between the two central incisors of
+ * that arch, then the distance from each crown's centre to the next one's.
+ * "Space evenly" reads its positions from it, so each arch is measured with
+ * its own teeth (the lower incisors are much narrower than the upper ones).
+ * A quadrant's run stops at a missing tooth; the teeth past it are left out.
+ */
+export function archDistances(teeth: ToothCentre[]): Map<string, number> {
+  const byId = new Map(teeth.map((t) => [t.id, t]));
+  const out = new Map<string, number>();
+  const gap = (a: ToothCentre, b: ToothCentre) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+  for (const [quadrant, partner] of [
+    ["1", "2"],
+    ["2", "1"],
+    ["3", "4"],
+    ["4", "3"],
+  ]) {
+    const central = byId.get(`${quadrant}1`);
+    if (!central) continue;
+    const across = byId.get(`${partner}1`);
+    let run = across ? gap(central, across) / 2 : Math.abs(central.x);
+    out.set(central.id, run);
+    let previous = central;
+    for (let n = 2; n <= 8; n++) {
+      const tooth = byId.get(`${quadrant}${n}`);
+      if (!tooth) break;
+      run += gap(previous, tooth);
+      out.set(tooth.id, run);
+      previous = tooth;
+    }
+  }
+  return out;
+}

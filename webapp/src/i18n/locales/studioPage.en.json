@@ -10,9 +10,7 @@
     "reassurance_one": "{{count}} day to explore, then the plan you choose, from {{price}} / month.",
     "reassurance_other": "{{count}} days to explore, then the plan you choose, from {{price}} / month.",
     "video": {
-      "description": "Silent demonstration of the 3D Studio: a crystal heart is placed gem by gem, the camera circles an iridescent star, several gems change colour at once, a gold lightning bolt is moved then turned on its tooth, the teeth change shade and light, then the mouth opens with the lower jewellery.",
-      "pause": "Pause the video",
-      "play": "Play the video"
+      "description": "Silent demonstration of the 3D Studio: a crystal heart is placed gem by gem, the camera circles an iridescent star, several gems change colour at once, a gold lightning bolt is moved then turned on its tooth, the teeth change shade and light, then the mouth opens with the lower jewellery."
     }
   },
   "benefits": {
@@ -65,11 +63,11 @@
         }
       },
       "space": {
-        "title": "A creative space made for you",
-        "body": "A place of your own for tooth jewellery ideas, open whenever inspiration comes, on a computer as on a phone.",
+        "title": "Tools as quick as your ideas",
+        "body": "Place, align, mirror-copy, duplicate, space evenly, recolour: in a few moves, the “Cristaux minimalistes” design is rebuilt from a blank smile.",
         "media": {
-          "alt": "The 3D Studio workspace on a computer: the shop’s gem library on the left, in the centre the dentition with a heart and a selected gem with its toolbar, on the right the gem’s settings (colour, size, rotation, mirror, position).",
-          "caption": "The whole workspace: the dentition, the library, the tools."
+          "description": "Demonstration of the 3D Studio editor, without sound: five fuchsia gems placed on a lateral incisor, lassoed and aligned vertically, then mirror-copied to the other side; a sapphire gem placed on the canine, made larger and mirror-copied; the two lowest gems copied vertically onto the lower arch and turned gold; one gem duplicated and mirror-copied, then the four lower gems aligned, spaced evenly and centred on their teeth; finally the panels close on the finished smile.",
+          "caption": "Filmed in the Studio and sped up: from a blank smile to the finished design."
         }
       }
     }
@@ -204,5 +202,9 @@
         "answer": "No. You pick a piece, place it on a tooth and move it with the mouse, a finger or the keyboard; the view turns with a drag. A help page comes with the editor."
       }
     ]
+  },
+  "video": {
+    "pause": "Pause the video",
+    "play": "Play the video"
   }
 }
