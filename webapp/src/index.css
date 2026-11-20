@@ -1435,9 +1435,7 @@ textarea {
    oversized headlines, glass media frames, emerald on the calls to action and
    fuchsia only as a hairline accent.
 
-   Media that does not exist yet is drawn as a deliberate placeholder
-   (`.gt-studio-b-ph`): a hatched, dashed surface naming the asset to come.
-   Nothing here is interactive, and nothing here touches `.gt-studio-*`.
+   Nothing here touches `.gt-studio-*`.
 --------------------------------------------------------------------------- */
 @layer components {
   .gt-studio-b-hero {
@@ -1464,16 +1462,6 @@ textarea {
     backdrop-filter: blur(var(--glass-blur)) saturate(1.1);
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.1);
     box-shadow: var(--shadow-glass);
-  }
-
-  /* The placeholder surface itself: hatched paper, dashed edge. */
-  .gt-studio-b-ph {
-    background-color: var(--gt-blue-50);
-    background-image: repeating-linear-gradient(
-      135deg,
-      rgba(90, 119, 150, .08) 0 1px,
-      transparent 1px 11px
-    );
   }
 
   /* Benefit cards: a hairline that warms up when the card is hovered. */
