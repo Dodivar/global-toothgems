@@ -20,14 +20,14 @@
  */
 
 import { localizedPath } from "./localeRoutes";
-import { STUDIO_PATH, STUDIO_SUBSCRIBE_PATH } from "./studioUrl";
+import { STUDIO_ATELIER_PLAN_PATH, STUDIO_PATH, STUDIO_SUBSCRIBE_PATH } from "./studioUrl";
 
 const CLICK_IDS = ["fbclid", "gclid", "ttclid", "igshid", "msclkid", "twclid"] as const;
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign"] as const;
 const STORAGE_KEY = "gt-studio-focus";
 
 /** The pages a focus visit applies to: the Studio's presentation and its plans. */
-export const FOCUS_PATHS: readonly string[] = [STUDIO_PATH, STUDIO_SUBSCRIBE_PATH];
+export const FOCUS_PATHS: readonly string[] = [STUDIO_PATH, STUDIO_SUBSCRIBE_PATH, STUDIO_ATELIER_PLAN_PATH];
 
 export function isFocusPath(pathname: string): boolean {
   return FOCUS_PATHS.includes(pathname);
@@ -83,6 +83,6 @@ export function syncFocusAttribute(pathname: string, search: string): void {
  * above by `adFocus.test.ts`.
  */
 export function focusBootScript(): string {
-  const paths = (["fr", "en"] as const).flatMap((locale) => [localizedPath("studio", locale), localizedPath("studioSubscribe", locale)]);
+  const paths = (["fr", "en"] as const).flatMap((locale) => [localizedPath("studio", locale), localizedPath("studioSubscribe", locale), localizedPath("studioAtelier", locale)]);
   return `(function(){try{var p=location.pathname.replace(/\\/+$/,"")||"/";if(${JSON.stringify(paths)}.indexOf(p)<0)return;var q=new URLSearchParams(location.search);var hit=q.get("focus")==="1";${JSON.stringify([...CLICK_IDS, ...UTM_KEYS])}.forEach(function(k){if((q.get(k)||"").trim()!=="")hit=true});if(hit)sessionStorage.setItem(${JSON.stringify(STORAGE_KEY)},"1");else hit=sessionStorage.getItem(${JSON.stringify(STORAGE_KEY)})==="1";if(hit)document.documentElement.setAttribute(${JSON.stringify(FOCUS_ATTRIBUTE)},"")}catch(e){}})();`;
 }

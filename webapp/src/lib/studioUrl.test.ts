@@ -23,6 +23,8 @@ describe("Studio checkout address", () => {
     expect(studioPlansPathFor("studio_locked")).toBe("/studio-3d/atelier");
     expect(studioPlansPathFor("studio_page")).toBe("/studio-3d");
     expect(studioPlansPathFor("studio_subscribe_page")).toBe("/studio-3d/abonnement");
+    expect(studioPlansPathFor("studio_atelier_page")).toBe("/studio-3d/formule-atelier");
+    expect(parseStudioCheckoutQuery(new URLSearchParams("plan=atelier&interval=year&from=studio_atelier_page"))?.surface).toBe("studio_atelier_page");
   });
 });
 

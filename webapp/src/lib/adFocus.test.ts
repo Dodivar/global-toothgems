@@ -28,6 +28,7 @@ describe("focus visits", () => {
   it("only applies to the Studio's offer pages", () => {
     expect(isFocusPath("/studio-3d")).toBe(true);
     expect(isFocusPath("/studio-3d/abonnement")).toBe(true);
+    expect(isFocusPath("/studio-3d/formule-atelier")).toBe(true);
     expect(isFocusPath("/boutique")).toBe(false);
     expect(isFocusPath("/studio-3d/atelier")).toBe(false);
     expect(isFocusedPage("/boutique", "?utm_source=instagram")).toBe(false);
@@ -54,7 +55,7 @@ describe("the head script that prevents a flash", () => {
   }
 
   it("marks a tagged visit to the Studio pages, in both languages, and remembers it", () => {
-    for (const path of ["/fr/studio-3d", "/fr/studio-3d/abonnement", "/en/3d-studio", "/en/3d-studio/subscribe", "/fr/studio-3d/"]) {
+    for (const path of ["/fr/studio-3d", "/fr/studio-3d/abonnement", "/en/3d-studio", "/en/3d-studio/subscribe", "/fr/studio-3d/formule-atelier", "/en/3d-studio/atelier-plan", "/fr/studio-3d/"]) {
       const { marked, store } = run(path, "?utm_source=instagram");
       expect(marked, path).toBe(true);
       expect(store.get("gt-studio-focus")).toBe("1");

@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "title": "The 3D Studio Atelier plan: bookings, calendar, directory and AI try-on",
+    "description": "Online bookings, a synced calendar, a place in the “Find an artist” directory and an AI try-on on your clients’ own smiles: what the 3D Studio’s Atelier plan adds to your tooth gem business."
+  },
+  "back": "All plans",
+  "hero": {
+    "eyebrow": "Atelier plan",
+    "title": "Your designs turn into appointments.",
+    "body": "Atelier connects the 3D Studio to your business: clients find you in the directory, try your design on their own smile and book a free hour in your calendar, without a single message back and forth.",
+    "priceNote": "Cancel anytime from your account. Everything in Artist is included.",
+    "cta": "Choose Atelier",
+    "ctaSecondary": "See the journey",
+    "media": {
+      "alt": "The Atelier calendar’s week view, with several appointments booked online.",
+      "caption": "The Atelier calendar, a real screenshot. The appointments shown are examples."
+    }
+  },
+  "journey": {
+    "eyebrow": "Your client’s journey",
+    "title": "From discovery to the chair, with no back and forth.",
+    "steps": {
+      "directory": {
+        "title": "Clients find you",
+        "body": "In the directory, by city or near them."
+      },
+      "tryOn": {
+        "title": "They see your design on their smile",
+        "body": "Your design placed on a photo of their own smile."
+      },
+      "booking": {
+        "title": "They book",
+        "body": "A free hour, the design attached, confirmed."
+      },
+      "agenda": {
+        "title": "You get the appointment",
+        "body": "In your calendar and on your phone’s."
+      }
+    },
+    "stepLabel": "Step {{n}}"
+  },
+  "directory": {
+    "eyebrow": "“Find an artist” directory",
+    "title": "Be the artist people find near them.",
+    "body": "Clients search by city or around them: your page shows on the map and in the list, with your designs, your place and your certified artist badge if you have earned it.",
+    "points": [
+      "One page per city, readable by search engines.",
+      "“Near me” sorts artists by distance; the client’s position never leaves their phone.",
+      "A salon with its address, or an area of about 1 km if you work from home: your home address is never published.",
+      "You choose whether to appear, from My Glowbook › Share."
+    ],
+    "media": {
+      "alt": "The “Find an artist” directory: a map of France with several artists and the list of their pages.",
+      "caption": "The directory, a real screenshot. For illustration, most of the artists shown are examples."
+    }
+  },
+  "tryOn": {
+    "eyebrow": "AI try-on",
+    "title": "Clients see the result on their own smile.",
+    "body": "A client sends a photo of their smile from your Glowbook or a shared link: your design is placed on it, gem by gem, where and at the size you set in the Studio. They book knowing exactly what they will get.",
+    "points": [
+      "The gems are placed by computation from your design, then rendered realistically by the AI.",
+      "You can also use it during appointments, on your own designs.",
+      "Up to 10 renders a day per account.",
+      "Neither the photo nor the render is kept on our servers."
+    ],
+    "compare": {
+      "label": "Compare the photo and the render: {{name}}",
+      "before": "Photo",
+      "after": "With the design",
+      "hint": "Drag to compare",
+      "creation": "The design in the Studio",
+      "examples": "Try-on examples",
+      "example": "Try-on {{n}}",
+      "beforeAlt": "{{name}}: the photo of the smile, before.",
+      "afterAlt": "{{name}}: the same smile with the design placed by the AI.",
+      "creationAlt": "{{name}}: the design in the 3D Studio."
+    },
+    "pending": {
+      "title": "Before / after examples coming soon",
+      "body": "The first try-ons made with the Studio, original photo, render and design, will be shown here."
+    }
+  },
+  "booking": {
+    "eyebrow": "Online bookings",
+    "title": "Clients book on their own, at any hour.",
+    "body": "From your Glowbook or one of your designs, the client picks a free hour, attaches the design they want and confirms. The hour is held at once; if it does not suit you, you cancel it with a reason.",
+    "points": [
+      "E-mail confirmation, an appointment to add to their calendar, a reminder the day before.",
+      "Free cancellation until 24 h before. Two no-shows or late cancellations in 12 months, and the client cannot book for 3 months.",
+      "The booked design is attached: you open it in 3D before the appointment.",
+      "No online payment, no commission: you get paid at the salon."
+    ],
+    "media": {
+      "description": "A client opens an artist’s Glowbook page, chooses “Book”, browses the week’s free hours, picks one, fills in their name and phone, then confirms; the appointment then shows in the artist’s calendar.",
+      "caption": "The booking journey, recorded on the real website. Names and times are examples."
+    }
+  },
+  "agenda": {
+    "eyebrow": "Calendar",
+    "title": "A calendar that follows your real week.",
+    "body": "Your hours, the notice before an appointment, your time off set in one go: clients only see the hours you are really free.",
+    "points": [
+      "Subscribe Google Calendar, Apple Calendar or Outlook to your calendar with a private link.",
+      "Busy hours from another calendar (Google, Apple, Outlook, or Planity if it gives an .ics link) close on their own, every 15 minutes.",
+      "An hour taken elsewhere? One click closes it in the week view.",
+      "During time off, whole days close at once and clients already booked are told by e-mail."
+    ],
+    "media": {
+      "alt": "The Atelier calendar’s list of appointments: each client, their design and the hour booked.",
+      "caption": "The calendar’s appointments, a real screenshot. Clients and times are examples."
+    }
+  },
+  "gains": {
+    "eyebrow": "What Atelier changes",
+    "title": "Fewer messages, more appointments.",
+    "items": {
+      "time": {
+        "title": "No more back and forth",
+        "body": "No more finding a date in direct messages: the client sees your free hours and books."
+      },
+      "noShow": {
+        "title": "Fewer forgotten appointments",
+        "body": "A reminder the day before, the appointment in their calendar and a clear rule after two no-shows."
+      },
+      "newClients": {
+        "title": "New clients",
+        "body": "The directory shows you to people looking for an artist in their city, even if they do not follow you yet."
+      },
+      "decided": {
+        "title": "Clients who have already decided",
+        "body": "After the try-on, clients come with their design chosen: the appointment gets straight to the point."
+      }
+    }
+  },
+  "extras": {
+    "title": "Also in Atelier",
+    "items": {
+      "unlimited": "Unlimited designs and Gem Groups.",
+      "postLayouts": "Premium layouts for your posts: gallery, spotlight and banner.",
+      "artist": "Everything in Artist: Glowbook, share links, front view, placement sheet and posts with your logo."
+    }
+  },
+  "offer": {
+    "eyebrow": "Atelier plan",
+    "title": "Open your Atelier.",
+    "body": "One subscription for the full editor, your page, your bookings, your calendar, the directory and the AI try-on.",
+    "compare": "Compare the three plans",
+    "trialNote_one": "The one-day free trial opens the editor; the Atelier tools open with the subscription.",
+    "trialNote_other": "The {{count}}-day free trial opens the editor; the Atelier tools open with the subscription."
+  }
+}
