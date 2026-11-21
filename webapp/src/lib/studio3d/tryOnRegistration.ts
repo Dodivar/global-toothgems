@@ -645,14 +645,14 @@ export function registerDesign(
   // Each other numbering against the function's: the teeth's geometry, plus the midline where the
   // photo check's box tells the two apart. The clearest win, if any, is taken.
   let chosen = given;
-  let chosenCost = Infinity;
+  let chosenGain = 0;
   for (const c of candidates.slice(1)) {
     const decides = midlineDecides(given.midline, c.midline);
     const givenCost = given.geometry + (decides ? midlineTerm(given.midline!) : 0);
     const cost = c.geometry + (decides ? midlineTerm(c.midline!) : 0);
-    if (cost <= givenCost - RENUMBER_MARGIN && cost <= givenCost * RENUMBER_RATIO && cost < chosenCost) {
+    if (cost <= givenCost - RENUMBER_MARGIN && cost <= givenCost * RENUMBER_RATIO && givenCost - cost > chosenGain) {
       chosen = c;
-      chosenCost = cost;
+      chosenGain = givenCost - cost;
     }
   }
   const { pairs, fit, kept, setAside, edgeOf, residualOf } = chosen.solution!;

@@ -242,7 +242,10 @@ device's store, and the saved creation): 9 gems were left out "hidden by a lip" 
    the lower ones a tooth over. The midline now counts, in the cost and in `midline_mismatch`, only between two
    numberings whose midlines the box tells apart by at least 0.5; the same rule lifts the refusal of a box 0.6 off
    on right numbers (the 5 renders refused on the trial of 2026-11-05). Replayed: numbers kept, all 27 gems placed,
-   reliable. The decision on the teeth alone stays close to the threshold on this analysis (0.605): bad boxes are what
+   reliable. Replayed on the 30 analyses of `webapp/try-on-trial-results-arbiter/` (one gem on each of 13–23 and
+   42–32): 26 unchanged; P7-S1 to S4 (teeth on the real midline, box 0.61 off) now reliable instead of refused;
+   P5-S2 (0.58), P7-S5 (0.64) and the others above 0.75 are still refused, the box there being clearly nearer
+   another numbering's midline. The decision on the teeth alone stays close to the threshold on this analysis (0.605): bad boxes are what
    the pixel midline above was built for. Tried and left out: comparing the widths at the photo's angle
    (`estimateViewYaw`) — it kept this photo's numbers, but a numbering a tooth off finds an angle that excuses its
    widths too, and the synthetic arch named a tooth off was no longer renamed.
