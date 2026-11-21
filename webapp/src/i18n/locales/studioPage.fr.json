@@ -59,14 +59,14 @@
     }
   },
   "proof": {
-    "eyebrow": "Les artistes",
-    "title": "Fait pour les artistes qui voient des possibilités partout.",
-    "body": "Voici quelques créations de l’équipe Global Toothgems, composées dans le Studio. Les mots et les créations des artistes qui l’utilisent viendront les rejoindre, publiés uniquement avec leur accord.",
+    "eyebrow": "Avis clients",
+    "title": "Ils créent avec le Studio, voici ce qu’ils en disent.",
+    "body": "Les créations et les mots de celles et ceux qui utilisent le Studio, publiés avec leur accord.",
     "testimonialsTitle": "Témoignages",
     "testimonial": {
-      "title": "Témoignage d’une utilisatrice du Studio",
-      "body": "Citation réelle, recueillie et publiée avec son accord.",
-      "caption": "Portrait et nom de l’artiste, publiés avec son autorisation."
+      "quote": "C’est la première fois que j’utilise un studio pour créer des compositions. La prise en main est super simple, intuitive, et elle permet de développer ma créativité !",
+      "author": "Fiona, artiste — composition « Christmas », créée dans le Studio.",
+      "alt": "Composition « Christmas » : un sapin de cristaux verts surmonté d’une étoile dorée sur une incisive du haut, un flocon de cristaux transparents sur les deux incisives voisines, et quatre cristaux rouges sur les incisives du bas."
     },
     "galleryTitle": "Créations",
     "gallery": {
