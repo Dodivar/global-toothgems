@@ -242,6 +242,7 @@ supabase/
 | 20261117100000 | `studio_plan_limits_10_50` | **Applied 2026-11-17** (owner's request, decision 113 (a) amended). `private.studio_plan_limit()`: Essential 10 creations / 3 Gem Groups, Artist 50 / 15 (was 15/3 and 30/10), Atelier unlimited; PRO MASTER PACK copy updated. Nobody loses data: a member above the new number just cannot save a new one. |
 | 20261118173122 | `studio_pale_gem_tints` | **Applied 2026-11-18** (decision 155). Data only: lighter `studio_gem_appearances.color` for 23 pale Swarovski gems (aquamarine, peridot, rose / rose clair / light rose, the jonquil kite, the heliotrope navette), each from its product photo's median colour lifted in linear light (exponent 1/1.15); a row changes only while it still holds its old tint (a no-op in CI). Saved designs keep the look they were saved with. |
 | 20261118174752 | `studio_rose_aquamarine_lighter` | **Applied 2026-11-18** (decision 155, second pass). Data only: the 9 rose and 8 aquamarine rows lighter still — photo median raised to 1/1.9 in linear light (full compensation of the double tint), chroma ×1.25 (rose, kept pink) or ×1.35 with a sky-blue hue OKLCH h = 232 (aquamarine); guarded on the tint of the first pass. |
+| 20261120163844 | `review_photos_update_guard` | **Applied 2026-11-20** (security review of 2026-11-20; recorded under the version the MCP gave it). Closes a moderation bypass: members kept the default UPDATE on every column of `review_photos` and the guard trigger ignored UPDATE, so the author of a published review could repoint `storage_path` at an unmoderated upload (or move the photo with `review_id`) and it went public. Now `authenticated` holds UPDATE on `alt_text` only, and `review_photos_guard` also fires on UPDATE: `storage_path` / `review_id` never change (42501, even for the backend; a new picture is delete + insert), an author's alt-text change sends a non-pending review back to moderation. Suite `tests/review_photos_guard_validation.sql` (P1–P5), passed on the project. |
 
 RLS is **enabled in the same migration that creates each table** (deny by default);
 policies are granted back in `rls_policies`.
@@ -459,7 +460,9 @@ Mirrors the review prototype (`webapp/src/data/reviewSystem.ts`, `lib/reviews.ts
   resolving as `hidden` hides the review, `removed` rejects it.
 - **Helpful votes**: one per customer, not on your own review; `helpful_count` maintained by trigger.
 - **Photos**: at most 4, stored in the author's folder of the **private** `review-photos` bucket;
-  readable by visitors only once the review is published.
+  readable by visitors only once the review is published. A photo's file and review never change
+  (members may edit the alt text only, which sends the review back to moderation; migration
+  `20261120163844`).
 - **Privacy**: visitors get a privacy name (`"Sarah M."`) and a verified flag — the columns
   `user_id` / `order_id` / moderation internals are not granted to `anon` (select explicit columns).
 - `product_review_stats` (view, RLS-aware): count, average, star buckets, verified, with photos.
@@ -2261,6 +2264,13 @@ The owner asked an agent to settle the pending "to confirm" points. Outcome:
   the consumer mediator of the seller and of the publisher (decisions 126, 135, "later": a legal launch blocker, still
   shown as "to supply"). Since 2026-11-13: **Sign in with Apple** (decision 138: coded, hidden by
   `APPLE_SIGN_IN_ENABLED = false`; not a priority, the Apple Developer Program costs $99 a year).
+- **Production data and AI (2026-11-20, owner's request):** the owner may analyse production data to make statistics
+  and improve the site (legitimate interest, now a purpose in the privacy policy). Agents and AI tools never receive
+  personal data (`AGENTS.md` §15): aggregates, pseudonymous identifiers or test data only. Not built, to decide
+  later: a read-only database role limited to analysis views without personal columns (small groups of at least 5);
+  a lawyer should confirm the wording and, if an AI provider ever receives personal data, the processing agreement,
+  the transfer framework and the recipients list. Supabase logs (IP, user agent, e-mails in auth logs) count as
+  personal data: keep them short, never export them to an AI.
 - **Open questions to the owner** (business facts only they hold):
   1. Supplier evidence for the "sans plomb" / "hypoallergénique" product claims (decision 116), else remove them.
   2. Final Studio prices before the live Prices are created (decision 94).
