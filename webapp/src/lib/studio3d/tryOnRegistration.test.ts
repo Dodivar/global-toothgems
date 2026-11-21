@@ -104,6 +104,27 @@ describe("registerDesign", () => {
     expect(atGum.tooth).toBe("found");
   });
 
+  it("moves a box that strays from its tooth toward the fit for its gems, more as it strays more", () => {
+    const shifted = (px: number) => {
+      const found = photoTeeth(UPPER_FRONT, 20, 600, 300);
+      found.find((t) => t.fdi === "11")!.x -= px;
+      return registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11")] }, found);
+    };
+    const t11 = tooth("11");
+    const truthX = ((t11.x0 + t11.x1) / 2) * 20 + 600;
+    // 11 % of its width off (residual under `FIT_PULL_FROM`): the box as it is.
+    expect(shifted(18).gems[0].x).toBeCloseTo(truthX - 18, 0);
+    // 40 % off (a third once the fit has followed it a little): part of the way back, still on the box, still drawn.
+    const far = shifted(64);
+    expect(far.teeth.find((t) => t.fdi === "11")!.source).toBe("found");
+    expect(far.gems[0].x).toBeGreaterThan(truthX - 64 + 10);
+    expect(far.gems[0].tooth).toBe("found");
+    // Farther still (just under the outlier threshold): nearly all the way.
+    const farther = shifted(80);
+    expect(farther.teeth.find((t) => t.fdi === "11")!.source).toBe("found");
+    expect(farther.gems[0].x - (truthX - 80)).toBeGreaterThan(far.gems[0].x - (truthX - 64));
+  });
+
   it("follows the customer's own tooth across, not the reference's", () => {
     const found = photoTeeth(UPPER_FRONT, 20, 600, 300);
     // The customer's 11 is wider toward the midline: the gem at its centre moves with it.
@@ -359,8 +380,10 @@ describe("the teeth's numbers", () => {
     expect(reg.issues).not.toContain("midline_mismatch");
     expect(reg.reliable).toBe(true);
     const byId = new Map(reg.gems.map((g) => [g.id, g]));
+    // The 11's box runs about 40 px left of the tooth (residual 0.43): its gems follow the fit most of the way.
     const box11 = CHRISTMAS.find((t) => t.fdi === "11")!;
-    expect(byId.get("tree")!.x).toBeLessThan(box11.x + box11.width);
+    expect(byId.get("tree")!.x).toBeGreaterThan(box11.x + box11.width / 2 + 20);
+    expect(byId.get("tree")!.x).toBeLessThan(box11.x + box11.width + 10);
     expect(reg.gems.map((g) => g.tooth)).toEqual(["found", "found", "found"]);
   });
 

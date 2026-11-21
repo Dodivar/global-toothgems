@@ -253,8 +253,19 @@ device's store, and the saved creation): 9 gems were left out "hidden by a lip" 
    (0.5 mm) under the upper teeth's edge, within `COVERED_TOLERANCE_MM`, so their edge was taken 2 mm higher and the
    red gems, 1.3 mm from the edge, fell above their boxes. A gem between the taken edge and the box's top now sits
    at the box's top plus its half-size, `found`; one below its box is still `hidden`.
-3. Still open: on this analysis the tree is drawn on the left half of the 11, its left navettes touching the 12,
-   since the 11's box runs half a tooth left (the fit put the 11 close to the real tooth, the box about 40 px left of it).
+3. **A box that strays from its tooth is moved toward the fit for its gems** (`fitPull`, from a residual of
+   `FIT_PULL_FROM` 0.25 to `OUTLIER_RESIDUAL` 0.5, along the smile): the 11's box ran about 40 px left of the tooth
+   (residual 0.43) and was used as it was, so the second render put the tree half on the 12; at 0.51 the tooth
+   would have been set aside and its gems placed between its neighbours — the pull removes that jump. Replayed: the
+   tree on the 11. On the 30 trial analyses, scored against the midlines measured there (`UPPER_EDGES` for the tooth
+   limits): upper gems on the right tooth 55 → 58 of 94, none moved onto a wrong one, mean distance to the tooth's
+   centre 0.298 → 0.294 widths.
+4. **Overlapping discs belong to the nearest gem** (`blendGems`): a pale column cut through the tree's navettes on
+   both renders. The tree's small round crystals, drawn too large by the image model, were moved back to their size;
+   their discs, processed first, owned the overlap with the navettes, and a gem moved back shows the photo outside
+   its own drawing.
+5. Still open: the 22's and 23's white gems sit about 15 px left of their teeth (the boxes run left, residuals under
+   0.25), so they read as all on the 22.
 
 Known limits: the teeth model sometimes numbers the teeth one tooth off (seen on one trial photo: the whole design
 then moves one tooth, with a high confidence, since the fit stays consistent; since 2026-11-04 the renumbering above

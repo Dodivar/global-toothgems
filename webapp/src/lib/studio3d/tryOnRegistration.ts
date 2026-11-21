@@ -36,7 +36,9 @@ import { gemSquash, visibleToothShare, type FrontViewProjection, type FrontViewT
  *    `VERTICAL_SCALE_BOUND` of the fitted scale; 2026-11-18 — in real
  *    millimetres, a gem in the middle of the tooth on screen landed near the
  *    customer's gum), on a lower tooth (its box usually cut by the lower lip)
- *    at its real distance times the fitted scale. A design tooth that
+ *    at its real distance times the fitted scale. A box far from where the fit
+ *    puts its tooth (residual above `FIT_PULL_FROM`) is first moved toward it
+ *    along the smile (`fitPull`, 2026-11-21). A design tooth that
  *    was not found, or was set aside, but whose two neighbours on its arch
  *    were kept, is inferred (2026-11-18): it must show between them, so its
  *    box is the space between theirs (`inferBetween`) and its gems are placed
@@ -229,6 +231,16 @@ const MIDLINE_WEIGHT = 0.3;
  * of a photo whose numbers were right).
  */
 const MIDLINE_DECISIVE = 0.5;
+/**
+ * A kept tooth's box is moved toward where the fit puts it, along the smile, as
+ * its residual grows from this share of its width to `OUTLIER_RESIDUAL` (where
+ * the tooth is set aside and its gems go to the space between its neighbours):
+ * none below, all of the way there (2026-11-21: a box half a tooth left of its
+ * tooth, at 0.43, was used as it was and the tree of the 11 sat on the 12).
+ */
+const FIT_PULL_FROM = 0.25;
+/** How far a kept tooth's box goes toward the fit for its gems (0–1), from its residual. */
+const fitPull = (residual: number) => Math.min(1, Math.max(0, (residual - FIT_PULL_FROM) / (OUTLIER_RESIDUAL - FIT_PULL_FROM)));
 /** A lower tooth's top within this distance (mm) of the upper teeth's edge above it is cut by them. */
 const COVERED_TOLERANCE_MM = 0.6;
 /**
@@ -691,12 +703,23 @@ export function registerDesign(
   // 3b–5. The gems on their teeth, at their real size.
   const viewYaw = estimateViewYaw(kept.map((p) => ({ ref: p.ref, width: p.found.width })), t.scale);
   const a = (t.angle * Math.PI) / 180;
+  /** Each kept tooth's box as its gems use it: moved along the smile toward where the fit puts it (`fitPull`). */
+  const gemBoxByFdi = new Map(
+    kept.map((p) => {
+      const pull = fitPull(residualOf(p));
+      if (pull === 0) return [p.found.fdi, p.found] as const;
+      const expected = placeRef(fit, refEdge(p.ref), p.ref.lower);
+      const actual = edgeOf(p.found, p.ref.lower);
+      const along = pull * ((expected.x - actual.x) * Math.cos(a) + (expected.y - actual.y) * Math.sin(a));
+      return [p.found.fdi, { ...p.found, x: p.found.x + along * Math.cos(a), y: p.found.y + along * Math.sin(a) }] as const;
+    }),
+  );
   const gems: RegisteredGem[] = front.flatMap((g): RegisteredGem[] => {
     const ref = refByFdi.get(g.toothId);
     const at = g.at!;
     if (!ref) return [];
     const inferred = inferredByFdi.get(g.toothId);
-    const box = keptByFdi.get(g.toothId) ?? inferred;
+    const box = gemBoxByFdi.get(g.toothId) ?? inferred;
     let x: number;
     let y: number;
     if (box) {

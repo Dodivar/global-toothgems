@@ -160,6 +160,33 @@ describe("blendGems moving gems back onto their marks", () => {
     expect(red(after.data!, 168, 60)).toBe(false);
   });
 
+  it("does not cut a neighbour's gem with the disc of a small gem moved back", () => {
+    // A large green gem and, beside it, a small one drawn twice too large and moved back (the tree's small
+    // round crystals beside its navettes, 2026-11-21: a pale column cut through the navettes). The small
+    // gem comes first: its disc used to own the overlap and show the photo there, off its own gem.
+    const green = { x: 100, y: 60, r: 22 };
+    const small = { id: "small", x: 128, y: 60, r: 6 };
+    const base = photo();
+    const drawn = answer(base, [{ x: 128, y: 60, r: 9 }]);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        if (Math.hypot(x - green.x, y - green.y) > green.r || Math.hypot(x - 128, y - 60) <= 9) continue;
+        const i = (y * W + x) * 4;
+        drawn.data[i] = 20;
+        drawn.data[i + 1] = 160;
+        drawn.data[i + 2] = 90;
+      }
+    }
+    const out = blendGems(base, drawn, [small, { id: "green", ...green }]);
+    expect(out.checks[0].reseated).toBe(true);
+    const isGreen = (x: number, y: number) => {
+      const [r, g] = pixel(out.data!, x, y);
+      return g > 130 && r < 80;
+    };
+    // On the green gem, inside the small gem's disc but off the small gem as moved back.
+    for (let y = 50; y <= 70; y++) for (const x of [115, 116, 117, 118]) expect(isGreen(x, y)).toBe(true);
+  });
+
   it("leaves a gem drawn as asked as it was", () => {
     // As it comes out when it is the only gem: kept where and as it was drawn.
     const alone = blendGems(original, edited, [marks[2]]);
