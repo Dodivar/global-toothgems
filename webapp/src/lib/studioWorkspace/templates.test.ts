@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isNewTemplate, searchTemplates, sortTemplates, TEMPLATE_NEW_DAYS, toTemplate, type TemplateRow } from "./templates";
+import { isNewTemplate, pickStarterTemplate, searchTemplates, sortTemplates, TEMPLATE_NEW_DAYS, toTemplate, type TemplateRow } from "./templates";
 
 const piece = (id: string) => ({
   id,
@@ -78,5 +78,16 @@ describe("sortTemplates and searchTemplates", () => {
     expect(searchTemplates(list, "comete").map((t) => t.id)).toEqual(["b"]);
     expect(searchTemplates(list, "etoiles").map((t) => t.id)).toEqual(["a", "b"]);
     expect(searchTemplates(list, "  ")).toHaveLength(3);
+  });
+});
+
+describe("pickStarterTemplate", () => {
+  it("prefers the Scorpion, whatever its case and spaces, else the first template with pieces", () => {
+    const empty = toTemplate(row({ id: "e", name: "Vide", scene_data: { version: 2, model: "smile", pieces: [], groups: [] } }));
+    const heart = toTemplate(row({ id: "h", name: "Coeur" }));
+    const scorpion = toTemplate(row({ id: "s", name: "  scorpion " }));
+    expect(pickStarterTemplate([empty, heart, scorpion])?.id).toBe("s");
+    expect(pickStarterTemplate([empty, heart])?.id).toBe("h");
+    expect(pickStarterTemplate([empty])).toBeNull();
   });
 });
