@@ -1,86 +1,10 @@
-import type { GemShape } from "./products";
-
 /**
- * Content of the 3D Studio presentation and subscription pages: the
- * compositions drawn on the inspiration boards (fixture art, not designs of
- * real members) and the plans. The working editor is a separate page
- * (`/studio-3d/atelier`, see `data/studioEditor.ts`); nothing here is read by it.
+ * Content of the 3D Studio presentation and subscription pages: the plans.
+ * The working editor is a separate page (`/studio-3d/atelier`, see
+ * `data/studioEditor.ts`); nothing here is read by it.
  */
 
 export type StudioMaterial = "crystal" | "sapphire" | "rose" | "emerald" | "gold" | "opal";
-
-/** A piece as it sits on the canvas. `u` and `v` are fractions of the tooth's box. */
-export interface PlacedPiece {
-  id: string;
-  row: "upper" | "lower";
-  /** Index in the row, left to right as the viewer sees it. */
-  tooth: number;
-  u: number;
-  v: number;
-  /** Rendered size in canvas units (the canvas is 640 wide). */
-  size: number;
-  shape: GemShape;
-  material: StudioMaterial;
-}
-
-type CompositionId = "signature" | "minimal" | "statement" | "symmetrical" | "mixed" | "sparkle" | "custom";
-
-let seq = 0;
-const p = (
-  row: PlacedPiece["row"],
-  tooth: number,
-  u: number,
-  v: number,
-  size: number,
-  shape: GemShape,
-  material: StudioMaterial,
-): PlacedPiece => ({ id: `p${++seq}`, row, tooth, u, v, size, shape, material });
-
-export const COMPOSITIONS: Record<CompositionId, PlacedPiece[]> = {
-  signature: [
-    p("upper", 5, 0.5, 0.6, 22, "heart", "gold"),
-    p("upper", 3, 0.52, 0.52, 13, "round", "crystal"),
-    p("upper", 6, 0.48, 0.5, 11, "round", "sapphire"),
-    p("upper", 6, 0.5, 0.74, 8, "round", "crystal"),
-    p("upper", 2, 0.5, 0.48, 14, "star", "gold"),
-  ],
-  minimal: [p("upper", 3, 0.5, 0.55, 12, "round", "crystal")],
-  statement: [
-    p("upper", 4, 0.5, 0.58, 26, "star", "gold"),
-    p("upper", 5, 0.5, 0.58, 26, "heart", "gold"),
-    p("upper", 3, 0.5, 0.5, 14, "round", "rose"),
-    p("upper", 6, 0.5, 0.5, 14, "round", "rose"),
-    p("upper", 2, 0.5, 0.52, 11, "round", "crystal"),
-    p("upper", 7, 0.5, 0.52, 11, "round", "crystal"),
-  ],
-  symmetrical: [
-    p("upper", 3, 0.5, 0.55, 14, "drop", "emerald"),
-    p("upper", 6, 0.5, 0.55, 14, "drop", "emerald"),
-    p("upper", 2, 0.5, 0.52, 10, "round", "crystal"),
-    p("upper", 7, 0.5, 0.52, 10, "round", "crystal"),
-  ],
-  mixed: [
-    p("upper", 4, 0.5, 0.6, 18, "navette", "crystal"),
-    p("upper", 6, 0.5, 0.5, 16, "flower", "opal"),
-    p("upper", 2, 0.5, 0.52, 13, "star", "gold"),
-    p("lower", 4, 0.5, 0.45, 11, "baguette", "sapphire"),
-  ],
-  sparkle: [
-    p("upper", 3, 0.35, 0.45, 9, "round", "crystal"),
-    p("upper", 3, 0.65, 0.62, 7, "round", "crystal"),
-    p("upper", 4, 0.5, 0.55, 12, "round", "crystal"),
-    p("upper", 5, 0.4, 0.7, 8, "round", "opal"),
-    p("upper", 5, 0.62, 0.45, 10, "round", "crystal"),
-    p("upper", 6, 0.5, 0.58, 9, "round", "sapphire"),
-    p("upper", 7, 0.5, 0.5, 8, "round", "crystal"),
-  ],
-  custom: [
-    p("upper", 5, 0.5, 0.6, 20, "flower", "gold"),
-    p("upper", 5, 0.5, 0.6, 7, "round", "rose"),
-    p("upper", 2, 0.5, 0.5, 12, "round", "emerald"),
-    p("lower", 3, 0.5, 0.45, 10, "round", "crystal"),
-  ],
-};
 
 /**
  * The Studio's offers: a free trial, then three plans billed monthly or yearly

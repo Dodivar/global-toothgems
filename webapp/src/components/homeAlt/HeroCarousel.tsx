@@ -5,9 +5,7 @@ import { ArrowRight, Check, ChevronLeft, ChevronRight, Pause, Play } from "lucid
 import clsx from "clsx";
 import { Button } from "../ui/Button";
 import { IconButton } from "../ui/IconButton";
-import { SmileCanvas } from "../studio/SmileCanvas";
 import { GemIcon } from "../studio/Gem";
-import { COMPOSITIONS } from "../../data/studio";
 import { GEMS_CATEGORY, shopHref } from "../../data/taxonomy";
 import { useTaxonomy } from "../../lib/catalog/useTaxonomy";
 import { photo } from "../../lib/images";
@@ -388,14 +386,24 @@ function StudioSlide() {
         visual={
           <div className="relative mx-auto w-full max-w-[250px] sm:max-w-[860px]">
             <div className="gt-alt-slide-media gt-studio-stage overflow-hidden rounded-[var(--radius-2xl)] shadow-[var(--shadow-glass-heavy)] ring-1 ring-white/40">
-              <SmileCanvas pieces={COMPOSITIONS.signature} label={t("homeAlt.hero.studio.canvasLabel")} className="block aspect-[16/10] w-full" />
+              {/* The team's "Scorpion", rendered by the Studio's own engine (the Studio page's still). */}
+              <img
+                src="/images/studio-page/scorpion-960.webp"
+                srcSet="/images/studio-page/scorpion-960.webp 960w, /images/studio-page/scorpion-1920.webp 1920w"
+                sizes="(min-width: 1024px) 860px, (min-width: 640px) 70vw, 250px"
+                width={960}
+                height={720}
+                alt={t("homeAlt.hero.studio.canvasLabel")}
+                decoding="async"
+                className="block aspect-[16/10] w-full object-cover"
+              />
             </div>
             <span aria-hidden="true" className="gt-alt-float gt-glass absolute -left-3 top-[12%] hidden items-center gap-2 rounded-[var(--radius-pill)] py-1.5 pl-1.5 pr-3.5 text-[12px] font-semibold text-[var(--gt-ink-900)] sm:inline-flex lg:-left-8">
-              <GemIcon shape="heart" material="gold" size={26} />
+              <GemIcon shape="navette" material="rose" size={26} />
               {t("homeAlt.hero.studio.chipShape")}
             </span>
             <span aria-hidden="true" className="gt-alt-float gt-alt-float--late gt-glass absolute -right-2 bottom-[16%] hidden items-center gap-2 rounded-[var(--radius-pill)] py-1.5 pl-1.5 pr-3.5 text-[12px] font-semibold text-[var(--gt-ink-900)] sm:inline-flex lg:-right-6">
-              <GemIcon shape="star" material="gold" size={26} />
+              <GemIcon shape="round" material="rose" size={26} />
               {t("homeAlt.hero.studio.chipMaterial")}
             </span>
             <span aria-hidden="true" className="gt-glass absolute -bottom-4 left-[10%] hidden items-center gap-1.5 rounded-[var(--radius-pill)] px-3.5 py-2 text-[12px] font-semibold text-[var(--gt-ink-900)] sm:inline-flex">

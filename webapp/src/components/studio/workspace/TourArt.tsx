@@ -1,50 +1,38 @@
 import { useTranslation } from "react-i18next";
 
 /**
- * The guided tour's drawings: the welcome's stage, the three stage gestures,
- * and the little celebration at the end. All inline SVG in the Studio's own
- * stage colours — no image to load, and the two
- * slow sparkles use `.gt-editor-pulse`, which `index.css` already stops where
- * less motion was asked for.
+ * The guided tour's pictures. The welcome and the celebration show real
+ * designs of the Global Toothgems team ("Étoile halo", "Coeur"), rendered by
+ * the editor's own engine — the stills of the Studio page. The three stage
+ * gestures are small inline SVG pictograms, and the celebration's sparkles use
+ * `.gt-editor-pulse`, which `index.css` already stops where less motion was
+ * asked for.
  */
 
-/** The smile the editor shows, as a flat drawing: the welcome's hero. */
-export function TourHero() {
-  const teeth = [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5];
+/** A still of one of the team's designs (`public/images/studio-page/`), 600 px and 1200 px wide, square. */
+function TeamDesign({ name, position, aspect }: { name: string; position: string; aspect: string }) {
+  const base = `/images/studio-page/creation-${name}`;
   return (
-    <svg aria-hidden="true" viewBox="0 0 320 132" className="block w-full rounded-[var(--radius-md)]">
-      <defs>
-        <radialGradient id="gt-tour-stage" cx="50%" cy="34%" r="82%">
-          <stop offset="0%" stopColor="var(--gt-blue-50)" />
-          <stop offset="64%" stopColor="var(--gt-blue-200)" />
-          <stop offset="100%" stopColor="var(--gt-blue-300)" />
-        </radialGradient>
-      </defs>
-      <rect width="320" height="132" fill="url(#gt-tour-stage)" />
-      <path d="M40 32 Q160 -4 280 32 L280 46 Q160 20 40 46Z" fill="#eeb2b6" opacity=".85" />
-      {teeth.map((x) => (
-        <rect
-          key={x}
-          x={160 + x * 34 - 15}
-          y={36 + Math.abs(x) * 4}
-          width="30"
-          height={62 - Math.abs(x) * 5}
-          rx="11"
-          fill="#fbf8f1"
-          stroke="rgba(120,98,70,.2)"
-        />
-      ))}
-      {/* Three gems already placed, and a sparkle waiting for the next one. */}
-      <circle cx="143" cy="62" r="6.5" fill="#ff9dc0" stroke="#fff" strokeWidth="2" />
-      <circle cx="177" cy="62" r="6.5" fill="#eef6ff" stroke="#fff" strokeWidth="2" />
-      <path d="M110 60l2.6 5.2 5.4.8-4 3.8 1 5.4-5-2.8-5 2.8 1-5.4-4-3.8 5.4-.8Z" fill="#f6c05a" stroke="#fff" strokeWidth="1.2" />
-      <path
-        d="M233 54l-2-6-2 6-6 2 6 2 2 6 2-6 6-2Z"
-        fill="#fff"
-        className="gt-editor-pulse"
-      />
-      <circle cx="68" cy="40" r="3" fill="#fff" opacity=".8" />
-    </svg>
+    <img
+      src={`${base}-600.webp`}
+      srcSet={`${base}-600.webp 600w, ${base}-1200.webp 1200w`}
+      sizes="(min-width: 640px) 440px, 90vw"
+      width={600}
+      height={600}
+      alt=""
+      decoding="async"
+      className="block w-full object-cover"
+      style={{ aspectRatio: aspect, objectPosition: position }}
+    />
+  );
+}
+
+/** The welcome's hero: the team's "Étoile halo", as the editor renders it. */
+export function TourHero() {
+  return (
+    <div aria-hidden="true" className="overflow-hidden rounded-[var(--radius-md)] bg-[var(--gt-blue-50)]">
+      <TeamDesign name="etoile-halo" position="50% 50%" aspect="320 / 132" />
+    </div>
   );
 }
 
@@ -118,48 +106,28 @@ function FrameArt() {
   );
 }
 
-/** The end of the tour: the smile with its gems, and a ribbon of sparkles. */
+/** The end of the tour: the team's "Coeur", as the editor renders it, and a ribbon of sparkles. */
 export function TourCelebration() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 320 104" className="block w-full rounded-[var(--radius-md)]">
-      <defs>
-        <radialGradient id="gt-tour-stage-done" cx="50%" cy="30%" r="80%">
-          <stop offset="0%" stopColor="var(--gt-emerald-50)" />
-          <stop offset="70%" stopColor="var(--gt-blue-100)" />
-          <stop offset="100%" stopColor="var(--gt-blue-200)" />
-        </radialGradient>
-      </defs>
-      <rect width="320" height="104" fill="url(#gt-tour-stage-done)" />
-      {[-2, -1, 0, 1, 2].map((x) => (
-        <rect
-          key={x}
-          x={160 + x * 34 - 14}
-          y={30 + Math.abs(x) * 4}
-          width="28"
-          height={52 - Math.abs(x) * 5}
-          rx="10"
-          fill="#fbf8f1"
-          stroke="rgba(120,98,70,.2)"
-        />
-      ))}
-      <circle cx="146" cy="52" r="6" fill="#ff9dc0" stroke="#fff" strokeWidth="2" />
-      <circle cx="174" cy="52" r="6" fill="#eef6ff" stroke="#fff" strokeWidth="2" />
-      <path d="M160 60l2.8 5.6 5.8.8-4.3 4 1 5.8-5.3-3-5.3 3 1-5.8-4.3-4 5.8-.8Z" fill="#f6c05a" stroke="#fff" strokeWidth="1.3" />
-      {[
-        [54, 28],
-        [92, 56],
-        [228, 34],
-        [268, 62],
-      ].map(([x, y], i) => (
-        <path
-          key={i}
-          d={`M${x} ${y}l-1.6-4.6-1.6 4.6-4.6 1.6 4.6 1.6 1.6 4.6 1.6-4.6 4.6-1.6Z`}
-          fill="#fff"
-          opacity=".9"
-          className="gt-editor-pulse"
-          style={{ animationDelay: `${i * 0.3}s` }}
-        />
-      ))}
-    </svg>
+    <div aria-hidden="true" className="relative overflow-hidden rounded-[var(--radius-md)] bg-[var(--gt-blue-50)]">
+      <TeamDesign name="coeur" position="50% 19%" aspect="320 / 140" />
+      <svg viewBox="0 0 320 140" className="absolute inset-0 h-full w-full">
+        {[
+          [34, 30],
+          [62, 104],
+          [262, 36],
+          [290, 98],
+        ].map(([x, y], i) => (
+          <path
+            key={i}
+            d={`M${x} ${y}l-1.6-4.6-1.6 4.6-4.6 1.6 4.6 1.6 1.6 4.6 1.6-4.6 4.6-1.6Z`}
+            fill="#fff"
+            opacity=".9"
+            className="gt-editor-pulse"
+            style={{ animationDelay: `${i * 0.3}s` }}
+          />
+        ))}
+      </svg>
+    </div>
   );
 }
