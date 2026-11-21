@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { FREE_TOOTH, type PlacedJewelry } from "../../data/studioEditor";
 import { createScene } from "../studioWorkspace/scene";
 import { DesignStore, targetToothOf } from "./store";
@@ -106,5 +106,75 @@ describe("target tooth", () => {
     expect(targetToothOf({ jewels, selectedJewelIds: [], selectedToothId: null })).toBeNull();
     expect(targetToothOf({ jewels, selectedJewelIds: ["b"], selectedToothId: null })).toBeNull();
     expect(targetToothOf({ jewels, selectedJewelIds: [], selectedToothId: FREE_TOOTH })).toBeNull();
+  });
+});
+
+describe("design store owner", () => {
+  function withStorage(initial: Record<string, string> = {}) {
+    const data = new Map(Object.entries(initial));
+    const storage = {
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => void data.set(k, v),
+      removeItem: (k: string) => void data.delete(k),
+    };
+    vi.stubGlobal("localStorage", storage);
+    return data;
+  }
+  afterEach(() => vi.unstubAllGlobals());
+
+  /** Alice's draft: the account is named first, then the design is made. */
+  function alicesDraft() {
+    const store = new DesignStore({ persist: false });
+    store.adoptAccount("alice");
+    store.loadScene(createScene({ pieces: [piece(), piece({ id: "b", toothId: "21", position: { x: 4, y: 0.5, z: 3 } })] }), null);
+    return store;
+  }
+
+  it("drops another account's draft, with its history and link", () => {
+    const store = alicesDraft();
+    store.updateJewel("a", { rotation: 30 });
+    store.clientName = "Léa";
+    expect(store.adoptAccount("bob")).toBe(true);
+    expect(store.jewels).toEqual([]);
+    expect(store.active).toBeNull();
+    expect(store.clientName).toBe("");
+    expect(store.getSnapshot().jewels).toEqual([]);
+    expect(store.getSnapshot().canUndo).toBe(false);
+    expect(store.owner).toBe("bob");
+  });
+
+  it("keeps the draft for its own account", () => {
+    const store = alicesDraft();
+    expect(store.adoptAccount("alice")).toBe(false);
+    expect(store.jewels).toHaveLength(2);
+  });
+
+  it("reads the owner back from storage and refuses an unowned draft", () => {
+    const data = withStorage();
+    const first = new DesignStore();
+    first.adoptAccount("alice");
+    first.loadScene(createScene({ pieces: [piece()] }), null);
+    first.saveNow();
+    expect(JSON.parse(data.get("gt-studio3d-design-v2")!).owner).toBe("alice");
+    // a reload: the same account finds its draft, another does not
+    const again = new DesignStore();
+    expect(again.adoptAccount("alice")).toBe(false);
+    expect(again.jewels).toHaveLength(1);
+    const other = new DesignStore();
+    expect(other.adoptAccount("bob")).toBe(true);
+    expect(other.jewels).toEqual([]);
+    // a draft saved before drafts named their account, linked to nobody's creation
+    data.set("gt-studio3d-design-v2", JSON.stringify({ jewels: [piece()] }));
+    expect(new DesignStore().adoptAccount("carol")).toBe(true);
+  });
+
+  it("keeps an unowned draft linked to one of the account's creations", () => {
+    const data = withStorage();
+    const active = { creationId: "c1", ownerId: "alice", name: "Mine", baselineKey: "k", savedAt: "2026-11-20T00:00:00Z" };
+    data.set("gt-studio3d-design-v2", JSON.stringify({ jewels: [piece()], active }));
+    const store = new DesignStore();
+    expect(store.adoptAccount("alice", { notify: false })).toBe(false);
+    expect(store.jewels).toHaveLength(1);
+    expect(store.active?.creationId).toBe("c1");
   });
 });

@@ -14,7 +14,10 @@ import { designKey, pruneGroups, sanitizeScene, type SceneCamera, type SceneGrou
  * three.js engine, which renders every frame and must not wait for React.
  *
  * The working draft lives in this browser's storage, as
- * in the standalone Studio it comes from. Saving a design to the account is
+ * in the standalone Studio it comes from, and belongs to the account that made
+ * it (`owner`): another account opening the Studio in the same browser — or in
+ * the same tab, since this store outlives a sign-out — starts on a blank stage
+ * (`adoptAccount`), never on the previous account's design. Saving a design to the account is
  * the Studio workspace's job (`lib/studioWorkspace`): this store only loads a
  * saved scene onto the stage, serialises the stage back into one, and
  * remembers which saved creation the draft belongs to.
@@ -149,6 +152,8 @@ export class DesignStore {
   contextMenu: ContextMenuState | null = null;
   groups: SceneGroupRef[] = [];
   active: ActiveCreation | null = null;
+  /** Account the draft belongs to; null until the editor names the signed-in account. */
+  owner: string | null = null;
   private pendingLoad: PendingLoad | null = null;
   /** True when the design was restored from a previous visit. */
   restored = false;
@@ -179,6 +184,7 @@ export class DesignStore {
       modelShade?: unknown;
       groups?: unknown;
       active?: unknown;
+      owner?: unknown;
     } | null;
     if (data && typeof data === "object") {
       this.jewels = sanitizeJewels(data.jewels);
@@ -188,6 +194,7 @@ export class DesignStore {
       if (typeof data.clientName === "string") this.clientName = data.clientName.slice(0, CLIENT_NAME_MAX);
       this.groups = sanitizeScene({ pieces: this.jewels, groups: data.groups }).groups;
       this.active = readActive(data.active);
+      if (typeof data.owner === "string") this.owner = data.owner;
     }
     this.committedJewels = this.jewels;
     this.snap = this.buildSnap();
@@ -553,7 +560,50 @@ export class DesignStore {
       modelShade: this.modelShade,
       groups: pruneGroups(this.groups, this.jewels),
       active: this.active,
+      owner: this.owner,
     });
+  }
+
+  /**
+   * Hand the draft to the signed-in account. The draft of another account —
+   * or a draft from before drafts named their account, unless it is linked to
+   * one of this account's creations — is dropped, with its history, link and
+   * client name: one account never sees another's design. Returns true when
+   * the draft was dropped. `notify` is false while React is rendering (the
+   * editor's first render, before anything on the page reads the store).
+   */
+  adoptAccount(userId: string, options: { notify?: boolean } = {}): boolean {
+    if (this.owner === userId) return false;
+    const legacyOwn = this.owner === null && this.active?.ownerId === userId;
+    this.owner = userId;
+    let dropped = false;
+    if (!legacyOwn) {
+      dropped = this.jewels.length > 0 || this.active !== null || this.clientName !== "";
+      this.jewels = [];
+      this.committedJewels = this.jewels;
+      this.groups = [];
+      this.active = null;
+      this.clientName = "";
+      this.modelShade = DEFAULT_MODEL_SHADE;
+      this.lightPreset = "studio";
+      this.issues = [];
+      this.designModel = "smile";
+      this.pendingLoad = null;
+      this.restored = false;
+      this.stepBase = null;
+      this.past = [];
+      this.future = [];
+      this.selectedJewelIds = [];
+      this.selectedToothId = null;
+      this.armedTypeId = null;
+      this.placingTypeId = null;
+      this.contextMenu = null;
+    }
+    if (options.notify === false) this.snap = this.buildSnap();
+    else this.commit();
+    // At once, not on the debounce: the previous account's draft leaves storage now.
+    this.saveNow();
+    return dropped;
   }
 
   /* ---------- saved creations ---------- */
