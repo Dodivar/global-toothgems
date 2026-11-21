@@ -36,6 +36,7 @@ const PAGES: Partial<Record<PublicRouteId, { title: Text; description?: Text }>>
   giftCard: { title: { keys: ["promo.store.headlineA", "promo.store.headlineB"] } },
   studio: { title: { key: "studioPage.hero.title" }, description: { key: "studioPage.hero.body" } },
   studioSubscribe: { title: { key: "studio.subscribe.title" }, description: { key: "studio.subscribe.body" } },
+  studioAtelier: { title: { key: "atelierPage.meta.title" }, description: { key: "atelierPage.meta.description" } },
   glowbookIntro: { title: { key: "studio.glowbook.intro.metaTitle" }, description: { key: "studio.glowbook.intro.metaDescription" } },
   artists: { title: { key: "directory.meta.title" }, description: { key: "directory.meta.description" } },
   academy: { title: { key: "academyPage.meta.title" }, description: { key: "academyPage.meta.description" } },

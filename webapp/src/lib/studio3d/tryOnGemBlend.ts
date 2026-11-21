@@ -155,13 +155,18 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
   // Away from every gem: how much the answer changed the photo.
   const step = Math.max(1, Math.round(Math.sqrt((width * height) / 20000)));
   const away: number[] = [];
+  const awayShift: [number[], number[], number[]] = [[], [], []];
   for (let y = 0; y < height; y += step) {
     for (let x = 0; x < width; x += step) {
       if (usable.some((m) => Math.hypot(x - m.x, y - m.y) <= windowOf(m))) continue;
-      away.push(diffAt((y * width + x) * 4));
+      const i = (y * width + x) * 4;
+      away.push(diffAt(i));
+      for (let c = 0; c < 3; c++) awayShift[c].push(E[i + c] - O[i + c]);
     }
   }
   const background = Math.round(medianOf(away));
+  /** The answer's colour drift away from every gem: the shift of a gem with no tooth to read around it. */
+  const backgroundShift = awayShift.map(medianOf);
 
   // Each gem: the change near its mark.
   const discs: { disc: Disc; owner: number }[] = [];
@@ -278,9 +283,10 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
       const values = read(bands * band, true);
       if (values[0].length >= SHIFT_MIN_PIXELS) return values.map(medianOf);
     }
-    // No tooth to read around (a gem amid others on every side): the plain ring, as before.
-    const values = read(band, false);
-    return values[0].length ? values.map(medianOf) : [0, 0, 0];
+    // No tooth to read around (a gem amid others on every side): the answer's drift away from the gems
+    // (2026-11-21: read on the plain ring, the neighbours' colours made the shift — the small green crystals
+    // of a tree's trunk, read on its navettes, were washed to the tooth's colour, a white veil over them).
+    return backgroundShift;
   });
 
   // How much of the answer each pixel keeps (overlapping discs: the most), and whose gem it is — the nearest

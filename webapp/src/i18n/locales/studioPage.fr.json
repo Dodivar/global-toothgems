@@ -93,6 +93,7 @@
     "body": "Commencez par explorer le Studio, puis choisissez l’abonnement qui correspond à votre façon de créer.",
     "perMonth": "/ mois",
     "featured": "Le choix des artistes",
+    "atelierDetails": "Voir ce que l’Atelier change pour vous",
     "cta": "Choisir {{plan}}",
     "trial": {
       "badge_one": "{{count}} jour offert",

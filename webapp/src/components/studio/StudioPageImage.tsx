@@ -25,6 +25,7 @@ export function StudioPageImage({
   sizes,
   className,
   imageClassName,
+  loading = "lazy",
 }: {
   still: StudioStill;
   alt: string;
@@ -33,6 +34,8 @@ export function StudioPageImage({
   sizes: string;
   className?: string;
   imageClassName?: string;
+  /** "eager" for a still at the top of a page (the Atelier page's hero). */
+  loading?: "lazy" | "eager";
 }) {
   const { base, width, height } = still;
   return (
@@ -44,7 +47,7 @@ export function StudioPageImage({
         width={width}
         height={height}
         alt={alt}
-        loading="lazy"
+        loading={loading}
         decoding="async"
         className={clsx("block h-auto w-full", imageClassName)}
       />
