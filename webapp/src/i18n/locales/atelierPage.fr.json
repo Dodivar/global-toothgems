@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "title": "Formule Atelier du Studio 3D : réservations, agenda, annuaire et essai IA",
+    "description": "Réservation en ligne, agenda synchronisé, place dans l’annuaire « Trouver un artiste » et essai par IA sur le sourire de vos clientes : ce que la formule Atelier du Studio 3D ajoute à votre activité de tooth gems."
+  },
+  "back": "Toutes les formules",
+  "hero": {
+    "eyebrow": "Formule Atelier",
+    "title": "Vos créations deviennent des rendez-vous.",
+    "body": "L’Atelier relie le Studio 3D à votre activité : vos clientes vous trouvent dans l’annuaire, essaient votre création sur leur propre sourire et réservent une heure libre de votre agenda, sans un message échangé.",
+    "priceNote": "Résiliable à tout moment depuis votre compte. Tout ce que contient Artist est inclus.",
+    "cta": "Choisir Atelier",
+    "ctaSecondary": "Voir le parcours",
+    "media": {
+      "alt": "La vue semaine de l’agenda Atelier, avec plusieurs rendez-vous réservés en ligne.",
+      "caption": "L’agenda de l’Atelier, capture réelle. Les rendez-vous affichés sont des exemples."
+    }
+  },
+  "journey": {
+    "eyebrow": "Le parcours de votre cliente",
+    "title": "De la découverte au fauteuil, sans aller-retour.",
+    "steps": {
+      "directory": {
+        "title": "Elle vous trouve",
+        "body": "Dans l’annuaire, par ville ou autour d’elle."
+      },
+      "tryOn": {
+        "title": "Elle se voit avec votre création",
+        "body": "Votre design posé sur la photo de son sourire."
+      },
+      "booking": {
+        "title": "Elle réserve",
+        "body": "Une heure libre, la création jointe, confirmée."
+      },
+      "agenda": {
+        "title": "Vous recevez le rendez-vous",
+        "body": "Dans votre agenda et celui de votre téléphone."
+      }
+    },
+    "stepLabel": "Étape {{n}}"
+  },
+  "directory": {
+    "eyebrow": "Annuaire « Trouver un artiste »",
+    "title": "Soyez l’artiste que l’on trouve près de chez soi.",
+    "body": "Les clientes cherchent par ville ou autour d’elles : votre page apparaît sur la carte et dans la liste, avec vos créations, votre lieu et votre badge d’artiste certifié si vous l’avez obtenu.",
+    "points": [
+      "Une page par ville, lisible par les moteurs de recherche.",
+      "« Près de moi » classe les artistes par distance ; la position de la cliente ne quitte jamais son téléphone.",
+      "Un salon avec son adresse, ou une zone d’environ 1 km si vous recevez chez vous : votre adresse personnelle n’est jamais publiée.",
+      "Vous choisissez d’apparaître, ou non, depuis Mon Glowbook › Partager."
+    ],
+    "media": {
+      "alt": "L’annuaire « Trouver un artiste » : une carte de France avec plusieurs artistes et la liste de leurs pages.",
+      "caption": "L’annuaire, capture réelle. Pour l’illustration, la plupart des artistes affichés sont des exemples."
+    }
+  },
+  "tryOn": {
+    "eyebrow": "Essai par IA",
+    "title": "Votre cliente voit le résultat sur son propre sourire.",
+    "body": "Elle envoie une photo de son sourire depuis votre Glowbook ou un lien partagé : votre création y est posée, gemme par gemme, à l’endroit et à la taille prévus dans le Studio. Elle réserve en sachant exactement ce qu’elle aura.",
+    "points": [
+      "Les gemmes sont placées par calcul à partir de votre design, puis rendues de façon réaliste par l’IA.",
+      "Vous vous en servez aussi en rendez-vous, sur vos propres créations.",
+      "Jusqu’à 10 rendus par jour et par compte.",
+      "Ni la photo ni le rendu ne sont conservés sur nos serveurs."
+    ],
+    "compare": {
+      "label": "Comparer la photo et le rendu : {{name}}",
+      "before": "Photo",
+      "after": "Avec la création",
+      "hint": "Faites glisser pour comparer",
+      "creation": "Le design dans le Studio",
+      "examples": "Exemples d’essais",
+      "example": "Essai {{n}}",
+      "beforeAlt": "{{name}} : la photo du sourire, avant.",
+      "afterAlt": "{{name}} : le même sourire avec la création posée par l’IA.",
+      "creationAlt": "{{name}} : le design dans le Studio 3D."
+    },
+    "pending": {
+      "title": "Exemples avant / après en préparation",
+      "body": "Les premiers essais réalisés avec le Studio, photo d’origine, rendu et design, seront présentés ici."
+    }
+  },
+  "booking": {
+    "eyebrow": "Réservation en ligne",
+    "title": "Vos clientes réservent seules, à toute heure.",
+    "body": "Depuis votre Glowbook ou l’une de vos créations, la cliente choisit une heure libre, joint le design qu’elle veut et confirme. L’heure est bloquée aussitôt ; si elle ne vous convient pas, vous l’annulez avec un motif.",
+    "points": [
+      "Confirmation par e-mail, rendez-vous à ajouter à son agenda, rappel la veille.",
+      "Annulation gratuite jusqu’à 24 h avant. Deux absences ou annulations tardives en 12 mois, et la cliente ne peut plus réserver pendant 3 mois.",
+      "La création réservée est jointe : vous l’ouvrez en 3D avant le rendez-vous.",
+      "Aucun paiement en ligne, aucune commission : vous encaissez au salon."
+    ],
+    "media": {
+      "description": "Une cliente ouvre la page Glowbook d’un artiste, choisit « Réserver », parcourt les heures libres de la semaine, en choisit une, remplit son nom et son téléphone, puis confirme ; le rendez-vous apparaît ensuite dans l’agenda de l’artiste.",
+      "caption": "Le parcours de réservation, enregistré dans le vrai site. Noms et horaires sont des exemples."
+    }
+  },
+  "agenda": {
+    "eyebrow": "Agenda",
+    "title": "Un agenda qui suit votre vraie semaine.",
+    "body": "Vos horaires, le délai avant un rendez-vous, vos congés posés d’un geste : vos clientes ne voient que les heures où vous êtes vraiment libre.",
+    "points": [
+      "Abonnez Google Agenda, Apple Calendrier ou Outlook à votre agenda par un lien privé.",
+      "Les heures occupées d’un autre agenda (Google, Apple, Outlook, ou Planity s’il fournit un lien .ics) se ferment toutes seules, toutes les 15 minutes.",
+      "Une heure prise ailleurs ? Un clic la ferme dans la vue semaine.",
+      "Pendant vos congés, les jours entiers se ferment d’un coup et les clientes déjà inscrites sont prévenues par e-mail."
+    ],
+    "media": {
+      "alt": "La liste des rendez-vous de l’agenda Atelier : chaque cliente, sa création et l’heure réservée.",
+      "caption": "Les rendez-vous de l’agenda, capture réelle. Clientes et horaires sont des exemples."
+    }
+  },
+  "gains": {
+    "eyebrow": "Ce que l’Atelier change",
+    "title": "Moins de messages, plus de rendez-vous.",
+    "items": {
+      "time": {
+        "title": "Fini les allers-retours",
+        "body": "Plus besoin de trouver une date en messages privés : la cliente voit vos heures libres et réserve."
+      },
+      "noShow": {
+        "title": "Moins de rendez-vous oubliés",
+        "body": "Rappel la veille, rendez-vous dans son agenda et une règle claire après deux absences."
+      },
+      "newClients": {
+        "title": "De nouvelles clientes",
+        "body": "L’annuaire vous montre à celles qui cherchent un artiste dans leur ville, même si elles ne vous suivent pas encore."
+      },
+      "decided": {
+        "title": "Des clientes déjà décidées",
+        "body": "Après l’essai sur son sourire, elle arrive avec son design choisi : le rendez-vous va droit au but."
+      }
+    }
+  },
+  "extras": {
+    "title": "Et aussi, dans l’Atelier",
+    "items": {
+      "unlimited": "Créations et groupes de gemmes illimités.",
+      "postLayouts": "Habillages premium pour vos publications : galerie, spotlight et bandeau.",
+      "artist": "Tout ce que contient Artist : Glowbook, liens de partage, vue de face, fiche de placement et posts à votre logo."
+    }
+  },
+  "offer": {
+    "eyebrow": "Formule Atelier",
+    "title": "Ouvrez votre Atelier.",
+    "body": "Un seul abonnement pour l’éditeur complet, votre page, vos réservations, votre agenda, l’annuaire et l’essai par IA.",
+    "compare": "Comparer les trois formules",
+    "trialNote_one": "L’essai gratuit d’un jour ouvre l’éditeur ; les outils de l’Atelier s’ouvrent avec l’abonnement.",
+    "trialNote_other": "L’essai gratuit de {{count}} jours ouvre l’éditeur ; les outils de l’Atelier s’ouvrent avec l’abonnement."
+  }
+}

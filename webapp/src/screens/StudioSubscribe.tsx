@@ -56,7 +56,7 @@ export function StudioSubscribe() {
             )}
           </header>
 
-          <StudioCheckoutPlans surface="studio_subscribe_page" />
+          <StudioCheckoutPlans surface="studio_subscribe_page" atelierDetails />
           <p className="m-0 text-center text-[length:var(--text-caption)] text-[var(--text-muted)]">
             {vatNotice && `${t(vatNotice)}. `}
             {t("studioPage.plans.note")}

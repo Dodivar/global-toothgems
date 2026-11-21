@@ -93,6 +93,7 @@
     "body": "Start by exploring the Studio, then choose the subscription that suits the way you create.",
     "perMonth": "/ month",
     "featured": "Artists’ choice",
+    "atelierDetails": "See what Atelier does for you",
     "cta": "Choose {{plan}}",
     "trial": {
       "badge_one": "{{count}} day free",

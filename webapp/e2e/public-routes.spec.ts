@@ -24,6 +24,7 @@ const PUBLIC_ROUTES: { path: string; heading: RegExp }[] = [
   { path: "/fr/carte-cadeau", heading: /Offrez l’éclat d’un sourire/ },
   { path: "/fr/studio-3d", heading: /Lasso, alignement, miroir : vos designs au millimètre\./ },
   { path: "/fr/studio-3d/abonnement", heading: /Débloquez le Studio 3D/ },
+  { path: "/fr/studio-3d/formule-atelier", heading: /Vos créations deviennent des rendez-vous\./ },
   { path: "/fr/glowbook", heading: /Toutes vos créations, en un seul lien\./ },
   // The artist directory (decision 145): empty in mock mode, its empty state still renders.
   { path: "/fr/artistes", heading: /Trouver un artiste tooth gems près de chez vous/ },

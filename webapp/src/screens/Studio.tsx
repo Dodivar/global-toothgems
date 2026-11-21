@@ -315,7 +315,7 @@ export function Studio() {
       >
         <div className="mx-auto grid max-w-[var(--max-width-content)] gap-8">
           <SectionHeading id="gt-studio-b-plans" eyebrow={t("studioPage.plans.eyebrow")} title={t("studioPage.plans.title")} body={t("studioPage.plans.body")} />
-          <StudioPlans onTrial={start} />
+          <StudioPlans onTrial={start} atelierDetails />
           <p className="m-0 text-[length:var(--text-caption)] text-[var(--text-muted)]">
             {vatNotice && `${t(vatNotice)}. `}
             {t("studioPage.plans.note")}

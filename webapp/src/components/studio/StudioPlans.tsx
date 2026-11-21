@@ -5,11 +5,9 @@ import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { ArrowRight, Check, CircleCheck, Gift, Info } from "lucide-react";
 import { Button } from "../ui/Button";
-import { trackStudio } from "../../lib/studioAnalytics";
-import { useNavigate } from "../../lib/navigation";
-import { useAuth } from "../../lib/auth";
-import { RETURN_PARAM, SIGN_IN_PATH } from "../../lib/authRoutes";
-import { studioCheckoutPath, type StudioCheckoutSurface } from "../../lib/studioUrl";
+import { Link } from "../../lib/navigation";
+import { STUDIO_ATELIER_PLAN_PATH, type StudioCheckoutSurface } from "../../lib/studioUrl";
+import { useStudioCheckoutChoice } from "./useStudioCheckoutChoice";
 import { useFormat } from "../../lib/format";
 import { useStudioPlanPrices } from "../../lib/studioBilling";
 import { displayPrice, monthsFreeOf, type StudioPlanPrice } from "../../lib/studioBillingMapping";
@@ -25,7 +23,7 @@ import {
 /** The member's subscription page (`app/compte/(space)/studio`). */
 export const ACCOUNT_STUDIO_PATH = "/compte/studio";
 
-type ChooseStudioPlan =(plan: StudioPaidPlanId, interval: StudioBillingInterval, price: StudioPlanPrice | null) => void;
+export type ChooseStudioPlan = (plan: StudioPaidPlanId, interval: StudioBillingInterval, price: StudioPlanPrice | null) => void;
 
 /**
  * The Studio's offers in the alternative page's dress: the free trial as an
@@ -37,7 +35,7 @@ type ChooseStudioPlan =(plan: StudioPaidPlanId, interval: StudioBillingInterval,
  * (decision 113), enforced by the database. Nothing is bought here: the trial opens the Studio (`onTrial`) and a
  * paid plan leads to its checkout (`onChoose`).
  */
-export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoose?: ChooseStudioPlan }) {
+export function StudioPlans({ onTrial, onChoose, atelierDetails = false }: { onTrial: () => void; onChoose?: ChooseStudioPlan; atelierDetails?: boolean }) {
   const { t } = useTranslation();
 
   const trial = STUDIO_PLANS.find((plan) => plan.id === "trial")!;
@@ -67,7 +65,11 @@ export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoo
         </div>
       </div>
 
-      {onChoose ? <StudioPaidPlans onChoose={onChoose} /> : <StudioCheckoutPlans surface="studio_page" />}
+      {onChoose ? (
+        <StudioPaidPlans onChoose={onChoose} atelierDetails={atelierDetails} />
+      ) : (
+        <StudioCheckoutPlans surface="studio_page" atelierDetails={atelierDetails} />
+      )}
     </div>
   );
 }
@@ -78,28 +80,9 @@ export function StudioPlans({ onTrial, onChoose }: { onTrial: () => void; onChoo
  * where the member pays and the Studio then opens. A visitor signs in first
  * (the subscription belongs to an account) and lands on that page.
  */
-export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurface }) {
-  const navigate = useNavigate();
-  const { signedIn } = useAuth();
-
-  const choose: ChooseStudioPlan = (plan, interval, price) => {
-    const checkout = studioCheckoutPath({ plan, interval, surface });
-    if (!signedIn) {
-      navigate(`${SIGN_IN_PATH}?${new URLSearchParams({ [RETURN_PARAM]: checkout })}`);
-      return;
-    }
-    trackStudio("studio_subscription_cta_clicked", {
-      plan_id: plan,
-      interval,
-      price_minor: price?.amountMinor ?? null,
-      currency: price?.currency ?? null,
-      surface,
-      checkout_available: true,
-    });
-    navigate(checkout);
-  };
-
-  return <StudioPaidPlans onChoose={choose} />;
+export function StudioCheckoutPlans({ surface, atelierDetails = false }: { surface: StudioCheckoutSurface; atelierDetails?: boolean }) {
+  const choose = useStudioCheckoutChoice(surface);
+  return <StudioPaidPlans onChoose={choose} atelierDetails={atelierDetails} />;
 }
 
 /**
@@ -114,15 +97,22 @@ export function StudioCheckoutPlans({ surface }: { surface: StudioCheckoutSurfac
  * and `locked` holds every switch while the subscription cannot change.
  * Without `onChoose` the cards are shown for information only, with no call
  * to action (a team account, which already has the Atelier rights).
+ *
+ * `atelierDetails` adds, at the foot of the Atelier card, the only link to the
+ * Atelier plan's presentation page (owner's request, 2026-11-21): set on the
+ * public presentation and subscription pages, never in the editor's locked
+ * screen or the member's subscription page.
  */
 export function StudioPaidPlans({
   onChoose,
   current = null,
   locked = false,
+  atelierDetails = false,
 }: {
   onChoose?: ChooseStudioPlan;
   current?: { plan: StudioPaidPlanId; interval: StudioBillingInterval } | null;
   locked?: boolean;
+  atelierDetails?: boolean;
 }) {
   const { t } = useTranslation();
   const { formatMoney } = useFormat();
@@ -226,6 +216,16 @@ export function StudioPaidPlans({
               )}
 
               <PlanFeatureList plan={plan.id} />
+
+              {atelierDetails && plan.id === "atelier" && (
+                <Link
+                  to={STUDIO_ATELIER_PLAN_PATH}
+                  className="group -mt-1 inline-flex items-center gap-1.5 justify-self-start rounded-[var(--radius-sm)] text-[length:var(--text-body-sm)] font-semibold text-[var(--gt-blue-700)] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                >
+                  {t("studioPage.plans.atelierDetails")}
+                  <ArrowRight size={15} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" />
+                </Link>
+              )}
             </li>
           );
         })}

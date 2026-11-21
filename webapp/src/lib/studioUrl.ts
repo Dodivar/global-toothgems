@@ -5,6 +5,13 @@
 export const STUDIO_PATH = "/studio-3d";
 export const STUDIO_SUBSCRIBE_PATH = "/studio-3d/abonnement";
 /**
+ * The Atelier plan's own presentation (`/fr/studio-3d/formule-atelier`,
+ * `/en/3d-studio/atelier-plan`): bookings, calendar, directory and AI try-on
+ * shown in detail. Reached only from the Atelier card of the public plans
+ * (owner's request, 2026-11-21: no link anywhere else).
+ */
+export const STUDIO_ATELIER_PLAN_PATH = "/studio-3d/formule-atelier";
+/**
  * The Glowbook's presentation page (`/fr/glowbook`, `/en/glowbook`): what an
  * artist's public page offers and the plan that opens it (decision 113).
  * Members below that plan land here from the Studio's Glowbook section.
@@ -102,7 +109,7 @@ export function studioSectionFromPath(pathname: string): StudioSection | null {
 
 const PAID_PLANS = ["essential", "artist", "atelier"] as const;
 const INTERVALS = ["month", "year"] as const;
-const SURFACES = ["studio_locked", "studio_page", "studio_subscribe_page"] as const;
+const SURFACES = ["studio_locked", "studio_page", "studio_subscribe_page", "studio_atelier_page"] as const;
 
 export type StudioCheckoutSurface = (typeof SURFACES)[number];
 export interface StudioCheckoutQuery {
@@ -132,5 +139,8 @@ export function parseStudioCheckoutQuery(params: URLSearchParams): StudioCheckou
 
 /** Where "Change plan" on the checkout page leads: back to the plans the member chose from. */
 export function studioPlansPathFor(surface: StudioCheckoutSurface): string {
-  return surface === "studio_locked" ? STUDIO_EDITOR_PATH : surface === "studio_page" ? STUDIO_PATH : STUDIO_SUBSCRIBE_PATH;
+  if (surface === "studio_locked") return STUDIO_EDITOR_PATH;
+  if (surface === "studio_page") return STUDIO_PATH;
+  if (surface === "studio_atelier_page") return STUDIO_ATELIER_PLAN_PATH;
+  return STUDIO_SUBSCRIBE_PATH;
 }
