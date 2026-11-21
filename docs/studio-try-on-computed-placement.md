@@ -124,8 +124,9 @@ approximate):
 - The lower arch is not scored (no lower midline measured); on one photo its boxes covered half the arch, a tooth
   or more off, 14 of 20 teeth were set aside and its gems left out with the message that they are hidden by a lip.
 
-**The pixel midline** (`tryOnMidline.ts`, `components/studio/tryOn/midlineArbiter.ts`; behind a flag, off by
-default): a third source for the midline, from the photo itself — the dark gaps between the upper teeth along the
+**The pixel midline** (`tryOnMidline.ts`, `components/studio/tryOn/midlineArbiter.ts`; **not called since
+2026-11-05**: the run moved from the dialog to `runTryOn.ts` that day without its call, so neither the correction
+nor the `arbiter_*` analytics run — to wire again or remove, owner's choice): a third source for the midline, from the photo itself — the dark gaps between the upper teeth along the
 central incisors' crowns. On the 11 distinct analyses of the trial, the darkest gap near the two readings was the
 real midline every time (within 0.03 central incisor widths). It is used only when the readings disagree (midlines
 more than 0.25 widths apart, no check box, 11 and 21 not touching, or a mirrored naming) and only when one gap
@@ -228,6 +229,29 @@ analysis is unchanged. Not yet checked in the browser: P5's fit on the rebuilt t
 Still open after this trial: the message for gems left out says they are hidden by a lip or other teeth even when
 the teeth were not found (separate the two); the image model drew 18 % of the gems more than half a gem off their
 mark and 20 % more than 30 % larger or smaller (worst on hearts and navettes) — see `reseat` above.
+
+Fixes after the owner's "Christmas" try-on of 2026-11-21 (tree of 11 gems on the 11, six white gems on each of 22
+and 23, four red ones near the biting edge of 42 to 32; replayed on the run's exact analysis, read from the
+device's store, and the saved creation): 9 gems were left out "hidden by a lip" and the tree was drawn on the 21.
+
+1. **A box half-way between two numberings no longer decides** (`MIDLINE_DECISIVE`, 0.5 central incisor widths).
+   The function's numbers were right; its left boxes ran left of their teeth (the 11's covered half the 12, a gap of
+   0.7 widths between 11 and 21), and the photo check's box sat half a tooth right of the real midline. On the teeth
+   alone the shift of both arches did not pass (`RENUMBER_RATIO`: 0.605 for 0.6); the midline term (0.51 against
+   0.29) pushed it over, and the design moved a tooth right — the 23's gems landed on the set-aside 24 (6 "fitted"),
+   the lower ones a tooth over. The midline now counts, in the cost and in `midline_mismatch`, only between two
+   numberings whose midlines the box tells apart by at least 0.5; the same rule lifts the refusal of a box 0.6 off
+   on right numbers (the 5 renders refused on the trial of 2026-11-05). Replayed: numbers kept, all 27 gems placed,
+   reliable. The decision on the teeth alone stays close to the threshold on this analysis (0.605): bad boxes are what
+   the pixel midline above was built for. Tried and left out: comparing the widths at the photo's angle
+   (`estimateViewYaw`) — it kept this photo's numbers, but a numbering a tooth off finds an angle that excuses its
+   widths too, and the synthetic arch named a tooth off was no longer renamed.
+2. **A gem that only the assumed overbite hides is shown just under the upper teeth**: the lower boxes started 7 px
+   (0.5 mm) under the upper teeth's edge, within `COVERED_TOLERANCE_MM`, so their edge was taken 2 mm higher and the
+   red gems, 1.3 mm from the edge, fell above their boxes. A gem between the taken edge and the box's top now sits
+   at the box's top plus its half-size, `found`; one below its box is still `hidden`.
+3. Still open: on this analysis the tree is drawn on the left half of the 11, its left navettes touching the 12,
+   since the 11's box runs half a tooth left (the fit put the 11 close to the real tooth, the box about 40 px left of it).
 
 Known limits: the teeth model sometimes numbers the teeth one tooth off (seen on one trial photo: the whole design
 then moves one tooth, with a high confidence, since the fit stays consistent; since 2026-11-04 the renumbering above

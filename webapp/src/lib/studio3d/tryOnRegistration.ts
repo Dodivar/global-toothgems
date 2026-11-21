@@ -26,7 +26,9 @@ import { gemSquash, visibleToothShare, type FrontViewProjection, type FrontViewT
  *    also tried one tooth to either side; a numbering is kept or replaced on
  *    how well the teeth agree in place and width (a central incisor is wider
  *    than a lateral one) and with the photo check's central incisors (the
- *    midline, a tie-breaker). Another numbering is taken only when clearly better.
+ *    midline, a tie-breaker, counted only when the box sits clearly nearer one
+ *    numbering's midline than the other's: `MIDLINE_DECISIVE`, 2026-11-21).
+ *    Another numbering is taken only when clearly better.
  * 3. Each gem is put on its own tooth: across it, at its share of the found
  *    box's width (the customer's own tooth); up from its biting edge, on an
  *    upper tooth at its share of the tooth as the editor shows it, dome
@@ -51,7 +53,9 @@ import { gemSquash, visibleToothShare, type FrontViewProjection, type FrontViewT
  * overbite) does not show its biting edge: its box starts where the upper
  * teeth end. Its edge is then taken `LOWER_OVERBITE_MM` above the box, so its
  * gems are not pushed down by the overlap (2026-11-03: drops on the lower
- * incisors landed on the lower lip).
+ * incisors landed on the lower lip). A gem that this assumed overbite alone
+ * puts behind the upper teeth (between the taken edge and the box's top) is
+ * shown just under them, not left out (2026-11-21).
  *
  * A confidence (0–1) says how far the result can be trusted; below
  * `RELIABLE_CONFIDENCE` the try-on asks for another photo.
@@ -186,10 +190,11 @@ export const LOWER_OVERBITE_MM = 2;
 /** The lower arch's offset is looked for in this range, mm, down: a little higher than closed (a deep bite) to a wide-open smile. */
 export const LOWER_OFFSET_RANGE: readonly [number, number] = [-4, 20];
 /**
- * A midline farther than this from the photo check's (central incisor widths)
- * is an issue, lowers the confidence and makes the placement unreliable
- * (2026-11-05: it only lowered the confidence, which stayed above
- * `RELIABLE_CONFIDENCE` on a trial photo whose whole upper arch was a tooth off).
+ * A midline farther than this from the photo check's (central incisor widths),
+ * the box clearly nearer another numbering's (`MIDLINE_DECISIVE`), is an issue,
+ * lowers the confidence and makes the placement unreliable (2026-11-05: it only
+ * lowered the confidence, which stayed above `RELIABLE_CONFIDENCE` on a trial
+ * photo whose whole upper arch was a tooth off).
  */
 export const MIDLINE_TOLERANCE = 0.5;
 /**
@@ -213,6 +218,17 @@ const WIDTH_WEIGHT = 4;
  * teeth that agree with their numbers.
  */
 const MIDLINE_WEIGHT = 0.3;
+/**
+ * The photo check's box speaks for one numbering over another only when it
+ * sits this much nearer one's midline than the other's (central incisor
+ * widths; numberings a tooth apart have midlines about one width apart). A box
+ * about half-way between says nothing: it neither renumbers nor makes the
+ * placement unreliable (2026-11-21: a box half a tooth off moved the
+ * "Christmas" try-on's two arches a tooth to the right — the teeth's numbers
+ * were right — and on the trial of 2026-11-05 such a box refused five renders
+ * of a photo whose numbers were right).
+ */
+const MIDLINE_DECISIVE = 0.5;
 /** A lower tooth's top within this distance (mm) of the upper teeth's edge above it is cut by them. */
 const COVERED_TOLERANCE_MM = 0.6;
 /**
@@ -506,19 +522,25 @@ function midlineError(fit: ArchFit, centrals: CloseUpBox | null, refByFdi: Reado
  * How badly a numbering fits, per tooth found: each tooth's distance from
  * where the fit puts it (capped at a tooth's width, a tooth the numbering
  * drops counting as a full width), how far the teeth's widths disagree with
- * their numbers' (a central incisor named lateral is too wide), and the
- * midline's distance from the photo check's.
+ * their numbers' (a central incisor named lateral is too wide) — `geometry`;
+ * and, apart, the midline's distance from the photo check's box (weighed by
+ * `midlineTerm` only where that box tells two numberings apart).
  */
 function numberingCost(solution: Solution | null, total: number, centrals: CloseUpBox | null, refByFdi: ReadonlyMap<string, FrontViewTooth>) {
-  if (!solution) return { cost: Infinity, midline: null };
+  if (!solution) return { geometry: Infinity, midline: null };
   const { pairs } = solution;
   const place = pairs.reduce((s, p) => s + Math.min(1, solution.residualOf(p)) ** 2, 0) + Math.max(0, total - pairs.length);
   const logs = pairs.map((p) => Math.log(p.found.width / widthOf(p.ref)));
   const middle = median(logs);
   const width = WIDTH_WEIGHT * logs.reduce((s, l) => s + Math.min(0.16, (l - middle) ** 2), 0);
-  const midline = midlineError(solution.fit, centrals, refByFdi);
-  return { cost: (place + width) / Math.max(1, total) + (midline === null ? 0 : MIDLINE_WEIGHT * Math.min(1.5, midline) ** 2), midline };
+  return { geometry: (place + width) / Math.max(1, total), midline: midlineError(solution.fit, centrals, refByFdi) };
 }
+
+/** The midline's part of a numbering's cost. */
+const midlineTerm = (midline: number) => MIDLINE_WEIGHT * Math.min(1.5, midline) ** 2;
+
+/** Whether the photo check's box sits clearly nearer one of two numberings' midlines (`MIDLINE_DECISIVE`). */
+const midlineDecides = (a: number | null, b: number | null): boolean => a !== null && b !== null && Math.abs(a - b) >= MIDLINE_DECISIVE;
 
 /** The photo's angle is looked for within this many degrees either side of the front. */
 export const MAX_VIEW_YAW = 25;
@@ -611,17 +633,28 @@ export function registerDesign(
   // 1–2. The fit for the function's numbering, and for each arch one tooth to either side.
   const total = found.filter((f) => refByFdi.has(f.fdi)).length;
   const hasArch = (row: readonly string[]) => found.some((f) => row.includes(f.fdi));
-  const candidates: { upper: number; lower: number; solution: Solution | null; cost: number; midline: number | null }[] = [];
+  const solved: { upper: number; lower: number; solution: Solution | null }[] = [];
   for (const upper of hasArch(UPPER_ROW) ? [0, -1, 1] : [0]) {
     for (const lower of hasArch(LOWER_ROW) ? [0, -1, 1] : [0]) {
-      const solution = solve(refByFdi, upper || lower ? shiftNumbering(found, upper, lower) : found);
-      candidates.push({ upper, lower, solution, ...numberingCost(solution, total, centrals, refByFdi) });
+      solved.push({ upper, lower, solution: solve(refByFdi, upper || lower ? shiftNumbering(found, upper, lower) : found) });
     }
   }
+  if (!solved[0].solution) return empty(["no_teeth"]);
+  const candidates = solved.map((c) => ({ ...c, ...numberingCost(c.solution, total, centrals, refByFdi) }));
   const given = candidates[0];
-  if (!given.solution) return empty(["no_teeth"]);
-  const best = candidates.reduce((a, b) => (b.cost < a.cost ? b : a));
-  const chosen = best !== given && best.cost <= given.cost - RENUMBER_MARGIN && best.cost <= given.cost * RENUMBER_RATIO ? best : given;
+  // Each other numbering against the function's: the teeth's geometry, plus the midline where the
+  // photo check's box tells the two apart. The clearest win, if any, is taken.
+  let chosen = given;
+  let chosenCost = Infinity;
+  for (const c of candidates.slice(1)) {
+    const decides = midlineDecides(given.midline, c.midline);
+    const givenCost = given.geometry + (decides ? midlineTerm(given.midline!) : 0);
+    const cost = c.geometry + (decides ? midlineTerm(c.midline!) : 0);
+    if (cost <= givenCost - RENUMBER_MARGIN && cost <= givenCost * RENUMBER_RATIO && cost < chosenCost) {
+      chosen = c;
+      chosenCost = cost;
+    }
+  }
   const { pairs, fit, kept, setAside, edgeOf, residualOf } = chosen.solution!;
   const t = fit.t;
 
@@ -679,6 +712,11 @@ export function registerDesign(
       const dy = ref.lower ? (at.y - ref.incisal) * t.scale : -visibleToothShare(g.toothId, at.v) * crownPx;
       x = edge.x + dx * Math.cos(a) - dy * Math.sin(a);
       y = edge.y + dx * Math.sin(a) + dy * Math.cos(a);
+      // A lower tooth taken as covered by the upper teeth: a gem near its biting edge lands in the band
+      // the overbite is assumed to hide (`LOWER_OVERBITE_MM`, a typical value, not one measured on the
+      // photo). It is shown just under the upper teeth rather than left out (2026-11-21: the red gems at
+      // the edge of three lower incisors were dropped on a photo where those edges plainly showed).
+      if (ref.lower && edge.y < box.y && y < box.y && y >= edge.y) y = box.y + Math.min(at.r * t.scale, box.height / 2);
     } else {
       ({ x, y } = placeRef(fit, { x: at.x, y: at.y }, ref.lower));
     }
@@ -712,7 +750,11 @@ export function registerDesign(
   const covered = designTeeth.filter((fdi) => keptByFdi.has(fdi)).length;
   if (covered < designTeeth.length) issues.push("design_teeth_missing");
   if (chosen !== given) issues.push("renumbered");
-  const midlineOk = chosen.midline === null || chosen.midline <= MIDLINE_TOLERANCE;
+  // Off the box, and the box clearly nearer another numbering's midline (a box half-way between says nothing).
+  const midlineOk =
+    chosen.midline === null ||
+    chosen.midline <= MIDLINE_TOLERANCE ||
+    !candidates.some((c) => c !== chosen && c.solution && c.midline !== null && chosen.midline! - c.midline >= MIDLINE_DECISIVE);
   if (!midlineOk) issues.push("midline_mismatch");
 
   const rms = kept.length >= 3 ? Math.sqrt(kept.reduce((s, p) => s + residualOf(p) ** 2, 0) / kept.length) : null;

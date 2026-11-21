@@ -220,6 +220,15 @@ describe("registerDesign", () => {
     expect(a.tooth).toBe("found");
   });
 
+  it("shows a gem near a covered lower tooth's biting edge just under the upper teeth, not left out", () => {
+    // 1 mm from the biting edge: inside the 2 mm the overbite is assumed to hide, while the tooth's top shows.
+    const { found, upperEdge } = overbitePhoto(5);
+    const t41 = tooth("41");
+    const a = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "41", { y: t41.incisal + 1, r: 0.9 })] }, found).gems[0];
+    expect(a.tooth).toBe("found");
+    expect(a.y).toBeCloseTo(upperEdge + 0.9 * 20, -1);
+  });
+
   it("hides a gem whose place is outside the visible part of its tooth (behind a lip)", () => {
     const { found } = overbitePhoto(2.5);
     const t41 = tooth("41");
@@ -321,6 +330,38 @@ describe("the teeth's numbers", () => {
     const off = registerDesign({ teeth: FRONT_VIEW_TEETH, gems: [gem("a", "11")] }, truth, { centrals: widened(1.8, 0.8) });
     expect(off.issues).toContain("midline_mismatch");
     expect(off.reliable).toBe(false);
+  });
+
+  /**
+   * The analysis of the owner's "Christmas" try-on of 2026-11-21 (close-up pixels): the numbers are right,
+   * the left boxes run a little left of their teeth (the 11's covers half the 12), and the photo check's
+   * box sits half a tooth right of the real midline. Both arches were moved a tooth to the right: the tree
+   * of the 11 landed on the 21, three red gems of the lower incisors and the 23's six were left out.
+   */
+  const CHRISTMAS: FoundTooth[] = (
+    [
+      ["13", 156, 247, 52, 122], ["12", 208, 247, 58, 122], ["11", 266, 225, 96, 144], ["21", 429, 225, 96, 144],
+      ["22", 525, 225, 86, 144], ["23", 611, 247, 67, 122], ["24", 678, 247, 58, 122], ["25", 736, 247, 57, 122],
+      ["43", 208, 376, 67, 122], ["42", 275, 376, 77, 129], ["41", 352, 376, 86, 129], ["31", 438, 376, 87, 129],
+      ["32", 525, 376, 86, 129], ["33", 611, 376, 77, 122], ["34", 688, 376, 57, 108],
+    ] as const
+  ).map(([fdi, x, y, width, height]) => ({ fdi, x, y, width, height }));
+  const CHRISTMAS_CENTRALS = { x: 346, y: 205, width: 268, height: 174 };
+
+  it("keeps the function's numbers when the photo check's box sits half-way between two numberings", () => {
+    const t41 = tooth("41");
+    const gems = [gem("tree", "11"), gem("white", "23"), gem("red", "31", { y: t41.incisal + 1.3, r: 0.9 })];
+    const reg = registerDesign({ teeth: FRONT_VIEW_TEETH, gems }, CHRISTMAS, { centrals: CHRISTMAS_CENTRALS });
+    expect(reg.renumbered).toEqual({ upper: 0, lower: 0 });
+    expect(reg.issues).not.toContain("renumbered");
+    // Half a tooth off, the box says nothing: no mismatch, the placement may be used.
+    expect(reg.midlineError).toBeGreaterThan(0.45);
+    expect(reg.issues).not.toContain("midline_mismatch");
+    expect(reg.reliable).toBe(true);
+    const byId = new Map(reg.gems.map((g) => [g.id, g]));
+    const box11 = CHRISTMAS.find((t) => t.fdi === "11")!;
+    expect(byId.get("tree")!.x).toBeLessThan(box11.x + box11.width);
+    expect(reg.gems.map((g) => g.tooth)).toEqual(["found", "found", "found"]);
   });
 
   it("ignores a box far too wide to be about the central incisors", () => {
