@@ -283,9 +283,13 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
     return values[0].length ? values.map(medianOf) : [0, 0, 0];
   });
 
-  // How much of the answer each pixel keeps (overlapping discs: the most), and whose colour shift applies.
+  // How much of the answer each pixel keeps (overlapping discs: the most), and whose gem it is — the nearest
+  // in its own half-sizes, so its colour shift and, for a gem moved back, its reading apply (2026-11-21: owned
+  // by the first disc reaching it, the overlap of a small gem moved back showed the photo across its larger
+  // neighbour — a pale column cut through a tree's navettes by the discs of its column of small crystals).
   const alpha = new Float32Array(width * height);
   const shiftOf = new Int16Array(width * height);
+  const nearest = new Float32Array(width * height).fill(Infinity);
   for (const { disc, owner } of discs) {
     const x0 = Math.max(0, Math.floor(disc.x - disc.outer));
     const x1 = Math.min(width - 1, Math.ceil(disc.x + disc.outer));
@@ -293,10 +297,14 @@ export function blendGems(original: Rgba, edited: Rgba, marks: readonly BlendMar
     const y1 = Math.min(height - 1, Math.ceil(disc.y + disc.outer));
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
-        const a = 1 - smooth((Math.hypot(x - disc.x, y - disc.y) - disc.inner) / Math.max(1e-6, disc.outer - disc.inner));
+        const distance = Math.hypot(x - disc.x, y - disc.y);
+        const a = 1 - smooth((distance - disc.inner) / Math.max(1e-6, disc.outer - disc.inner));
+        if (a <= 0) continue;
         const p = y * width + x;
-        if (a > alpha[p]) {
-          alpha[p] = a;
+        if (a > alpha[p]) alpha[p] = a;
+        const d = distance / usable[owner].r;
+        if (d < nearest[p]) {
+          nearest[p] = d;
           shiftOf[p] = owner;
         }
       }

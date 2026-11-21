@@ -389,6 +389,13 @@ export const PRIVACY: LegalDocument = {
               basis: l("Obligation légale (loi pour la confiance dans l’économie numérique, règlement sur les services numériques) et exécution du contrat (CGU)", "Legal obligation (French LCEN, Digital Services Act) and performance of a contract (terms of use)"),
             },
             { purpose: l("Envoyer la newsletter et des e-mails marketing", "Send the newsletter and marketing emails"), basis: l("Consentement", "Consent") },
+            {
+              purpose: l(
+                "Établir des statistiques internes (ventes, formations, fréquentation) et améliorer le site et nos services, à partir de données agrégées ou pseudonymisées",
+                "Produce internal statistics (sales, training, usage) and improve the website and our services, from aggregated or pseudonymised data",
+              ),
+              basis: l("Intérêt légitime", "Legitimate interest"),
+            },
             { purpose: l("Mesure d’audience et cookies non essentiels", "Audience measurement and non-essential cookies"), basis: l("Consentement", "Consent") },
             ...(ADVERTISING_ENABLED
               ? [

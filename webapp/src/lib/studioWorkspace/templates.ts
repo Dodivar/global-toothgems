@@ -62,6 +62,20 @@ export function sortTemplates(list: StudioTemplate[]): StudioTemplate[] {
   return [...list].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || a.name.localeCompare(b.name));
 }
 
+/**
+ * The team's design a new account finds on the stage the first time it opens
+ * the editor (owner's choice, 2026-11-21): the template of this name, matched
+ * ignoring case, accents and surrounding spaces.
+ */
+export const STARTER_TEMPLATE_NAME = "Scorpion";
+
+/** The starter design: the template named `STARTER_TEMPLATE_NAME`, else the first one with pieces, else none. */
+export function pickStarterTemplate(list: StudioTemplate[]): StudioTemplate | null {
+  const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
+  const usable = list.filter((x) => x.scene.pieces.length > 0);
+  return usable.find((x) => fold(x.name) === fold(STARTER_TEMPLATE_NAME)) ?? usable[0] ?? null;
+}
+
 /** Search by name and description, ignoring case and accents. */
 export function searchTemplates(list: StudioTemplate[], query: string): StudioTemplate[] {
   const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();

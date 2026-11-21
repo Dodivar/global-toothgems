@@ -27,7 +27,10 @@ import { StudioTemplatesProvider } from "../lib/studioWorkspace/templatesStore";
 import { GlowbookProvider } from "../lib/studioWorkspace/glowbookStore";
 import { StudioTour } from "../components/studio/workspace/StudioTour";
 import { isPhoneDevice, phoneNoticeSeen } from "../lib/studioWorkspace/phoneNotice";
-import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog, useWorkspaceDialog } from "../lib/studioWorkspace/workspaceUi";
+import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog, setOnboardingAccount, useWorkspaceDialog } from "../lib/studioWorkspace/workspaceUi";
+import { useStudioTemplates } from "../lib/studioWorkspace/templatesStore";
+import { pickStarterTemplate } from "../lib/studioWorkspace/templates";
+import { useAuth } from "../lib/auth";
 
 /**
  * The 3D Studio editor: compose tooth jewellery on a 3D dental arch.
@@ -47,6 +50,23 @@ import { getWorkspaceDialog, onboardingSeen, openWorkspaceDialog, useWorkspaceDi
  * it was when the artist comes back.
  */
 export function StudioEditor() {
+  const { userId } = useAuth();
+  // The draft and the welcome belong to the signed-in account. Settled during
+  // the first render, before any panel or the engine reads the store, so a
+  // previous account's design never reaches the stage, not even for a frame.
+  const adopted = useRef<string | null | undefined>(undefined);
+  if (adopted.current === undefined) {
+    adopted.current = userId;
+    setOnboardingAccount(userId);
+    if (userId) studioStore.adoptAccount(userId, { notify: false });
+  }
+  // Another account signed in while the editor is open (another tab): same rule.
+  useEffect(() => {
+    if (adopted.current === userId) return;
+    adopted.current = userId;
+    setOnboardingAccount(userId);
+    if (userId) studioStore.adoptAccount(userId);
+  }, [userId]);
   return (
     <StudioWorkspaceProvider>
       <StudioTemplatesProvider>
@@ -114,15 +134,34 @@ function StudioWorkspace() {
     if (!getWorkspaceDialog()) openWorkspaceDialog({ kind: "phoneNotice" });
   }, []);
 
-  // First visit: a short welcome over the stage, once it has had a moment to draw.
+  // An account's first visit opens on one of the team's designs (the Scorpion),
+  // never on an empty stage: something to turn around, select and recolour,
+  // and what the guided tour then works on. A copy on the stage, linked to
+  // nothing: saving it makes it the member's own creation.
+  const { status: templatesStatus, templates } = useStudioTemplates();
+  const firstVisit = useRef(!onboardingSeen());
   useEffect(() => {
-    if (onboardingSeen()) return;
+    if (!firstVisit.current || templatesStatus === "loading") return;
+    firstVisit.current = false;
+    if (templatesStatus !== "ready" || studioStore.jewels.length > 0 || studioStore.active) return;
+    const starter = pickStarterTemplate(templates);
+    if (starter) studioStore.loadScene(starter.scene, null);
+  }, [templatesStatus, templates]);
+
+  // First visit: a short welcome over the stage, once it has had a moment to draw.
+  // Only over the stage — arriving on a library page is not a first look at the
+  // editor —, so it waits for the artist's first visit to the stage. And after
+  // the starter design is settled: the tour must not see 17 pieces land mid-step.
+  const welcomeAsked = useRef(false);
+  useEffect(() => {
+    if (section || welcomeAsked.current || templatesStatus === "loading" || onboardingSeen()) return;
     const timer = setTimeout(() => {
-      // Only over the stage: arriving on a library page is not a first look at the editor.
-      if (!getWorkspaceDialog() && !live.current.section) openWorkspaceDialog({ kind: "onboarding" });
+      if (getWorkspaceDialog() || live.current.section) return;
+      welcomeAsked.current = true;
+      openWorkspaceDialog({ kind: "onboarding" });
     }, 900);
     return () => clearTimeout(timer);
-  }, []);
+  }, [section, dialog, templatesStatus]);
 
   // A section in front: nothing half-done may linger on the stage behind it.
   useEffect(() => {

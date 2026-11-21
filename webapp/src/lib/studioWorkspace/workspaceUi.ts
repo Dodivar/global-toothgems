@@ -73,16 +73,29 @@ export function useWorkspaceDialog(): WorkspaceDialog | null {
 
 /**
  * v2: the welcome became the guided tour over the editor itself
- * (`components/studio/workspace/StudioTour`). The key was bumped so the new
- * tour is offered once to everyone, including artists who dismissed the old
- * four-slide dialog; nothing else is stored under it.
+ * (`components/studio/workspace/StudioTour`). v3 (2026-11-21): the answer is
+ * kept per account, not per browser — a new member signing in where someone
+ * else already answered (a shared computer, the team testing accounts) is
+ * still welcomed. Nothing else is stored under it.
  */
-const ONBOARDING_KEY = "gt-studio3d-onboarding-v2";
+const ONBOARDING_KEY = "gt-studio3d-onboarding-v3";
 
-/** Whether the welcome was already answered — tour taken or declined — in this browser. */
+/** The signed-in account the welcome is asked of; set by the editor. */
+let onboardingAccount: string | null = null;
+
+export function setOnboardingAccount(userId: string | null) {
+  onboardingAccount = userId;
+}
+
+/** Storage key of the welcome's answer for an account (`anonymous` without one, the mock mode). */
+export function onboardingKey(userId: string | null): string {
+  return `${ONBOARDING_KEY}:${userId ?? "anonymous"}`;
+}
+
+/** Whether the signed-in account already answered the welcome — tour taken or declined — in this browser. */
 export function onboardingSeen(): boolean {
   try {
-    return localStorage.getItem(ONBOARDING_KEY) !== null;
+    return localStorage.getItem(onboardingKey(onboardingAccount)) !== null;
   } catch {
     return true; // storage blocked: never nag on every visit
   }
@@ -90,7 +103,7 @@ export function onboardingSeen(): boolean {
 
 export function rememberOnboarding(choice: "done" | "skipped" | "started") {
   try {
-    localStorage.setItem(ONBOARDING_KEY, choice);
+    localStorage.setItem(onboardingKey(onboardingAccount), choice);
   } catch {
     /* the choice lasts for this visit */
   }

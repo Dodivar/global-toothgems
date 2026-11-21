@@ -110,8 +110,9 @@ describe("arbitrateMidline", () => {
     expect(a.centrals).toEqual(box(0.1));
   });
 
-  it("keeps teeth that are right when the check's box is off (the box then refused them)", () => {
-    expect(place(truth, box(0.6)).reliable).toBe(false);
+  it("keeps teeth that are right when the check's box is off", () => {
+    // Half-way between two numberings' midlines, the box no longer refuses them (2026-11-21, `MIDLINE_DECISIVE`).
+    expect(place(truth, box(0.6)).reliable).toBe(true);
     const a = arbitrateMidline(truth, box(0.6), gaps);
     expect(a.triggered).toBe(true);
     expect(a.corrections).toEqual([]);

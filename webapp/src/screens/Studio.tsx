@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { ArrowDown, ArrowRight, Camera, Quote, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, Quote, Sparkles } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { StudioPageImage, type StudioStill } from "../components/studio/StudioPageImage";
 import { HeroVideo } from "../components/studio/HeroVideo";
@@ -28,9 +28,9 @@ import { STUDIO_PREVIEW } from "../lib/studioAccess";
  * length come from `data/studio.ts`; the hero plays the Studio film (`HeroVideo`); the benefit blocks and the
  * artists' gallery show stills rendered by the editor's own engine from the
  * Global Toothgems team's designs, and a film of the editor at work
- * (`StudioPageImage`, `public/images/studio-page/`, `StudioLoopVideo`); the testimonials stay
- * labelled placeholders until the owner supplies real ones, and no
- * testimonial, rating or figure is made up; the buttons behave as follows: while the Studio is in
+ * (`StudioPageImage`, `public/images/studio-page/`, `StudioLoopVideo`); the one testimonial is a real
+ * artist's (Fiona, "Christmas" composition, supplied by the owner, 2026-11-21), and no
+ * other testimonial, rating or figure is made up; the buttons behave as follows: while the Studio is in
  * free preview (`studioAccess`) "start" opens the editor, otherwise it leads
  * to the subscription page, and nothing here activates a trial or takes a
  * payment.
@@ -68,6 +68,8 @@ const GALLERY: { key: string; still: StudioStill }[] = [
   { key: "star", still: { base: `${STILLS}/creation-etoile-halo`, width: 600, height: 600 } },
   { key: "gold", still: { base: `${STILLS}/creation-doree`, width: 600, height: 600 } },
 ];
+/** The artist's testimonial picture: her "Christmas" composition (the editor's own render, saved with her agreement). */
+const TESTIMONIAL_STILL: StudioStill = { base: `${STILLS}/testimonial-noel`, width: 600, height: 338 };
 const GALLERY_SIZES = "(min-width: 1024px) 410px, (min-width: 640px) 30vw, calc(100vw - 32px)";
 
 /**
@@ -270,21 +272,23 @@ export function Studio() {
           <SectionHeading id="gt-studio-b-proof" eyebrow={t("studioPage.proof.eyebrow")} title={t("studioPage.proof.title")} body={t("studioPage.proof.body")} />
 
           <h3 className="sr-only">{t("studioPage.proof.testimonialsTitle")}</h3>
-          <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 lg:grid-cols-3">
-            {[0, 1, 2].map((slot) => (
-              <li key={slot} className="grid content-start gap-3 rounded-[var(--radius-xl)] border border-dashed border-[var(--gt-blue-300)] bg-[var(--gt-blue-50)] p-5 sm:p-6">
-                <span aria-hidden="true" className="text-[var(--gt-blue-400)]">
-                  <Quote size={22} />
-                </span>
-                <p className="m-0 text-[length:var(--text-body-md)] font-semibold text-[var(--text-primary)]">{t("studioPage.proof.testimonial.title")}</p>
-                <p className="m-0 text-[length:var(--text-body-sm)] text-[var(--text-body)]">{t("studioPage.proof.testimonial.body")}</p>
-                <p className="m-0 flex items-center gap-2 text-[length:var(--text-caption)] text-[var(--text-muted)]">
-                  <Camera size={13} aria-hidden="true" />
-                  {t("studioPage.proof.testimonial.caption")}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <figure className="m-0 grid items-center gap-5 rounded-[var(--radius-xl)] border border-[var(--border-subtle)] bg-[var(--gt-blue-50)] p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-10">
+            <StudioPageImage
+              still={TESTIMONIAL_STILL}
+              alt={t("studioPage.proof.testimonial.alt")}
+              sizes="(min-width: 1024px) 520px, calc(100vw - 64px)"
+              imageClassName="rounded-[var(--radius-lg)] border border-[var(--border-subtle)]"
+            />
+            <div className="grid content-center gap-3">
+              <span aria-hidden="true" className="text-[var(--gt-blue-400)]">
+                <Quote size={26} />
+              </span>
+              <blockquote className="m-0 text-[clamp(18px,2.6vw,24px)] font-semibold leading-[var(--leading-snug)] text-[var(--text-primary)]">
+                {t("studioPage.proof.testimonial.quote")}
+              </blockquote>
+              <figcaption className="text-[length:var(--text-body-sm)] text-[var(--text-muted)]">{t("studioPage.proof.testimonial.author")}</figcaption>
+            </div>
+          </figure>
 
           <h3 className="sr-only">{t("studioPage.proof.galleryTitle")}</h3>
           <div className="grid gap-3">
