@@ -263,7 +263,11 @@ device's store, and the saved creation): 9 gems were left out "hidden by a lip" 
 4. **Overlapping discs belong to the nearest gem** (`blendGems`): a pale column cut through the tree's navettes on
    both renders. The tree's small round crystals, drawn too large by the image model, were moved back to their size;
    their discs, processed first, owned the overlap with the navettes, and a gem moved back shows the photo outside
-   its own drawing.
+   its own drawing. The third render then showed a white veil over those small crystals: owning their own pixels
+   now, they got their own colour shift, which, with no tooth around them to read, was read on the plain ring —
+   the navettes' green — and washed them to the tooth's colour. A gem with no tooth around it now takes the
+   answer's colour drift away from every gem (`backgroundShift`). Reproduced on a synthetic answer drawn on the
+   tree's real marks: the column with the former code, the veil after the first fix, neither now.
 5. Still open: the 22's and 23's white gems sit about 15 px left of their teeth (the boxes run left, residuals under
    0.25), so they read as all on the 22.
 

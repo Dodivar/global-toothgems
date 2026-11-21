@@ -187,6 +187,28 @@ describe("blendGems moving gems back onto their marks", () => {
     for (let y = 50; y <= 70; y++) for (const x of [115, 116, 117, 118]) expect(isGreen(x, y)).toBe(true);
   });
 
+  it("keeps the colour of a small gem with no tooth around it, amid larger ones", () => {
+    // A small green crystal ringed by large green gems, as a tree's trunk between its navettes: no tooth to
+    // match its colours on. Read on its neighbours, its shift washed it to the tooth's colour (2026-11-21).
+    const base = photo();
+    const ring = Array.from({ length: 6 }, (_, k) => ({ id: `n${k}`, x: 110 + 26 * Math.cos((k * Math.PI) / 3), y: 65 + 26 * Math.sin((k * Math.PI) / 3), r: 16 }));
+    const centre = { id: "c", x: 110, y: 65, r: 6 };
+    const drawn = answer(base, []);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        if (![...ring, centre].some((g) => Math.hypot(x - g.x, y - g.y) <= g.r)) continue;
+        const i = (y * W + x) * 4;
+        drawn.data[i] = 20;
+        drawn.data[i + 1] = 150;
+        drawn.data[i + 2] = 90;
+      }
+    }
+    const out = blendGems(base, drawn, [centre, ...ring]);
+    const [r, g] = pixel(out.data!, 110, 65);
+    expect(g).toBeGreaterThan(130);
+    expect(r).toBeLessThan(40);
+  });
+
   it("leaves a gem drawn as asked as it was", () => {
     // As it comes out when it is the only gem: kept where and as it was drawn.
     const alone = blendGems(original, edited, [marks[2]]);
